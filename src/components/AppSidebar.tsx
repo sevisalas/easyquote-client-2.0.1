@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, PanelLeft } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -32,7 +32,7 @@ const items: Item[] = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const location = useLocation();
   const currentPath = location.pathname;
@@ -47,7 +47,6 @@ export function AppSidebar() {
     toast({ title: "Sesión cerrada" });
     navigate("/auth");
   };
-
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive
       ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
