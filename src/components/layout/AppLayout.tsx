@@ -7,7 +7,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 function MainContent({ children }: PropsWithChildren) {
-  return <main className={`flex-1 pr-4 md:pr-6 py-4 md:py-6`}>{children}</main>;
+  return (
+    <main className={"flex-1 pr-4 md:pr-6 py-4 md:py-6 md:pl-[--sidebar-width] md:peer-data-[collapsible=icon]:pl-[--sidebar-width-icon]"}>
+      {children}
+    </main>
+  );
 }
 
 export default function AppLayout({ children }: PropsWithChildren) {
