@@ -162,18 +162,6 @@ export default function PromptsForm({
           {p.description && (
             <p className="text-xs text-muted-foreground">{p.description}</p>
           )}
-          {p.default !== undefined && p.default !== null && p.default !== "" && (
-            p.type === "color" ? (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="inline-block h-3 w-3 rounded-sm border" style={{ backgroundColor: String(p.default) }} />
-                <span>Por defecto: {String(p.default)}</span>
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Por defecto: {getOptionLabel(p.options, p.default) ?? String(p.default)}
-              </p>
-            )
-          )}
 
 
           {/* Number / Integer */}
@@ -243,11 +231,6 @@ export default function PromptsForm({
                     ) : (
                       <div className="h-24 w-full grid place-items-center text-sm text-muted-foreground">
                         {o.label ?? o.value}
-                      </div>
-                    )}
-                    {o.label && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur px-2 py-1 text-xs">
-                        {o.label}
                       </div>
                     )}
                   </button>
