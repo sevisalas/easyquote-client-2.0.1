@@ -4,7 +4,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 
 function MainContent({ children }: PropsWithChildren) {
   return (
-    <main className={"flex-1 pr-4 md:pr-6 py-4 md:py-6 md:pl-[--sidebar-width] md:peer-data-[collapsible=icon]:pl-[--sidebar-width-icon]"}>
+    <main className={"flex-1 pr-4 md:pr-6 py-4 md:py-6 md:pl-[calc(var(--sidebar-width)+0.5rem)] md:peer-data-[collapsible=icon]:pl-[calc(var(--sidebar-width-icon)+0.5rem)]"}>
       {children}
     </main>
   );
