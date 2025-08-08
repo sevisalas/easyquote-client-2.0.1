@@ -54,7 +54,7 @@ export function AppSidebar() {
       : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
 
   return (
-    <Sidebar collapsible="offcanvas">
+    <Sidebar collapsible="icon">
       <SidebarHeader>
         <Link to="/" aria-label="Ir al inicio" className="flex items-center justify-center px-2 py-2">
           <picture>
