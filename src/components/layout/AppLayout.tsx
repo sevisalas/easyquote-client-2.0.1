@@ -1,9 +1,21 @@
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useCallback } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Link } from "react-router-dom";
-
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 export default function AppLayout({ children }: PropsWithChildren) {
+  const navigate = useNavigate();
+  const handleSignOut = useCallback(async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({ title: "Error", description: "No se pudo cerrar sesión", variant: "destructive" });
+      return;
+    }
+    toast({ title: "Sesión cerrada" });
+    navigate("/auth");
+  }, [navigate]);
   return (
     <SidebarProvider>
       <header className="h-14 flex items-center border-b bg-background">
@@ -20,6 +32,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
               />
             </picture>
           </Link>
+
+          <div className="ml-auto">
+            <Button variant="outline" size="sm" onClick={handleSignOut}>
+              Cerrar sesión
+            </Button>
+          </div>
         </div>
       </header>
 
