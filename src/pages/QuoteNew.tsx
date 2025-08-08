@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import PromptsForm from "@/components/quotes/PromptsForm";
@@ -63,7 +64,7 @@ const QuoteNew = () => {
 
   const { data: customers } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
   const { data: products } = useQuery({ queryKey: ["easyquote-products"], queryFn: fetchProducts, retry: 1, enabled: hasToken });
-  const { data: pricing } = useQuery({
+  const { data: pricing, error: pricingError } = useQuery({
     queryKey: ["easyquote-pricing", productId],
     enabled: hasToken && !!productId,
     retry: 1,
@@ -83,6 +84,36 @@ const QuoteNew = () => {
   const handlePromptChange = (id: string, value: any) => {
     setPromptValues((prev) => ({ ...prev, [id]: value }));
   };
+
+  const formatEUR = (val: any) => {
+    const num = typeof val === "number" ? val : parseFloat(String(val).replace(/\./g, "").replace(",", "."));
+    if (isNaN(num)) return `${String(val)} €`;
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency: "EUR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(num);
+  };
+
+  const outputs = useMemo(() => ((pricing as any)?.outputValues ?? []) as any[], [pricing]);
+  const imageOutputs = useMemo(
+    () =>
+      outputs.filter((o: any) => {
+        const t = String(o?.type || "").toLowerCase();
+        const v = String(o?.value || "");
+        return t === "image" || /^https?:\/\//i.test(v);
+      }),
+    [outputs]
+  );
+  const priceOutput = useMemo(
+    () => outputs.find((o: any) => String(o?.type || "").toLowerCase() === "price"),
+    [outputs]
+  );
+  const otherOutputs = useMemo(
+    () => outputs.filter((o: any) => o !== priceOutput && !imageOutputs.includes(o)),
+    [outputs, priceOutput, imageOutputs]
+  );
 
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,7 +206,7 @@ const QuoteNew = () => {
 
       {canShowPanels && (
         <div className="grid gap-6 md:grid-cols-3">
-          <Card className="md:col-span-2">
+          <Card className="md:col-span-1">
             <CardHeader>
               <CardTitle>Opciones del producto</CardTitle>
             </CardHeader>
@@ -188,12 +219,53 @@ const QuoteNew = () => {
             </CardContent>
           </Card>
 
-          <Card className="md:col-span-1">
+          <Card className="md:col-span-2">
             <CardHeader>
-              <CardTitle>Resultados y salidas</CardTitle>
+              <CardTitle>Resultado</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Aquí verás los resultados del cálculo y los outputs.</p>
+              {imageOutputs.length > 0 && (
+                <section className="mb-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {imageOutputs.map((o: any, idx: number) => (
+                    <img
+                      key={idx}
+                      src={String(o.value)}
+                      alt={`resultado imagen ${idx + 1}`}
+                      loading="lazy"
+                      className="w-full h-auto rounded-md"
+                    />
+                  ))}
+                </section>
+              )}
+
+              {pricingError && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertTitle>Producto sin pricing</AlertTitle>
+                  <AlertDescription>El producto seleccionado no existe o es incorrecto.</AlertDescription>
+                </Alert>
+              )}
+
+              {priceOutput ? (
+                <div className="p-4 rounded-md border">
+                  <div className="text-sm text-muted-foreground">Precio</div>
+                  <div className="text-2xl font-semibold">{formatEUR((priceOutput as any).value)}</div>
+                </div>
+              ) : (
+                !pricingError && (
+                  <p className="text-sm text-muted-foreground">Selecciona opciones para ver el resultado.</p>
+                )
+              )}
+
+              {otherOutputs.length > 0 && (
+                <section className="mt-4 space-y-2">
+                  {otherOutputs.map((o: any, idx: number) => (
+                    <div key={idx} className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
+                      <span>{String(o.value)}</span>
+                    </div>
+                  ))}
+                </section>
+              )}
             </CardContent>
           </Card>
         </div>
