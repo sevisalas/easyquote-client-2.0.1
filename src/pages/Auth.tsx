@@ -31,6 +31,21 @@ const Auth = () => {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+
+        // Obtener token de EasyQuote con las mismas credenciales y guardarlo
+        try {
+          const { data, error: fxError } = await supabase.functions.invoke("easyquote-auth", {
+            body: { email, password },
+          });
+          if (fxError) {
+            console.error("easyquote-auth error", fxError);
+          } else if ((data as any)?.token) {
+            localStorage.setItem("easyquote_token", (data as any).token);
+          }
+        } catch (e) {
+          console.warn("No se pudo obtener el token de EasyQuote", e);
+        }
+
         toast({ title: "Bienvenido", description: "Sesión iniciada correctamente" });
         navigate("/", { replace: true });
       } else {

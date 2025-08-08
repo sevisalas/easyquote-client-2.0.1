@@ -11,6 +11,7 @@ import ClienteForm from "./pages/ClienteForm";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Auth from "./pages/Auth";
 import AppLayout from "./components/layout/AppLayout";
+import QuoteNew from "./pages/QuoteNew";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -67,6 +68,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <ClienteForm />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/presupuestos/nuevo"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <QuoteNew />
                 </AppLayout>
               </ProtectedRoute>
             }
