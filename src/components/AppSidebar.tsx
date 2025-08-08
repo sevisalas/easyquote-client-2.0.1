@@ -11,6 +11,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
@@ -27,10 +30,6 @@ interface Item {
 const items: Item[] = [
   { title: "Inicio", url: "/", icon: Home },
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Clientes", url: "/clientes", icon: Users },
-  { title: "Nuevo Cliente", url: "/clientes/nuevo", icon: PlusCircle },
-  { title: "Presupuestos", url: "/presupuestos", icon: FileText },
-  { title: "Nuevo Presupuesto", url: "/presupuestos/nuevo", icon: PlusCircle },
 ];
 
 export function AppSidebar() {
@@ -83,6 +82,80 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+
+              {/* Clientes */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={currentPath.startsWith("/clientes")}
+                >
+                  <NavLink to="/clientes" end className={getNavCls}>
+                    <Users className="mr-2 h-4 w-4" />
+                    {!isCollapsed && <span>Clientes</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                      asChild
+                      isActive={currentPath === "/clientes"}
+                    >
+                      <NavLink to="/clientes" end className={getNavCls}>
+                        <Users className="mr-2 h-4 w-4" />
+                        {!isCollapsed && <span>Listado</span>}
+                      </NavLink>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                      asChild
+                      isActive={currentPath === "/clientes/nuevo"}
+                    >
+                      <NavLink to="/clientes/nuevo" className={getNavCls}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        {!isCollapsed && <span>Nuevo</span>}
+                      </NavLink>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
+
+              {/* Presupuestos */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={currentPath.startsWith("/presupuestos")}
+                >
+                  <NavLink to="/presupuestos" end className={getNavCls}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    {!isCollapsed && <span>Presupuestos</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                      asChild
+                      isActive={currentPath === "/presupuestos"}
+                    >
+                      <NavLink to="/presupuestos" end className={getNavCls}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        {!isCollapsed && <span>Listado</span>}
+                      </NavLink>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                      asChild
+                      isActive={currentPath === "/presupuestos/nuevo"}
+                    >
+                      <NavLink to="/presupuestos/nuevo" className={getNavCls}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        {!isCollapsed && <span>Nuevo</span>}
+                      </NavLink>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
