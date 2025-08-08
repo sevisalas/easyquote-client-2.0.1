@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -25,27 +27,54 @@ const fetchProducts = async (): Promise<Product[]> => {
     body: { token },
   });
   if (error) throw error;
-  // La API puede devolver lista simple u objeto; normalizamos
   const list = Array.isArray(data) ? data : (data?.items || data?.data || []);
   return list as Product[];
 };
 
 const QuoteNew = () => {
-  const [customerId, setCustomerId] = useState<string | undefined>();
-  const [productId, setProductId] = useState<string | undefined>();
+  const [customerId, setCustomerId] = useState<string>("");
+  const [productId, setProductId] = useState<string>("");
+  const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
+  const [eqEmail, setEqEmail] = useState<string>("");
+  const [eqPassword, setEqPassword] = useState<string>("");
+  const [connecting, setConnecting] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     document.title = "Nuevo Presupuesto | Productos y Cliente";
   }, []);
 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setEqEmail(data.user?.email ?? ""));
+  }, []);
+
   const { data: customers } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
-  const { data: products } = useQuery({ queryKey: ["easyquote-products"], queryFn: fetchProducts });
+  const { data: products } = useQuery({ queryKey: ["easyquote-products"], queryFn: fetchProducts, retry: 1, enabled: hasToken });
 
   const canShowPanels = useMemo(() => !!customerId && !!productId, [customerId, productId]);
 
-  useEffect(() => {
-    if (!products) return;
-  }, [products]);
+  const handleConnect = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setConnecting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("easyquote-auth", {
+        body: { email: eqEmail, password: eqPassword },
+      });
+      if (error) throw error as any;
+      if ((data as any)?.token) {
+        localStorage.setItem("easyquote_token", (data as any).token);
+        setHasToken(true);
+        toast({ title: "Conectado con EasyQuote" });
+        await queryClient.invalidateQueries({ queryKey: ["easyquote-products"] });
+      } else {
+        throw new Error("Respuesta sin token");
+      }
+    } catch (err: any) {
+      toast({ title: "No se pudo conectar", description: err?.message || "Verifica credenciales", variant: "destructive" });
+    } finally {
+      setConnecting(false);
+    }
+  };
 
   return (
     <main className="p-6 space-y-6">
@@ -76,9 +105,9 @@ const QuoteNew = () => {
 
           <div className="space-y-2">
             <Label>Producto</Label>
-            <Select onValueChange={setProductId} value={productId}>
+            <Select onValueChange={setProductId} value={productId} disabled={!hasToken}>
               <SelectTrigger>
-                <SelectValue placeholder="Elige un producto" />
+                <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
               </SelectTrigger>
               <SelectContent>
                 {products?.map((p: any) => (
@@ -89,6 +118,29 @@ const QuoteNew = () => {
           </div>
         </CardContent>
       </Card>
+
+      {!hasToken && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Conectar EasyQuote</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleConnect} className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2 md:col-span-1">
+                <Label>Email</Label>
+                <Input value={eqEmail} onChange={(e) => setEqEmail(e.target.value)} type="email" required />
+              </div>
+              <div className="space-y-2 md:col-span-1">
+                <Label>Contraseña</Label>
+                <Input value={eqPassword} onChange={(e) => setEqPassword(e.target.value)} type="password" required />
+              </div>
+              <div className="flex items-end md:col-span-1">
+                <Button type="submit" disabled={connecting} className="w-full">{connecting ? "Conectando..." : "Conectar"}</Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       {canShowPanels && (
         <div className="grid gap-6 md:grid-cols-3">

@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, PanelLeft } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, PanelLeft, FileText } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -29,6 +29,8 @@ const items: Item[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Nuevo Cliente", url: "/clientes/nuevo", icon: PlusCircle },
+  { title: "Presupuestos", url: "/presupuestos", icon: FileText },
+  { title: "Nuevo Presupuesto", url: "/presupuestos/nuevo", icon: PlusCircle },
 ];
 
 export function AppSidebar() {
