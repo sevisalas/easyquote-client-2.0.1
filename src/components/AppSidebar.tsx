@@ -1,11 +1,12 @@
 import { Home, LayoutDashboard, Users, PlusCircle } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, Link } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -39,6 +40,18 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <Link to="/" aria-label="Ir al inicio" className="flex items-center justify-center px-2 py-2">
+          <picture>
+            <source srcSet="/lovable-uploads/6b895d66-5fd4-4be7-b9b7-6b22e2b14c75.png" media="(prefers-color-scheme: dark)" />
+            <img
+              src="/lovable-uploads/3ff3c1d3-fd0e-4649-9146-6991b081234b.png"
+              alt="Logo EasyQuote"
+              className={`${isCollapsed ? "h-6" : "h-8"} w-auto max-w-full object-contain`}
+            />
+          </picture>
+        </Link>
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Navegación</SidebarGroupLabel>
