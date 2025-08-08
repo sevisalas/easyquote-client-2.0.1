@@ -10,7 +10,7 @@ import Clientes from "./pages/Clientes";
 import ClienteForm from "./pages/ClienteForm";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Auth from "./pages/Auth";
-
+import AppLayout from "./components/layout/AppLayout";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -21,11 +21,56 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
-          <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
-          <Route path="/clientes/nuevo" element={<ProtectedRoute><ClienteForm /></ProtectedRoute>} />
-          <Route path="/clientes/:id/editar" element={<ProtectedRoute><ClienteForm /></ProtectedRoute>} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Index />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Dashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/clientes"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Clientes />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/clientes/nuevo"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ClienteForm />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/clientes/:id/editar"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ClienteForm />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
