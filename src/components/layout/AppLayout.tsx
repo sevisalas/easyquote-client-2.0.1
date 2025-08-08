@@ -18,7 +18,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
   }, [navigate]);
   return (
     <SidebarProvider>
-      <header className="h-14 flex items-center border-b bg-background">
+      <header className="h-14 sticky top-0 z-20 flex items-center border-b bg-background">
         <div className="container mx-auto flex items-center gap-3 px-4">
           <SidebarTrigger aria-label="Abrir menú" />
           <Link to="/" className="flex items-center gap-2" aria-label="Ir al inicio">
