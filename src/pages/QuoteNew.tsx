@@ -63,6 +63,20 @@ const QuoteNew = () => {
 
   const { data: customers } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
   const { data: products } = useQuery({ queryKey: ["easyquote-products"], queryFn: fetchProducts, retry: 1, enabled: hasToken });
+  const { data: pricing } = useQuery({
+    queryKey: ["easyquote-pricing", productId],
+    enabled: hasToken && !!productId,
+    retry: 1,
+    queryFn: async () => {
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
+      const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
+        body: { token, productId },
+      });
+      if (error) throw error as any;
+      return data;
+    },
+  });
 
   const selectedProduct = useMemo(() => products?.find((p: any) => String(p.id) === String(productId)), [products, productId]);
   const canShowPanels = useMemo(() => !!customerId && !!productId, [customerId, productId]);
@@ -166,10 +180,10 @@ const QuoteNew = () => {
               <CardTitle>Opciones del producto</CardTitle>
             </CardHeader>
             <CardContent>
-              {selectedProduct ? (
-                <PromptsForm product={selectedProduct} values={promptValues} onChange={handlePromptChange} />
+              {pricing || selectedProduct ? (
+                <PromptsForm product={pricing || selectedProduct} values={promptValues} onChange={handlePromptChange} />
               ) : (
-                <p className="text-sm text-muted-foreground">Selecciona un producto para ver sus prompts.</p>
+                <p className="text-sm text-muted-foreground">Selecciona un producto para ver sus opciones.</p>
               )}
             </CardContent>
           </Card>

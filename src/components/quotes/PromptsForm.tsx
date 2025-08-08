@@ -43,14 +43,23 @@ function normalizeOptions(opts: any[]): PromptOption[] {
 }
 
 function extractPrompts(product: any): PromptDef[] {
-  const raw: any[] =
-    product?.prompts ??
-    product?.inputs ??
-    product?.fields ??
-    product?.parameters ??
-    product?.config?.prompts ??
-    product?.schema?.prompts ??
-    [];
+  const candidates = [
+    product?.prompts,
+    product?.inputs,
+    product?.fields,
+    product?.parameters,
+    product?.config?.prompts,
+    product?.schema?.prompts,
+    product?.pricing?.prompts,
+    product?.pricing?.inputs,
+    product?.form?.fields,
+    product?.form?.prompts,
+    product?.options,
+    product?.choices,
+    product?.data?.prompts,
+    product?.request?.fields,
+  ];
+  const raw: any[] = (candidates.find((r) => Array.isArray(r)) as any[]) || [];
 
   return raw.map((f: any, idx: number): PromptDef => {
     const id = String(f.id ?? f.key ?? f.name ?? `field_${idx}`);
@@ -95,7 +104,7 @@ export default function PromptsForm({
 
   if (!product) return null;
   if (!prompts?.length) {
-    return <p className="text-sm text-muted-foreground">Este producto no define prompts.</p>;
+    return <p className="text-sm text-muted-foreground">Este producto no define opciones.</p>;
   }
 
   return (
