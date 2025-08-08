@@ -34,7 +34,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
 
       <div className="min-h-screen flex w-full">
         <AppSidebar />
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 px-4 md:px-6"><div className="container mx-auto max-w-5xl py-4 md:py-6">{children}</div></main>
       </div>
     </SidebarProvider>
   );
