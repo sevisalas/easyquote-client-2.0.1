@@ -208,7 +208,7 @@ const QuoteNew = () => {
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="md:col-span-1">
             <CardHeader>
-              <CardTitle>Opciones del producto</CardTitle>
+              <CardTitle>Opciones</CardTitle>
             </CardHeader>
             <CardContent>
               {pricing || selectedProduct ? (
