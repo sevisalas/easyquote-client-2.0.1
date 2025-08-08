@@ -92,14 +92,14 @@ const Clientes = () => {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
         <header className="mb-8">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-3">
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-2">Clientes</h1>
               <p className="text-muted-foreground">Gestiona tu base de datos de clientes</p>
             </div>
             <Button 
               onClick={() => navigate('/clientes/nuevo')}
-              className="bg-primary hover:bg-primary/90"
+              className="w-full md:w-auto bg-primary hover:bg-primary/90"
             >
               <Plus className="w-4 h-4 mr-2" />
               Nuevo Cliente

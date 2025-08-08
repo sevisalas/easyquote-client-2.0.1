@@ -70,17 +70,17 @@ const Dashboard = () => {
               <p className="text-muted-foreground">
                 Administra tu base de datos de clientes
               </p>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button 
                   onClick={() => navigate('/clientes')} 
-                  className="bg-primary hover:bg-primary/90"
+                  className="w-full sm:w-auto bg-primary hover:bg-primary/90"
                 >
                   Ver Clientes
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => navigate('/clientes/nuevo')}
-                  className="border-primary text-primary hover:bg-primary/10"
+                  className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Nuevo Cliente
@@ -100,17 +100,17 @@ const Dashboard = () => {
               <p className="text-muted-foreground">
                 Crea y gestiona presupuestos con EasyQuote API
               </p>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button 
                   onClick={() => navigate('/presupuestos')}
-                  className="bg-primary hover:bg-primary/90"
+                  className="w-full sm:w-auto bg-primary hover:bg-primary/90"
                 >
                   Ver Presupuestos
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => navigate('/presupuestos/nuevo')}
-                  className="border-primary text-primary hover:bg-primary/10"
+                  className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Nuevo Presupuesto
