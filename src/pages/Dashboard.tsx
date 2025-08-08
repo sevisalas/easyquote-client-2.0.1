@@ -1,10 +1,38 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, FileText, Calculator, Plus } from "lucide-react";
+import { FileText, Plus, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [totalQuotes, setTotalQuotes] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [approvedCount, setApprovedCount] = useState(0);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const uid = user?.id || "";
+      try {
+        const [{ count: total }, { count: pending }, { count: approved }] = await Promise.all([
+          supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('user_id', uid),
+          supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('user_id', uid).eq('status', 'pendiente'),
+          supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('user_id', uid).eq('status', 'aprobado'),
+        ]);
+        setTotalQuotes(total ?? 0);
+        setPendingCount(pending ?? 0);
+        setApprovedCount(approved ?? 0);
+      } catch (_e) {
+        setTotalQuotes(0);
+        setPendingCount(0);
+        setApprovedCount(0);
+      }
+    };
+    load();
+  }, []);
+
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -23,9 +51,9 @@ const Dashboard = () => {
               <FileText className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">8</div>
+              <div className="text-2xl font-bold text-foreground">{totalQuotes}</div>
               <p className="text-xs text-muted-foreground">
-                5 pendientes, 3 aprobados
+                {pendingCount} pendientes, {approvedCount} aprobados
               </p>
             </CardContent>
           </Card>
