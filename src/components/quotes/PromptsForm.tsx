@@ -42,6 +42,13 @@ function normalizeOptions(opts: any[]): PromptOption[] {
   });
 }
 
+function getOptionLabel(options: PromptOption[] | undefined, value: any) {
+  if (value === undefined || value === null) return undefined;
+  const v = String(value);
+  const opt = options?.find((o) => String(o.value) === v);
+  return opt?.label ?? v;
+}
+
 function extractPrompts(product: any): PromptDef[] {
   const candidates = [
     product?.prompts,
@@ -62,10 +69,10 @@ function extractPrompts(product: any): PromptDef[] {
   const raw: any[] = (candidates.find((r) => Array.isArray(r)) as any[]) || [];
 
   return raw.map((f: any, idx: number): PromptDef => {
-    const id = String(f.id ?? f.key ?? f.name ?? `field_${idx}`);
-    const label = f.label ?? f.title ?? f.name ?? id;
-    const t = String(f.type ?? f.inputType ?? f.kind ?? "text").toLowerCase();
-    const options = normalizeOptions(f.options ?? f.choices ?? f.values ?? f.items ?? []);
+    const id = String(f.id ?? f.key ?? f.code ?? f.slug ?? f.name ?? `field_${idx}`);
+    const label = f.label ?? f.title ?? f.promptName ?? f.displayName ?? f.text ?? f.caption ?? f.name ?? id;
+    const t = String(f.type ?? f.inputType ?? f.kind ?? f.uiType ?? "text").toLowerCase();
+    const options = normalizeOptions(f.options ?? f.choices ?? f.values ?? f.items ?? f.optionsList ?? []);
     const hasImages = options.some((o) => !!o.imageUrl);
     const hasColors = options.every((o) => !!o.color || isHexColor(o.value));
 
@@ -75,6 +82,10 @@ function extractPrompts(product: any): PromptDef[] {
     else if ((options?.length ?? 0) > 0) type = hasImages ? "image" : hasColors ? "color" : "select";
 
     const decimals = t.includes("decimal") || t.includes("float") || f.decimals === true;
+    const inferredStep = Number.isFinite(f.step) ? Number(f.step) : decimals ? 0.01 : type === "integer" ? 1 : undefined;
+
+    const defaultFromIndex = (Number.isFinite(f.defaultIndex) && options[Number(f.defaultIndex)]) ? options[Number(f.defaultIndex)].value : undefined;
+    const defaultVal = f.default ?? f.defaultValue ?? f.initial ?? f.value ?? f.defaultOption?.value ?? defaultFromIndex;
 
     return {
       id,
@@ -84,9 +95,9 @@ function extractPrompts(product: any): PromptDef[] {
       required: !!(f.required ?? f.mandatory),
       min: Number.isFinite(f.min) ? Number(f.min) : undefined,
       max: Number.isFinite(f.max) ? Number(f.max) : undefined,
-      step: Number.isFinite(f.step) ? Number(f.step) : decimals ? 0.01 : type === "integer" ? 1 : undefined,
+      step: inferredStep,
       options,
-      default: f.default ?? f.defaultValue,
+      default: defaultVal,
     };
   });
 }
@@ -115,13 +126,26 @@ export default function PromptsForm({
           {p.description && (
             <p className="text-xs text-muted-foreground">{p.description}</p>
           )}
+          {p.default !== undefined && p.default !== null && p.default !== "" && (
+            p.type === "color" ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="inline-block h-3 w-3 rounded-sm border" style={{ backgroundColor: String(p.default) }} />
+                <span>Por defecto: {String(p.default)}</span>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Por defecto: {getOptionLabel(p.options, p.default) ?? String(p.default)}
+              </p>
+            )
+          )}
+
 
           {/* Number / Integer */}
           {(p.type === "number" || p.type === "integer") && (
             <Input
               id={p.id}
               type="number"
-              inputMode="decimal"
+              inputMode={p.type === "integer" ? "numeric" : "decimal"}
               step={p.step}
               min={p.min}
               max={p.max}
