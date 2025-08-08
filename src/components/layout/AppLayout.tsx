@@ -1,5 +1,5 @@
 import { PropsWithChildren, useCallback } from "react";
-import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,9 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 function MainContent({ children }: PropsWithChildren) {
-  const { state } = useSidebar();
-  const paddingCls = state === "collapsed" ? "md:pl-12" : "md:pl-64";
-  return <main className={`flex-1 p-4 md:p-6 ${paddingCls}`}>{children}</main>;
+  return <main className={`flex-1 p-4 md:p-6`}>{children}</main>;
 }
 
 export default function AppLayout({ children }: PropsWithChildren) {
@@ -39,7 +37,8 @@ export default function AppLayout({ children }: PropsWithChildren) {
       </header>
 
       <div className="min-h-screen flex w-full">
-        <AppSidebar />
+        {/* Sidebar temporalmente desactivado para depurar el espacio */}
+        {/* <AppSidebar /> */}
         <MainContent>{children}</MainContent>
       </div>
     </SidebarProvider>
