@@ -206,7 +206,7 @@ const QuoteNew = () => {
 
       {canShowPanels && (
         <div className="grid gap-6 md:grid-cols-3">
-          <Card className="md:col-span-1">
+          <Card className="md:col-span-2">
             <CardHeader>
               <CardTitle>Opciones</CardTitle>
             </CardHeader>
@@ -219,7 +219,7 @@ const QuoteNew = () => {
             </CardContent>
           </Card>
 
-          <Card className="md:col-span-2">
+          <Card className="md:col-span-1">
             <CardHeader>
               <CardTitle>Resultado</CardTitle>
             </CardHeader>
