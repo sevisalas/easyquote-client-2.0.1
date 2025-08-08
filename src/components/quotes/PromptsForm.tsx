@@ -28,17 +28,32 @@ function isHexColor(v: string) {
 }
 
 function normalizeOptions(opts: any[]): PromptOption[] {
-  return (opts || []).map((o: any) => {
+  return (opts || []).map((o: any, idx: number) => {
     if (typeof o === "string") {
+      const isHexNoHash = /^[0-9a-f]{6}$/i.test(o);
+      const isImage = /^https?:\/\/.+\.(?:png|jpe?g|gif|webp|svg)(?:\?.*)?$/i.test(o);
+      if (isImage) {
+        const file = o.split("/").pop() || o;
+        const base = file.split(".")[0] || file;
+        const label = base.replace(/[_-]+/g, " ");
+        return { value: o, label, imageUrl: o } as PromptOption;
+      }
+      if (isHexNoHash) {
+        const v = `#${o.toUpperCase()}`;
+        return { value: v, label: v, color: v } as PromptOption;
+      }
       return isHexColor(o)
         ? { value: o, label: o, color: o }
         : { value: o, label: o };
     }
     const value = o.value ?? o.id ?? o.key ?? o.name ?? String(o);
     const label = o.label ?? o.title ?? o.name ?? String(value);
-    const imageUrl = o.imageUrl ?? o.image ?? o.thumbnail ?? o.url ?? undefined;
-    const color = o.color ?? (isHexColor(value) ? value : undefined);
-    return { value: String(value), label, imageUrl, color } as PromptOption;
+    const imageFromUrl = typeof o.url === "string" && /^https?:\/\/.+\.(?:png|jpe?g|gif|webp|svg)(?:\?.*)?$/i.test(o.url) ? o.url : undefined;
+    const imageUrl = o.imageUrl ?? o.image ?? o.thumbnail ?? imageFromUrl ?? undefined;
+    const valueStr = String(value);
+    const isHexNoHash = /^[0-9a-f]{6}$/i.test(valueStr);
+    const normalizedColor = o.color ?? (isHexNoHash ? `#${valueStr.toUpperCase()}` : isHexColor(valueStr) ? valueStr : undefined);
+    return { value: String(isHexNoHash ? `#${valueStr.toUpperCase()}` : valueStr), label, imageUrl, color: normalizedColor } as PromptOption;
   });
 }
 
@@ -70,31 +85,52 @@ function extractPrompts(product: any): PromptDef[] {
 
   return raw.map((f: any, idx: number): PromptDef => {
     const id = String(f.id ?? f.key ?? f.code ?? f.slug ?? f.name ?? `field_${idx}`);
-    const label = f.label ?? f.title ?? f.promptName ?? f.displayName ?? f.text ?? f.caption ?? f.name ?? id;
-    const t = String(f.type ?? f.inputType ?? f.kind ?? f.uiType ?? "text").toLowerCase();
-    const options = normalizeOptions(f.options ?? f.choices ?? f.values ?? f.items ?? f.optionsList ?? []);
+    const label = f.promptText ?? f.label ?? f.title ?? f.promptName ?? f.displayName ?? f.text ?? f.caption ?? f.name ?? id;
+    const rawType = String(f.promptType ?? f.type ?? f.inputType ?? f.kind ?? f.uiType ?? "text").toLowerCase();
+    const options = normalizeOptions(f.valueOptions ?? f.options ?? f.choices ?? f.values ?? f.items ?? f.optionsList ?? []);
     const hasImages = options.some((o) => !!o.imageUrl);
-    const hasColors = options.every((o) => !!o.color || isHexColor(o.value));
+    const hasColors = (options?.length ?? 0) > 0 && options.every((o) => !!o.color || isHexColor(String(o.value)));
 
     let type: PromptDef["type"] = "text";
-    if (t.includes("int")) type = "integer";
-    else if (t.includes("number") || t.includes("decimal") || t.includes("float")) type = "number";
-    else if ((options?.length ?? 0) > 0) type = hasImages ? "image" : hasColors ? "color" : "select";
+    if (rawType.includes("image")) type = "image";
+    else if (rawType.includes("color")) type = "color";
+    else if (rawType.includes("drop") || rawType.includes("select")) type = "select";
+    else if (rawType.includes("number") || rawType.includes("decimal") || rawType.includes("float") || rawType.includes("int")) {
+      const allowedDecimals = Number(f.allowedDecimals);
+      type = allowedDecimals > 0 ? "number" : "integer";
+    } else if ((options?.length ?? 0) > 0) type = hasImages ? "image" : hasColors ? "color" : "select";
 
-    const decimals = t.includes("decimal") || t.includes("float") || f.decimals === true;
-    const inferredStep = Number.isFinite(f.step) ? Number(f.step) : decimals ? 0.01 : type === "integer" ? 1 : undefined;
+    const allowedDecimals = Number(f.allowedDecimals);
+    const decimals = rawType.includes("decimal") || rawType.includes("float") || f.decimals === true || allowedDecimals > 0;
+    const inferredStep = Number.isFinite(Number(f.step))
+      ? Number(f.step)
+      : Number.isFinite(allowedDecimals) && allowedDecimals > 0
+        ? Math.pow(10, -allowedDecimals)
+        : type === "integer"
+          ? 1
+          : decimals
+            ? 0.01
+            : undefined;
 
-    const defaultFromIndex = (Number.isFinite(f.defaultIndex) && options[Number(f.defaultIndex)]) ? options[Number(f.defaultIndex)].value : undefined;
-    const defaultVal = f.default ?? f.defaultValue ?? f.initial ?? f.value ?? f.defaultOption?.value ?? defaultFromIndex;
+    const defaultFromIndex = (Number.isFinite(Number(f.defaultIndex)) && options[Number(f.defaultIndex)]) ? options[Number(f.defaultIndex)].value : undefined;
+    let defaultVal = f.currentValue ?? f.default ?? f.defaultValue ?? f.initial ?? f.value ?? f.defaultOption?.value ?? defaultFromIndex;
+
+    if ((type === "color") && typeof defaultVal === "string" && /^[0-9a-f]{6}$/i.test(defaultVal)) {
+      defaultVal = `#${defaultVal.toUpperCase()}`;
+    }
+
+    const min = Number.isFinite(Number(f.min)) ? Number(f.min) : (Number.isFinite(Number(f.minimum)) ? Number(f.minimum) : undefined);
+    const max = Number.isFinite(Number(f.max)) ? Number(f.max) : (Number.isFinite(Number(f.maximum)) ? Number(f.maximum) : undefined);
+    const required = !!(f.required ?? f.mandatory ?? f.valueRequired);
 
     return {
       id,
       label,
       type,
       description: f.description ?? f.helpText,
-      required: !!(f.required ?? f.mandatory),
-      min: Number.isFinite(f.min) ? Number(f.min) : undefined,
-      max: Number.isFinite(f.max) ? Number(f.max) : undefined,
+      required,
+      min,
+      max,
       step: inferredStep,
       options,
       default: defaultVal,
