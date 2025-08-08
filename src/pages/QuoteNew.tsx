@@ -205,7 +205,21 @@ const QuoteNew = () => {
       )}
 
       {canShowPanels && (
-        <div className="grid gap-6 md:grid-cols-5">
+        <>
+          {imageOutputs.length > 0 && (
+            <section className="mb-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {imageOutputs.map((o: any, idx: number) => (
+                <img
+                  key={idx}
+                  src={String(o.value)}
+                  alt={`resultado imagen ${idx + 1}`}
+                  loading="lazy"
+                  className="w-full h-auto rounded-md"
+                />
+              ))}
+            </section>
+          )}
+          <div className="grid gap-6 md:grid-cols-5">
           <Card className="md:col-span-3">
             <CardHeader>
               <CardTitle>Opciones</CardTitle>
@@ -219,24 +233,11 @@ const QuoteNew = () => {
             </CardContent>
           </Card>
 
-          <Card className="md:col-span-2">
+          <Card className="md:col-span-2 md:sticky md:top-6 self-start">
             <CardHeader>
               <CardTitle>Resultado</CardTitle>
             </CardHeader>
             <CardContent>
-              {imageOutputs.length > 0 && (
-                <section className="mb-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {imageOutputs.map((o: any, idx: number) => (
-                    <img
-                      key={idx}
-                      src={String(o.value)}
-                      alt={`resultado imagen ${idx + 1}`}
-                      loading="lazy"
-                      className="w-full h-auto rounded-md"
-                    />
-                  ))}
-                </section>
-              )}
 
               {pricingError && (
                 <Alert variant="destructive" className="mb-4">
@@ -269,6 +270,7 @@ const QuoteNew = () => {
             </CardContent>
           </Card>
         </div>
+        </>
       )}
     </main>
   );
