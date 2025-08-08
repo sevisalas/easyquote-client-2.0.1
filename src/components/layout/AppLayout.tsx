@@ -1,6 +1,6 @@
 import { PropsWithChildren, useCallback } from "react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+
+
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,10 +24,9 @@ export default function AppLayout({ children }: PropsWithChildren) {
   }, [navigate]);
 
   return (
-    <SidebarProvider>
+    <>
       <header className="h-14 flex items-center border-b bg-background">
         <div className="container mx-auto flex items-center gap-3 px-4">
-          <SidebarTrigger aria-label="Abrir menú" />
           <div className="ml-auto">
             <Button variant="outline" size="sm" onClick={handleSignOut}>
               Cerrar sesión
@@ -37,10 +36,8 @@ export default function AppLayout({ children }: PropsWithChildren) {
       </header>
 
       <div className="min-h-screen flex w-full">
-        {/* Sidebar temporalmente desactivado para depurar el espacio */}
-        {/* <AppSidebar /> */}
         <MainContent>{children}</MainContent>
       </div>
-    </SidebarProvider>
+    </>
   );
 }
