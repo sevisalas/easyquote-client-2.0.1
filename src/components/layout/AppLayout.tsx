@@ -10,12 +10,15 @@ export default function AppLayout({ children }: PropsWithChildren) {
         <div className="container mx-auto flex items-center gap-3 px-4">
           <SidebarTrigger aria-label="Abrir menú" />
           <Link to="/" className="flex items-center gap-2" aria-label="Ir al inicio">
-            <img
-              src="/lovable-uploads/3ff3c1d3-fd0e-4649-9146-6991b081234b.png"
-              alt="EasyQuote logo"
-              loading="lazy"
-              className="h-6 w-auto"
-            />
+            <picture>
+              <source srcSet="/lovable-uploads/6b895d66-5fd4-4be7-b9b7-6b22e2b14c75.png" media="(prefers-color-scheme: dark)" />
+              <img
+                src="/lovable-uploads/3ff3c1d3-fd0e-4649-9146-6991b081234b.png"
+                alt="EasyQuote logo"
+                loading="lazy"
+                className="h-6 w-auto"
+              />
+            </picture>
           </Link>
         </div>
       </header>
