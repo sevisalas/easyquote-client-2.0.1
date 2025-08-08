@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import PromptsForm from "@/components/quotes/PromptsForm";
 
 interface Customer { id: string; name: string }
 interface Product { id: string; name?: string; title?: string }
@@ -50,6 +51,7 @@ const QuoteNew = () => {
   const [eqPassword, setEqPassword] = useState<string>("");
   const [connecting, setConnecting] = useState(false);
   const queryClient = useQueryClient();
+  const [promptValues, setPromptValues] = useState<Record<string, any>>({});
 
   useEffect(() => {
     document.title = "Nuevo Presupuesto | Productos y Cliente";
@@ -62,7 +64,11 @@ const QuoteNew = () => {
   const { data: customers } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
   const { data: products } = useQuery({ queryKey: ["easyquote-products"], queryFn: fetchProducts, retry: 1, enabled: hasToken });
 
+  const selectedProduct = useMemo(() => products?.find((p: any) => String(p.id) === String(productId)), [products, productId]);
   const canShowPanels = useMemo(() => !!customerId && !!productId, [customerId, productId]);
+  const handlePromptChange = (id: string, value: any) => {
+    setPromptValues((prev) => ({ ...prev, [id]: value }));
+  };
 
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,7 +166,11 @@ const QuoteNew = () => {
               <CardTitle>Prompts del producto</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Aquí mostraremos los prompts dinámicos del producto seleccionado.</p>
+              {selectedProduct ? (
+                <PromptsForm product={selectedProduct} values={promptValues} onChange={handlePromptChange} />
+              ) : (
+                <p className="text-sm text-muted-foreground">Selecciona un producto para ver sus prompts.</p>
+              )}
             </CardContent>
           </Card>
 
