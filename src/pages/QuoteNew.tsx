@@ -100,9 +100,8 @@ const QuoteNew = () => {
   const imageOutputs = useMemo(
     () =>
       outputs.filter((o: any) => {
-        const t = String(o?.type || "").toLowerCase();
-        const v = String(o?.value || "");
-        return t === "image" || /^https?:\/\//i.test(v);
+        const v = String(o?.value ?? "");
+        return /^https?:\/\//i.test(v);
       }),
     [outputs]
   );
@@ -111,7 +110,15 @@ const QuoteNew = () => {
     [outputs]
   );
   const otherOutputs = useMemo(
-    () => outputs.filter((o: any) => o !== priceOutput && !imageOutputs.includes(o)),
+    () =>
+      outputs.filter((o: any) => {
+        const t = String(o?.type || "").toLowerCase();
+        const n = String(o?.name || "").toLowerCase();
+        const v = String(o?.value ?? "");
+        const isImageLike = t.includes("image") || n.includes("image");
+        const isNA = v === "" || v === "#N/A";
+        return o !== priceOutput && !imageOutputs.includes(o) && !isImageLike && !isNA;
+      }),
     [outputs, priceOutput, imageOutputs]
   );
 
