@@ -35,9 +35,8 @@ const Dashboard = () => {
 
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto">
-        <header className="mb-8">
+    <div className="w-full space-y-8"> 
+      <header className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard EasyQuote</h1>
           <p className="text-muted-foreground">Gestiona tus clientes y presupuestos</p>
         </header>
@@ -121,7 +120,6 @@ const Dashboard = () => {
           </Card>
         </div>
       </div>
-    </div>
   );
 };
 
