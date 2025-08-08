@@ -31,6 +31,17 @@ const fetchProducts = async (): Promise<Product[]> => {
   return list as Product[];
 };
 
+const getProductLabel = (p: any) =>
+  p?.name ??
+  p?.title ??
+  p?.displayName ??
+  p?.productName ??
+  p?.product_name ??
+  p?.nombre ??
+  p?.Nombre ??
+  p?.description ??
+  "Producto sin nombre";
+
 const QuoteNew = () => {
   const [customerId, setCustomerId] = useState<string>("");
   const [productId, setProductId] = useState<string>("");
@@ -111,7 +122,7 @@ const QuoteNew = () => {
               </SelectTrigger>
               <SelectContent>
                 {products?.map((p: any) => (
-                  <SelectItem key={p.id} value={p.id}>{p.name || p.title || p.id}</SelectItem>
+                  <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
