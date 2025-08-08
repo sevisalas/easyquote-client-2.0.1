@@ -1,0 +1,190 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Plus, Search, Edit, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
+
+interface Cliente {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  notes: string;
+  created_at: string;
+}
+
+const Clientes = () => {
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchClientes();
+  }, []);
+
+  const fetchClientes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setClientes(data || []);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los clientes",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteCliente = async (id: string) => {
+    if (!confirm("¿Estás seguro de que quieres eliminar este cliente?")) return;
+
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      setClientes(clientes.filter(c => c.id !== id));
+      toast({
+        title: "Éxito",
+        description: "Cliente eliminado correctamente",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el cliente",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const filteredClientes = clientes.filter(cliente =>
+    cliente.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cliente.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center py-20">
+            <p className="text-muted-foreground">Cargando clientes...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto">
+        <header className="mb-8">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Clientes</h1>
+              <p className="text-muted-foreground">Gestiona tu base de datos de clientes</p>
+            </div>
+            <Button 
+              onClick={() => navigate('/clientes/nuevo')}
+              className="bg-primary hover:bg-primary/90"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nuevo Cliente
+            </Button>
+          </div>
+        </header>
+
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Buscar clientes por nombre o email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredClientes.map((cliente) => (
+            <Card key={cliente.id} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex justify-between items-start">
+                  <span className="text-lg">{cliente.name}</span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigate(`/clientes/${cliente.id}/editar`)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteCliente(cliente.id)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Email:</strong> {cliente.email || 'No especificado'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Teléfono:</strong> {cliente.phone || 'No especificado'}
+                  </p>
+                  {cliente.notes && (
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Notas:</strong> {cliente.notes}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Creado: {new Date(cliente.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {filteredClientes.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-muted-foreground">
+              {searchTerm ? 'No se encontraron clientes' : 'Aún no tienes clientes registrados'}
+            </p>
+            {!searchTerm && (
+              <Button 
+                onClick={() => navigate('/clientes/nuevo')}
+                className="mt-4 bg-primary hover:bg-primary/90"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Crear primer cliente
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Clientes;
