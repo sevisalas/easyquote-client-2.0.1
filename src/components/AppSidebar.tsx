@@ -1,8 +1,9 @@
-import { Home, LayoutDashboard, Users, PlusCircle } from "lucide-react";
-import { NavLink, useLocation, Link } from "react-router-dom";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut } from "lucide-react";
+import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -13,6 +14,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import type { LucideIcon } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface Item {
   title: string;
@@ -32,6 +35,17 @@ export function AppSidebar() {
   const isCollapsed = state === "collapsed";
   const location = useLocation();
   const currentPath = location.pathname;
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({ title: "Error", description: "No se pudo cerrar sesión", variant: "destructive" });
+      return;
+    }
+    toast({ title: "Sesión cerrada" });
+    navigate("/auth");
+  };
 
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive
@@ -71,6 +85,18 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Cerrar sesión">
+              <button onClick={handleSignOut} className="w-full flex items-center">
+                <LogOut className="mr-2 h-4 w-4" />
+                {!isCollapsed && <span>Cerrar sesión</span>}
+              </button>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
