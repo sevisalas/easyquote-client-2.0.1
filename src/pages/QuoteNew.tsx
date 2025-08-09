@@ -10,6 +10,8 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import PromptsForm from "@/components/quotes/PromptsForm";
+import { Switch } from "@/components/ui/switch";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface Customer { id: string; name: string }
 interface Product { id: string; name?: string; title?: string }
@@ -55,6 +57,10 @@ const QuoteNew = () => {
   const queryClient = useQueryClient();
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
   const [debouncedPromptValues, setDebouncedPromptValues] = useState<Record<string, any>>({});
+  // Multi-cantidades
+  const [multiEnabled, setMultiEnabled] = useState<boolean>(false);
+  const [qtyPrompt, setQtyPrompt] = useState<string>("");
+  const [qtyInputs, setQtyInputs] = useState<string[]>(["100", "200", "500"]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedPromptValues(promptValues), 350);
@@ -215,6 +221,27 @@ const QuoteNew = () => {
     });
   }, [pricing]);
 
+  const numericPrompts = useMemo(() => {
+    const p: any = pricing as any;
+    const arr: any[] = Array.isArray(p?.prompts) ? p.prompts : [];
+    return arr
+      .filter((sp: any) => {
+        const hasOptions = Array.isArray(sp?.valueOptions) && sp.valueOptions.length > 0;
+        if (hasOptions) return false;
+        const t = String(sp?.promptType || "").toLowerCase();
+        if (t.includes("number")) return true;
+        const cv = sp?.currentValue ?? sp?.default ?? sp?.value;
+        return typeof cv === "number";
+      })
+      .map((sp: any) => ({ id: String(sp.id), label: sp.promptText ?? sp.name ?? sp.id }));
+  }, [pricing]);
+
+  useEffect(() => {
+    if (!qtyPrompt && numericPrompts.length > 0) {
+      setQtyPrompt(numericPrompts[0].id);
+    }
+  }, [numericPrompts, qtyPrompt]);
+
   const formatEUR = (val: any) => {
     const num = typeof val === "number" ? val : parseFloat(String(val).replace(/\./g, "").replace(",", "."));
     if (isNaN(num)) return `${String(val)} €`;
@@ -251,6 +278,66 @@ const QuoteNew = () => {
       }),
     [outputs, priceOutput, imageOutputs]
   );
+
+  const { data: multiResults, isFetching: multiLoading } = useQuery({
+    queryKey: ["easyquote-multi", productId, debouncedPromptValues, qtyPrompt, qtyInputs, multiEnabled],
+    enabled: hasToken && !!productId && multiEnabled && !!qtyPrompt && qtyInputs.some((q) => q && q.trim() !== ""),
+    refetchOnWindowFocus: false,
+    retry: 1,
+    queryFn: async () => {
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
+      // Normalizar inputs base
+      const norm: Record<string, any> = {};
+      Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
+        if (v === "" || v === undefined || v === null) return;
+        if (typeof v === "string") {
+          const trimmed = v.trim();
+          const isHex = /^#[0-9a-f]{6}$/i.test(trimmed);
+          if (isHex) {
+            norm[k] = trimmed.slice(1).toUpperCase();
+            return;
+          }
+          const num = Number(trimmed.replace(",", "."));
+          if (!Number.isNaN(num) && /^-?\d+([.,]\d+)?$/.test(trimmed)) {
+            norm[k] = num;
+            return;
+          }
+          norm[k] = trimmed;
+        } else {
+          norm[k] = v;
+        }
+      });
+
+      const qtys = qtyInputs.map((q) => Number(String(q).replace(/\./g, "").replace(",", "."))).filter((n) => !Number.isNaN(n)).slice(0, 5);
+      const results = await Promise.all(
+        qtys.map(async (qty) => {
+          const list = Object.entries(norm).map(([id, value]) => ({ id, value }));
+          const replaced = list.filter((it) => it.id !== qtyPrompt).concat([{ id: qtyPrompt, value: qty }]);
+          const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
+            body: { token, productId, inputs: replaced },
+          });
+          if (error) throw error as any;
+          return { qty, data };
+        })
+      );
+      return results;
+    },
+  });
+
+  const multiRows = useMemo(() => {
+    const rows = (multiResults as any[] | undefined) || [];
+    return rows.map((r: any) => {
+      const outs: any[] = Array.isArray(r?.data?.outputValues) ? r.data.outputValues : [];
+      const priceOut = outs.find(
+        (o: any) => String(o?.type || "").toLowerCase() === "price" || String(o?.name || "").toLowerCase().includes("precio") || String(o?.name || "").toLowerCase().includes("price")
+      );
+      const totalStr = priceOut?.value ?? "";
+      const totalNum = typeof totalStr === "number" ? totalStr : parseFloat(String(totalStr).replace(/\./g, "").replace(",", "."));
+      const unit = r.qty > 0 && !Number.isNaN(totalNum) ? totalNum / r.qty : NaN;
+      return { qty: r.qty, outs, totalStr, unit };
+    });
+  }, [multiResults]);
 
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -411,6 +498,85 @@ const QuoteNew = () => {
                           </div>
                         ))}
                       </section>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+              
+              <Card className="border-accent/50 bg-muted/30">
+                <CardHeader>
+                  <CardTitle>Múltiples cantidades</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label>Activar</Label>
+                    </div>
+                    <Switch checked={multiEnabled} onCheckedChange={setMultiEnabled} />
+                  </div>
+
+                  {multiEnabled && (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Prompt de cantidad</Label>
+                        <Select value={qtyPrompt} onValueChange={setQtyPrompt} disabled={numericPrompts.length === 0}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona prompt numérico" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {numericPrompts.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid grid-cols-5 gap-2">
+                        {[0,1,2,3,4].map((i) => (
+                          <div key={i} className="space-y-1">
+                            <Label>Cant. {i+1}</Label>
+                            <Input
+                              type="number"
+                              min={1}
+                              value={qtyInputs[i] ?? ""}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setQtyInputs((prev) => {
+                                  const next = [...prev];
+                                  next[i] = v;
+                                  return next;
+                                });
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      <Separator className="my-2" />
+                      {multiLoading ? (
+                        <p className="text-sm text-muted-foreground">Calculando...</p>
+                      ) : (multiRows && multiRows.length > 0 ? (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Cantidad</TableHead>
+                              <TableHead>Precio total</TableHead>
+                              <TableHead>Precio unitario</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {multiRows.map((r, idx) => (
+                              <TableRow key={idx}>
+                                <TableCell>{r.qty}</TableCell>
+                                <TableCell>{String(((r.outs || []).find((o:any)=>String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'))?.value) ?? '')}</TableCell>
+                                <TableCell>{Number.isFinite(r.unit) ? r.unit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Añade cantidades para ver precios.</p>
+                      ))}
                     </>
                   )}
                 </CardContent>
