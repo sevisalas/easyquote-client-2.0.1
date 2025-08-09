@@ -62,6 +62,8 @@ const QuoteNew = () => {
   const [qtyPrompt, setQtyPrompt] = useState<string>("");
   const [qtyInputs, setQtyInputs] = useState<string[]>(["", "", "", "", ""]);
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
+  const MAX_QTY = 10; // TODO: Configurable desde Settings
+  const [qtyCount, setQtyCount] = useState<number>(5);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedPromptValues(promptValues), 350);
@@ -257,6 +259,19 @@ const QuoteNew = () => {
       });
     }
   }, [promptValues, qtyPrompt, multiEnabled]);
+
+  // Ajusta la longitud de qtyInputs según qtyCount
+  useEffect(() => {
+    setQtyInputs((prev) => {
+      if (qtyCount > prev.length) {
+        return prev.concat(Array(qtyCount - prev.length).fill(""));
+      }
+      if (qtyCount < prev.length) {
+        return prev.slice(0, qtyCount);
+      }
+      return prev;
+    });
+  }, [qtyCount]);
 
   const qtyLabel = useMemo(() => {
     const found = numericPrompts.find((p) => p.id === qtyPrompt);
@@ -554,10 +569,25 @@ const QuoteNew = () => {
                         </Select>
                       </div>
 
+                      <div className="space-y-2">
+                        <Label>¿Cuántos?</Label>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={MAX_QTY}
+                          value={qtyCount}
+                          onChange={(e) => {
+                            const n = parseInt(e.target.value || "0", 10);
+                            if (Number.isNaN(n)) return;
+                            setQtyCount(Math.max(1, Math.min(MAX_QTY, n)));
+                          }}
+                        />
+                      </div>
+
                       <div className="grid grid-cols-5 gap-2">
-                        {[0,1,2,3,4].map((i) => (
+                        {Array.from({ length: qtyCount }, (_, i) => (
                           <div key={i} className="space-y-1">
-                            <Label>{qtyLabel} {i+1}</Label>
+                            <Label>Q{i + 1}</Label>
                             <Input
                               type="number"
                               min={1}
