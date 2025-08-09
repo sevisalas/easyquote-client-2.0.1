@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -197,7 +197,9 @@ export default function PromptsForm({
   onChange: (id: string, value: any) => void;
 }) {
   const prompts = useMemo(() => extractPrompts(product), [product]);
-  const visiblePrompts = useMemo(() => prompts.filter((p) => isVisiblePrompt(p, values)), [prompts, values]);
+  const defaultsMap = useMemo(() => Object.fromEntries(prompts.map((p) => [p.id, p.default])), [prompts]);
+  const effectiveValues = useMemo(() => ({ ...defaultsMap, ...values }), [defaultsMap, values]);
+  const visiblePrompts = useMemo(() => prompts.filter((p) => isVisiblePrompt(p, effectiveValues)), [prompts, effectiveValues]);
 
   if (!product) return null;
   if (!visiblePrompts?.length) {
@@ -222,7 +224,7 @@ export default function PromptsForm({
               step={p.step}
               min={p.min}
               max={p.max}
-              value={values[p.id] ?? p.default ?? ""}
+              value={effectiveValues[p.id] ?? ""}
               onChange={(e) => {
                 const v = e.target.value;
                 onChange(p.id, v === "" ? "" : Number(v));
@@ -235,14 +237,14 @@ export default function PromptsForm({
             <Input
               id={p.id}
               type="text"
-              value={values[p.id] ?? p.default ?? ""}
+              value={effectiveValues[p.id] ?? ""}
               onChange={(e) => onChange(p.id, e.target.value)}
             />
           )}
 
           {/* Select (dropdown) */}
           {p.type === "select" && (
-            <Select value={values[p.id] ?? p.default ?? undefined} onValueChange={(v) => onChange(p.id, v)}>
+            <Select value={(effectiveValues[p.id] ?? undefined) as any} onValueChange={(v) => onChange(p.id, v)}>
               <SelectTrigger id={p.id}>
                 <SelectValue placeholder="Selecciona una opción" />
               </SelectTrigger>
@@ -260,7 +262,7 @@ export default function PromptsForm({
           {p.type === "image" && (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {p.options?.map((o) => {
-                const selected = (values[p.id] ?? p.default) === o.value;
+                const selected = (effectiveValues[p.id]) === o.value;
                 return (
                   <button
                     key={o.value}
@@ -292,7 +294,7 @@ export default function PromptsForm({
           {p.type === "color" && (
             <div className="flex flex-wrap gap-2">
               {p.options?.map((o) => {
-                const selected = (values[p.id] ?? p.default) === o.value;
+                const selected = (effectiveValues[p.id]) === o.value;
                 const color = o.color ?? o.value;
                 return (
                   <button
