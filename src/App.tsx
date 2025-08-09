@@ -13,6 +13,7 @@ import Auth from "./pages/Auth";
 import AppLayout from "./components/layout/AppLayout";
 import QuoteNew from "./pages/QuoteNew";
 import QuotesList from "./pages/QuotesList";
+import SettingsPdfTemplate from "./pages/SettingsPdfTemplate";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -89,6 +90,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <QuoteNew />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configuracion/plantilla-pdf"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <SettingsPdfTemplate />
                 </AppLayout>
               </ProtectedRoute>
             }

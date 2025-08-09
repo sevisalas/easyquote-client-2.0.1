@@ -61,6 +61,13 @@ const QuotesList = () => {
     }
   };
 
+  const getStatusVariant = (s: string) => {
+    if (s === "approved") return "success" as const;
+    if (s === "rejected") return "destructive" as const;
+    if (s === "sent") return "default" as const;
+    return "secondary" as const; // draft
+  };
+
   return (
     <main className="p-6 space-y-6">
       <header className="sr-only">
@@ -99,7 +106,7 @@ const QuotesList = () => {
                     <TableCell className="text-right">{fmtEUR(q.final_price)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary">{statusLabel[q.status] || q.status}</Badge>
+                        <Badge variant={getStatusVariant(q.status)}>{statusLabel[q.status] || q.status}</Badge>
                         <Select value={q.status} onValueChange={(v) => handleStatusChange(q.id, v)}>
                           <SelectTrigger className="w-[140px]">
                             <SelectValue placeholder="Estado" />
@@ -114,7 +121,7 @@ const QuotesList = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Button size="sm" variant="secondary" onClick={() => navigate(`/presupuestos/nuevo?from=${q.id}`)}>
+                        <Button size="sm" variant="default" onClick={() => navigate(`/presupuestos/nuevo?from=${q.id}`)}>
                           Duplicar como nuevo
                         </Button>
                       </div>

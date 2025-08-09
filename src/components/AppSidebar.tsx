@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, PanelLeft, FileText } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, PanelLeft, FileText, Palette } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -151,6 +151,26 @@ export function AppSidebar() {
                       <NavLink to="/presupuestos/nuevo" className={getNavCls}>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         {!isCollapsed && <span>Nuevo</span>}
+                      </NavLink>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
+
+              {/* Configuración */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={currentPath.startsWith("/configuracion")}>
+                  <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
+                    <Palette className="mr-2 h-4 w-4" />
+                    {!isCollapsed && <span>Configuración</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/plantilla-pdf"}>
+                      <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        {!isCollapsed && <span>Plantilla PDF</span>}
                       </NavLink>
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
