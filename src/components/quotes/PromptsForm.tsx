@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,6 +21,8 @@ export type PromptDef = {
   step?: number;
   options?: PromptOption[];
   default?: any;
+  visibility?: any; // show if conditions
+  hiddenWhen?: any; // hide if conditions
 };
 
 function isHexColor(v: string) {
@@ -62,6 +64,48 @@ function getOptionLabel(options: PromptOption[] | undefined, value: any) {
   const v = String(value);
   const opt = options?.find((o) => String(o.value) === v);
   return opt?.label ?? v;
+}
+
+// Flexible condition evaluation for prompt visibility
+function matchValue(current: any, expected: any) {
+  if (Array.isArray(expected)) return expected.map(String).includes(String(current));
+  if (typeof expected === "boolean") return Boolean(current) === expected;
+  return String(current) === String(expected);
+}
+
+function evalCondition(cond: any, values: Record<string, any>): boolean {
+  if (!cond) return true;
+  // Array => AND of items
+  if (Array.isArray(cond)) return cond.every((c) => evalCondition(c, values));
+  if (typeof cond === "string") {
+    // very simple format: "field=value" (AND by &&)
+    const parts = cond.split(/\s*&&\s*/);
+    return parts.every((p) => {
+      const [k, v] = p.split("=");
+      if (!k) return true;
+      return matchValue(values[k.trim()], (v ?? "").trim());
+    });
+  }
+  if (typeof cond === "object") {
+    // Support anyOf / allOf
+    if (Array.isArray(cond.allOf)) return cond.allOf.every((c: any) => evalCondition(c, values));
+    if (Array.isArray(cond.anyOf)) return cond.anyOf.some((c: any) => evalCondition(c, values));
+    // { field, id, key, equals/value }
+    const field = cond.field ?? cond.id ?? cond.key;
+    if (field) {
+      const expected = cond.equals ?? cond.value ?? cond.is;
+      return matchValue(values[field], expected);
+    }
+    // Mapping object: { size: "L", color: "red" }
+    return Object.entries(cond).every(([k, v]) => matchValue(values[k], v));
+  }
+  return true;
+}
+
+function isVisiblePrompt(p: PromptDef, values: Record<string, any>): boolean {
+  if (p.hiddenWhen && evalCondition(p.hiddenWhen, values)) return false;
+  if (p.visibility && !evalCondition(p.visibility, values)) return false;
+  return true;
 }
 
 function extractPrompts(product: any): PromptDef[] {
@@ -123,6 +167,9 @@ function extractPrompts(product: any): PromptDef[] {
     const max = Number.isFinite(Number(f.max)) ? Number(f.max) : (Number.isFinite(Number(f.maximum)) ? Number(f.maximum) : undefined);
     const required = !!(f.required ?? f.mandatory ?? f.valueRequired);
 
+    const visibility = f.visibleWhen ?? f.showIf ?? f.when ?? f.condition ?? f.conditions ?? undefined;
+    const hiddenWhen = f.hiddenWhen ?? f.hideIf ?? undefined;
+
     return {
       id,
       label,
@@ -134,6 +181,8 @@ function extractPrompts(product: any): PromptDef[] {
       step: inferredStep,
       options,
       default: defaultVal,
+      visibility,
+      hiddenWhen,
     };
   });
 }
@@ -148,21 +197,21 @@ export default function PromptsForm({
   onChange: (id: string, value: any) => void;
 }) {
   const prompts = useMemo(() => extractPrompts(product), [product]);
+  const visiblePrompts = useMemo(() => prompts.filter((p) => isVisiblePrompt(p, values)), [prompts, values]);
 
   if (!product) return null;
-  if (!prompts?.length) {
+  if (!visiblePrompts?.length) {
     return <p className="text-sm text-muted-foreground">Este producto no define opciones.</p>;
   }
 
   return (
     <div className="space-y-6">
-      {prompts.map((p) => (
+      {visiblePrompts.map((p) => (
         <div key={p.id} className="space-y-2">
           <Label htmlFor={p.id}>{p.label}{p.required ? " *" : ""}</Label>
           {p.description && (
             <p className="text-xs text-muted-foreground">{p.description}</p>
           )}
-
 
           {/* Number / Integer */}
           {(p.type === "number" || p.type === "integer") && (
@@ -197,7 +246,7 @@ export default function PromptsForm({
               <SelectTrigger id={p.id}>
                 <SelectValue placeholder="Selecciona una opción" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-50 bg-popover">
                 {p.options?.map((o) => (
                   <SelectItem key={o.value} value={o.value}>
                     {o.label ?? o.value}
