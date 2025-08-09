@@ -13,7 +13,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export default function QuoteItem({ hasToken }: { hasToken: boolean }) {
+type ItemSnapshot = {
+  productId: string;
+  prompts: Record<string, any>;
+  outputs: any[];
+  price?: any;
+  multi?: any;
+};
+
+interface QuoteItemProps {
+  hasToken: boolean;
+  id: string | number;
+  onChange?: (id: string | number, snapshot: ItemSnapshot) => void;
+}
+
+export default function QuoteItem({ hasToken, id, onChange }: QuoteItemProps) {
   // Local state per item
   const [productId, setProductId] = useState<string>("");
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
@@ -259,6 +273,16 @@ export default function QuoteItem({ hasToken }: { hasToken: boolean }) {
       return { qty: r.qty, outs, totalStr, unit };
     });
   }, [multiResults]);
+
+  useEffect(() => {
+    onChange?.(id, {
+      productId,
+      prompts: promptValues,
+      outputs,
+      price: (priceOutput as any)?.value ?? null,
+      multi: multiEnabled ? { qtyPrompt, qtyInputs, rows: multiRows } : null,
+    });
+  }, [id, onChange, productId, promptValues, outputs, priceOutput, multiEnabled, qtyPrompt, qtyInputs, multiRows]);
 
   const handlePromptChange = (id: string, value: any) => setPromptValues((prev) => ({ ...prev, [id]: value }));
 
