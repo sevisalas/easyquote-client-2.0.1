@@ -709,12 +709,12 @@ const QuoteNew = () => {
       {customerId && (
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Ítems adicionales</h2>
-            <Button onClick={addItem}>Agregar ítem</Button>
+            <h2 className="text-lg font-semibold">Artículos adicionales</h2>
+            <Button onClick={addItem}>Agregar artículo</Button>
           </div>
 
           {extraItems.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aún no hay ítems añadidos.</p>
+            <p className="text-sm text-muted-foreground">Aún no hay artículos añadidos.</p>
           ) : (
             <div className="space-y-6">
               {extraItems.map((k) => (

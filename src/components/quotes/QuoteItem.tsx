@@ -265,7 +265,7 @@ export default function QuoteItem({ hasToken }: { hasToken: boolean }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ítem</CardTitle>
+        <CardTitle>Artículo</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
@@ -497,7 +497,7 @@ export default function QuoteItem({ hasToken }: { hasToken: boolean }) {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Selecciona un producto para configurar este ítem.</p>
+          <p className="text-sm text-muted-foreground">Selecciona un producto para configurar este artículo.</p>
         )}
       </CardContent>
     </Card>
