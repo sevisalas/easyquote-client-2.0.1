@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 11, fontFamily: "Helvetica" },
@@ -17,7 +17,11 @@ const fmtEUR = (n: any) => {
   return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 2 }).format(num);
 };
 
-export default function QuotePDF({ customer, main, items }: any) {
+export default function QuotePDF({ customer, main, items, template }: any) {
+  const brand = (template?.brandColor as string) || "#0ea5e9";
+  const company = (template?.companyName as string) || "";
+  const logoUrl = (template?.logoUrl as string) || "";
+  const footerText = (template?.footerText as string) || "";
   const today = new Date();
   const itemsArr = Array.isArray(items) ? items : [];
   const extrasTotal = itemsArr.reduce((acc, it) => {
@@ -30,8 +34,18 @@ export default function QuotePDF({ customer, main, items }: any) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <Text style={styles.h1}>Presupuesto</Text>
+        <View style={{ marginBottom: 12 }}>
+          {logoUrl ? (
+            <Image src={logoUrl} style={{ width: 120, height: 36 }} />
+          ) : (
+            <Text style={{ fontSize: 14, fontWeight: 700 }}>{company || ""}</Text>
+          )}
+          <View style={{ height: 3, backgroundColor: brand, marginTop: 6 }} />
+        </View>
+
+        <Text style={{ ...styles.h1, color: brand }}>Presupuesto</Text>
         <View style={styles.meta}>
+          {!!company && <Text>Empresa: {company}</Text>}
           <Text>Fecha: {today.toLocaleDateString("es-ES")}</Text>
           <Text>Cliente: {customer?.name || ""}</Text>
         </View>
@@ -67,9 +81,16 @@ export default function QuotePDF({ customer, main, items }: any) {
         <View style={styles.section}>
           <View style={{ ...styles.row, borderTop: 1, paddingTop: 8 }}>
             <Text style={{ fontSize: 12, fontWeight: 700 }}>Total</Text>
-            <Text style={{ fontSize: 12, fontWeight: 700 }}>{fmtEUR(total)}</Text>
+            <Text style={{ fontSize: 12, fontWeight: 700, color: brand }}>{fmtEUR(total)}</Text>
           </View>
         </View>
+
+        {footerText ? (
+          <View style={{ position: "absolute", bottom: 24, left: 32, right: 32 }}>
+            <View style={{ height: 1, backgroundColor: "#e5e7eb", marginBottom: 6 }} />
+            <Text style={{ fontSize: 9, color: "#6b7280" }}>{footerText}</Text>
+          </View>
+        ) : null}
       </Page>
     </Document>
   );

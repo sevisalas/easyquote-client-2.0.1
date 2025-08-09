@@ -18,6 +18,7 @@ import QuoteItem from "@/components/quotes/QuoteItem";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import QuotePDF from "@/components/quotes/QuotePDF";
 import { useLocation, useSearchParams } from "react-router-dom";
+import QuotePdfTemplateDialog from "@/components/quotes/QuotePdfTemplateDialog";
 
 interface Customer { id: string; name: string }
 interface Product { id: string; name?: string; title?: string }
@@ -69,7 +70,8 @@ const QuoteNew = () => {
   const [qtyInputs, setQtyInputs] = useState<string[]>(["", "", "", "", ""]);
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
   const MAX_QTY = 10; // TODO: Configurable desde Settings
-  const [qtyCount, setQtyCount] = useState<number>(5);
+const [qtyCount, setQtyCount] = useState<number>(5);
+  const [pdfOpen, setPdfOpen] = useState(false);
 
   // Artículos adicionales en el presupuesto
   const [extraItems, setExtraItems] = useState<number[]>([]);
@@ -841,27 +843,22 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
           }
         }}>Guardar presupuesto</Button>
 
-        <PDFDownloadLink
-          document={
-            <QuotePDF
-              customer={(customers || []).find((c) => c.id === customerId)}
-              main={{
-                product: selectedProduct ? getProductLabel(selectedProduct) : "Producto",
-                price: (priceOutput as any)?.value ?? null,
-                prompts: promptValues,
-                outputs,
-                multi: multiEnabled ? { qtyLabel, qtyInputs, rows: multiRows } : null,
-              }}
-              items={Object.values(extraItemsData || {})}
-            />
-          }
-          fileName={`Presupuesto_${new Date().toISOString().slice(0,10)}.pdf`}
-        >
-          {({ loading }) => (
-            <Button variant="secondary" disabled={loading}>{loading ? "Generando PDF..." : "Generar PDF"}</Button>
-          )}
-        </PDFDownloadLink>
+        <Button variant="secondary" onClick={() => setPdfOpen(true)}>Generar PDF</Button>
       </section>
+
+      <QuotePdfTemplateDialog
+        open={pdfOpen}
+        onOpenChange={setPdfOpen}
+        customer={(customers || []).find((c) => c.id === customerId)}
+        main={{
+          product: selectedProduct ? getProductLabel(selectedProduct) : "Producto",
+          price: (priceOutput as any)?.value ?? null,
+          prompts: promptValues,
+          outputs,
+          multi: multiEnabled ? { qtyLabel, qtyInputs, rows: multiRows } : null,
+        }}
+        items={Object.values(extraItemsData || {})}
+      />
     </main>
   );
 };
