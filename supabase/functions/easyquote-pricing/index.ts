@@ -35,9 +35,9 @@ serve(async (req: Request): Promise<Response> => {
 
     if (inputs && typeof inputs === "object" && Object.keys(inputs).length > 0) {
       try {
-        console.log("easyquote-pricing: using POST with inputs", { keys: Object.keys(inputs) });
+        console.log("easyquote-pricing: using PATCH with inputs", { keys: Object.keys(inputs) });
         res = await fetch(baseUrl, {
-          method: "POST",
+          method: "PATCH",
           headers: {
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
@@ -46,7 +46,20 @@ serve(async (req: Request): Promise<Response> => {
           body: JSON.stringify({ inputs }),
         });
       } catch (e) {
-        console.error("easyquote-pricing: POST attempt failed, will try GET", e);
+        console.error("easyquote-pricing: PATCH attempt failed, will try POST", e);
+        try {
+          res = await fetch(baseUrl, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ inputs }),
+          });
+        } catch (e2) {
+          console.error("easyquote-pricing: POST attempt failed, will try GET", e2);
+        }
       }
     }
 

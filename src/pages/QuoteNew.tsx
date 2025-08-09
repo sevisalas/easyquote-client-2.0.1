@@ -103,6 +103,49 @@ const QuoteNew = () => {
     setPromptValues({});
   }, [productId]);
 
+  useEffect(() => {
+    const p: any = pricing as any;
+    const serverPrompts: any[] = Array.isArray(p?.prompts) ? p.prompts : [];
+    if (!serverPrompts.length) return;
+    setPromptValues((prev) => {
+      const next: Record<string, any> = { ...prev };
+      let changed = false;
+
+      const serverIds = new Set<string>(serverPrompts.map((sp: any) => String(sp.id)));
+      // Remove keys that no longer exist
+      Object.keys(next).forEach((k) => {
+        if (!serverIds.has(String(k))) {
+          delete next[k];
+          changed = true;
+        }
+      });
+
+      // Ensure values are valid against server options/currentValue
+      for (const sp of serverPrompts) {
+        const id = String(sp.id);
+        const options: string[] = (sp.valueOptions ?? []).map((v: any) => String(v?.value ?? v));
+        const currentValue = sp.currentValue ?? sp.value ?? sp.default ?? undefined;
+        const val = next[id];
+        const valStr = val !== undefined && val !== null ? String(val) : undefined;
+        const isValid = valStr === undefined ? false : options.length === 0 || options.includes(valStr);
+        if (valStr === undefined || !isValid) {
+          if (currentValue !== undefined) {
+            next[id] = currentValue;
+            changed = true;
+          } else if (options.length) {
+            next[id] = options[0];
+            changed = true;
+          } else if (id in next) {
+            delete next[id];
+            changed = true;
+          }
+        }
+      }
+
+      return changed ? next : prev;
+    });
+  }, [pricing]);
+
   const formatEUR = (val: any) => {
     const num = typeof val === "number" ? val : parseFloat(String(val).replace(/\./g, "").replace(",", "."));
     if (isNaN(num)) return `${String(val)} €`;
