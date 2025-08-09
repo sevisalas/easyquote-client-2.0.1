@@ -65,14 +65,14 @@ const QuoteNew = () => {
   const { data: customers } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
   const { data: products } = useQuery({ queryKey: ["easyquote-products"], queryFn: fetchProducts, retry: 1, enabled: hasToken });
   const { data: pricing, error: pricingError } = useQuery({
-    queryKey: ["easyquote-pricing", productId],
+    queryKey: ["easyquote-pricing", productId, promptValues],
     enabled: hasToken && !!productId,
     retry: 1,
     queryFn: async () => {
       const token = localStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
       const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
-        body: { token, productId },
+        body: { token, productId, inputs: promptValues },
       });
       if (error) throw error as any;
       return data;
@@ -213,70 +213,73 @@ const QuoteNew = () => {
 
       {canShowPanels && (
         <>
-          {imageOutputs.length > 0 && (
-            <section className="mb-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {imageOutputs.map((o: any, idx: number) => (
-                <img
-                  key={idx}
-                  src={String(o.value)}
-                  alt={`resultado imagen ${idx + 1}`}
-                  loading="lazy"
-                  className="w-full h-auto rounded-md"
-                />
-              ))}
-            </section>
-          )}
           <div className="grid gap-6 md:grid-cols-5">
-          <Card className="md:col-span-3">
-            <CardHeader>
-              <CardTitle>Opciones</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {pricing || selectedProduct ? (
-                <PromptsForm product={pricing || selectedProduct} values={promptValues} onChange={handlePromptChange} />
-              ) : (
-                <p className="text-sm text-muted-foreground">Selecciona un producto para ver sus opciones.</p>
-              )}
-            </CardContent>
-          </Card>
+            <Card className="md:col-span-3">
+              <CardHeader>
+                <CardTitle>Opciones</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {pricing || selectedProduct ? (
+                  <PromptsForm product={pricing || selectedProduct} values={promptValues} onChange={handlePromptChange} />
+                ) : (
+                  <p className="text-sm text-muted-foreground">Selecciona un producto para ver sus opciones.</p>
+                )}
+              </CardContent>
+            </Card>
 
-          <Card className="md:col-span-2 md:sticky md:top-6 self-start">
-            <CardHeader>
-              <CardTitle>Resultado</CardTitle>
-            </CardHeader>
-            <CardContent>
-
-              {pricingError && (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertTitle>Producto sin pricing</AlertTitle>
-                  <AlertDescription>El producto seleccionado no existe o es incorrecto.</AlertDescription>
-                </Alert>
-              )}
-
-              {priceOutput ? (
-                <div className="p-4 rounded-md border">
-                  <div className="text-sm text-muted-foreground">Precio</div>
-                  <div className="text-2xl font-semibold">{formatEUR((priceOutput as any).value)}</div>
-                </div>
-              ) : (
-                !pricingError && (
-                  <p className="text-sm text-muted-foreground">Selecciona opciones para ver el resultado.</p>
-                )
-              )}
-
-              {otherOutputs.length > 0 && (
-                <section className="mt-4 space-y-2">
-                  {otherOutputs.map((o: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
-                      <span>{String(o.value)}</span>
-                    </div>
+            <div className="md:col-span-2 md:sticky md:top-6 self-start space-y-3">
+              {imageOutputs.length > 0 && (
+                <section className="grid grid-cols-2 sm:grid-cols-2 gap-3">
+                  {imageOutputs.map((o: any, idx: number) => (
+                    <img
+                      key={idx}
+                      src={String(o.value)}
+                      alt={`resultado imagen ${idx + 1}`}
+                      loading="lazy"
+                      className="w-full h-auto rounded-md"
+                    />
                   ))}
                 </section>
               )}
-            </CardContent>
-          </Card>
-        </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resultado</CardTitle>
+                </CardHeader>
+                <CardContent>
+
+                  {pricingError && (
+                    <Alert variant="destructive" className="mb-4">
+                      <AlertTitle>Producto sin pricing</AlertTitle>
+                      <AlertDescription>El producto seleccionado no existe o es incorrecto.</AlertDescription>
+                    </Alert>
+                  )}
+
+                  {priceOutput ? (
+                    <div className="p-4 rounded-md border">
+                      <div className="text-sm text-muted-foreground">Precio</div>
+                      <div className="text-2xl font-semibold">{formatEUR((priceOutput as any).value)}</div>
+                    </div>
+                  ) : (
+                    !pricingError && (
+                      <p className="text-sm text-muted-foreground">Selecciona opciones para ver el resultado.</p>
+                    )
+                  )}
+
+                  {otherOutputs.length > 0 && (
+                    <section className="mt-4 space-y-2">
+                      {otherOutputs.map((o: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
+                          <span>{String(o.value)}</span>
+                        </div>
+                      ))}
+                    </section>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </>
       )}
     </main>

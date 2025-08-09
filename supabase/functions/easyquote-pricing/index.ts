@@ -19,7 +19,7 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const { token, productId } = await req.json();
+    const { token, productId, inputs } = await req.json();
     if (!token || !productId) {
       return new Response(JSON.stringify({ error: "Missing token or productId" }), {
         status: 400,
@@ -27,7 +27,10 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const url = `https://api.easyquote.cloud/api/v1/pricing/${productId}`;
+    const query = inputs && typeof inputs === "object" && Object.keys(inputs).length > 0
+      ? `?inputs=${encodeURIComponent(JSON.stringify(inputs))}`
+      : "";
+    const url = `https://api.easyquote.cloud/api/v1/pricing/${productId}${query}`;
     const res = await fetch(url, {
       method: "GET",
       headers: {
