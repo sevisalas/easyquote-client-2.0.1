@@ -104,20 +104,34 @@ const QuoteNew = () => {
           }
         });
 
-        const qs = Object.keys(norm).length ? `?inputs=${encodeURIComponent(JSON.stringify(norm))}` : "";
-        const url = `https://api.easyquote.cloud/api/v1/pricing/${productId}${qs}`;
+        const baseUrl = `https://api.easyquote.cloud/api/v1/pricing/${productId}`;
 
         try {
-          const res = await fetch(url, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          });
-          if (!res.ok) throw new Error(`EasyQuote GET ${res.status}`);
-          const json = await res.json();
-          return json;
+          // PATCH para actualizar (si hay inputs), GET solo para carga inicial
+          if (Object.keys(norm).length > 0) {
+            const res = await fetch(baseUrl, {
+              method: "PATCH",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ inputs: norm }),
+            });
+            if (!res.ok) throw new Error(`EasyQuote PATCH ${res.status}`);
+            const json = await res.json();
+            return json;
+          } else {
+            const res = await fetch(baseUrl, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+            if (!res.ok) throw new Error(`EasyQuote GET ${res.status}`);
+            const json = await res.json();
+            return json;
+          }
         } catch (e) {
           const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
             body: { token, productId, inputs: norm },
