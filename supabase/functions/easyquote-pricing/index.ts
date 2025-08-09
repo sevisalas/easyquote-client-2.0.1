@@ -33,9 +33,17 @@ serve(async (req: Request): Promise<Response> => {
     // Prefer POST with JSON body when inputs are provided; fallback to GET with query if POST fails
     let res: Response | null = null;
 
-    if (inputs && typeof inputs === "object" && Object.keys(inputs).length > 0) {
+    // Prepare inputs as an array of { id, value }
+    let inputsList: any[] = [];
+    if (Array.isArray(inputs)) {
+      inputsList = inputs as any[];
+    } else if (inputs && typeof inputs === "object" && Object.keys(inputs).length > 0) {
+      inputsList = Object.entries(inputs).map(([id, value]) => ({ id, value }));
+    }
+
+    if (inputsList.length > 0) {
       try {
-        console.log("easyquote-pricing: using PATCH with inputs", { keys: Object.keys(inputs) });
+        console.log("easyquote-pricing: using PATCH with inputs", { count: inputsList.length });
         res = await fetch(baseUrl, {
           method: "PATCH",
           headers: {
@@ -43,7 +51,7 @@ serve(async (req: Request): Promise<Response> => {
             Accept: "application/json",
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ inputs }),
+          body: JSON.stringify(inputsList),
         });
       } catch (e) {
         console.error("easyquote-pricing: PATCH attempt failed, will try POST", e);
@@ -55,7 +63,7 @@ serve(async (req: Request): Promise<Response> => {
               Accept: "application/json",
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ inputs }),
+            body: JSON.stringify(inputsList),
           });
         } catch (e2) {
           console.error("easyquote-pricing: POST attempt failed, will try GET", e2);

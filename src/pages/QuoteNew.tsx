@@ -115,7 +115,7 @@ const QuoteNew = () => {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({ inputs: norm }),
+              body: JSON.stringify(Object.entries(norm).map(([id, value]) => ({ id, value }))),
             });
             if (!res.ok) throw new Error(`EasyQuote PATCH ${res.status}`);
             const json = await res.json();
@@ -134,7 +134,7 @@ const QuoteNew = () => {
           }
         } catch (e) {
           const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
-            body: { token, productId, inputs: norm },
+            body: { token, productId, inputs: Object.entries(norm).map(([id, value]) => ({ id, value })) },
           });
           if (error) throw error as any;
           return data;
