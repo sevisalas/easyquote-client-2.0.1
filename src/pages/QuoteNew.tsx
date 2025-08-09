@@ -60,7 +60,7 @@ const QuoteNew = () => {
   // Multi-cantidades
   const [multiEnabled, setMultiEnabled] = useState<boolean>(false);
   const [qtyPrompt, setQtyPrompt] = useState<string>("");
-  const [qtyInputs, setQtyInputs] = useState<string[]>(["100", "200", "500"]);
+  const [qtyInputs, setQtyInputs] = useState<string[]>(["", "", "", "", ""]);
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
