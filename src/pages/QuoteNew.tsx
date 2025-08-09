@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import PromptsForm from "@/components/quotes/PromptsForm";
@@ -212,7 +213,7 @@ const QuoteNew = () => {
       )}
 
       {canShowPanels && (
-        <>
+        <> 
           <div className="grid gap-6 md:grid-cols-5">
             <Card className="md:col-span-3">
               <CardHeader>
@@ -242,7 +243,7 @@ const QuoteNew = () => {
                 </section>
               )}
 
-              <Card>
+              <Card className="border-accent/50 bg-muted/50 animate-fade-in">
                 <CardHeader>
                   <CardTitle>Resultado</CardTitle>
                 </CardHeader>
@@ -256,9 +257,13 @@ const QuoteNew = () => {
                   )}
 
                   {priceOutput ? (
-                    <div className="p-4 rounded-md border">
-                      <div className="text-sm text-muted-foreground">Precio</div>
-                      <div className="text-2xl font-semibold">{formatEUR((priceOutput as any).value)}</div>
+                    <div className="p-4 rounded-md border bg-card/50">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Precio</span>
+                        <span className="px-3 py-1 rounded-full bg-accent text-accent-foreground text-lg font-semibold hover-scale">
+                          {formatEUR((priceOutput as any).value)}
+                        </span>
+                      </div>
                     </div>
                   ) : (
                     !pricingError && (
@@ -267,14 +272,17 @@ const QuoteNew = () => {
                   )}
 
                   {otherOutputs.length > 0 && (
-                    <section className="mt-4 space-y-2">
-                      {otherOutputs.map((o: any, idx: number) => (
-                        <div key={idx} className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
-                          <span>{String(o.value)}</span>
-                        </div>
-                      ))}
-                    </section>
+                    <>
+                      <Separator className="my-4" />
+                      <section className="space-y-2">
+                        {otherOutputs.map((o: any, idx: number) => (
+                          <div key={idx} className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
+                            <span>{String(o.value)}</span>
+                          </div>
+                        ))}
+                      </section>
+                    </>
                   )}
                 </CardContent>
               </Card>
