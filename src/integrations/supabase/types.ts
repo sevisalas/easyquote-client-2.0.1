@@ -44,10 +44,66 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_items: {
+        Row: {
+          created_at: string
+          id: string
+          multi: Json | null
+          name: string | null
+          outputs: Json
+          position: number | null
+          product_id: string | null
+          prompts: Json
+          quantity: number | null
+          quote_id: string
+          total_price: number | null
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          multi?: Json | null
+          name?: string | null
+          outputs?: Json
+          position?: number | null
+          product_id?: string | null
+          prompts?: Json
+          quantity?: number | null
+          quote_id: string
+          total_price?: number | null
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          multi?: Json | null
+          name?: string | null
+          outputs?: Json
+          position?: number | null
+          product_id?: string | null
+          prompts?: Json
+          quantity?: number | null
+          quote_id?: string
+          total_price?: number | null
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quotes: {
         Row: {
           created_at: string
-          customer_iduu: string
+          customer_id: string
           final_price: number
           id: string
           product_id: string | null
@@ -56,11 +112,12 @@ export type Database = {
           results: Json
           selections: Json
           status: string | null
-          user_id: string | null
+          updated_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
-          customer_iduu?: string
+          customer_id: string
           final_price: number
           id?: string
           product_id?: string | null
@@ -69,11 +126,12 @@ export type Database = {
           results: Json
           selections: Json
           status?: string | null
-          user_id?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Update: {
           created_at?: string
-          customer_iduu?: string
+          customer_id?: string
           final_price?: number
           id?: string
           product_id?: string | null
@@ -82,9 +140,18 @@ export type Database = {
           results?: Json
           selections?: Json
           status?: string | null
-          user_id?: string | null
+          updated_at?: string
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "quotes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
