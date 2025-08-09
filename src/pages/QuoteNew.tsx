@@ -12,6 +12,8 @@ import { toast } from "@/hooks/use-toast";
 import PromptsForm from "@/components/quotes/PromptsForm";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Customer { id: string; name: string }
 interface Product { id: string; name?: string; title?: string }
@@ -610,32 +612,87 @@ const QuoteNew = () => {
                         ))}
                       </div>
 
-                      <Separator className="my-2" />
-                      {multiLoading ? (
-                        <p className="text-sm text-muted-foreground">Calculando...</p>
-                      ) : (multiRows && multiRows.length > 0 ? (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              {multiRows.map((_, idx) => (
-                                <TableHead key={idx}>Q{idx + 1}</TableHead>
-                              ))}
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            <TableRow>
-                              {multiRows.map((r, idx) => {
-                                const priceOut = (r.outs || []).find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
-                                return (
-                                  <TableCell key={idx}>{formatEUR(priceOut?.value)}</TableCell>
-                                );
-                              })}
-                            </TableRow>
-                          </TableBody>
-                        </Table>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Añade cantidades para ver precios.</p>
-                      ))}
+<Separator className="my-2" />
+{multiLoading ? (
+  <p className="text-sm text-muted-foreground">Calculando...</p>
+) : (multiRows && multiRows.length > 0 ? (
+  <>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          {multiRows.map((_, idx) => (
+            <TableHead key={idx}>Q{idx + 1}</TableHead>
+          ))}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        <TableRow>
+          {multiRows.map((r, idx) => {
+            const priceOut = (r.outs || []).find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
+            return (
+              <TableCell key={idx}>{formatEUR(priceOut?.value)}</TableCell>
+            );
+          })}
+        </TableRow>
+      </TableBody>
+    </Table>
+
+    <div className="mt-3">
+      <Accordion type="single" collapsible className="w-full">
+        <AccordionItem value="detalles">
+          <AccordionTrigger>Detalles</AccordionTrigger>
+          <AccordionContent>
+            <Tabs defaultValue="q1" className="w-full">
+              <TabsList className="mb-3">
+                {multiRows.map((_, idx) => (
+                  <TabsTrigger key={idx} value={`q${idx + 1}`}>Q{idx + 1}</TabsTrigger>
+                ))}
+              </TabsList>
+
+              {multiRows.map((r, idx) => {
+                const outs = r.outs || [];
+                const priceOut = outs.find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
+                const details = outs.filter((o:any) => {
+                  const t = String(o?.type || '').toLowerCase();
+                  const n = String(o?.name || '').toLowerCase();
+                  const v = String(o?.value ?? '');
+                  const isImageLike = t.includes('image') || n.includes('image');
+                  const isNA = v === '' || v === '#N/A';
+                  return o !== priceOut && !isImageLike && !isNA;
+                });
+                return (
+                  <TabsContent key={idx} value={`q${idx + 1}`}>
+                    <div className="p-3 rounded-md border bg-card/50 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Precio total</span>
+                        <span className="font-semibold">{formatEUR(priceOut?.value)}</span>
+                      </div>
+                      {details.length > 0 && (
+                        <>
+                          <Separator className="my-2" />
+                          <div className="space-y-1">
+                            {details.map((o:any, i:number) => (
+                              <div key={i} className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">{o.name ?? 'Dato'}</span>
+                                <span>{String(o.value)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    </div>
+  </>
+) : (
+  <p className="text-sm text-muted-foreground">Añade cantidades para ver precios.</p>
+))}
                     </>
                   )}
                 </CardContent>
