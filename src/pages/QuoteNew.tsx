@@ -61,6 +61,7 @@ const QuoteNew = () => {
   const [multiEnabled, setMultiEnabled] = useState<boolean>(false);
   const [qtyPrompt, setQtyPrompt] = useState<string>("");
   const [qtyInputs, setQtyInputs] = useState<string[]>(["100", "200", "500"]);
+  const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedPromptValues(promptValues), 350);
@@ -242,6 +243,26 @@ const QuoteNew = () => {
     }
   }, [numericPrompts, qtyPrompt]);
 
+  // Sincroniza la primera cantidad con el valor actual del formulario
+  useEffect(() => {
+    if (!multiEnabled || !qtyPrompt) return;
+    const current = (promptValues as any)[qtyPrompt];
+    if (current !== undefined && current !== null && String(current) !== "") {
+      setQtyInputs((prev) => {
+        const asStr = String(current);
+        if (String(prev[0] ?? "") === asStr) return prev;
+        const next = [...prev];
+        next[0] = asStr;
+        return next;
+      });
+    }
+  }, [promptValues, qtyPrompt, multiEnabled]);
+
+  const qtyLabel = useMemo(() => {
+    const found = numericPrompts.find((p) => p.id === qtyPrompt);
+    return found?.label ?? "Cantidad";
+  }, [numericPrompts, qtyPrompt]);
+
   const formatEUR = (val: any) => {
     const num = typeof val === "number" ? val : parseFloat(String(val).replace(/\./g, "").replace(",", "."));
     if (isNaN(num)) return `${String(val)} €`;
@@ -309,19 +330,21 @@ const QuoteNew = () => {
         }
       });
 
-      const qtys = qtyInputs.map((q) => Number(String(q).replace(/\./g, "").replace(",", "."))).filter((n) => !Number.isNaN(n)).slice(0, 5);
-      const results = await Promise.all(
-        qtys.map(async (qty) => {
-          const list = Object.entries(norm).map(([id, value]) => ({ id, value }));
-          const replaced = list.filter((it) => it.id !== qtyPrompt).concat([{ id: qtyPrompt, value: qty }]);
-          const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
-            body: { token, productId, inputs: replaced },
-          });
-          if (error) throw error as any;
-          return { qty, data };
-        })
-      );
-      return results;
+      const qtys = qtyInputs
+        .map((q) => Number(String(q).replace(/\./g, "").replace(",", ".")))
+        .filter((n) => !Number.isNaN(n))
+        .slice(0, 1);
+
+      if (qtys.length === 0) return [] as any[];
+
+      const qty = qtys[0];
+      const list = Object.entries(norm).map(([id, value]) => ({ id, value }));
+      const replaced = list.filter((it) => it.id !== qtyPrompt).concat([{ id: qtyPrompt, value: qty }]);
+      const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
+        body: { token, productId, inputs: replaced },
+      });
+      if (error) throw error as any;
+      return [{ qty, data }];
     },
   });
 
@@ -534,7 +557,7 @@ const QuoteNew = () => {
                       <div className="grid grid-cols-5 gap-2">
                         {[0,1,2,3,4].map((i) => (
                           <div key={i} className="space-y-1">
-                            <Label>Cant. {i+1}</Label>
+                            <Label>{qtyLabel} {i+1}</Label>
                             <Input
                               type="number"
                               min={1}
@@ -559,19 +582,53 @@ const QuoteNew = () => {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Cantidad</TableHead>
+                              <TableHead>{qtyLabel}</TableHead>
                               <TableHead>Precio total</TableHead>
-                              <TableHead>Precio unitario</TableHead>
+                              <TableHead>Detalles</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {multiRows.map((r, idx) => (
-                              <TableRow key={idx}>
-                                <TableCell>{r.qty}</TableCell>
-                                <TableCell>{String(((r.outs || []).find((o:any)=>String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'))?.value) ?? '')}</TableCell>
-                                <TableCell>{Number.isFinite(r.unit) ? r.unit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}</TableCell>
-                              </TableRow>
-                            ))}
+                            {multiRows.map((r, idx) => {
+                              const priceOut = (r.outs || []).find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
+                              const other = (r.outs || []).filter((o:any) => {
+                                const t = String(o?.type || '').toLowerCase();
+                                const n = String(o?.name || '').toLowerCase();
+                                const v = String(o?.value ?? '');
+                                const isImageLike = t.includes('image') || n.includes('image');
+                                const isNA = v === '' || v === '#N/A';
+                                return o !== priceOut && !isImageLike && !isNA;
+                              });
+                              const isOpen = !!expandedRows[idx];
+                              return (
+                                <>
+                                  <TableRow key={`row-${idx}`}>
+                                    <TableCell>{r.qty}</TableCell>
+                                    <TableCell>{formatEUR(priceOut?.value)}</TableCell>
+                                    <TableCell>
+                                      {other.length > 0 && (
+                                        <Button variant="outline" size="sm" onClick={() => setExpandedRows((prev) => ({ ...prev, [idx]: !prev[idx] }))}>
+                                          {isOpen ? "Ocultar" : "Ver más"}
+                                        </Button>
+                                      )}
+                                    </TableCell>
+                                  </TableRow>
+                                  {isOpen && (
+                                    <TableRow key={`detail-${idx}`}>
+                                      <TableCell colSpan={3}>
+                                        <div className="space-y-1">
+                                          {other.map((o:any, i:number) => (
+                                            <div key={i} className="flex items-center justify-between text-sm">
+                                              <span className="text-muted-foreground">{o.name ?? 'Resultado'}</span>
+                                              <span>{String(o.value)}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  )}
+                                </>
+                              );
+                            })}
                           </TableBody>
                         </Table>
                       ) : (
