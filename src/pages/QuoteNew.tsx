@@ -80,6 +80,18 @@ const QuoteNew = () => {
     },
   });
 
+  useEffect(() => {
+    if (pricing) {
+      try {
+        // Debug: inspect pricing structure to support dynamic prompts
+        // eslint-disable-next-line no-console
+        console.log("[pricing] keys", Object.keys(pricing as any));
+        // eslint-disable-next-line no-console
+        console.log("[pricing] sample", (pricing as any));
+      } catch {}
+    }
+  }, [pricing]);
+
   const selectedProduct = useMemo(() => products?.find((p: any) => String(p.id) === String(productId)), [products, productId]);
   const canShowPanels = useMemo(() => !!customerId && !!productId, [customerId, productId]);
   const handlePromptChange = (id: string, value: any) => {
