@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -54,6 +54,12 @@ const QuoteNew = () => {
   const [connecting, setConnecting] = useState(false);
   const queryClient = useQueryClient();
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
+  const [debouncedPromptValues, setDebouncedPromptValues] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedPromptValues(promptValues), 350);
+    return () => clearTimeout(t);
+  }, [promptValues]);
 
   useEffect(() => {
     document.title = "Nuevo Presupuesto | Productos y Cliente";
@@ -66,14 +72,17 @@ const QuoteNew = () => {
   const { data: customers } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
   const { data: products } = useQuery({ queryKey: ["easyquote-products"], queryFn: fetchProducts, retry: 1, enabled: hasToken });
   const { data: pricing, error: pricingError } = useQuery({
-    queryKey: ["easyquote-pricing", productId, promptValues],
+    queryKey: ["easyquote-pricing", productId, debouncedPromptValues],
     enabled: hasToken && !!productId,
     retry: 1,
+    placeholderData: keepPreviousData,
+    refetchOnWindowFocus: false,
+    staleTime: 5000,
     queryFn: async () => {
       const token = localStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
       const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
-        body: { token, productId, inputs: promptValues },
+        body: { token, productId, inputs: debouncedPromptValues },
       });
       if (error) throw error as any;
       return data;
@@ -120,23 +129,30 @@ const QuoteNew = () => {
         }
       });
 
-      // Ensure values are valid against server options/currentValue
+      // Sincronizar con servidor sin pisar lo que el usuario está escribiendo
       for (const sp of serverPrompts) {
         const id = String(sp.id);
         const options: string[] = (sp.valueOptions ?? []).map((v: any) => String(v?.value ?? v));
         const currentValue = sp.currentValue ?? sp.value ?? sp.default ?? undefined;
+        const hasOptions = options.length > 0;
         const val = next[id];
         const valStr = val !== undefined && val !== null ? String(val) : undefined;
-        const isValid = valStr === undefined ? false : options.length === 0 || options.includes(valStr);
-        if (valStr === undefined || !isValid) {
-          if (currentValue !== undefined) {
+
+        if (hasOptions) {
+          const isValid = valStr !== undefined && options.includes(valStr);
+          if (valStr === undefined || !isValid) {
+            if (currentValue !== undefined) {
+              next[id] = currentValue;
+              changed = true;
+            } else if (options.length) {
+              next[id] = options[0];
+              changed = true;
+            }
+          }
+        } else {
+          // Entrada libre (sin opciones): solo inicializar si está vacío
+          if (valStr === undefined && currentValue !== undefined) {
             next[id] = currentValue;
-            changed = true;
-          } else if (options.length) {
-            next[id] = options[0];
-            changed = true;
-          } else if (id in next) {
-            delete next[id];
             changed = true;
           }
         }
