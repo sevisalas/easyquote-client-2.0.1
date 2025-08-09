@@ -347,19 +347,24 @@ const QuoteNew = () => {
 
       const qtys = qtyInputs
         .map((q) => Number(String(q).replace(/\./g, "").replace(",", ".")))
-        .filter((n) => !Number.isNaN(n))
-        .slice(0, 1);
+        .filter((n) => !Number.isNaN(n));
 
       if (qtys.length === 0) return [] as any[];
 
-      const qty = qtys[0];
       const list = Object.entries(norm).map(([id, value]) => ({ id, value }));
-      const replaced = list.filter((it) => it.id !== qtyPrompt).concat([{ id: qtyPrompt, value: qty }]);
-      const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
-        body: { token, productId, inputs: replaced },
-      });
-      if (error) throw error as any;
-      return [{ qty, data }];
+
+      const results = await Promise.all(
+        qtys.map(async (qty) => {
+          const replaced = list.filter((it) => it.id !== qtyPrompt).concat([{ id: qtyPrompt, value: qty }]);
+          const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
+            body: { token, productId, inputs: replaced },
+          });
+          if (error) throw error as any;
+          return { qty, data };
+        })
+      );
+
+      return results;
     },
   });
 
@@ -612,53 +617,20 @@ const QuoteNew = () => {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>{qtyLabel}</TableHead>
-                              <TableHead>Precio total</TableHead>
-                              <TableHead>Detalles</TableHead>
+                              {multiRows.map((_, idx) => (
+                                <TableHead key={idx}>Q{idx + 1}</TableHead>
+                              ))}
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {multiRows.map((r, idx) => {
-                              const priceOut = (r.outs || []).find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
-                              const other = (r.outs || []).filter((o:any) => {
-                                const t = String(o?.type || '').toLowerCase();
-                                const n = String(o?.name || '').toLowerCase();
-                                const v = String(o?.value ?? '');
-                                const isImageLike = t.includes('image') || n.includes('image');
-                                const isNA = v === '' || v === '#N/A';
-                                return o !== priceOut && !isImageLike && !isNA;
-                              });
-                              const isOpen = !!expandedRows[idx];
-                              return (
-                                <>
-                                  <TableRow key={`row-${idx}`}>
-                                    <TableCell>{r.qty}</TableCell>
-                                    <TableCell>{formatEUR(priceOut?.value)}</TableCell>
-                                    <TableCell>
-                                      {other.length > 0 && (
-                                        <Button variant="outline" size="sm" onClick={() => setExpandedRows((prev) => ({ ...prev, [idx]: !prev[idx] }))}>
-                                          {isOpen ? "Ocultar" : "Ver más"}
-                                        </Button>
-                                      )}
-                                    </TableCell>
-                                  </TableRow>
-                                  {isOpen && (
-                                    <TableRow key={`detail-${idx}`}>
-                                      <TableCell colSpan={3}>
-                                        <div className="space-y-1">
-                                          {other.map((o:any, i:number) => (
-                                            <div key={i} className="flex items-center justify-between text-sm">
-                                              <span className="text-muted-foreground">{o.name ?? 'Resultado'}</span>
-                                              <span>{String(o.value)}</span>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </TableCell>
-                                    </TableRow>
-                                  )}
-                                </>
-                              );
-                            })}
+                            <TableRow>
+                              {multiRows.map((r, idx) => {
+                                const priceOut = (r.outs || []).find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
+                                return (
+                                  <TableCell key={idx}>{formatEUR(priceOut?.value)}</TableCell>
+                                );
+                              })}
+                            </TableRow>
                           </TableBody>
                         </Table>
                       ) : (
