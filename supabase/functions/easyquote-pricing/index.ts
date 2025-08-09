@@ -27,17 +27,43 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const query = inputs && typeof inputs === "object" && Object.keys(inputs).length > 0
-      ? `?inputs=${encodeURIComponent(JSON.stringify(inputs))}`
-      : "";
-    const url = `https://api.easyquote.cloud/api/v1/pricing/${productId}${query}`;
-    const res = await fetch(url, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-    });
+    // Build target URL
+    const baseUrl = `https://api.easyquote.cloud/api/v1/pricing/${productId}`;
+
+    // Prefer POST with JSON body when inputs are provided; fallback to GET with query if POST fails
+    let res: Response | null = null;
+
+    if (inputs && typeof inputs === "object" && Object.keys(inputs).length > 0) {
+      try {
+        console.log("easyquote-pricing: using POST with inputs", { keys: Object.keys(inputs) });
+        res = await fetch(baseUrl, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ inputs }),
+        });
+      } catch (e) {
+        console.error("easyquote-pricing: POST attempt failed, will try GET", e);
+      }
+    }
+
+    if (!res || !res.ok) {
+      const query = inputs && typeof inputs === "object" && Object.keys(inputs).length > 0
+        ? `?inputs=${encodeURIComponent(JSON.stringify(inputs))}`
+        : "";
+      const url = `${baseUrl}${query}`;
+      console.log("easyquote-pricing: using GET", { url });
+      res = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+    }
 
     const text = await res.text();
     let data: any;

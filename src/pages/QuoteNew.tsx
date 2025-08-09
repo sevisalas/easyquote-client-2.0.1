@@ -86,6 +86,11 @@ const QuoteNew = () => {
     setPromptValues((prev) => ({ ...prev, [id]: value }));
   };
 
+  useEffect(() => {
+    // Reset prompts when product changes
+    setPromptValues({});
+  }, [productId]);
+
   const formatEUR = (val: any) => {
     const num = typeof val === "number" ? val : parseFloat(String(val).replace(/\./g, "").replace(",", "."));
     if (isNaN(num)) return `${String(val)} €`;
