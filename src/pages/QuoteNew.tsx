@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import QuoteItem from "@/components/quotes/QuoteItem";
 
 interface Customer { id: string; name: string }
 interface Product { id: string; name?: string; title?: string }
@@ -66,6 +67,10 @@ const QuoteNew = () => {
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
   const MAX_QTY = 10; // TODO: Configurable desde Settings
   const [qtyCount, setQtyCount] = useState<number>(5);
+
+  // Ítems adicionales en el presupuesto
+  const [extraItems, setExtraItems] = useState<number[]>([]);
+  const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedPromptValues(promptValues), 350);
@@ -700,6 +705,24 @@ const QuoteNew = () => {
             </div>
           </div>
         </>
+      )}
+      {customerId && (
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Ítems adicionales</h2>
+            <Button onClick={addItem}>Agregar ítem</Button>
+          </div>
+
+          {extraItems.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aún no hay ítems añadidos.</p>
+          ) : (
+            <div className="space-y-6">
+              {extraItems.map((k) => (
+                <QuoteItem key={k} hasToken={hasToken} />
+              ))}
+            </div>
+          )}
+        </section>
       )}
     </main>
   );
