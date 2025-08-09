@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import QuoteItem from "@/components/quotes/QuoteItem";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import QuotePDF from "@/components/quotes/QuotePDF";
+import { useLocation, useSearchParams } from "react-router-dom";
 
 interface Customer { id: string; name: string }
 interface Product { id: string; name?: string; title?: string }
@@ -73,7 +74,59 @@ const QuoteNew = () => {
   // Artículos adicionales en el presupuesto
   const [extraItems, setExtraItems] = useState<number[]>([]);
   const [extraItemsData, setExtraItemsData] = useState<Record<number, any>>({});
-  const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
+const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
+
+  // Duplicar desde presupuesto previo
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const fromState = (location.state as any)?.fromQuoteId;
+  const fromParam = searchParams.get("from");
+  const fromQuoteId = fromState || fromParam || null;
+  const [prefillDone, setPrefillDone] = useState(false);
+  const [initialItems, setInitialItems] = useState<Record<number, any>>({});
+
+  useEffect(() => {
+    if (!fromQuoteId || prefillDone) return;
+    (async () => {
+      try {
+        const { data: q, error: qe } = await supabase
+          .from("quotes")
+          .select("id, customer_id, selections, results, product_name")
+          .eq("id", fromQuoteId)
+          .maybeSingle();
+        if (qe) throw qe;
+        if (q) {
+          setCustomerId(q.customer_id);
+          setPromptValues((q as any).selections || {});
+          const { data: items, error: ie } = await supabase
+            .from("quote_items")
+            .select("product_id, prompts, outputs, multi, total_price, position")
+            .eq("quote_id", q.id)
+            .order("position", { ascending: true });
+          if (ie) throw ie;
+          const keys: number[] = [];
+          const initMap: Record<number, any> = {};
+          (items || []).forEach((it: any, idx: number) => {
+            const key = Date.now() + idx;
+            keys.push(key);
+            initMap[key] = {
+              productId: it.product_id || "",
+              prompts: it.prompts || {},
+              outputs: it.outputs || [],
+              price: it.total_price || null,
+              multi: it.multi || null,
+            };
+          });
+          if (keys.length) setExtraItems(keys);
+          setInitialItems(initMap);
+          setPrefillDone(true);
+          toast({ title: "Datos cargados", description: "Usando presupuesto previo como base." });
+        }
+      } catch (e: any) {
+        toast({ title: "No se pudo cargar el presupuesto", description: e?.message || "Inténtalo de nuevo", variant: "destructive" });
+      }
+    })();
+  }, [fromQuoteId, prefillDone]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedPromptValues(promptValues), 350);
@@ -725,6 +778,7 @@ const QuoteNew = () => {
                   key={k}
                   id={k}
                   hasToken={hasToken}
+                  initialData={initialItems[k]}
                   onChange={(id, data) => setExtraItemsData((prev) => ({ ...prev, [id as number]: data }))}
                 />
               ))}

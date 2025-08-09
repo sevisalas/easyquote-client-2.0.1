@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -24,10 +24,11 @@ type ItemSnapshot = {
 interface QuoteItemProps {
   hasToken: boolean;
   id: string | number;
+  initialData?: ItemSnapshot;
   onChange?: (id: string | number, snapshot: ItemSnapshot) => void;
 }
 
-export default function QuoteItem({ hasToken, id, onChange }: QuoteItemProps) {
+export default function QuoteItem({ hasToken, id, initialData, onChange }: QuoteItemProps) {
   // Local state per item
   const [productId, setProductId] = useState<string>("");
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
@@ -38,7 +39,28 @@ export default function QuoteItem({ hasToken, id, onChange }: QuoteItemProps) {
   const [qtyPrompt, setQtyPrompt] = useState<string>("");
   const [qtyInputs, setQtyInputs] = useState<string[]>(["", "", "", "", ""]);
   const MAX_QTY = 10;
-  const [qtyCount, setQtyCount] = useState<number>(5);
+const [qtyCount, setQtyCount] = useState<number>(5);
+
+// Inicialización desde datos previos (duplicar)
+  const initializedRef = useRef(false);
+  useEffect(() => {
+    if (initializedRef.current) return;
+    if (!initialData) return;
+    initializedRef.current = true;
+    try {
+      setProductId(initialData.productId || "");
+      setPromptValues(initialData.prompts || {});
+      const m: any = initialData.multi;
+      if (m) {
+        setMultiEnabled(true);
+        if (m.qtyPrompt) setQtyPrompt(m.qtyPrompt);
+        if (Array.isArray(m.qtyInputs)) {
+          setQtyInputs(m.qtyInputs);
+          setQtyCount(Math.max(1, Math.min(MAX_QTY, m.qtyInputs.length)));
+        }
+      }
+    } catch {}
+  }, [initialData]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedPromptValues(promptValues), 350);
