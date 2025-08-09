@@ -78,15 +78,54 @@ const QuoteNew = () => {
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     staleTime: 5000,
-    queryFn: async () => {
-      const token = localStorage.getItem("easyquote_token");
-      if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
-      const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
-        body: { token, productId, inputs: debouncedPromptValues },
-      });
-      if (error) throw error as any;
-      return data;
-    },
+      queryFn: async () => {
+        const token = localStorage.getItem("easyquote_token");
+        if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
+
+        // Normalizar inputs para la API (quitar '#' en colores hex y forzar números)
+        const norm: Record<string, any> = {};
+        Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
+          if (v === "" || v === undefined || v === null) return;
+          if (typeof v === "string") {
+            const trimmed = v.trim();
+            const isHex = /^#[0-9a-f]{6}$/i.test(trimmed);
+            if (isHex) {
+              norm[k] = trimmed.slice(1).toUpperCase();
+              return;
+            }
+            const num = Number(trimmed.replace(",", "."));
+            if (!Number.isNaN(num) && /^-?\d+([.,]\d+)?$/.test(trimmed)) {
+              norm[k] = num;
+              return;
+            }
+            norm[k] = trimmed;
+          } else {
+            norm[k] = v;
+          }
+        });
+
+        const qs = Object.keys(norm).length ? `?inputs=${encodeURIComponent(JSON.stringify(norm))}` : "";
+        const url = `https://api.easyquote.cloud/api/v1/pricing/${productId}${qs}`;
+
+        try {
+          const res = await fetch(url, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+          if (!res.ok) throw new Error(`EasyQuote GET ${res.status}`);
+          const json = await res.json();
+          return json;
+        } catch (e) {
+          const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
+            body: { token, productId, inputs: norm },
+          });
+          if (error) throw error as any;
+          return data;
+        }
+      },
   });
 
   useEffect(() => {

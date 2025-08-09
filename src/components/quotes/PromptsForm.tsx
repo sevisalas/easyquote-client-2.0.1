@@ -225,10 +225,7 @@ export default function PromptsForm({
               min={p.min}
               max={p.max}
               value={effectiveValues[p.id] ?? ""}
-              onChange={(e) => {
-                const v = e.target.value;
-                onChange(p.id, v === "" ? "" : Number(v));
-              }}
+              onChange={(e) => onChange(p.id, e.target.value)}
             />
           )}
 
