@@ -57,6 +57,7 @@ const getProductLabel = (p: any) =>
 const QuoteNew = () => {
   const [customerId, setCustomerId] = useState<string>("");
   const [productId, setProductId] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
   const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
   const [eqEmail, setEqEmail] = useState<string>("");
   const [eqPassword, setEqPassword] = useState<string>("");
@@ -96,13 +97,14 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
       try {
         const { data: q, error: qe } = await supabase
           .from("quotes")
-          .select("id, customer_id, selections, results, product_name")
+          .select("id, customer_id, selections, results, product_name, description")
           .eq("id", fromQuoteId)
           .maybeSingle();
         if (qe) throw qe;
         if (q) {
           setCustomerId(q.customer_id);
           setDupProductName((q as any).product_name || null);
+          setDescription((q as any).description || "");
           setPromptValues((q as any).selections || {});
           setDupResults(((q as any).results as any[]) || []);
           const { data: items, error: ie } = await supabase
@@ -516,33 +518,44 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
         <CardHeader>
           <CardTitle>Selecciona cliente y producto</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Cliente</Label>
-            <Select onValueChange={setCustomerId} value={customerId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Elige un cliente" />
-              </SelectTrigger>
-              <SelectContent>
-                {customers?.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Cliente</Label>
+              <Select onValueChange={setCustomerId} value={customerId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Elige un cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {customers?.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Producto</Label>
+              <Select onValueChange={setProductId} value={productId} disabled={!hasToken}>
+                <SelectTrigger>
+                  <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {products?.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Producto</Label>
-            <Select onValueChange={setProductId} value={productId} disabled={!hasToken}>
-              <SelectTrigger>
-                <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
-              </SelectTrigger>
-              <SelectContent>
-                {products?.map((p: any) => (
-                  <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Descripción del presupuesto</Label>
+            <Input 
+              value={description} 
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe brevemente este presupuesto..."
+            />
           </div>
         </CardContent>
       </Card>
@@ -879,6 +892,7 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
                 status: "draft",
                 customer_id: customerId,
                 product_name: selectedProduct ? getProductLabel(selectedProduct) : (dupProductName || null),
+                description: description.trim() || null,
                 selections: promptValues,
                 results: outputs,
                 final_price: total

@@ -26,7 +26,7 @@ const fmtEUR = (n: any) => {
 const fetchQuotes = async () => {
   const { data, error } = await supabase
     .from("quotes")
-    .select("id, created_at, quote_number, customer_id, product_name, final_price, status, selections")
+    .select("id, created_at, quote_number, customer_id, product_name, final_price, status, selections, description")
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data || [];
@@ -90,7 +90,7 @@ const QuotesList = () => {
                   <TableHead>Fecha</TableHead>
                   <TableHead>Nº</TableHead>
                   <TableHead>Cliente</TableHead>
-                  <TableHead>Producto</TableHead>
+                  <TableHead>Descripción</TableHead>
                   <TableHead className="text-right">Total</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Acciones</TableHead>
@@ -102,10 +102,13 @@ const QuotesList = () => {
                     <TableCell>{new Date(q.created_at).toLocaleDateString("es-ES")}</TableCell>
                     <TableCell>{q.quote_number}</TableCell>
                     <TableCell>{getCustomerName(q.customer_id)}</TableCell>
-                    <TableCell>{q.product_name || "—"}</TableCell>
+                    <TableCell>{q.description || q.product_name || "—"}</TableCell>
                     <TableCell className="text-right">{fmtEUR(q.final_price)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
+                        <Badge variant={getStatusVariant(q.status)} className="cursor-pointer">
+                          {statusLabel[q.status] || q.status}
+                        </Badge>
                         <Select value={q.status} onValueChange={(v) => handleStatusChange(q.id, v)}>
                           <SelectTrigger className="w-[140px]">
                             <SelectValue placeholder="Estado" />
