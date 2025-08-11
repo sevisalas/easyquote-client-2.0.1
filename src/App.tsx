@@ -14,6 +14,7 @@ import AppLayout from "./components/layout/AppLayout";
 import QuoteNew from "./pages/QuoteNew";
 import QuotesList from "./pages/QuotesList";
 import SettingsPdfTemplate from "./pages/SettingsPdfTemplate";
+import QuoteDetail from "./pages/QuoteDetail";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -90,6 +91,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <QuoteNew />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/presupuestos/:id"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <QuoteDetail />
                 </AppLayout>
               </ProtectedRoute>
             }

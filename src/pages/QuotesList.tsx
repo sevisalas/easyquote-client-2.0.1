@@ -121,6 +121,9 @@ const QuotesList = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
+                        <Button size="sm" variant="secondary" onClick={() => navigate(`/presupuestos/${q.id}`)}>
+                          Ver
+                        </Button>
                         <Button size="sm" variant="default" onClick={() => navigate(`/presupuestos/nuevo?from=${q.id}`)}>
                           Duplicar como nuevo
                         </Button>

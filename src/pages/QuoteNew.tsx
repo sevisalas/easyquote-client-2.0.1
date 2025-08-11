@@ -70,8 +70,10 @@ const QuoteNew = () => {
   const [qtyInputs, setQtyInputs] = useState<string[]>(["", "", "", "", ""]);
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
   const MAX_QTY = 10; // TODO: Configurable desde Settings
-const [qtyCount, setQtyCount] = useState<number>(5);
+  const [qtyCount, setQtyCount] = useState<number>(5);
   const [pdfOpen, setPdfOpen] = useState(false);
+  // Duplicación desde presupuesto previo
+  const [dupProductName, setDupProductName] = useState<string | null>(null);
 
   // Artículos adicionales en el presupuesto
   const [extraItems, setExtraItems] = useState<number[]>([]);
@@ -99,6 +101,7 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
         if (qe) throw qe;
         if (q) {
           setCustomerId(q.customer_id);
+          setDupProductName((q as any).product_name || null);
           setPromptValues((q as any).selections || {});
           const { data: items, error: ie } = await supabase
             .from("quote_items")
@@ -121,7 +124,6 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
           });
           if (keys.length) setExtraItems(keys);
           setInitialItems(initMap);
-          setPrefillDone(true);
           toast({ title: "Datos cargados", description: "Usando presupuesto previo como base." });
         }
       } catch (e: any) {
@@ -129,6 +131,22 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
       }
     })();
   }, [fromQuoteId, prefillDone]);
+
+  // Cargar productos (antes de usarlos en el prefill)
+  const { data: products } = useQuery({ queryKey: ["easyquote-products"], queryFn: fetchProducts, retry: 1, enabled: hasToken });
+
+  // Seleccionar automáticamente el producto según el nombre del presupuesto duplicado
+  useEffect(() => {
+    if (!fromQuoteId || prefillDone) return;
+    if (!dupProductName) return;
+    if (!Array.isArray(products) || products.length === 0) return;
+    const match = (products as any[]).find((p: any) => getProductLabel(p) === dupProductName);
+    if (match) {
+      setProductId(String((match as any).id));
+    }
+    // Marcar el prefill como completado para reactivar comportamientos normales
+    setPrefillDone(true);
+  }, [fromQuoteId, prefillDone, dupProductName, products]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedPromptValues(promptValues), 350);
@@ -144,7 +162,6 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
   }, []);
 
   const { data: customers } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
-  const { data: products } = useQuery({ queryKey: ["easyquote-products"], queryFn: fetchProducts, retry: 1, enabled: hasToken });
   const { data: pricing, error: pricingError } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues],
     enabled: hasToken && !!productId,
@@ -235,9 +252,10 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
   };
 
   useEffect(() => {
-    // Reset prompts when product changes
+    // Reset prompts when product changes, except during duplication prefill
+    if (fromQuoteId && !prefillDone) return;
     setPromptValues({});
-  }, [productId]);
+  }, [productId, fromQuoteId, prefillDone]);
 
   useEffect(() => {
     const p: any = pricing as any;
