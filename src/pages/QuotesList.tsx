@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -105,21 +105,20 @@ const QuotesList = () => {
                     <TableCell>{q.description || q.product_name || "—"}</TableCell>
                     <TableCell className="text-right">{fmtEUR(q.final_price)}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={getStatusVariant(q.status)} className="cursor-pointer">
-                          {statusLabel[q.status] || q.status}
-                        </Badge>
-                        <Select value={q.status} onValueChange={(v) => handleStatusChange(q.id, v)}>
-                          <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder="Estado" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {statusOptions.map((s) => (
-                              <SelectItem key={s} value={s}>{statusLabel[s]}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Badge variant={getStatusVariant(q.status)} className="cursor-pointer hover:opacity-80">
+                            {statusLabel[q.status] || q.status}
+                          </Badge>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          {statusOptions.map((s) => (
+                            <DropdownMenuItem key={s} onClick={() => handleStatusChange(q.id, s)}>
+                              {statusLabel[s]}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
