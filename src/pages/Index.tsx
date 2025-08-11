@@ -16,6 +16,15 @@ const Index = () => {
       {/* Hero Section - Simplificado para clientes */}
       <section className="relative px-6 py-12 text-center">
         <div className="max-w-4xl mx-auto">
+          {/* Logo principal - Más pequeño */}
+          <div className="mb-4 animate-fade-in">
+            <img 
+              src="/lovable-uploads/3ff3c1d3-fd0e-4649-9146-6991b081234b.png" 
+              alt="EasyQuote Logo"
+              className="h-16 w-auto mx-auto mb-3 hover-scale"
+            />
+          </div>
+          
           {/* Título simplificado */}
           <div className="mb-8 animate-fade-in">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">
@@ -92,15 +101,10 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Logos Section - ABAJO como debería estar */}
+      {/* Logos Section - Solo una imagen */}
       <section className="px-6 py-8">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="flex flex-wrap justify-center items-center gap-20 opacity-80 hover:opacity-100 transition-opacity">
-            <img 
-              src="/lovable-uploads/6b895d66-5fd4-4be7-b9b7-6b22e2b14c75.png" 
-              alt="Partner Logo"
-              className="h-40 w-auto hover-scale"
-            />
+          <div className="flex justify-center items-center opacity-80 hover:opacity-100 transition-opacity">
             <img 
               src="/lovable-uploads/90590fde-3895-4073-bd6a-2744ba8ceb02.png" 
               alt="Technology Logo"
