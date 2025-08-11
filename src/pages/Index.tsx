@@ -16,15 +16,6 @@ const Index = () => {
       {/* Hero Section - Simplificado para clientes */}
       <section className="relative px-6 py-12 text-center">
         <div className="max-w-4xl mx-auto">
-          {/* Logo principal - Más pequeño */}
-          <div className="mb-4 animate-fade-in">
-            <img 
-              src="/lovable-uploads/3ff3c1d3-fd0e-4649-9146-6991b081234b.png" 
-              alt="EasyQuote Logo"
-              className="h-20 w-auto mx-auto mb-3 hover-scale"
-            />
-          </div>
-          
           {/* Título simplificado */}
           <div className="mb-8 animate-fade-in">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">
