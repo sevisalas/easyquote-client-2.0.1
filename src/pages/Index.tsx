@@ -1,14 +1,26 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Plus, Users, ArrowRight } from "lucide-react";
+import { FileText, Plus, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [userEmail, setUserEmail] = useState<string>("");
 
   useEffect(() => {
     document.title = "Inicio | EasyQuote";
+    
+    // Obtener información del usuario
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        setUserEmail(user.email);
+      }
+    };
+    
+    getUser();
   }, []);
 
   return (
@@ -28,11 +40,8 @@ const Index = () => {
           {/* Título simplificado */}
           <div className="mb-8 animate-fade-in">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">
-              Tu Panel EasyQuote
+              Bienvenido {userEmail ? userEmail.split('@')[0] : 'Usuario'}
             </h1>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              Gestiona tus presupuestos y clientes de manera eficiente
-            </p>
           </div>
 
           {/* Botones de acción principales */}
