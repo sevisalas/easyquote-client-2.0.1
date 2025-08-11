@@ -35,12 +35,29 @@ const fetchCustomers = async (): Promise<Customer[]> => {
 const fetchProducts = async (): Promise<Product[]> => {
   const token = localStorage.getItem("easyquote_token");
   if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
-  const { data, error } = await supabase.functions.invoke("easyquote-products", {
-    body: { token },
-  });
-  if (error) throw error;
-  const list = Array.isArray(data) ? data : (data?.items || data?.data || []);
-  return list as Product[];
+  
+  try {
+    const { data, error } = await supabase.functions.invoke("easyquote-products", {
+      body: { token },
+    });
+    if (error) {
+      // Si hay error 401, limpiar token inválido
+      if (error.message?.includes('401') || error.status === 401) {
+        localStorage.removeItem("easyquote_token");
+        throw new Error("Sesión de EasyQuote expirada. Inicia sesión de nuevo.");
+      }
+      throw error;
+    }
+    const list = Array.isArray(data) ? data : (data?.items || data?.data || []);
+    return list as Product[];
+  } catch (e: any) {
+    // Si es error de autorización, limpiar token
+    if (e.message?.includes('401') || e.status === 401) {
+      localStorage.removeItem("easyquote_token");
+      throw new Error("Sesión de EasyQuote expirada. Inicia sesión de nuevo.");
+    }
+    throw e;
+  }
 };
 
 const getProductLabel = (p: any) =>
@@ -142,7 +159,24 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
   }, [fromQuoteId, prefillDone]);
 
   // Cargar productos (antes de usarlos en el prefill)
-  const { data: products } = useQuery({ queryKey: ["easyquote-products"], queryFn: fetchProducts, retry: 1, enabled: hasToken });
+  const { data: products, error: productsError } = useQuery({ 
+    queryKey: ["easyquote-products"], 
+    queryFn: fetchProducts, 
+    retry: false, 
+    enabled: hasToken
+  });
+
+  // Manejar errores de productos
+  useEffect(() => {
+    if (productsError && productsError.message?.includes('expirada')) {
+      setHasToken(false);
+      toast({ 
+        title: "Sesión expirada", 
+        description: "Necesitas conectar de nuevo con EasyQuote", 
+        variant: "destructive" 
+      });
+    }
+  }, [productsError]);
 
   // Seleccionar automáticamente el producto según el nombre del presupuesto duplicado
   useEffect(() => {
@@ -264,7 +298,7 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
     }
   }, [pricing]);
 
-  const selectedProduct = useMemo(() => products?.find((p: any) => String(p.id) === String(productId)), [products, productId]);
+  const selectedProduct = useMemo(() => (products as Product[] | undefined)?.find((p: any) => String(p.id) === String(productId)), [products, productId]);
   const canShowPanels = useMemo(() => !!customerId && !!productId, [customerId, productId]);
   const handlePromptChange = (id: string, value: any) => {
     setPromptValues((prev) => ({ ...prev, [id]: value }));
@@ -541,16 +575,24 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
 
             <div className="space-y-2">
               <Label>Producto</Label>
-              <Select onValueChange={setProductId} value={productId} disabled={!hasToken}>
+              <Select onValueChange={setProductId} value={productId} disabled={!hasToken || !products}>
                 <SelectTrigger>
-                  <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
+                  <SelectValue placeholder={
+                    !hasToken ? "Conecta EasyQuote primero" : 
+                    productsError ? "Error al cargar productos" :
+                    !products ? "Cargando productos..." : 
+                    "Elige un producto"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {products?.map((p: any) => (
+                  {(products as Product[] | undefined)?.map((p: any) => (
                     <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {productsError && (
+                <p className="text-sm text-destructive">{productsError.message}</p>
+              )}
             </div>
           </div>
 
