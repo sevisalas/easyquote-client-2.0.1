@@ -102,7 +102,7 @@ const QuotesList = () => {
                     <TableCell>{new Date(q.created_at).toLocaleDateString("es-ES")}</TableCell>
                     <TableCell>{q.quote_number}</TableCell>
                     <TableCell>{getCustomerName(q.customer_id)}</TableCell>
-                    <TableCell>{q.description || "Sin descripción"}</TableCell>
+                    <TableCell>{q.description || ""}</TableCell>
                     <TableCell className="text-right">{fmtEUR(q.final_price)}</TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -111,7 +111,7 @@ const QuotesList = () => {
                             {statusLabel[q.status] || q.status}
                           </Badge>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent>
+                        <DropdownMenuContent className="bg-background border shadow-lg z-50">
                           {statusOptions.map((s) => (
                             <DropdownMenuItem key={s} onClick={() => handleStatusChange(q.id, s)}>
                               {statusLabel[s]}
