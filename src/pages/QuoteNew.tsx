@@ -62,6 +62,7 @@ const QuoteNew = () => {
   const [eqEmail, setEqEmail] = useState<string>("");
   const [eqPassword, setEqPassword] = useState<string>("");
   const [connecting, setConnecting] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState<string>("Verificando...");
   const queryClient = useQueryClient();
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
   const [debouncedPromptValues, setDebouncedPromptValues] = useState<Record<string, any>>({});
@@ -141,7 +142,27 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
     })();
   }, [fromQuoteId, prefillDone]);
 
-  const { data: products } = useQuery({ queryKey: ["easyquote-products"], queryFn: fetchProducts, retry: 1, enabled: hasToken });
+  const { data: products, error: productsError } = useQuery({ 
+    queryKey: ["easyquote-products"], 
+    queryFn: fetchProducts, 
+    retry: 1, 
+    enabled: hasToken
+  });
+
+  // Manejar estado del token según resultado de productos
+  useEffect(() => {
+    if (products && products.length > 0) {
+      setTokenStatus("Token válido - Productos cargados");
+    }
+    if (productsError) {
+      console.error("Error fetching products:", productsError);
+      setTokenStatus(`Error: ${productsError.message}`);
+      if (productsError.message?.includes('401') || productsError.message?.includes('Failed to fetch')) {
+        setHasToken(false);
+        localStorage.removeItem("easyquote_token");
+      }
+    }
+  }, [products, productsError]);
 
   // Seleccionar automáticamente el producto según el nombre del presupuesto duplicado
   useEffect(() => {
@@ -177,6 +198,30 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setEqEmail(data.user?.email ?? ""));
+    
+    // Verificar estado del token al cargar
+    const token = localStorage.getItem("easyquote_token");
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const exp = payload.exp * 1000;
+        const now = Date.now();
+        if (exp < now) {
+          setTokenStatus("Token expirado");
+          setHasToken(false);
+          localStorage.removeItem("easyquote_token");
+        } else {
+          const remainingHours = Math.floor((exp - now) / (1000 * 60 * 60));
+          setTokenStatus(`Token válido - Expira en ${remainingHours}h`);
+        }
+      } catch (e) {
+        setTokenStatus("Token inválido");
+        setHasToken(false);
+        localStorage.removeItem("easyquote_token");
+      }
+    } else {
+      setTokenStatus("Sin token");
+    }
   }, []);
 
   const { data: customers } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
@@ -568,6 +613,9 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
         <Card>
           <CardHeader>
             <CardTitle>Conectar EasyQuote</CardTitle>
+            <div className="text-sm text-muted-foreground">
+              Estado: <span className="font-mono">{tokenStatus}</span>
+            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleConnect} className="grid gap-4 md:grid-cols-3">
@@ -579,10 +627,37 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
                 <Label>Contraseña</Label>
                 <Input value={eqPassword} onChange={(e) => setEqPassword(e.target.value)} type="password" required />
               </div>
-              <div className="flex items-end md:col-span-1">
-                <Button type="submit" disabled={connecting} className="w-full">{connecting ? "Conectando..." : "Conectar"}</Button>
+              <div className="flex items-end gap-2 md:col-span-1">
+                <Button type="submit" disabled={connecting} className="flex-1">
+                  {connecting ? "Conectando..." : "Conectar"}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    const token = localStorage.getItem("easyquote_token");
+                    if (token) {
+                      setHasToken(true);
+                      setTokenStatus("Reintentando con token existente...");
+                      queryClient.invalidateQueries({ queryKey: ["easyquote-products"] });
+                    }
+                  }}
+                >
+                  Reintentar
+                </Button>
               </div>
             </form>
+            
+            {productsError && (
+              <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                <p className="text-sm text-destructive">
+                  Error: {productsError.message}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Prueba a reconectar con tus credenciales de EasyQuote
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
