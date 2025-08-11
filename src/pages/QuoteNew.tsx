@@ -74,6 +74,7 @@ const QuoteNew = () => {
   const [pdfOpen, setPdfOpen] = useState(false);
   // Duplicación desde presupuesto previo
   const [dupProductName, setDupProductName] = useState<string | null>(null);
+  const [dupResults, setDupResults] = useState<any[]>([]);
 
   // Artículos adicionales en el presupuesto
   const [extraItems, setExtraItems] = useState<number[]>([]);
@@ -103,6 +104,7 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
           setCustomerId(q.customer_id);
           setDupProductName((q as any).product_name || null);
           setPromptValues((q as any).selections || {});
+          setDupResults(((q as any).results as any[]) || []);
           const { data: items, error: ie } = await supabase
             .from("quote_items")
             .select("product_id, prompts, outputs, multi, total_price, position")
@@ -382,7 +384,11 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
     }).format(num);
   };
 
-  const outputs = useMemo(() => ((pricing as any)?.outputValues ?? []) as any[], [pricing]);
+  const outputs = useMemo(() => {
+    const api = (pricing as any)?.outputValues;
+    if (Array.isArray(api) && api.length > 0) return api as any[];
+    return Array.isArray(dupResults) ? dupResults : [];
+  }, [pricing, dupResults]);
   const imageOutputs = useMemo(
     () =>
       outputs.filter((o: any) => {
@@ -560,6 +566,41 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
                 <Button type="submit" disabled={connecting} className="w-full">{connecting ? "Conectando..." : "Conectar"}</Button>
               </div>
             </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {!canShowPanels && dupResults.length > 0 && (
+        <Card className="border-accent/50 bg-muted/50">
+          <CardHeader>
+            <CardTitle>Resultado (desde presupuesto anterior)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {priceOutput ? (
+              <div className="p-4 rounded-md border bg-card/50">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Precio</span>
+                  <span className="px-3 py-1 rounded-full bg-accent text-accent-foreground text-lg font-semibold hover-scale">
+                    {formatEUR((priceOutput as any).value)}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Resultado cargado desde la copia.</p>
+            )}
+            {otherOutputs.length > 0 && (
+              <>
+                <Separator className="my-4" />
+                <section className="space-y-2">
+                  {otherOutputs.map((o: any, idx: number) => (
+                    <div key={idx} className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
+                      <span>{String(o.value)}</span>
+                    </div>
+                  ))}
+                </section>
+              </>
+            )}
           </CardContent>
         </Card>
       )}

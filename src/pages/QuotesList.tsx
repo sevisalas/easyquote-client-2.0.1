@@ -106,7 +106,6 @@ const QuotesList = () => {
                     <TableCell className="text-right">{fmtEUR(q.final_price)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Badge variant={getStatusVariant(q.status)}>{statusLabel[q.status] || q.status}</Badge>
                         <Select value={q.status} onValueChange={(v) => handleStatusChange(q.id, v)}>
                           <SelectTrigger className="w-[140px]">
                             <SelectValue placeholder="Estado" />
