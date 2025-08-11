@@ -76,6 +76,7 @@ const QuoteNew = () => {
   // Duplicación desde presupuesto previo
   const [dupProductName, setDupProductName] = useState<string | null>(null);
   const [dupResults, setDupResults] = useState<any[]>([]);
+  const [shouldRecalculate, setShouldRecalculate] = useState<boolean>(false);
 
   // Artículos adicionales en el presupuesto
   const [extraItems, setExtraItems] = useState<number[]>([]);
@@ -124,11 +125,15 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
               outputs: it.outputs || [],
               price: it.total_price || null,
               multi: it.multi || null,
+              needsRecalculation: true, // Marcar para recálculo
             };
           });
-          if (keys.length) setExtraItems(keys);
+          if (keys.length) {
+            setExtraItems(keys);
+            setShouldRecalculate(true); // Activar recálculo automático
+          }
           setInitialItems(initMap);
-          toast({ title: "Datos cargados", description: "Usando presupuesto previo como base." });
+          toast({ title: "Datos cargados", description: "Presupuesto cargado. Recalculando precios actuales..." });
         }
       } catch (e: any) {
         toast({ title: "No se pudo cargar el presupuesto", description: e?.message || "Inténtalo de nuevo", variant: "destructive" });

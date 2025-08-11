@@ -19,6 +19,7 @@ type ItemSnapshot = {
   outputs: any[];
   price?: any;
   multi?: any;
+  needsRecalculation?: boolean;
 };
 
 interface QuoteItemProps {
@@ -33,6 +34,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange }: Quote
   const [productId, setProductId] = useState<string>("");
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
   const [debouncedPromptValues, setDebouncedPromptValues] = useState<Record<string, any>>({});
+  const [forceRecalculate, setForceRecalculate] = useState<boolean>(false);
 
   // Multi-cantidades
   const [multiEnabled, setMultiEnabled] = useState<boolean>(false);
@@ -58,6 +60,10 @@ const [qtyCount, setQtyCount] = useState<number>(5);
           setQtyInputs(m.qtyInputs);
           setQtyCount(Math.max(1, Math.min(MAX_QTY, m.qtyInputs.length)));
         }
+      }
+      // Activar recálculo automático si es una duplicación
+      if (initialData.needsRecalculation) {
+        setForceRecalculate(true);
       }
     } catch {}
   }, [initialData]);
@@ -88,13 +94,13 @@ const [qtyCount, setQtyCount] = useState<number>(5);
     enabled: hasToken,
   });
 
-  const { data: pricing, error: pricingError } = useQuery({
-    queryKey: ["easyquote-pricing", productId, debouncedPromptValues],
+  const { data: pricing, error: pricingError, refetch: refetchPricing } = useQuery({
+    queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate],
     enabled: hasToken && !!productId,
     retry: 1,
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
-    staleTime: 5000,
+    staleTime: forceRecalculate ? 0 : 5000,
     queryFn: async () => {
       const token = localStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
@@ -155,6 +161,14 @@ const [qtyCount, setQtyCount] = useState<number>(5);
       }
     },
   });
+
+  // Forzar recálculo cuando se activa el flag
+  useEffect(() => {
+    if (forceRecalculate && hasToken && productId) {
+      refetchPricing();
+      setForceRecalculate(false);
+    }
+  }, [forceRecalculate, hasToken, productId, refetchPricing]);
 
   // Reset prompts when product changes
   useEffect(() => {
