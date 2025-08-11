@@ -107,9 +107,11 @@ const QuotesList = () => {
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Badge variant={getStatusVariant(q.status)} className="cursor-pointer hover:opacity-80">
-                            {statusLabel[q.status] || q.status}
-                          </Badge>
+                          <button className="p-0 border-0 bg-transparent cursor-pointer">
+                            <Badge variant={getStatusVariant(q.status)} className="cursor-pointer hover:opacity-80">
+                              {statusLabel[q.status] || q.status}
+                            </Badge>
+                          </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="bg-background border shadow-lg z-50">
                           {statusOptions.map((s) => (
