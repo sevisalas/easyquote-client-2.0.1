@@ -21,7 +21,7 @@ All colors MUST be HSL.
     --primary: 330 65% 48%; /* #c93277 */
     --primary-foreground: 0 0% 98%;
 
-    --secondary: 270 38% 23%; /* #442453 */
+    --secondary: 270 38% 24%; /* #442453 - morado corporativo correcto */
     --secondary-foreground: 0 0% 98%;
 
     --muted: 210 40% 96.1%;

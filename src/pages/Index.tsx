@@ -57,25 +57,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Logos Section - Más arriba y más grandes */}
-      <section className="px-6 py-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="flex flex-wrap justify-center items-center gap-20 opacity-80 hover:opacity-100 transition-opacity">
-            <img 
-              src="/lovable-uploads/6b895d66-5fd4-4be7-b9b7-6b22e2b14c75.png" 
-              alt="Partner Logo"
-              className="h-40 w-auto hover-scale"
-            />
-            <img 
-              src="/lovable-uploads/90590fde-3895-4073-bd6a-2744ba8ceb02.png" 
-              alt="Technology Logo"
-              className="h-40 w-auto hover-scale"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Acceso rápido - Presupuestos primero */}
+      {/* Acceso rápido - Presupuestos primero - ARRIBA como estaba antes */}
       <section className="px-6 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="grid md:grid-cols-2 gap-6">
@@ -115,6 +97,24 @@ const Index = () => {
                 </Button>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Logos Section - ABAJO como debería estar */}
+      <section className="px-6 py-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="flex flex-wrap justify-center items-center gap-20 opacity-80 hover:opacity-100 transition-opacity">
+            <img 
+              src="/lovable-uploads/6b895d66-5fd4-4be7-b9b7-6b22e2b14c75.png" 
+              alt="Partner Logo"
+              className="h-40 w-auto hover-scale"
+            />
+            <img 
+              src="/lovable-uploads/90590fde-3895-4073-bd6a-2744ba8ceb02.png" 
+              alt="Technology Logo"
+              className="h-40 w-auto hover-scale"
+            />
           </div>
         </div>
       </section>
