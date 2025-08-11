@@ -140,11 +140,21 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
     if (!fromQuoteId || prefillDone) return;
     if (!dupProductName) return;
     if (!Array.isArray(products) || products.length === 0) return;
-    const match = (products as any[]).find((p: any) => getProductLabel(p) === dupProductName);
+
+    const norm = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').trim().toLowerCase();
+    const target = norm(String(dupProductName));
+
+    const exact = (products as any[]).find((p: any) => norm(getProductLabel(p)) === target);
+    const contains = exact ? null : (products as any[]).find((p: any) => norm(getProductLabel(p)).includes(target) || target.includes(norm(getProductLabel(p))));
+    const match = exact || contains;
+
     if (match) {
       setProductId(String((match as any).id));
+      toast({ title: "Producto seleccionado", description: getProductLabel(match) });
+    } else {
+      toast({ title: "Producto no encontrado", description: "Selecciona el producto original manualmente.", variant: "destructive" });
     }
-    // Marcar el prefill como completado para reactivar comportamientos normales
+
     setPrefillDone(true);
   }, [fromQuoteId, prefillDone, dupProductName, products]);
 
@@ -827,7 +837,7 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
                 quote_number: quoteNumber,
                 status: "draft",
                 customer_id: customerId,
-                product_name: selectedProduct ? getProductLabel(selectedProduct) : null,
+                product_name: selectedProduct ? getProductLabel(selectedProduct) : (dupProductName || null),
                 selections: promptValues,
                 results: outputs,
                 final_price: total
