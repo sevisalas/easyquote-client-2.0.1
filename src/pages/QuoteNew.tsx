@@ -875,63 +875,73 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
         </section>
       )}
 
-      <section className="flex items-center justify-end gap-3 pt-4">
-        <Button onClick={async () => {
-          try {
-            const parseNumber = (v: any) => {
-              if (typeof v === "number") return v;
-              const n = parseFloat(String(v ?? "").replace(/\./g, "").replace(",", "."));
-              return Number.isNaN(n) ? 0 : n;
-            };
-            const mainPrice = parseNumber((priceOutput as any)?.value);
-            const extrasTotal = Object.values(extraItemsData || {}).reduce((acc: number, it: any) => acc + parseNumber(it?.price), 0);
-            const total = mainPrice + extrasTotal;
+      {(() => {
+        const hasMainProduct = !!priceOutput?.value;
+        const hasExtraItems = Object.values(extraItemsData || {}).some((item: any) => item?.price);
+        const hasAnyItems = hasMainProduct || hasExtraItems;
+        
+        if (!hasAnyItems) return null;
+        
+        return (
+          <section className="flex items-center justify-end gap-3 pt-4">
+            <Button onClick={async () => {
+              try {
+                const parseNumber = (v: any) => {
+                  if (typeof v === "number") return v;
+                  const n = parseFloat(String(v ?? "").replace(/\./g, "").replace(",", "."));
+                  return Number.isNaN(n) ? 0 : n;
+                };
+                const mainPrice = parseNumber((priceOutput as any)?.value);
+                const extrasTotal = Object.values(extraItemsData || {}).reduce((acc: number, it: any) => acc + parseNumber(it?.price), 0);
+                const total = mainPrice + extrasTotal;
 
-            const quoteNumber = `P-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(Math.random()*9000+1000)}`;
+                const quoteNumber = `P-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(Math.random()*9000+1000)}`;
 
-            const { data: inserted, error } = await supabase
-              .from("quotes")
-              .insert([{ 
-                quote_number: quoteNumber,
-                status: "draft",
-                customer_id: customerId,
-                product_name: selectedProduct ? getProductLabel(selectedProduct) : (dupProductName || null),
-                description: description.trim() || null,
-                selections: promptValues,
-                results: outputs,
-                final_price: total
-              }])
-              .select("id")
-              .maybeSingle();
+                const { data: inserted, error } = await supabase
+                  .from("quotes")
+                  .insert([{ 
+                    quote_number: quoteNumber,
+                    status: "draft",
+                    customer_id: customerId,
+                    product_name: selectedProduct ? getProductLabel(selectedProduct) : (dupProductName || null),
+                    description: description.trim() || null,
+                    selections: promptValues,
+                    results: outputs,
+                    final_price: total
+                  }])
+                  .select("id")
+                  .maybeSingle();
 
-            if (error) throw error;
-            const quoteId = inserted?.id;
-            if (!quoteId) throw new Error("No se pudo crear el presupuesto.");
+                if (error) throw error;
+                const quoteId = inserted?.id;
+                if (!quoteId) throw new Error("No se pudo crear el presupuesto.");
 
-            const items = Object.entries(extraItemsData || {}).map(([k, data]: any, index) => ({
-              quote_id: quoteId,
-              name: `Artículo ${index + 1}`,
-              product_id: data?.productId ?? null,
-              prompts: data?.prompts ?? {},
-              outputs: data?.outputs ?? [],
-              multi: data?.multi ?? null,
-              total_price: parseNumber(data?.price) || null,
-              position: index
-            }));
+                const items = Object.entries(extraItemsData || {}).map(([k, data]: any, index) => ({
+                  quote_id: quoteId,
+                  name: `Artículo ${index + 1}`,
+                  product_id: data?.productId ?? null,
+                  prompts: data?.prompts ?? {},
+                  outputs: data?.outputs ?? [],
+                  multi: data?.multi ?? null,
+                  total_price: parseNumber(data?.price) || null,
+                  position: index
+                }));
 
-            if (items.length > 0) {
-              const { error: itemsErr } = await supabase.from("quote_items").insert(items);
-              if (itemsErr) throw itemsErr;
-            }
+                if (items.length > 0) {
+                  const { error: itemsErr } = await supabase.from("quote_items").insert(items);
+                  if (itemsErr) throw itemsErr;
+                }
 
-            toast({ title: "Presupuesto guardado", description: "Se ha guardado como borrador." });
-          } catch (e: any) {
-            toast({ title: "Error al guardar", description: e?.message || "Revisa los datos e inténtalo de nuevo.", variant: "destructive" });
-          }
-        }}>Guardar presupuesto</Button>
+                toast({ title: "Presupuesto guardado", description: "Se ha guardado como borrador." });
+              } catch (e: any) {
+                toast({ title: "Error al guardar", description: e?.message || "Revisa los datos e inténtalo de nuevo.", variant: "destructive" });
+              }
+            }}>Guardar presupuesto</Button>
 
-        <Button variant="secondary" onClick={() => setPdfOpen(true)}>Generar PDF</Button>
-      </section>
+            <Button variant="secondary" onClick={() => setPdfOpen(true)}>Generar PDF</Button>
+          </section>
+        );
+      })()}
 
       <QuotePdfTemplateDialog
         open={pdfOpen}
