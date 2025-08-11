@@ -57,10 +57,29 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Acceso rápido - Simplificado */}
+      {/* Acceso rápido - Presupuestos primero */}
       <section className="px-6 py-12">
         <div className="max-w-4xl mx-auto">
           <div className="grid md:grid-cols-2 gap-6">
+            <Card className="border-secondary/20 hover:border-secondary/50 transition-all duration-300 hover-scale">
+              <CardContent className="p-6 text-center">
+                <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FileText className="w-6 h-6 text-secondary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-3 text-foreground">Presupuestos</h3>
+                <p className="text-muted-foreground mb-4 text-sm">
+                  Crea y gestiona tus presupuestos
+                </p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/presupuestos')}
+                  className="w-full border-secondary text-secondary hover:bg-secondary/10"
+                >
+                  Ver Todos
+                </Button>
+              </CardContent>
+            </Card>
+
             <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale">
               <CardContent className="p-6 text-center">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -79,43 +98,23 @@ const Index = () => {
                 </Button>
               </CardContent>
             </Card>
-
-            <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale">
-              <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FileText className="w-6 h-6 text-secondary" />
-                </div>
-                <h3 className="text-lg font-semibold mb-3 text-foreground">Presupuestos</h3>
-                <p className="text-muted-foreground mb-4 text-sm">
-                  Crea y gestiona tus presupuestos
-                </p>
-                <Button 
-                  variant="outline" 
-                  onClick={() => navigate('/presupuestos')}
-                  className="w-full border-secondary text-secondary hover:bg-secondary/10"
-                >
-                  Ver Todos
-                </Button>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </section>
 
-      {/* Partners/Logos Section - Logos más grandes */}
+      {/* Logos Section - Centrados y más grandes */}
       <section className="px-6 py-12 bg-muted/20">
         <div className="max-w-4xl mx-auto text-center">
-          <h3 className="text-xl font-semibold mb-6 text-foreground">Potenciado por</h3>
-          <div className="flex flex-wrap justify-center items-center gap-12 opacity-70 hover:opacity-100 transition-opacity">
+          <div className="flex flex-wrap justify-center items-center gap-16 opacity-70 hover:opacity-100 transition-opacity">
             <img 
               src="/lovable-uploads/6b895d66-5fd4-4be7-b9b7-6b22e2b14c75.png" 
               alt="Partner Logo"
-              className="h-24 w-auto hover-scale"
+              className="h-32 w-auto hover-scale"
             />
             <img 
               src="/lovable-uploads/90590fde-3895-4073-bd6a-2744ba8ceb02.png" 
               alt="Technology Logo"
-              className="h-24 w-auto hover-scale"
+              className="h-32 w-auto hover-scale"
             />
           </div>
         </div>
