@@ -102,7 +102,7 @@ const QuotesList = () => {
                     <TableCell>{new Date(q.created_at).toLocaleDateString("es-ES")}</TableCell>
                     <TableCell>{q.quote_number}</TableCell>
                     <TableCell>{getCustomerName(q.customer_id)}</TableCell>
-                    <TableCell>{q.description || q.product_name || "—"}</TableCell>
+                    <TableCell>{q.description || "Sin descripción"}</TableCell>
                     <TableCell className="text-right">{fmtEUR(q.final_price)}</TableCell>
                     <TableCell>
                       <DropdownMenu>
