@@ -41,8 +41,8 @@ const Dashboard = () => {
   return (
     <div className="w-full space-y-8"> 
       <header className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard EasyQuote</h1>
-          <p className="text-muted-foreground">Gestiona tus clientes y presupuestos</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Panel de control | EasyQuote</h1>
+          <p className="text-muted-foreground">Gestiona tus presupuestos</p>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -79,7 +79,7 @@ const Dashboard = () => {
                   onClick={() => navigate('/clientes')} 
                   className="w-full sm:w-auto bg-primary hover:bg-primary/90"
                 >
-                  Ver clientes
+                  Ver Clientes
                 </Button>
                 <Button 
                   variant="outline" 
