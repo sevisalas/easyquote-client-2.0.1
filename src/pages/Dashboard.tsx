@@ -74,17 +74,17 @@ const Dashboard = () => {
               <p className="text-muted-foreground">
                 Administra tus clientes
               </p>
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col gap-2">
                 <Button 
                   onClick={() => navigate('/clientes')} 
-                  className="w-full sm:w-auto bg-primary hover:bg-primary/90"
+                  className="w-full bg-primary hover:bg-primary/90"
                 >
                   Ver Clientes
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => navigate('/clientes/nuevo')}
-                  className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10"
+                  className="w-full border-primary text-primary hover:bg-primary/10"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Nuevo Cliente
@@ -104,17 +104,17 @@ const Dashboard = () => {
               <p className="text-muted-foreground">
                 Crea y gestiona tus presupuestos
               </p>
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col gap-2">
                 <Button 
                   onClick={() => navigate('/presupuestos')}
-                  className="w-full sm:w-auto bg-primary hover:bg-primary/90"
+                  className="w-full bg-primary hover:bg-primary/90"
                 >
                   Ver Presupuestos
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => navigate('/presupuestos/nuevo')}
-                  className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10"
+                  className="w-full border-primary text-primary hover:bg-primary/10"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Nuevo Presupuesto
