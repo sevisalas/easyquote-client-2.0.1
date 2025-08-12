@@ -70,10 +70,10 @@ const Index = () => {
       <section className="px-6 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="grid md:grid-cols-2 gap-6">
-            <Card className="border-secondary/30 hover:border-secondary/60 transition-all duration-300 hover-scale bg-secondary/5">
+            <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale">
               <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FileText className="w-6 h-6 text-secondary" />
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FileText className="w-6 h-6 text-primary" />
                 </div>
                 <h3 className="text-lg font-semibold mb-3 text-foreground">Presupuestos</h3>
                 <p className="text-muted-foreground mb-4 text-sm">
@@ -81,7 +81,7 @@ const Index = () => {
                 </p>
                 <Button 
                   onClick={() => navigate('/presupuestos')}
-                  className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   Ver Todos
                 </Button>
