@@ -19,10 +19,10 @@ All colors MUST be HSL.
 
     /* Corporate colors: #c93277 and #442453 */
     --primary: 330 65% 48%; /* #c93277 */
-    --primary-foreground: 281 29% 33%;
+    --primary-foreground: 0 0% 98%;
 
     --secondary: 283 39% 23%; /* #442453 */
-    --secondary-foreground: 281 29% 33%;
+    --secondary-foreground: 0 0% 98%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
@@ -34,7 +34,7 @@ All colors MUST be HSL.
     --destructive-foreground: 210 40% 98%;
 
     --success: 142 71% 45%;
-    --success-foreground: 281 29% 33%;
+    --success-foreground: 0 0% 98%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
@@ -42,13 +42,13 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
 
-    --sidebar-background: 281 29% 33%;
+    --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;
 
     --sidebar-primary: 240 5.9% 10%;
 
-    --sidebar-primary-foreground: 281 29% 33%;
+    --sidebar-primary-foreground: 0 0% 98%;
 
     --sidebar-accent: 240 4.8% 95.9%;
 
