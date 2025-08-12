@@ -98,9 +98,8 @@ const Index = () => {
                   Gestiona tu base de datos de clientes
                 </p>
                 <Button 
-                  variant="outline" 
                   onClick={() => navigate('/clientes')}
-                  className="w-full border-primary text-primary hover:bg-primary/10"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   Administrar
                 </Button>
