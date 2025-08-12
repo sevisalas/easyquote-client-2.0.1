@@ -17,11 +17,11 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* Corporate colors: #c93277 and #442453 */
-    --primary: 330 65% 48%; /* #c93277 */
-    --primary-foreground: 0 0% 98%;
+    /* New color palette */
+    --primary: 348 97% 72%; /* #fd6f8a */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 281 39% 23%; /* #442453 */
+    --secondary: 223 52% 40%; /* #314f9c */
     --secondary-foreground: 0 0% 98%;
 
     --muted: 210 40% 96.1%;
@@ -30,10 +30,10 @@ All colors MUST be HSL.
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 327 65% 53%; /* #d7398a - datos negativos */
+    --destructive-foreground: 0 0% 98%;
 
-    --success: 142 71% 45%;
+    --success: 188 76% 45%; /* #1bb6c9 - datos positivos */
     --success-foreground: 0 0% 98%;
 
     --border: 214.3 31.8% 91.4%;
@@ -69,11 +69,11 @@ All colors MUST be HSL.
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 348 97% 72%; /* #fd6f8a */
+    --primary-foreground: 0 0% 0%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 223 52% 40%; /* #314f9c */
+    --secondary-foreground: 0 0% 98%;
 
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
@@ -81,9 +81,9 @@ All colors MUST be HSL.
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --success: 142 76% 36%;
+    --destructive: 327 65% 53%; /* #d7398a - datos negativos */
+    --destructive-foreground: 0 0% 98%;
+    --success: 188 76% 45%; /* #1bb6c9 - datos positivos */
     --success-foreground: 0 0% 0%;
 
     --border: 217.2 32.6% 17.5%;
