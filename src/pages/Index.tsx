@@ -24,7 +24,7 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="w-full min-h-screen bg-white dark:bg-gray-900">
+    <div className="w-full min-h-screen bg-secondary">
       {/* Hero Section - Simplificado para clientes */}
       <section className="relative px-6 py-12 text-center">
         <div className="max-w-4xl mx-auto">
