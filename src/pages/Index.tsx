@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Users } from "lucide-react";
+import { FileText, Plus, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -11,7 +11,7 @@ const Index = () => {
 
   useEffect(() => {
     document.title = "Inicio | EasyQuote";
-
+    
     // Obtener información del usuario
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -19,34 +19,54 @@ const Index = () => {
         setUserEmail(user.email);
       }
     };
-
+    
     getUser();
   }, []);
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-secondary/5 via-background to-secondary/10">
-      {/* Hero Section - Solo logo y saludo */}
+      {/* Hero Section - Simplificado para clientes */}
       <section className="relative px-6 py-12 text-center">
         <div className="max-w-4xl mx-auto">
-          {/* Logo principal */}
+          {/* Logo principal - Más pequeño */}
           <div className="mb-4 animate-fade-in">
-            <img
-              src="/lovable-uploads/3ff3c1d3-fd0e-4649-9146-6991b081234b.png"
+            <img 
+              src="/lovable-uploads/3ff3c1d3-fd0e-4649-9146-6991b081234b.png" 
               alt="EasyQuote Logo"
               className="h-16 w-auto mx-auto mb-3 hover-scale"
             />
           </div>
-
+          
           {/* Título simplificado */}
           <div className="mb-8 animate-fade-in">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">
-              Bienvenido {userEmail ? userEmail.split("@")[0] : "Usuario"}
+              Bienvenido {userEmail ? userEmail.split('@')[0] : 'Usuario'}
             </h1>
+          </div>
+
+          {/* Botones de acción principales */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8 animate-fade-in">
+            <Button 
+              size="lg"
+              onClick={() => navigate('/presupuestos/nuevo')}
+              className="bg-secondary hover:bg-secondary/90 text-secondary-foreground px-8 py-3 text-lg hover-scale"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Nuevo presupuesto
+            </Button>
+            <Button 
+              size="lg"
+              variant="outline"
+              onClick={() => navigate('/dashboard')}
+              className="border-secondary text-secondary hover:bg-secondary/10 px-8 py-3 text-lg hover-scale"
+            >
+              Ver panel de control
+            </Button>
           </div>
         </div>
       </section>
 
-      {/* Acceso rápido - Presupuestos primero */}
+      {/* Acceso rápido - Presupuestos primero - ARRIBA como estaba antes */}
       <section className="px-6 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="grid md:grid-cols-2 gap-6">
@@ -59,8 +79,8 @@ const Index = () => {
                 <p className="text-muted-foreground mb-4 text-sm">
                   Crea y gestiona tus presupuestos
                 </p>
-                <Button
-                  onClick={() => navigate("/presupuestos")}
+                <Button 
+                  onClick={() => navigate('/presupuestos')}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   Ver Todos
@@ -77,8 +97,8 @@ const Index = () => {
                 <p className="text-muted-foreground mb-4 text-sm">
                   Gestiona tu base de datos de clientes
                 </p>
-                <Button
-                  onClick={() => navigate("/clientes")}
+                <Button 
+                  onClick={() => navigate('/clientes')}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   Administrar
@@ -93,8 +113,8 @@ const Index = () => {
       <section className="px-6 py-8">
         <div className="max-w-4xl mx-auto text-center">
           <div className="flex justify-center items-center opacity-80 hover:opacity-100 transition-opacity">
-            <img
-              src="/lovable-uploads/90590fde-3895-4073-bd6a-2744ba8ceb02.png"
+            <img 
+              src="/lovable-uploads/90590fde-3895-4073-bd6a-2744ba8ceb02.png" 
               alt="Technology Logo"
               className="h-40 w-auto hover-scale"
             />
