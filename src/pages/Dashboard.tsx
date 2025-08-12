@@ -45,30 +45,19 @@ const Dashboard = () => {
           <p className="text-muted-foreground">Gestiona tus clientes y presupuestos</p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <Card className="border-primary/20 hover:border-primary/50 transition-colors md:col-span-2 lg:col-span-1">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle className="text-lg font-medium text-muted-foreground">
-                Resumen de Presupuestos
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <Card className="border-primary/20 hover:border-primary/50 transition-colors md:col-span-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Presupuestos
               </CardTitle>
-              <FileText className="h-6 w-6 text-primary" />
+              <FileText className="h-4 w-4 text-primary" />
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-3xl font-bold text-foreground">{totalQuotes}</div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Pendientes:</span>
-                  <span className="text-sm font-semibold text-orange-600">{pendingCount}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Aprobados:</span>
-                  <span className="text-sm font-semibold text-green-600">{approvedCount}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Rechazados:</span>
-                  <span className="text-sm font-semibold text-red-600">{rejectedCount}</span>
-                </div>
-              </div>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">{totalQuotes}</div>
+              <p className="text-xs text-muted-foreground">
+                {pendingCount} pendientes, {approvedCount} aprobados, {rejectedCount} rechazados
+              </p>
             </CardContent>
           </Card>
         </div>
