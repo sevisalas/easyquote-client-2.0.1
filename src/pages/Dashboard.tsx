@@ -67,12 +67,12 @@ const Dashboard = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
-                Gestión de Clientes
+                Clientes
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-muted-foreground">
-                Administra tu base de datos de clientes
+                Administra tus clientes
               </p>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button 
@@ -102,7 +102,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-muted-foreground">
-                Crea y gestiona presupuestos con EasyQuote API
+                Crea y gestiona tus presupuestos
               </p>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button 
