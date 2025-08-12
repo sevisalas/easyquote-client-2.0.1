@@ -10,24 +10,28 @@ const Dashboard = () => {
   const [totalQuotes, setTotalQuotes] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
   const [approvedCount, setApprovedCount] = useState(0);
+  const [rejectedCount, setRejectedCount] = useState(0);
 
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       const uid = user?.id || "";
       try {
-        const [{ count: total }, { count: pending }, { count: approved }] = await Promise.all([
+        const [{ count: total }, { count: pending }, { count: approved }, { count: rejected }] = await Promise.all([
           supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('user_id', uid),
-          supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('user_id', uid).eq('status', 'pendiente'),
-          supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('user_id', uid).eq('status', 'aprobado'),
+          supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('user_id', uid).in('status', ['draft', 'sent']),
+          supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('user_id', uid).eq('status', 'approved'),
+          supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('user_id', uid).eq('status', 'rejected'),
         ]);
         setTotalQuotes(total ?? 0);
         setPendingCount(pending ?? 0);
         setApprovedCount(approved ?? 0);
+        setRejectedCount(rejected ?? 0);
       } catch (_e) {
         setTotalQuotes(0);
         setPendingCount(0);
         setApprovedCount(0);
+        setRejectedCount(0);
       }
     };
     load();
@@ -52,7 +56,7 @@ const Dashboard = () => {
             <CardContent>
               <div className="text-2xl font-bold text-foreground">{totalQuotes}</div>
               <p className="text-xs text-muted-foreground">
-                {pendingCount} pendientes, {approvedCount} aprobados
+                {pendingCount} pendientes, {approvedCount} aprobados, {rejectedCount} rechazados
               </p>
             </CardContent>
           </Card>
