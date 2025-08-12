@@ -29,7 +29,7 @@ interface Item {
 
 const items: Item[] = [
   { title: "Inicio", url: "/", icon: Home },
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Panel de control", url: "/dashboard", icon: LayoutDashboard },
 ];
 
 export function AppSidebar() {
