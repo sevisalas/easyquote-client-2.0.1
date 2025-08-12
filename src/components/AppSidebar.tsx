@@ -1,6 +1,5 @@
 import { Home, LayoutDashboard, Users, PlusCircle, LogOut, PanelLeft, FileText, Palette } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -21,7 +20,6 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface Item {
   title: string;
@@ -40,21 +38,6 @@ export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const navigate = useNavigate();
-  
-  // State for collapsible groups
-  const [openGroups, setOpenGroups] = useState({
-    navigation: true,
-    clients: false,
-    quotes: false,
-    settings: false
-  });
-
-  const toggleGroup = (groupName: keyof typeof openGroups) => {
-    setOpenGroups(prev => ({
-      ...prev,
-      [groupName]: !prev[groupName]
-    }));
-  };
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -85,46 +68,35 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        {/* Navegación Principal */}
-        <Collapsible open={openGroups.navigation} onOpenChange={() => toggleGroup('navigation')}>
-          <SidebarGroup>
-            <CollapsibleTrigger asChild>
-              <SidebarGroupLabel className="cursor-pointer hover:bg-sidebar-accent/50 rounded px-2 py-1">
-                Navegación Principal
-              </SidebarGroupLabel>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {items.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild isActive={currentPath === item.url}>
-                        <NavLink to={item.url} end className={getNavCls}>
-                          <item.icon className="mr-2 h-4 w-4" />
-                          {!isCollapsed && <span>{item.title}</span>}
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </CollapsibleContent>
-          </SidebarGroup>
-        </Collapsible>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navegación</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {items.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={currentPath === item.url}>
+                    <NavLink to={item.url} end className={getNavCls}>
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {!isCollapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
 
-        {/* Clientes */}
-        <Collapsible open={openGroups.clients} onOpenChange={() => toggleGroup('clients')}>
-          <SidebarGroup>
-            <CollapsibleTrigger asChild>
-              <SidebarGroupLabel className="cursor-pointer hover:bg-sidebar-accent/50 rounded px-2 py-1">
-                Clientes
-              </SidebarGroupLabel>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
+              {/* Clientes */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={currentPath.startsWith("/clientes")}
+                >
+                  <NavLink to="/clientes" end className={getNavCls}>
+                    <Users className="mr-2 h-4 w-4" />
+                    {!isCollapsed && <span>Clientes</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
                       asChild
                       isActive={currentPath === "/clientes"}
                     >
@@ -132,38 +104,36 @@ export function AppSidebar() {
                         <Users className="mr-2 h-4 w-4" />
                         {!isCollapsed && <span>Listado</span>}
                       </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
                       asChild
                       isActive={currentPath === "/clientes/nuevo"}
                     >
                       <NavLink to="/clientes/nuevo" className={getNavCls}>
                         <PlusCircle className="mr-2 h-4 w-4" />
-                        {!isCollapsed && <span>Nuevo Cliente</span>}
+                        {!isCollapsed && <span>Nuevo</span>}
                       </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </CollapsibleContent>
-          </SidebarGroup>
-        </Collapsible>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
 
-        {/* Presupuestos */}
-        <Collapsible open={openGroups.quotes} onOpenChange={() => toggleGroup('quotes')}>
-          <SidebarGroup>
-            <CollapsibleTrigger asChild>
-              <SidebarGroupLabel className="cursor-pointer hover:bg-sidebar-accent/50 rounded px-2 py-1">
-                Presupuestos
-              </SidebarGroupLabel>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
+              {/* Presupuestos */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={currentPath.startsWith("/presupuestos")}
+                >
+                  <NavLink to="/presupuestos" end className={getNavCls}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    {!isCollapsed && <span>Presupuestos</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
                       asChild
                       isActive={currentPath === "/presupuestos"}
                     >
@@ -171,49 +141,44 @@ export function AppSidebar() {
                         <FileText className="mr-2 h-4 w-4" />
                         {!isCollapsed && <span>Listado</span>}
                       </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
                       asChild
                       isActive={currentPath === "/presupuestos/nuevo"}
                     >
                       <NavLink to="/presupuestos/nuevo" className={getNavCls}>
                         <PlusCircle className="mr-2 h-4 w-4" />
-                        {!isCollapsed && <span>Nuevo Presupuesto</span>}
+                        {!isCollapsed && <span>Nuevo</span>}
                       </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </CollapsibleContent>
-          </SidebarGroup>
-        </Collapsible>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
 
-        {/* Configuración */}
-        <Collapsible open={openGroups.settings} onOpenChange={() => toggleGroup('settings')}>
-          <SidebarGroup>
-            <CollapsibleTrigger asChild>
-              <SidebarGroupLabel className="cursor-pointer hover:bg-sidebar-accent/50 rounded px-2 py-1">
-                Configuración
-              </SidebarGroupLabel>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={currentPath === "/configuracion/plantilla-pdf"}>
+              {/* Configuración */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={currentPath.startsWith("/configuracion")}>
+                  <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
+                    <Palette className="mr-2 h-4 w-4" />
+                    {!isCollapsed && <span>Configuración</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/plantilla-pdf"}>
                       <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
                         <FileText className="mr-2 h-4 w-4" />
                         {!isCollapsed && <span>Plantilla PDF</span>}
                       </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </CollapsibleContent>
-          </SidebarGroup>
-        </Collapsible>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
