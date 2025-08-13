@@ -183,7 +183,7 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip={isCollapsed ? "Expandir" : "Contraer"}>
+            <SidebarMenuButton asChild tooltip={isCollapsed ? "Expandir" : "Colapsar"}>
               <button onClick={toggleSidebar} className="w-full flex items-center">
                 <PanelLeft className="mr-2 h-4 w-4" />
                 {!isCollapsed && <span>{isCollapsed ? "Expandir" : "Colapsar"}</span>}

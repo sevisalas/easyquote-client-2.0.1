@@ -74,7 +74,7 @@ const Auth = () => {
         <CardHeader className="flex flex-col items-center">
   {/* Imagen en la cabecera */}
   <img
-    src="https://id-preview--ad98f81e-87a7-4a3e-8089-681d7fc4b657.lovable.app/lovable-uploads/90590fde-3895-4073-bd6a-2744ba8ceb02.png"
+    src="https://id-preview--ad98f81e-87a7-4a3e-8089-681d7fc4b657.lovable.app/lovable-uploads/3ff3c1d3-fd0e-4649-9146-6991b081234b.png"
     alt="Logo"
     className="h-20 w-auto mb-4"
   />
