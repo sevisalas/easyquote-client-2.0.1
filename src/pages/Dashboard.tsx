@@ -19,7 +19,7 @@ const Dashboard = () => {
       try {
         const [{ count: total }, { count: pending }, { count: approved }, { count: rejected }] = await Promise.all([
           supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('user_id', uid),
-          supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('user_id', uid).in('status', ['draft', 'pending']),
+          supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('user_id', uid).in('status', ['draft', 'sent']),
           supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('user_id', uid).eq('status', 'approved'),
           supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('user_id', uid).eq('status', 'rejected'),
         ]);
