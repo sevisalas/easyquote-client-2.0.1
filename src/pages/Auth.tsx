@@ -71,9 +71,19 @@ const Auth = () => {
   return (
     <main className="min-h-screen flex items-center justify-center p-6">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>{isLogin ? "Inicia sesión" : "Crea tu cuenta"}</CardTitle>
-        </CardHeader>
+        <CardHeader className="flex flex-col items-center">
+  {/* Imagen en la cabecera */}
+  <img
+    src="https://id-preview--ad98f81e-87a7-4a3e-8089-681d7fc4b657.lovable.app/lovable-uploads/90590fde-3895-4073-bd6a-2744ba8ceb02.png"
+    alt="Logo"
+    className="h-20 w-auto mb-4"
+  />
+  
+  <CardTitle>
+    {isLogin ? "Inicia sesión" : "Crea tu cuenta"}
+  </CardTitle>
+</CardHeader>
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
