@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.4"
@@ -41,6 +41,80 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      organization_members: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          role: Database["public"]["Enums"]["organization_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          role?: Database["public"]["Enums"]["organization_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          role?: Database["public"]["Enums"]["organization_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          api_user_id: string
+          client_user_extra: number
+          client_user_limit: number
+          created_at: string
+          excel_extra: number
+          excel_limit: number
+          id: string
+          name: string
+          subscription_plan: Database["public"]["Enums"]["subscription_plan"]
+          updated_at: string
+        }
+        Insert: {
+          api_user_id: string
+          client_user_extra?: number
+          client_user_limit?: number
+          created_at?: string
+          excel_extra?: number
+          excel_limit?: number
+          id?: string
+          name: string
+          subscription_plan?: Database["public"]["Enums"]["subscription_plan"]
+          updated_at?: string
+        }
+        Update: {
+          api_user_id?: string
+          client_user_extra?: number
+          client_user_limit?: number
+          created_at?: string
+          excel_extra?: number
+          excel_limit?: number
+          id?: string
+          name?: string
+          subscription_plan?: Database["public"]["Enums"]["subscription_plan"]
+          updated_at?: string
         }
         Relationships: []
       }
@@ -161,10 +235,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_plan_limits: {
+        Args: { plan: Database["public"]["Enums"]["subscription_plan"] }
+        Returns: {
+          client_user_limit: number
+          excel_limit: number
+        }[]
+      }
     }
     Enums: {
-      [_ in never]: never
+      organization_role: "superadmin" | "admin" | "user"
+      subscription_plan:
+        | "api_base"
+        | "api_pro"
+        | "client_base"
+        | "client_pro"
+        | "custom"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -291,6 +377,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      organization_role: ["superadmin", "admin", "user"],
+      subscription_plan: [
+        "api_base",
+        "api_pro",
+        "client_base",
+        "client_pro",
+        "custom",
+      ],
+    },
   },
 } as const
