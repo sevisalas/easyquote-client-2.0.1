@@ -75,7 +75,6 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         .eq('api_user_id', user.id)
         .single();
 
-      console.log('Organization data for user:', user.email, orgData);
       setOrganization(orgData);
 
       // Get user's membership (as client user)
@@ -88,7 +87,6 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         .eq('user_id', user.id)
         .single();
 
-      console.log('Membership data for user:', user.email, memberData);
       setMembership(memberData);
 
     } catch (error) {
@@ -127,13 +125,6 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   };
 
   const isOrgAdmin = organization !== null || membership?.role === 'admin';
-  
-  console.log('isOrgAdmin calculation:', {
-    hasOrganization: organization !== null,
-    membershipRole: membership?.role,
-    isOrgAdmin,
-    isSuperAdmin
-  });
 
   return (
     <SubscriptionContext.Provider
