@@ -314,7 +314,7 @@ const GestionUsuarios = () => {
               </div>
               
               <div>
-                <Label htmlFor="emailApi">Email del Usuario API</Label>
+                <Label htmlFor="emailApi">Email del usuario API</Label>
                 <Input
                   id="emailApi"
                   type="email"
@@ -325,7 +325,7 @@ const GestionUsuarios = () => {
               </div>
               
               <div>
-                <Label htmlFor="planSuscripcion">Plan de Suscripción</Label>
+                <Label htmlFor="planSuscripcion">Plan de suscripción</Label>
                 <Select value={planNuevaOrg} onValueChange={(value: any) => setPlanNuevaOrg(value)}>
                   <SelectTrigger>
                     <SelectValue />
@@ -367,8 +367,8 @@ const GestionUsuarios = () => {
                   <TableHead>Suscriptor</TableHead>
                   <TableHead>Plan</TableHead>
                   <TableHead>Usuario API</TableHead>
-                  <TableHead>Límite Excel</TableHead>
-                  <TableHead>Límite Usuarios</TableHead>
+                  <TableHead>Límite excel</TableHead>
+                  <TableHead>Límite usuarios</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -395,7 +395,7 @@ const GestionUsuarios = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5" />
-              Invitar Nuevo Usuario
+              Invitar nuevo usuario
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
