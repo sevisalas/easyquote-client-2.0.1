@@ -16,6 +16,8 @@ import QuotesList from "./pages/QuotesList";
 import SettingsPdfTemplate from "./pages/SettingsPdfTemplate";
 import QuoteDetail from "./pages/QuoteDetail";
 import GestionUsuarios from "./pages/UserManagement";
+import EditarSuscriptor from "./pages/SubscriberEdit";
+import GestionPlanes from "./pages/PlansManagement";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 const queryClient = new QueryClient();
 
@@ -124,6 +126,26 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <GestionUsuarios />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/suscriptores/:id/editar"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <EditarSuscriptor />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/planes"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <GestionPlanes />
                 </AppLayout>
               </ProtectedRoute>
             }

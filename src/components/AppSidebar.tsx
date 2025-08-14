@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, PanelLeft, FileText, Palette, UserCog } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, PanelLeft, FileText, Palette, UserCog, Settings } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -191,6 +191,18 @@ export function AppSidebar() {
                     <NavLink to="/usuarios" end className={getNavCls}>
                       <UserCog className="mr-2 h-4 w-4" />
                       {!isCollapsed && <span>Gestión de usuarios</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
+              {/* Solo mostrar si es superadmin */}
+              {isSuperAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={currentPath === "/planes"}>
+                    <NavLink to="/planes" end className={getNavCls}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      {!isCollapsed && <span>Gestión de planes</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

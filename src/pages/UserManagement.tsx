@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Users, Building } from "lucide-react";
+import { Plus, Trash2, Users, Building, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
 
 interface Usuario {
   id: string;
@@ -47,6 +48,7 @@ const GestionUsuarios = () => {
   const [emailApiUser, setEmailApiUser] = useState("");
   const { toast } = useToast();
   const { isSuperAdmin, isOrgAdmin, organization } = useSubscription();
+  const navigate = useNavigate();
 
   console.log('UserManagement - isSuperAdmin:', isSuperAdmin, 'isOrgAdmin:', isOrgAdmin, 'organization:', organization);
 
@@ -369,6 +371,7 @@ const GestionUsuarios = () => {
                   <TableHead>Usuario API</TableHead>
                   <TableHead>Límite excel</TableHead>
                   <TableHead>Límite usuarios</TableHead>
+                  <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -381,6 +384,15 @@ const GestionUsuarios = () => {
                     <TableCell>{org.api_user_email || 'N/A'}</TableCell>
                     <TableCell>{org.excel_limit + org.excel_extra}</TableCell>
                     <TableCell>{org.client_user_limit + org.client_user_extra}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/suscriptores/${org.id}/editar`)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
