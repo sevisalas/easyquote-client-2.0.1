@@ -124,7 +124,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
     return org.client_user_limit + org.client_user_extra;
   };
 
-  const isOrgAdmin = organization !== null || membership?.role === 'admin';
+  const isOrgAdmin = organization !== null || membership?.role === 'admin' || isSuperAdmin;
 
   return (
     <SubscriptionContext.Provider
