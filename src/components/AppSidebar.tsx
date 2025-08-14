@@ -74,7 +74,8 @@ export function AppSidebar() {
           <SidebarGroupLabel>Navegación</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {/* Solo mostrar Inicio y Dashboard si NO es superadmin */}
+              {!isSuperAdmin && items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={currentPath === item.url}>
                     <NavLink to={item.url} end className={getNavCls}>
