@@ -33,7 +33,7 @@ const Index = () => {
               className="h-16 w-auto mx-auto md:mx-0 mb-4 hover-scale"
             />
             <h1 className="text-4xl md:text-5xl font-bold text-foreground bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent mb-6">
-              Bienvenido {userEmail ? userEmail.split('@')[0] : 'Usuario'}
+              Hola, {userEmail ? userEmail.split('@')[0] : 'Usuario'}
             </h1>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
