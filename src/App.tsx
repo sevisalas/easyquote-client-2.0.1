@@ -15,7 +15,7 @@ import QuoteNew from "./pages/QuoteNew";
 import QuotesList from "./pages/QuotesList";
 import SettingsPdfTemplate from "./pages/SettingsPdfTemplate";
 import QuoteDetail from "./pages/QuoteDetail";
-import UserManagement from "./pages/UserManagement";
+import GestionUsuarios from "./pages/UserManagement";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 const queryClient = new QueryClient();
 
@@ -123,7 +123,7 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <AppLayout>
-                  <UserManagement />
+                  <GestionUsuarios />
                 </AppLayout>
               </ProtectedRoute>
             }

@@ -65,7 +65,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         return;
       }
 
-      // Check if superadmin
+      // Verificar si es superadmin
       setIsSuperAdmin(user.email === 'test1');
 
       // Get user's organization (as API user)

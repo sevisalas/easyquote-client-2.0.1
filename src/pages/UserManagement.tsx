@@ -12,18 +12,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-interface User {
+interface Usuario {
   id: string;
   email: string;
-  organization?: {
+  organizacion?: {
     id: string;
-    name: string;
-    subscription_plan: string;
+    nombre: string;
+    plan_suscripcion: string;
   };
-  role?: string;
+  rol?: string;
 }
 
-interface Organization {
+interface Organizacion {
   id: string;
   name: string;
   subscription_plan: string;
@@ -35,32 +35,32 @@ interface Organization {
   api_user_email?: string;
 }
 
-const UserManagement = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [newUserEmail, setNewUserEmail] = useState("");
-  const [newUserRole, setNewUserRole] = useState<"admin" | "user">("user");
-  const [selectedOrgId, setSelectedOrgId] = useState("");
+const GestionUsuarios = () => {
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [organizaciones, setOrganizaciones] = useState<Organizacion[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [emailNuevoUsuario, setEmailNuevoUsuario] = useState("");
+  const [rolNuevoUsuario, setRolNuevoUsuario] = useState<"admin" | "user">("user");
+  const [orgSeleccionadaId, setOrgSeleccionadaId] = useState("");
   const { toast } = useToast();
   const { isSuperAdmin, isOrgAdmin, organization } = useSubscription();
 
   useEffect(() => {
-    fetchData();
+    obtenerDatos();
   }, []);
 
-  const fetchData = async () => {
+  const obtenerDatos = async () => {
     try {
       if (isSuperAdmin) {
-        // Fetch all organizations 
-        const { data: orgsData } = await supabase
+        // Obtener todas las organizaciones 
+        const { data: datosOrgs } = await supabase
           .from('organizations')
           .select('*');
         
-        setOrganizations(orgsData || []);
+        setOrganizaciones(datosOrgs || []);
 
-        // Fetch all users with their memberships
-        const { data: membersData } = await supabase
+        // Obtener todos los usuarios con sus membresías
+        const { data: datosMiembros } = await supabase
           .from('organization_members')
           .select(`
             user_id,
@@ -68,21 +68,25 @@ const UserManagement = () => {
             organization:organizations(*)
           `);
 
-        const usersMap = new Map();
-        membersData?.forEach(member => {
-          if (!usersMap.has(member.user_id)) {
-            usersMap.set(member.user_id, {
-              id: member.user_id,
-              organization: member.organization,
-              role: member.role
+        const mapaUsuarios = new Map();
+        datosMiembros?.forEach(miembro => {
+          if (!mapaUsuarios.has(miembro.user_id)) {
+            mapaUsuarios.set(miembro.user_id, {
+              id: miembro.user_id,
+              organizacion: {
+                id: miembro.organization.id,
+                nombre: miembro.organization.name,
+                plan_suscripcion: miembro.organization.subscription_plan
+              },
+              rol: miembro.role
             });
           }
         });
 
-        setUsers(Array.from(usersMap.values()));
+        setUsuarios(Array.from(mapaUsuarios.values()));
       } else if (isOrgAdmin && organization) {
-        // Fetch only users from admin's organization
-        const { data: membersData } = await supabase
+        // Obtener solo usuarios de la organización del admin
+        const { data: datosMiembros } = await supabase
           .from('organization_members')
           .select(`
             user_id,
@@ -91,104 +95,108 @@ const UserManagement = () => {
           `)
           .eq('organization_id', organization.id);
 
-        const usersWithEmails = await Promise.all(
-          (membersData || []).map(async (member) => {
-            const { data: userData } = await supabase.auth.admin.getUserById(member.user_id);
+        const usuariosConEmails = await Promise.all(
+          (datosMiembros || []).map(async (miembro) => {
+            const { data: datosUsuario } = await supabase.auth.admin.getUserById(miembro.user_id);
             return {
-              id: member.user_id,
-              email: userData.user?.email || 'N/A',
-              organization: member.organization,
-              role: member.role
+              id: miembro.user_id,
+              email: datosUsuario.user?.email || 'N/A',
+              organizacion: {
+                id: miembro.organization.id,
+                nombre: miembro.organization.name,
+                plan_suscripcion: miembro.organization.subscription_plan
+              },
+              rol: miembro.role
             };
           })
         );
 
-        setUsers(usersWithEmails);
+        setUsuarios(usuariosConEmails);
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error al obtener datos:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch user data",
+        description: "No se pudieron obtener los datos de usuarios",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setCargando(false);
     }
   };
 
-  const inviteUser = async () => {
-    if (!newUserEmail || !selectedOrgId) {
+  const invitarUsuario = async () => {
+    if (!emailNuevoUsuario || !orgSeleccionadaId) {
       toast({
         title: "Error",
-        description: "Please fill in all fields",
+        description: "Por favor complete todos los campos",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      // Sign up the user (they'll need to confirm email)
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newUserEmail,
-        password: Math.random().toString(36).slice(-8), // Temporary password
+      // Registrar el usuario (necesitará confirmar email)
+      const { data: datosAuth, error: errorAuth } = await supabase.auth.signUp({
+        email: emailNuevoUsuario,
+        password: Math.random().toString(36).slice(-8), // Contraseña temporal
       });
 
-      if (authError) throw authError;
+      if (errorAuth) throw errorAuth;
 
-      if (authData.user) {
-        // Add user to organization
-        const { error: memberError } = await supabase
+      if (datosAuth.user) {
+        // Agregar usuario a la organización
+        const { error: errorMiembro } = await supabase
           .from('organization_members')
           .insert({
-            organization_id: selectedOrgId,
-            user_id: authData.user.id,
-            role: newUserRole,
+            organization_id: orgSeleccionadaId,
+            user_id: datosAuth.user.id,
+            role: rolNuevoUsuario,
           });
 
-        if (memberError) throw memberError;
+        if (errorMiembro) throw errorMiembro;
 
         toast({
-          title: "Success",
-          description: `User invited successfully. They will receive a confirmation email.`,
+          title: "Éxito",
+          description: `Usuario invitado exitosamente. Recibirá un email de confirmación.`,
         });
 
-        setNewUserEmail("");
-        setNewUserRole("user");
-        setSelectedOrgId("");
-        fetchData();
+        setEmailNuevoUsuario("");
+        setRolNuevoUsuario("user");
+        setOrgSeleccionadaId("");
+        obtenerDatos();
       }
     } catch (error: any) {
-      console.error('Error inviting user:', error);
+      console.error('Error al invitar usuario:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to invite user",
+        description: error.message || "No se pudo invitar al usuario",
         variant: "destructive",
       });
     }
   };
 
-  const removeUser = async (userId: string, orgId: string) => {
+  const eliminarUsuario = async (usuarioId: string, orgId: string) => {
     try {
       const { error } = await supabase
         .from('organization_members')
         .delete()
-        .eq('user_id', userId)
+        .eq('user_id', usuarioId)
         .eq('organization_id', orgId);
 
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "User removed successfully",
+        title: "Éxito",
+        description: "Usuario eliminado exitosamente",
       });
 
-      fetchData();
+      obtenerDatos();
     } catch (error: any) {
-      console.error('Error removing user:', error);
+      console.error('Error al eliminar usuario:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to remove user",
+        description: error.message || "No se pudo eliminar el usuario",
         variant: "destructive",
       });
     }
@@ -199,9 +207,9 @@ const UserManagement = () => {
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-96">
           <CardHeader>
-            <CardTitle>Access Denied</CardTitle>
+            <CardTitle>Acceso Denegado</CardTitle>
             <CardDescription>
-              You don't have permission to access user management.
+              No tienes permisos para acceder a la gestión de usuarios.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -209,10 +217,10 @@ const UserManagement = () => {
     );
   }
 
-  if (loading) {
+  if (cargando) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p>Loading...</p>
+        <p>Cargando...</p>
       </div>
     );
   }
@@ -221,35 +229,35 @@ const UserManagement = () => {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">User Management</h1>
+          <h1 className="text-3xl font-bold">Gestión de Usuarios</h1>
           <p className="text-muted-foreground">
-            {isSuperAdmin ? "Manage all users and organizations" : "Manage your organization's users"}
+            {isSuperAdmin ? "Gestionar todos los usuarios y organizaciones" : "Gestionar los usuarios de tu organización"}
           </p>
         </div>
       </div>
 
-      {/* Organizations Overview (SuperAdmin only) */}
+      {/* Vista de Organizaciones (Solo SuperAdmin) */}
       {isSuperAdmin && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building className="h-5 w-5" />
-              Organizations
+              Organizaciones
             </CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Organization</TableHead>
+                  <TableHead>Organización</TableHead>
                   <TableHead>Plan</TableHead>
-                  <TableHead>API User</TableHead>
-                  <TableHead>Excel Limit</TableHead>
-                  <TableHead>User Limit</TableHead>
+                  <TableHead>Usuario API</TableHead>
+                  <TableHead>Límite Excel</TableHead>
+                  <TableHead>Límite Usuarios</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {organizations.map((org) => (
+                {organizaciones.map((org) => (
                   <TableRow key={org.id}>
                     <TableCell className="font-medium">{org.name}</TableCell>
                     <TableCell>
@@ -266,13 +274,13 @@ const UserManagement = () => {
         </Card>
       )}
 
-      {/* Invite User */}
+      {/* Invitar Usuario */}
       {(isSuperAdmin || isOrgAdmin) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5" />
-              Invite New User
+              Invitar Nuevo Usuario
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -282,21 +290,21 @@ const UserManagement = () => {
                 <Input
                   id="email"
                   type="email"
-                  value={newUserEmail}
-                  onChange={(e) => setNewUserEmail(e.target.value)}
-                  placeholder="user@example.com"
+                  value={emailNuevoUsuario}
+                  onChange={(e) => setEmailNuevoUsuario(e.target.value)}
+                  placeholder="usuario@ejemplo.com"
                 />
               </div>
               
               {isSuperAdmin && (
                 <div>
-                  <Label htmlFor="organization">Organization</Label>
-                  <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
+                  <Label htmlFor="organization">Organización</Label>
+                  <Select value={orgSeleccionadaId} onValueChange={setOrgSeleccionadaId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select organization" />
+                      <SelectValue placeholder="Seleccionar organización" />
                     </SelectTrigger>
                     <SelectContent>
-                      {organizations.map((org) => (
+                      {organizaciones.map((org) => (
                         <SelectItem key={org.id} value={org.id}>
                           {org.name}
                         </SelectItem>
@@ -307,35 +315,35 @@ const UserManagement = () => {
               )}
               
               <div>
-                <Label htmlFor="role">Role</Label>
-                <Select value={newUserRole} onValueChange={(value: "admin" | "user") => setNewUserRole(value)}>
+                <Label htmlFor="role">Rol</Label>
+                <Select value={rolNuevoUsuario} onValueChange={(value: "admin" | "user") => setRolNuevoUsuario(value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="user">Usuario</SelectItem>
+                    <SelectItem value="admin">Administrador</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             
             <Button 
-              onClick={inviteUser}
-              disabled={!newUserEmail || (isSuperAdmin && !selectedOrgId)}
+              onClick={invitarUsuario}
+              disabled={!emailNuevoUsuario || (isSuperAdmin && !orgSeleccionadaId)}
             >
-              Invite User
+              Invitar Usuario
             </Button>
           </CardContent>
         </Card>
       )}
 
-      {/* Users List */}
+      {/* Lista de Usuarios */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Users
+            Usuarios
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -343,23 +351,23 @@ const UserManagement = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Email</TableHead>
-                <TableHead>Organization</TableHead>
+                <TableHead>Organización</TableHead>
                 <TableHead>Plan</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>Rol</TableHead>
+                <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.organization?.name || 'N/A'}</TableCell>
+              {usuarios.map((usuario) => (
+                <TableRow key={usuario.id}>
+                  <TableCell>{usuario.email}</TableCell>
+                  <TableCell>{usuario.organizacion?.nombre || 'N/A'}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">{user.organization?.subscription_plan || 'N/A'}</Badge>
+                    <Badge variant="outline">{usuario.organizacion?.plan_suscripcion || 'N/A'}</Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                      {user.role}
+                    <Badge variant={usuario.rol === 'admin' ? 'default' : 'secondary'}>
+                      {usuario.rol === 'admin' ? 'Administrador' : 'Usuario'}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -371,17 +379,17 @@ const UserManagement = () => {
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Remove User</DialogTitle>
+                          <DialogTitle>Eliminar Usuario</DialogTitle>
                           <DialogDescription>
-                            Are you sure you want to remove {user.email} from the organization?
+                            ¿Estás seguro de que quieres eliminar a {usuario.email} de la organización?
                           </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>
                           <Button
                             variant="destructive"
-                            onClick={() => removeUser(user.id, user.organization?.id || '')}
+                            onClick={() => eliminarUsuario(usuario.id, usuario.organizacion?.id || '')}
                           >
-                            Remove
+                            Eliminar
                           </Button>
                         </DialogFooter>
                       </DialogContent>
@@ -397,4 +405,4 @@ const UserManagement = () => {
   );
 };
 
-export default UserManagement;
+export default GestionUsuarios;
