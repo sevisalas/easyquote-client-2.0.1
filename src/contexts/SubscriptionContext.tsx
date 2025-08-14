@@ -71,28 +71,34 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       console.log('Is superadmin?', isSuperAdminUser, 'Email:', user.email);
       setIsSuperAdmin(isSuperAdminUser);
 
-      // Get user's organization (as API user)
-      const { data: orgData, error: orgError } = await supabase
-        .from('organizations')
-        .select('*')
-        .eq('api_user_id', user.id)
-        .single();
+      // Get user's organization (as API user) - solo si no es superadmin
+      if (!isSuperAdminUser) {
+        const { data: orgData, error: orgError } = await supabase
+          .from('organizations')
+          .select('*')
+          .eq('api_user_id', user.id)
+          .maybeSingle();
 
-      console.log('Organization data:', orgData, 'Error:', orgError);
-      setOrganization(orgData);
+        console.log('Organization data:', orgData, 'Error:', orgError);
+        setOrganization(orgData);
 
-      // Get user's membership (as client user)
-      const { data: memberData, error: memberError } = await supabase
-        .from('organization_members')
-        .select(`
-          *,
-          organization:organizations(*)
-        `)
-        .eq('user_id', user.id)
-        .single();
+        // Get user's membership (as client user)
+        const { data: memberData, error: memberError } = await supabase
+          .from('organization_members')
+          .select(`
+            *,
+            organization:organizations(*)
+          `)
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      console.log('Member data:', memberData, 'Error:', memberError);
-      setMembership(memberData);
+        console.log('Member data:', memberData, 'Error:', memberError);
+        setMembership(memberData);
+      } else {
+        // Los superadmins no necesitan organization ni membership propios
+        setOrganization(null);
+        setMembership(null);
+      }
 
     } catch (error) {
       console.error('Error fetching subscription data:', error);
