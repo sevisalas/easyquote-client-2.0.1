@@ -285,7 +285,7 @@ const GestionUsuarios = () => {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Gestión de Usuarios</h1>
+          <h1 className="text-3xl font-bold">Gestión de usuarios</h1>
           <p className="text-muted-foreground">
             {isSuperAdmin ? "Gestionar todos los usuarios y suscriptores" : "Gestionar los usuarios de tu suscriptor"}
           </p>
@@ -357,7 +357,7 @@ const GestionUsuarios = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building className="h-5 w-5" />
-              Organizaciones
+              Suscriptores
             </CardTitle>
           </CardHeader>
           <CardContent>
