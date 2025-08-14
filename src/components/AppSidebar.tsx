@@ -184,7 +184,7 @@ export function AppSidebar() {
                 </>
               )}
 
-              {/* Solo mostrar si es superadmin o admin de organización */}
+              {/* Solo mostrar si es superadmin o admin de suscriptor */}
               {(isSuperAdmin || isOrgAdmin) && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={currentPath === "/usuarios"}>

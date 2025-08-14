@@ -90,7 +90,7 @@ const GestionUsuarios = () => {
 
         setUsuarios(Array.from(mapaUsuarios.values()));
       } else if (isOrgAdmin && organization) {
-        // Obtener solo usuarios de la organización del admin
+        // Obtener solo usuarios del suscriptor del admin
         const { data: datosMiembros } = await supabase
           .from('organization_members')
           .select(`
@@ -150,7 +150,7 @@ const GestionUsuarios = () => {
       if (errorAuth) throw errorAuth;
 
       if (datosAuth.user) {
-        // Agregar usuario a la organización
+        // Agregar usuario al suscriptor
         const { error: errorMiembro } = await supabase
           .from('organization_members')
           .insert({
@@ -201,7 +201,7 @@ const GestionUsuarios = () => {
       if (errorAuth) throw errorAuth;
 
       if (datosAuth.user) {
-        // Crear la organización
+        // Crear el suscriptor
         const { error: errorOrg } = await supabase
           .from('organizations')
           .insert({
@@ -214,7 +214,7 @@ const GestionUsuarios = () => {
 
         toast({
           title: "Éxito",
-          description: `Organización "${nombreNuevaOrg}" creada exitosamente.`,
+          description: `Suscriptor "${nombreNuevaOrg}" creado exitosamente.`,
         });
 
         setNombreNuevaOrg("");
@@ -223,10 +223,10 @@ const GestionUsuarios = () => {
         obtenerDatos();
       }
     } catch (error: any) {
-      console.error('Error al crear organización:', error);
+      console.error('Error al crear suscriptor:', error);
       toast({
         title: "Error",
-        description: error.message || "No se pudo crear la organización",
+        description: error.message || "No se pudo crear el suscriptor",
         variant: "destructive",
       });
     }
@@ -287,7 +287,7 @@ const GestionUsuarios = () => {
         <div>
           <h1 className="text-3xl font-bold">Gestión de Usuarios</h1>
           <p className="text-muted-foreground">
-            {isSuperAdmin ? "Gestionar todos los usuarios y organizaciones" : "Gestionar los usuarios de tu organización"}
+            {isSuperAdmin ? "Gestionar todos los usuarios y suscriptores" : "Gestionar los usuarios de tu suscriptor"}
           </p>
         </div>
       </div>
@@ -298,13 +298,13 @@ const GestionUsuarios = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5" />
-              Crear Nueva Organización
+              Crear nuevo suscriptor
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="nombreOrg">Nombre de la Organización</Label>
+                <Label htmlFor="nombreOrg">Nombre del suscriptor</Label>
                 <Input
                   id="nombreOrg"
                   value={nombreNuevaOrg}
@@ -345,7 +345,7 @@ const GestionUsuarios = () => {
               onClick={crearOrganizacion}
               disabled={!nombreNuevaOrg || !emailApiUser}
             >
-              Crear Organización
+              Crear suscriptor
             </Button>
           </CardContent>
         </Card>
@@ -364,7 +364,7 @@ const GestionUsuarios = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Organización</TableHead>
+                  <TableHead>Suscriptor</TableHead>
                   <TableHead>Plan</TableHead>
                   <TableHead>Usuario API</TableHead>
                   <TableHead>Límite Excel</TableHead>
@@ -413,10 +413,10 @@ const GestionUsuarios = () => {
               
               {isSuperAdmin && (
                 <div>
-                  <Label htmlFor="organization">Organización</Label>
+                  <Label htmlFor="organization">Suscriptor</Label>
                   <Select value={orgSeleccionadaId} onValueChange={setOrgSeleccionadaId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar organización" />
+                      <SelectValue placeholder="Seleccionar suscriptor" />
                     </SelectTrigger>
                     <SelectContent>
                       {organizaciones.map((org) => (
@@ -466,7 +466,7 @@ const GestionUsuarios = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Email</TableHead>
-                <TableHead>Organización</TableHead>
+                <TableHead>Suscriptor</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>Rol</TableHead>
                 <TableHead>Acciones</TableHead>
@@ -496,7 +496,7 @@ const GestionUsuarios = () => {
                         <DialogHeader>
                           <DialogTitle>Eliminar Usuario</DialogTitle>
                           <DialogDescription>
-                            ¿Estás seguro de que quieres eliminar a {usuario.email} de la organización?
+                            ¿Estás seguro de que quieres eliminar a {usuario.email} del suscriptor?
                           </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>
