@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Users, Building, Edit } from "lucide-react";
+import { Plus, Users, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,21 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 
-interface Usuario {
-  id: string;
-  email: string;
-  organizacion?: {
-    id: string;
-    nombre: string;
-    plan_suscripcion: string;
-  };
-  rol?: string;
-}
-
-interface Organizacion {
+interface Suscriptor {
   id: string;
   name: string;
   subscription_plan: string;
@@ -37,94 +25,34 @@ interface Organizacion {
 }
 
 const GestionUsuarios = () => {
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [organizaciones, setOrganizaciones] = useState<Organizacion[]>([]);
+  const [suscriptores, setSuscriptores] = useState<Suscriptor[]>([]);
   const [cargando, setCargando] = useState(true);
-  const [emailNuevoUsuario, setEmailNuevoUsuario] = useState("");
-  const [rolNuevoUsuario, setRolNuevoUsuario] = useState<"admin" | "user">("user");
-  const [orgSeleccionadaId, setOrgSeleccionadaId] = useState("");
-  const [nombreNuevaOrg, setNombreNuevaOrg] = useState("");
-  const [planNuevaOrg, setPlanNuevaOrg] = useState<"api_base" | "api_pro" | "client_base" | "client_pro" | "custom">("api_base");
+  const [nombreNuevoSuscriptor, setNombreNuevoSuscriptor] = useState("");
+  const [planNuevoSuscriptor, setPlanNuevoSuscriptor] = useState<"api_base" | "api_pro" | "client_base" | "client_pro" | "custom">("api_base");
   const [emailApiUser, setEmailApiUser] = useState("");
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const { toast } = useToast();
-  const { isSuperAdmin, isOrgAdmin, organization } = useSubscription();
+  const { isSuperAdmin } = useSubscription();
   const navigate = useNavigate();
 
-  console.log('UserManagement - isSuperAdmin:', isSuperAdmin, 'isOrgAdmin:', isOrgAdmin, 'organization:', organization);
-
   useEffect(() => {
-    obtenerDatos();
-  }, []);
+    if (isSuperAdmin) {
+      obtenerSuscriptores();
+    }
+  }, [isSuperAdmin]);
 
-  const obtenerDatos = async () => {
+  const obtenerSuscriptores = async () => {
     try {
-      if (isSuperAdmin) {
-        // Obtener todas las organizaciones 
-        const { data: datosOrgs } = await supabase
-          .from('organizations')
-          .select('*');
-        
-        setOrganizaciones(datosOrgs || []);
-
-        // Obtener todos los usuarios con sus membresías
-        const { data: datosMiembros } = await supabase
-          .from('organization_members')
-          .select(`
-            user_id,
-            role,
-            organization:organizations(*)
-          `);
-
-        const mapaUsuarios = new Map();
-        datosMiembros?.forEach(miembro => {
-          if (!mapaUsuarios.has(miembro.user_id)) {
-            mapaUsuarios.set(miembro.user_id, {
-              id: miembro.user_id,
-              organizacion: {
-                id: miembro.organization.id,
-                nombre: miembro.organization.name,
-                plan_suscripcion: miembro.organization.subscription_plan
-              },
-              rol: miembro.role
-            });
-          }
-        });
-
-        setUsuarios(Array.from(mapaUsuarios.values()));
-      } else if (isOrgAdmin && organization) {
-        // Obtener solo usuarios del suscriptor del admin
-        const { data: datosMiembros } = await supabase
-          .from('organization_members')
-          .select(`
-            user_id,
-            role,
-            organization:organizations(*)
-          `)
-          .eq('organization_id', organization.id);
-
-        const usuariosConEmails = await Promise.all(
-          (datosMiembros || []).map(async (miembro) => {
-            const { data: datosUsuario } = await supabase.auth.admin.getUserById(miembro.user_id);
-            return {
-              id: miembro.user_id,
-              email: datosUsuario.user?.email || 'N/A',
-              organizacion: {
-                id: miembro.organization.id,
-                nombre: miembro.organization.name,
-                plan_suscripcion: miembro.organization.subscription_plan
-              },
-              rol: miembro.role
-            };
-          })
-        );
-
-        setUsuarios(usuariosConEmails);
-      }
+      const { data: datosOrgs } = await supabase
+        .from('organizations')
+        .select('*');
+      
+      setSuscriptores(datosOrgs || []);
     } catch (error) {
-      console.error('Error al obtener datos:', error);
+      console.error('Error al obtener suscriptores:', error);
       toast({
         title: "Error",
-        description: "No se pudieron obtener los datos de usuarios",
+        description: "No se pudieron obtener los suscriptores",
         variant: "destructive",
       });
     } finally {
@@ -132,59 +60,8 @@ const GestionUsuarios = () => {
     }
   };
 
-  const invitarUsuario = async () => {
-    if (!emailNuevoUsuario || !orgSeleccionadaId) {
-      toast({
-        title: "Error",
-        description: "Por favor complete todos los campos",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      // Registrar el usuario (necesitará confirmar email)
-      const { data: datosAuth, error: errorAuth } = await supabase.auth.signUp({
-        email: emailNuevoUsuario,
-        password: Math.random().toString(36).slice(-8), // Contraseña temporal
-      });
-
-      if (errorAuth) throw errorAuth;
-
-      if (datosAuth.user) {
-        // Agregar usuario al suscriptor
-        const { error: errorMiembro } = await supabase
-          .from('organization_members')
-          .insert({
-            organization_id: orgSeleccionadaId,
-            user_id: datosAuth.user.id,
-            role: rolNuevoUsuario,
-          });
-
-        if (errorMiembro) throw errorMiembro;
-
-        toast({
-          title: "Éxito",
-          description: `Usuario invitado exitosamente. Recibirá un email de confirmación.`,
-        });
-
-        setEmailNuevoUsuario("");
-        setRolNuevoUsuario("user");
-        setOrgSeleccionadaId("");
-        obtenerDatos();
-      }
-    } catch (error: any) {
-      console.error('Error al invitar usuario:', error);
-      toast({
-        title: "Error",
-        description: error.message || "No se pudo invitar al usuario",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const crearOrganizacion = async () => {
-    if (!nombreNuevaOrg || !emailApiUser) {
+  const crearSuscriptor = async () => {
+    if (!nombreNuevoSuscriptor || !emailApiUser) {
       toast({
         title: "Error",
         description: "Por favor complete todos los campos",
@@ -207,8 +84,8 @@ const GestionUsuarios = () => {
         const { error: errorOrg } = await supabase
           .from('organizations')
           .insert({
-            name: nombreNuevaOrg,
-            subscription_plan: planNuevaOrg,
+            name: nombreNuevoSuscriptor,
+            subscription_plan: planNuevoSuscriptor,
             api_user_id: datosAuth.user.id,
           });
 
@@ -216,13 +93,14 @@ const GestionUsuarios = () => {
 
         toast({
           title: "Éxito",
-          description: `Suscriptor "${nombreNuevaOrg}" creado exitosamente.`,
+          description: `Suscriptor "${nombreNuevoSuscriptor}" creado exitosamente.`,
         });
 
-        setNombreNuevaOrg("");
+        setNombreNuevoSuscriptor("");
         setEmailApiUser("");
-        setPlanNuevaOrg("api_base");
-        obtenerDatos();
+        setPlanNuevoSuscriptor("api_base");
+        setMostrarFormulario(false);
+        obtenerSuscriptores();
       }
     } catch (error: any) {
       console.error('Error al crear suscriptor:', error);
@@ -234,38 +112,12 @@ const GestionUsuarios = () => {
     }
   };
 
-  const eliminarUsuario = async (usuarioId: string, orgId: string) => {
-    try {
-      const { error } = await supabase
-        .from('organization_members')
-        .delete()
-        .eq('user_id', usuarioId)
-        .eq('organization_id', orgId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Éxito",
-        description: "Usuario eliminado exitosamente",
-      });
-
-      obtenerDatos();
-    } catch (error: any) {
-      console.error('Error al eliminar usuario:', error);
-      toast({
-        title: "Error",
-        description: error.message || "No se pudo eliminar el usuario",
-        variant: "destructive",
-      });
-    }
-  };
-
-  if (!isSuperAdmin && !isOrgAdmin) {
+  if (!isSuperAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-96">
           <CardHeader>
-            <CardTitle>Acceso Denegado</CardTitle>
+            <CardTitle>Acceso denegado</CardTitle>
             <CardDescription>
               No tienes permisos para acceder a la gestión de usuarios.
             </CardDescription>
@@ -287,30 +139,34 @@ const GestionUsuarios = () => {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Gestión de usuarios</h1>
+          <h1 className="text-3xl font-bold">Gestión de suscriptores</h1>
           <p className="text-muted-foreground">
-            {isSuperAdmin ? "Gestionar todos los usuarios y suscriptores" : "Gestionar los usuarios de tu suscriptor"}
+            Gestionar suscriptores y sus usuarios
           </p>
         </div>
+        <Button onClick={() => setMostrarFormulario(true)} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Nuevo suscriptor
+        </Button>
       </div>
 
-      {/* Crear Organización (Solo SuperAdmin) */}
-      {isSuperAdmin && (
+      {/* Formulario crear suscriptor */}
+      {mostrarFormulario && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5" />
+              <Building className="h-5 w-5" />
               Crear nuevo suscriptor
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="nombreOrg">Nombre del suscriptor</Label>
+                <Label htmlFor="nombreSuscriptor">Nombre del suscriptor</Label>
                 <Input
-                  id="nombreOrg"
-                  value={nombreNuevaOrg}
-                  onChange={(e) => setNombreNuevaOrg(e.target.value)}
+                  id="nombreSuscriptor"
+                  value={nombreNuevoSuscriptor}
+                  onChange={(e) => setNombreNuevoSuscriptor(e.target.value)}
                   placeholder="Mi Empresa S.L."
                 />
               </div>
@@ -328,7 +184,7 @@ const GestionUsuarios = () => {
               
               <div>
                 <Label htmlFor="planSuscripcion">Plan de suscripción</Label>
-                <Select value={planNuevaOrg} onValueChange={(value: any) => setPlanNuevaOrg(value)}>
+                <Select value={planNuevoSuscriptor} onValueChange={(value: any) => setPlanNuevoSuscriptor(value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -343,184 +199,58 @@ const GestionUsuarios = () => {
               </div>
             </div>
             
-            <Button 
-              onClick={crearOrganizacion}
-              disabled={!nombreNuevaOrg || !emailApiUser}
-            >
-              Crear suscriptor
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Vista de Organizaciones (Solo SuperAdmin) */}
-      {isSuperAdmin && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building className="h-5 w-5" />
-              Suscriptores
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Suscriptor</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Usuario API</TableHead>
-                  <TableHead>Límite excel</TableHead>
-                  <TableHead>Límite usuarios</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {organizaciones.map((org) => (
-                  <TableRow key={org.id}>
-                    <TableCell className="font-medium">{org.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{org.subscription_plan}</Badge>
-                    </TableCell>
-                    <TableCell>{org.api_user_email || 'N/A'}</TableCell>
-                    <TableCell>{org.excel_limit + org.excel_extra}</TableCell>
-                    <TableCell>{org.client_user_limit + org.client_user_extra}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/suscriptores/${org.id}/editar`)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Invitar Usuario */}
-      {(isSuperAdmin || isOrgAdmin) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5" />
-              Invitar nuevo usuario
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={emailNuevoUsuario}
-                  onChange={(e) => setEmailNuevoUsuario(e.target.value)}
-                  placeholder="usuario@ejemplo.com"
-                />
-              </div>
-              
-              {isSuperAdmin && (
-                <div>
-                  <Label htmlFor="organization">Suscriptor</Label>
-                  <Select value={orgSeleccionadaId} onValueChange={setOrgSeleccionadaId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar suscriptor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {organizaciones.map((org) => (
-                        <SelectItem key={org.id} value={org.id}>
-                          {org.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              
-              <div>
-                <Label htmlFor="role">Rol</Label>
-                <Select value={rolNuevoUsuario} onValueChange={(value: "admin" | "user") => setRolNuevoUsuario(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="user">Usuario</SelectItem>
-                    <SelectItem value="admin">Administrador</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="flex gap-3">
+              <Button 
+                onClick={crearSuscriptor}
+                disabled={!nombreNuevoSuscriptor || !emailApiUser}
+              >
+                Crear suscriptor
+              </Button>
+              <Button variant="outline" onClick={() => setMostrarFormulario(false)}>
+                Cancelar
+              </Button>
             </div>
-            
-            <Button 
-              onClick={invitarUsuario}
-              disabled={!emailNuevoUsuario || (isSuperAdmin && !orgSeleccionadaId)}
-            >
-              Invitar Usuario
-            </Button>
           </CardContent>
         </Card>
       )}
 
-      {/* Lista de Usuarios */}
+      {/* Lista de suscriptores */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Usuarios
+            <Building className="h-5 w-5" />
+            Suscriptores
           </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Email</TableHead>
                 <TableHead>Suscriptor</TableHead>
                 <TableHead>Plan</TableHead>
-                <TableHead>Rol</TableHead>
+                <TableHead>Límite excel</TableHead>
+                <TableHead>Límite usuarios</TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {usuarios.map((usuario) => (
-                <TableRow key={usuario.id}>
-                  <TableCell>{usuario.email}</TableCell>
-                  <TableCell>{usuario.organizacion?.nombre || 'N/A'}</TableCell>
+              {suscriptores.map((suscriptor) => (
+                <TableRow key={suscriptor.id}>
+                  <TableCell className="font-medium">{suscriptor.name}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">{usuario.organizacion?.plan_suscripcion || 'N/A'}</Badge>
+                    <Badge variant="outline">{suscriptor.subscription_plan}</Badge>
                   </TableCell>
-                  <TableCell>
-                    <Badge variant={usuario.rol === 'admin' ? 'default' : 'secondary'}>
-                      {usuario.rol === 'admin' ? 'Administrador' : 'Usuario'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Eliminar Usuario</DialogTitle>
-                          <DialogDescription>
-                            ¿Estás seguro de que quieres eliminar a {usuario.email} del suscriptor?
-                          </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                          <Button
-                            variant="destructive"
-                            onClick={() => eliminarUsuario(usuario.id, usuario.organizacion?.id || '')}
-                          >
-                            Eliminar
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
+                  <TableCell>{suscriptor.excel_limit + suscriptor.excel_extra}</TableCell>
+                  <TableCell>{suscriptor.client_user_limit + suscriptor.client_user_extra}</TableCell>
+                  <TableCell className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/suscriptores/${suscriptor.id}/usuarios`)}
+                    >
+                      <Users className="h-4 w-4 mr-1" />
+                      Usuarios
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
