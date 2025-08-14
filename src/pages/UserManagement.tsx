@@ -42,6 +42,9 @@ const GestionUsuarios = () => {
   const [emailNuevoUsuario, setEmailNuevoUsuario] = useState("");
   const [rolNuevoUsuario, setRolNuevoUsuario] = useState<"admin" | "user">("user");
   const [orgSeleccionadaId, setOrgSeleccionadaId] = useState("");
+  const [nombreNuevaOrg, setNombreNuevaOrg] = useState("");
+  const [planNuevaOrg, setPlanNuevaOrg] = useState<"api_base" | "api_pro" | "client_base" | "client_pro" | "custom">("api_base");
+  const [emailApiUser, setEmailApiUser] = useState("");
   const { toast } = useToast();
   const { isSuperAdmin, isOrgAdmin, organization } = useSubscription();
 
@@ -176,6 +179,57 @@ const GestionUsuarios = () => {
     }
   };
 
+  const crearOrganizacion = async () => {
+    if (!nombreNuevaOrg || !emailApiUser) {
+      toast({
+        title: "Error",
+        description: "Por favor complete todos los campos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Crear el usuario API
+      const { data: datosAuth, error: errorAuth } = await supabase.auth.signUp({
+        email: emailApiUser,
+        password: Math.random().toString(36).slice(-8), // Contraseña temporal
+      });
+
+      if (errorAuth) throw errorAuth;
+
+      if (datosAuth.user) {
+        // Crear la organización
+        const { error: errorOrg } = await supabase
+          .from('organizations')
+          .insert({
+            name: nombreNuevaOrg,
+            subscription_plan: planNuevaOrg,
+            api_user_id: datosAuth.user.id,
+          });
+
+        if (errorOrg) throw errorOrg;
+
+        toast({
+          title: "Éxito",
+          description: `Organización "${nombreNuevaOrg}" creada exitosamente.`,
+        });
+
+        setNombreNuevaOrg("");
+        setEmailApiUser("");
+        setPlanNuevaOrg("api_base");
+        obtenerDatos();
+      }
+    } catch (error: any) {
+      console.error('Error al crear organización:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo crear la organización",
+        variant: "destructive",
+      });
+    }
+  };
+
   const eliminarUsuario = async (usuarioId: string, orgId: string) => {
     try {
       const { error } = await supabase
@@ -235,6 +289,65 @@ const GestionUsuarios = () => {
           </p>
         </div>
       </div>
+
+      {/* Crear Organización (Solo SuperAdmin) */}
+      {isSuperAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Crear Nueva Organización
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="nombreOrg">Nombre de la Organización</Label>
+                <Input
+                  id="nombreOrg"
+                  value={nombreNuevaOrg}
+                  onChange={(e) => setNombreNuevaOrg(e.target.value)}
+                  placeholder="Mi Empresa S.L."
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="emailApi">Email del Usuario API</Label>
+                <Input
+                  id="emailApi"
+                  type="email"
+                  value={emailApiUser}
+                  onChange={(e) => setEmailApiUser(e.target.value)}
+                  placeholder="api@miempresa.com"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="planSuscripcion">Plan de Suscripción</Label>
+                <Select value={planNuevaOrg} onValueChange={(value: any) => setPlanNuevaOrg(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="api_base">API Base</SelectItem>
+                    <SelectItem value="api_pro">API Pro</SelectItem>
+                    <SelectItem value="client_base">Cliente Base</SelectItem>
+                    <SelectItem value="client_pro">Cliente Pro</SelectItem>
+                    <SelectItem value="custom">Personalizado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <Button 
+              onClick={crearOrganizacion}
+              disabled={!nombreNuevaOrg || !emailApiUser}
+            >
+              Crear Organización
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Vista de Organizaciones (Solo SuperAdmin) */}
       {isSuperAdmin && (
