@@ -132,19 +132,6 @@ const Auth = () => {
             >
               {isLogin ? "¿No tienes cuenta? Regístrate" : "¿Ya tienes cuenta? Inicia sesión"}
             </button>
-            {isLogin && (
-              <div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={createSuperAdmin}
-                  disabled={loading}
-                >
-                  Crear Superadmin
-                </Button>
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
