@@ -179,17 +179,15 @@ export function AppSidebar() {
                 </SidebarMenuSub>
               </SidebarMenuItem>
 
-              {/* Gestión de Usuarios - Solo para superadmin y admins */}
-              {(isSuperAdmin || isOrgAdmin) && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={currentPath === "/usuarios"}>
-                    <NavLink to="/usuarios" end className={getNavCls}>
-                      <UserCog className="mr-2 h-4 w-4" />
-                      {!isCollapsed && <span>Gestión de Usuarios</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
+              {/* Gestión de Usuarios - Siempre visible para debug */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={currentPath === "/usuarios"}>
+                  <NavLink to="/usuarios" end className={getNavCls}>
+                    <UserCog className="mr-2 h-4 w-4" />
+                    {!isCollapsed && <span>Gestión de Usuarios</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
