@@ -266,6 +266,10 @@ export type Database = {
           excel_limit: number
         }[]
       }
+      is_superadmin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       organization_role: "superadmin" | "admin" | "user"
