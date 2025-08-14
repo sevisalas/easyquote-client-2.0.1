@@ -23,32 +23,6 @@ const Auth = () => {
     });
   }, [isLogin, navigate]);
 
-  const createSuperAdmin = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signUp({
-        email: "vdp@tradsis.net",
-        password: "1234",
-        options: { 
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            first_name: "VDP",
-            last_name: "Admin"
-          }
-        },
-      });
-      if (error) throw error;
-      toast({
-        title: "Superadmin creado",
-        description: "Usuario vdp@tradsis.net creado. Revisa el correo para confirmar.",
-      });
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -98,17 +72,16 @@ const Auth = () => {
     <main className="min-h-screen flex items-center justify-center p-6">
       <Card className="w-full max-w-md">
         <CardHeader className="flex flex-col items-center">
-  {/* Imagen en la cabecera */}
-  <img
-    src="https://id-preview--ad98f81e-87a7-4a3e-8089-681d7fc4b657.lovable.app/lovable-uploads/3ff3c1d3-fd0e-4649-9146-6991b081234b.png"
-    alt="Logo"
-    className="h-20 w-auto mb-4"
-  />
-  
-  <CardTitle>
-    {isLogin ? "Inicia sesión" : "Crea tu cuenta"}
-  </CardTitle>
-</CardHeader>
+          <img
+            src="https://id-preview--ad98f81e-87a7-4a3e-8089-681d7fc4b657.lovable.app/lovable-uploads/3ff3c1d3-fd0e-4649-9146-6991b081234b.png"
+            alt="Logo"
+            className="h-20 w-auto mb-4"
+          />
+          
+          <CardTitle>
+            {isLogin ? "Inicia sesión" : "Crea tu cuenta"}
+          </CardTitle>
+        </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
