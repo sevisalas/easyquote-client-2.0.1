@@ -23,6 +23,32 @@ const Auth = () => {
     });
   }, [isLogin, navigate]);
 
+  const createSuperAdmin = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: "vdp@tradsis.net",
+        password: "1234",
+        options: { 
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            first_name: "VDP",
+            last_name: "Admin"
+          }
+        },
+      });
+      if (error) throw error;
+      toast({
+        title: "Superadmin creado",
+        description: "Usuario vdp@tradsis.net creado. Revisa el correo para confirmar.",
+      });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -98,7 +124,7 @@ const Auth = () => {
               {loading ? "Procesando..." : isLogin ? "Entrar" : "Crear cuenta"}
             </Button>
           </form>
-          <div className="mt-4 text-center">
+          <div className="mt-4 text-center space-y-2">
             <button
               type="button"
               onClick={() => setIsLogin((v) => !v)}
@@ -106,6 +132,19 @@ const Auth = () => {
             >
               {isLogin ? "¿No tienes cuenta? Regístrate" : "¿Ya tienes cuenta? Inicia sesión"}
             </button>
+            {isLogin && (
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={createSuperAdmin}
+                  disabled={loading}
+                >
+                  Crear Superadmin
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
