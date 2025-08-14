@@ -29,7 +29,7 @@ const UsuariosSuscriptor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSuperAdmin } = useSubscription();
+  const { isSuperAdmin, organization } = useSubscription();
   const [loading, setLoading] = useState(true);
   const [suscriptor, setSuscriptor] = useState<Suscriptor | null>(null);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -38,12 +38,19 @@ const UsuariosSuscriptor = () => {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
   useEffect(() => {
-    if (!isSuperAdmin) {
+    if (!isSuperAdmin && !organization) {
       navigate('/');
       return;
     }
+    
+    // Si no es superadmin, verificar que el ID coincida con su organización
+    if (!isSuperAdmin && organization && id !== organization.id) {
+      navigate('/usuarios');
+      return;
+    }
+    
     obtenerDatos();
-  }, [id, isSuperAdmin, navigate]);
+  }, [id, isSuperAdmin, organization, navigate]);
 
   const obtenerDatos = async () => {
     try {
@@ -172,7 +179,7 @@ const UsuariosSuscriptor = () => {
     }
   };
 
-  if (!isSuperAdmin) {
+  if (!isSuperAdmin && !organization) {
     return null;
   }
 

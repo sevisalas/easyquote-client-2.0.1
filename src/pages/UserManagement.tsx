@@ -32,32 +32,37 @@ const GestionUsuarios = () => {
   const [emailApiUser, setEmailApiUser] = useState("");
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const { toast } = useToast();
-  const { isSuperAdmin } = useSubscription();
+  const { isSuperAdmin, organization } = useSubscription();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isSuperAdmin) {
+    if (isSuperAdmin || organization) {
       obtenerSuscriptores();
     }
-  }, [isSuperAdmin]);
+  }, [isSuperAdmin, organization]);
 
   useEffect(() => {
     // Recargar datos cuando la página se enfoca
     const handleFocus = () => {
-      if (isSuperAdmin) {
+      if (isSuperAdmin || organization) {
         obtenerSuscriptores();
       }
     };
     
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
-  }, [isSuperAdmin]);
+  }, [isSuperAdmin, organization]);
 
   const obtenerSuscriptores = async () => {
     try {
-      const { data: datosOrgs } = await supabase
-        .from('organizations')
-        .select('*');
+      let query = supabase.from('organizations').select('*');
+      
+      // Si no es superadmin, solo mostrar su propia organización
+      if (!isSuperAdmin && organization) {
+        query = query.eq('id', organization.id);
+      }
+      
+      const { data: datosOrgs } = await query;
       
       setSuscriptores(datosOrgs || []);
     } catch (error) {
@@ -124,7 +129,7 @@ const GestionUsuarios = () => {
     }
   };
 
-  if (!isSuperAdmin) {
+  if (!isSuperAdmin && !organization) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-96">
@@ -151,19 +156,23 @@ const GestionUsuarios = () => {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Gestión de suscriptores</h1>
+          <h1 className="text-3xl font-bold">
+            {isSuperAdmin ? 'Gestión de suscriptores' : 'Gestión de usuarios'}
+          </h1>
           <p className="text-muted-foreground">
-            Gestionar suscriptores y sus usuarios
+            {isSuperAdmin ? 'Gestionar suscriptores y sus usuarios' : 'Gestionar usuarios de tu organización'}
           </p>
         </div>
-        <Button onClick={() => setMostrarFormulario(true)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Nuevo suscriptor
-        </Button>
+        {isSuperAdmin && (
+          <Button onClick={() => setMostrarFormulario(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Nuevo suscriptor
+          </Button>
+        )}
       </div>
 
-      {/* Formulario crear suscriptor */}
-      {mostrarFormulario && (
+      {/* Formulario crear suscriptor - Solo para superadmin */}
+      {isSuperAdmin && mostrarFormulario && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -231,7 +240,7 @@ const GestionUsuarios = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building className="h-5 w-5" />
-            Suscriptores
+            {isSuperAdmin ? 'Suscriptores' : 'Tu organización'}
           </CardTitle>
         </CardHeader>
         <CardContent>
