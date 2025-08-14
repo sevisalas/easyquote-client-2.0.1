@@ -7,14 +7,28 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [userEmail, setUserEmail] = useState<string>("");
+  const [userName, setUserName] = useState<string>("");
 
   useEffect(() => {
     document.title = "Inicio | EasyQuote";
 
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user?.email) setUserEmail(user.email);
+      if (user) {
+        // Try to get profile data first
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile?.first_name) {
+          setUserName(profile.first_name);
+        } else {
+          // Fallback to email prefix if no profile
+          setUserName(user.email?.split('@')[0] || 'Usuario');
+        }
+      }
     };
 
     getUser();
@@ -33,7 +47,7 @@ const Index = () => {
               className="h-16 w-auto mx-auto md:mx-0 mb-4 hover-scale"
             />
             <h1 className="text-4xl md:text-5xl font-bold text-foreground bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent mb-6">
-              Hola, {userEmail ? userEmail.split('@')[0] : 'Usuario'}
+              Hola, {userName || 'Usuario'}
             </h1>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
