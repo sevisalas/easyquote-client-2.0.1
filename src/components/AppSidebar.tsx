@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, PanelLeft, FileText, Palette } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, PanelLeft, FileText, Palette, UserCog } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -20,6 +20,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 interface Item {
   title: string;
@@ -38,6 +39,7 @@ export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const navigate = useNavigate();
+  const { isSuperAdmin, isOrgAdmin } = useSubscription();
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -176,6 +178,18 @@ export function AppSidebar() {
                   </SidebarMenuSubItem>
                 </SidebarMenuSub>
               </SidebarMenuItem>
+
+              {/* Gestión de Usuarios - Solo para superadmin y admins */}
+              {(isSuperAdmin || isOrgAdmin) && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={currentPath === "/usuarios"}>
+                    <NavLink to="/usuarios" end className={getNavCls}>
+                      <UserCog className="mr-2 h-4 w-4" />
+                      {!isCollapsed && <span>Gestión de Usuarios</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

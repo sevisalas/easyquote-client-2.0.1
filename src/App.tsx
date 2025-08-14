@@ -15,6 +15,8 @@ import QuoteNew from "./pages/QuoteNew";
 import QuotesList from "./pages/QuotesList";
 import SettingsPdfTemplate from "./pages/SettingsPdfTemplate";
 import QuoteDetail from "./pages/QuoteDetail";
+import UserManagement from "./pages/UserManagement";
+import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -23,6 +25,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <SubscriptionProvider>
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route
@@ -115,9 +118,20 @@ const App = () => (
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/usuarios"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <UserManagement />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </SubscriptionProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
