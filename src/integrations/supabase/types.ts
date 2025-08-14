@@ -259,6 +259,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_organization_users: {
+        Args: { org_id: string }
+        Returns: {
+          created_at: string
+          email: string
+          id: string
+          role: Database["public"]["Enums"]["organization_role"]
+          updated_at: string
+          user_id: string
+        }[]
+      }
       get_plan_limits: {
         Args: { plan: Database["public"]["Enums"]["subscription_plan"] }
         Returns: {

@@ -68,24 +68,21 @@ const UsuariosSuscriptor = () => {
 
       setSuscriptor(datosSuscriptor);
 
-      // Obtener usuarios del suscriptor
-      const { data: datosMiembros } = await supabase
-        .from('organization_members')
-        .select('user_id, role')
-        .eq('organization_id', id);
+      // Obtener usuarios del suscriptor usando la función segura
+      const { data: usuariosData, error: errorUsuarios } = await supabase
+        .rpc('get_organization_users', { org_id: id });
 
-      const usuariosConEmails = await Promise.all(
-        (datosMiembros || []).map(async (miembro) => {
-          const { data: datosUsuario } = await supabase.auth.admin.getUserById(miembro.user_id);
-          return {
-            id: miembro.user_id,
-            email: datosUsuario.user?.email || 'N/A',
-            rol: miembro.role
-          };
-        })
-      );
+      if (errorUsuarios) {
+        console.error('Error al obtener usuarios:', errorUsuarios);
+      }
 
-      setUsuarios(usuariosConEmails);
+      const usuariosFormateados = (usuariosData || []).map((usuario) => ({
+        id: usuario.user_id,
+        email: usuario.email || 'N/A',
+        rol: usuario.role
+      }));
+
+      setUsuarios(usuariosFormateados);
     } catch (error: any) {
       console.error('Error al obtener datos:', error);
       toast({
