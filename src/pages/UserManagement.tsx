@@ -41,6 +41,18 @@ const GestionUsuarios = () => {
     }
   }, [isSuperAdmin]);
 
+  useEffect(() => {
+    // Recargar datos cuando la página se enfoca
+    const handleFocus = () => {
+      if (isSuperAdmin) {
+        obtenerSuscriptores();
+      }
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [isSuperAdmin]);
+
   const obtenerSuscriptores = async () => {
     try {
       const { data: datosOrgs } = await supabase
@@ -249,7 +261,7 @@ const GestionUsuarios = () => {
                       onClick={() => navigate(`/suscriptores/${suscriptor.id}/usuarios`)}
                     >
                       <Users className="h-4 w-4 mr-1" />
-                      Usuarios
+                      Gestionar
                     </Button>
                   </TableCell>
                 </TableRow>
