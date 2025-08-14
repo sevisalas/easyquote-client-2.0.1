@@ -48,6 +48,8 @@ const GestionUsuarios = () => {
   const { toast } = useToast();
   const { isSuperAdmin, isOrgAdmin, organization } = useSubscription();
 
+  console.log('UserManagement - isSuperAdmin:', isSuperAdmin, 'isOrgAdmin:', isOrgAdmin, 'organization:', organization);
+
   useEffect(() => {
     obtenerDatos();
   }, []);

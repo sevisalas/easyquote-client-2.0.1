@@ -60,25 +60,29 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   const refreshData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('Current user:', user);
       if (!user) {
         setLoading(false);
         return;
       }
 
       // Verificar si es superadmin
-      setIsSuperAdmin(user.email === 'vdp@tradsis.net');
+      const isSuperAdminUser = user.email === 'vdp@tradsis.net';
+      console.log('Is superadmin?', isSuperAdminUser, 'Email:', user.email);
+      setIsSuperAdmin(isSuperAdminUser);
 
       // Get user's organization (as API user)
-      const { data: orgData } = await supabase
+      const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select('*')
         .eq('api_user_id', user.id)
         .single();
 
+      console.log('Organization data:', orgData, 'Error:', orgError);
       setOrganization(orgData);
 
       // Get user's membership (as client user)
-      const { data: memberData } = await supabase
+      const { data: memberData, error: memberError } = await supabase
         .from('organization_members')
         .select(`
           *,
@@ -87,6 +91,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         .eq('user_id', user.id)
         .single();
 
+      console.log('Member data:', memberData, 'Error:', memberError);
       setMembership(memberData);
 
     } catch (error) {
