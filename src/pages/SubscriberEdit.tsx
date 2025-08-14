@@ -14,11 +14,6 @@ interface Suscriptor {
   id: string;
   name: string;
   subscription_plan: "api_base" | "api_pro" | "client_base" | "client_pro" | "custom";
-  excel_limit: number;
-  excel_extra: number;
-  client_user_limit: number;
-  client_user_extra: number;
-  api_user_id: string;
 }
 
 const EditarSuscriptor = () => {
@@ -81,10 +76,6 @@ const EditarSuscriptor = () => {
         .update({
           name: suscriptor.name,
           subscription_plan: suscriptor.subscription_plan,
-          excel_limit: suscriptor.excel_limit,
-          excel_extra: suscriptor.excel_extra,
-          client_user_limit: suscriptor.client_user_limit,
-          client_user_extra: suscriptor.client_user_extra,
         })
         .eq('id', suscriptor.id);
 
@@ -151,7 +142,7 @@ const EditarSuscriptor = () => {
         <CardHeader>
           <CardTitle>Información del suscriptor</CardTitle>
           <CardDescription>
-            Modifica los datos y límites del suscriptor
+            Modificar nombre y plan del suscriptor
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -186,48 +177,13 @@ const EditarSuscriptor = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="excel_limit">Límite base excel</Label>
-              <Input
-                id="excel_limit"
-                type="number"
-                value={suscriptor.excel_limit}
-                onChange={(e) => setSuscriptor({ ...suscriptor, excel_limit: parseInt(e.target.value) || 0 })}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="excel_extra">Excel adicionales</Label>
-              <Input
-                id="excel_extra"
-                type="number"
-                value={suscriptor.excel_extra}
-                onChange={(e) => setSuscriptor({ ...suscriptor, excel_extra: parseInt(e.target.value) || 0 })}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="client_user_limit">Límite base usuarios</Label>
-              <Input
-                id="client_user_limit"
-                type="number"
-                value={suscriptor.client_user_limit}
-                onChange={(e) => setSuscriptor({ ...suscriptor, client_user_limit: parseInt(e.target.value) || 0 })}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="client_user_extra">Usuarios adicionales</Label>
-              <Input
-                id="client_user_extra"
-                type="number"
-                value={suscriptor.client_user_extra}
-                onChange={(e) => setSuscriptor({ ...suscriptor, client_user_extra: parseInt(e.target.value) || 0 })}
-              />
-            </div>
+          <div className="bg-muted/50 p-4 rounded-lg">
+            <h4 className="font-medium mb-2">¿Qué es el usuario API?</h4>
+            <p className="text-sm text-muted-foreground">
+              El usuario API es el administrador técnico principal de este suscriptor. 
+              Tiene acceso completo a las funciones de API y puede gestionar la configuración técnica. 
+              Los límites de excel y usuarios se configuran según el plan seleccionado.
+            </p>
           </div>
 
           <div className="flex gap-3">
