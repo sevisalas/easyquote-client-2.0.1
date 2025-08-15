@@ -76,6 +76,22 @@ const QuotesList = () => {
         <meta name="description" content="Listado de presupuestos en la aplicación." />
       </header>
 
+      {/* Header with title */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Presupuestos</h1>
+        <Button onClick={() => navigate('/presupuestos/nuevo')}>
+          Nuevo presupuesto
+        </Button>
+      </div>
+
+      {/* Espacio reservado para filtros futuros */}
+      <div className="bg-muted/30 border-2 border-dashed border-muted-foreground/20 rounded-lg p-8">
+        <div className="text-center text-muted-foreground">
+          <p className="text-sm">Espacio reservado para filtros</p>
+          <p className="text-xs mt-1">Filtros por fecha, cliente, estado, etc.</p>
+        </div>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Listado de presupuestos</CardTitle>
