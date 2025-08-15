@@ -69,7 +69,7 @@ const QuotesList = () => {
   };
 
   return (
-    <main className="p-4 md:p-6">
+    <main className="p-2 md:p-4">
       <header className="sr-only">
         <h1>Listado de presupuestos</h1>
         <link rel="canonical" href={`${window.location.origin}/presupuestos`} />
@@ -77,34 +77,34 @@ const QuotesList = () => {
       </header>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Listado de presupuestos</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Listado de presupuestos</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3">
           {quotes.length === 0 ? (
             <p className="text-sm text-muted-foreground">Aún no hay presupuestos.</p>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Nº</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Descripción</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Acciones</TableHead>
+                <TableRow className="h-10">
+                  <TableHead className="py-2">Fecha</TableHead>
+                  <TableHead className="py-2">Nº</TableHead>
+                  <TableHead className="py-2">Cliente</TableHead>
+                  <TableHead className="py-2">Descripción</TableHead>
+                  <TableHead className="py-2 text-right">Total</TableHead>
+                  <TableHead className="py-2">Estado</TableHead>
+                  <TableHead className="py-2">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {quotes.map((q: any) => (
-                  <TableRow key={q.id}>
-                    <TableCell>{new Date(q.created_at).toLocaleDateString("es-ES")}</TableCell>
-                    <TableCell>{q.quote_number}</TableCell>
-                    <TableCell>{getCustomerName(q.customer_id)}</TableCell>
-                    <TableCell>{q.description || ""}</TableCell>
-                    <TableCell className="text-right">{fmtEUR(q.final_price)}</TableCell>
-                    <TableCell>
+                  <TableRow key={q.id} className="h-12">
+                    <TableCell className="py-2">{new Date(q.created_at).toLocaleDateString("es-ES")}</TableCell>
+                    <TableCell className="py-2">{q.quote_number}</TableCell>
+                    <TableCell className="py-2">{getCustomerName(q.customer_id)}</TableCell>
+                    <TableCell className="py-2">{q.description || ""}</TableCell>
+                    <TableCell className="py-2 text-right">{fmtEUR(q.final_price)}</TableCell>
+                    <TableCell className="py-2">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button className="p-0 border-0 bg-transparent cursor-pointer">
@@ -122,8 +122,8 @@ const QuotesList = () => {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
+                    <TableCell className="py-2">
+                      <div className="flex items-center gap-1">
                         <Button size="sm" variant="secondary" onClick={() => navigate(`/presupuestos/${q.id}`)}>
                           Ver
                         </Button>
