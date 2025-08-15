@@ -69,7 +69,7 @@ const QuotesList = () => {
   };
 
   return (
-    <main className="p-2 md:p-4">
+    <main className="p-1 md:p-2">
       <header className="sr-only">
         <h1>Listado de presupuestos</h1>
         <link rel="canonical" href={`${window.location.origin}/presupuestos`} />
@@ -77,10 +77,10 @@ const QuotesList = () => {
       </header>
 
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Listado de presupuestos</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Listado de presupuestos</CardTitle>
         </CardHeader>
-        <CardContent className="p-3">
+        <CardContent className="p-2">
           {quotes.length === 0 ? (
             <p className="text-sm text-muted-foreground">Aún no hay presupuestos.</p>
           ) : (
