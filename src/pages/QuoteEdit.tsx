@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import QuoteItem from "@/components/quotes/QuoteItem";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import QuotePDF from "@/components/quotes/QuotePDF";
-import QuotePdfTemplateDialog from "@/components/quotes/QuotePdfTemplateDialog";
+
 
 interface Customer { id: string; name: string }
 interface Product { id: string; name?: string; title?: string }
@@ -35,7 +35,7 @@ const fetchCustomers = async (): Promise<Customer[]> => {
 const fetchQuote = async (id: string) => {
   const { data, error } = await supabase
     .from("quotes")
-    .select("id, customer_id, description, status, quote_additionals")
+    .select("id, customer_id, description, status, quote_additionals, quote_number")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
@@ -58,7 +58,7 @@ const QuoteEdit = () => {
   const [customerId, setCustomerId] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
-  const [pdfOpen, setPdfOpen] = useState(false);
+  
 
   // Artículos adicionales en el presupuesto
   const [extraItems, setExtraItems] = useState<number[]>([]);
@@ -384,19 +384,43 @@ const QuoteEdit = () => {
                 }
               }}>Guardar cambios</Button>
 
-              <Button variant="secondary" onClick={() => setPdfOpen(true)}>Generar PDF</Button>
+              <PDFDownloadLink
+                document={
+                  <QuotePDF
+                    customer={(customers || []).find((c) => c.id === customerId)}
+                    main={null}
+                    items={Object.values(extraItemsData || {}).map((data: any, index: number) => ({
+                      name: data?.itemDescription || `Artículo ${index + 1}`,
+                      description: data?.itemDescription || "",
+                      prompts: data?.prompts || {},
+                      outputs: data?.outputs || [],
+                      total_price: data?.price || 0
+                    }))}
+                    template={{
+                      companyName: localStorage.getItem("pdf_template_config") ? 
+                        JSON.parse(localStorage.getItem("pdf_template_config") || "{}").companyName || "" : "",
+                      logoUrl: localStorage.getItem("pdf_template_config") ? 
+                        JSON.parse(localStorage.getItem("pdf_template_config") || "{}").logoUrl || "" : "",
+                      brandColor: localStorage.getItem("pdf_template_config") ? 
+                        JSON.parse(localStorage.getItem("pdf_template_config") || "{}").brandColor || "#0ea5e9" : "#0ea5e9",
+                      footerText: localStorage.getItem("pdf_template_config") ? 
+                        JSON.parse(localStorage.getItem("pdf_template_config") || "{}").footerText || "" : ""
+                    }}
+                    quote={quote}
+                  />
+                }
+                fileName={`presupuesto-${quote?.quote_number || id}.pdf`}
+              >
+                {({ loading }) => (
+                  <Button variant="secondary" disabled={loading}>
+                    {loading ? "Generando..." : "Generar PDF"}
+                  </Button>
+                )}
+              </PDFDownloadLink>
             </section>
           );
         })()}
 
-        <QuotePdfTemplateDialog
-          open={pdfOpen}
-          onOpenChange={setPdfOpen}
-          customer={(customers || []).find((c) => c.id === customerId)}
-          main={null}
-          items={items || []}
-          quote={quote}
-        />
       </div>
     </main>
   );
