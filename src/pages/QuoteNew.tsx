@@ -130,6 +130,13 @@ const QuoteNew = () => {
 
   const { data: customers } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
   
+  const { data: products } = useQuery({
+    queryKey: ["easyquote-products"],
+    queryFn: fetchProducts,
+    retry: 1,
+    enabled: hasToken,
+  });
+  
   const { data: additionals } = useQuery({
     queryKey: ["additionals"],
     queryFn: async () => {
@@ -442,13 +449,19 @@ const QuoteNew = () => {
                 <QuotePDF
                   customer={(customers || []).find((c) => c.id === customerId)}
                   main={null}
-                  items={Object.values(extraItemsData || {}).map((data: any, index: number) => ({
-                    name: data?.itemDescription || `Artículo ${index + 1}`,
-                    description: data?.itemDescription || "",
-                    prompts: data?.prompts || {},
-                    outputs: data?.outputs || [],
-                    total_price: data?.price || 0
-                  }))}
+                  items={Object.values(extraItemsData || {}).map((data: any, index: number) => {
+                    // Buscar el producto para obtener su nombre real
+                    const product = products?.find((p: any) => String(p.id) === String(data?.productId));
+                    const productName = product ? getProductLabel(product) : "";
+                    
+                    return {
+                      name: data?.itemDescription || productName || `Artículo ${index + 1}`,
+                      description: data?.itemDescription || "",
+                      prompts: data?.prompts || {},
+                      outputs: data?.outputs || [],
+                      total_price: data?.price || 0
+                    };
+                  })}
                   template={{
                     companyName: localStorage.getItem("pdf_template_config") ? 
                       JSON.parse(localStorage.getItem("pdf_template_config") || "{}").companyName || "" : "",
