@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type ItemSnapshot = {
   productId: string;
@@ -22,6 +23,7 @@ type ItemSnapshot = {
   multi?: any;
   needsRecalculation?: boolean;
   itemDescription?: string;
+  itemAdditionals?: Record<string, { enabled: boolean; value: number }>;
 };
 
 interface QuoteItemProps {
@@ -30,6 +32,14 @@ interface QuoteItemProps {
   initialData?: ItemSnapshot;
   onChange?: (id: string | number, snapshot: ItemSnapshot) => void;
   onRemove?: (id: string | number) => void;
+}
+
+interface Additional {
+  id: string;
+  name: string;
+  description?: string;
+  type: 'net' | 'quantity';
+  default_value: number;
 }
 
 export default function QuoteItem({ hasToken, id, initialData, onChange, onRemove }: QuoteItemProps) {
@@ -46,7 +56,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [qtyPrompt, setQtyPrompt] = useState<string>("");
   const [qtyInputs, setQtyInputs] = useState<string[]>(["", "", "", "", ""]);
   const MAX_QTY = 10;
-const [qtyCount, setQtyCount] = useState<number>(5);
+  const [qtyCount, setQtyCount] = useState<number>(5);
+
+  // Item additionals
+  const [itemAdditionals, setItemAdditionals] = useState<Record<string, { enabled: boolean; value: number }>>({});
 
   // Inicialización desde datos previos (duplicar)
   const initializedRef = useRef(false);
@@ -58,6 +71,7 @@ const [qtyCount, setQtyCount] = useState<number>(5);
       setProductId(initialData.productId || "");
       setPromptValues(initialData.prompts || {});
       setItemDescription(initialData.itemDescription || "");
+      setItemAdditionals(initialData.itemAdditionals || {});
       const m: any = initialData.multi;
       if (m) {
         setMultiEnabled(true);
@@ -102,6 +116,18 @@ const [qtyCount, setQtyCount] = useState<number>(5);
     queryFn: fetchProducts,
     retry: 1,
     enabled: hasToken,
+  });
+
+  const { data: additionals } = useQuery({
+    queryKey: ["additionals"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("additionals")
+        .select("*")
+        .order("name");
+      if (error) throw error;
+      return data as Additional[];
+    },
   });
 
   const { data: pricing, error: pricingError, refetch: refetchPricing } = useQuery({
@@ -320,16 +346,40 @@ const [qtyCount, setQtyCount] = useState<number>(5);
     });
   }, [multiResults]);
 
+  // Calculate final price with additionals
+  const finalPrice = useMemo(() => {
+    const basePrice = parseFloat(String((priceOutput as any)?.value ?? 0).replace(/\./g, "").replace(",", ".")) || 0;
+    let additionalsTotal = 0;
+    
+    Object.entries(itemAdditionals).forEach(([additionalId, config]) => {
+      if (!config.enabled) return;
+      const additional = additionals?.find(a => a.id === additionalId);
+      if (!additional) return;
+      
+      if (additional.type === 'net') {
+        additionalsTotal += config.value;
+      } else if (additional.type === 'quantity') {
+        // For quantity type, we need to get the quantity from prompts or multi
+        const quantity = multiEnabled && multiRows.length > 0 ? 
+          multiRows.reduce((sum, row) => sum + row.qty, 0) : 1;
+        additionalsTotal += config.value * quantity;
+      }
+    });
+    
+    return basePrice + additionalsTotal;
+  }, [priceOutput, itemAdditionals, additionals, multiEnabled, multiRows]);
+
   useEffect(() => {
     onChange?.(id, {
       productId,
       prompts: promptValues,
       outputs,
-      price: (priceOutput as any)?.value ?? null,
+      price: finalPrice,
       multi: multiEnabled ? { qtyPrompt, qtyInputs, rows: multiRows } : null,
       itemDescription,
+      itemAdditionals,
     });
-  }, [id, onChange, productId, promptValues, outputs, priceOutput, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription]);
+  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, itemAdditionals]);
 
   const handlePromptChange = (id: string, value: any) => setPromptValues((prev) => ({ ...prev, [id]: value }));
 
@@ -355,7 +405,7 @@ const [qtyCount, setQtyCount] = useState<number>(5);
             <div className="flex items-center gap-3">
               {priceOutput && (
                 <span className="font-semibold text-primary">
-                  {formatEUR((priceOutput as any).value)}
+                  {formatEUR(finalPrice)}
                 </span>
               )}
               <Button variant="outline" size="sm" onClick={() => setIsExpanded(true)}>
@@ -633,6 +683,95 @@ const [qtyCount, setQtyCount] = useState<number>(5);
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">Selecciona un producto para configurar este artículo.</p>
+        )}
+
+        {/* Additionals Section */}
+        {productId && additionals && additionals.length > 0 && (
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="additionals">
+              <AccordionTrigger>
+                <div className="flex items-center gap-2">
+                  <span>Adicionales del artículo</span>
+                  {Object.values(itemAdditionals).some(a => a.enabled) && (
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                      {Object.values(itemAdditionals).filter(a => a.enabled).length} activos
+                    </span>
+                  )}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4 pt-2">
+                  {additionals.map((additional) => {
+                    const config = itemAdditionals[additional.id] || { enabled: false, value: additional.default_value };
+                    return (
+                      <div key={additional.id} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`additional-${additional.id}`}
+                              checked={config.enabled}
+                              onCheckedChange={(checked) => {
+                                setItemAdditionals(prev => ({
+                                  ...prev,
+                                  [additional.id]: {
+                                    ...config,
+                                    enabled: !!checked
+                                  }
+                                }));
+                              }}
+                            />
+                            <div>
+                              <label 
+                                htmlFor={`additional-${additional.id}`}
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                              >
+                                {additional.name}
+                              </label>
+                              {additional.description && (
+                                <p className="text-xs text-muted-foreground mt-1">{additional.description}</p>
+                              )}
+                            </div>
+                          </div>
+                          <span className="text-xs bg-muted px-2 py-1 rounded">
+                            {additional.type === 'net' ? 'Importe neto' : 'Por cantidad'}
+                          </span>
+                        </div>
+                        
+                        {config.enabled && (
+                          <div className="space-y-2">
+                            <Label htmlFor={`value-${additional.id}`}>Valor</Label>
+                            <Input
+                              id={`value-${additional.id}`}
+                              type="number"
+                              step="0.01"
+                              value={config.value}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value) || 0;
+                                setItemAdditionals(prev => ({
+                                  ...prev,
+                                  [additional.id]: {
+                                    ...config,
+                                    value
+                                  }
+                                }));
+                              }}
+                              placeholder={`Valor por defecto: ${additional.default_value}`}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              {additional.type === 'net' 
+                                ? `Se suma ${formatEUR(config.value)} al subtotal`
+                                : `Se suma ${formatEUR(config.value)} por cada unidad`
+                              }
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         )}
       </CardContent>
     </Card>

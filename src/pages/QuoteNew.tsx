@@ -69,6 +69,9 @@ const QuoteNew = () => {
   const [extraItemsData, setExtraItemsData] = useState<Record<number, any>>({});
   const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
 
+  // Budget additionals
+  const [budgetAdditionals, setBudgetAdditionals] = useState<Record<string, { enabled: boolean; value: number }>>({});
+
   // Duplicar desde presupuesto previo
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -126,6 +129,18 @@ const QuoteNew = () => {
   }, [fromQuoteId, prefillDone]);
 
   const { data: customers } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
+  
+  const { data: additionals } = useQuery({
+    queryKey: ["additionals"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("additionals")
+        .select("*")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
 
   useEffect(() => {
     document.title = "Nuevo Presupuesto | Productos y Cliente";
@@ -266,6 +281,93 @@ const QuoteNew = () => {
         </section>
       )}
 
+      {/* Budget Additionals */}
+      {customerId && extraItems.length > 0 && additionals && additionals.length > 0 && (
+        <section className="space-y-4">
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="budget-additionals">
+              <AccordionTrigger>
+                <div className="flex items-center gap-2">
+                  <span>Adicionales del presupuesto</span>
+                  {Object.values(budgetAdditionals).some(a => a.enabled) && (
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                      {Object.values(budgetAdditionals).filter(a => a.enabled).length} activos
+                    </span>
+                  )}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {additionals.map((additional) => {
+                    const config = budgetAdditionals[additional.id] || { enabled: false, value: additional.default_value };
+                    return (
+                      <div key={additional.id} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id={`budget-additional-${additional.id}`}
+                              checked={config.enabled}
+                              onChange={(e) => {
+                                setBudgetAdditionals(prev => ({
+                                  ...prev,
+                                  [additional.id]: {
+                                    ...config,
+                                    enabled: e.target.checked
+                                  }
+                                }));
+                              }}
+                              className="rounded border-gray-300"
+                            />
+                            <div>
+                              <label 
+                                htmlFor={`budget-additional-${additional.id}`}
+                                className="text-sm font-medium"
+                              >
+                                {additional.name}
+                              </label>
+                              {additional.description && (
+                                <p className="text-xs text-muted-foreground mt-1">{additional.description}</p>
+                              )}
+                            </div>
+                          </div>
+                          <span className="text-xs bg-muted px-2 py-1 rounded">
+                            Importe neto
+                          </span>
+                        </div>
+                        
+                        {config.enabled && (
+                          <div className="space-y-2">
+                            <Label htmlFor={`budget-value-${additional.id}`}>Valor</Label>
+                            <Input
+                              id={`budget-value-${additional.id}`}
+                              type="number"
+                              step="0.01"
+                              value={config.value}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value) || 0;
+                                setBudgetAdditionals(prev => ({
+                                  ...prev,
+                                  [additional.id]: {
+                                    ...config,
+                                    value
+                                  }
+                                }));
+                              }}
+                              placeholder={`Valor por defecto: ${additional.default_value}`}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </section>
+      )}
+
       {(() => {
         const hasAnyItems = extraItems.length > 0;
         
@@ -281,6 +383,14 @@ const QuoteNew = () => {
                   return Number.isNaN(n) ? 0 : n;
                 };
                 const extrasTotal = Object.values(extraItemsData || {}).reduce((acc: number, it: any) => acc + parseNumber(it?.price), 0);
+                
+                // Calculate budget additionals total
+                const budgetAdditionalsTotal = Object.entries(budgetAdditionals).reduce((acc, [id, config]) => {
+                  if (!config.enabled) return acc;
+                  return acc + config.value;
+                }, 0);
+                
+                const finalTotal = extrasTotal + budgetAdditionalsTotal;
 
                 const quoteNumber = `P-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(Math.random()*9000+1000)}`;
 
@@ -294,7 +404,8 @@ const QuoteNew = () => {
                     description: description.trim() || null,
                     selections: {},
                     results: [],
-                    final_price: extrasTotal
+                    final_price: finalTotal,
+                    quote_additionals: budgetAdditionals
                   }])
                   .select("id")
                   .maybeSingle();
@@ -311,7 +422,8 @@ const QuoteNew = () => {
                   outputs: data?.outputs ?? [],
                   multi: data?.multi ?? null,
                   total_price: parseNumber(data?.price) || null,
-                  position: index
+                  position: index,
+                  item_additionals: data?.itemAdditionals ?? {}
                 }));
 
                 if (items.length > 0) {
