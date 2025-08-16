@@ -547,27 +547,13 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Producto</Label>
-                  <Select onValueChange={setProductId} value={productId} disabled={!hasToken}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(products as Product[] | undefined)?.map((p: any) => (
-                        <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Descripción del presupuesto</Label>
+                  <Input 
+                    value={description} 
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Describe brevemente este presupuesto..."
+                  />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Descripción del presupuesto</Label>
-                <Input 
-                  value={description} 
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe brevemente este presupuesto..."
-                />
               </div>
             </CardContent>
           </Card>
@@ -599,269 +585,6 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
         </Card>
       )}
 
-      {!canShowPanels && dupResults.length > 0 && (
-        <Card className="border-accent/50 bg-muted/50">
-          <CardHeader>
-            <CardTitle>Resultado (desde presupuesto anterior)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {priceOutput ? (
-              <div className="p-4 rounded-md border bg-card/50">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Precio</span>
-                  <span className="px-3 py-1 rounded-full bg-accent text-accent-foreground text-lg font-semibold hover-scale">
-                    {formatEUR((priceOutput as any).value)}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">Resultado cargado desde la copia.</p>
-            )}
-            {otherOutputs.length > 0 && (
-              <>
-                <Separator className="my-4" />
-                <section className="space-y-2">
-                  {otherOutputs.map((o: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
-                      <span>{String(o.value)}</span>
-                    </div>
-                  ))}
-                </section>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {canShowPanels && (
-        <> 
-          <div className="grid gap-6 md:grid-cols-5">
-            <Card className="md:col-span-3">
-              <CardHeader>
-                <CardTitle>Opciones</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {pricing || selectedProduct ? (
-                  <PromptsForm product={pricing || selectedProduct} values={promptValues} onChange={handlePromptChange} />
-                ) : (
-                  <p className="text-sm text-muted-foreground">Selecciona un producto para ver sus opciones.</p>
-                )}
-              </CardContent>
-            </Card>
-
-            <div className="md:col-span-2 md:sticky md:top-6 self-start space-y-3">
-              {imageOutputs.length > 0 && (
-                <section className="grid grid-cols-2 sm:grid-cols-2 gap-3">
-                  {imageOutputs.map((o: any, idx: number) => (
-                    <img
-                      key={idx}
-                      src={String(o.value)}
-                      alt={`resultado imagen ${idx + 1}`}
-                      loading="lazy"
-                      className="w-full h-auto rounded-md"
-                    />
-                  ))}
-                </section>
-              )}
-
-              <Card className="border-accent/50 bg-muted/50 animate-fade-in">
-                <CardHeader>
-                  <CardTitle>Resultado</CardTitle>
-                </CardHeader>
-                <CardContent>
-
-                  {pricingError && (
-                    <Alert variant="destructive" className="mb-4">
-                      <AlertTitle>Producto sin pricing</AlertTitle>
-                      <AlertDescription>El producto seleccionado no existe o es incorrecto.</AlertDescription>
-                    </Alert>
-                  )}
-
-                  {priceOutput ? (
-                    <div className="p-4 rounded-md border bg-card/50">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Precio</span>
-                        <span className="px-3 py-1 rounded-full bg-accent text-accent-foreground text-lg font-semibold hover-scale">
-                          {formatEUR((priceOutput as any).value)}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    !pricingError && (
-                      <p className="text-sm text-muted-foreground">Selecciona opciones para ver el resultado.</p>
-                    )
-                  )}
-
-                  {otherOutputs.length > 0 && (
-                    <>
-                      <Separator className="my-4" />
-                      <section className="space-y-2">
-                        {otherOutputs.map((o: any, idx: number) => (
-                          <div key={idx} className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
-                            <span>{String(o.value)}</span>
-                          </div>
-                        ))}
-                      </section>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-              
-              <Card className="border-accent/50 bg-muted/30">
-                <CardHeader>
-                  <CardTitle>Múltiples cantidades</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <Label>Activar</Label>
-                    </div>
-                    <Switch checked={multiEnabled} onCheckedChange={setMultiEnabled} />
-                  </div>
-
-                  {multiEnabled && (
-                    <>
-                      <div className="space-y-2">
-                        <Label>Prompt de cantidad</Label>
-                        <Select value={qtyPrompt} onValueChange={setQtyPrompt} disabled={numericPrompts.length === 0}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona prompt numérico" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {numericPrompts.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>¿Cuántos?</Label>
-                        <Input
-                          type="number"
-                          min={1}
-                          max={MAX_QTY}
-                          value={qtyCount}
-                          onChange={(e) => {
-                            const n = parseInt(e.target.value || "0", 10);
-                            if (Number.isNaN(n)) return;
-                            setQtyCount(Math.max(1, Math.min(MAX_QTY, n)));
-                          }}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-5 gap-2">
-                        {Array.from({ length: qtyCount }, (_, i) => (
-                          <div key={i} className="space-y-1">
-                            <Label>Q{i + 1}</Label>
-                            <Input
-                              type="number"
-                              min={1}
-                              value={qtyInputs[i] ?? ""}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                setQtyInputs((prev) => {
-                                  const next = [...prev];
-                                  next[i] = v;
-                                  return next;
-                                });
-                              }}
-                            />
-                          </div>
-                        ))}
-                      </div>
-
-<Separator className="my-2" />
-{multiLoading ? (
-  <p className="text-sm text-muted-foreground">Calculando...</p>
-) : (multiRows && multiRows.length > 0 ? (
-  <>
-    <Table>
-      <TableHeader>
-        <TableRow>
-          {multiRows.map((_, idx) => (
-            <TableHead key={idx}>Q{idx + 1}</TableHead>
-          ))}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        <TableRow>
-          {multiRows.map((r, idx) => {
-            const priceOut = (r.outs || []).find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
-            return (
-              <TableCell key={idx}>{formatEUR(priceOut?.value)}</TableCell>
-            );
-          })}
-        </TableRow>
-      </TableBody>
-    </Table>
-
-    <div className="mt-3">
-      <Accordion type="single" collapsible className="w-full">
-        <AccordionItem value="detalles">
-          <AccordionTrigger>Detalles</AccordionTrigger>
-          <AccordionContent>
-            <Tabs defaultValue="q1" className="w-full">
-              <TabsList className="mb-3">
-                {multiRows.map((_, idx) => (
-                  <TabsTrigger key={idx} value={`q${idx + 1}`}>Q{idx + 1}</TabsTrigger>
-                ))}
-              </TabsList>
-
-              {multiRows.map((r, idx) => {
-                const outs = r.outs || [];
-                const priceOut = outs.find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
-                const details = outs.filter((o:any) => {
-                  const t = String(o?.type || '').toLowerCase();
-                  const n = String(o?.name || '').toLowerCase();
-                  const v = String(o?.value ?? '');
-                  const isImageLike = t.includes('image') || n.includes('image');
-                  const isNA = v === '' || v === '#N/A';
-                  return o !== priceOut && !isImageLike && !isNA;
-                });
-                return (
-                  <TabsContent key={idx} value={`q${idx + 1}`}>
-                    <div className="p-3 rounded-md border bg-card/50 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Precio total</span>
-                        <span className="font-semibold">{formatEUR(priceOut?.value)}</span>
-                      </div>
-                      {details.length > 0 && (
-                        <>
-                          <Separator className="my-2" />
-                          <div className="space-y-1">
-                            {details.map((o:any, i:number) => (
-                              <div key={i} className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground">{o.name ?? 'Dato'}</span>
-                                <span>{String(o.value)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </TabsContent>
-                );
-              })}
-            </Tabs>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    </div>
-  </>
-) : (
-  <p className="text-sm text-muted-foreground">Añade cantidades para ver precios.</p>
-))}
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </>
-      )}
       {/* Artículos adicionales */}
       {customerId && (
         <section className="space-y-4">
@@ -889,11 +612,9 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
       )}
 
       {(() => {
-        const hasMainProduct = !!priceOutput?.value;
         const hasExtraItems = Object.values(extraItemsData || {}).some((item: any) => item?.price);
-        const hasAnyItems = hasMainProduct || hasExtraItems;
         
-        if (!hasAnyItems) return null;
+        if (!hasExtraItems) return null;
         
         return (
           <section className="flex items-center justify-end gap-3 pt-4">
@@ -904,9 +625,7 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
                   const n = parseFloat(String(v ?? "").replace(/\./g, "").replace(",", "."));
                   return Number.isNaN(n) ? 0 : n;
                 };
-                const mainPrice = parseNumber((priceOutput as any)?.value);
                 const extrasTotal = Object.values(extraItemsData || {}).reduce((acc: number, it: any) => acc + parseNumber(it?.price), 0);
-                const total = mainPrice + extrasTotal;
 
                 const quoteNumber = `P-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(Math.random()*9000+1000)}`;
 
@@ -916,11 +635,11 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
                     quote_number: quoteNumber,
                     status: "draft",
                     customer_id: customerId,
-                    product_name: selectedProduct ? getProductLabel(selectedProduct) : (dupProductName || null),
+                    product_name: null,
                     description: description.trim() || null,
-                    selections: promptValues,
-                    results: outputs,
-                    final_price: total
+                    selections: {},
+                    results: [],
+                    final_price: extrasTotal
                   }])
                   .select("id")
                   .maybeSingle();
@@ -931,7 +650,7 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
 
                 const items = Object.entries(extraItemsData || {}).map(([k, data]: any, index) => ({
                   quote_id: quoteId,
-                  name: `Artículo ${index + 1}`,
+                  name: data?.itemDescription || `Artículo ${index + 1}`,
                   product_id: data?.productId ?? null,
                   prompts: data?.prompts ?? {},
                   outputs: data?.outputs ?? [],
@@ -961,11 +680,11 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
         onOpenChange={setPdfOpen}
         customer={(customers || []).find((c) => c.id === customerId)}
         main={{
-          product: selectedProduct ? getProductLabel(selectedProduct) : "Producto",
-          price: (priceOutput as any)?.value ?? null,
-          prompts: promptValues,
-          outputs,
-          multi: multiEnabled ? { qtyLabel, qtyInputs, rows: multiRows } : null,
+          product: "Producto",
+          price: null,
+          prompts: {},
+          outputs: [],
+          multi: null,
         }}
         items={Object.values(extraItemsData || {})}
       />
