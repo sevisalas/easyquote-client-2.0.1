@@ -23,14 +23,8 @@ export default function QuotePDF({ customer, main, items, template }: any) {
   const logoUrl = (template?.logoUrl as string) || "";
   const footerText = (template?.footerText as string) || "";
   const today = new Date();
-  // Combinar artículo principal e items adicionales en una sola lista
-  const allItems = [];
-  if (main) {
-    allItems.push(main);
-  }
-  if (Array.isArray(items)) {
-    allItems.push(...items);
-  }
+  // Solo usar los items reales
+  const allItems = Array.isArray(items) ? items : [];
 
   return (
     <Document>
