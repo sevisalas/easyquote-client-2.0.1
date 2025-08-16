@@ -32,7 +32,7 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log("easyquote-products: Making request to EasyQuote API");
 
-    const url = `https://api.easyquote.cloud/api/v1/products`;
+    const url = `https://api.easyquote.cloud/api/v1/products?isActive=true`;
     const res = await fetch(url, {
       method: "GET",
       headers: {
