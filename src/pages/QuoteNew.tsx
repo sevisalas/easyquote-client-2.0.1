@@ -252,6 +252,13 @@ const QuoteNew = () => {
                   hasToken={hasToken}
                   initialData={initialItems[k]}
                   onChange={(id, data) => setExtraItemsData((prev) => ({ ...prev, [id as number]: data }))}
+                  onRemove={(id) => {
+                    setExtraItems((prev) => prev.filter((item) => item !== id));
+                    setExtraItemsData((prev) => {
+                      const { [id as number]: removed, ...rest } = prev;
+                      return rest;
+                    });
+                  }}
                 />
               ))}
             </div>

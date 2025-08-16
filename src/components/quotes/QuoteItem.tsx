@@ -29,9 +29,10 @@ interface QuoteItemProps {
   id: string | number;
   initialData?: ItemSnapshot;
   onChange?: (id: string | number, snapshot: ItemSnapshot) => void;
+  onRemove?: (id: string | number) => void;
 }
 
-export default function QuoteItem({ hasToken, id, initialData, onChange }: QuoteItemProps) {
+export default function QuoteItem({ hasToken, id, initialData, onChange, onRemove }: QuoteItemProps) {
   // Local state per item
   const [productId, setProductId] = useState<string>("");
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
@@ -344,9 +345,9 @@ const [qtyCount, setQtyCount] = useState<number>(5);
             <div className="flex-1">
               <div className="flex items-center gap-3">
                 <div>
-                  <h3 className="font-medium">{productName}</h3>
-                  {itemDescription && (
-                    <p className="text-sm text-muted-foreground mt-1">{itemDescription}</p>
+                  <h3 className="font-medium">{itemDescription || productName || "Artículo sin nombre"}</h3>
+                  {itemDescription && productName && (
+                    <p className="text-sm text-muted-foreground mt-1">{productName}</p>
                   )}
                 </div>
               </div>
@@ -360,6 +361,9 @@ const [qtyCount, setQtyCount] = useState<number>(5);
               <Button variant="outline" size="sm" onClick={() => setIsExpanded(true)}>
                 Expandir
               </Button>
+              <Button variant="destructive" size="sm" onClick={() => onRemove?.(id)}>
+                Eliminar
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -372,11 +376,16 @@ const [qtyCount, setQtyCount] = useState<number>(5);
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Artículo</span>
-          {productId && (
-            <Button variant="outline" size="sm" onClick={() => setIsExpanded(false)}>
-              Comprimir
+          <div className="flex gap-2">
+            {productId && (
+              <Button variant="outline" size="sm" onClick={() => setIsExpanded(false)}>
+                Comprimir
+              </Button>
+            )}
+            <Button variant="destructive" size="sm" onClick={() => onRemove?.(id)}>
+              Eliminar
             </Button>
-          )}
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
