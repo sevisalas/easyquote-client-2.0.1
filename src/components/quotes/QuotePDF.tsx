@@ -82,20 +82,6 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
                       ))}
                     </View>
                   )}
-
-                  {/* Debug: Mostrar toda la estructura del item */}
-                  <View style={{ marginLeft: 12, marginTop: 4, backgroundColor: "#fff3cd", padding: 8 }}>
-                    <Text style={{ fontSize: 8, fontWeight: 700, marginBottom: 4 }}>DEBUG - Datos del item:</Text>
-                    <Text style={{ fontSize: 8 }}>
-                      {JSON.stringify({ 
-                        name: item?.name,
-                        hasPrompts: !!item?.prompts,
-                        promptsKeys: item?.prompts ? Object.keys(item.prompts) : [],
-                        hasOutputs: !!item?.outputs,
-                        outputsLength: item?.outputs ? item.outputs.length : 0
-                      }, null, 2)}
-                    </Text>
-                  </View>
                   
                   {/* Precio (solo Price output) */}
                   {item?.outputs && item.outputs.find((output: any) => output.name === "Price") && (
