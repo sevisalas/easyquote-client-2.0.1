@@ -23,13 +23,14 @@ export default function QuotePDF({ customer, main, items, template }: any) {
   const logoUrl = (template?.logoUrl as string) || "";
   const footerText = (template?.footerText as string) || "";
   const today = new Date();
-  const itemsArr = Array.isArray(items) ? items : [];
-  const extrasTotal = itemsArr.reduce((acc, it) => {
-    const v = typeof it?.price === "number" ? it.price : parseFloat(String(it?.price ?? "").replace(/\./g, "").replace(",", ".")) || 0;
-    return acc + (Number.isNaN(v) ? 0 : v);
-  }, 0);
-  const mainPrice = typeof main?.price === "number" ? main.price : parseFloat(String(main?.price ?? "").replace(/\./g, "").replace(",", ".")) || 0;
-  const total = mainPrice + extrasTotal;
+  // Combinar artículo principal e items adicionales en una sola lista
+  const allItems = [];
+  if (main) {
+    allItems.push(main);
+  }
+  if (Array.isArray(items)) {
+    allItems.push(...items);
+  }
 
   return (
     <Document>
@@ -50,40 +51,33 @@ export default function QuotePDF({ customer, main, items, template }: any) {
           <Text>Cliente: {customer?.name || ""}</Text>
         </View>
 
-        <View style={styles.section}>
-          <Text style={{ marginBottom: 6, fontSize: 13 }}>Artículo principal</Text>
-          <View style={styles.tableHeader}>
-            <Text style={styles.th}>Producto</Text>
-            <Text style={styles.th}>Precio</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.td}>{main?.product || "Producto"}</Text>
-            <Text style={styles.td}>{fmtEUR(main?.price)}</Text>
-          </View>
-        </View>
-
-        {itemsArr.length > 0 && (
+        {allItems.length > 0 && (
           <View style={styles.section}>
-            <Text style={{ marginBottom: 6, fontSize: 13 }}>Artículos adicionales</Text>
+            <Text style={{ marginBottom: 6, fontSize: 13 }}>Artículos</Text>
             <View style={styles.tableHeader}>
-              <Text style={styles.th}>Artículo</Text>
-              <Text style={styles.th}>Precio</Text>
+              <Text style={styles.th}>Producto</Text>
+              <Text style={styles.th}>Descripción</Text>
+              <Text style={styles.th}>Cantidad</Text>
+              <Text style={styles.th}>Precio unitario</Text>
+              <Text style={styles.th}>Total</Text>
             </View>
-            {itemsArr.map((it: any, i: number) => (
-              <View key={i} style={styles.row}>
-                <Text style={styles.td}>{it?.productId ? `Artículo ${i + 1}` : `Artículo ${i + 1}`}</Text>
-                <Text style={styles.td}>{fmtEUR(it?.price)}</Text>
-              </View>
-            ))}
+            {allItems.map((item: any, i: number) => {
+              const quantity = item?.quantity || 1;
+              const unitPrice = typeof item?.price === "number" ? item.price : parseFloat(String(item?.price ?? "").replace(/\./g, "").replace(",", ".")) || 0;
+              const totalPrice = quantity * unitPrice;
+              
+              return (
+                <View key={i} style={styles.row}>
+                  <Text style={styles.td}>{item?.product || `Artículo ${i + 1}`}</Text>
+                  <Text style={styles.td}>{item?.description || ""}</Text>
+                  <Text style={styles.td}>{quantity}</Text>
+                  <Text style={styles.td}>{fmtEUR(unitPrice)}</Text>
+                  <Text style={styles.td}>{fmtEUR(totalPrice)}</Text>
+                </View>
+              );
+            })}
           </View>
         )}
-
-        <View style={styles.section}>
-          <View style={{ ...styles.row, borderTop: 1, paddingTop: 8 }}>
-            <Text style={{ fontSize: 12, fontWeight: 700 }}>Total</Text>
-            <Text style={{ fontSize: 12, fontWeight: 700, color: brand }}>{fmtEUR(total)}</Text>
-          </View>
-        </View>
 
         {footerText ? (
           <View style={{ position: "absolute", bottom: 24, left: 32, right: 32 }}>
