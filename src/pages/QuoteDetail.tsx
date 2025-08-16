@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 
 const statusLabel: Record<string, string> = {
@@ -52,6 +53,109 @@ const fetchItems = async (quoteId: string) => {
     .order("position", { ascending: true });
   if (error) throw error;
   return data || [];
+};
+
+const QuoteDetailItem = ({ item, index }: { item: any; index: number }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  const productName = item.product_id || `Artículo ${index + 1}`;
+  const itemDescription = item.name || "";
+  const price = item.total_price;
+  
+  // Estado comprimido
+  if (!isExpanded) {
+    return (
+      <Card className="border-l-4 border-l-muted-foreground/30">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-3">
+                <div>
+                  <h3 className="font-medium">{productName}</h3>
+                  {itemDescription && (
+                    <p className="text-sm text-muted-foreground mt-1">{itemDescription}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {price && (
+                <span className="font-semibold text-primary">
+                  {fmtEUR(price)}
+                </span>
+              )}
+              <Button variant="outline" size="sm" onClick={() => setIsExpanded(true)}>
+                Ver detalles
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Estado expandido - mostrar detalles completos
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <span>{productName}</span>
+          <Button variant="outline" size="sm" onClick={() => setIsExpanded(false)}>
+            Comprimir
+          </Button>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {itemDescription && (
+          <div>
+            <h4 className="text-sm font-medium text-muted-foreground">Descripción</h4>
+            <p className="text-sm">{itemDescription}</p>
+          </div>
+        )}
+        
+        {price && (
+          <div>
+            <h4 className="text-sm font-medium text-muted-foreground">Precio</h4>
+            <p className="text-lg font-semibold text-primary">{fmtEUR(price)}</p>
+          </div>
+        )}
+
+        {item.prompts && Object.keys(item.prompts).length > 0 && (
+          <>
+            <Separator />
+            <div>
+              <h4 className="text-sm font-medium text-muted-foreground mb-2">Configuración</h4>
+              <div className="grid gap-2 text-sm">
+                {Object.entries(item.prompts).map(([key, value]: [string, any]) => (
+                  <div key={key} className="flex justify-between">
+                    <span className="text-muted-foreground">{key}:</span>
+                    <span>{String(value)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0 && (
+          <>
+            <Separator />
+            <div>
+              <h4 className="text-sm font-medium text-muted-foreground mb-2">Resultados</h4>
+              <div className="grid gap-2 text-sm">
+                {item.outputs.map((output: any, idx: number) => (
+                  <div key={idx} className="flex justify-between">
+                    <span className="text-muted-foreground">{output.name || `Resultado ${idx + 1}`}:</span>
+                    <span>{String(output.value || "")}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
 };
 
 const QuoteDetail = () => {
@@ -137,28 +241,13 @@ const QuoteDetail = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Líneas</CardTitle>
+          <CardTitle>Artículos</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           {items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin artículos adicionales.</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Artículo</TableHead>
-                  <TableHead>Precio</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((it: any, i: number) => (
-                  <TableRow key={it.id || i}>
-                    <TableCell>{it.name || `Artículo ${i + 1}`}</TableCell>
-                    <TableCell>{fmtEUR(it.total_price)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            items.map((item: any, i: number) => <QuoteDetailItem key={item.id || i} item={item} index={i} />)
           )}
         </CardContent>
       </Card>

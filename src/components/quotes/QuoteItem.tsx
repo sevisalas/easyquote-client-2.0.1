@@ -3,6 +3,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
@@ -20,6 +21,7 @@ type ItemSnapshot = {
   price?: any;
   multi?: any;
   needsRecalculation?: boolean;
+  itemDescription?: string;
 };
 
 interface QuoteItemProps {
@@ -35,6 +37,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange }: Quote
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
   const [debouncedPromptValues, setDebouncedPromptValues] = useState<Record<string, any>>({});
   const [forceRecalculate, setForceRecalculate] = useState<boolean>(false);
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [itemDescription, setItemDescription] = useState<string>("");
 
   // Multi-cantidades
   const [multiEnabled, setMultiEnabled] = useState<boolean>(false);
@@ -43,7 +47,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange }: Quote
   const MAX_QTY = 10;
 const [qtyCount, setQtyCount] = useState<number>(5);
 
-// Inicialización desde datos previos (duplicar)
+  // Inicialización desde datos previos (duplicar)
   const initializedRef = useRef(false);
   useEffect(() => {
     if (initializedRef.current) return;
@@ -52,6 +56,7 @@ const [qtyCount, setQtyCount] = useState<number>(5);
     try {
       setProductId(initialData.productId || "");
       setPromptValues(initialData.prompts || {});
+      setItemDescription(initialData.itemDescription || "");
       const m: any = initialData.multi;
       if (m) {
         setMultiEnabled(true);
@@ -64,6 +69,10 @@ const [qtyCount, setQtyCount] = useState<number>(5);
       // Activar recálculo automático si es una duplicación
       if (initialData.needsRecalculation) {
         setForceRecalculate(true);
+      }
+      // Expandir si hay datos iniciales
+      if (initialData.productId) {
+        setIsExpanded(true);
       }
     } catch {}
   }, [initialData]);
@@ -317,29 +326,86 @@ const [qtyCount, setQtyCount] = useState<number>(5);
       outputs,
       price: (priceOutput as any)?.value ?? null,
       multi: multiEnabled ? { qtyPrompt, qtyInputs, rows: multiRows } : null,
+      itemDescription,
     });
-  }, [id, onChange, productId, promptValues, outputs, priceOutput, multiEnabled, qtyPrompt, qtyInputs, multiRows]);
+  }, [id, onChange, productId, promptValues, outputs, priceOutput, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription]);
 
   const handlePromptChange = (id: string, value: any) => setPromptValues((prev) => ({ ...prev, [id]: value }));
+
+  const selectedProductInfo = products?.find((p: any) => String(p.id) === String(productId));
+  const productName = selectedProductInfo ? getProductLabel(selectedProductInfo) : "";
+
+  // Estado comprimido
+  if (!isExpanded && productId) {
+    return (
+      <Card className="border-l-4 border-l-primary">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-3">
+                <div>
+                  <h3 className="font-medium">{productName}</h3>
+                  {itemDescription && (
+                    <p className="text-sm text-muted-foreground mt-1">{itemDescription}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {priceOutput && (
+                <span className="font-semibold text-primary">
+                  {formatEUR((priceOutput as any).value)}
+                </span>
+              )}
+              <Button variant="outline" size="sm" onClick={() => setIsExpanded(true)}>
+                Expandir
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Artículo</CardTitle>
+        <CardTitle className="flex items-center justify-between">
+          <span>Artículo</span>
+          {productId && (
+            <Button variant="outline" size="sm" onClick={() => setIsExpanded(false)}>
+              Comprimir
+            </Button>
+          )}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="space-y-2">
-          <Label>Producto</Label>
-          <Select onValueChange={setProductId} value={productId} disabled={!hasToken}>
-            <SelectTrigger>
-              <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
-            </SelectTrigger>
-            <SelectContent>
-              {products?.map((p: any) => (
-                <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Producto</Label>
+            <Select onValueChange={(value) => {
+              setProductId(value);
+              if (value && !isExpanded) setIsExpanded(true);
+            }} value={productId} disabled={!hasToken}>
+              <SelectTrigger>
+                <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
+              </SelectTrigger>
+              <SelectContent>
+                {products?.map((p: any) => (
+                  <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Descripción del artículo (opcional)</Label>
+            <Input
+              value={itemDescription}
+              onChange={(e) => setItemDescription(e.target.value)}
+              placeholder="Detalles adicionales..."
+            />
+          </div>
         </div>
 
         {productId ? (

@@ -511,58 +511,70 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
   };
 
   return (
-    <main className="p-6 space-y-6">
+    <main className="space-y-6">
       <header className="sr-only">
         <h1>Nuevo presupuesto - seleccionar cliente y producto</h1>
         <link rel="canonical" href={`${window.location.origin}/presupuestos/nuevo`} />
         <meta name="description" content="Crear presupuesto: selecciona cliente y producto para ver prompts y resultados." />
       </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Selecciona cliente y producto</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Cliente</Label>
-              <Select onValueChange={setCustomerId} value={customerId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Elige un cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers?.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Cabecera fija siempre visible */}
+      <div className="sticky top-0 z-10 bg-background border-b pb-4 mb-6">
+        <div className="p-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Nuevo Presupuesto</span>
+                {customerId && (
+                  <Button onClick={addItem}>Agregar artículo</Button>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Cliente</Label>
+                  <Select onValueChange={setCustomerId} value={customerId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Elige un cliente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers?.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <Label>Producto</Label>
-              <Select onValueChange={setProductId} value={productId} disabled={!hasToken}>
-                <SelectTrigger>
-                  <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {(products as Product[] | undefined)?.map((p: any) => (
-                    <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                <div className="space-y-2">
+                  <Label>Producto (principal)</Label>
+                  <Select onValueChange={setProductId} value={productId} disabled={!hasToken}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(products as Product[] | undefined)?.map((p: any) => (
+                        <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <Label>Descripción del presupuesto</Label>
-            <Input 
-              value={description} 
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe brevemente este presupuesto..."
-            />
-          </div>
-        </CardContent>
-      </Card>
+              <div className="space-y-2">
+                <Label>Descripción del presupuesto</Label>
+                <Input 
+                  value={description} 
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Describe brevemente este presupuesto..."
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <div className="px-6 space-y-6">
 
       {!hasToken && (
         <Card>
@@ -850,17 +862,18 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
           </div>
         </>
       )}
+      {/* Artículos adicionales */}
       {customerId && (
         <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Artículos adicionales</h2>
-            <Button onClick={addItem}>Agregar artículo</Button>
-          </div>
+          <h2 className="text-lg font-semibold">Artículos</h2>
 
           {extraItems.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aún no hay artículos añadidos.</p>
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No hay artículos añadidos.</p>
+              <p className="text-sm">Usa el botón "Agregar artículo" en la cabecera para empezar.</p>
+            </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {extraItems.map((k) => (
                 <QuoteItem
                   key={k}
@@ -956,6 +969,7 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
         }}
         items={Object.values(extraItemsData || {})}
       />
+      </div>
     </main>
   );
 };
