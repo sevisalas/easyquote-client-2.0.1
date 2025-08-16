@@ -83,15 +83,13 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
                     </View>
                   )}
                   
-                  {/* Resultados adicionales */}
-                  {item?.outputs && item.outputs.length > 0 && (
+                  {/* Precio (solo Price output) */}
+                  {item?.outputs && item.outputs.find((output: any) => output.name === "Price") && (
                     <View style={{ marginLeft: 12, marginTop: 4, backgroundColor: "#f0f9ff", padding: 8 }}>
-                      <Text style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>Resultados:</Text>
-                      {item.outputs.map((output: any, j: number) => (
-                        <Text key={j} style={{ fontSize: 9, marginBottom: 2 }}>
-                          • {output.name}: {output.value}
-                        </Text>
-                      ))}
+                      <Text style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>Precio:</Text>
+                      <Text style={{ fontSize: 9 }}>
+                        • {item.outputs.find((output: any) => output.name === "Price").value}
+                      </Text>
                     </View>
                   )}
                 </View>
