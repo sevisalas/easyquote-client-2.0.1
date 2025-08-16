@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      additionals: {
+        Row: {
+          created_at: string
+          default_value: number
+          description: string | null
+          id: string
+          name: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          default_value?: number
+          description?: string | null
+          id?: string
+          name: string
+          type: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          default_value?: number
+          description?: string | null
+          id?: string
+          name?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string
@@ -146,6 +179,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          item_additionals: Json | null
           multi: Json | null
           name: string | null
           outputs: Json
@@ -161,6 +195,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          item_additionals?: Json | null
           multi?: Json | null
           name?: string | null
           outputs?: Json
@@ -176,6 +211,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          item_additionals?: Json | null
           multi?: Json | null
           name?: string | null
           outputs?: Json
@@ -207,6 +243,7 @@ export type Database = {
           id: string
           product_id: string | null
           product_name: string | null
+          quote_additionals: Json | null
           quote_number: string
           results: Json
           selections: Json
@@ -222,6 +259,7 @@ export type Database = {
           id?: string
           product_id?: string | null
           product_name?: string | null
+          quote_additionals?: Json | null
           quote_number: string
           results: Json
           selections: Json
@@ -237,6 +275,7 @@ export type Database = {
           id?: string
           product_id?: string | null
           product_name?: string | null
+          quote_additionals?: Json | null
           quote_number?: string
           results?: Json
           selections?: Json

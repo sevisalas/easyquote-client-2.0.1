@@ -15,6 +15,7 @@ import QuoteNew from "./pages/QuoteNew";
 import QuoteEdit from "./pages/QuoteEdit";
 import QuotesList from "./pages/QuotesList";
 import SettingsPdfTemplate from "./pages/SettingsPdfTemplate";
+import Additionals from "./pages/Additionals";
 import QuoteDetail from "./pages/QuoteDetail";
 import GestionUsuarios from "./pages/UserManagement";
 import EditarSuscriptor from "./pages/SubscriberEdit";
@@ -118,6 +119,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <QuoteEdit />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configuracion/adicionales"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Additionals />
                 </AppLayout>
               </ProtectedRoute>
             }
