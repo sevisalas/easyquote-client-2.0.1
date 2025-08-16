@@ -455,8 +455,8 @@ const QuoteNew = () => {
                     const productName = product ? getProductLabel(product) : "";
                     
                     return {
-                      name: data?.itemDescription || productName || `Artículo ${index + 1}`,
-                      description: data?.itemDescription || "",
+                      name: productName || data?.itemDescription || `Artículo ${index + 1}`,
+                      description: data?.itemDescription || productName || "",
                       prompts: data?.prompts || {},
                       outputs: data?.outputs || [],
                       total_price: data?.price || 0

@@ -127,11 +127,6 @@ const QuotesList = () => {
                         <Button size="sm" variant="secondary" className="h-7 px-2 text-xs" onClick={() => navigate(`/presupuestos/${q.id}`)}>
                           Ver
                         </Button>
-                        {q.status === 'draft' && (
-                          <Button size="sm" variant="default" className="h-7 px-2 text-xs" onClick={() => navigate(`/presupuestos/editar/${q.id}`)}>
-                            Editar
-                          </Button>
-                        )}
                         <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => navigate(`/presupuestos/nuevo?from=${q.id}`)}>
                           Duplicar
                         </Button>
