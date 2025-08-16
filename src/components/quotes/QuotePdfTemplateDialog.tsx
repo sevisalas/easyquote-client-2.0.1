@@ -12,11 +12,12 @@ interface Props {
   customer: any;
   main: any;
   items: any[];
+  quote?: any;
 }
 
 const STORAGE_KEY = "pdf_template_config";
 
-export default function QuotePdfTemplateDialog({ open, onOpenChange, customer, main, items }: Props) {
+export default function QuotePdfTemplateDialog({ open, onOpenChange, customer, main, items, quote }: Props) {
   const [companyName, setCompanyName] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [brandColor, setBrandColor] = useState("#0ea5e9");
@@ -72,7 +73,7 @@ export default function QuotePdfTemplateDialog({ open, onOpenChange, customer, m
         <DialogFooter className="gap-2">
           <Button variant="secondary" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <PDFDownloadLink
-            document={<QuotePDF customer={customer} main={main} items={items} template={{ companyName, logoUrl, brandColor, footerText }} />}
+            document={<QuotePDF customer={customer} main={main} items={items} template={{ companyName, logoUrl, brandColor, footerText }} quote={quote} />}
             fileName={`Presupuesto_${new Date().toISOString().slice(0,10)}.pdf`}
           >
             {({ loading }) => (

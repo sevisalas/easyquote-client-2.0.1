@@ -17,7 +17,7 @@ const fmtEUR = (n: any) => {
   return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 2 }).format(num);
 };
 
-export default function QuotePDF({ customer, main, items, template }: any) {
+export default function QuotePDF({ customer, main, items, template, quote }: any) {
   const brand = (template?.brandColor as string) || "#0ea5e9";
   const company = (template?.companyName as string) || "";
   const logoUrl = (template?.logoUrl as string) || "";
@@ -40,6 +40,7 @@ export default function QuotePDF({ customer, main, items, template }: any) {
 
         <Text style={{ ...styles.h1, color: brand }}>Presupuesto</Text>
         <View style={styles.meta}>
+          {quote?.quote_number && <Text>Número: {quote.quote_number}</Text>}
           {!!company && <Text>Empresa: {company}</Text>}
           <Text>Fecha: {today.toLocaleDateString("es-ES")}</Text>
           <Text>Cliente: {customer?.name || ""}</Text>
@@ -57,12 +58,12 @@ export default function QuotePDF({ customer, main, items, template }: any) {
             </View>
             {allItems.map((item: any, i: number) => {
               const quantity = item?.quantity || 1;
-              const unitPrice = typeof item?.price === "number" ? item.price : parseFloat(String(item?.price ?? "").replace(/\./g, "").replace(",", ".")) || 0;
-              const totalPrice = quantity * unitPrice;
+              const unitPrice = item?.total_price ? item.total_price / quantity : 0;
+              const totalPrice = item?.total_price || 0;
               
               return (
                 <View key={i} style={styles.row}>
-                  <Text style={styles.td}>{item?.product || `Artículo ${i + 1}`}</Text>
+                  <Text style={styles.td}>{item?.name || `Artículo ${i + 1}`}</Text>
                   <Text style={styles.td}>{item?.description || ""}</Text>
                   <Text style={styles.td}>{quantity}</Text>
                   <Text style={styles.td}>{fmtEUR(unitPrice)}</Text>

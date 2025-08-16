@@ -447,7 +447,7 @@ const QuoteNew = () => {
         onOpenChange={setPdfOpen}
         customer={(customers || []).find((c) => c.id === customerId)}
         main={null}
-        items={Object.values(extraItemsData || {})}
+        items={[]}
       />
       </div>
     </main>
