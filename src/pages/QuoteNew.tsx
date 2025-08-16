@@ -421,17 +421,23 @@ const QuoteNew = () => {
                 const quoteId = inserted?.id;
                 if (!quoteId) throw new Error("No se pudo crear el presupuesto.");
 
-                const items = Object.entries(extraItemsData || {}).map(([k, data]: any, index) => ({
-                  quote_id: quoteId,
-                  name: data?.itemDescription || `Artículo ${index + 1}`,
-                  product_id: data?.productId ?? null,
-                  prompts: data?.prompts ?? {},
-                  outputs: data?.outputs ?? [],
-                  multi: data?.multi ?? null,
-                  total_price: parseNumber(data?.price) || null,
-                  position: index,
-                  item_additionals: data?.itemAdditionals ?? {}
-                }));
+                const items = Object.entries(extraItemsData || {}).map(([k, data]: any, index) => {
+                  // Buscar el producto para obtener su nombre real
+                  const product = products?.find((p: any) => String(p.id) === String(data?.productId));
+                  const productName = product ? getProductLabel(product) : "";
+                  
+                  return {
+                    quote_id: quoteId,
+                    name: productName || data?.itemDescription || `Artículo ${index + 1}`,
+                    product_id: data?.productId ?? null,
+                    prompts: data?.prompts ?? {},
+                    outputs: data?.outputs ?? [],
+                    multi: data?.multi ?? null,
+                    total_price: parseNumber(data?.price) || null,
+                    position: index,
+                    item_additionals: data?.itemAdditionals ?? {}
+                  };
+                });
 
                 if (items.length > 0) {
                   const { error: itemsErr } = await supabase.from("quote_items").insert(items);
