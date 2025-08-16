@@ -216,34 +216,6 @@ const QuoteDetail = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Resultados</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {Array.isArray(quote?.results) && quote!.results.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Valor</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {quote!.results.map((o: any, idx: number) => (
-                  <TableRow key={idx}>
-                    <TableCell>{o.name ?? "Campo"}</TableCell>
-                    <TableCell>{String(o.value ?? "")}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <p className="text-sm text-muted-foreground">Sin resultados.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle>Artículos</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
