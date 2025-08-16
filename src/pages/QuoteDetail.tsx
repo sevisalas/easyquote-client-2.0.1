@@ -101,7 +101,7 @@ const QuoteDetailItem = ({ item, index }: { item: any; index: number }) => {
         <CardTitle className="flex items-center justify-between">
           <span>{productName}</span>
           <Button variant="outline" size="sm" onClick={() => setIsExpanded(false)}>
-            Comprimir
+            Ocultar
           </Button>
         </CardTitle>
       </CardHeader>
