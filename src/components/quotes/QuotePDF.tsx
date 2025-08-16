@@ -61,7 +61,7 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
                 <View key={i} style={{ marginBottom: 12 }}>
                   <View style={styles.row}>
                     <Text style={styles.td}>{item?.name || `Artículo ${i + 1}`}</Text>
-                    <Text style={styles.td}>{item?.name || item?.description || ""}</Text>
+                    <Text style={styles.td}>{item?.name || ""}</Text>
                     <Text style={styles.td}>{fmtEUR(totalPrice)}</Text>
                   </View>
                   
