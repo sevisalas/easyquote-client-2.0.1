@@ -85,10 +85,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       if (initialData.needsRecalculation) {
         setForceRecalculate(true);
       }
-      // Expandir si hay datos iniciales
-      if (initialData.productId) {
-        setIsExpanded(true);
-      }
     } catch {}
   }, [initialData]);
 
@@ -444,7 +440,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             <Label>Producto</Label>
             <Select onValueChange={(value) => {
               setProductId(value);
-              if (value && !isExpanded) setIsExpanded(true);
             }} value={productId} disabled={!hasToken}>
               <SelectTrigger>
                 <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
