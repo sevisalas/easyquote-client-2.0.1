@@ -18,7 +18,7 @@ import QuoteItem from "@/components/quotes/QuoteItem";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import QuotePDF from "@/components/quotes/QuotePDF";
 import { useLocation, useSearchParams } from "react-router-dom";
-import QuotePdfTemplateDialog from "@/components/quotes/QuotePdfTemplateDialog";
+
 
 interface Customer { id: string; name: string }
 interface Product { id: string; name?: string; title?: string }
@@ -62,7 +62,7 @@ const QuoteNew = () => {
   const [eqPassword, setEqPassword] = useState<string>("");
   const [connecting, setConnecting] = useState(false);
   const queryClient = useQueryClient();
-  const [pdfOpen, setPdfOpen] = useState(false);
+  
 
   // Artículos adicionales en el presupuesto
   const [extraItems, setExtraItems] = useState<number[]>([]);
@@ -437,18 +437,43 @@ const QuoteNew = () => {
               }
             }}>Guardar presupuesto</Button>
 
-            <Button variant="secondary" onClick={() => setPdfOpen(true)}>Generar PDF</Button>
+            <PDFDownloadLink
+              document={
+                <QuotePDF
+                  customer={(customers || []).find((c) => c.id === customerId)}
+                  main={null}
+                  items={Object.values(extraItemsData || {}).map((data: any, index: number) => ({
+                    name: data?.itemDescription || `Artículo ${index + 1}`,
+                    description: data?.itemDescription || "",
+                    prompts: data?.prompts || {},
+                    outputs: data?.outputs || [],
+                    total_price: data?.price || 0
+                  }))}
+                  template={{
+                    companyName: localStorage.getItem("pdf_template_config") ? 
+                      JSON.parse(localStorage.getItem("pdf_template_config") || "{}").companyName || "" : "",
+                    logoUrl: localStorage.getItem("pdf_template_config") ? 
+                      JSON.parse(localStorage.getItem("pdf_template_config") || "{}").logoUrl || "" : "",
+                    brandColor: localStorage.getItem("pdf_template_config") ? 
+                      JSON.parse(localStorage.getItem("pdf_template_config") || "{}").brandColor || "#0ea5e9" : "#0ea5e9",
+                    footerText: localStorage.getItem("pdf_template_config") ? 
+                      JSON.parse(localStorage.getItem("pdf_template_config") || "{}").footerText || "" : ""
+                  }}
+                  quote={null}
+                />
+              }
+              fileName={`presupuesto-nuevo-${Date.now()}.pdf`}
+            >
+              {({ loading }) => (
+                <Button variant="secondary" disabled={loading}>
+                  {loading ? "Generando..." : "Generar PDF"}
+                </Button>
+              )}
+            </PDFDownloadLink>
           </section>
         );
       })()}
 
-      <QuotePdfTemplateDialog
-        open={pdfOpen}
-        onOpenChange={setPdfOpen}
-        customer={(customers || []).find((c) => c.id === customerId)}
-        main={null}
-        items={Object.values(extraItemsData || {})}
-      />
       </div>
     </main>
   );
