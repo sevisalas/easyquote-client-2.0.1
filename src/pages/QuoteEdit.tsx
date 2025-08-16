@@ -389,13 +389,7 @@ const QuoteEdit = () => {
                   <QuotePDF
                     customer={(customers || []).find((c) => c.id === customerId)}
                     main={null}
-                    items={Object.values(extraItemsData || {}).map((data: any, index: number) => ({
-                      name: data?.itemDescription || `Artículo ${index + 1}`,
-                      description: data?.itemDescription || "",
-                      prompts: data?.prompts || {},
-                      outputs: data?.outputs || [],
-                      total_price: data?.price || 0
-                    }))}
+                    items={items || []}
                     template={{
                       companyName: localStorage.getItem("pdf_template_config") ? 
                         JSON.parse(localStorage.getItem("pdf_template_config") || "{}").companyName || "" : "",
