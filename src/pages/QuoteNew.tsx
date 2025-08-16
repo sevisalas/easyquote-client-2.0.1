@@ -260,9 +260,9 @@ const QuoteNew = () => {
       )}
 
       {(() => {
-        const hasExtraItems = Object.values(extraItemsData || {}).some((item: any) => item?.price);
+        const hasAnyItems = extraItems.length > 0;
         
-        if (!hasExtraItems) return null;
+        if (!hasAnyItems) return null;
         
         return (
           <section className="flex items-center justify-end gap-3 pt-4">
