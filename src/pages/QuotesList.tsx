@@ -127,9 +127,35 @@ const QuotesList = () => {
                         <Button size="sm" variant="secondary" className="h-7 px-2 text-xs" onClick={() => navigate(`/presupuestos/${q.id}`)}>
                           Ver
                         </Button>
-                        <Button size="sm" variant="default" className="h-7 px-2 text-xs" onClick={() => navigate(`/presupuestos/nuevo?from=${q.id}`)}>
-                          Duplicar como nuevo
+                        {q.status === 'draft' && (
+                          <Button size="sm" variant="default" className="h-7 px-2 text-xs" onClick={() => navigate(`/presupuestos/editar/${q.id}`)}>
+                            Editar
+                          </Button>
+                        )}
+                        <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => navigate(`/presupuestos/nuevo?from=${q.id}`)}>
+                          Duplicar
                         </Button>
+                        {q.status === 'draft' && (
+                          <Button 
+                            size="sm" 
+                            variant="destructive" 
+                            className="h-7 px-2 text-xs" 
+                            onClick={async () => {
+                              if (confirm('¿Estás seguro de que quieres eliminar este presupuesto?')) {
+                                try {
+                                  const { error } = await supabase.from('quotes').delete().eq('id', q.id);
+                                  if (error) throw error;
+                                  toast({ title: 'Presupuesto eliminado' });
+                                  refetch();
+                                } catch (e: any) {
+                                  toast({ title: 'Error al eliminar', description: e?.message, variant: 'destructive' });
+                                }
+                              }
+                            }}
+                          >
+                            Eliminar
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

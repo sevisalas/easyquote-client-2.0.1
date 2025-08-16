@@ -12,6 +12,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Auth from "./pages/Auth";
 import AppLayout from "./components/layout/AppLayout";
 import QuoteNew from "./pages/QuoteNew";
+import QuoteEdit from "./pages/QuoteEdit";
 import QuotesList from "./pages/QuotesList";
 import SettingsPdfTemplate from "./pages/SettingsPdfTemplate";
 import QuoteDetail from "./pages/QuoteDetail";
@@ -107,6 +108,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <QuoteDetail />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/presupuestos/editar/:id"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <QuoteEdit />
                 </AppLayout>
               </ProtectedRoute>
             }

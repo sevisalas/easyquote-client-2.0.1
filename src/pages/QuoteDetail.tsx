@@ -58,8 +58,8 @@ const fetchItems = async (quoteId: string) => {
 const QuoteDetailItem = ({ item, index }: { item: any; index: number }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
-  const productName = item.product_id || `Artículo ${index + 1}`;
   const itemDescription = item.name || "";
+  const productName = itemDescription || `Artículo ${index + 1}`;
   const price = item.total_price;
   
   // Estado comprimido
@@ -182,6 +182,9 @@ const QuoteDetail = () => {
         <h2 className="text-xl font-semibold">{quote?.quote_number || "Presupuesto"}</h2>
         <div className="flex items-center gap-2">
           {quote?.status && <Badge variant={getStatusVariant(quote.status)}>{statusLabel[quote.status] || quote.status}</Badge>}
+          {quote?.status === 'draft' && (
+            <Button variant="default" onClick={() => navigate(`/presupuestos/editar/${id}`)}>Editar</Button>
+          )}
           <Button variant="secondary" onClick={() => navigate(`/presupuestos/nuevo?from=${id}`)}>Duplicar como nuevo</Button>
           <Button onClick={() => navigate(-1)}>Volver</Button>
         </div>
