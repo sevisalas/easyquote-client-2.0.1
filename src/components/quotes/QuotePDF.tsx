@@ -52,13 +52,9 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
             <View style={styles.tableHeader}>
               <Text style={styles.th}>Producto</Text>
               <Text style={styles.th}>Descripción</Text>
-              <Text style={styles.th}>Cantidad</Text>
-              <Text style={styles.th}>Precio unitario</Text>
-              <Text style={styles.th}>Total</Text>
+              <Text style={styles.th}>Precio</Text>
             </View>
             {allItems.map((item: any, i: number) => {
-              const quantity = item?.quantity || 1;
-              const unitPrice = item?.total_price ? item.total_price / quantity : 0;
               const totalPrice = item?.total_price || 0;
               
               return (
@@ -66,8 +62,6 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
                   <View style={styles.row}>
                     <Text style={styles.td}>{item?.name || `Artículo ${i + 1}`}</Text>
                     <Text style={styles.td}>{item?.description || ""}</Text>
-                    <Text style={styles.td}>{quantity}</Text>
-                    <Text style={styles.td}>{fmtEUR(unitPrice)}</Text>
                     <Text style={styles.td}>{fmtEUR(totalPrice)}</Text>
                   </View>
                   
