@@ -45,7 +45,7 @@ const fetchQuote = async (id: string) => {
 const fetchItems = async (quoteId: string) => {
   const { data, error } = await supabase
     .from("quote_items")
-    .select("id, name, product_id, prompts, outputs, multi, total_price, position, item_additionals")
+    .select("id, name, product_id, prompts, outputs, multi, total_price, position, item_additionals, description")
     .eq("quote_id", quoteId)
     .order("position", { ascending: true });
   if (error) throw error;
