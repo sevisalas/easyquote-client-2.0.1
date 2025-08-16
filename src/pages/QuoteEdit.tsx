@@ -23,6 +23,21 @@ import QuotePDF from "@/components/quotes/QuotePDF";
 interface Customer { id: string; name: string }
 interface Product { id: string; name?: string; title?: string }
 
+const fetchProducts = async () => {
+  const token = localStorage.getItem("easyquote_token");
+  if (!token) throw new Error("No token available");
+  
+  const { data, error } = await supabase.functions.invoke("easyquote-products", {
+    body: { token },
+  });
+  if (error) throw error;
+  const list = Array.isArray(data) ? data : (data?.items || data?.data || []);
+  return list as any[];
+};
+
+const getProductLabel = (p: any) =>
+  p?.name ?? p?.title ?? p?.displayName ?? p?.productName ?? p?.product_name ?? p?.nombre ?? p?.Nombre ?? p?.description ?? "Producto sin nombre";
+
 const fetchCustomers = async (): Promise<Customer[]> => {
   const { data, error } = await supabase
     .from("customers")
@@ -59,7 +74,6 @@ const QuoteEdit = () => {
   const [description, setDescription] = useState<string>("");
   const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
   
-
   // Artículos adicionales en el presupuesto
   const [extraItems, setExtraItems] = useState<number[]>([]);
   const [extraItemsData, setExtraItemsData] = useState<Record<number, any>>({});
@@ -67,8 +81,15 @@ const QuoteEdit = () => {
 
   // Budget additionals
   const [budgetAdditionals, setBudgetAdditionals] = useState<Record<string, { enabled: boolean; value: number }>>({});
-
+  
   const { data: customers } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
+  
+  const { data: products } = useQuery({
+    queryKey: ["easyquote-products"],
+    queryFn: fetchProducts,
+    retry: 1,
+    enabled: hasToken,
+  });
   
   const { data: additionals } = useQuery({
     queryKey: ["additionals"],
@@ -389,7 +410,17 @@ const QuoteEdit = () => {
                   <QuotePDF
                     customer={(customers || []).find((c) => c.id === customerId)}
                     main={null}
-                    items={items || []}
+                    items={(items || []).map((item: any) => {
+                      // Buscar el producto para obtener su nombre real
+                      const product = products?.find((p: any) => String(p.id) === String(item.product_id));
+                      const productName = product ? getProductLabel(product) : "";
+                      
+                      return {
+                        ...item,
+                        name: productName || item.name,
+                        description: item.name || productName || ""
+                      };
+                    })}
                     template={{
                       companyName: localStorage.getItem("pdf_template_config") ? 
                         JSON.parse(localStorage.getItem("pdf_template_config") || "{}").companyName || "" : "",
