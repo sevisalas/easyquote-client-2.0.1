@@ -92,6 +92,36 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
           </View>
         )}
 
+        {/* Totales */}
+        {allItems.length > 0 && (
+          <View style={{ marginTop: 20, marginLeft: 'auto', width: '40%' }}>
+            <View style={{ borderTop: 1, borderColor: '#e5e7eb', paddingTop: 8 }}>
+              {(() => {
+                const subtotal = allItems.reduce((sum, item) => sum + (parseFloat(item?.total_price || 0)), 0);
+                const iva = subtotal * 0.21; // 21% IVA
+                const total = subtotal + iva;
+                
+                return (
+                  <>
+                    <View style={styles.row}>
+                      <Text style={{ fontSize: 10 }}>Subtotal:</Text>
+                      <Text style={{ fontSize: 10, fontWeight: 700 }}>{fmtEUR(subtotal)}</Text>
+                    </View>
+                    <View style={styles.row}>
+                      <Text style={{ fontSize: 10 }}>IVA (21%):</Text>
+                      <Text style={{ fontSize: 10, fontWeight: 700 }}>{fmtEUR(iva)}</Text>
+                    </View>
+                    <View style={{ ...styles.row, borderTop: 1, borderColor: brand, paddingTop: 4, marginTop: 4 }}>
+                      <Text style={{ fontSize: 12, fontWeight: 700, color: brand }}>TOTAL:</Text>
+                      <Text style={{ fontSize: 12, fontWeight: 700, color: brand }}>{fmtEUR(total)}</Text>
+                    </View>
+                  </>
+                );
+              })()}
+            </View>
+          </View>
+        )}
+
         {footerText ? (
           <View style={{ position: "absolute", bottom: 24, left: 32, right: 32 }}>
             <View style={{ height: 1, backgroundColor: "#e5e7eb", marginBottom: 6 }} />
