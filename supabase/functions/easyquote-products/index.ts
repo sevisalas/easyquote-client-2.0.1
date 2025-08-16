@@ -20,12 +20,17 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const { token } = await req.json();
+    console.log("easyquote-products: Request received");
+    
     if (!token) {
+      console.error("easyquote-products: Missing token");
       return new Response(JSON.stringify({ error: "Missing token" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    console.log("easyquote-products: Making request to EasyQuote API");
 
     const url = `https://api.easyquote.cloud/api/v1/products`;
     const res = await fetch(url, {
