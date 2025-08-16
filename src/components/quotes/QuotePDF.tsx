@@ -62,12 +62,38 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
               const totalPrice = item?.total_price || 0;
               
               return (
-                <View key={i} style={styles.row}>
-                  <Text style={styles.td}>{item?.name || `Artículo ${i + 1}`}</Text>
-                  <Text style={styles.td}>{item?.description || ""}</Text>
-                  <Text style={styles.td}>{quantity}</Text>
-                  <Text style={styles.td}>{fmtEUR(unitPrice)}</Text>
-                  <Text style={styles.td}>{fmtEUR(totalPrice)}</Text>
+                <View key={i} style={{ marginBottom: 12 }}>
+                  <View style={styles.row}>
+                    <Text style={styles.td}>{item?.name || `Artículo ${i + 1}`}</Text>
+                    <Text style={styles.td}>{item?.description || ""}</Text>
+                    <Text style={styles.td}>{quantity}</Text>
+                    <Text style={styles.td}>{fmtEUR(unitPrice)}</Text>
+                    <Text style={styles.td}>{fmtEUR(totalPrice)}</Text>
+                  </View>
+                  
+                  {/* Detalles de configuración */}
+                  {item?.prompts && Object.keys(item.prompts).length > 0 && (
+                    <View style={{ marginLeft: 12, marginTop: 4, backgroundColor: "#f9fafb", padding: 8 }}>
+                      <Text style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>Configuración:</Text>
+                      {Object.entries(item.prompts).map(([key, value]: [string, any], j: number) => (
+                        <Text key={j} style={{ fontSize: 9, marginBottom: 2 }}>
+                          • {key}: {String(value)}
+                        </Text>
+                      ))}
+                    </View>
+                  )}
+                  
+                  {/* Resultados adicionales */}
+                  {item?.outputs && item.outputs.length > 0 && (
+                    <View style={{ marginLeft: 12, marginTop: 4, backgroundColor: "#f0f9ff", padding: 8 }}>
+                      <Text style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>Resultados:</Text>
+                      {item.outputs.map((output: any, j: number) => (
+                        <Text key={j} style={{ fontSize: 9, marginBottom: 2 }}>
+                          • {output.name}: {output.value}
+                        </Text>
+                      ))}
+                    </View>
+                  )}
                 </View>
               );
             })}
