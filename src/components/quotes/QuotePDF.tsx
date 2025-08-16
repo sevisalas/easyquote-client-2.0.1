@@ -77,6 +77,18 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
                     </View>
                   )}
                   
+                  {/* Mostrar detalles si no hay prompts pero hay otros datos */}
+                  {(!item?.prompts || Object.keys(item.prompts).length === 0) && item?.multi && (
+                    <View style={{ marginLeft: 12, marginTop: 4, backgroundColor: "#f9fafb", padding: 8 }}>
+                      <Text style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>Configuración:</Text>
+                      {Object.entries(item.multi).map(([key, value]: [string, any], j: number) => (
+                        <Text key={j} style={{ fontSize: 9, marginBottom: 2 }}>
+                          • {key}: {String(value)}
+                        </Text>
+                      ))}
+                    </View>
+                  )}
+                  
                   {/* Precio (solo Price output) */}
                   {item?.outputs && item.outputs.find((output: any) => output.name === "Price") && (
                     <View style={{ marginLeft: 12, marginTop: 4, backgroundColor: "#f0f9ff", padding: 8 }}>
