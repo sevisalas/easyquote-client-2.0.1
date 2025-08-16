@@ -525,9 +525,9 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Nuevo Presupuesto</span>
-                {customerId && (
-                  <Button onClick={addItem}>Agregar artículo</Button>
-                )}
+                <Button onClick={addItem} disabled={!customerId}>
+                  Agregar artículo
+                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -547,7 +547,7 @@ const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Producto (principal)</Label>
+                  <Label>Producto</Label>
                   <Select onValueChange={setProductId} value={productId} disabled={!hasToken}>
                     <SelectTrigger>
                       <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
