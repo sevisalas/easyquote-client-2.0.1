@@ -420,7 +420,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 </span>
               )}
               <Button variant="outline" size="sm" onClick={() => setIsExpanded(true)}>
-                Expandir
+                Ver detalles
               </Button>
               <Button variant="destructive" size="sm" onClick={() => onRemove?.(id)}>
                 Eliminar
