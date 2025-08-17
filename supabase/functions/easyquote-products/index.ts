@@ -30,7 +30,7 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log("easyquote-products: Making request to EasyQuote API");
+    console.log("easyquote-products: Making request to EasyQuote API with isActive=true filter");
 
     const url = `https://api.easyquote.cloud/api/v1/products?isActive=true`;
     const res = await fetch(url, {
@@ -61,7 +61,15 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    return new Response(JSON.stringify(data), {
+    // Additional filtering on backend as backup
+    let products = Array.isArray(data) ? data : (data?.items || data?.data || []);
+    const activeProducts = products.filter((product: any) => {
+      return product.isActive === true || product.is_active === true || product.active === true;
+    });
+    
+    console.log(`easyquote-products: Backend filtered ${activeProducts.length} active products from ${products.length} total`);
+
+    return new Response(JSON.stringify(activeProducts), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
