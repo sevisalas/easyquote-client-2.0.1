@@ -63,8 +63,10 @@ serve(async (req: Request): Promise<Response> => {
 
     // Additional filtering on backend as backup
     let products = Array.isArray(data) ? data : (data?.items || data?.data || []);
+    console.log(`easyquote-products: Total products received: ${products.length}`);
     const activeProducts = products.filter((product: any) => {
-      return product.isActive === true || product.is_active === true || product.active === true;
+      console.log(`Product ${product.productName}: isActive=${product.isActive}`);
+      return product.isActive === true;
     });
     
     console.log(`easyquote-products: Backend filtered ${activeProducts.length} active products from ${products.length} total`);

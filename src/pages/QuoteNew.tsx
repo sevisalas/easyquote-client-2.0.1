@@ -42,7 +42,8 @@ const fetchProducts = async (): Promise<Product[]> => {
   const list = Array.isArray(data) ? data : (data?.items || data?.data || []);
   // Filtrar solo productos activos (backup en frontend)
   const activeProducts = list.filter((product: any) => {
-    return product.isActive === true || product.is_active === true || product.active === true;
+    console.log(`Product ${product.productName}: isActive=${product.isActive}`);
+    return product.isActive === true;
   });
   console.log(`fetchProducts: Filtered ${activeProducts.length} active products from ${list.length} total`);
   return activeProducts as Product[];
