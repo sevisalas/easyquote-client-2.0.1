@@ -25,12 +25,20 @@ interface Product { id: string; name?: string; title?: string }
 
 const fetchProducts = async () => {
   const token = localStorage.getItem("easyquote_token");
-  if (!token) throw new Error("No token available");
+  if (!token) throw new Error("No hay token de EasyQuote disponible. Por favor, inicia sesión nuevamente.");
   
   const { data, error } = await supabase.functions.invoke("easyquote-products", {
     body: { token },
   });
-  if (error) throw error;
+  
+  if (error) {
+    // Si es error 401 o relacionado con autenticación
+    if (error.message?.includes("401") || error.message?.includes("Failed to fetch products") || error.message?.includes("Unauthorized")) {
+      throw new Error("Tu sesión de EasyQuote ha expirado. Por favor, cierra sesión y vuelve a iniciar sesión para continuar.");
+    }
+    throw error;
+  }
+  
   const list = Array.isArray(data) ? data : (data?.items || data?.data || []);
   // Filtrar solo productos activos (backup en frontend)
   const activeProducts = list.filter((product: any) => {
