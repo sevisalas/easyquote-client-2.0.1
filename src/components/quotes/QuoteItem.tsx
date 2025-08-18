@@ -80,7 +80,24 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setProductId(initialData.productId || "");
       setPromptValues(initialData.prompts || {});
       setItemDescription(initialData.itemDescription || "");
-      setItemAdditionals(initialData.itemAdditionals || []);
+      // Convert old format to new format if needed
+      const oldAdditionals = initialData.itemAdditionals;
+      if (Array.isArray(oldAdditionals)) {
+        setItemAdditionals(oldAdditionals);
+      } else if (oldAdditionals && typeof oldAdditionals === 'object') {
+        // Convert old object format to new array format
+        const convertedAdditionals = Object.entries(oldAdditionals)
+          .filter(([_, config]: [string, any]) => config.enabled)
+          .map(([id, config]: [string, any]) => ({
+            id,
+            name: `Adicional ${id}`,
+            type: "net_amount" as const,
+            value: config.value
+          }));
+        setItemAdditionals(convertedAdditionals);
+      } else {
+        setItemAdditionals([]);
+      }
       const m: any = initialData.multi;
       if (m) {
         setMultiEnabled(true);
@@ -371,7 +388,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     const basePrice = parseFloat(String((priceOutput as any)?.value ?? 0).replace(/\./g, "").replace(",", ".")) || 0;
     let additionalsTotal = 0;
     
-    itemAdditionals.forEach((additional) => {
+    // Ensure itemAdditionals is an array
+    const additionalsArray = Array.isArray(itemAdditionals) ? itemAdditionals : [];
+    
+    additionalsArray.forEach((additional) => {
       if (additional.type === 'net_amount') {
         additionalsTotal += additional.value;
       } else if (additional.type === 'quantity_multiplier') {
