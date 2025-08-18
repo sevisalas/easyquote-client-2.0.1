@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import AdditionalsSelector from "./AdditionalsSelector";
 
 type ItemSnapshot = {
   productId: string;
@@ -23,7 +24,7 @@ type ItemSnapshot = {
   multi?: any;
   needsRecalculation?: boolean;
   itemDescription?: string;
-  itemAdditionals?: Record<string, { enabled: boolean; value: number }>;
+  itemAdditionals?: SelectedAdditional[];
 };
 
 interface QuoteItemProps {
@@ -35,11 +36,19 @@ interface QuoteItemProps {
 }
 
 interface Additional {
-  id: string;
-  name: string;
-  description?: string;
-  type: 'net' | 'quantity';
-  default_value: number;
+  id: string
+  name: string
+  description: string | null
+  type: "net_amount" | "quantity_multiplier"
+  default_value: number
+}
+
+interface SelectedAdditional {
+  id: string
+  name: string
+  type: "net_amount" | "quantity_multiplier" | "custom"
+  value: number
+  isCustom?: boolean
 }
 
 export default function QuoteItem({ hasToken, id, initialData, onChange, onRemove }: QuoteItemProps) {
@@ -59,7 +68,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [qtyCount, setQtyCount] = useState<number>(5);
 
   // Item additionals
-  const [itemAdditionals, setItemAdditionals] = useState<Record<string, { enabled: boolean; value: number }>>({});
+  const [itemAdditionals, setItemAdditionals] = useState<SelectedAdditional[]>([]);
 
   // Inicialización desde datos previos (duplicar)
   const initializedRef = useRef(false);
@@ -71,7 +80,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setProductId(initialData.productId || "");
       setPromptValues(initialData.prompts || {});
       setItemDescription(initialData.itemDescription || "");
-      setItemAdditionals(initialData.itemAdditionals || {});
+      setItemAdditionals(initialData.itemAdditionals || []);
       const m: any = initialData.multi;
       if (m) {
         setMultiEnabled(true);
@@ -362,23 +371,19 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     const basePrice = parseFloat(String((priceOutput as any)?.value ?? 0).replace(/\./g, "").replace(",", ".")) || 0;
     let additionalsTotal = 0;
     
-    Object.entries(itemAdditionals).forEach(([additionalId, config]) => {
-      if (!config.enabled) return;
-      const additional = additionals?.find(a => a.id === additionalId);
-      if (!additional) return;
-      
-      if (additional.type === 'net') {
-        additionalsTotal += config.value;
-      } else if (additional.type === 'quantity') {
+    itemAdditionals.forEach((additional) => {
+      if (additional.type === 'net_amount') {
+        additionalsTotal += additional.value;
+      } else if (additional.type === 'quantity_multiplier') {
         // For quantity type, we need to get the quantity from prompts or multi
         const quantity = multiEnabled && multiRows.length > 0 ? 
           multiRows.reduce((sum, row) => sum + row.qty, 0) : 1;
-        additionalsTotal += config.value * quantity;
+        additionalsTotal += additional.value * quantity;
       }
     });
     
     return basePrice + additionalsTotal;
-  }, [priceOutput, itemAdditionals, additionals, multiEnabled, multiRows]);
+  }, [priceOutput, itemAdditionals, multiEnabled, multiRows]);
 
   useEffect(() => {
     onChange?.(id, {
@@ -696,88 +701,25 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         )}
 
         {/* Additionals Section */}
-        {productId && additionals && additionals.length > 0 && (
+        {productId && (
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="additionals">
               <AccordionTrigger>
                 <div className="flex items-center gap-2">
                   <span>Adicionales del artículo</span>
-                  {Object.values(itemAdditionals).some(a => a.enabled) && (
+                  {itemAdditionals.length > 0 && (
                     <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                      {Object.values(itemAdditionals).filter(a => a.enabled).length} activos
+                      {itemAdditionals.length} seleccionados
                     </span>
                   )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
-                <div className="space-y-4 pt-2">
-                  {additionals.map((additional) => {
-                    const config = itemAdditionals[additional.id] || { enabled: false, value: additional.default_value };
-                    return (
-                      <div key={additional.id} className="border rounded-lg p-4 space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`additional-${additional.id}`}
-                              checked={config.enabled}
-                              onCheckedChange={(checked) => {
-                                setItemAdditionals(prev => ({
-                                  ...prev,
-                                  [additional.id]: {
-                                    ...config,
-                                    enabled: !!checked
-                                  }
-                                }));
-                              }}
-                            />
-                            <div>
-                              <label 
-                                htmlFor={`additional-${additional.id}`}
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                              >
-                                {additional.name}
-                              </label>
-                              {additional.description && (
-                                <p className="text-xs text-muted-foreground mt-1">{additional.description}</p>
-                              )}
-                            </div>
-                          </div>
-                          <span className="text-xs bg-muted px-2 py-1 rounded">
-                            {additional.type === 'net' ? 'Importe neto' : 'Por cantidad'}
-                          </span>
-                        </div>
-                        
-                        {config.enabled && (
-                          <div className="space-y-2">
-                            <Label htmlFor={`value-${additional.id}`}>Valor</Label>
-                            <Input
-                              id={`value-${additional.id}`}
-                              type="number"
-                              step="0.01"
-                              value={config.value}
-                              onChange={(e) => {
-                                const value = parseFloat(e.target.value) || 0;
-                                setItemAdditionals(prev => ({
-                                  ...prev,
-                                  [additional.id]: {
-                                    ...config,
-                                    value
-                                  }
-                                }));
-                              }}
-                              placeholder={`Valor por defecto: ${additional.default_value}`}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              {additional.type === 'net' 
-                                ? `Se suma ${formatEUR(config.value)} al subtotal`
-                                : `Se suma ${formatEUR(config.value)} por cada unidad`
-                              }
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                <div className="pt-2">
+                  <AdditionalsSelector
+                    selectedAdditionals={itemAdditionals}
+                    onChange={setItemAdditionals}
+                  />
                 </div>
               </AccordionContent>
             </AccordionItem>

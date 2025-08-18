@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import QuoteItem from "@/components/quotes/QuoteItem";
+import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import QuotePDF from "@/components/quotes/QuotePDF";
 
@@ -94,7 +95,7 @@ const QuoteEdit = () => {
   const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
 
   // Budget additionals
-  const [budgetAdditionals, setBudgetAdditionals] = useState<Record<string, { enabled: boolean; value: number }>>({});
+  const [budgetAdditionals, setBudgetAdditionals] = useState<any[]>([]);
   
   const { data: customers } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
   
@@ -144,7 +145,17 @@ const QuoteEdit = () => {
       }
       setCustomerId(quote.customer_id);
       setDescription(quote.description || "");
-      setBudgetAdditionals((quote.quote_additionals as Record<string, { enabled: boolean; value: number }>) || {});
+      // Convert old format to new format if needed
+      const oldAdditionals = quote.quote_additionals as Record<string, { enabled: boolean; value: number }> || {};
+      const convertedAdditionals = Object.entries(oldAdditionals)
+        .filter(([_, config]) => config.enabled)
+        .map(([id, config]) => ({
+          id,
+          name: `Adicional ${id}`,
+          type: "net_amount" as const,
+          value: config.value
+        }));
+      setBudgetAdditionals(Array.isArray(quote.quote_additionals) ? quote.quote_additionals : convertedAdditionals);
     }
   }, [quote, id, navigate]);
 
@@ -270,79 +281,18 @@ const QuoteEdit = () => {
               <AccordionTrigger>
                 <div className="flex items-center gap-2">
                   <span>Adicionales del presupuesto</span>
-                  {Object.values(budgetAdditionals).some(a => a.enabled) && (
+                  {budgetAdditionals.length > 0 && (
                     <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                      {Object.values(budgetAdditionals).filter(a => a.enabled).length} activos
+                      {budgetAdditionals.length} seleccionados
                     </span>
                   )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {additionals.map((additional) => {
-                    const config = budgetAdditionals[additional.id] || { enabled: false, value: additional.default_value };
-                    return (
-                      <div key={additional.id} className="border rounded-lg p-4 space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id={`budget-additional-${additional.id}`}
-                              checked={config.enabled}
-                              onChange={(e) => {
-                                setBudgetAdditionals(prev => ({
-                                  ...prev,
-                                  [additional.id]: {
-                                    ...config,
-                                    enabled: e.target.checked
-                                  }
-                                }));
-                              }}
-                              className="rounded border-gray-300"
-                            />
-                            <div>
-                              <label 
-                                htmlFor={`budget-additional-${additional.id}`}
-                                className="text-sm font-medium"
-                              >
-                                {additional.name}
-                              </label>
-                              {additional.description && (
-                                <p className="text-xs text-muted-foreground mt-1">{additional.description}</p>
-                              )}
-                            </div>
-                          </div>
-                          <span className="text-xs bg-muted px-2 py-1 rounded">
-                            Importe neto
-                          </span>
-                        </div>
-                        
-                        {config.enabled && (
-                          <div className="space-y-2">
-                            <Label htmlFor={`budget-value-${additional.id}`}>Valor</Label>
-                            <Input
-                              id={`budget-value-${additional.id}`}
-                              type="number"
-                              step="0.01"
-                              value={config.value}
-                              onChange={(e) => {
-                                const value = parseFloat(e.target.value) || 0;
-                                setBudgetAdditionals(prev => ({
-                                  ...prev,
-                                  [additional.id]: {
-                                    ...config,
-                                    value
-                                  }
-                                }));
-                              }}
-                              placeholder={`Valor por defecto: ${additional.default_value}`}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                <QuoteAdditionalsSelector
+                  selectedAdditionals={budgetAdditionals}
+                  onChange={setBudgetAdditionals}
+                />
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -366,9 +316,17 @@ const QuoteEdit = () => {
                   const extrasTotal = Object.values(extraItemsData || {}).reduce((acc: number, it: any) => acc + parseNumber(it?.price), 0);
                   
                   // Calculate budget additionals total
-                  const budgetAdditionalsTotal = Object.entries(budgetAdditionals).reduce((acc, [id, config]) => {
-                    if (!config.enabled) return acc;
-                    return acc + config.value;
+                  const budgetAdditionalsTotal = budgetAdditionals.reduce((acc, additional) => {
+                    if (additional.type === 'net_amount') {
+                      return acc + additional.value;
+                    } else if (additional.type === 'quantity_multiplier') {
+                      // For quote level, multiply by total quantity of all items
+                      const totalQuantity = Object.values(extraItemsData || {}).reduce((sum: number, item: any) => {
+                        return sum + (item?.quantity || 1);
+                      }, 0);
+                      return acc + (additional.value * totalQuantity);
+                    }
+                    return acc;
                   }, 0);
                   
                   const finalTotal = extrasTotal + budgetAdditionalsTotal;
