@@ -15,7 +15,8 @@ interface Additional {
   id: string
   name: string
   description: string | null
-  type: "net_amount" | "quantity_multiplier"
+  type: "net_amount" | "quantity_multiplier" | "percentage"
+  assignment_type: "article" | "quote"
   default_value: number
   created_at: string
   updated_at: string
@@ -24,7 +25,8 @@ interface Additional {
 interface AdditionalForm {
   name: string
   description: string
-  type: "net_amount" | "quantity_multiplier"
+  type: "net_amount" | "quantity_multiplier" | "percentage"
+  assignment_type: "article" | "quote"
   default_value: number
 }
 
@@ -49,6 +51,7 @@ export default function Additionals() {
     name: "",
     description: "",
     type: "net_amount",
+    assignment_type: "article",
     default_value: 0
   })
 
@@ -75,11 +78,11 @@ export default function Additionals() {
       queryClient.invalidateQueries({ queryKey: ["additionals"] })
       setIsDialogOpen(false)
       resetForm()
-      toast({ title: "Adicional creado correctamente" })
+      toast({ title: "Otro detalle creado correctamente" })
     },
     onError: (error) => {
       console.error("Error creating additional:", error)
-      toast({ title: "Error al crear el adicional", variant: "destructive" })
+      toast({ title: "Error al crear el otro detalle", variant: "destructive" })
     }
   })
 
@@ -100,11 +103,11 @@ export default function Additionals() {
       setIsDialogOpen(false)
       setEditingAdditional(null)
       resetForm()
-      toast({ title: "Adicional actualizado correctamente" })
+      toast({ title: "Otro detalle actualizado correctamente" })
     },
     onError: (error) => {
       console.error("Error updating additional:", error)
-      toast({ title: "Error al actualizar el adicional", variant: "destructive" })
+      toast({ title: "Error al actualizar el otro detalle", variant: "destructive" })
     }
   })
 
@@ -119,11 +122,11 @@ export default function Additionals() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["additionals"] })
-      toast({ title: "Adicional eliminado correctamente" })
+      toast({ title: "Otro detalle eliminado correctamente" })
     },
     onError: (error) => {
       console.error("Error deleting additional:", error)
-      toast({ title: "Error al eliminar el adicional", variant: "destructive" })
+      toast({ title: "Error al eliminar el otro detalle", variant: "destructive" })
     }
   })
 
@@ -132,6 +135,7 @@ export default function Additionals() {
       name: "",
       description: "",
       type: "net_amount",
+      assignment_type: "article",
       default_value: 0
     })
   }
@@ -152,13 +156,14 @@ export default function Additionals() {
       name: additional.name,
       description: additional.description || "",
       type: additional.type,
+      assignment_type: additional.assignment_type,
       default_value: additional.default_value
     })
     setIsDialogOpen(true)
   }
 
   const handleDelete = (id: string) => {
-    if (confirm("¿Estás seguro de que quieres eliminar este adicional?")) {
+    if (confirm("¿Estás seguro de que quieres eliminar este otro detalle?")) {
       deleteMutation.mutate(id)
     }
   }
@@ -177,9 +182,9 @@ export default function Additionals() {
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Adicionales</h1>
+          <h1 className="text-2xl font-bold">Otros detalles</h1>
           <p className="text-muted-foreground">
-            Gestiona los adicionales que se pueden aplicar a artículos y presupuestos
+            Procesos o conceptos a asignar a los artículos o al subtotal del presupuesto
           </p>
         </div>
         
@@ -187,18 +192,18 @@ export default function Additionals() {
           <DialogTrigger asChild>
             <Button onClick={openCreateDialog}>
               <Plus className="h-4 w-4 mr-2" />
-              Nuevo Adicional
+              Nuevo Otro Detalle
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {editingAdditional ? "Editar Adicional" : "Crear Nuevo Adicional"}
+                {editingAdditional ? "Editar Otro Detalle" : "Crear Nuevo Otro Detalle"}
               </DialogTitle>
               <DialogDescription>
                 {editingAdditional 
-                  ? "Modifica los datos del adicional"
-                  : "Crea un nuevo adicional que podrás aplicar a artículos y presupuestos"
+                  ? "Modifica los datos del otro detalle"
+                  : "Crea un nuevo proceso o concepto para asignar a artículos o presupuestos"
                 }
               </DialogDescription>
             </DialogHeader>
@@ -224,10 +229,28 @@ export default function Additionals() {
               </div>
               
               <div>
+                <Label htmlFor="assignment_type">Asignar a</Label>
+                <Select
+                  value={form.assignment_type}
+                  onValueChange={(value: "article" | "quote") => 
+                    setForm({ ...form, assignment_type: value, type: "net_amount" })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="article">Artículo</SelectItem>
+                    <SelectItem value="quote">Presupuesto</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
                 <Label htmlFor="type">Tipo</Label>
                 <Select
                   value={form.type}
-                  onValueChange={(value: "net_amount" | "quantity_multiplier") => 
+                  onValueChange={(value: "net_amount" | "quantity_multiplier" | "percentage") => 
                     setForm({ ...form, type: value })
                   }
                 >
@@ -236,7 +259,12 @@ export default function Additionals() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="net_amount">Importe Neto</SelectItem>
-                    <SelectItem value="quantity_multiplier">Multiplicador por Cantidad</SelectItem>
+                    {form.assignment_type === "article" && (
+                      <SelectItem value="quantity_multiplier">Por Unidad</SelectItem>
+                    )}
+                    {form.assignment_type === "quote" && (
+                      <SelectItem value="percentage">Porcentaje sobre Subtotal</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -277,8 +305,8 @@ export default function Additionals() {
           <Card>
             <CardContent className="py-8">
               <div className="text-center text-muted-foreground">
-                <p>No hay adicionales configurados</p>
-                <p className="text-sm">Crea tu primer adicional para empezar</p>
+                <p>No hay otros detalles configurados</p>
+                <p className="text-sm">Crea tu primer otro detalle para empezar</p>
               </div>
             </CardContent>
           </Card>
@@ -310,14 +338,19 @@ export default function Additionals() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="font-medium">Asignación:</p>
+                    <p>{additional.assignment_type === "article" ? "Artículo" : "Presupuesto"}</p>
+                  </div>
                   <div>
                     <p className="font-medium">Tipo:</p>
-                    <p>{additional.type === "net_amount" ? "Importe Neto" : "Multiplicador por Cantidad"}</p>
+                    <p>{additional.type === "net_amount" ? "Importe Neto" : 
+                      additional.type === "quantity_multiplier" ? "Por Unidad" : "Porcentaje"}</p>
                   </div>
                   <div>
                     <p className="font-medium">Valor por Defecto:</p>
-                    <p>€{additional.default_value.toFixed(2)}</p>
+                    <p>{additional.type === "percentage" ? `${additional.default_value}%` : `€${additional.default_value.toFixed(2)}`}</p>
                   </div>
                 </div>
               </CardContent>

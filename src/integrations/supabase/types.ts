@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       additionals: {
         Row: {
+          assignment_type: string
           created_at: string
           default_value: number
           description: string | null
@@ -26,6 +27,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          assignment_type?: string
           created_at?: string
           default_value?: number
           description?: string | null
@@ -36,6 +38,7 @@ export type Database = {
           user_id?: string
         }
         Update: {
+          assignment_type?: string
           created_at?: string
           default_value?: number
           description?: string | null
