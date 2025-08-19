@@ -177,9 +177,9 @@ export default function Additionals() {
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Ajustes</h1>
+          <h1 className="text-2xl font-bold">Adicionales</h1>
           <p className="text-muted-foreground">
-            Modificadores y complementos adicionales que se pueden aplicar a artículos y presupuestos
+            Gestiona los adicionales que se pueden aplicar a artículos y presupuestos
           </p>
         </div>
         
@@ -193,12 +193,12 @@ export default function Additionals() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {editingAdditional ? "Editar Adicional" : "Crear Nuevo Adicional"}
+                {editingAdditional ? "Editar ajuste" : "Crear nuevo ajuste"}
               </DialogTitle>
               <DialogDescription>
                 {editingAdditional 
-                  ? "Modifica los datos del adicional"
-                  : "Crea un nuevo adicional que podrás aplicar a artículos y presupuestos"
+                  ? "Modifica los datos del ajuste"
+                  : "Crea un nuevo ajust que podrás aplicar a artículos y presupuestos"
                 }
               </DialogDescription>
             </DialogHeader>
