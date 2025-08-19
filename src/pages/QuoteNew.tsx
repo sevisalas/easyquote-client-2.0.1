@@ -328,7 +328,7 @@ const QuoteNew = () => {
             <AccordionItem value="budget-additionals">
               <AccordionTrigger>
                 <div className="flex items-center gap-2">
-                  <span>Adicionales del presupuesto</span>
+                  <span>Ajustes del presupuesto</span>
                   {budgetAdditionals.length > 0 && (
                     <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
                       {budgetAdditionals.length} seleccionados
