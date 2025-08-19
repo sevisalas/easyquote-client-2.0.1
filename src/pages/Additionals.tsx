@@ -187,7 +187,7 @@ export default function Additionals() {
           <DialogTrigger asChild>
             <Button onClick={openCreateDialog}>
               <Plus className="h-4 w-4 mr-2" />
-              Nuevo Adicional
+              Crear nuevo
             </Button>
           </DialogTrigger>
           <DialogContent>
