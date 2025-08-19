@@ -99,12 +99,29 @@ const QuoteEdit = () => {
   
   const { data: customers } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
   
-  const { data: products } = useQuery({
+  const { data: products, error: productsError } = useQuery({
     queryKey: ["easyquote-products"],
     queryFn: fetchProducts,
-    retry: 1,
+    retry: (failureCount, error) => {
+      // No reintentar si es error de autenticación
+      if (error.message?.includes("Tu sesión de EasyQuote ha expirado")) {
+        return false;
+      }
+      return failureCount < 1;
+    },
     enabled: hasToken,
   });
+
+  // Mostrar error de EasyQuote si existe
+  useEffect(() => {
+    if (productsError) {
+      toast({
+        title: "Error de conexión con EasyQuote",
+        description: productsError.message,
+        variant: "destructive",
+      });
+    }
+  }, [productsError]);
   
   const { data: additionals } = useQuery({
     queryKey: ["additionals"],
