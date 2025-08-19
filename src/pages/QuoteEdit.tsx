@@ -89,7 +89,7 @@ const QuoteEdit = () => {
   const [description, setDescription] = useState<string>("");
   const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
   
-  // Artículos adicionales en el presupuesto
+  // Artículos ajustes en el presupuesto
   const [extraItems, setExtraItems] = useState<number[]>([]);
   const [extraItemsData, setExtraItemsData] = useState<Record<number, any>>({});
   const addItem = () => setExtraItems((prev) => [...prev, Date.now()]);
@@ -257,7 +257,7 @@ const QuoteEdit = () => {
       </div>
 
       <div className="px-6 space-y-6">
-        {/* Artículos adicionales */}
+        {/* Artículos Ajustes */}
         {customerId && (
           <section className="space-y-4">
             <h2 className="text-lg font-semibold">Artículos</h2>
@@ -297,7 +297,7 @@ const QuoteEdit = () => {
             <AccordionItem value="budget-additionals">
               <AccordionTrigger>
                 <div className="flex items-center gap-2">
-                  <span>Adicionales del presupuesto</span>
+                  <span>Ajustes del presupuesto</span>
                   {budgetAdditionals.length > 0 && (
                     <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
                       {budgetAdditionals.length} seleccionados
