@@ -175,7 +175,7 @@ export function AppSidebar() {
                         <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/adicionales"}>
                           <NavLink to="/configuracion/adicionales" end className={getNavCls}>
                             <Plus className="mr-2 h-4 w-4" />
-                            {!isCollapsed && <span>Otros detalles</span>}
+                            {!isCollapsed && <span>Ajustes</span>}
                           </NavLink>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
