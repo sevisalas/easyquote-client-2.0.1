@@ -100,11 +100,11 @@ export default function Additionals() {
       setIsDialogOpen(false)
       setEditingAdditional(null)
       resetForm()
-      toast({ title: "Adicional actualizado correctamente" })
+      toast({ title: "Ajuste actualizado correctamente" })
     },
     onError: (error) => {
       console.error("Error updating additional:", error)
-      toast({ title: "Error al actualizar el adicional", variant: "destructive" })
+      toast({ title: "Error al actualizar el ajuste", variant: "destructive" })
     }
   })
 
@@ -119,11 +119,11 @@ export default function Additionals() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["additionals"] })
-      toast({ title: "Adicional eliminado correctamente" })
+      toast({ title: "Ajuste eliminado correctamente" })
     },
     onError: (error) => {
       console.error("Error deleting additional:", error)
-      toast({ title: "Error al eliminar el adicional", variant: "destructive" })
+      toast({ title: "Error al eliminar el ajuste", variant: "destructive" })
     }
   })
 
@@ -158,7 +158,7 @@ export default function Additionals() {
   }
 
   const handleDelete = (id: string) => {
-    if (confirm("¿Estás seguro de que quieres eliminar este adicional?")) {
+    if (confirm("¿Estás seguro de que quieres eliminar este ajuste?")) {
       deleteMutation.mutate(id)
     }
   }
@@ -177,9 +177,9 @@ export default function Additionals() {
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Adicionales</h1>
+          <h1 className="text-2xl font-bold">Ajustes</h1>
           <p className="text-muted-foreground">
-            Gestiona los adicionales que se pueden aplicar a artículos y presupuestos
+            Gestiona los ajustes de presupuesto que se pueden aplicar a artículos o al subtotal del presupuesto
           </p>
         </div>
         
@@ -198,7 +198,7 @@ export default function Additionals() {
               <DialogDescription>
                 {editingAdditional 
                   ? "Modifica los datos del ajuste"
-                  : "Crea un nuevo ajust que podrás aplicar a artículos y presupuestos"
+                  : "Crea un nuevo ajuste que podrás aplicar a artículos y presupuestos"
                 }
               </DialogDescription>
             </DialogHeader>
@@ -235,14 +235,14 @@ export default function Additionals() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="net_amount">Importe Neto</SelectItem>
-                    <SelectItem value="quantity_multiplier">Multiplicador por Cantidad</SelectItem>
+                    <SelectItem value="net_amount">Importe neto</SelectItem>
+                    <SelectItem value="quantity_multiplier">Multiplicador por cantidad</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
               <div>
-                <Label htmlFor="default_value">Valor por Defecto</Label>
+                <Label htmlFor="default_value">Valor por defecto</Label>
                 <Input
                   id="default_value"
                   type="number"
@@ -277,8 +277,8 @@ export default function Additionals() {
           <Card>
             <CardContent className="py-8">
               <div className="text-center text-muted-foreground">
-                <p>No hay adicionales configurados</p>
-                <p className="text-sm">Crea tu primer adicional para empezar</p>
+                <p>No hay ajustes configurados</p>
+                <p className="text-sm">Crea tu primer ajuste de presupuesto para empezar</p>
               </div>
             </CardContent>
           </Card>
@@ -316,7 +316,7 @@ export default function Additionals() {
                     <p>{additional.type === "net_amount" ? "Importe Neto" : "Multiplicador por Cantidad"}</p>
                   </div>
                   <div>
-                    <p className="font-medium">Valor por Defecto:</p>
+                    <p className="font-medium">Valor por defecto:</p>
                     <p>€{additional.default_value.toFixed(2)}</p>
                   </div>
                 </div>
