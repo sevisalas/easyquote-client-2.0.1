@@ -15,7 +15,8 @@ interface Additional {
   id: string
   name: string
   description: string | null
-  type: "net_amount" | "quantity_multiplier"
+  assignment_type: "article" | "quote"
+  type: "net_amount" | "quantity_multiplier" | "percentage"
   default_value: number
   created_at: string
   updated_at: string
@@ -24,7 +25,8 @@ interface Additional {
 interface AdditionalForm {
   name: string
   description: string
-  type: "net_amount" | "quantity_multiplier"
+  assignment_type: "article" | "quote"
+  type: "net_amount" | "quantity_multiplier" | "percentage"
   default_value: number
 }
 
@@ -48,6 +50,7 @@ export default function Additionals() {
   const [form, setForm] = useState<AdditionalForm>({
     name: "",
     description: "",
+    assignment_type: "article",
     type: "net_amount",
     default_value: 0
   })
@@ -131,6 +134,7 @@ export default function Additionals() {
     setForm({
       name: "",
       description: "",
+      assignment_type: "article",
       type: "net_amount",
       default_value: 0
     })
@@ -151,6 +155,7 @@ export default function Additionals() {
     setForm({
       name: additional.name,
       description: additional.description || "",
+      assignment_type: additional.assignment_type,
       type: additional.type,
       default_value: additional.default_value
     })
@@ -224,10 +229,28 @@ export default function Additionals() {
               </div>
               
               <div>
+                <Label htmlFor="assignment_type">Asignar a</Label>
+                <Select
+                  value={form.assignment_type}
+                  onValueChange={(value: "article" | "quote") => 
+                    setForm({ ...form, assignment_type: value, type: "net_amount" })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="article">Artículo</SelectItem>
+                    <SelectItem value="quote">Presupuesto</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
                 <Label htmlFor="type">Tipo</Label>
                 <Select
                   value={form.type}
-                  onValueChange={(value: "net_amount" | "quantity_multiplier") => 
+                  onValueChange={(value: "net_amount" | "quantity_multiplier" | "percentage") => 
                     setForm({ ...form, type: value })
                   }
                 >
@@ -236,7 +259,11 @@ export default function Additionals() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="net_amount">Importe neto</SelectItem>
-                    <SelectItem value="quantity_multiplier">Multiplicador por cantidad</SelectItem>
+                    {form.assignment_type === "article" ? (
+                      <SelectItem value="quantity_multiplier">Multiplicador por cantidad</SelectItem>
+                    ) : (
+                      <SelectItem value="percentage">Porcentaje del subtotal</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -310,14 +337,30 @@ export default function Additionals() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="font-medium">Asignar a:</p>
+                    <p>{additional.assignment_type === "article" ? "Artículo" : "Presupuesto"}</p>
+                  </div>
                   <div>
                     <p className="font-medium">Tipo:</p>
-                    <p>{additional.type === "net_amount" ? "Importe Neto" : "Multiplicador por Cantidad"}</p>
+                    <p>
+                      {additional.type === "net_amount" 
+                        ? "Importe Neto" 
+                        : additional.type === "quantity_multiplier" 
+                        ? "Multiplicador por Cantidad"
+                        : "Porcentaje del Subtotal"
+                      }
+                    </p>
                   </div>
                   <div>
                     <p className="font-medium">Valor por defecto:</p>
-                    <p>€{additional.default_value.toFixed(2)}</p>
+                    <p>
+                      {additional.type === "percentage" 
+                        ? `${additional.default_value}%` 
+                        : `€${additional.default_value.toFixed(2)}`
+                      }
+                    </p>
                   </div>
                 </div>
               </CardContent>
