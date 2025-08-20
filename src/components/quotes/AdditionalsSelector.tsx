@@ -41,6 +41,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
       const { data, error } = await supabase
         .from("additionals")
         .select("*")
+        .eq("assignment_type", "article")
         .order("name")
 
       if (error) throw error
