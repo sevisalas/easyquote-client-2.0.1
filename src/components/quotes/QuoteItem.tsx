@@ -78,7 +78,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         // Formato antiguo: objeto con ids como keys
         const converted = Object.entries(additionals).map(([id, config]: [string, any]) => ({
           id,
-          name: `Adicional ${id}`,
+          name: `Ajuste ${id}`,
           type: "net_amount",
           value: config.value || 0,
           isCustom: true
@@ -714,7 +714,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             <AccordionItem value="additionals">
               <AccordionTrigger>
                 <div className="flex items-center gap-2">
-                  <span>Adicionales del artículo</span>
+                  <span>Ajustes del artículo</span>
                   {Array.isArray(itemAdditionals) && itemAdditionals.length > 0 && (
                     <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
                       {itemAdditionals.length} activos

@@ -75,11 +75,11 @@ export default function Additionals() {
       queryClient.invalidateQueries({ queryKey: ["additionals"] })
       setIsDialogOpen(false)
       resetForm()
-      toast({ title: "Adicional creado correctamente" })
+      toast({ title: "Ajuste creado correctamente" })
     },
     onError: (error) => {
       console.error("Error creating additional:", error)
-      toast({ title: "Error al crear el adicional", variant: "destructive" })
+      toast({ title: "Error al crear el ajuste", variant: "destructive" })
     }
   })
 

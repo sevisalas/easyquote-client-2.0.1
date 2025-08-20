@@ -105,7 +105,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
       {/* Selected Additionals */}
       {selectedAdditionals.length > 0 && (
         <div className="space-y-3">
-          <h4 className="font-medium">Adicionales Seleccionados</h4>
+          <h4 className="font-medium">Ajustes Seleccionados</h4>
           {selectedAdditionals.map((additional) => (
             <Card key={additional.id} className="relative">
               <CardHeader className="pb-3">
@@ -158,11 +158,11 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
       {/* Add Predefined Additional */}
       {unselectedAdditionals.length > 0 && (
         <div className="space-y-3">
-          <h4 className="font-medium">Añadir Adicional Predefinido</h4>
+          <h4 className="font-medium">Añadir Ajuste Predefinido</h4>
           <div className="flex gap-2">
             <Select value={newAdditionalId} onValueChange={setNewAdditionalId}>
               <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Selecciona un adicional..." />
+                <SelectValue placeholder="Selecciona un ajuste..." />
               </SelectTrigger>
               <SelectContent>
                 {unselectedAdditionals.map((additional) => (
@@ -181,7 +181,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
 
       {/* Add Custom Additional */}
       <div className="space-y-3">
-        <h4 className="font-medium">Añadir Adicional Personalizado</h4>
+        <h4 className="font-medium">Añadir Ajuste Personalizado</h4>
         <div className="grid grid-cols-2 gap-2">
           <div>
             <Label htmlFor="custom-name" className="text-sm">Concepto</Label>

@@ -124,7 +124,7 @@ const App = () => (
             }
           />
           <Route
-            path="/configuracion/adicionales"
+            path="/configuracion/ajustes"
             element={
               <ProtectedRoute>
                 <AppLayout>

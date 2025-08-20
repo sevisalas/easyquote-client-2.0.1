@@ -168,7 +168,7 @@ const QuoteEdit = () => {
         .filter(([_, config]) => config.enabled)
         .map(([id, config]) => ({
           id,
-          name: `Adicional ${id}`,
+          name: `Ajuste ${id}`,
           type: "net_amount" as const,
           value: config.value
         }));
