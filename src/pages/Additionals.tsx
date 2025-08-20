@@ -258,12 +258,12 @@ export default function Additionals() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="net_amount">Importe neto</SelectItem>
-                    {form.assignment_type === "article" ? (
-                      <SelectItem value="quantity_multiplier">Multiplicador por cantidad</SelectItem>
-                    ) : (
-                      <SelectItem value="percentage">Porcentaje del subtotal</SelectItem>
-                    )}
+                     <SelectItem value="net_amount">Importe neto</SelectItem>
+                     {form.assignment_type === "article" ? (
+                       <SelectItem value="quantity_multiplier">Importe unitario (por cantidad)</SelectItem>
+                     ) : (
+                       <SelectItem value="percentage">Porcentaje sobre subtotal</SelectItem>
+                     )}
                   </SelectContent>
                 </Select>
               </div>
@@ -344,14 +344,14 @@ export default function Additionals() {
                   </div>
                   <div>
                     <p className="font-medium">Tipo:</p>
-                    <p>
-                      {additional.type === "net_amount" 
-                        ? "Importe Neto" 
-                        : additional.type === "quantity_multiplier" 
-                        ? "Multiplicador por Cantidad"
-                        : "Porcentaje del Subtotal"
-                      }
-                    </p>
+                     <p>
+                       {additional.type === "net_amount" 
+                         ? "Importe Neto" 
+                         : additional.type === "quantity_multiplier" 
+                         ? "Importe Unitario"
+                         : "Porcentaje del Subtotal"
+                       }
+                     </p>
                   </div>
                   <div>
                     <p className="font-medium">Valor por defecto:</p>
