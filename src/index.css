@@ -33,7 +33,7 @@ All colors MUST be HSL.
     --destructive: 327 65% 53%; /* #d7398a - datos negativos */
     --destructive-foreground: 0 0% 98%;
 
-    --success: 188 76% 45%; /* #1bb6c9 - datos positivos */
+    --success: 167.914, 97%, 72%; /* #1bb6c9 - datos positivos */
     --success-foreground: 0 0% 98%;
 
     --border: 214.3 31.8% 91.4%;
