@@ -64,8 +64,8 @@ const QuotesList = () => {
   const getStatusVariant = (s: string) => {
     if (s === "approved") return "success" as const;
     if (s === "rejected") return "destructive" as const;
-    if (s === "sent") return "secondary" as const;
-    return "default" as const; // draft
+    if (s === "sent") return "muted" as const;
+    return "accent" as const; // draft
   };
 
   return (
