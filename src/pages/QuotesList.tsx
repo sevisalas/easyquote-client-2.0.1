@@ -73,7 +73,7 @@ const QuotesList = () => {
       }
       
       // Status filter
-      if (statusFilter && quote.status !== statusFilter) {
+      if (statusFilter && statusFilter !== "all" && quote.status !== statusFilter) {
         return false;
       }
       
@@ -162,7 +162,7 @@ const QuotesList = () => {
                     <SelectValue placeholder="Todos los estados" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los estados</SelectItem>
+                    <SelectItem value="all">Todos los estados</SelectItem>
                     {statusOptions.map((status) => (
                       <SelectItem key={status} value={status}>
                         {statusLabel[status]}
