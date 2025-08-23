@@ -137,32 +137,26 @@ const QuotesList = () => {
         </CardHeader>
         <CardContent className="p-2">
           {/* Filters Section */}
-          <div className="mb-4 p-4 bg-muted/50 rounded-lg border">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+          <div className="mb-3 p-3 bg-muted/30 rounded border">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
               {/* Customer Filter */}
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                  Cliente
-                </label>
                 <Input
-                  placeholder="Buscar cliente..."
+                  placeholder="Cliente..."
                   value={customerFilter}
                   onChange={(e) => setCustomerFilter(e.target.value)}
-                  className="h-8 text-sm"
+                  className="h-7 text-xs"
                 />
               </div>
 
               {/* Status Filter */}
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                  Estado
-                </label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue placeholder="Todos los estados" />
+                  <SelectTrigger className="h-7 text-xs">
+                    <SelectValue placeholder="Estado..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos los estados</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
                     {statusOptions.map((status) => (
                       <SelectItem key={status} value={status}>
                         {statusLabel[status]}
@@ -174,33 +168,27 @@ const QuotesList = () => {
 
               {/* Quote Number Filter */}
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                  Nº Presupuesto
-                </label>
                 <Input
-                  placeholder="Buscar número..."
+                  placeholder="Nº presupuesto..."
                   value={quoteNumberFilter}
                   onChange={(e) => setQuoteNumberFilter(e.target.value)}
-                  className="h-8 text-sm"
+                  className="h-7 text-xs"
                 />
               </div>
 
               {/* Date From Filter */}
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                  Fecha desde
-                </label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
-                        "h-8 w-full justify-start text-left font-normal text-sm",
+                        "h-7 w-full justify-start text-left font-normal text-xs px-2",
                         !dateFromFilter && "text-muted-foreground"
                       )}
                     >
-                      <CalendarIcon className="mr-2 h-3 w-3" />
-                      {dateFromFilter ? format(dateFromFilter, "dd/MM/yyyy") : "Seleccionar"}
+                      <CalendarIcon className="mr-1 h-3 w-3" />
+                      {dateFromFilter ? format(dateFromFilter, "dd/MM/yy") : "Desde"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -217,20 +205,17 @@ const QuotesList = () => {
 
               {/* Date To Filter */}
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                  Fecha hasta
-                </label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
-                        "h-8 w-full justify-start text-left font-normal text-sm",
+                        "h-7 w-full justify-start text-left font-normal text-xs px-2",
                         !dateToFilter && "text-muted-foreground"
                       )}
                     >
-                      <CalendarIcon className="mr-2 h-3 w-3" />
-                      {dateToFilter ? format(dateToFilter, "dd/MM/yyyy") : "Seleccionar"}
+                      <CalendarIcon className="mr-1 h-3 w-3" />
+                      {dateToFilter ? format(dateToFilter, "dd/MM/yy") : "Hasta"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -248,23 +233,23 @@ const QuotesList = () => {
 
             {/* Clear Filters Button */}
             {hasActiveFilters && (
-              <div className="mt-3 flex justify-end">
+              <div className="mt-2 flex justify-end">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={clearAllFilters}
-                  className="h-7 text-xs"
+                  className="h-6 text-xs px-2"
                 >
                   <X className="w-3 h-3 mr-1" />
-                  Limpiar filtros
+                  Limpiar
                 </Button>
               </div>
             )}
           </div>
 
           {/* Results Summary */}
-          <div className="mb-3 text-xs text-muted-foreground">
-            Mostrando {filteredQuotes.length} de {quotes.length} presupuestos
+          <div className="mb-2 text-xs text-muted-foreground">
+            {filteredQuotes.length} de {quotes.length} presupuestos
           </div>
 
           {filteredQuotes.length === 0 ? (
