@@ -152,7 +152,7 @@ const QuotesList = () => {
               {/* Status Filter */}
               <div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="h-7 text-xs">
+                  <SelectTrigger className="h-6 text-xs px-2">
                     <SelectValue placeholder="Estado..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -169,10 +169,10 @@ const QuotesList = () => {
               {/* Quote Number Filter */}
               <div>
                 <Input
-                  placeholder="Nº presupuesto..."
+                  placeholder="Nº..."
                   value={quoteNumberFilter}
                   onChange={(e) => setQuoteNumberFilter(e.target.value)}
-                  className="h-7 text-xs"
+                  className="h-6 text-xs px-2"
                 />
               </div>
 
@@ -183,12 +183,12 @@ const QuotesList = () => {
                     <Button
                       variant="outline"
                       className={cn(
-                        "h-7 w-full justify-start text-left font-normal text-xs px-2",
+                        "h-6 w-full justify-start text-left font-normal text-xs px-1",
                         !dateFromFilter && "text-muted-foreground"
                       )}
                     >
-                      <CalendarIcon className="mr-1 h-3 w-3" />
-                      {dateFromFilter ? format(dateFromFilter, "dd/MM/yy") : "Desde"}
+                      <CalendarIcon className="mr-1 h-2 w-2" />
+                      {dateFromFilter ? format(dateFromFilter, "dd/MM") : "Desde"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -210,12 +210,12 @@ const QuotesList = () => {
                     <Button
                       variant="outline"
                       className={cn(
-                        "h-7 w-full justify-start text-left font-normal text-xs px-2",
+                        "h-6 w-full justify-start text-left font-normal text-xs px-1",
                         !dateToFilter && "text-muted-foreground"
                       )}
                     >
-                      <CalendarIcon className="mr-1 h-3 w-3" />
-                      {dateToFilter ? format(dateToFilter, "dd/MM/yy") : "Hasta"}
+                      <CalendarIcon className="mr-1 h-2 w-2" />
+                      {dateToFilter ? format(dateToFilter, "dd/MM") : "Hasta"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
