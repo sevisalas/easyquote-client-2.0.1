@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, X } from "lucide-react";
+import { CalendarIcon, X, Search } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -140,12 +140,13 @@ const QuotesList = () => {
           <div className="mb-3 p-3 bg-muted/30 rounded border">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
               {/* Customer Filter */}
-              <div>
+              <div className="relative">
+                <Search className="absolute left-2 top-1.5 h-3 w-3 text-muted-foreground" />
                 <Input
                   placeholder="Cliente..."
                   value={customerFilter}
                   onChange={(e) => setCustomerFilter(e.target.value)}
-                  className="h-7 text-xs"
+                  className="h-7 text-xs pl-7"
                 />
               </div>
 
