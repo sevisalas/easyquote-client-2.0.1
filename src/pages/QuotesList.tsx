@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +6,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon, X } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -40,6 +47,13 @@ const fetchCustomers = async () => {
 
 const QuotesList = () => {
   const navigate = useNavigate();
+  
+  // Filter states
+  const [customerFilter, setCustomerFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [quoteNumberFilter, setQuoteNumberFilter] = useState("");
+  const [dateFromFilter, setDateFromFilter] = useState<Date | undefined>();
+  const [dateToFilter, setDateToFilter] = useState<Date | undefined>();
 
   useEffect(() => {
     document.title = "Presupuestos | Listado";
@@ -49,6 +63,47 @@ const QuotesList = () => {
   const { data: customers = [] } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
 
   const getCustomerName = (id?: string | null) => customers.find((c: any) => c.id === id)?.name || "—";
+
+  // Filtered quotes based on all filters
+  const filteredQuotes = useMemo(() => {
+    return quotes.filter((quote: any) => {
+      // Customer filter
+      if (customerFilter && !getCustomerName(quote.customer_id).toLowerCase().includes(customerFilter.toLowerCase())) {
+        return false;
+      }
+      
+      // Status filter
+      if (statusFilter && quote.status !== statusFilter) {
+        return false;
+      }
+      
+      // Quote number filter
+      if (quoteNumberFilter && !quote.quote_number?.toLowerCase().includes(quoteNumberFilter.toLowerCase())) {
+        return false;
+      }
+      
+      // Date filters
+      const quoteDate = new Date(quote.created_at);
+      if (dateFromFilter && quoteDate < dateFromFilter) {
+        return false;
+      }
+      if (dateToFilter && quoteDate > dateToFilter) {
+        return false;
+      }
+      
+      return true;
+    });
+  }, [quotes, customerFilter, statusFilter, quoteNumberFilter, dateFromFilter, dateToFilter, customers]);
+
+  const clearAllFilters = () => {
+    setCustomerFilter("");
+    setStatusFilter("");
+    setQuoteNumberFilter("");
+    setDateFromFilter(undefined);
+    setDateToFilter(undefined);
+  };
+
+  const hasActiveFilters = customerFilter || statusFilter || quoteNumberFilter || dateFromFilter || dateToFilter;
 
   const handleStatusChange = async (id: string, next: string) => {
     try {
@@ -81,8 +136,141 @@ const QuotesList = () => {
           <CardTitle className="text-base">Listado de presupuestos</CardTitle>
         </CardHeader>
         <CardContent className="p-2">
-          {quotes.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aún no hay presupuestos.</p>
+          {/* Filters Section */}
+          <div className="mb-4 p-4 bg-muted/50 rounded-lg border">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+              {/* Customer Filter */}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                  Cliente
+                </label>
+                <Input
+                  placeholder="Buscar cliente..."
+                  value={customerFilter}
+                  onChange={(e) => setCustomerFilter(e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                  Estado
+                </label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue placeholder="Todos los estados" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todos los estados</SelectItem>
+                    {statusOptions.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {statusLabel[status]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Quote Number Filter */}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                  Nº Presupuesto
+                </label>
+                <Input
+                  placeholder="Buscar número..."
+                  value={quoteNumberFilter}
+                  onChange={(e) => setQuoteNumberFilter(e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+
+              {/* Date From Filter */}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                  Fecha desde
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "h-8 w-full justify-start text-left font-normal text-sm",
+                        !dateFromFilter && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-3 w-3" />
+                      {dateFromFilter ? format(dateFromFilter, "dd/MM/yyyy") : "Seleccionar"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateFromFilter}
+                      onSelect={setDateFromFilter}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Date To Filter */}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                  Fecha hasta
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "h-8 w-full justify-start text-left font-normal text-sm",
+                        !dateToFilter && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-3 w-3" />
+                      {dateToFilter ? format(dateToFilter, "dd/MM/yyyy") : "Seleccionar"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateToFilter}
+                      onSelect={setDateToFilter}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            {/* Clear Filters Button */}
+            {hasActiveFilters && (
+              <div className="mt-3 flex justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="h-7 text-xs"
+                >
+                  <X className="w-3 h-3 mr-1" />
+                  Limpiar filtros
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Results Summary */}
+          <div className="mb-3 text-xs text-muted-foreground">
+            Mostrando {filteredQuotes.length} de {quotes.length} presupuestos
+          </div>
+
+          {filteredQuotes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {quotes.length === 0 ? "Aún no hay presupuestos." : "No se encontraron presupuestos con los filtros aplicados."}
+            </p>
           ) : (
             <Table>
               <TableHeader>
@@ -97,7 +285,7 @@ const QuotesList = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {quotes.map((q: any) => (
+                {filteredQuotes.map((q: any) => (
                   <TableRow key={q.id} className="h-12">
                     <TableCell className="py-2">{new Date(q.created_at).toLocaleDateString("es-ES")}</TableCell>
                     <TableCell className="py-2">{q.quote_number}</TableCell>
