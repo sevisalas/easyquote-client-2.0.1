@@ -321,13 +321,6 @@ export type Database = {
             foreignKeyName: "quotes_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "customer_public_info"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quotes_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
             referencedRelation: "customers"
             referencedColumns: ["id"]
           },
@@ -335,29 +328,18 @@ export type Database = {
       }
     }
     Views: {
-      customer_public_info: {
-        Row: {
-          created_at: string | null
-          id: string | null
-          name: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string | null
-          name?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string | null
-          name?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
+      get_customer_public_info: {
+        Args: { customer_id?: string }
+        Returns: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }[]
+      }
       get_organization_users: {
         Args: { org_id: string }
         Returns: {
