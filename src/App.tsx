@@ -21,6 +21,7 @@ import GestionUsuarios from "./pages/UserManagement";
 import EditarSuscriptor from "./pages/SubscriberEdit";
 import UsuariosSuscriptor from "./pages/SubscriberUsers";
 import GestionPlanes from "./pages/PlansManagement";
+import Integrations from "./pages/Integrations";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 const queryClient = new QueryClient();
 
@@ -179,6 +180,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <GestionPlanes />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configuracion/integraciones"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Integrations />
                 </AppLayout>
               </ProtectedRoute>
             }
