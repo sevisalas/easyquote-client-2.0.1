@@ -199,7 +199,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             },
             body: JSON.stringify(Object.entries(norm).map(([id, value]) => ({ id, value }))),
           });
-          if (!res.ok) throw new Error(`EasyQuote PATCH ${res.status}`);
+          if (!res.ok) {
+            if (res.status === 401) {
+              const { notifyUnauthorized } = await import('@/hooks/useTokenRefresh');
+              notifyUnauthorized(401, 'easyquote.cloud/pricing');
+            }
+            throw new Error(`EasyQuote PATCH ${res.status}`);
+          }
           const json = await res.json();
           return json;
         } else {
@@ -210,15 +216,33 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               "Content-Type": "application/json",
             },
           });
-          if (!res.ok) throw new Error(`EasyQuote GET ${res.status}`);
+          if (!res.ok) {
+            if (res.status === 401) {
+              const { notifyUnauthorized } = await import('@/hooks/useTokenRefresh');
+              notifyUnauthorized(401, 'easyquote.cloud/pricing');
+            }
+            throw new Error(`EasyQuote GET ${res.status}`);
+          }
           const json = await res.json();
           return json;
         }
-      } catch (e) {
+      } catch (e: any) {
+        // Si ya se notificó el error 401 arriba, no hacer llamada de respaldo
+        if (e.message?.includes('EasyQuote') && e.message?.includes('401')) {
+          throw e;
+        }
+        
         const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
           body: { token, productId, inputs: Object.entries(norm).map(([id, value]) => ({ id, value })) },
         });
-        if (error) throw error as any;
+        if (error) {
+          // Detectar si es un error 401 y notificar
+          if (error.message?.includes('401') || error.context?.res?.status === 401) {
+            const { notifyUnauthorized } = await import('@/hooks/useTokenRefresh');
+            notifyUnauthorized(401, 'easyquote.cloud/pricing');
+          }
+          throw error as any;
+        }
         return data;
       }
     },
@@ -300,7 +324,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
             body: { token, productId, inputs: replaced },
           });
-          if (error) throw error as any;
+          if (error) {
+            // Detectar si es un error 401 y notificar
+            if (error.message?.includes('401') || error.context?.res?.status === 401) {
+              const { notifyUnauthorized } = await import('@/hooks/useTokenRefresh');
+              notifyUnauthorized(401, 'easyquote.cloud/pricing');
+            }
+            throw error as any;
+          }
           return { qty, data };
         })
       );

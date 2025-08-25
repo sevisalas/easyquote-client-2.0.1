@@ -42,6 +42,11 @@ const fetchProducts = async (): Promise<Product[]> => {
   });
   
   if (error) {
+    // Detectar si es un error 401 y notificar
+    if (error.message?.includes('401') || error.context?.res?.status === 401) {
+      const { notifyUnauthorized } = await import('@/hooks/useTokenRefresh');
+      notifyUnauthorized(401, 'easyquote.cloud/products');
+    }
     // Si es error 401 o relacionado con autenticación
     if (error.message?.includes("401") || error.message?.includes("Failed to fetch products") || error.message?.includes("Unauthorized")) {
       throw new Error("Tu sesión de EasyQuote ha expirado. Por favor, cierra sesión y vuelve a iniciar sesión para continuar.");

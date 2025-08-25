@@ -1,6 +1,7 @@
 import { PropsWithChildren } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 
 function MainContent({ children }: PropsWithChildren) {
   return (
@@ -11,6 +12,8 @@ function MainContent({ children }: PropsWithChildren) {
 }
 
 export default function AppLayout({ children }: PropsWithChildren) {
+  // Activar detección de tokens expirados
+  useTokenRefresh();
 
   return (
     <SidebarProvider>
