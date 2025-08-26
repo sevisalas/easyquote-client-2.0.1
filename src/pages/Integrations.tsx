@@ -14,7 +14,6 @@ interface Integration {
   integration_type: string;
   configuration: {
     apiKey?: string;
-    holdedId?: string;
   };
   is_active: boolean;
 }
@@ -24,7 +23,7 @@ const Integrations = () => {
   const [saving, setSaving] = useState(false);
   const [holdedConfig, setHoldedConfig] = useState<Integration>({
     integration_type: 'holded',
-    configuration: { apiKey: '', holdedId: '' },
+    configuration: { apiKey: '' },
     is_active: false
   });
   
@@ -60,7 +59,7 @@ const Integrations = () => {
       }
 
       if (data) {
-        const config = data.configuration as { apiKey?: string; holdedId?: string } || { apiKey: '', holdedId: '' };
+        const config = data.configuration as { apiKey?: string } || { apiKey: '' };
         setHoldedConfig({
           id: data.id,
           integration_type: data.integration_type,
@@ -85,11 +84,12 @@ const Integrations = () => {
     
     setSaving(true);
     try {
+      const isActive = !!(holdedConfig.configuration.apiKey?.trim());
       const integrationData = {
         organization_id: currentOrganization.id,
         integration_type: 'holded',
         configuration: holdedConfig.configuration,
-        is_active: holdedConfig.is_active
+        is_active: isActive
       };
 
       if (holdedConfig.id) {
@@ -165,48 +165,32 @@ const Integrations = () => {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Holded</span>
-              <Switch
-                checked={holdedConfig.is_active}
-                onCheckedChange={(checked) =>
-                  setHoldedConfig(prev => ({ ...prev, is_active: checked }))
-                }
-              />
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${holdedConfig.configuration.apiKey?.trim() ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <span className="text-sm text-muted-foreground">
+                  {holdedConfig.configuration.apiKey?.trim() ? 'Activa' : 'Inactiva'}
+                </span>
+              </div>
             </CardTitle>
             <CardDescription>
               Integración con Holded para sincronización de datos contables
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="holded-key">API Key</Label>
-                <Input
-                  id="holded-key"
-                  type="password"
-                  placeholder="Introduce tu API Key de Holded"
-                  value={holdedConfig.configuration.apiKey || ''}
-                  onChange={(e) =>
-                    setHoldedConfig(prev => ({
-                      ...prev,
-                      configuration: { ...prev.configuration, apiKey: e.target.value }
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="holded-id">ID de Holded</Label>
-                <Input
-                  id="holded-id"
-                  placeholder="ID generado por Holded"
-                  value={holdedConfig.configuration.holdedId || ''}
-                  onChange={(e) =>
-                    setHoldedConfig(prev => ({
-                      ...prev,
-                      configuration: { ...prev.configuration, holdedId: e.target.value }
-                    }))
-                  }
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="holded-key">API Key</Label>
+              <Input
+                id="holded-key"
+                type="password"
+                placeholder="Introduce tu API Key de Holded"
+                value={holdedConfig.configuration.apiKey || ''}
+                onChange={(e) =>
+                  setHoldedConfig(prev => ({
+                    ...prev,
+                    configuration: { ...prev.configuration, apiKey: e.target.value }
+                  }))
+                }
+              />
             </div>
             <div className="flex justify-end">
               <Button 
