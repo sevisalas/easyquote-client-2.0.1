@@ -140,6 +140,33 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_integration_access: {
+        Row: {
+          created_at: string
+          granted_by: string
+          id: string
+          integration_type: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          granted_by: string
+          id?: string
+          integration_type: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          granted_by?: string
+          id?: string
+          integration_type?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       organization_members: {
         Row: {
           created_at: string

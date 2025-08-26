@@ -21,6 +21,7 @@ interface Integration {
 const Integrations = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [hasHoldedAccess, setHasHoldedAccess] = useState(false);
   const [holdedConfig, setHoldedConfig] = useState<Integration>({
     integration_type: 'holded',
     configuration: { apiKey: '' },
@@ -34,8 +35,31 @@ const Integrations = () => {
 
   useEffect(() => {
     if (!isOrgAdmin) return;
+    checkIntegrationAccess();
     loadIntegrations();
   }, [currentOrganization?.id, isOrgAdmin]);
+
+  const checkIntegrationAccess = async () => {
+    if (!currentOrganization?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('organization_integration_access')
+        .select('integration_type')
+        .eq('organization_id', currentOrganization.id)
+        .eq('integration_type', 'holded')
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking integration access:', error);
+        return;
+      }
+
+      setHasHoldedAccess(!!data);
+    } catch (error) {
+      console.error('Error checking integration access:', error);
+    }
+  };
 
   const loadIntegrations = async () => {
     if (!currentOrganization?.id) return;
@@ -161,6 +185,7 @@ const Integrations = () => {
 
       <div className="grid gap-6">
         {/* Integración con Holded */}
+        {hasHoldedAccess ? (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -202,6 +227,18 @@ const Integrations = () => {
             </div>
           </CardContent>
         </Card>
+        ) : (
+          <Card>
+            <CardContent className="py-8">
+              <div className="text-center space-y-2">
+                <h3 className="text-lg font-medium">No hay integraciones disponibles</h3>
+                <p className="text-sm text-muted-foreground">
+                  Tu organización no tiene acceso a ninguna integración en este momento.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
