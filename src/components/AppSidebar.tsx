@@ -98,7 +98,7 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild isActive={currentPath === "/usuarios"}>
                       <NavLink to="/usuarios" end className={getNavCls}>
                         <UserCog className="mr-2 h-4 w-4" />
-                        {!isCollapsed && <span>Gestión de Usuarios</span>}
+                        {!isCollapsed && <span>Gestión de suscriptores</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
