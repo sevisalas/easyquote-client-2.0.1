@@ -89,7 +89,7 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild isActive={currentPath === "/planes"}>
                       <NavLink to="/planes" end className={getNavCls}>
                         <Settings className="mr-2 h-4 w-4" />
-                        {!isCollapsed && <span>Gestión de Planes</span>}
+                        {!isCollapsed && <span>Planes</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -98,7 +98,7 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild isActive={currentPath === "/usuarios"}>
                       <NavLink to="/usuarios" end className={getNavCls}>
                         <UserCog className="mr-2 h-4 w-4" />
-                        {!isCollapsed && <span>Gestión de suscriptores</span>}
+                        {!isCollapsed && <span>Suscriptores</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -107,7 +107,7 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild isActive={currentPath === "/integraciones-acceso"}>
                       <NavLink to="/integraciones-acceso" end className={getNavCls}>
                         <Plug className="mr-2 h-4 w-4" />
-                        {!isCollapsed && <span>Gestión de Integraciones</span>}
+                        {!isCollapsed && <span>Integraciones</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
