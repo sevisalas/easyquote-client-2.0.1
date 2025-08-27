@@ -1,0 +1,201 @@
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Settings, Users, Building2, Plug } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+
+const SuperAdminDashboard = () => {
+  const navigate = useNavigate();
+  const { isSuperAdmin } = useSubscription();
+  const [stats, setStats] = useState({
+    totalOrganizations: 0,
+    totalUsers: 0,
+    totalIntegrations: 0
+  });
+
+  useEffect(() => {
+    document.title = "Dashboard SuperAdmin | EasyQuote";
+    
+    if (!isSuperAdmin) {
+      navigate('/');
+      return;
+    }
+
+    loadStats();
+  }, [isSuperAdmin, navigate]);
+
+  const loadStats = async () => {
+    try {
+      // Total organizaciones
+      const { count: orgsCount } = await supabase
+        .from('organizations')
+        .select('*', { count: 'exact', head: true });
+
+      // Total miembros de organizaciones
+      const { count: usersCount } = await supabase
+        .from('organization_members')
+        .select('*', { count: 'exact', head: true });
+
+      // Total accesos a integraciones
+      const { count: integrationsCount } = await supabase
+        .from('organization_integration_access')
+        .select('*', { count: 'exact', head: true });
+
+      setStats({
+        totalOrganizations: orgsCount || 0,
+        totalUsers: usersCount || 0,
+        totalIntegrations: integrationsCount || 0
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+
+  if (!isSuperAdmin) {
+    return null;
+  }
+
+  return (
+    <div className="w-full min-h-screen bg-gradient-to-br from-secondary/5 via-background to-secondary/10 px-6 py-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-foreground bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent mb-2">
+            Panel de SuperAdmin
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Administra organizaciones, usuarios e integraciones del sistema
+          </p>
+        </div>
+
+        {/* Estadísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="border-primary/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Organizaciones</p>
+                  <p className="text-3xl font-bold text-primary">{stats.totalOrganizations}</p>
+                </div>
+                <Building2 className="h-8 w-8 text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-primary/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Usuarios</p>
+                  <p className="text-3xl font-bold text-primary">{stats.totalUsers}</p>
+                </div>
+                <Users className="h-8 w-8 text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-primary/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Integraciones Activas</p>
+                  <p className="text-3xl font-bold text-primary">{stats.totalIntegrations}</p>
+                </div>
+                <Plug className="h-8 w-8 text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Acciones principales */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-primary" />
+                Organizaciones
+              </CardTitle>
+              <CardDescription>
+                Gestiona las organizaciones del sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={() => navigate('/planes')}
+                className="w-full bg-primary hover:bg-primary/90"
+              >
+                Gestionar Planes
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
+                Usuarios
+              </CardTitle>
+              <CardDescription>
+                Administra usuarios y permisos
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={() => navigate('/usuarios')}
+                className="w-full bg-primary hover:bg-primary/90"
+              >
+                Gestionar Usuarios
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Plug className="h-5 w-5 text-primary" />
+                Integraciones
+              </CardTitle>
+              <CardDescription>
+                Controla el acceso a integraciones
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={() => navigate('/integraciones-acceso')}
+                className="w-full bg-primary hover:bg-primary/90"
+              >
+                Gestionar Accesos
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-primary" />
+                Sistema
+              </CardTitle>
+              <CardDescription>
+                Configuración global del sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={() => navigate('/configuracion/sistema')}
+                variant="outline"
+                className="w-full"
+                disabled
+              >
+                Próximamente
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SuperAdminDashboard;

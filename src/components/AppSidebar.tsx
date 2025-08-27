@@ -73,21 +73,61 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {/* Solo mostrar Inicio y Dashboard si NO es superadmin */}
-              {!isSuperAdmin && items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={currentPath === item.url}>
-                    <NavLink to={item.url} end className={getNavCls}>
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!isCollapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {/* Menú para SuperAdmin */}
+              {isSuperAdmin && (
+                <>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={currentPath === "/"}>
+                      <NavLink to="/" end className={getNavCls}>
+                        <Home className="mr-2 h-4 w-4" />
+                        {!isCollapsed && <span>Dashboard</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
 
-              {/* Solo mostrar si NO es superadmin */}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={currentPath === "/planes"}>
+                      <NavLink to="/planes" end className={getNavCls}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        {!isCollapsed && <span>Gestión de Planes</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={currentPath === "/usuarios"}>
+                      <NavLink to="/usuarios" end className={getNavCls}>
+                        <UserCog className="mr-2 h-4 w-4" />
+                        {!isCollapsed && <span>Gestión de Usuarios</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={currentPath === "/integraciones-acceso"}>
+                      <NavLink to="/integraciones-acceso" end className={getNavCls}>
+                        <Plug className="mr-2 h-4 w-4" />
+                        {!isCollapsed && <span>Gestión de Integraciones</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
+              )}
+
+              {/* Menú para usuarios normales */}
               {!isSuperAdmin && (
                 <>
+                  {items.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild isActive={currentPath === item.url}>
+                        <NavLink to={item.url} end className={getNavCls}>
+                          <item.icon className="mr-2 h-4 w-4" />
+                          {!isCollapsed && <span>{item.title}</span>}
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+
                   {/* Clientes */}
                   <SidebarMenuItem>
                     <SidebarMenuButton
@@ -202,25 +242,13 @@ export function AppSidebar() {
                 </>
               )}
 
-              {/* Solo mostrar si es superadmin o admin de suscriptor */}
-              {(isSuperAdmin || isOrgAdmin) && (
+              {/* Gestión de usuarios - solo para org admin (no superadmin, ya está arriba) */}
+              {!isSuperAdmin && isOrgAdmin && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={currentPath === "/usuarios"}>
                     <NavLink to="/usuarios" end className={getNavCls}>
                       <UserCog className="mr-2 h-4 w-4" />
                       {!isCollapsed && <span>Gestión de usuarios</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
-
-              {/* Solo mostrar si es superadmin */}
-              {isSuperAdmin && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={currentPath === "/planes"}>
-                    <NavLink to="/planes" end className={getNavCls}>
-                      <Settings className="mr-2 h-4 w-4" />
-                      {!isCollapsed && <span>Gestión de planes</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

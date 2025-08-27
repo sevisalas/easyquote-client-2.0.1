@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/button";
 import { FileText, Plus, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import SuperAdminDashboard from "./SuperAdminDashboard";
 
 const Index = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>("");
+  const { isSuperAdmin } = useSubscription();
 
   useEffect(() => {
     document.title = "Inicio | EasyQuote";
@@ -33,6 +36,11 @@ const Index = () => {
 
     getUser();
   }, []);
+
+  // Si es superadmin, mostrar el dashboard específico de superadmin
+  if (isSuperAdmin) {
+    return <SuperAdminDashboard />;
+  }
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-secondary/5 via-background to-secondary/10 px-6 py-8">
