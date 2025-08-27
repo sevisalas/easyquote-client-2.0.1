@@ -72,14 +72,18 @@ const IntegrationAccess = () => {
       // Load integration accesses
       const { data: accessData, error: accessError } = await supabase
         .from('organization_integration_access')
-        .select(`
-          *,
-          organization:organizations(id, name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (accessError) throw accessError;
-      setIntegrationAccesses(accessData || []);
+
+      // Manually map organization data
+      const accessesWithOrgs = (accessData || []).map(access => ({
+        ...access,
+        organization: orgsData?.find(org => org.id === access.organization_id)
+      }));
+
+      setIntegrationAccesses(accessesWithOrgs);
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
