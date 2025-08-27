@@ -40,7 +40,12 @@ const Integrations = () => {
   }, [currentOrganization?.id, isOrgAdmin]);
 
   const checkIntegrationAccess = async () => {
-    if (!currentOrganization?.id) return;
+    if (!currentOrganization?.id) {
+      console.log('No current organization ID');
+      return;
+    }
+    
+    console.log('Checking integration access for organization:', currentOrganization.id);
     
     try {
       const { data, error } = await supabase
@@ -50,12 +55,16 @@ const Integrations = () => {
         .eq('integration_type', 'holded')
         .maybeSingle();
 
+      console.log('Integration access query result:', { data, error });
+
       if (error && error.code !== 'PGRST116') {
         console.error('Error checking integration access:', error);
         return;
       }
 
-      setHasHoldedAccess(!!data);
+      const hasAccess = !!data;
+      console.log('Has Holded access:', hasAccess);
+      setHasHoldedAccess(hasAccess);
     } catch (error) {
       console.error('Error checking integration access:', error);
     }
