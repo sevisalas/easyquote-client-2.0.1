@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
+import { CustomerName } from "@/components/quotes/CustomerName";
 
 const statusLabel: Record<string, string> = {
   draft: "Borrador",
@@ -201,7 +202,7 @@ const QuoteDetail = () => {
           </div>
           <div>
             <div className="text-sm text-muted-foreground">Cliente</div>
-            <div>{customer?.name || "—"}</div>
+            <div><CustomerName customerId={quote?.customer_id} /></div>
           </div>
           <div>
             <div className="text-sm text-muted-foreground">Producto</div>

@@ -19,6 +19,7 @@ import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelect
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import QuotePDF from "@/components/quotes/QuotePDF";
 import { useLocation, useSearchParams } from "react-router-dom";
+import { CustomerSelector } from "@/components/quotes/CustomerSelector";
 
 
 interface Customer { id: string; name: string }
@@ -240,19 +241,10 @@ const QuoteNew = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Cliente</Label>
-                  <Select onValueChange={setCustomerId} value={customerId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Elige un cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customers?.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <CustomerSelector 
+                  value={customerId}
+                  onValueChange={setCustomerId}
+                />
 
                 <div className="space-y-2">
                   <Label>Descripción del presupuesto</Label>

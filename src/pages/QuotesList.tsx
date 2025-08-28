@@ -15,6 +15,8 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
+import { CustomerName } from "@/components/quotes/CustomerName";
 
 const statusOptions = ["draft", "sent", "approved", "rejected"] as const;
 const statusLabel: Record<string, string> = {
@@ -47,6 +49,7 @@ const fetchCustomers = async () => {
 
 const QuotesList = () => {
   const navigate = useNavigate();
+  const { isHoldedActive, getHoldedContacts } = useHoldedIntegration();
   
   // Filter states
   const [customerFilter, setCustomerFilter] = useState("");
@@ -54,13 +57,37 @@ const QuotesList = () => {
   const [quoteNumberFilter, setQuoteNumberFilter] = useState("");
   const [dateFromFilter, setDateFromFilter] = useState<Date | undefined>();
   const [dateToFilter, setDateToFilter] = useState<Date | undefined>();
+  const [holdedCustomers, setHoldedCustomers] = useState<any[]>([]);
 
   useEffect(() => {
     document.title = "Presupuestos | Listado";
   }, []);
 
+  // Cargar clientes de Holded cuando esté activo
+  useEffect(() => {
+    if (!isHoldedActive) return;
+
+    const loadHoldedCustomers = async () => {
+      try {
+        const contacts = await getHoldedContacts();
+        setHoldedCustomers(contacts);
+      } catch (error) {
+        console.error('Error loading Holded customers:', error);
+        setHoldedCustomers([]);
+      }
+    };
+
+    loadHoldedCustomers();
+  }, [isHoldedActive, getHoldedContacts]);
+
   const { data: quotes = [], refetch } = useQuery({ queryKey: ["quotes"], queryFn: fetchQuotes });
-  const { data: customers = [] } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
+  const { data: localCustomers = [] } = useQuery({ 
+    queryKey: ["customers"], 
+    queryFn: fetchCustomers,
+    enabled: !isHoldedActive
+  });
+
+  const customers = isHoldedActive ? holdedCustomers : localCustomers;
 
   const getCustomerName = (id?: string | null) => customers.find((c: any) => c.id === id)?.name || "—";
 
@@ -275,7 +302,7 @@ const QuotesList = () => {
                   <TableRow key={q.id} className="h-12">
                     <TableCell className="py-2">{new Date(q.created_at).toLocaleDateString("es-ES")}</TableCell>
                     <TableCell className="py-2">{q.quote_number}</TableCell>
-                    <TableCell className="py-2">{getCustomerName(q.customer_id)}</TableCell>
+                    <TableCell className="py-2"><CustomerName customerId={q.customer_id} /></TableCell>
                     <TableCell className="py-2">{q.description || ""}</TableCell>
                     <TableCell className="py-2 text-right">{fmtEUR(q.final_price)}</TableCell>
                     <TableCell className="py-2">

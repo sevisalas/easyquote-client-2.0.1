@@ -21,6 +21,7 @@ import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 
 interface Item {
   title: string;
@@ -40,6 +41,7 @@ export function AppSidebar() {
   const currentPath = location.pathname;
   const navigate = useNavigate();
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
+  const { isHoldedActive } = useHoldedIntegration();
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -128,42 +130,44 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                   ))}
 
-                  {/* Clientes */}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={currentPath.startsWith("/clientes")}
-                    >
-                      <NavLink to="/clientes" end className={getNavCls}>
-                        <Users className="mr-2 h-4 w-4" />
-                        {!isCollapsed && <span>Clientes</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                    <SidebarMenuSub>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton
-                          asChild
-                          isActive={currentPath === "/clientes"}
-                        >
-                          <NavLink to="/clientes" end className={getNavCls}>
-                            <Users className="mr-2 h-4 w-4" />
-                            {!isCollapsed && <span>Listado</span>}
-                          </NavLink>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton
-                          asChild
-                          isActive={currentPath === "/clientes/nuevo"}
-                        >
-                          <NavLink to="/clientes/nuevo" className={getNavCls}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            {!isCollapsed && <span>Nuevo</span>}
-                          </NavLink>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </SidebarMenuItem>
+                  {/* Clientes - Solo mostrar si Holded no está activo */}
+                  {!isHoldedActive && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={currentPath.startsWith("/clientes")}
+                      >
+                        <NavLink to="/clientes" end className={getNavCls}>
+                          <Users className="mr-2 h-4 w-4" />
+                          {!isCollapsed && <span>Clientes</span>}
+                        </NavLink>
+                      </SidebarMenuButton>
+                      <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={currentPath === "/clientes"}
+                          >
+                            <NavLink to="/clientes" end className={getNavCls}>
+                              <Users className="mr-2 h-4 w-4" />
+                              {!isCollapsed && <span>Listado</span>}
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={currentPath === "/clientes/nuevo"}
+                          >
+                            <NavLink to="/clientes/nuevo" className={getNavCls}>
+                              <PlusCircle className="mr-2 h-4 w-4" />
+                              {!isCollapsed && <span>Nuevo</span>}
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      </SidebarMenuSub>
+                    </SidebarMenuItem>
+                  )}
 
                   {/* Presupuestos */}
                   <SidebarMenuItem>
