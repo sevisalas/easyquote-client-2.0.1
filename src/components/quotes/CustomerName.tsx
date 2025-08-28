@@ -21,25 +21,18 @@ export const CustomerName = ({ customerId, fallback = "—" }: CustomerNameProps
     const fetchCustomerName = async () => {
       setLoading(true);
       try {
-        if (isHoldedActive) {
-          // Buscar en clientes de Holded
-          const holdedContacts = await getHoldedContacts();
-          const customer = holdedContacts.find(contact => contact.id === customerId);
-          setCustomerName(customer?.name || fallback);
+        // Buscar en clientes locales
+        const { data, error } = await supabase
+          .from("customers")
+          .select("name")
+          .eq("id", customerId)
+          .maybeSingle();
+        
+        if (error) {
+          console.error('Error fetching customer:', error);
+          setCustomerName(fallback);
         } else {
-          // Buscar en clientes locales
-          const { data, error } = await supabase
-            .from("customers")
-            .select("name")
-            .eq("id", customerId)
-            .maybeSingle();
-          
-          if (error) {
-            console.error('Error fetching customer:', error);
-            setCustomerName(fallback);
-          } else {
-            setCustomerName(data?.name || fallback);
-          }
+          setCustomerName(data?.name || fallback);
         }
       } catch (error) {
         console.error('Error fetching customer name:', error);

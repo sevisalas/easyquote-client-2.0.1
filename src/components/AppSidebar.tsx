@@ -130,44 +130,42 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                   ))}
 
-                  {/* Clientes - Solo mostrar si Holded no está activo */}
-                  {!isHoldedActive && (
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={currentPath.startsWith("/clientes")}
-                      >
-                        <NavLink to="/clientes" end className={getNavCls}>
-                          <Users className="mr-2 h-4 w-4" />
-                          {!isCollapsed && <span>Clientes</span>}
-                        </NavLink>
-                      </SidebarMenuButton>
-                      <SidebarMenuSub>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton
-                            asChild
-                            isActive={currentPath === "/clientes"}
-                          >
-                            <NavLink to="/clientes" end className={getNavCls}>
-                              <Users className="mr-2 h-4 w-4" />
-                              {!isCollapsed && <span>Listado</span>}
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton
-                            asChild
-                            isActive={currentPath === "/clientes/nuevo"}
-                          >
-                            <NavLink to="/clientes/nuevo" className={getNavCls}>
-                              <PlusCircle className="mr-2 h-4 w-4" />
-                              {!isCollapsed && <span>Nuevo</span>}
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      </SidebarMenuSub>
-                    </SidebarMenuItem>
-                  )}
+                  {/* Clientes */}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={currentPath.startsWith("/clientes")}
+                    >
+                      <NavLink to="/clientes" end className={getNavCls}>
+                        <Users className="mr-2 h-4 w-4" />
+                        {!isCollapsed && <span>Clientes</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={currentPath === "/clientes"}
+                        >
+                          <NavLink to="/clientes" end className={getNavCls}>
+                            <Users className="mr-2 h-4 w-4" />
+                            {!isCollapsed && <span>Listado</span>}
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={currentPath === "/clientes/nuevo"}
+                        >
+                          <NavLink to="/clientes/nuevo" className={getNavCls}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            {!isCollapsed && <span>Nuevo</span>}
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </SidebarMenuItem>
 
                   {/* Presupuestos */}
                   <SidebarMenuItem>

@@ -39,46 +39,14 @@ export const CustomerSelector = ({
   const [holdedCustomers, setHoldedCustomers] = useState<Customer[]>([]);
   const [loadingHolded, setLoadingHolded] = useState(false);
 
-  // Cargar clientes locales solo si Holded no está activo
+  // Cargar clientes locales
   const { data: localCustomers } = useQuery({ 
     queryKey: ["customers"], 
-    queryFn: fetchLocalCustomers,
-    enabled: !isHoldedActive
+    queryFn: fetchLocalCustomers
   });
 
-  // Cargar clientes de Holded cuando esté activo
-  useEffect(() => {
-    if (!isHoldedActive) return;
-
-    const loadHoldedCustomers = async () => {
-      setLoadingHolded(true);
-      try {
-        const contacts = await getHoldedContacts();
-        const formattedContacts = contacts.map(contact => ({
-          id: contact.id,
-          name: contact.name,
-          email: contact.email,
-          phone: contact.phone
-        }));
-        setHoldedCustomers(formattedContacts);
-      } catch (error) {
-        console.error('Error loading Holded customers:', error);
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los clientes de Holded",
-          variant: "destructive"
-        });
-        setHoldedCustomers([]);
-      } finally {
-        setLoadingHolded(false);
-      }
-    };
-
-    loadHoldedCustomers();
-  }, [isHoldedActive, getHoldedContacts]);
-
-  const customers = isHoldedActive ? holdedCustomers : (localCustomers || []);
-  const isLoading = isHoldedActive ? loadingHolded : false;
+  const customers = localCustomers || [];
+  const isLoading = false;
 
   return (
     <div className="space-y-2">
@@ -100,11 +68,6 @@ export const CustomerSelector = ({
           ))}
         </SelectContent>
       </Select>
-      {isHoldedActive && (
-        <p className="text-xs text-muted-foreground">
-          Clientes sincronizados desde Holded
-        </p>
-      )}
     </div>
   );
 };

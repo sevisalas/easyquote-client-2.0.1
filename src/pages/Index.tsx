@@ -110,26 +110,23 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          {/* Solo mostrar tarjeta de clientes si Holded no está activo */}
-          {!isHoldedActive && (
-            <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale">
-              <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="text-lg font-semibold mb-3 text-foreground">Clientes</h3>
-                <p className="text-muted-foreground mb-4 text-sm">
-                  Gestiona tu base de datos de clientes
-                </p>
-                <Button
-                  onClick={() => navigate('/clientes')}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
-                  Administrar
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale">
+            <CardContent className="p-6 text-center">
+              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-3 text-foreground">Clientes</h3>
+              <p className="text-muted-foreground mb-4 text-sm">
+                Gestiona tu base de datos de clientes
+              </p>
+              <Button
+                onClick={() => navigate('/clientes')}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                Administrar
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

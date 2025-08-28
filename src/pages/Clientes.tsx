@@ -3,9 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Edit, Trash2 } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 interface Cliente {
   id: string;
@@ -20,7 +22,12 @@ const Clientes = () => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [importing, setImporting] = useState(false);
   const navigate = useNavigate();
+  const { isHoldedActive } = useHoldedIntegration();
+  const { organization, membership } = useSubscription();
+  
+  const currentOrganization = organization || membership?.organization;
 
   useEffect(() => {
     fetchClientes();
@@ -71,6 +78,46 @@ const Clientes = () => {
     }
   };
 
+  const importFromHolded = async () => {
+    if (!currentOrganization?.id) {
+      toast({
+        title: "Error",
+        description: "No se pudo obtener la información de la organización",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setImporting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('holded-import-customers', {
+        body: { organizationId: currentOrganization.id }
+      });
+
+      if (error) {
+        console.error('Error importing from Holded:', error);
+        throw error;
+      }
+
+      toast({
+        title: "Importación completada",
+        description: data.message,
+      });
+
+      // Recargar la lista de clientes
+      await fetchClientes();
+    } catch (error) {
+      console.error('Error importing customers from Holded:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron importar los clientes desde Holded",
+        variant: "destructive",
+      });
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const filteredClientes = clientes.filter(cliente =>
     cliente.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cliente.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -97,13 +144,26 @@ const Clientes = () => {
               <h1 className="text-3xl font-bold text-foreground mb-2">Clientes</h1>
               <p className="text-muted-foreground">Gestiona tu base de datos de clientes</p>
             </div>
-            <Button 
-              onClick={() => navigate('/clientes/nuevo')}
-              className="w-full md:w-auto bg-primary hover:bg-primary/90"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nuevo Cliente
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+              {isHoldedActive && (
+                <Button 
+                  onClick={importFromHolded}
+                  disabled={importing}
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  {importing ? "Importando..." : "Importar de Holded"}
+                </Button>
+              )}
+              <Button 
+                onClick={() => navigate('/clientes/nuevo')}
+                className="w-full sm:w-auto bg-primary hover:bg-primary/90"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nuevo Cliente
+              </Button>
+            </div>
           </div>
         </header>
 
