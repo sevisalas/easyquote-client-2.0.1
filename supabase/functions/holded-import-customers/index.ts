@@ -69,40 +69,25 @@ serve(async (req) => {
       )
     }
 
-    // Call Holded API to get contacts with pagination
-    let allContacts = []
-    let page = 1
-    let hasMore = true
-
-    while (hasMore) {
-      const holdedResponse = await fetch(`https://api.holded.com/api/invoicing/v1/contacts?limit=500&page=${page}`, {
-        method: 'GET',
-        headers: {
-          'accept': 'application/json',
-          'key': apiKey
-        }
-      })
-
-      if (!holdedResponse.ok) {
-        console.error('Holded API error:', holdedResponse.status, await holdedResponse.text())
-        break
+    // Call Holded API to get contacts - limit to 100 for testing
+    const holdedResponse = await fetch(`https://api.holded.com/api/invoicing/v1/contacts?limit=100&page=1`, {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json',
+        'key': apiKey
       }
+    })
 
-      const pageContacts = await holdedResponse.json()
-      console.log(`Page ${page}: Found ${pageContacts.length} contacts`)
-      
-      if (pageContacts.length === 0) {
-        hasMore = false
-      } else {
-        allContacts = allContacts.concat(pageContacts)
-        page++
-        
-        // Add delay between requests to avoid rate limiting (300ms like your working example)
-        if (hasMore) {
-          await new Promise(resolve => setTimeout(resolve, 300))
-        }
-      }
+    if (!holdedResponse.ok) {
+      console.error('Holded API error:', holdedResponse.status, await holdedResponse.text())
+      return new Response(
+        JSON.stringify({ error: 'Error calling Holded API' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
+
+    const allContacts = await holdedResponse.json()
+    console.log(`Found ${allContacts.length} contacts from Holded API`)
 
     const holdedContacts = allContacts
     console.log(`Total found ${holdedContacts.length} contacts from Holded`)
@@ -118,25 +103,28 @@ serve(async (req) => {
       
       for (const contact of batch) {
         try {
+          // Don't use Holded ID as UUID, let Supabase generate UUID
           const customerData = {
-            id: contact.id,
             user_id: user.id,
-            name: contact.name || contact.customName || 'Sin nombre'
+            name: contact.name || contact.customName || 'Sin nombre',
+            email: contact.email || null,
+            phone: contact.phone || null,
+            notes: `Holded ID: ${contact.id}${contact.customName ? ` | Custom Name: ${contact.customName}` : ''}`
           }
 
-          // Try to upsert the customer
-          const { data: upsertData, error: upsertError } = await supabaseClient
-            .from('customers')
-            .upsert(customerData, { 
-              onConflict: 'id',
-              ignoreDuplicates: false 
-            })
+          console.log('Processing contact:', contact.id, contact.name)
 
-          if (upsertError) {
-            console.error('Error upserting customer:', contact.id, upsertError)
+          // Insert new customer (no upsert since we can't match by Holded ID)
+          const { data: insertData, error: insertError } = await supabaseClient
+            .from('customers')
+            .insert(customerData)
+            .select()
+
+          if (insertError) {
+            console.error('Error inserting customer:', contact.id, insertError)
             errors++
           } else {
-            console.log('Successfully upserted customer:', contact.id, contact.name)
+            console.log('Successfully inserted customer:', contact.id, contact.name)
             imported++
           }
         } catch (error) {
