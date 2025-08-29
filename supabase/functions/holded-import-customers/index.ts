@@ -75,7 +75,7 @@ serve(async (req) => {
     let hasMore = true
 
     while (hasMore) {
-      const holdedResponse = await fetch(`https://api.holded.com/api/invoicing/v1/contacts?page=${page}&per_page=500`, {
+      const holdedResponse = await fetch(`https://api.holded.com/api/invoicing/v1/contacts?limit=500&page=${page}`, {
         method: 'GET',
         headers: {
           'accept': 'application/json',
@@ -91,12 +91,17 @@ serve(async (req) => {
       const pageContacts = await holdedResponse.json()
       console.log(`Page ${page}: Found ${pageContacts.length} contacts`)
       
-      if (pageContacts.length === 0 || pageContacts.length < 500) {
+      if (pageContacts.length === 0) {
         hasMore = false
+      } else {
+        allContacts = allContacts.concat(pageContacts)
+        page++
+        
+        // Add delay between requests to avoid rate limiting (300ms like your working example)
+        if (hasMore) {
+          await new Promise(resolve => setTimeout(resolve, 300))
+        }
       }
-      
-      allContacts = allContacts.concat(pageContacts)
-      page++
     }
 
     const holdedContacts = allContacts
