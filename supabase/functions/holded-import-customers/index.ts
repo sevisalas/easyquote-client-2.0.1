@@ -104,10 +104,7 @@ serve(async (req) => {
           const customerData = {
             id: contact.id,
             user_id: user.id,
-            name: contact.name || contact.customName || 'Sin nombre',
-            email: contact.email || null,
-            phone: contact.phone || null,
-            notes: contact.vatNumber ? `NIF/CIF: ${contact.vatNumber}` : null
+            name: contact.name || contact.customName || 'Sin nombre'
           }
 
           // Try to upsert the customer
