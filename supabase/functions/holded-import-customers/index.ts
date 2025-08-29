@@ -103,29 +103,58 @@ serve(async (req) => {
       
       for (const contact of batch) {
         try {
-          // Don't use Holded ID as UUID, let Supabase generate UUID
+          // Store Holded ID in separate field and use it for upsert logic
           const customerData = {
             user_id: user.id,
+            holded_id: contact.id.toString(), // Store original Holded ID
             name: contact.name || contact.customName || 'Sin nombre',
             email: contact.email || null,
             phone: contact.phone || null,
-            notes: `Holded ID: ${contact.id}${contact.customName ? ` | Custom Name: ${contact.customName}` : ''}`
+            notes: contact.customName ? `Custom Name: ${contact.customName}` : null
           }
 
           console.log('Processing contact:', contact.id, contact.name)
 
-          // Insert new customer (no upsert since we can't match by Holded ID)
-          const { data: insertData, error: insertError } = await supabaseClient
+          // First try to find existing customer with this holded_id
+          const { data: existingCustomer } = await supabaseClient
             .from('customers')
-            .insert(customerData)
-            .select()
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('holded_id', contact.id.toString())
+            .maybeSingle()
 
-          if (insertError) {
-            console.error('Error inserting customer:', contact.id, insertError)
-            errors++
+          if (existingCustomer) {
+            // Update existing customer
+            const { error: updateError } = await supabaseClient
+              .from('customers')
+              .update({
+                name: customerData.name,
+                email: customerData.email,
+                phone: customerData.phone,
+                notes: customerData.notes
+              })
+              .eq('id', existingCustomer.id)
+
+            if (updateError) {
+              console.error('Error updating customer:', contact.id, updateError)
+              errors++
+            } else {
+              console.log('Successfully updated customer:', contact.id, contact.name)
+              updated++
+            }
           } else {
-            console.log('Successfully inserted customer:', contact.id, contact.name)
-            imported++
+            // Insert new customer
+            const { error: insertError } = await supabaseClient
+              .from('customers')
+              .insert(customerData)
+
+            if (insertError) {
+              console.error('Error inserting customer:', contact.id, insertError)
+              errors++
+            } else {
+              console.log('Successfully inserted customer:', contact.id, contact.name)
+              imported++
+            }
           }
         } catch (error) {
           console.error('Error processing contact:', error)
