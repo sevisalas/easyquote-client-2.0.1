@@ -120,7 +120,7 @@ serve(async (req) => {
           }
 
           // Try to upsert the customer
-          const { error: upsertError } = await supabaseClient
+          const { data: upsertData, error: upsertError } = await supabaseClient
             .from('customers')
             .upsert(customerData, { 
               onConflict: 'id',
@@ -128,27 +128,11 @@ serve(async (req) => {
             })
 
           if (upsertError) {
-            console.error('Error upserting customer:', upsertError)
+            console.error('Error upserting customer:', contact.id, upsertError)
             errors++
           } else {
-            // Check if it was an insert or update
-            const { data: existing } = await supabaseClient
-              .from('customers')
-              .select('created_at')
-              .eq('id', contact.id)
-              .single()
-            
-            if (existing) {
-              const createdAt = new Date(existing.created_at)
-              const now = new Date()
-              const diffMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60)
-              
-              if (diffMinutes < 1) {
-                imported++
-              } else {
-                updated++
-              }
-            }
+            console.log('Successfully upserted customer:', contact.id, contact.name)
+            imported++
           }
         } catch (error) {
           console.error('Error processing contact:', error)
