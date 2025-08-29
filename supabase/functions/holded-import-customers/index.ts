@@ -69,26 +69,38 @@ serve(async (req) => {
       )
     }
 
-    // Call Holded API to get contacts
-    const holdedResponse = await fetch('https://api.holded.com/api/invoicing/v1/contacts', {
-      method: 'GET',
-      headers: {
-        'accept': 'application/json',
-        'key': apiKey
-      }
-    })
+    // Call Holded API to get contacts with pagination
+    let allContacts = []
+    let page = 1
+    let hasMore = true
 
-    if (!holdedResponse.ok) {
-      console.error('Holded API error:', holdedResponse.status, await holdedResponse.text())
-      return new Response(
-        JSON.stringify({ error: 'Error fetching data from Holded API' }),
-        { status: holdedResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    while (hasMore) {
+      const holdedResponse = await fetch(`https://api.holded.com/api/invoicing/v1/contacts?page=${page}&per_page=500`, {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+          'key': apiKey
+        }
+      })
+
+      if (!holdedResponse.ok) {
+        console.error('Holded API error:', holdedResponse.status, await holdedResponse.text())
+        break
+      }
+
+      const pageContacts = await holdedResponse.json()
+      console.log(`Page ${page}: Found ${pageContacts.length} contacts`)
+      
+      if (pageContacts.length === 0 || pageContacts.length < 500) {
+        hasMore = false
+      }
+      
+      allContacts = allContacts.concat(pageContacts)
+      page++
     }
 
-    const holdedContacts = await holdedResponse.json()
-    
-    console.log(`Found ${holdedContacts.length} contacts from Holded`)
+    const holdedContacts = allContacts
+    console.log(`Total found ${holdedContacts.length} contacts from Holded`)
 
     // Process contacts in batches to avoid overwhelming the database
     const batchSize = 50
