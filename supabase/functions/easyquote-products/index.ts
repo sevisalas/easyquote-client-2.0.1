@@ -55,6 +55,19 @@ serve(async (req: Request): Promise<Response> => {
 
     if (!res.ok) {
       console.error("easyquote-products: fetch failed", res.status, data);
+      
+      // Si es un error 401, retornamos un error específico para que el frontend lo maneje
+      if (res.status === 401) {
+        return new Response(JSON.stringify({ 
+          error: "Tu sesión de EasyQuote ha expirado. Por favor, vuelve a conectarte.", 
+          code: "EASYQUOTE_UNAUTHORIZED",
+          status: 401 
+        }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
       return new Response(JSON.stringify({ error: data?.message || "Failed to fetch products" }), {
         status: res.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
