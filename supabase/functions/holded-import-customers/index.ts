@@ -69,6 +69,16 @@ serve(async (req) => {
       )
     }
 
+    // Get existing Holded IDs to only import new contacts
+    const { data: existingCustomers } = await supabaseClient
+      .from('customers')
+      .select('holded_id')
+      .eq('user_id', user.id)
+      .not('holded_id', 'is', null)
+
+    const existingHoldedIds = new Set(existingCustomers?.map(c => c.holded_id) || [])
+    console.log(`Found ${existingHoldedIds.size} existing Holded contacts in database`)
+
     // Call Holded API to get contacts - limit to 100 for testing
     const holdedResponse = await fetch(`https://api.holded.com/api/invoicing/v1/contacts?limit=100&page=1`, {
       method: 'GET',
@@ -89,13 +99,15 @@ serve(async (req) => {
     const allContacts = await holdedResponse.json()
     console.log(`Found ${allContacts.length} contacts from Holded API`)
 
-    const holdedContacts = allContacts
-    console.log(`Total found ${holdedContacts.length} contacts from Holded`)
+    // Filter out contacts that already exist
+    const newContacts = allContacts.filter(contact => !existingHoldedIds.has(contact.id.toString()))
+    console.log(`${newContacts.length} new contacts to import (${allContacts.length - newContacts.length} already exist)`)
+
+    const holdedContacts = newContacts
 
     // Process contacts in batches to avoid overwhelming the database
     const batchSize = 50
     let imported = 0
-    let updated = 0
     let errors = 0
 
     for (let i = 0; i < holdedContacts.length; i += batchSize) {
@@ -115,46 +127,17 @@ serve(async (req) => {
 
           console.log('Processing contact:', contact.id, contact.name)
 
-          // First try to find existing customer with this holded_id
-          const { data: existingCustomer } = await supabaseClient
+          // Insert new customer (we already filtered existing ones)
+          const { error: insertError } = await supabaseClient
             .from('customers')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('holded_id', contact.id.toString())
-            .maybeSingle()
+            .insert(customerData)
 
-          if (existingCustomer) {
-            // Update existing customer
-            const { error: updateError } = await supabaseClient
-              .from('customers')
-              .update({
-                name: customerData.name,
-                email: customerData.email,
-                phone: customerData.phone,
-                notes: customerData.notes
-              })
-              .eq('id', existingCustomer.id)
-
-            if (updateError) {
-              console.error('Error updating customer:', contact.id, updateError)
-              errors++
-            } else {
-              console.log('Successfully updated customer:', contact.id, contact.name)
-              updated++
-            }
+          if (insertError) {
+            console.error('Error inserting customer:', contact.id, insertError)
+            errors++
           } else {
-            // Insert new customer
-            const { error: insertError } = await supabaseClient
-              .from('customers')
-              .insert(customerData)
-
-            if (insertError) {
-              console.error('Error inserting customer:', contact.id, insertError)
-              errors++
-            } else {
-              console.log('Successfully inserted customer:', contact.id, contact.name)
-              imported++
-            }
+            console.log('Successfully inserted customer:', contact.id, contact.name)
+            imported++
           }
         } catch (error) {
           console.error('Error processing contact:', error)
@@ -167,11 +150,11 @@ serve(async (req) => {
     }
 
     const result = {
-      total: holdedContacts.length,
+      total: allContacts.length,
+      new_found: holdedContacts.length,
       imported,
-      updated,
       errors,
-      message: `Importación completada: ${imported} nuevos, ${updated} actualizados, ${errors} errores`
+      message: `Importación completada: ${imported} nuevos contactos importados de ${holdedContacts.length} encontrados (${allContacts.length - holdedContacts.length} ya existían)`
     }
 
     console.log('Import result:', result)
