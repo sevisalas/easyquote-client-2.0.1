@@ -120,7 +120,7 @@ const Clientes = () => {
 
   const filteredClientes = clientes.filter(cliente =>
     cliente.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cliente.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (cliente.email && cliente.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   if (loading) {
