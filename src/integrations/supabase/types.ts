@@ -400,6 +400,16 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_integration_status: {
+        Args: { integration_name: string; org_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          integration_type: string
+          is_active: boolean
+          updated_at: string
+        }[]
+      }
       get_organization_users: {
         Args: { org_id: string }
         Returns: {
