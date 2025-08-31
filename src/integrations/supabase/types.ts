@@ -439,6 +439,17 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_integration_status_safe: {
+        Args: { org_id: string }
+        Returns: {
+          created_at: string
+          has_configuration: boolean
+          id: string
+          integration_type: string
+          is_active: boolean
+          updated_at: string
+        }[]
+      }
       get_organization_users: {
         Args: { org_id: string }
         Returns: {
