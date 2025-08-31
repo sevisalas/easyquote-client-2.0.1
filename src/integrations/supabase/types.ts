@@ -388,36 +388,7 @@ export type Database = {
       }
     }
     Views: {
-      integration_metadata: {
-        Row: {
-          configuration: Json | null
-          created_at: string | null
-          id: string | null
-          integration_type: string | null
-          is_active: boolean | null
-          organization_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          configuration?: never
-          created_at?: string | null
-          id?: string | null
-          integration_type?: string | null
-          is_active?: boolean | null
-          organization_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          configuration?: never
-          created_at?: string | null
-          id?: string | null
-          integration_type?: string | null
-          is_active?: boolean | null
-          organization_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       get_customer_public_info: {
