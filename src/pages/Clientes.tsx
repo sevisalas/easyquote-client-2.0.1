@@ -29,7 +29,7 @@ const Clientes = () => {
   const { isHoldedActive } = useHoldedIntegration();
   const { organization, membership } = useSubscription();
   
-  const ITEMS_PER_PAGE = 50;
+  const ITEMS_PER_PAGE = 25;
   const currentOrganization = organization || membership?.organization;
 
   useEffect(() => {
@@ -148,7 +148,7 @@ const Clientes = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-background p-2">
         <div className="max-w-7xl mx-auto">
           <div className="text-center py-20">
             <p className="text-muted-foreground">Cargando clientes...</p>
@@ -159,7 +159,7 @@ const Clientes = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-background p-2">
       <div className="max-w-7xl mx-auto">
         <header className="mb-8">
           <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-3">
