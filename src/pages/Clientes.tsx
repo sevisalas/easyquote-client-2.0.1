@@ -216,28 +216,29 @@ const Clientes = () => {
             </TableHeader>
             <TableBody>
               {clientes.map((cliente) => (
-                <TableRow key={cliente.id} className="hover:bg-muted/50">
-                  <TableCell className="font-medium">{cliente.name}</TableCell>
-                  <TableCell>{cliente.email || 'No especificado'}</TableCell>
-                  <TableCell>{cliente.phone || 'No especificado'}</TableCell>
-                  <TableCell className="max-w-xs truncate">{cliente.notes || 'Sin notas'}</TableCell>
-                  <TableCell>{new Date(cliente.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
+                <TableRow key={cliente.id} className="hover:bg-muted/50 h-12">
+                  <TableCell className="font-medium py-2">{cliente.name}</TableCell>
+                  <TableCell className="py-2">{cliente.email || 'No especificado'}</TableCell>
+                  <TableCell className="py-2">{cliente.phone || 'No especificado'}</TableCell>
+                  <TableCell className="max-w-xs truncate py-2">{cliente.notes || 'Sin notas'}</TableCell>
+                  <TableCell className="py-2">{new Date(cliente.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-right py-2">
+                    <div className="flex justify-end gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => navigate(`/clientes/${cliente.id}/editar`)}
+                        className="h-8 w-8 p-0"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-3 h-3" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => deleteCliente(cliente.id)}
-                        className="text-destructive hover:text-destructive"
+                        className="text-destructive hover:text-destructive h-8 w-8 p-0"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
                   </TableCell>
