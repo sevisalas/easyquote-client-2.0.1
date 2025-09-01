@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, Edit, Trash2, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -179,51 +179,49 @@ const Clientes = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredClientes.map((cliente) => (
-            <Card key={cliente.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex justify-between items-start">
-                  <span className="text-lg">{cliente.name}</span>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(`/clientes/${cliente.id}/editar`)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteCliente(cliente.id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    <strong>Email:</strong> {cliente.email || 'No especificado'}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    <strong>Teléfono:</strong> {cliente.phone || 'No especificado'}
-                  </p>
-                  {cliente.notes && (
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Notas:</strong> {cliente.notes}
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Creado: {new Date(cliente.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Teléfono</TableHead>
+                <TableHead>Notas</TableHead>
+                <TableHead>Fecha de creación</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredClientes.map((cliente) => (
+                <TableRow key={cliente.id} className="hover:bg-muted/50">
+                  <TableCell className="font-medium">{cliente.name}</TableCell>
+                  <TableCell>{cliente.email || 'No especificado'}</TableCell>
+                  <TableCell>{cliente.phone || 'No especificado'}</TableCell>
+                  <TableCell className="max-w-xs truncate">{cliente.notes || 'Sin notas'}</TableCell>
+                  <TableCell>{new Date(cliente.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/clientes/${cliente.id}/editar`)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteCliente(cliente.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
 
         {filteredClientes.length === 0 && (
