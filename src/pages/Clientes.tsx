@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Edit, Trash2, Download } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Download, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
@@ -20,6 +20,8 @@ interface Cliente {
 
 const Clientes = () => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
@@ -27,21 +29,41 @@ const Clientes = () => {
   const { isHoldedActive } = useHoldedIntegration();
   const { organization, membership } = useSubscription();
   
+  const ITEMS_PER_PAGE = 50;
   const currentOrganization = organization || membership?.organization;
 
   useEffect(() => {
     fetchClientes();
-  }, []);
+  }, [currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    fetchClientes();
+  }, [searchTerm]);
 
   const fetchClientes = async () => {
+    setLoading(true);
     try {
-      const { data, error } = await supabase
+      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+      const endIndex = startIndex + ITEMS_PER_PAGE - 1;
+
+      let query = supabase
         .from('customers')
-        .select('*')
+        .select('*', { count: 'exact' })
         .order('created_at', { ascending: false });
 
+      // Aplicar filtro de búsqueda si existe
+      if (searchTerm) {
+        query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      }
+
+      // Aplicar paginación
+      const { data, error, count } = await query.range(startIndex, endIndex);
+
       if (error) throw error;
+      
       setClientes(data || []);
+      setTotalCount(count || 0);
     } catch (error) {
       toast({
         title: "Error",
@@ -118,10 +140,11 @@ const Clientes = () => {
     }
   };
 
-  const filteredClientes = clientes.filter(cliente =>
-    cliente.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (cliente.email && cliente.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   if (loading) {
     return (
@@ -192,7 +215,7 @@ const Clientes = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredClientes.map((cliente) => (
+              {clientes.map((cliente) => (
                 <TableRow key={cliente.id} className="hover:bg-muted/50">
                   <TableCell className="font-medium">{cliente.name}</TableCell>
                   <TableCell>{cliente.email || 'No especificado'}</TableCell>
@@ -224,7 +247,65 @@ const Clientes = () => {
           </Table>
         </div>
 
-        {filteredClientes.length === 0 && (
+        
+        {/* Controles de paginación */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6">
+            <div className="text-sm text-muted-foreground">
+              Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} de {totalCount} clientes
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Anterior
+              </Button>
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNumber;
+                  if (totalPages <= 5) {
+                    pageNumber = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNumber = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNumber = totalPages - 4 + i;
+                  } else {
+                    pageNumber = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNumber}
+                      variant={currentPage === pageNumber ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange(pageNumber)}
+                      className="w-10"
+                    >
+                      {pageNumber}
+                    </Button>
+                  );
+                })}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Siguiente
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {clientes.length === 0 && (
           <div className="text-center py-20">
             <p className="text-muted-foreground">
               {searchTerm ? 'No se encontraron clientes' : 'Aún no tienes clientes registrados'}
