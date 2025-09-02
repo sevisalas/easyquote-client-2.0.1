@@ -18,10 +18,10 @@ All colors MUST be HSL.
     --popover-foreground: 222.2 84% 4.9%;
 
     /* New color palette */
-    --primary: 187 75% 45%; /* #fd6f8a */
+    --primary: 348 97% 72%; /* #fd6f8a */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 272 99% 40%; /* #6d01cc*/
+    --secondary: 329 67% 53%; /* #6d01cc*/
     --secondary-foreground: 0 0% 98%;
 
     --muted: 210 40% 96.1%;
