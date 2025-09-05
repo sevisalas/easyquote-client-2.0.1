@@ -52,7 +52,7 @@ const Index = () => {
           {/* Bloque del logo y saludo */}
           <div className="text-center md:text-left">
             <img
-              src="/lovable-uploads/3ff3c1d3-fd0e-4649-9146-6991b081234b.png"
+              src="/lovable-uploads/logo_transparente.png"
               alt="EasyQuote Logo"
               className="h-16 w-auto mx-auto md:mx-0 mb-4 hover-scale"
             />
@@ -83,7 +83,7 @@ const Index = () => {
           {/* Bloque de la imagen */}
           <div className="flex justify-center">
             <img
-              src="/lovable-uploads/logo_transparente.png"
+              src="/lovable-uploads/easyquote 1.png"
               alt="EasyQuote Logo"
               className="h-40 w-auto hover-scale"
             />
