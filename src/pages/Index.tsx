@@ -83,8 +83,8 @@ const Index = () => {
           {/* Bloque de la imagen */}
           <div className="flex justify-center">
             <img
-              src="/lovable-uploads/90590fde-3895-4073-bd6a-2744ba8ceb02.png"
-              alt="Technology Logo"
+              src="/lovable-uploads/logo_transparente.png"
+              alt="EasyQuote Logo"
               className="h-40 w-auto hover-scale"
             />
           </div>
