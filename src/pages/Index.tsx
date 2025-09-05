@@ -52,7 +52,7 @@ const Index = () => {
           {/* Bloque del logo y saludo */}
           <div className="text-center md:text-left">
             <img
-              src="/lovable-uploads/logo_transparente.png"
+              src="/lovable-uploads/logo_transparente-removebg-preview.png"
               alt="EasyQuote Logo"
               className="h-16 w-auto mx-auto md:mx-0 mb-4 hover-scale"
             />
