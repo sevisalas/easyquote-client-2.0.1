@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,16 +9,17 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { 
   Package, 
   Search, 
-  Filter,
-  Download,
   AlertCircle,
   CheckCircle2,
   XCircle,
-  Loader2
+  Loader2,
+  Edit,
+  Settings
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -29,19 +30,39 @@ interface EasyQuoteProduct {
   productId: string;
   productName: string;
   isActive: boolean;
-  prompts?: any[];
   category?: string;
   description?: string;
   basePrice?: number;
+  excelFileId?: string;
   [key: string]: any; // Para otros campos del API
+}
+
+interface ProductPrompt {
+  promptId: string;
+  productId: string;
+  sequence: number;
+  promptTypeId: number;
+  title: string;
+  isRequired: boolean;
+}
+
+interface ProductOutput {
+  outputId: string;
+  productId: string;
+  outputName: string;
+  outputTypeId: number;
+  sequence: number;
 }
 
 export default function ProductManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [includeInactive, setIncludeInactive] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<EasyQuoteProduct | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
+  const queryClient = useQueryClient();
 
   // Check permissions
   if (!isSuperAdmin && !isOrgAdmin) {
@@ -122,25 +143,56 @@ export default function ProductManagement() {
   const activeProducts = products.filter(p => p.isActive);
   const inactiveProducts = products.filter(p => !p.isActive);
 
-  const exportProducts = () => {
-    const csvContent = [
-      ["ID", "Nombre", "Estado", "Categoría", "Descripción"].join(","),
-      ...filteredProducts.map(product => [
-        `"${product.productId}"`,
-        `"${product.productName}"`,
-        product.isActive ? "Activo" : "Inactivo",
-        `"${product.category || ""}"`,
-        `"${product.description || ""}"`
-      ].join(","))
-    ].join("\\n");
+  // Mutation para actualizar producto
+  const updateProductMutation = useMutation({
+    mutationFn: async (updatedProduct: EasyQuoteProduct) => {
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) {
+        throw new Error("No hay token de EasyQuote disponible");
+      }
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "productos-easyquote.csv";
-    link.click();
-    window.URL.revokeObjectURL(url);
+      const response = await fetch("https://api.easyquote.cloud/api/v1/products", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(updatedProduct)
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al actualizar el producto");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Producto actualizado",
+        description: "El producto se ha actualizado correctamente.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["easyquote-products"] });
+      setIsEditDialogOpen(false);
+      setSelectedProduct(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleEditProduct = (product: EasyQuoteProduct) => {
+    setSelectedProduct({ ...product });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveProduct = () => {
+    if (selectedProduct) {
+      updateProductMutation.mutate(selectedProduct);
+    }
   };
 
   if (!hasToken) {
@@ -193,9 +245,13 @@ export default function ProductManagement() {
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={exportProducts} disabled={isLoading}>
-            <Download className="h-4 w-4 mr-2" />
-            Exportar CSV
+          <Button 
+            variant="outline" 
+            onClick={() => refetch()}
+            disabled={isLoading}
+          >
+            <Package className="h-4 w-4 mr-2" />
+            Actualizar
           </Button>
         </div>
       </div>
@@ -337,7 +393,7 @@ export default function ProductManagement() {
                   <TableHead>ID</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Categoría</TableHead>
-                  <TableHead>Prompts</TableHead>
+                  <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -379,9 +435,14 @@ export default function ProductManagement() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-muted-foreground">
-                        {product.prompts?.length || 0} campos
-                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditProduct(product)}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -390,6 +451,95 @@ export default function ProductManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Product Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar Producto</DialogTitle>
+            <DialogDescription>
+              Modifica los detalles del producto EasyQuote
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedProduct && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="productName">Nombre del Producto</Label>
+                  <Input
+                    id="productName"
+                    value={selectedProduct.productName}
+                    onChange={(e) => setSelectedProduct({
+                      ...selectedProduct,
+                      productName: e.target.value
+                    })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="category">Categoría</Label>
+                  <Input
+                    id="category"
+                    value={selectedProduct.category || ""}
+                    onChange={(e) => setSelectedProduct({
+                      ...selectedProduct,
+                      category: e.target.value
+                    })}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="description">Descripción</Label>
+                <Input
+                  id="description"
+                  value={selectedProduct.description || ""}
+                  onChange={(e) => setSelectedProduct({
+                    ...selectedProduct,
+                    description: e.target.value
+                  })}
+                />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="isActive"
+                  checked={selectedProduct.isActive}
+                  onCheckedChange={(checked) => setSelectedProduct({
+                    ...selectedProduct,
+                    isActive: checked
+                  })}
+                />
+                <Label htmlFor="isActive">
+                  Producto activo
+                </Label>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsEditDialogOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleSaveProduct}
+                  disabled={updateProductMutation.isPending}
+                >
+                  {updateProductMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    'Guardar cambios'
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
