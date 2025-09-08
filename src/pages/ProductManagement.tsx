@@ -934,27 +934,27 @@ export default function ProductManagement() {
                                 </div>
                               )}
 
-                              <div className="col-span-1">
-                                <Label>Type Content</Label>
-                                <Select
-                                  value={prompt.promptType?.toString() || ""}
-                                  onValueChange={(value) => {
-                                    const updatedPrompt = { ...prompt, promptType: parseInt(value) };
-                                    updatePromptMutation.mutate(updatedPrompt);
-                                  }}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent className="bg-background border shadow-lg z-50">
-                                    {promptTypes.map((type) => (
-                                      <SelectItem key={type.id} value={type.id?.toString() || ""}>
-                                        {type.promptType}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
+                               <div className="col-span-2">
+                                 <Label>Type Content</Label>
+                                 <Select
+                                   value={prompt.promptType?.toString() || ""}
+                                   onValueChange={(value) => {
+                                     const updatedPrompt = { ...prompt, promptType: parseInt(value) };
+                                     updatePromptMutation.mutate(updatedPrompt);
+                                   }}
+                                 >
+                                   <SelectTrigger>
+                                     <SelectValue />
+                                   </SelectTrigger>
+                                   <SelectContent className="bg-background border shadow-lg z-50">
+                                     {promptTypes.map((type) => (
+                                       <SelectItem key={type.id} value={type.id?.toString() || ""}>
+                                         {type.promptType}
+                                       </SelectItem>
+                                     ))}
+                                   </SelectContent>
+                                 </Select>
+                               </div>
 
                               <div className="col-span-1">
                                 <Label>Required</Label>
@@ -981,7 +981,7 @@ export default function ProductManagement() {
                                       }}
                                     />
                                   </div>
-                                   <div className="col-span-2">
+                                   <div className="col-span-1">
                                      <Label>Qty Min</Label>
                                      <Input
                                        type="number"
@@ -992,7 +992,7 @@ export default function ProductManagement() {
                                        }}
                                      />
                                    </div>
-                                   <div className="col-span-2">
+                                   <div className="col-span-1">
                                      <Label>Qty Max</Label>
                                      <Input
                                        type="number"
@@ -1003,11 +1003,11 @@ export default function ProductManagement() {
                                        }}
                                      />
                                    </div>
-                                </>
-                              )}
+                                 </>
+                               )}
 
                                {/* Espacios vacíos para mantener alineación cuando no hay campos numéricos */}
-                               {!isNumericType && <div className="col-span-4"></div>}
+                               {!isNumericType && <div className="col-span-2"></div>}
 
                               <div className="col-span-1">
                                 <Label>Actions</Label>
