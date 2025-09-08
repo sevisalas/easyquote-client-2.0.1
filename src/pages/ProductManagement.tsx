@@ -876,40 +876,6 @@ export default function ProductManagement() {
                           </Button>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                          <div>
-                            <Label>Título (Celda)</Label>
-                            <Input
-                              defaultValue={prompt.promptCell}
-                              onBlur={(e) => {
-                                const updatedPrompt = { ...prompt, promptCell: e.target.value };
-                                updatePromptMutation.mutate(updatedPrompt);
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <Label>Tipo</Label>
-                            <Select
-                              value={prompt.promptType?.toString() || ""}
-                              onValueChange={(value) => {
-                                const updatedPrompt = { ...prompt, promptType: parseInt(value) };
-                                updatePromptMutation.mutate(updatedPrompt);
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="bg-background border shadow-lg z-50">
-                                {promptTypes.map((type) => (
-                                  <SelectItem key={type.id} value={type.id?.toString() || ""}>
-                                    {type.promptType}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-
                         {(() => {
                           const currentPromptType = promptTypes.find(type => type.id === prompt.promptType);
                           const isNumericType = currentPromptType?.promptType === "Number" || currentPromptType?.promptType === "Quantity";
@@ -917,27 +883,6 @@ export default function ProductManagement() {
                           
                           return (
                             <div className="grid grid-cols-12 gap-2 items-end">
-                              <div className="col-span-2">
-                                <Label>Valor por defecto</Label>
-                                <Input
-                                  defaultValue={prompt.valueCell || ""}
-                                  onBlur={(e) => {
-                                    const updatedPrompt = { ...prompt, valueCell: e.target.value };
-                                    updatePromptMutation.mutate(updatedPrompt);
-                                  }}
-                                />
-                              </div>
-                              <div className="col-span-1">
-                                <Label>Orden</Label>
-                                <Input
-                                  type="number"
-                                  defaultValue={prompt.promptSeq}
-                                  onBlur={(e) => {
-                                    const updatedPrompt = { ...prompt, promptSeq: parseInt(e.target.value) };
-                                    updatePromptMutation.mutate(updatedPrompt);
-                                  }}
-                                />
-                              </div>
                               <div className="col-span-1">
                                 <Label>Sheet</Label>
                                 <Input
@@ -948,14 +893,45 @@ export default function ProductManagement() {
                                   }}
                                 />
                               </div>
+                              <div className="col-span-1">
+                                <Label>Prompt</Label>
+                                <Input
+                                  defaultValue={prompt.promptCell}
+                                  onBlur={(e) => {
+                                    const updatedPrompt = { ...prompt, promptCell: e.target.value };
+                                    updatePromptMutation.mutate(updatedPrompt);
+                                  }}
+                                />
+                              </div>
+                              <div className="col-span-1">
+                                <Label>Default value</Label>
+                                <Input
+                                  defaultValue={prompt.valueCell || ""}
+                                  onBlur={(e) => {
+                                    const updatedPrompt = { ...prompt, valueCell: e.target.value };
+                                    updatePromptMutation.mutate(updatedPrompt);
+                                  }}
+                                />
+                              </div>
+                              <div className="col-span-1">
+                                <Label>Order</Label>
+                                <Input
+                                  type="number"
+                                  defaultValue={prompt.promptSeq}
+                                  onBlur={(e) => {
+                                    const updatedPrompt = { ...prompt, promptSeq: parseInt(e.target.value) };
+                                    updatePromptMutation.mutate(updatedPrompt);
+                                  }}
+                                />
+                              </div>
                               
                               {/* Rango - Solo para tipos no numéricos */}
                               {!isNumericType && (
-                                <div className="col-span-2">
-                                  <Label>Rango</Label>
+                                <div className="col-span-1">
+                                  <Label>Range</Label>
                                   <Input
                                     defaultValue={prompt.valueOptionRange || ""}
-                                    placeholder="ej: $E$2:$E$3"
+                                    placeholder="$E$2:$E$3"
                                     onBlur={(e) => {
                                       const updatedPrompt = { ...prompt, valueOptionRange: e.target.value };
                                       updatePromptMutation.mutate(updatedPrompt);
@@ -964,11 +940,44 @@ export default function ProductManagement() {
                                 </div>
                               )}
 
+                              <div className="col-span-1">
+                                <Label>Type Content</Label>
+                                <Select
+                                  value={prompt.promptType?.toString() || ""}
+                                  onValueChange={(value) => {
+                                    const updatedPrompt = { ...prompt, promptType: parseInt(value) };
+                                    updatePromptMutation.mutate(updatedPrompt);
+                                  }}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-background border shadow-lg z-50">
+                                    {promptTypes.map((type) => (
+                                      <SelectItem key={type.id} value={type.id?.toString() || ""}>
+                                        {type.promptType}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="col-span-1">
+                                <Label>Required</Label>
+                                <Switch
+                                  checked={prompt.valueRequired}
+                                  onCheckedChange={(checked) => {
+                                    const updatedPrompt = { ...prompt, valueRequired: checked };
+                                    updatePromptMutation.mutate(updatedPrompt);
+                                  }}
+                                />
+                              </div>
+
                               {/* Campos numéricos - Solo para tipos Number/Quantity */}
                               {isNumericType && (
                                 <>
                                   <div className="col-span-1">
-                                    <Label>Decimales</Label>
+                                    <Label>Decimals</Label>
                                     <Input
                                       type="number"
                                       defaultValue={prompt.valueQuantityAllowedDecimals || 0}
@@ -979,7 +988,7 @@ export default function ProductManagement() {
                                     />
                                   </div>
                                   <div className="col-span-1">
-                                    <Label>Min</Label>
+                                    <Label>Qty Min</Label>
                                     <Input
                                       type="number"
                                       defaultValue={prompt.valueQuantityMin || 1}
@@ -990,7 +999,7 @@ export default function ProductManagement() {
                                     />
                                   </div>
                                   <div className="col-span-1">
-                                    <Label>Max</Label>
+                                    <Label>Qty Max</Label>
                                     <Input
                                       type="number"
                                       defaultValue={prompt.valueQuantityMax || 9999}
@@ -1003,34 +1012,19 @@ export default function ProductManagement() {
                                 </>
                               )}
 
-                              {/* Espacios vacíos para mantener alineación */}
-                              {!isNumericType && <div className="col-span-3"></div>}
-                              {isNumericType && <div className="col-span-2"></div>}
-                              
-                              <div className="col-span-2 flex items-center justify-end space-x-2">
-                                <Switch
-                                  checked={prompt.valueRequired}
-                                  onCheckedChange={(checked) => {
-                                    const updatedPrompt = { ...prompt, valueRequired: checked };
-                                    updatePromptMutation.mutate(updatedPrompt);
-                                  }}
-                                />
-                                <Label className="text-sm">Requerido</Label>
+                              <div className="col-span-1">
+                                <Label>Actions</Label>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => deletePrompt(prompt.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
                             </div>
                           );
                         })()}
-
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            checked={prompt.valueRequired}
-                            onCheckedChange={(checked) => {
-                              const updatedPrompt = { ...prompt, valueRequired: checked };
-                              updatePromptMutation.mutate(updatedPrompt);
-                            }}
-                          />
-                          <Label>Campo requerido</Label>
-                        </div>
                       </div>
                     ))}
                   </div>
