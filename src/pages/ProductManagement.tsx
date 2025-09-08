@@ -50,6 +50,14 @@ interface ProductPrompt {
   title: string;
   isRequired: boolean;
   promptType?: string;
+  defaultValue?: string;
+  order?: number;
+  range?: string;
+  typeContent?: number;
+  decimals?: number;
+  qtyMin?: number;
+  qtyMax?: number;
+  sheet?: string;
 }
 
 interface ProductOutput {
@@ -59,6 +67,10 @@ interface ProductOutput {
   outputTypeId: number;
   sequence: number;
   outputType?: string;
+  sheet?: string;
+  prompt?: string;
+  defaultValue?: string;
+  fieldType?: number;
 }
 
 interface PromptType {
@@ -831,52 +843,8 @@ export default function ProductManagement() {
                   <div className="space-y-3">
                     {productPrompts.map((prompt, index) => (
                       <div key={prompt.promptId} className="p-4 border rounded-lg">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1 space-y-2">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label>Título</Label>
-                                <Input
-                                  defaultValue={prompt.title}
-                                  onBlur={(e) => {
-                                    const updatedPrompt = { ...prompt, title: e.target.value };
-                                    updatePromptMutation.mutate(updatedPrompt);
-                                  }}
-                                />
-                              </div>
-                              <div>
-                                <Label>Tipo</Label>
-                                <Select
-                                  value={prompt.promptTypeId?.toString() || ""}
-                                  onValueChange={(value) => {
-                                    const updatedPrompt = { ...prompt, promptTypeId: parseInt(value) };
-                                    updatePromptMutation.mutate(updatedPrompt);
-                                  }}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {promptTypes.map((type) => (
-                                      <SelectItem key={type.id} value={type.id?.toString() || ""}>
-                                        {type.promptType}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Switch
-                                checked={prompt.isRequired}
-                                onCheckedChange={(checked) => {
-                                  const updatedPrompt = { ...prompt, isRequired: checked };
-                                  updatePromptMutation.mutate(updatedPrompt);
-                                }}
-                              />
-                              <Label>Campo requerido</Label>
-                            </div>
-                          </div>
+                        <div className="flex justify-between items-start mb-4">
+                          <h4 className="font-medium">Prompt #{index + 1}</h4>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -884,6 +852,132 @@ export default function ProductManagement() {
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <Label>Título</Label>
+                            <Input
+                              defaultValue={prompt.title}
+                              onBlur={(e) => {
+                                const updatedPrompt = { ...prompt, title: e.target.value };
+                                updatePromptMutation.mutate(updatedPrompt);
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <Label>Tipo</Label>
+                            <Select
+                              value={prompt.promptTypeId?.toString() || ""}
+                              onValueChange={(value) => {
+                                const updatedPrompt = { ...prompt, promptTypeId: parseInt(value) };
+                                updatePromptMutation.mutate(updatedPrompt);
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border shadow-lg z-50">
+                                {promptTypes.map((type) => (
+                                  <SelectItem key={type.id} value={type.id?.toString() || ""}>
+                                    {type.promptType}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-4 mb-4">
+                          <div>
+                            <Label>Valor por defecto</Label>
+                            <Input
+                              defaultValue={prompt.defaultValue || ""}
+                              onBlur={(e) => {
+                                const updatedPrompt = { ...prompt, defaultValue: e.target.value };
+                                updatePromptMutation.mutate(updatedPrompt);
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <Label>Orden</Label>
+                            <Input
+                              type="number"
+                              defaultValue={prompt.order || prompt.sequence}
+                              onBlur={(e) => {
+                                const updatedPrompt = { ...prompt, order: parseInt(e.target.value) };
+                                updatePromptMutation.mutate(updatedPrompt);
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <Label>Rango</Label>
+                            <Input
+                              defaultValue={prompt.range || ""}
+                              placeholder="ej: $E$2:$E$3"
+                              onBlur={(e) => {
+                                const updatedPrompt = { ...prompt, range: e.target.value };
+                                updatePromptMutation.mutate(updatedPrompt);
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-4 gap-4 mb-4">
+                          <div>
+                            <Label>Decimales</Label>
+                            <Input
+                              type="number"
+                              defaultValue={prompt.decimals || 0}
+                              onBlur={(e) => {
+                                const updatedPrompt = { ...prompt, decimals: parseInt(e.target.value) };
+                                updatePromptMutation.mutate(updatedPrompt);
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <Label>Qty Min</Label>
+                            <Input
+                              type="number"
+                              defaultValue={prompt.qtyMin || 1}
+                              onBlur={(e) => {
+                                const updatedPrompt = { ...prompt, qtyMin: parseInt(e.target.value) };
+                                updatePromptMutation.mutate(updatedPrompt);
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <Label>Qty Max</Label>
+                            <Input
+                              type="number"
+                              defaultValue={prompt.qtyMax || 9999}
+                              onBlur={(e) => {
+                                const updatedPrompt = { ...prompt, qtyMax: parseInt(e.target.value) };
+                                updatePromptMutation.mutate(updatedPrompt);
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <Label>Sheet</Label>
+                            <Input
+                              defaultValue={prompt.sheet || "Main"}
+                              onBlur={(e) => {
+                                const updatedPrompt = { ...prompt, sheet: e.target.value };
+                                updatePromptMutation.mutate(updatedPrompt);
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={prompt.isRequired}
+                            onCheckedChange={(checked) => {
+                              const updatedPrompt = { ...prompt, isRequired: checked };
+                              updatePromptMutation.mutate(updatedPrompt);
+                            }}
+                          />
+                          <Label>Campo requerido</Label>
                         </div>
                       </div>
                     ))}
@@ -919,42 +1013,8 @@ export default function ProductManagement() {
                   <div className="space-y-3">
                     {productOutputs.map((output, index) => (
                       <div key={output.outputId} className="p-4 border rounded-lg">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1 space-y-2">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label>Nombre</Label>
-                                <Input
-                                  defaultValue={output.outputName}
-                                  onBlur={(e) => {
-                                    const updatedOutput = { ...output, outputName: e.target.value };
-                                    updateOutputMutation.mutate(updatedOutput);
-                                  }}
-                                />
-                              </div>
-                              <div>
-                                <Label>Tipo</Label>
-                                <Select
-                                  value={output.outputTypeId?.toString() || ""}
-                                  onValueChange={(value) => {
-                                    const updatedOutput = { ...output, outputTypeId: parseInt(value) };
-                                    updateOutputMutation.mutate(updatedOutput);
-                                  }}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {outputTypes.map((type) => (
-                                      <SelectItem key={type.id} value={type.id?.toString() || ""}>
-                                        {type.outputType}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                          </div>
+                        <div className="flex justify-between items-start mb-4">
+                          <h4 className="font-medium">Output #{index + 1}</h4>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -962,6 +1022,75 @@ export default function ProductManagement() {
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <Label>Nombre</Label>
+                            <Input
+                              defaultValue={output.outputName}
+                              onBlur={(e) => {
+                                const updatedOutput = { ...output, outputName: e.target.value };
+                                updateOutputMutation.mutate(updatedOutput);
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <Label>Tipo de Campo</Label>
+                            <Select
+                              value={output.outputTypeId?.toString() || ""}
+                              onValueChange={(value) => {
+                                const updatedOutput = { ...output, outputTypeId: parseInt(value) };
+                                updateOutputMutation.mutate(updatedOutput);
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border shadow-lg z-50">
+                                {outputTypes.map((type) => (
+                                  <SelectItem key={type.id} value={type.id?.toString() || ""}>
+                                    {type.outputType}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-4">
+                          <div>
+                            <Label>Sheet</Label>
+                            <Input
+                              defaultValue={output.sheet || "Main"}
+                              onBlur={(e) => {
+                                const updatedOutput = { ...output, sheet: e.target.value };
+                                updateOutputMutation.mutate(updatedOutput);
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <Label>Prompt</Label>
+                            <Input
+                              defaultValue={output.prompt || ""}
+                              placeholder="ej: A25"
+                              onBlur={(e) => {
+                                const updatedOutput = { ...output, prompt: e.target.value };
+                                updateOutputMutation.mutate(updatedOutput);
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <Label>Valor por defecto</Label>
+                            <Input
+                              defaultValue={output.defaultValue || ""}
+                              placeholder="ej: B25"
+                              onBlur={(e) => {
+                                const updatedOutput = { ...output, defaultValue: e.target.value };
+                                updateOutputMutation.mutate(updatedOutput);
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
                     ))}
