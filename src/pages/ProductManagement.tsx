@@ -43,21 +43,23 @@ interface EasyQuoteProduct {
 }
 
 interface ProductPrompt {
-  promptId: string;
+  id: string; // El API usa 'id' no 'promptId'
   productId: string;
-  sequence: number;
-  promptTypeId: number;
-  title: string;
-  isRequired: boolean;
-  promptType?: string;
-  defaultValue?: string;
-  order?: number;
-  range?: string;
-  typeContent?: number;
-  decimals?: number;
-  qtyMin?: number;
-  qtyMax?: number;
-  sheet?: string;
+  promptSeq: number; // sequence en el API
+  promptType: number; // promptTypeId en el API  
+  promptSheet: string;
+  promptCell: string; // título/nombre del prompt
+  valueSheet: string;
+  valueCell: string; // valor por defecto
+  valueOptionSheet: string;
+  valueOptionRange: string; // rango
+  valueRequired: boolean; // isRequired en el API
+  valueQuantityAllowedDecimals: number | null; // decimales
+  valueQuantityMin: number | null; // qty min
+  valueQuantityMax: number | null; // qty max
+  tooltipValueSheet?: string | null;
+  tooltipValueCell?: string | null;
+  valueOptionLabelRange?: string | null;
 }
 
 interface ProductOutput {
@@ -172,7 +174,7 @@ export default function ProductManagement() {
 
   // Mutations para prompts y outputs
   const createPromptMutation = useMutation({
-    mutationFn: async (newPrompt: Omit<ProductPrompt, 'promptId'>) => {
+    mutationFn: async (newPrompt: Omit<ProductPrompt, 'id'>) => {
       const token = localStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
@@ -443,10 +445,18 @@ export default function ProductManagement() {
 
     const newPrompt = {
       productId: selectedProduct.id,
-      sequence: productPrompts.length + 1,
-      promptTypeId: promptTypes[0]?.id || 0,
-      title: "Nuevo Prompt",
-      isRequired: false
+      promptSeq: productPrompts.length + 1,
+      promptType: promptTypes[0]?.id || 0,
+      promptSheet: "Main",
+      promptCell: "A" + (productPrompts.length + 2),
+      valueSheet: "Main", 
+      valueCell: "B" + (productPrompts.length + 2),
+      valueOptionSheet: "Main",
+      valueOptionRange: "",
+      valueRequired: false,
+      valueQuantityAllowedDecimals: 0,
+      valueQuantityMin: 1,
+      valueQuantityMax: 9999
     };
 
     createPromptMutation.mutate(newPrompt);
@@ -854,13 +864,13 @@ export default function ProductManagement() {
                 ) : (
                   <div className="space-y-3">
                     {productPrompts.map((prompt, index) => (
-                      <div key={prompt.promptId} className="p-4 border rounded-lg">
+                      <div key={prompt.id} className="p-4 border rounded-lg">
                         <div className="flex justify-between items-start mb-4">
                           <h4 className="font-medium">Prompt #{index + 1}</h4>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => deletePrompt(prompt.promptId)}
+                            onClick={() => deletePrompt(prompt.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -868,11 +878,11 @@ export default function ProductManagement() {
                         
                         <div className="grid grid-cols-2 gap-4 mb-4">
                           <div>
-                            <Label>Título</Label>
+                            <Label>Título (Celda)</Label>
                             <Input
-                              defaultValue={prompt.title}
+                              defaultValue={prompt.promptCell}
                               onBlur={(e) => {
-                                const updatedPrompt = { ...prompt, title: e.target.value };
+                                const updatedPrompt = { ...prompt, promptCell: e.target.value };
                                 updatePromptMutation.mutate(updatedPrompt);
                               }}
                             />
@@ -880,9 +890,9 @@ export default function ProductManagement() {
                           <div>
                             <Label>Tipo</Label>
                             <Select
-                              value={prompt.promptTypeId?.toString() || ""}
+                              value={prompt.promptType?.toString() || ""}
                               onValueChange={(value) => {
-                                const updatedPrompt = { ...prompt, promptTypeId: parseInt(value) };
+                                const updatedPrompt = { ...prompt, promptType: parseInt(value) };
                                 updatePromptMutation.mutate(updatedPrompt);
                               }}
                             >
@@ -902,11 +912,11 @@ export default function ProductManagement() {
 
                         <div className="grid grid-cols-3 gap-4 mb-4">
                           <div>
-                            <Label>Valor por defecto</Label>
+                            <Label>Valor por defecto (Celda)</Label>
                             <Input
-                              defaultValue={prompt.defaultValue || ""}
+                              defaultValue={prompt.valueCell || ""}
                               onBlur={(e) => {
-                                const updatedPrompt = { ...prompt, defaultValue: e.target.value };
+                                const updatedPrompt = { ...prompt, valueCell: e.target.value };
                                 updatePromptMutation.mutate(updatedPrompt);
                               }}
                             />
@@ -915,9 +925,9 @@ export default function ProductManagement() {
                             <Label>Orden</Label>
                             <Input
                               type="number"
-                              defaultValue={prompt.order || prompt.sequence}
+                              defaultValue={prompt.promptSeq}
                               onBlur={(e) => {
-                                const updatedPrompt = { ...prompt, order: parseInt(e.target.value) };
+                                const updatedPrompt = { ...prompt, promptSeq: parseInt(e.target.value) };
                                 updatePromptMutation.mutate(updatedPrompt);
                               }}
                             />
@@ -925,10 +935,10 @@ export default function ProductManagement() {
                           <div>
                             <Label>Rango</Label>
                             <Input
-                              defaultValue={prompt.range || ""}
+                              defaultValue={prompt.valueOptionRange || ""}
                               placeholder="ej: $E$2:$E$3"
                               onBlur={(e) => {
-                                const updatedPrompt = { ...prompt, range: e.target.value };
+                                const updatedPrompt = { ...prompt, valueOptionRange: e.target.value };
                                 updatePromptMutation.mutate(updatedPrompt);
                               }}
                             />
@@ -940,9 +950,9 @@ export default function ProductManagement() {
                             <Label>Decimales</Label>
                             <Input
                               type="number"
-                              defaultValue={prompt.decimals || 0}
+                              defaultValue={prompt.valueQuantityAllowedDecimals || 0}
                               onBlur={(e) => {
-                                const updatedPrompt = { ...prompt, decimals: parseInt(e.target.value) };
+                                const updatedPrompt = { ...prompt, valueQuantityAllowedDecimals: parseInt(e.target.value) };
                                 updatePromptMutation.mutate(updatedPrompt);
                               }}
                             />
@@ -951,9 +961,9 @@ export default function ProductManagement() {
                             <Label>Qty Min</Label>
                             <Input
                               type="number"
-                              defaultValue={prompt.qtyMin || 1}
+                              defaultValue={prompt.valueQuantityMin || 1}
                               onBlur={(e) => {
-                                const updatedPrompt = { ...prompt, qtyMin: parseInt(e.target.value) };
+                                const updatedPrompt = { ...prompt, valueQuantityMin: parseInt(e.target.value) };
                                 updatePromptMutation.mutate(updatedPrompt);
                               }}
                             />
@@ -962,9 +972,9 @@ export default function ProductManagement() {
                             <Label>Qty Max</Label>
                             <Input
                               type="number"
-                              defaultValue={prompt.qtyMax || 9999}
+                              defaultValue={prompt.valueQuantityMax || 9999}
                               onBlur={(e) => {
-                                const updatedPrompt = { ...prompt, qtyMax: parseInt(e.target.value) };
+                                const updatedPrompt = { ...prompt, valueQuantityMax: parseInt(e.target.value) };
                                 updatePromptMutation.mutate(updatedPrompt);
                               }}
                             />
@@ -972,9 +982,9 @@ export default function ProductManagement() {
                           <div>
                             <Label>Sheet</Label>
                             <Input
-                              defaultValue={prompt.sheet || "Main"}
+                              defaultValue={prompt.promptSheet || "Main"}
                               onBlur={(e) => {
-                                const updatedPrompt = { ...prompt, sheet: e.target.value };
+                                const updatedPrompt = { ...prompt, promptSheet: e.target.value };
                                 updatePromptMutation.mutate(updatedPrompt);
                               }}
                             />
@@ -983,9 +993,9 @@ export default function ProductManagement() {
 
                         <div className="flex items-center space-x-2">
                           <Switch
-                            checked={prompt.isRequired}
+                            checked={prompt.valueRequired}
                             onCheckedChange={(checked) => {
-                              const updatedPrompt = { ...prompt, isRequired: checked };
+                              const updatedPrompt = { ...prompt, valueRequired: checked };
                               updatePromptMutation.mutate(updatedPrompt);
                             }}
                           />
