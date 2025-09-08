@@ -237,17 +237,6 @@ export default function ExcelFiles() {
     }
   };
 
-  const downloadTemplate = () => {
-    // Create a simple Excel template
-    const csvContent = "name,price,description,category,sku\nProducto Ejemplo,99.99,Descripción del producto,Categoría,SKU123";
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "plantilla_productos.csv";
-    link.click();
-    window.URL.revokeObjectURL(url);
-  };
 
   if (!hasToken) {
     return (
@@ -288,10 +277,6 @@ export default function ExcelFiles() {
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={downloadTemplate}>
-            <Download className="h-4 w-4 mr-2" />
-            Descargar Plantilla
-          </Button>
           <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -415,7 +400,6 @@ export default function ExcelFiles() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nombre del Archivo</TableHead>
-                  <TableHead>ID</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Última Modificación</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
@@ -429,9 +413,6 @@ export default function ExcelFiles() {
                         <FileSpreadsheet className="h-4 w-4" />
                         {file.fileName}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-mono text-xs">{file.id}</span>
                     </TableCell>
                     <TableCell>
                       <Badge variant={file.isActive ? "default" : "secondary"}>
