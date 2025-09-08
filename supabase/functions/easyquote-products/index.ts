@@ -19,8 +19,8 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const { token } = await req.json();
-    console.log("easyquote-products: Request received");
+    const { token, includeInactive = false } = await req.json();
+    console.log("easyquote-products: Request received", { includeInactive });
     
     if (!token) {
       console.error("easyquote-products: Missing token");
@@ -30,9 +30,12 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log("easyquote-products: Making request to EasyQuote API with isActive=true filter");
+    console.log("easyquote-products: Making request to EasyQuote API", { includeInactive });
 
-    const url = `https://api.easyquote.cloud/api/v1/products?isActive=true`;
+    // Si includeInactive es true, no filtramos por isActive
+    const url = includeInactive 
+      ? `https://api.easyquote.cloud/api/v1/products`
+      : `https://api.easyquote.cloud/api/v1/products?isActive=true`;
     const res = await fetch(url, {
       method: "GET",
       headers: {
@@ -74,17 +77,23 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Additional filtering on backend as backup
+    // Process products data
     let products = Array.isArray(data) ? data : (data?.items || data?.data || []);
     console.log(`easyquote-products: Total products received: ${products.length}`);
-    const activeProducts = products.filter((product: any) => {
-      console.log(`Product ${product.productName}: isActive=${product.isActive}`);
-      return product.isActive === true;
-    });
     
-    console.log(`easyquote-products: Backend filtered ${activeProducts.length} active products from ${products.length} total`);
+    // Si no queremos incluir inactivos, filtramos solo los activos
+    if (!includeInactive) {
+      const activeProducts = products.filter((product: any) => {
+        console.log(`Product ${product.productName}: isActive=${product.isActive}`);
+        return product.isActive === true;
+      });
+      products = activeProducts;
+      console.log(`easyquote-products: Backend filtered ${products.length} active products`);
+    } else {
+      console.log(`easyquote-products: Returning all products (active and inactive): ${products.length}`);
+    }
 
-    return new Response(JSON.stringify(activeProducts), {
+    return new Response(JSON.stringify(products), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
