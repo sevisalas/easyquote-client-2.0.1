@@ -29,32 +29,17 @@ interface EasyQuoteExcelFile {
 }
 
 export default function ExcelFiles() {
+  // All hooks must be declared at the top, before any conditional logic
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedExcelFile, setSelectedExcelFile] = useState<EasyQuoteExcelFile | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
+  
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
-
-  // Check permissions
-  if (!isSuperAdmin && !isOrgAdmin) {
-    return (
-      <div className="container mx-auto py-10">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Acceso denegado</AlertTitle>
-          <AlertDescription>
-            Solo los administradores pueden acceder a esta sección.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  // Verificar si hay token de EasyQuote
-  const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
 
   // Fetch Excel files from EasyQuote API
   const { data: files = [], isLoading, error, refetch } = useQuery({
@@ -201,6 +186,23 @@ export default function ExcelFiles() {
       }
     }
   });
+
+  // Now conditional logic can happen after all hooks are declared
+  
+  // Check permissions
+  if (!isSuperAdmin && !isOrgAdmin) {
+    return (
+      <div className="container mx-auto py-10">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Acceso denegado</AlertTitle>
+          <AlertDescription>
+            Solo los administradores pueden acceder a esta sección.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   const handleUpload = async () => {
     if (!selectedFile) return;
