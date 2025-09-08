@@ -981,33 +981,33 @@ export default function ProductManagement() {
                                       }}
                                     />
                                   </div>
-                                  <div className="col-span-1">
-                                    <Label>Qty Min</Label>
-                                    <Input
-                                      type="number"
-                                      defaultValue={prompt.valueQuantityMin || 1}
-                                      onBlur={(e) => {
-                                        const updatedPrompt = { ...prompt, valueQuantityMin: parseInt(e.target.value) };
-                                        updatePromptMutation.mutate(updatedPrompt);
-                                      }}
-                                    />
-                                  </div>
-                                  <div className="col-span-1">
-                                    <Label>Qty Max</Label>
-                                    <Input
-                                      type="number"
-                                      defaultValue={prompt.valueQuantityMax || 9999}
-                                      onBlur={(e) => {
-                                        const updatedPrompt = { ...prompt, valueQuantityMax: parseInt(e.target.value) };
-                                        updatePromptMutation.mutate(updatedPrompt);
-                                      }}
-                                    />
-                                  </div>
+                                   <div className="col-span-2">
+                                     <Label>Qty Min</Label>
+                                     <Input
+                                       type="number"
+                                       defaultValue={prompt.valueQuantityMin || 1}
+                                       onBlur={(e) => {
+                                         const updatedPrompt = { ...prompt, valueQuantityMin: parseInt(e.target.value) };
+                                         updatePromptMutation.mutate(updatedPrompt);
+                                       }}
+                                     />
+                                   </div>
+                                   <div className="col-span-2">
+                                     <Label>Qty Max</Label>
+                                     <Input
+                                       type="number"
+                                       defaultValue={prompt.valueQuantityMax || 9999}
+                                       onBlur={(e) => {
+                                         const updatedPrompt = { ...prompt, valueQuantityMax: parseInt(e.target.value) };
+                                         updatePromptMutation.mutate(updatedPrompt);
+                                       }}
+                                     />
+                                   </div>
                                 </>
                               )}
 
-                              {/* Espacios vacíos para mantener alineación cuando no hay campos numéricos */}
-                              {!isNumericType && <div className="col-span-1"></div>}
+                               {/* Espacios vacíos para mantener alineación cuando no hay campos numéricos */}
+                               {!isNumericType && <div className="col-span-4"></div>}
 
                               <div className="col-span-1">
                                 <Label>Actions</Label>
