@@ -81,6 +81,21 @@ export default function ProductManagement() {
   
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
   const queryClient = useQueryClient();
+
+  // Check permissions first, before declaring any conditional hooks
+  if (!isSuperAdmin && !isOrgAdmin) {
+    return (
+      <div className="container mx-auto py-10">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Acceso denegado</AlertTitle>
+          <AlertDescription>
+            Solo los administradores pueden ver productos.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
   
   // Queries para tipos de prompts y outputs
   const { data: promptTypes = [] } = useQuery({
@@ -302,21 +317,6 @@ export default function ProductManagement() {
       refetchOutputs();
     }
   });
-
-  // Check permissions
-  if (!isSuperAdmin && !isOrgAdmin) {
-    return (
-      <div className="container mx-auto py-10">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Acceso denegado</AlertTitle>
-          <AlertDescription>
-            Solo los administradores pueden ver productos.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
 
 
   // Fetch products from EasyQuote API
