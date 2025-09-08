@@ -18,11 +18,14 @@ import { es } from "date-fns/locale";
 interface EasyQuoteExcelFile {
   id: string;
   fileName: string;
+  fileSizeKb: number;
+  dateCreated: string;
   dateModified: string;
   isActive: boolean;
-  subscriberId: string;
-  fileSize?: number;
-  worksheets?: any[];
+  isPlanCompliant: boolean;
+  subscriberId?: string;
+  excelfilesSheets: any[];
+  products: any[];
 }
 
 export default function ExcelFiles() {
@@ -210,12 +213,13 @@ export default function ExcelFiles() {
     }
   };
 
-  const formatFileSize = (bytes?: number) => {
-    if (!bytes || bytes === 0) return "N/A";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  const formatFileSize = (sizeKb: number) => {
+    if (!sizeKb || sizeKb === 0) return "0 KB";
+    if (sizeKb < 1024) return `${sizeKb} KB`;
+    const sizeMb = sizeKb / 1024;
+    if (sizeMb < 1024) return `${sizeMb.toFixed(1)} MB`;
+    const sizeGb = sizeMb / 1024;
+    return `${sizeGb.toFixed(2)} GB`;
   };
 
   // Fetch file details
@@ -352,7 +356,7 @@ export default function ExcelFiles() {
       <Separator />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total de Archivos</CardTitle>
@@ -378,6 +382,16 @@ export default function ExcelFiles() {
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
               {files.filter(f => !f.isActive).length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">No Conformes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              {files.filter(f => !f.isPlanCompliant).length}
             </div>
           </CardContent>
         </Card>
@@ -424,7 +438,7 @@ export default function ExcelFiles() {
                         {file.fileName}
                       </div>
                     </TableCell>
-                    <TableCell>{formatFileSize(file.fileSize)}</TableCell>
+                    <TableCell>{formatFileSize(file.fileSizeKb)}</TableCell>
                     <TableCell>
                       <Badge variant={file.isActive ? "default" : "secondary"}>
                         {file.isActive ? (
@@ -505,16 +519,16 @@ export default function ExcelFiles() {
                 </div>
               </div>
 
-              {selectedExcelFile.worksheets && selectedExcelFile.worksheets.length > 0 && (
+              {selectedExcelFile.excelfilesSheets && selectedExcelFile.excelfilesSheets.length > 0 && (
                 <div>
-                  <Label>Hojas de Trabajo ({selectedExcelFile.worksheets.length})</Label>
+                  <Label>Hojas de Trabajo ({selectedExcelFile.excelfilesSheets.length})</Label>
                   <div className="mt-2 space-y-2">
-                    {selectedExcelFile.worksheets.map((worksheet, index) => (
+                    {selectedExcelFile.excelfilesSheets.map((sheet, index) => (
                       <div key={index} className="p-3 border rounded-lg">
-                        <div className="text-sm font-medium">{worksheet.name || `Hoja ${index + 1}`}</div>
-                        {worksheet.description && (
+                        <div className="text-sm font-medium">{sheet.name || `Hoja ${index + 1}`}</div>
+                        {sheet.description && (
                           <div className="text-xs text-muted-foreground mt-1">
-                            {worksheet.description}
+                            {sheet.description}
                           </div>
                         )}
                       </div>
