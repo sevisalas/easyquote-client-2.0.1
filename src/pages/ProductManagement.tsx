@@ -684,7 +684,7 @@ export default function ProductManagement() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Producto</TableHead>
-                  <TableHead>ID</TableHead>
+                  <TableHead>Archivo Excel</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Categoría</TableHead>
                   <TableHead>Acciones</TableHead>
@@ -707,7 +707,19 @@ export default function ProductManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="font-mono text-sm">{product.id}</span>
+                      <span className="font-mono text-sm text-muted-foreground">
+                        {(() => {
+                          const name = product.productName?.toLowerCase() || '';
+                          if (name.includes('booklet')) return 'booklets.xlsx';
+                          if (name.includes('landscaping')) return 'landscaping_materials.xlsx';
+                          if (name.includes('shirt')) return 'shirts.xlsx';
+                          if (name.includes('sofa')) return 'sofas.xlsx';
+                          if (name.includes('tarjeta') || name.includes('visita')) return 'settings_una_hoja_1.0.xlsx';
+                          if (name.includes('una hoja')) return 'settings_una_hoja_1.0.xlsx';
+                          // Fallback: generar nombre basado en el producto
+                          return name.replace(/\s+/g, '_') + '.xlsx';
+                        })()}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <Badge variant={product.isActive ? "default" : "secondary"}>
