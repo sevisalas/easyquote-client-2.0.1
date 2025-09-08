@@ -491,7 +491,7 @@ export default function ProductManagement() {
   // Check permissions
   if (!isSuperAdmin && !isOrgAdmin) {
     return (
-      <div className="container mx-auto py-10">
+      <div className="container mx-auto p-4 max-w-full">
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Acceso denegado</AlertTitle>
@@ -505,7 +505,7 @@ export default function ProductManagement() {
 
   if (!hasToken) {
     return (
-      <div className="container mx-auto py-10">
+      <div className="container mx-auto p-4 max-w-full">
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Sesión requerida</AlertTitle>
@@ -519,7 +519,7 @@ export default function ProductManagement() {
 
   if (error) {
     return (
-      <div className="container mx-auto py-10">
+      <div className="container mx-auto p-4 max-w-full">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
@@ -543,12 +543,12 @@ export default function ProductManagement() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="w-full max-w-full p-4 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Productos EasyQuote</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-2xl sm:text-3xl font-bold">Productos EasyQuote</h1>
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
             Catálogo de productos del API de EasyQuote para presupuestos
           </p>
         </div>
@@ -557,9 +557,10 @@ export default function ProductManagement() {
             variant="outline" 
             onClick={() => refetch()}
             disabled={isLoading}
+            size="sm"
           >
             <Package className="h-4 w-4 mr-2" />
-            Actualizar
+            <span className="hidden sm:inline">Actualizar</span>
           </Button>
         </div>
       </div>
@@ -575,8 +576,8 @@ export default function ProductManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
+          <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-end">
+            <div className="flex-1 min-w-0">
               <Label htmlFor="search">Buscar productos</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -589,7 +590,7 @@ export default function ProductManagement() {
                 />
               </div>
             </div>
-            <div className="w-48">
+            <div className="w-full sm:w-48">
               <Label>Categoría</Label>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger>
@@ -605,20 +606,20 @@ export default function ProductManagement() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 justify-center sm:justify-start">
               <Switch
                 id="include-inactive"
                 checked={includeInactive}
                 onCheckedChange={setIncludeInactive}
               />
-              <Label htmlFor="include-inactive">Incluir inactivos</Label>
+              <Label htmlFor="include-inactive" className="whitespace-nowrap">Incluir inactivos</Label>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Products Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2 text-center">
             <CardTitle className="text-sm font-medium">Total Productos</CardTitle>
@@ -691,87 +692,154 @@ export default function ProductManagement() {
               ) : null}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Producto</TableHead>
-                  <TableHead>Archivo Excel</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Categoría</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <div className="space-y-4">
+              {/* Mobile view */}
+              <div className="block md:hidden space-y-4">
                 {filteredProducts.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{product.productName}</div>
-                        {product.description && (
-                          <div className="text-sm text-muted-foreground">
-                            {product.description.length > 80 
-                              ? product.description.substring(0, 80) + "..."
-                              : product.description
-                            }
+                  <Card key={product.id}>
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium truncate">{product.productName}</h3>
+                            {product.description && (
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {product.description.length > 60 
+                                  ? product.description.substring(0, 60) + "..."
+                                  : product.description
+                                }
+                              </p>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-mono text-sm text-muted-foreground">
-                        {(() => {
-                          const name = product.productName?.toLowerCase() || '';
-                          if (name.includes('booklet')) return 'booklets.xlsx';
-                          if (name.includes('landscaping')) return 'landscaping_materials.xlsx';
-                          if (name.includes('shirt')) return 'shirts.xlsx';
-                          if (name.includes('sofa')) return 'sofas.xlsx';
-                          if (name.includes('tarjeta') || name.includes('visita')) return 'settings_una_hoja_1.0.xlsx';
-                          if (name.includes('una hoja')) return 'settings_una_hoja_1.0.xlsx';
-                          // Fallback: generar nombre basado en el producto
-                          return name.replace(/\s+/g, '_') + '.xlsx';
-                        })()}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={product.isActive ? "default" : "secondary"}>
-                        <div className="flex items-center gap-1">
-                          {product.isActive ? (
-                            <CheckCircle2 className="h-3 w-3" />
-                          ) : (
-                            <XCircle className="h-3 w-3" />
-                          )}
-                          {product.isActive ? "Activo" : "Inactivo"}
+                          <Badge variant={product.isActive ? "default" : "secondary"} className="ml-2">
+                            {product.isActive ? "Activo" : "Inactivo"}
+                          </Badge>
                         </div>
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {product.category ? (
-                        <Badge variant="outline">{product.category}</Badge>
-                      ) : (
-                        <span className="text-muted-foreground">Sin categoría</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditProduct(product)}
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Editar
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                        
+                        <div className="space-y-2">
+                          {product.category && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">Categoría:</span>
+                              <Badge variant="outline" className="text-xs">{product.category}</Badge>
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">Excel:</span>
+                            <span className="font-mono text-xs text-muted-foreground">
+                              {(() => {
+                                const name = product.productName?.toLowerCase() || '';
+                                if (name.includes('booklet')) return 'booklets.xlsx';
+                                if (name.includes('landscaping')) return 'landscaping_materials.xlsx';
+                                if (name.includes('shirt')) return 'shirts.xlsx';
+                                if (name.includes('sofa')) return 'sofas.xlsx';
+                                if (name.includes('tarjeta') || name.includes('visita')) return 'settings_una_hoja_1.0.xlsx';
+                                if (name.includes('una hoja')) return 'settings_una_hoja_1.0.xlsx';
+                                return name.replace(/\s+/g, '_') + '.xlsx';
+                              })()}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditProduct(product)}
+                          className="w-full"
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+
+              {/* Desktop table view */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Producto</TableHead>
+                      <TableHead>Archivo Excel</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead>Categoría</TableHead>
+                      <TableHead>Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredProducts.map((product) => (
+                      <TableRow key={product.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{product.productName}</div>
+                            {product.description && (
+                              <div className="text-sm text-muted-foreground">
+                                {product.description.length > 80 
+                                  ? product.description.substring(0, 80) + "..."
+                                  : product.description
+                                }
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-mono text-sm text-muted-foreground">
+                            {(() => {
+                              const name = product.productName?.toLowerCase() || '';
+                              if (name.includes('booklet')) return 'booklets.xlsx';
+                              if (name.includes('landscaping')) return 'landscaping_materials.xlsx';
+                              if (name.includes('shirt')) return 'shirts.xlsx';
+                              if (name.includes('sofa')) return 'sofas.xlsx';
+                              if (name.includes('tarjeta') || name.includes('visita')) return 'settings_una_hoja_1.0.xlsx';
+                              if (name.includes('una hoja')) return 'settings_una_hoja_1.0.xlsx';
+                              return name.replace(/\s+/g, '_') + '.xlsx';
+                            })()}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={product.isActive ? "default" : "secondary"}>
+                            <div className="flex items-center gap-1">
+                              {product.isActive ? (
+                                <CheckCircle2 className="h-3 w-3" />
+                              ) : (
+                                <XCircle className="h-3 w-3" />
+                              )}
+                              {product.isActive ? "Activo" : "Inactivo"}
+                            </div>
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {product.category ? (
+                            <Badge variant="outline">{product.category}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">Sin categoría</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditProduct(product)}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Edit Product Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-full max-w-[95vw] md:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar producto</DialogTitle>
             <DialogDescription>
@@ -782,13 +850,13 @@ export default function ProductManagement() {
           {selectedProduct && (
             <Tabs defaultValue="general" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="prompts">Datos de entrada ({productPrompts.length})</TabsTrigger>
-                <TabsTrigger value="outputs">Datos de salida ({productOutputs.length})</TabsTrigger>
+                <TabsTrigger value="general" className="text-xs sm:text-sm">General</TabsTrigger>
+                <TabsTrigger value="prompts" className="text-xs sm:text-sm">Entradas ({productPrompts.length})</TabsTrigger>
+                <TabsTrigger value="outputs" className="text-xs sm:text-sm">Salidas ({productOutputs.length})</TabsTrigger>
               </TabsList>
               
               <TabsContent value="general" className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="productName">Nombre del producto</Label>
                     <Input

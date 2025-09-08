@@ -107,5 +107,33 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground font-sans;
+    overflow-x: hidden;
+  }
+  
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+/* Responsive utilities */
+@layer utilities {
+  .container {
+    @apply max-w-full px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* Ensure tables don't break on mobile */
+  .table-responsive {
+    @apply overflow-x-auto;
+  }
+  
+  /* Mobile-first responsive text */
+  .text-responsive {
+    @apply text-sm sm:text-base;
+  }
+  
+  /* Safe area for mobile devices */
+  .safe-area-padding {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 }
