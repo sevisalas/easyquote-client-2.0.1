@@ -61,13 +61,13 @@ interface ProductOutput {
 }
 
 interface PromptType {
-  promptTypeId: number;
-  typeName: string;
+  id: number;
+  promptType: string;
 }
 
 interface OutputType {
-  outputTypeId: number;
-  typeName: string;
+  id: number;
+  outputType: string;
 }
 
 export default function ProductManagement() {
@@ -440,7 +440,7 @@ export default function ProductManagement() {
     const newPrompt = {
       productId: selectedProduct.productId,
       sequence: productPrompts.length + 1,
-      promptTypeId: promptTypes[0].promptTypeId,
+      promptTypeId: promptTypes[0]?.id || 0,
       title: "Nuevo Prompt",
       isRequired: false
     };
@@ -455,7 +455,7 @@ export default function ProductManagement() {
     const newOutput = {
       productId: selectedProduct.productId,
       sequence: productOutputs.length + 1,
-      outputTypeId: outputTypes[0].outputTypeId,
+      outputTypeId: outputTypes[0]?.id || 0,
       outputName: "Nuevo Output"
     };
 
@@ -839,7 +839,7 @@ export default function ProductManagement() {
                               <div>
                                 <Label>Tipo</Label>
                                 <Select
-                                  value={prompt.promptTypeId.toString()}
+                                  value={prompt.promptTypeId?.toString() || ""}
                                   onValueChange={(value) => {
                                     const updatedPrompt = { ...prompt, promptTypeId: parseInt(value) };
                                     updatePromptMutation.mutate(updatedPrompt);
@@ -850,8 +850,8 @@ export default function ProductManagement() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     {promptTypes.map((type) => (
-                                      <SelectItem key={type.promptTypeId} value={type.promptTypeId.toString()}>
-                                        {type.typeName}
+                                      <SelectItem key={type.id} value={type.id?.toString() || ""}>
+                                        {type.promptType}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -927,7 +927,7 @@ export default function ProductManagement() {
                               <div>
                                 <Label>Tipo</Label>
                                 <Select
-                                  value={output.outputTypeId.toString()}
+                                  value={output.outputTypeId?.toString() || ""}
                                   onValueChange={(value) => {
                                     const updatedOutput = { ...output, outputTypeId: parseInt(value) };
                                     updateOutputMutation.mutate(updatedOutput);
@@ -938,8 +938,8 @@ export default function ProductManagement() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     {outputTypes.map((type) => (
-                                      <SelectItem key={type.outputTypeId} value={type.outputTypeId.toString()}>
-                                        {type.typeName}
+                                      <SelectItem key={type.id} value={type.id?.toString() || ""}>
+                                        {type.outputType}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
