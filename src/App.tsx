@@ -23,6 +23,9 @@ import UsuariosSuscriptor from "./pages/SubscriberUsers";
 import GestionPlanes from "./pages/PlansManagement";
 import Integrations from "./pages/Integrations";
 import IntegrationAccess from "./pages/IntegrationAccess";
+import ExcelFiles from "./pages/ExcelFiles";
+import AdminDashboard from "./pages/AdminDashboard";
+import ProductManagement from "./pages/ProductManagement";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 const queryClient = new QueryClient();
 
@@ -201,6 +204,36 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <IntegrationAccess />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configuracion/archivos-excel"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ExcelFiles />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <AdminDashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/productos"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ProductManagement />
                 </AppLayout>
               </ProtectedRoute>
             }

@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, PanelLeft, FileText, Palette, UserCog, Settings, Plus, Plug } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, PanelLeft, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -230,14 +230,40 @@ export function AppSidebar() {
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                       {(isSuperAdmin || isOrgAdmin) && (
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/integraciones"}>
-                            <NavLink to="/configuracion/integraciones" end className={getNavCls}>
-                              <Plug className="mr-2 h-4 w-4" />
-                              {!isCollapsed && <span>Integraciones</span>}
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
+                        <>
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/integraciones"}>
+                              <NavLink to="/configuracion/integraciones" end className={getNavCls}>
+                                <Plug className="mr-2 h-4 w-4" />
+                                {!isCollapsed && <span>Integraciones</span>}
+                              </NavLink>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/archivos-excel"}>
+                              <NavLink to="/configuracion/archivos-excel" end className={getNavCls}>
+                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                {!isCollapsed && <span>Archivos Excel</span>}
+                              </NavLink>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild isActive={currentPath === "/admin/dashboard"}>
+                              <NavLink to="/admin/dashboard" end className={getNavCls}>
+                                <LayoutDashboard className="mr-2 h-4 w-4" />
+                                {!isCollapsed && <span>Dashboard Admin</span>}
+                              </NavLink>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild isActive={currentPath === "/admin/productos"}>
+                              <NavLink to="/admin/productos" end className={getNavCls}>
+                                <Package className="mr-2 h-4 w-4" />
+                                {!isCollapsed && <span>Productos</span>}
+                              </NavLink>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        </>
                       )}
                     </SidebarMenuSub>
                   </SidebarMenuItem>
