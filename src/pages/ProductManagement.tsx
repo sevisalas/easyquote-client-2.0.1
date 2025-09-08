@@ -910,86 +910,105 @@ export default function ProductManagement() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-4 mb-4">
-                          <div>
-                            <Label>Valor por defecto (Celda)</Label>
-                            <Input
-                              defaultValue={prompt.valueCell || ""}
-                              onBlur={(e) => {
-                                const updatedPrompt = { ...prompt, valueCell: e.target.value };
-                                updatePromptMutation.mutate(updatedPrompt);
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <Label>Orden</Label>
-                            <Input
-                              type="number"
-                              defaultValue={prompt.promptSeq}
-                              onBlur={(e) => {
-                                const updatedPrompt = { ...prompt, promptSeq: parseInt(e.target.value) };
-                                updatePromptMutation.mutate(updatedPrompt);
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <Label>Rango</Label>
-                            <Input
-                              defaultValue={prompt.valueOptionRange || ""}
-                              placeholder="ej: $E$2:$E$3"
-                              onBlur={(e) => {
-                                const updatedPrompt = { ...prompt, valueOptionRange: e.target.value };
-                                updatePromptMutation.mutate(updatedPrompt);
-                              }}
-                            />
-                          </div>
-                        </div>
+                        {(() => {
+                          const currentPromptType = promptTypes.find(type => type.id === prompt.promptType);
+                          const isNumericType = currentPromptType?.promptType === "Number" || currentPromptType?.promptType === "Quantity";
+                          const isDropdownType = currentPromptType?.promptType === "DropDown";
+                          
+                          return (
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                  <Label>Valor por defecto (Celda)</Label>
+                                  <Input
+                                    defaultValue={prompt.valueCell || ""}
+                                    onBlur={(e) => {
+                                      const updatedPrompt = { ...prompt, valueCell: e.target.value };
+                                      updatePromptMutation.mutate(updatedPrompt);
+                                    }}
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Orden</Label>
+                                  <Input
+                                    type="number"
+                                    defaultValue={prompt.promptSeq}
+                                    onBlur={(e) => {
+                                      const updatedPrompt = { ...prompt, promptSeq: parseInt(e.target.value) };
+                                      updatePromptMutation.mutate(updatedPrompt);
+                                    }}
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Sheet</Label>
+                                  <Input
+                                    defaultValue={prompt.promptSheet || "Main"}
+                                    onBlur={(e) => {
+                                      const updatedPrompt = { ...prompt, promptSheet: e.target.value };
+                                      updatePromptMutation.mutate(updatedPrompt);
+                                    }}
+                                  />
+                                </div>
+                              </div>
 
-                        <div className="grid grid-cols-4 gap-4 mb-4">
-                          <div>
-                            <Label>Decimales</Label>
-                            <Input
-                              type="number"
-                              defaultValue={prompt.valueQuantityAllowedDecimals || 0}
-                              onBlur={(e) => {
-                                const updatedPrompt = { ...prompt, valueQuantityAllowedDecimals: parseInt(e.target.value) };
-                                updatePromptMutation.mutate(updatedPrompt);
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <Label>Qty Min</Label>
-                            <Input
-                              type="number"
-                              defaultValue={prompt.valueQuantityMin || 1}
-                              onBlur={(e) => {
-                                const updatedPrompt = { ...prompt, valueQuantityMin: parseInt(e.target.value) };
-                                updatePromptMutation.mutate(updatedPrompt);
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <Label>Qty Max</Label>
-                            <Input
-                              type="number"
-                              defaultValue={prompt.valueQuantityMax || 9999}
-                              onBlur={(e) => {
-                                const updatedPrompt = { ...prompt, valueQuantityMax: parseInt(e.target.value) };
-                                updatePromptMutation.mutate(updatedPrompt);
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <Label>Sheet</Label>
-                            <Input
-                              defaultValue={prompt.promptSheet || "Main"}
-                              onBlur={(e) => {
-                                const updatedPrompt = { ...prompt, promptSheet: e.target.value };
-                                updatePromptMutation.mutate(updatedPrompt);
-                              }}
-                            />
-                          </div>
-                        </div>
+                              {/* Rango - Solo para tipos no numéricos */}
+                              {!isNumericType && (
+                                <div className="grid grid-cols-1 gap-4">
+                                  <div>
+                                    <Label>Rango</Label>
+                                    <Input
+                                      defaultValue={prompt.valueOptionRange || ""}
+                                      placeholder="ej: $E$2:$E$3"
+                                      onBlur={(e) => {
+                                        const updatedPrompt = { ...prompt, valueOptionRange: e.target.value };
+                                        updatePromptMutation.mutate(updatedPrompt);
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Campos numéricos - Solo para tipos Number/Quantity */}
+                              {isNumericType && (
+                                <div className="grid grid-cols-3 gap-4">
+                                  <div>
+                                    <Label>Decimales</Label>
+                                    <Input
+                                      type="number"
+                                      defaultValue={prompt.valueQuantityAllowedDecimals || 0}
+                                      onBlur={(e) => {
+                                        const updatedPrompt = { ...prompt, valueQuantityAllowedDecimals: parseInt(e.target.value) };
+                                        updatePromptMutation.mutate(updatedPrompt);
+                                      }}
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label>Qty Min</Label>
+                                    <Input
+                                      type="number"
+                                      defaultValue={prompt.valueQuantityMin || 1}
+                                      onBlur={(e) => {
+                                        const updatedPrompt = { ...prompt, valueQuantityMin: parseInt(e.target.value) };
+                                        updatePromptMutation.mutate(updatedPrompt);
+                                      }}
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label>Qty Max</Label>
+                                    <Input
+                                      type="number"
+                                      defaultValue={prompt.valueQuantityMax || 9999}
+                                      onBlur={(e) => {
+                                        const updatedPrompt = { ...prompt, valueQuantityMax: parseInt(e.target.value) };
+                                        updatePromptMutation.mutate(updatedPrompt);
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
 
                         <div className="flex items-center space-x-2">
                           <Switch
