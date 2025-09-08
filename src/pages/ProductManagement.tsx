@@ -130,39 +130,39 @@ export default function ProductManagement() {
 
   // Queries para prompts y outputs del producto seleccionado
   const { data: productPrompts = [], refetch: refetchPrompts } = useQuery({
-    queryKey: ["product-prompts", selectedProduct?.id],
+    queryKey: ["product-prompts", selectedProduct?.productId],
     queryFn: async () => {
-      if (!selectedProduct?.id) return [];
+      if (!selectedProduct?.productId) return [];
       
       const token = localStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
-      const response = await fetch(`https://api.easyquote.cloud/api/v1/products/prompts/list/${selectedProduct.id}`, {
+      const response = await fetch(`https://api.easyquote.cloud/api/v1/products/prompts/list/${selectedProduct.productId}`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
 
       if (!response.ok) throw new Error("Error fetching product prompts");
       return response.json();
     },
-    enabled: !!selectedProduct?.id && isEditDialogOpen
+    enabled: !!selectedProduct?.productId && isEditDialogOpen
   });
 
   const { data: productOutputs = [], refetch: refetchOutputs } = useQuery({
-    queryKey: ["product-outputs", selectedProduct?.id],
+    queryKey: ["product-outputs", selectedProduct?.productId],
     queryFn: async () => {
-      if (!selectedProduct?.id) return [];
+      if (!selectedProduct?.productId) return [];
       
       const token = localStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
-      const response = await fetch(`https://api.easyquote.cloud/api/v1/products/outputs/list/${selectedProduct.id}`, {
+      const response = await fetch(`https://api.easyquote.cloud/api/v1/products/outputs/list/${selectedProduct.productId}`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
 
       if (!response.ok) throw new Error("Error fetching product outputs");
       return response.json();
     },
-    enabled: !!selectedProduct?.id && isEditDialogOpen
+    enabled: !!selectedProduct?.productId && isEditDialogOpen
   });
 
   // Mutations para prompts y outputs
