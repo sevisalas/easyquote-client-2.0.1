@@ -28,6 +28,29 @@ export const useHoldedIntegration = () => {
     }
 
     try {
+      // First check if the organization has access to Holded integration
+      const { data: accessData, error: accessError } = await supabase
+        .from('organization_integration_access')
+        .select('id')
+        .eq('organization_id', currentOrganization.id)
+        .eq('integration_type', 'holded')
+        .maybeSingle();
+
+      if (accessError && accessError.code !== 'PGRST116') {
+        console.error('Error checking Holded integration access:', accessError);
+        setIsHoldedActive(false);
+        setLoading(false);
+        return;
+      }
+
+      // If no access record exists, integration is not available
+      if (!accessData) {
+        setIsHoldedActive(false);
+        setLoading(false);
+        return;
+      }
+
+      // Now check if integration is configured and active
       const { data, error } = await supabase
         .from('integrations')
         .select('is_active, configuration')
