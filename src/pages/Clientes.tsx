@@ -26,7 +26,7 @@ const Clientes = () => {
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const navigate = useNavigate();
-  const { isHoldedActive } = useHoldedIntegration();
+  const { isHoldedActive, refreshIntegration } = useHoldedIntegration();
   const { organization, membership } = useSubscription();
   
   const ITEMS_PER_PAGE = 25;
@@ -35,6 +35,11 @@ const Clientes = () => {
   useEffect(() => {
     fetchClientes();
   }, [currentPage]);
+
+  useEffect(() => {
+    // Refresh integration status when component mounts and when organization changes
+    refreshIntegration();
+  }, [currentOrganization?.id, refreshIntegration]);
 
   useEffect(() => {
     setCurrentPage(1);
