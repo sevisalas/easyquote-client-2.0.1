@@ -232,6 +232,14 @@ export function AppSidebar() {
                       {(isSuperAdmin || isOrgAdmin) && (
                         <>
                           <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild isActive={currentPath === "/admin"}>
+                              <NavLink to="/admin" end className={getNavCls}>
+                                <Settings className="mr-2 h-4 w-4" />
+                                {!isCollapsed && <span>Panel Admin</span>}
+                              </NavLink>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                          <SidebarMenuSubItem>
                             <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/integraciones"}>
                               <NavLink to="/configuracion/integraciones" end className={getNavCls}>
                                 <Plug className="mr-2 h-4 w-4" />
