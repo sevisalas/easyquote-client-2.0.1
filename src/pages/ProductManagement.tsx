@@ -31,13 +31,14 @@ import { Separator } from "@/components/ui/separator";
 
 // Interface para productos del API de EasyQuote
 interface EasyQuoteProduct {
-  productId: string;
+  id: string; // El API devuelve 'id', no 'productId'
   productName: string;
   isActive: boolean;
   category?: string;
   description?: string;
   basePrice?: number;
-  excelFileId?: string;
+  excelfileId?: string;
+  currency?: string;
   [key: string]: any; // Para otros campos del API
 }
 
@@ -116,15 +117,15 @@ export default function ProductManagement() {
 
   // Queries para prompts y outputs del producto seleccionado
   const { data: productPrompts = [], refetch: refetchPrompts, isLoading: promptsLoading } = useQuery({
-    queryKey: ["product-prompts", selectedProduct?.productId],
+    queryKey: ["product-prompts", selectedProduct?.id],
     queryFn: async () => {
-      if (!selectedProduct?.productId) return [];
+      if (!selectedProduct?.id) return [];
       
-      console.log("Fetching prompts for product:", selectedProduct.productId);
+      console.log("Fetching prompts for product:", selectedProduct.id);
       const token = localStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
-      const response = await fetch(`https://api.easyquote.cloud/api/v1/products/prompts/list/${selectedProduct.productId}`, {
+      const response = await fetch(`https://api.easyquote.cloud/api/v1/products/prompts/list/${selectedProduct.id}`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
 
@@ -133,19 +134,19 @@ export default function ProductManagement() {
       console.log("Product prompts received:", data);
       return data;
     },
-    enabled: !!selectedProduct?.productId
+    enabled: !!selectedProduct?.id
   });
 
   const { data: productOutputs = [], refetch: refetchOutputs, isLoading: outputsLoading } = useQuery({
-    queryKey: ["product-outputs", selectedProduct?.productId],
+    queryKey: ["product-outputs", selectedProduct?.id],
     queryFn: async () => {
-      if (!selectedProduct?.productId) return [];
+      if (!selectedProduct?.id) return [];
       
-      console.log("Fetching outputs for product:", selectedProduct.productId);
+      console.log("Fetching outputs for product:", selectedProduct.id);
       const token = localStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
-      const response = await fetch(`https://api.easyquote.cloud/api/v1/products/outputs/list/${selectedProduct.productId}`, {
+      const response = await fetch(`https://api.easyquote.cloud/api/v1/products/outputs/list/${selectedProduct.id}`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
 
@@ -154,7 +155,7 @@ export default function ProductManagement() {
       console.log("Product outputs received:", data);
       return data;
     },
-    enabled: !!selectedProduct?.productId
+    enabled: !!selectedProduct?.id
   });
 
   // Mutations para prompts y outputs
@@ -357,7 +358,7 @@ export default function ProductManagement() {
     const matchesSearch = !searchTerm || 
       product.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.productId?.toLowerCase().includes(searchTerm.toLowerCase());
+      product.id?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesCategory = categoryFilter === "all" || 
       product.category === categoryFilter;
@@ -429,7 +430,7 @@ export default function ProductManagement() {
     if (!selectedProduct || !promptTypes.length) return;
 
     const newPrompt = {
-      productId: selectedProduct.productId,
+      productId: selectedProduct.id,
       sequence: productPrompts.length + 1,
       promptTypeId: promptTypes[0]?.id || 0,
       title: "Nuevo Prompt",
@@ -444,7 +445,7 @@ export default function ProductManagement() {
     if (!selectedProduct || !outputTypes.length) return;
 
     const newOutput = {
-      productId: selectedProduct.productId,
+      productId: selectedProduct.id,
       sequence: productOutputs.length + 1,
       outputTypeId: outputTypes[0]?.id || 0,
       outputName: "Nuevo Output"
@@ -679,7 +680,7 @@ export default function ProductManagement() {
               </TableHeader>
               <TableBody>
                 {filteredProducts.map((product) => (
-                  <TableRow key={product.productId}>
+                  <TableRow key={product.id}>
                     <TableCell>
                       <div>
                         <div className="font-medium">{product.productName}</div>
@@ -694,7 +695,7 @@ export default function ProductManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="font-mono text-sm">{product.productId}</span>
+                      <span className="font-mono text-sm">{product.id}</span>
                     </TableCell>
                     <TableCell>
                       <Badge variant={product.isActive ? "default" : "secondary"}>
