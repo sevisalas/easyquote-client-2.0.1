@@ -41,7 +41,7 @@ export default function ProductManagement() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [includeInactive, setIncludeInactive] = useState(false);
   
-  const { isSuperAdmin, isOrgAdmin, organization, membership } = useSubscription();
+  const { isSuperAdmin, isOrgAdmin } = useSubscription();
 
   // Check permissions
   if (!isSuperAdmin && !isOrgAdmin) {
@@ -58,49 +58,23 @@ export default function ProductManagement() {
     );
   }
 
-  // Obtener ID de la organización
-  const organizationId = organization?.id || membership?.organization_id;
-
-  // Obtener token de EasyQuote de la integración
-  const { data: integrationData, isLoading: isLoadingIntegration } = useQuery({
-    queryKey: ["easyquote-integration"],
-    queryFn: async () => {
-      if (!organizationId) {
-        throw new Error("No organization found");
-      }
-
-      const { data, error } = await supabase
-        .from("integrations")
-        .select("*")
-        .eq("organization_id", organizationId)
-        .eq("integration_type", "easyquote")
-        .eq("is_active", true)
-        .maybeSingle();
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!organizationId
-  });
+  // Verificar si hay token de EasyQuote
+  const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
 
   // Fetch products from EasyQuote API
   const { data: products = [], isLoading, error, refetch } = useQuery({
     queryKey: ["easyquote-products", includeInactive],
     queryFn: async () => {
-      if (!integrationData?.configuration || typeof integrationData.configuration !== 'object') {
-        throw new Error("No EasyQuote integration configuration found");
-      }
-
-      const config = integrationData.configuration as { access_token?: string };
-      if (!config.access_token) {
-        throw new Error("No EasyQuote integration token found");
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) {
+        throw new Error("No hay token de EasyQuote disponible. Por favor, inicia sesión nuevamente.");
       }
 
       console.log("ProductManagement: Fetching products", { includeInactive });
 
       const { data, error } = await supabase.functions.invoke("easyquote-products", {
         body: { 
-          token: config.access_token,
+          token,
           includeInactive 
         }
       });
@@ -118,7 +92,7 @@ export default function ProductManagement() {
       console.log("ProductManagement: Products received", data.length);
       return data as EasyQuoteProduct[];
     },
-    enabled: !!integrationData?.configuration,
+    enabled: hasToken,
     retry: (failureCount, error: any) => {
       // Si es error de autorización, no reintentar
       if (error?.message?.includes("401") || error?.message?.includes("EASYQUOTE_UNAUTHORIZED")) {
@@ -169,25 +143,14 @@ export default function ProductManagement() {
     window.URL.revokeObjectURL(url);
   };
 
-  if (isLoadingIntegration) {
-    return (
-      <div className="container mx-auto py-10">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Verificando integración con EasyQuote...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!integrationData) {
+  if (!hasToken) {
     return (
       <div className="container mx-auto py-10">
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Integración requerida</AlertTitle>
+          <AlertTitle>Sesión requerida</AlertTitle>
           <AlertDescription>
-            Para ver los productos, necesitas configurar la integración con EasyQuote.
+            Para ver los productos, necesitas iniciar sesión en EasyQuote desde la página de presupuestos.
           </AlertDescription>
         </Alert>
       </div>
