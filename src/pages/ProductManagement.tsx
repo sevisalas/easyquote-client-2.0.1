@@ -620,34 +620,34 @@ export default function ProductManagement() {
       {/* Products Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 text-center">
             <CardTitle className="text-sm font-medium">Total Productos</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="text-center">
             <div className="text-2xl font-bold">{products.length}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 text-center">
             <CardTitle className="text-sm font-medium">Productos Activos</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="text-center">
             <div className="text-2xl font-bold text-green-600">{activeProducts.length}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 text-center">
             <CardTitle className="text-sm font-medium">Productos Inactivos</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="text-center">
             <div className="text-2xl font-bold text-red-600">{inactiveProducts.length}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 text-center">
             <CardTitle className="text-sm font-medium">Categorías</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="text-center">
             <div className="text-2xl font-bold">{categories.length}</div>
           </CardContent>
         </Card>
@@ -775,7 +775,7 @@ export default function ProductManagement() {
           <DialogHeader>
             <DialogTitle>Editar Producto</DialogTitle>
             <DialogDescription>
-              Modifica los detalles del producto, prompts y outputs
+              Modifica los detalles del producto, datos de entrada y datos de salida
             </DialogDescription>
           </DialogHeader>
           
@@ -783,8 +783,8 @@ export default function ProductManagement() {
             <Tabs defaultValue="general" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="prompts">Prompts ({productPrompts.length})</TabsTrigger>
-                <TabsTrigger value="outputs">Outputs ({productOutputs.length})</TabsTrigger>
+                <TabsTrigger value="prompts">Datos de entrada ({productPrompts.length})</TabsTrigger>
+                <TabsTrigger value="outputs">Datos de salida ({productOutputs.length})</TabsTrigger>
               </TabsList>
               
               <TabsContent value="general" className="space-y-4">
@@ -841,14 +841,14 @@ export default function ProductManagement() {
               <TabsContent value="prompts" className="space-y-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h3 className="text-lg font-medium">Prompts del Producto</h3>
+                    <h3 className="text-lg font-medium">Datos de entrada del Producto</h3>
                     <p className="text-sm text-muted-foreground">
                       Gestiona los campos de entrada para este producto
                     </p>
                   </div>
                   <Button onClick={addNewPrompt} size="sm">
                     <Plus className="h-4 w-4 mr-2" />
-                    Añadir Prompt
+                    Añadir Dato de entrada
                   </Button>
                 </div>
 
@@ -860,7 +860,7 @@ export default function ProductManagement() {
                 ) : productPrompts.length === 0 ? (
                   <div className="text-center py-8">
                     <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">No hay prompts configurados</p>
+                    <p className="text-muted-foreground">No hay datos de entrada configurados</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -1042,14 +1042,14 @@ export default function ProductManagement() {
               <TabsContent value="outputs" className="space-y-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h3 className="text-lg font-medium">Outputs del Producto</h3>
+                    <h3 className="text-lg font-medium">Datos de salida del Producto</h3>
                     <p className="text-sm text-muted-foreground">
                       Gestiona los campos de salida para este producto
                     </p>
                   </div>
                   <Button onClick={addNewOutput} size="sm">
                     <Plus className="h-4 w-4 mr-2" />
-                    Añadir Output
+                    Añadir Dato de salida
                   </Button>
                 </div>
 
@@ -1061,7 +1061,7 @@ export default function ProductManagement() {
                 ) : productOutputs.length === 0 ? (
                   <div className="text-center py-8">
                     <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">No hay outputs configurados</p>
+                    <p className="text-muted-foreground">No hay datos de salida configurados</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
