@@ -317,9 +317,6 @@ export default function ProductManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{products.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Mostrando: {filteredProducts.length}
-            </p>
           </CardContent>
         </Card>
         <Card>
