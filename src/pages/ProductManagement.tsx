@@ -77,6 +77,10 @@ export default function ProductManagement() {
   const [selectedProduct, setSelectedProduct] = useState<EasyQuoteProduct | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
+  
+  const { isSuperAdmin, isOrgAdmin } = useSubscription();
+  const queryClient = useQueryClient();
   
   // Queries para tipos de prompts y outputs
   const { data: promptTypes = [] } = useQuery({
@@ -298,9 +302,6 @@ export default function ProductManagement() {
       refetchOutputs();
     }
   });
-  
-  const { isSuperAdmin, isOrgAdmin } = useSubscription();
-  const queryClient = useQueryClient();
 
   // Check permissions
   if (!isSuperAdmin && !isOrgAdmin) {
@@ -317,8 +318,6 @@ export default function ProductManagement() {
     );
   }
 
-  // Verificar si hay token de EasyQuote
-  const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
 
   // Fetch products from EasyQuote API
   const { data: products = [], isLoading, error, refetch } = useQuery({
