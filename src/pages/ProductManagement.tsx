@@ -23,7 +23,8 @@ import {
   Edit,
   Settings,
   Plus,
-  Trash2
+  Trash2,
+  Save
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -865,15 +866,8 @@ export default function ProductManagement() {
                   <div className="space-y-3">
                     {productPrompts.map((prompt, index) => (
                       <div key={prompt.id} className="p-4 border rounded-lg">
-                        <div className="flex justify-between items-start mb-4">
+                        <div className="mb-4">
                           <h4 className="font-medium">Prompt #{index + 1}</h4>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deletePrompt(prompt.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
                         </div>
                         
                         {(() => {
@@ -940,7 +934,7 @@ export default function ProductManagement() {
                                 </div>
                               )}
 
-                              <div className="col-span-1">
+                              <div className="col-span-2">
                                 <Label>Type Content</Label>
                                 <Select
                                   value={prompt.promptType?.toString() || ""}
@@ -1012,15 +1006,29 @@ export default function ProductManagement() {
                                 </>
                               )}
 
+                              {/* Espacios vacíos para mantener alineación cuando no hay campos numéricos */}
+                              {!isNumericType && <div className="col-span-3"></div>}
+
                               <div className="col-span-1">
                                 <Label>Actions</Label>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => deletePrompt(prompt.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      updatePromptMutation.mutate(prompt);
+                                    }}
+                                  >
+                                    <Save className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => deletePrompt(prompt.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
                             </div>
                           );
