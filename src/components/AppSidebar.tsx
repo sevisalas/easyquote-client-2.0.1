@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, PanelLeft, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -295,14 +295,6 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip={isCollapsed ? "Expandir" : "Contraer"}>
-              <button onClick={toggleSidebar} className="w-full flex items-center">
-                <PanelLeft className="mr-2 h-4 w-4" />
-                {!isCollapsed && <span>{isCollapsed ? "Expandir" : "Contraer"}</span>}
-              </button>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Cerrar sesión">
               <button onClick={handleSignOut} className="w-full flex items-center">
