@@ -81,22 +81,8 @@ export default function ProductManagement() {
   
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
   const queryClient = useQueryClient();
-
-  // Check permissions first, before declaring any conditional hooks
-  if (!isSuperAdmin && !isOrgAdmin) {
-    return (
-      <div className="container mx-auto py-10">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Acceso denegado</AlertTitle>
-          <AlertDescription>
-            Solo los administradores pueden ver productos.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
   
+  // ALL HOOKS MUST BE DECLARED BEFORE ANY CONDITIONAL LOGIC
   // Queries para tipos de prompts y outputs
   const { data: promptTypes = [] } = useQuery({
     queryKey: ["prompt-types"],
@@ -470,6 +456,22 @@ export default function ProductManagement() {
   const deleteOutput = (outputId: string) => {
     deleteOutputMutation.mutate(outputId);
   };
+
+  // ALL CONDITIONAL LOGIC AND EARLY RETURNS MUST COME AFTER ALL HOOKS
+  // Check permissions
+  if (!isSuperAdmin && !isOrgAdmin) {
+    return (
+      <div className="container mx-auto py-10">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Acceso denegado</AlertTitle>
+          <AlertDescription>
+            Solo los administradores pueden ver productos.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   if (!hasToken) {
     return (
