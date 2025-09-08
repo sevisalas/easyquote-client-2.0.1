@@ -629,7 +629,7 @@ export default function ProductManagement() {
         </Card>
         <Card>
           <CardHeader className="pb-2 text-center">
-            <CardTitle className="text-sm font-medium">Productos Activos</CardTitle>
+            <CardTitle className="text-sm font-medium">Productos activos</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
             <div className="text-2xl font-bold text-green-600">{activeProducts.length}</div>
@@ -637,7 +637,7 @@ export default function ProductManagement() {
         </Card>
         <Card>
           <CardHeader className="pb-2 text-center">
-            <CardTitle className="text-sm font-medium">Productos Inactivos</CardTitle>
+            <CardTitle className="text-sm font-medium">Productos inactivos</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
             <div className="text-2xl font-bold text-red-600">{inactiveProducts.length}</div>
@@ -773,7 +773,7 @@ export default function ProductManagement() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar Producto</DialogTitle>
+            <DialogTitle>Editar producto</DialogTitle>
             <DialogDescription>
               Modifica los detalles del producto, datos de entrada y datos de salida
             </DialogDescription>
@@ -790,7 +790,7 @@ export default function ProductManagement() {
               <TabsContent value="general" className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="productName">Nombre del Producto</Label>
+                    <Label htmlFor="productName">Nombre del producto</Label>
                     <Input
                       id="productName"
                       value={selectedProduct.productName}
@@ -1049,14 +1049,14 @@ export default function ProductManagement() {
                   </div>
                   <Button onClick={addNewOutput} size="sm">
                     <Plus className="h-4 w-4 mr-2" />
-                    Añadir Dato de salida
+                    Añadir dato de salida
                   </Button>
                 </div>
 
                 {isLoadingDetails ? (
                   <div className="text-center py-4">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                    <p className="text-sm text-muted-foreground mt-2">Cargando outputs...</p>
+                    <p className="text-sm text-muted-foreground mt-2">Cargando datos de salida...</p>
                   </div>
                 ) : productOutputs.length === 0 ? (
                   <div className="text-center py-8">
@@ -1068,7 +1068,7 @@ export default function ProductManagement() {
                     {productOutputs.map((output, index) => (
                       <div key={output.outputId} className="p-4 border rounded-lg">
                         <div className="flex justify-between items-start mb-4">
-                          <h4 className="font-medium">Output #{index + 1}</h4>
+                          <h4 className="font-medium">Campo nº {index + 1}</h4>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -1090,7 +1090,7 @@ export default function ProductManagement() {
                             />
                           </div>
                           <div>
-                            <Label>Tipo de Campo</Label>
+                            <Label>Tipo</Label>
                             <Select
                               value={output.outputTypeId?.toString() || ""}
                               onValueChange={(value) => {
