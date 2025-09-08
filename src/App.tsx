@@ -26,7 +26,7 @@ import IntegrationAccess from "./pages/IntegrationAccess";
 import ExcelFiles from "./pages/ExcelFiles";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProductManagement from "./pages/ProductManagement";
-import AdminModeSelector from "./pages/AdminModeSelector";
+
 import CalculadorDashboard from "./pages/CalculadorDashboard";
 import PresupuestosDashboard from "./pages/PresupuestosDashboard";
 import ProductTestPage from "./pages/ProductTestPage";
@@ -242,16 +242,16 @@ const App = () => (
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <AdminModeSelector />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <AdminDashboard />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
           <Route
             path="/admin/calculadores"
             element={
