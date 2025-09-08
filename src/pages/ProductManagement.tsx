@@ -10,6 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { 
   Package, 
@@ -19,7 +21,9 @@ import {
   XCircle,
   Loader2,
   Edit,
-  Settings
+  Settings,
+  Plus,
+  Trash2
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -44,6 +48,7 @@ interface ProductPrompt {
   promptTypeId: number;
   title: string;
   isRequired: boolean;
+  promptType?: string;
 }
 
 interface ProductOutput {
@@ -52,6 +57,17 @@ interface ProductOutput {
   outputName: string;
   outputTypeId: number;
   sequence: number;
+  outputType?: string;
+}
+
+interface PromptType {
+  promptTypeId: number;
+  typeName: string;
+}
+
+interface OutputType {
+  outputTypeId: number;
+  typeName: string;
 }
 
 export default function ProductManagement() {
@@ -60,6 +76,11 @@ export default function ProductManagement() {
   const [includeInactive, setIncludeInactive] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<EasyQuoteProduct | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [productPrompts, setProductPrompts] = useState<ProductPrompt[]>([]);
+  const [productOutputs, setProductOutputs] = useState<ProductOutput[]>([]);
+  const [promptTypes, setPromptTypes] = useState<PromptType[]>([]);
+  const [outputTypes, setOutputTypes] = useState<OutputType[]>([]);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
   const queryClient = useQueryClient();
@@ -184,14 +205,222 @@ export default function ProductManagement() {
     }
   });
 
-  const handleEditProduct = (product: EasyQuoteProduct) => {
+  const handleEditProduct = async (product: EasyQuoteProduct) => {
     setSelectedProduct({ ...product });
+    setIsLoadingDetails(true);
     setIsEditDialogOpen(true);
+
+    const token = localStorage.getItem("easyquote_token");
+    if (!token) return;
+
+    try {
+      // Fetch product details, prompts, outputs, and types in parallel
+      const [
+        productDetailsResponse,
+        promptsResponse,
+        outputsResponse,
+        promptTypesResponse,
+        outputTypesResponse
+      ] = await Promise.all([
+        fetch(`https://api.easyquote.cloud/api/v1/products/${product.productId}`, {
+          headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }
+        }),
+        fetch(`https://api.easyquote.cloud/api/v1/products/prompts/list/${product.productId}`, {
+          headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }
+        }),
+        fetch(`https://api.easyquote.cloud/api/v1/products/outputs/list/${product.productId}`, {
+          headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }
+        }),
+        fetch(`https://api.easyquote.cloud/api/v1/products/prompts/types`, {
+          headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }
+        }),
+        fetch(`https://api.easyquote.cloud/api/v1/products/outputs/types`, {
+          headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }
+        })
+      ]);
+
+      if (productDetailsResponse.ok) {
+        const productDetails = await productDetailsResponse.json();
+        setSelectedProduct(productDetails);
+      }
+
+      if (promptsResponse.ok) {
+        const prompts = await promptsResponse.json();
+        setProductPrompts(prompts || []);
+      }
+
+      if (outputsResponse.ok) {
+        const outputs = await outputsResponse.json();
+        setProductOutputs(outputs || []);
+      }
+
+      if (promptTypesResponse.ok) {
+        const types = await promptTypesResponse.json();
+        setPromptTypes(types || []);
+      }
+
+      if (outputTypesResponse.ok) {
+        const types = await outputTypesResponse.json();
+        setOutputTypes(types || []);
+      }
+
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los detalles del producto",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingDetails(false);
+    }
   };
 
   const handleSaveProduct = () => {
     if (selectedProduct) {
       updateProductMutation.mutate(selectedProduct);
+    }
+  };
+
+  // Add new prompt
+  const addNewPrompt = async () => {
+    if (!selectedProduct || !promptTypes.length) return;
+
+    const token = localStorage.getItem("easyquote_token");
+    if (!token) return;
+
+    const newPrompt = {
+      productId: selectedProduct.productId,
+      sequence: productPrompts.length + 1,
+      promptTypeId: promptTypes[0].promptTypeId,
+      title: "Nuevo Prompt",
+      isRequired: false
+    };
+
+    try {
+      const response = await fetch("https://api.easyquote.cloud/api/v1/products/prompts", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(newPrompt)
+      });
+
+      if (response.ok) {
+        const createdPrompt = await response.json();
+        setProductPrompts([...productPrompts, createdPrompt]);
+        toast({
+          title: "Prompt añadido",
+          description: "El nuevo prompt se ha creado correctamente.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo crear el prompt",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Add new output
+  const addNewOutput = async () => {
+    if (!selectedProduct || !outputTypes.length) return;
+
+    const token = localStorage.getItem("easyquote_token");
+    if (!token) return;
+
+    const newOutput = {
+      productId: selectedProduct.productId,
+      sequence: productOutputs.length + 1,
+      outputTypeId: outputTypes[0].outputTypeId,
+      outputName: "Nuevo Output"
+    };
+
+    try {
+      const response = await fetch("https://api.easyquote.cloud/api/v1/products/outputs", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(newOutput)
+      });
+
+      if (response.ok) {
+        const createdOutput = await response.json();
+        setProductOutputs([...productOutputs, createdOutput]);
+        toast({
+          title: "Output añadido",
+          description: "El nuevo output se ha creado correctamente.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo crear el output",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Delete prompt
+  const deletePrompt = async (promptId: string) => {
+    const token = localStorage.getItem("easyquote_token");
+    if (!token) return;
+
+    try {
+      const response = await fetch(`https://api.easyquote.cloud/api/v1/products/prompts/${promptId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (response.ok) {
+        setProductPrompts(productPrompts.filter(p => p.promptId !== promptId));
+        toast({
+          title: "Prompt eliminado",
+          description: "El prompt se ha eliminado correctamente.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el prompt",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Delete output
+  const deleteOutput = async (outputId: string) => {
+    const token = localStorage.getItem("easyquote_token");
+    if (!token) return;
+
+    try {
+      const response = await fetch(`https://api.easyquote.cloud/api/v1/products/outputs/${outputId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (response.ok) {
+        setProductOutputs(productOutputs.filter(o => o.outputId !== outputId));
+        toast({
+          title: "Output eliminado",
+          description: "El output se ha eliminado correctamente.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el output",
+        variant: "destructive",
+      });
     }
   };
 
@@ -451,66 +680,243 @@ export default function ProductManagement() {
 
       {/* Edit Product Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Producto</DialogTitle>
             <DialogDescription>
-              Modifica los detalles del producto EasyQuote
+              Modifica los detalles del producto, prompts y outputs
             </DialogDescription>
           </DialogHeader>
           
           {selectedProduct && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="productName">Nombre del Producto</Label>
-                  <Input
-                    id="productName"
-                    value={selectedProduct.productName}
-                    onChange={(e) => setSelectedProduct({
-                      ...selectedProduct,
-                      productName: e.target.value
-                    })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="category">Categoría</Label>
-                  <Input
-                    id="category"
-                    value={selectedProduct.category || ""}
-                    onChange={(e) => setSelectedProduct({
-                      ...selectedProduct,
-                      category: e.target.value
-                    })}
-                  />
-                </div>
-              </div>
+            <Tabs defaultValue="general" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="prompts">Prompts ({productPrompts.length})</TabsTrigger>
+                <TabsTrigger value="outputs">Outputs ({productOutputs.length})</TabsTrigger>
+              </TabsList>
               
-              <div>
-                <Label htmlFor="description">Descripción</Label>
-                <Input
-                  id="description"
-                  value={selectedProduct.description || ""}
-                  onChange={(e) => setSelectedProduct({
-                    ...selectedProduct,
-                    description: e.target.value
-                  })}
-                />
-              </div>
+              <TabsContent value="general" className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="productName">Nombre del Producto</Label>
+                    <Input
+                      id="productName"
+                      value={selectedProduct.productName}
+                      onChange={(e) => setSelectedProduct({
+                        ...selectedProduct,
+                        productName: e.target.value
+                      })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="category">Categoría</Label>
+                    <Input
+                      id="category"
+                      value={selectedProduct.category || ""}
+                      onChange={(e) => setSelectedProduct({
+                        ...selectedProduct,
+                        category: e.target.value
+                      })}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="description">Descripción</Label>
+                  <Textarea
+                    id="description"
+                    value={selectedProduct.description || ""}
+                    onChange={(e) => setSelectedProduct({
+                      ...selectedProduct,
+                      description: e.target.value
+                    })}
+                  />
+                </div>
 
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="isActive"
-                  checked={selectedProduct.isActive}
-                  onCheckedChange={(checked) => setSelectedProduct({
-                    ...selectedProduct,
-                    isActive: checked
-                  })}
-                />
-                <Label htmlFor="isActive">
-                  Producto activo
-                </Label>
-              </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="isActive"
+                    checked={selectedProduct.isActive}
+                    onCheckedChange={(checked) => setSelectedProduct({
+                      ...selectedProduct,
+                      isActive: checked
+                    })}
+                  />
+                  <Label htmlFor="isActive">Producto activo</Label>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="prompts" className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-lg font-medium">Prompts del Producto</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Gestiona los campos de entrada para este producto
+                    </p>
+                  </div>
+                  <Button onClick={addNewPrompt} size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Añadir Prompt
+                  </Button>
+                </div>
+
+                {isLoadingDetails ? (
+                  <div className="text-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                    <p className="text-sm text-muted-foreground mt-2">Cargando prompts...</p>
+                  </div>
+                ) : productPrompts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">No hay prompts configurados</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {productPrompts.map((prompt, index) => (
+                      <div key={prompt.promptId} className="p-4 border rounded-lg">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 space-y-2">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label>Título</Label>
+                                <Input
+                                  value={prompt.title}
+                                  onChange={(e) => {
+                                    const updated = [...productPrompts];
+                                    updated[index] = { ...prompt, title: e.target.value };
+                                    setProductPrompts(updated);
+                                  }}
+                                />
+                              </div>
+                              <div>
+                                <Label>Tipo</Label>
+                                <Select
+                                  value={prompt.promptTypeId.toString()}
+                                  onValueChange={(value) => {
+                                    const updated = [...productPrompts];
+                                    updated[index] = { ...prompt, promptTypeId: parseInt(value) };
+                                    setProductPrompts(updated);
+                                  }}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {promptTypes.map((type) => (
+                                      <SelectItem key={type.promptTypeId} value={type.promptTypeId.toString()}>
+                                        {type.typeName}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Switch
+                                checked={prompt.isRequired}
+                                onCheckedChange={(checked) => {
+                                  const updated = [...productPrompts];
+                                  updated[index] = { ...prompt, isRequired: checked };
+                                  setProductPrompts(updated);
+                                }}
+                              />
+                              <Label>Campo requerido</Label>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deletePrompt(prompt.promptId)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="outputs" className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-lg font-medium">Outputs del Producto</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Gestiona los campos de salida para este producto
+                    </p>
+                  </div>
+                  <Button onClick={addNewOutput} size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Añadir Output
+                  </Button>
+                </div>
+
+                {isLoadingDetails ? (
+                  <div className="text-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                    <p className="text-sm text-muted-foreground mt-2">Cargando outputs...</p>
+                  </div>
+                ) : productOutputs.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">No hay outputs configurados</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {productOutputs.map((output, index) => (
+                      <div key={output.outputId} className="p-4 border rounded-lg">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 space-y-2">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label>Nombre</Label>
+                                <Input
+                                  value={output.outputName}
+                                  onChange={(e) => {
+                                    const updated = [...productOutputs];
+                                    updated[index] = { ...output, outputName: e.target.value };
+                                    setProductOutputs(updated);
+                                  }}
+                                />
+                              </div>
+                              <div>
+                                <Label>Tipo</Label>
+                                <Select
+                                  value={output.outputTypeId.toString()}
+                                  onValueChange={(value) => {
+                                    const updated = [...productOutputs];
+                                    updated[index] = { ...output, outputTypeId: parseInt(value) };
+                                    setProductOutputs(updated);
+                                  }}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {outputTypes.map((type) => (
+                                      <SelectItem key={type.outputTypeId} value={type.outputTypeId.toString()}>
+                                        {type.typeName}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteOutput(output.outputId)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
 
               <div className="flex justify-end space-x-2 pt-4">
                 <Button 
@@ -533,7 +939,7 @@ export default function ProductManagement() {
                   )}
                 </Button>
               </div>
-            </div>
+            </Tabs>
           )}
         </DialogContent>
       </Dialog>
