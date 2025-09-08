@@ -115,11 +115,12 @@ export default function ProductManagement() {
   });
 
   // Queries para prompts y outputs del producto seleccionado
-  const { data: productPrompts = [], refetch: refetchPrompts } = useQuery({
+  const { data: productPrompts = [], refetch: refetchPrompts, isLoading: promptsLoading } = useQuery({
     queryKey: ["product-prompts", selectedProduct?.productId],
     queryFn: async () => {
       if (!selectedProduct?.productId) return [];
       
+      console.log("Fetching prompts for product:", selectedProduct.productId);
       const token = localStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
@@ -128,16 +129,19 @@ export default function ProductManagement() {
       });
 
       if (!response.ok) throw new Error("Error fetching product prompts");
-      return response.json();
+      const data = await response.json();
+      console.log("Product prompts received:", data);
+      return data;
     },
-    enabled: !!selectedProduct?.productId && isEditDialogOpen
+    enabled: !!selectedProduct?.productId
   });
 
-  const { data: productOutputs = [], refetch: refetchOutputs } = useQuery({
+  const { data: productOutputs = [], refetch: refetchOutputs, isLoading: outputsLoading } = useQuery({
     queryKey: ["product-outputs", selectedProduct?.productId],
     queryFn: async () => {
       if (!selectedProduct?.productId) return [];
       
+      console.log("Fetching outputs for product:", selectedProduct.productId);
       const token = localStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
@@ -146,9 +150,11 @@ export default function ProductManagement() {
       });
 
       if (!response.ok) throw new Error("Error fetching product outputs");
-      return response.json();
+      const data = await response.json();
+      console.log("Product outputs received:", data);
+      return data;
     },
-    enabled: !!selectedProduct?.productId && isEditDialogOpen
+    enabled: !!selectedProduct?.productId
   });
 
   // Mutations para prompts y outputs
