@@ -21,6 +21,7 @@ interface EasyQuoteExcelFile {
   dateModified: string;
   isActive: boolean;
   subscriberId: string;
+  fileSize?: number;
   worksheets?: any[];
 }
 
@@ -207,6 +208,14 @@ export default function ExcelFiles() {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes || bytes === 0) return "N/A";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   // Fetch file details
@@ -400,6 +409,7 @@ export default function ExcelFiles() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nombre del Archivo</TableHead>
+                  <TableHead>Tamaño</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Última Modificación</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
@@ -414,6 +424,7 @@ export default function ExcelFiles() {
                         {file.fileName}
                       </div>
                     </TableCell>
+                    <TableCell>{formatFileSize(file.fileSize)}</TableCell>
                     <TableCell>
                       <Badge variant={file.isActive ? "default" : "secondary"}>
                         {file.isActive ? (
