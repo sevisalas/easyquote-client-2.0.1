@@ -921,7 +921,7 @@ export default function ProductManagement() {
                               
                               {/* Rango - Solo para tipos no numéricos */}
                               {!isNumericType && (
-                                <div className="col-span-1">
+                                <div className="col-span-2">
                                   <Label>Range</Label>
                                   <Input
                                     defaultValue={prompt.valueOptionRange || ""}
@@ -934,7 +934,7 @@ export default function ProductManagement() {
                                 </div>
                               )}
 
-                              <div className="col-span-2">
+                              <div className="col-span-1">
                                 <Label>Type Content</Label>
                                 <Select
                                   value={prompt.promptType?.toString() || ""}
@@ -1007,7 +1007,7 @@ export default function ProductManagement() {
                               )}
 
                               {/* Espacios vacíos para mantener alineación cuando no hay campos numéricos */}
-                              {!isNumericType && <div className="col-span-3"></div>}
+                              {!isNumericType && <div className="col-span-1"></div>}
 
                               <div className="col-span-1">
                                 <Label>Actions</Label>
