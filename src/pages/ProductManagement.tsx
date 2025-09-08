@@ -76,11 +76,228 @@ export default function ProductManagement() {
   const [includeInactive, setIncludeInactive] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<EasyQuoteProduct | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [productPrompts, setProductPrompts] = useState<ProductPrompt[]>([]);
-  const [productOutputs, setProductOutputs] = useState<ProductOutput[]>([]);
-  const [promptTypes, setPromptTypes] = useState<PromptType[]>([]);
-  const [outputTypes, setOutputTypes] = useState<OutputType[]>([]);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  
+  // Queries para tipos de prompts y outputs
+  const { data: promptTypes = [] } = useQuery({
+    queryKey: ["prompt-types"],
+    queryFn: async () => {
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No token available");
+
+      const response = await fetch("https://api.easyquote.cloud/api/v1/products/prompts/types", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (!response.ok) throw new Error("Error fetching prompt types");
+      return response.json();
+    }
+  });
+
+  const { data: outputTypes = [] } = useQuery({
+    queryKey: ["output-types"],
+    queryFn: async () => {
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No token available");
+
+      const response = await fetch("https://api.easyquote.cloud/api/v1/products/outputs/types", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (!response.ok) throw new Error("Error fetching output types");
+      return response.json();
+    }
+  });
+
+  // Queries para prompts y outputs del producto seleccionado
+  const { data: productPrompts = [], refetch: refetchPrompts } = useQuery({
+    queryKey: ["product-prompts", selectedProduct?.id],
+    queryFn: async () => {
+      if (!selectedProduct?.id) return [];
+      
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No token available");
+
+      const response = await fetch(`https://api.easyquote.cloud/api/v1/products/prompts/list/${selectedProduct.id}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (!response.ok) throw new Error("Error fetching product prompts");
+      return response.json();
+    },
+    enabled: !!selectedProduct?.id && isEditDialogOpen
+  });
+
+  const { data: productOutputs = [], refetch: refetchOutputs } = useQuery({
+    queryKey: ["product-outputs", selectedProduct?.id],
+    queryFn: async () => {
+      if (!selectedProduct?.id) return [];
+      
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No token available");
+
+      const response = await fetch(`https://api.easyquote.cloud/api/v1/products/outputs/list/${selectedProduct.id}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (!response.ok) throw new Error("Error fetching product outputs");
+      return response.json();
+    },
+    enabled: !!selectedProduct?.id && isEditDialogOpen
+  });
+
+  // Mutations para prompts y outputs
+  const createPromptMutation = useMutation({
+    mutationFn: async (newPrompt: Omit<ProductPrompt, 'promptId'>) => {
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No token available");
+
+      const response = await fetch("https://api.easyquote.cloud/api/v1/products/prompts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(newPrompt)
+      });
+
+      if (!response.ok) throw new Error("Error creating prompt");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Prompt añadido",
+        description: "El nuevo prompt se ha creado correctamente.",
+      });
+      refetchPrompts();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Error al crear el prompt",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const createOutputMutation = useMutation({
+    mutationFn: async (newOutput: Omit<ProductOutput, 'outputId'>) => {
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No token available");
+
+      const response = await fetch("https://api.easyquote.cloud/api/v1/products/outputs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(newOutput)
+      });
+
+      if (!response.ok) throw new Error("Error creating output");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Output añadido",
+        description: "El nuevo output se ha creado correctamente.",
+      });
+      refetchOutputs();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Error al crear el output",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const deletePromptMutation = useMutation({
+    mutationFn: async (promptId: string) => {
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No token available");
+
+      const response = await fetch(`https://api.easyquote.cloud/api/v1/products/prompts/${promptId}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (!response.ok) throw new Error("Error deleting prompt");
+    },
+    onSuccess: () => {
+      toast({
+        title: "Prompt eliminado",
+        description: "El prompt se ha eliminado correctamente.",
+      });
+      refetchPrompts();
+    }
+  });
+
+  const deleteOutputMutation = useMutation({
+    mutationFn: async (outputId: string) => {
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No token available");
+
+      const response = await fetch(`https://api.easyquote.cloud/api/v1/products/outputs/${outputId}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (!response.ok) throw new Error("Error deleting output");
+    },
+    onSuccess: () => {
+      toast({
+        title: "Output eliminado",
+        description: "El output se ha eliminado correctamente.",
+      });
+      refetchOutputs();
+    }
+  });
+
+  const updatePromptMutation = useMutation({
+    mutationFn: async (updatedPrompt: ProductPrompt) => {
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No token available");
+
+      const response = await fetch("https://api.easyquote.cloud/api/v1/products/prompts", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(updatedPrompt)
+      });
+
+      if (!response.ok) throw new Error("Error updating prompt");
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchPrompts();
+    }
+  });
+
+  const updateOutputMutation = useMutation({
+    mutationFn: async (updatedOutput: ProductOutput) => {
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No token available");
+
+      const response = await fetch("https://api.easyquote.cloud/api/v1/products/outputs", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(updatedOutput)
+      });
+
+      if (!response.ok) throw new Error("Error updating output");
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchOutputs();
+    }
+  });
   
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
   const queryClient = useQueryClient();
@@ -205,74 +422,9 @@ export default function ProductManagement() {
     }
   });
 
-  const handleEditProduct = async (product: EasyQuoteProduct) => {
+  const handleEditProduct = (product: EasyQuoteProduct) => {
     setSelectedProduct({ ...product });
-    setIsLoadingDetails(true);
     setIsEditDialogOpen(true);
-
-    const token = localStorage.getItem("easyquote_token");
-    if (!token) return;
-
-    try {
-      // Fetch product details, prompts, outputs, and types in parallel
-      const [
-        productDetailsResponse,
-        promptsResponse,
-        outputsResponse,
-        promptTypesResponse,
-        outputTypesResponse
-      ] = await Promise.all([
-        fetch(`https://api.easyquote.cloud/api/v1/products/${product.productId}`, {
-          headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }
-        }),
-        fetch(`https://api.easyquote.cloud/api/v1/products/prompts/list/${product.productId}`, {
-          headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }
-        }),
-        fetch(`https://api.easyquote.cloud/api/v1/products/outputs/list/${product.productId}`, {
-          headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }
-        }),
-        fetch(`https://api.easyquote.cloud/api/v1/products/prompts/types`, {
-          headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }
-        }),
-        fetch(`https://api.easyquote.cloud/api/v1/products/outputs/types`, {
-          headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }
-        })
-      ]);
-
-      if (productDetailsResponse.ok) {
-        const productDetails = await productDetailsResponse.json();
-        setSelectedProduct(productDetails);
-      }
-
-      if (promptsResponse.ok) {
-        const prompts = await promptsResponse.json();
-        setProductPrompts(prompts || []);
-      }
-
-      if (outputsResponse.ok) {
-        const outputs = await outputsResponse.json();
-        setProductOutputs(outputs || []);
-      }
-
-      if (promptTypesResponse.ok) {
-        const types = await promptTypesResponse.json();
-        setPromptTypes(types || []);
-      }
-
-      if (outputTypesResponse.ok) {
-        const types = await outputTypesResponse.json();
-        setOutputTypes(types || []);
-      }
-
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los detalles del producto",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingDetails(false);
-    }
   };
 
   const handleSaveProduct = () => {
@@ -282,11 +434,8 @@ export default function ProductManagement() {
   };
 
   // Add new prompt
-  const addNewPrompt = async () => {
+  const addNewPrompt = () => {
     if (!selectedProduct || !promptTypes.length) return;
-
-    const token = localStorage.getItem("easyquote_token");
-    if (!token) return;
 
     const newPrompt = {
       productId: selectedProduct.productId,
@@ -296,39 +445,12 @@ export default function ProductManagement() {
       isRequired: false
     };
 
-    try {
-      const response = await fetch("https://api.easyquote.cloud/api/v1/products/prompts", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(newPrompt)
-      });
-
-      if (response.ok) {
-        const createdPrompt = await response.json();
-        setProductPrompts([...productPrompts, createdPrompt]);
-        toast({
-          title: "Prompt añadido",
-          description: "El nuevo prompt se ha creado correctamente.",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo crear el prompt",
-        variant: "destructive",
-      });
-    }
+    createPromptMutation.mutate(newPrompt);
   };
 
   // Add new output
-  const addNewOutput = async () => {
+  const addNewOutput = () => {
     if (!selectedProduct || !outputTypes.length) return;
-
-    const token = localStorage.getItem("easyquote_token");
-    if (!token) return;
 
     const newOutput = {
       productId: selectedProduct.productId,
@@ -337,91 +459,17 @@ export default function ProductManagement() {
       outputName: "Nuevo Output"
     };
 
-    try {
-      const response = await fetch("https://api.easyquote.cloud/api/v1/products/outputs", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(newOutput)
-      });
-
-      if (response.ok) {
-        const createdOutput = await response.json();
-        setProductOutputs([...productOutputs, createdOutput]);
-        toast({
-          title: "Output añadido",
-          description: "El nuevo output se ha creado correctamente.",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo crear el output",
-        variant: "destructive",
-      });
-    }
+    createOutputMutation.mutate(newOutput);
   };
 
   // Delete prompt
-  const deletePrompt = async (promptId: string) => {
-    const token = localStorage.getItem("easyquote_token");
-    if (!token) return;
-
-    try {
-      const response = await fetch(`https://api.easyquote.cloud/api/v1/products/prompts/${promptId}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
-
-      if (response.ok) {
-        setProductPrompts(productPrompts.filter(p => p.promptId !== promptId));
-        toast({
-          title: "Prompt eliminado",
-          description: "El prompt se ha eliminado correctamente.",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el prompt",
-        variant: "destructive",
-      });
-    }
+  const deletePrompt = (promptId: string) => {
+    deletePromptMutation.mutate(promptId);
   };
 
   // Delete output
-  const deleteOutput = async (outputId: string) => {
-    const token = localStorage.getItem("easyquote_token");
-    if (!token) return;
-
-    try {
-      const response = await fetch(`https://api.easyquote.cloud/api/v1/products/outputs/${outputId}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
-
-      if (response.ok) {
-        setProductOutputs(productOutputs.filter(o => o.outputId !== outputId));
-        toast({
-          title: "Output eliminado",
-          description: "El output se ha eliminado correctamente.",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el output",
-        variant: "destructive",
-      });
-    }
+  const deleteOutput = (outputId: string) => {
+    deleteOutputMutation.mutate(outputId);
   };
 
   if (!hasToken) {
@@ -781,11 +829,10 @@ export default function ProductManagement() {
                               <div>
                                 <Label>Título</Label>
                                 <Input
-                                  value={prompt.title}
-                                  onChange={(e) => {
-                                    const updated = [...productPrompts];
-                                    updated[index] = { ...prompt, title: e.target.value };
-                                    setProductPrompts(updated);
+                                  defaultValue={prompt.title}
+                                  onBlur={(e) => {
+                                    const updatedPrompt = { ...prompt, title: e.target.value };
+                                    updatePromptMutation.mutate(updatedPrompt);
                                   }}
                                 />
                               </div>
@@ -794,9 +841,8 @@ export default function ProductManagement() {
                                 <Select
                                   value={prompt.promptTypeId.toString()}
                                   onValueChange={(value) => {
-                                    const updated = [...productPrompts];
-                                    updated[index] = { ...prompt, promptTypeId: parseInt(value) };
-                                    setProductPrompts(updated);
+                                    const updatedPrompt = { ...prompt, promptTypeId: parseInt(value) };
+                                    updatePromptMutation.mutate(updatedPrompt);
                                   }}
                                 >
                                   <SelectTrigger>
@@ -816,9 +862,8 @@ export default function ProductManagement() {
                               <Switch
                                 checked={prompt.isRequired}
                                 onCheckedChange={(checked) => {
-                                  const updated = [...productPrompts];
-                                  updated[index] = { ...prompt, isRequired: checked };
-                                  setProductPrompts(updated);
+                                  const updatedPrompt = { ...prompt, isRequired: checked };
+                                  updatePromptMutation.mutate(updatedPrompt);
                                 }}
                               />
                               <Label>Campo requerido</Label>
@@ -872,11 +917,10 @@ export default function ProductManagement() {
                               <div>
                                 <Label>Nombre</Label>
                                 <Input
-                                  value={output.outputName}
-                                  onChange={(e) => {
-                                    const updated = [...productOutputs];
-                                    updated[index] = { ...output, outputName: e.target.value };
-                                    setProductOutputs(updated);
+                                  defaultValue={output.outputName}
+                                  onBlur={(e) => {
+                                    const updatedOutput = { ...output, outputName: e.target.value };
+                                    updateOutputMutation.mutate(updatedOutput);
                                   }}
                                 />
                               </div>
@@ -885,9 +929,8 @@ export default function ProductManagement() {
                                 <Select
                                   value={output.outputTypeId.toString()}
                                   onValueChange={(value) => {
-                                    const updated = [...productOutputs];
-                                    updated[index] = { ...output, outputTypeId: parseInt(value) };
-                                    setProductOutputs(updated);
+                                    const updatedOutput = { ...output, outputTypeId: parseInt(value) };
+                                    updateOutputMutation.mutate(updatedOutput);
                                   }}
                                 >
                                   <SelectTrigger>
