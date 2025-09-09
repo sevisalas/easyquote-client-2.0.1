@@ -9,10 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
+import { useDropzone } from "react-dropzone";
 import { 
   Package, 
   Search, 
@@ -24,7 +25,9 @@ import {
   Settings,
   Plus,
   Trash2,
-  Save
+  Save,
+  Upload,
+  FileSpreadsheet
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -82,6 +85,19 @@ interface OutputType {
   outputType: string;
 }
 
+interface EasyQuoteExcelFile {
+  id: string;
+  fileName: string;
+  fileSizeKb: number;
+  dateCreated: string;
+  dateModified: string;
+  isActive: boolean;
+  isPlanCompliant: boolean;
+  subscriberId?: string;
+  excelfilesSheets: any[];
+  products: any[];
+}
+
 export default function ProductManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -92,6 +108,14 @@ export default function ProductManagement() {
   const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
   const [isNewPromptDialogOpen, setIsNewPromptDialogOpen] = useState(false);
   const [isNewOutputDialogOpen, setIsNewOutputDialogOpen] = useState(false);
+  const [isCreateProductDialogOpen, setIsCreateProductDialogOpen] = useState(false);
+  const [isUpdateExcelDialogOpen, setIsUpdateExcelDialogOpen] = useState(false);
+  const [selectedExcelFile, setSelectedExcelFile] = useState<File | null>(null);
+  const [newProductData, setNewProductData] = useState({
+    productName: "",
+    excelFileId: "",
+    currency: "USD"
+  });
   const [newPromptData, setNewPromptData] = useState({
     promptSheet: "Main",
     promptCell: "",
@@ -145,6 +169,23 @@ export default function ProductManagement() {
       if (!response.ok) throw new Error("Error fetching output types");
       return response.json();
     }
+  });
+
+  // Query para obtener archivos Excel disponibles
+  const { data: excelFiles = [] } = useQuery({
+    queryKey: ["easyquote-excel-files"],
+    queryFn: async () => {
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No token available");
+
+      const response = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (!response.ok) throw new Error("Error fetching excel files");
+      return response.json();
+    },
+    enabled: hasToken
   });
 
   // Queries para prompts y outputs del producto seleccionado
@@ -353,6 +394,109 @@ export default function ProductManagement() {
     }
   });
 
+  // Crear nuevo producto con archivo Excel
+  const createProductMutation = useMutation({
+    mutationFn: async (productData: { productName: string; excelFileId: string; currency: string }) => {
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No token available");
+
+      const response = await fetch("https://api.easyquote.cloud/api/v1/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productName: productData.productName,
+          excelFileId: productData.excelFileId,
+          currency: productData.currency,
+          isActive: true
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error creating product: ${errorText}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Producto creado",
+        description: "El producto se ha creado correctamente.",
+      });
+      refetch();
+      setIsCreateProductDialogOpen(false);
+      setNewProductData({ productName: "", excelFileId: "", currency: "USD" });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Actualizar archivo Excel
+  const updateExcelMutation = useMutation({
+    mutationFn: async (file: File) => {
+      if (!file) throw new Error("No file selected");
+      if (!selectedProduct?.excelfileId) throw new Error("No excel file ID found");
+      
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No token available");
+
+      // Convert file to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Remove the data URL prefix (data:application/...;base64,)
+          const base64Data = result.split(',')[1];
+          resolve(base64Data);
+        };
+        reader.onerror = reject;
+      });
+
+      const response = await fetch(`https://api.easyquote.cloud/api/v1/excelfiles/${selectedProduct.excelfileId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileContent: base64
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error updating Excel file: ${errorText}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Archivo Excel actualizado",
+        description: "El archivo Excel se ha actualizado correctamente.",
+      });
+      setIsUpdateExcelDialogOpen(false);
+      setSelectedExcelFile(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
 
   // Fetch products from EasyQuote API
   const { data: products = [], isLoading, error, refetch } = useQuery({
@@ -551,6 +695,38 @@ export default function ProductManagement() {
     deleteOutputMutation.mutate(outputId);
   };
 
+  // Crear nuevo producto
+  const createProduct = () => {
+    createProductMutation.mutate(newProductData);
+  };
+
+  // Actualizar archivo Excel
+  const updateExcel = () => {
+    if (!selectedExcelFile) {
+      toast({
+        title: "Error",
+        description: "Por favor selecciona un archivo Excel",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateExcelMutation.mutate(selectedExcelFile);
+  };
+
+  // Dropzone para subir archivos Excel
+  const { getRootProps: getExcelRootProps, getInputProps: getExcelInputProps, isDragActive: isExcelDragActive } = useDropzone({
+    accept: {
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+      "application/vnd.ms-excel": [".xls"],
+    },
+    maxFiles: 1,
+    onDrop: (acceptedFiles) => {
+      if (acceptedFiles.length > 0) {
+        setSelectedExcelFile(acceptedFiles[0]);
+      }
+    }
+  });
+
   // ALL CONDITIONAL LOGIC AND EARLY RETURNS MUST COME AFTER ALL HOOKS
   // Check permissions
   if (!isSuperAdmin && !isOrgAdmin) {
@@ -617,6 +793,13 @@ export default function ProductManagement() {
           </p>
         </div>
         <div className="flex gap-3">
+          <Button 
+            variant="outline" 
+            onClick={() => setIsCreateProductDialogOpen(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Crear Producto
+          </Button>
           <Button 
             variant="outline" 
             onClick={() => refetch()}
@@ -816,14 +999,28 @@ export default function ProductManagement() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditProduct(product)}
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Editar
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditProduct(product)}
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedProduct(product);
+                            setIsUpdateExcelDialogOpen(true);
+                          }}
+                          disabled={!product.excelfileId}
+                        >
+                          <FileSpreadsheet className="h-4 w-4 mr-2" />
+                          Excel
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -1427,6 +1624,151 @@ export default function ProductManagement() {
               Crear Output
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo para crear nuevo producto */}
+      <Dialog open={isCreateProductDialogOpen} onOpenChange={setIsCreateProductDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Crear Nuevo Producto</DialogTitle>
+            <DialogDescription>
+              Crea un nuevo producto asociado a un archivo Excel
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="product-name">Nombre del Producto</Label>
+              <Input
+                id="product-name"
+                value={newProductData.productName}
+                onChange={(e) => setNewProductData(prev => ({ ...prev, productName: e.target.value }))}
+                placeholder="Ej: Tarjetas de Visita Premium"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="excel-file">Archivo Excel</Label>
+              <Select 
+                value={newProductData.excelFileId} 
+                onValueChange={(value) => setNewProductData(prev => ({ ...prev, excelFileId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un archivo Excel" />
+                </SelectTrigger>
+                <SelectContent>
+                  {excelFiles.map((file) => (
+                    <SelectItem key={file.id} value={file.id}>
+                      {file.fileName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="currency">Moneda</Label>
+              <Select 
+                value={newProductData.currency} 
+                onValueChange={(value) => setNewProductData(prev => ({ ...prev, currency: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USD">USD - Dólar</SelectItem>
+                  <SelectItem value="EUR">EUR - Euro</SelectItem>
+                  <SelectItem value="COP">COP - Peso Colombiano</SelectItem>
+                  <SelectItem value="MXN">MXN - Peso Mexicano</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsCreateProductDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={createProduct}
+              disabled={!newProductData.productName || !newProductData.excelFileId || createProductMutation.isPending}
+            >
+              {createProductMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Plus className="h-4 w-4 mr-2" />
+              )}
+              Crear Producto
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo para actualizar archivo Excel */}
+      <Dialog open={isUpdateExcelDialogOpen} onOpenChange={setIsUpdateExcelDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Actualizar Archivo Excel</DialogTitle>
+            <DialogDescription>
+              Actualiza el archivo Excel asociado al producto "{selectedProduct?.productName}"
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div 
+              {...getExcelRootProps()} 
+              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                isExcelDragActive ? 'border-primary bg-primary/10' : 'border-muted-foreground/25'
+              }`}
+            >
+              <input {...getExcelInputProps()} />
+              <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              {selectedExcelFile ? (
+                <div>
+                  <p className="text-sm font-medium">{selectedExcelFile.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {(selectedExcelFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Arrastra un archivo Excel aquí o haz clic para seleccionar
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Soporta .xlsx y .xls
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsUpdateExcelDialogOpen(false);
+                setSelectedExcelFile(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={updateExcel}
+              disabled={!selectedExcelFile || updateExcelMutation.isPending}
+            >
+              {updateExcelMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              Actualizar Excel
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
