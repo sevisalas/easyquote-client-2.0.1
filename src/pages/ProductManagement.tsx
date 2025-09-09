@@ -108,8 +108,6 @@ export default function ProductManagement() {
   const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
   const [isNewPromptDialogOpen, setIsNewPromptDialogOpen] = useState(false);
   const [isNewOutputDialogOpen, setIsNewOutputDialogOpen] = useState(false);
-  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
-  const [selectedProductForCategory, setSelectedProductForCategory] = useState<EasyQuoteProduct | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>("");
   const [newPromptData, setNewPromptData] = useState({
@@ -517,49 +515,33 @@ export default function ProductManagement() {
 
   const handleEditProduct = (product: EasyQuoteProduct) => {
     setSelectedProduct({ ...product });
+    
+    // Cargar categoría actual del producto
+    const mapping = getProductMapping(product.id);
+    setSelectedCategoryId(mapping?.category_id || "");
+    setSelectedSubcategoryId(mapping?.subcategory_id || "");
+    
     setIsEditDialogOpen(true);
   };
 
   const handleSaveProduct = () => {
     if (selectedProduct) {
+      // Actualizar producto en EasyQuote
       updateProductMutation.mutate(selectedProduct);
+      
+      // Actualizar categoría en Supabase
+      if (selectedCategoryId || selectedSubcategoryId) {
+        upsertCategoryMapping.mutate({
+          easyquote_product_id: selectedProduct.id,
+          product_name: selectedProduct.productName,
+          category_id: selectedCategoryId || undefined,
+          subcategory_id: selectedSubcategoryId || undefined
+        });
+      }
     }
   };
 
-  // Handle category assignment
-  const handleAssignCategory = (product: EasyQuoteProduct) => {
-    const mapping = getProductMapping(product.id);
-    setSelectedProductForCategory(product);
-    setSelectedCategoryId(mapping?.category_id || "");
-    setSelectedSubcategoryId(mapping?.subcategory_id || "");
-    setIsCategoryDialogOpen(true);
-  };
-
-  const handleSaveCategory = () => {
-    if (!selectedProductForCategory) return;
-    
-    upsertCategoryMapping.mutate({
-      easyquote_product_id: selectedProductForCategory.id,
-      product_name: selectedProductForCategory.productName,
-      category_id: selectedCategoryId || undefined,
-      subcategory_id: selectedSubcategoryId || undefined
-    });
-    
-    setIsCategoryDialogOpen(false);
-    setSelectedProductForCategory(null);
-    setSelectedCategoryId("");
-    setSelectedSubcategoryId("");
-  };
-
-  const handleRemoveCategory = () => {
-    if (!selectedProductForCategory) return;
-    
-    deleteCategoryMapping.mutate(selectedProductForCategory.id);
-    setIsCategoryDialogOpen(false);
-    setSelectedProductForCategory(null);
-    setSelectedCategoryId("");
-    setSelectedSubcategoryId("");
-  };
+  // Handle category assignment - integrado en handleSaveProduct
 
   // Add new prompt
   const addNewPrompt = () => {
@@ -957,26 +939,15 @@ export default function ProductManagement() {
                        })()}
                      </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditProduct(product)}
-                            title="Editar datos del producto"
-                          >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Editar
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleAssignCategory(product)}
-                            title="Asignar categoría"
-                          >
-                            <Settings className="h-4 w-4 mr-2" />
-                            Categoría
-                          </Button>
-                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditProduct(product)}
+                          title="Editar producto y asignar categoría"
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -1017,17 +988,81 @@ export default function ProductManagement() {
                       })}
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="category">Categoría</Label>
-                    <Input
-                      id="category"
-                      value={selectedProduct.category || ""}
-                      onChange={(e) => setSelectedProduct({
-                        ...selectedProduct,
-                        category: e.target.value
-                      })}
-                    />
+                  <div className="flex items-center space-x-2">
+                    <div>
+                      <Label>Estado</Label>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Switch
+                          checked={selectedProduct.isActive}
+                          onCheckedChange={(checked) => setSelectedProduct({
+                            ...selectedProduct,
+                            isActive: checked
+                          })}
+                        />
+                        <span className="text-sm">
+                          {selectedProduct.isActive ? "Activo" : "Inactivo"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="category-select">Categoría</Label>
+                    <Select
+                      value={selectedCategoryId}
+                      onValueChange={(value) => {
+                        setSelectedCategoryId(value);
+                        // Reset subcategory when category changes
+                        setSelectedSubcategoryId("");
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar categoría" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Sin categoría</SelectItem>
+                        {allCategories.filter(cat => cat.is_active).map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            <div className="flex items-center space-x-2">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: category.color }}
+                              />
+                              <span>{category.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {selectedCategoryId && (
+                    <div>
+                      <Label htmlFor="subcategory-select">Subcategoría</Label>
+                      <Select
+                        value={selectedSubcategoryId}
+                        onValueChange={setSelectedSubcategoryId}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sin subcategoría" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Sin subcategoría</SelectItem>
+                          {allSubcategories
+                            .filter(subcat => 
+                              subcat.category_id === selectedCategoryId && subcat.is_active
+                            )
+                            .map((subcategory) => (
+                              <SelectItem key={subcategory.id} value={subcategory.id}>
+                                {subcategory.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
                 
                 <div>
@@ -1580,96 +1615,6 @@ export default function ProductManagement() {
               Crear Output
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Diálogo para asignar categoría */}
-      <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Asignar Categoría</DialogTitle>
-            <DialogDescription>
-              Asigna una categoría y subcategoría al producto: {selectedProductForCategory?.productName}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="category-select">Categoría</Label>
-              <Select
-                value={selectedCategoryId}
-                onValueChange={(value) => {
-                  setSelectedCategoryId(value);
-                  // Reset subcategory when category changes
-                  setSelectedSubcategoryId("");
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar categoría" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Sin categoría</SelectItem>
-                  {allCategories.filter(cat => cat.is_active).map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div className="flex items-center space-x-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: category.color }}
-                        />
-                        <span>{category.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {selectedCategoryId && (
-              <div className="space-y-2">
-                <Label htmlFor="subcategory-select">Subcategoría (opcional)</Label>
-                <Select
-                  value={selectedSubcategoryId}
-                  onValueChange={setSelectedSubcategoryId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar subcategoría" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Sin subcategoría</SelectItem>
-                    {allSubcategories
-                      .filter(subcat => 
-                        subcat.category_id === selectedCategoryId && subcat.is_active
-                      )
-                      .map((subcategory) => (
-                        <SelectItem key={subcategory.id} value={subcategory.id}>
-                          {subcategory.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
-          
-          <DialogFooter>
-            <div className="flex justify-between w-full">
-              <Button
-                variant="destructive"
-                onClick={handleRemoveCategory}
-                disabled={!getProductMapping(selectedProductForCategory?.id || "")}
-              >
-                Eliminar categoría
-              </Button>
-              <div className="space-x-2">
-                <Button variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleSaveCategory}>
-                  Guardar
-                </Button>
-              </div>
-            </div>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
