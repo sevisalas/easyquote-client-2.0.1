@@ -1,1 +1,4 @@
 project_id = "wqfbldhrdqidpcboyeup"
+
+[functions.easyquote-master-files]
+verify_jwt = false

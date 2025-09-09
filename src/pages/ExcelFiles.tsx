@@ -154,12 +154,18 @@ export default function ExcelFiles() {
     queryClient.invalidateQueries({ queryKey: ["excel-files-meta"] });
   };
 
+  // Generate proxy URL for master files
+  const generateProxyUrl = (fileId: string, fileName: string) => {
+    if (!subscriberId) return null;
+    // Generate a public URL that uses our proxy function
+    return `${window.location.origin}/api/master-file?fileId=${fileId}&fileName=${encodeURIComponent(fileName)}&subscriberId=${subscriberId}`;
+  };
+
   // Combine API files with Supabase metadata
   const filesWithMeta = files.map(file => {
     const meta = excelFilesMeta?.find(m => m.file_id === file.id);
     const isMaster = meta?.is_master || false;
-    // Usar el subscriberId del contexto en lugar del que no existe en file
-    const fileUrl = isMaster && subscriberId ? `https://sheets.easyquote.cloud/${subscriberId}/${file.id}/${file.fileName}` : null;
+    const fileUrl = isMaster ? generateProxyUrl(file.id, file.fileName) : null;
     return {
       ...file,
       isMaster,
@@ -518,8 +524,75 @@ export default function ExcelFiles() {
     }
   };
 
-  // Download file
+  // Download master file using proxy
+  const downloadMasterFile = async (fileId: string, fileName: string) => {
+    const token = localStorage.getItem("easyquote_token");
+    if (!token || !subscriberId) {
+      toast({
+        title: "Error",
+        description: "No hay token de autenticación o subscriber ID",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await supabase.functions.invoke('easyquote-master-files', {
+        body: {
+          token,
+          subscriberId,
+          fileId,
+          fileName
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Error al descargar archivo');
+      }
+
+      if (response.data) {
+        // Create blob from response data
+        const blob = new Blob([response.data], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        
+        // Cleanup
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(link);
+        }, 100);
+
+        toast({
+          title: "Descarga iniciada",
+          description: `Descargando ${fileName}...`,
+        });
+      }
+    } catch (error: any) {
+      console.error("Error downloading master file:", error);
+      toast({
+        title: "Error al descargar archivo maestro",
+        description: error.message || "Error desconocido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Download file (regular files use normal API, master files use proxy)
   const downloadFile = async (fileId: string, fileName: string) => {
+    // Check if this file is marked as master
+    const fileWithMeta = filesWithMeta.find(f => f.id === fileId);
+    if (fileWithMeta?.isMaster) {
+      return downloadMasterFile(fileId, fileName);
+    }
+
     const token = localStorage.getItem("easyquote_token");
     if (!token) {
       toast({
