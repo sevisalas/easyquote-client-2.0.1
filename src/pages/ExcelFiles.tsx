@@ -382,38 +382,76 @@ export default function ExcelFiles() {
   // Download file
   const downloadFile = async (fileId: string, fileName: string) => {
     const token = localStorage.getItem("easyquote_token");
-    if (!token) return;
+    if (!token) {
+      toast({
+        title: "Error",
+        description: "No hay token de autenticación",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
-      const response = await fetch(`https://api.easyquote.cloud/api/v1/excelfiles/${fileId}/download`, {
+      // Try the direct download endpoint first
+      let response = await fetch(`https://api.easyquote.cloud/api/v1/excelfiles/${fileId}/download`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
         }
       });
 
+      // If 404, try alternative endpoint
+      if (response.status === 404) {
+        response = await fetch(`https://api.easyquote.cloud/api/v1/excelfiles/${fileId}`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          }
+        });
+      }
+
       if (response.ok) {
         const blob = await response.blob();
+        
+        // Check if we actually got a file
+        if (blob.size === 0) {
+          throw new Error("El archivo está vacío");
+        }
+
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         link.download = fileName;
+        link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(link);
+        
+        // Cleanup
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(link);
+        }, 100);
         
         toast({
           title: "Archivo descargado",
           description: `El archivo ${fileName} se ha descargado correctamente.`,
         });
       } else {
-        throw new Error("Error al descargar el archivo");
+        const errorText = await response.text();
+        console.error("Download error:", response.status, errorText);
+        
+        toast({
+          title: "Error al descargar",
+          description: `Error ${response.status}: El servicio de descarga no está disponible en este momento.`,
+          variant: "destructive",
+        });
       }
     } catch (error) {
+      console.error("Download error:", error);
       toast({
-        title: "Error",
-        description: "No se pudo descargar el archivo",
+        title: "Error de descarga",
+        description: "No se pudo descargar el archivo. Verifique su conexión e intente nuevamente.",
         variant: "destructive",
       });
     }
