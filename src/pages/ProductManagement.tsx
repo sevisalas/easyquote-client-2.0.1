@@ -319,7 +319,10 @@ export default function ProductManagement() {
       });
 
       if (!response.ok) throw new Error("Error updating output");
-      return response.json();
+      
+      // Check if response has content before parsing JSON
+      const text = await response.text();
+      return text ? JSON.parse(text) : null;
     },
     onSuccess: () => {
       refetchOutputs();
