@@ -66,14 +66,10 @@ interface ProductPrompt {
 interface ProductOutput {
   outputId: string;
   productId: string;
-  outputName: string;
   outputTypeId: number;
-  sequence: number;
-  outputType?: string;
-  sheet?: string;
-  prompt?: string;
-  defaultValue?: string;
-  fieldType?: number;
+  sheet: string;
+  nameCell: string;
+  valueCell: string;
 }
 
 interface PromptType {
@@ -535,12 +531,10 @@ export default function ProductManagement() {
 
     const newOutput = {
       productId: selectedProduct.id,
-      sequence: productOutputs.length + 1,
       outputTypeId: newOutputData.outputTypeId,
-      outputName: "Nuevo Output",
       sheet: newOutputData.sheet,
-      prompt: newOutputData.prompt,
-      defaultValue: newOutputData.defaultValue
+      nameCell: newOutputData.prompt,
+      valueCell: newOutputData.defaultValue
     };
 
     createOutputMutation.mutate(newOutput);
@@ -1162,10 +1156,10 @@ export default function ProductManagement() {
                           <div>
                             <Label>Rótulo</Label>
                             <Input
-                              value={output.prompt || ""}
+                              value={output.nameCell || ""}
                               placeholder="ej: A25"
                               onChange={(e) => {
-                                const updatedOutput = { ...output, prompt: e.target.value };
+                                const updatedOutput = { ...output, nameCell: e.target.value };
                                 updateOutputMutation.mutate(updatedOutput);
                               }}
                             />
@@ -1173,10 +1167,10 @@ export default function ProductManagement() {
                           <div>
                             <Label>Valor por defecto</Label>
                             <Input
-                              value={output.defaultValue || ""}
+                              value={output.valueCell || ""}
                               placeholder="ej: B25"
                               onChange={(e) => {
-                                const updatedOutput = { ...output, defaultValue: e.target.value };
+                                const updatedOutput = { ...output, valueCell: e.target.value };
                                 updateOutputMutation.mutate(updatedOutput);
                               }}
                             />
