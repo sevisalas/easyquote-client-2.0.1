@@ -320,9 +320,8 @@ export default function ProductManagement() {
 
       if (!response.ok) throw new Error("Error updating output");
       
-      // Check if response has content before parsing JSON
-      const text = await response.text();
-      return text ? JSON.parse(text) : null;
+      // Return success without trying to parse JSON since PUT often returns empty response
+      return { success: true };
     },
     onSuccess: () => {
       refetchOutputs();
