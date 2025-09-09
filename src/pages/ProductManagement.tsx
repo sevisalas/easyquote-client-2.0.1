@@ -1090,7 +1090,7 @@ export default function ProductManagement() {
                             />
                           </div>
                           <div>
-                            <Label>Prompt</Label>
+                            <Label>Rótulo</Label>
                             <Input
                               value={output.prompt || ""}
                               placeholder="ej: A25"
