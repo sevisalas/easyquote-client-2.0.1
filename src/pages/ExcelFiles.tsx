@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useDropzone } from "react-dropzone";
 import { toast } from "@/hooks/use-toast";
-import { Download, FileSpreadsheet, Plus, Trash2, Upload, AlertCircle, CheckCircle2, Eye, Package, Edit } from "lucide-react";
+import { Download, FileSpreadsheet, Plus, Trash2, Upload, AlertCircle, CheckCircle2, Package, Edit } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Separator } from "@/components/ui/separator";
@@ -379,6 +379,46 @@ export default function ExcelFiles() {
     }
   };
 
+  // Download file
+  const downloadFile = async (fileId: string, fileName: string) => {
+    const token = localStorage.getItem("easyquote_token");
+    if (!token) return;
+
+    try {
+      const response = await fetch(`https://api.easyquote.cloud/api/v1/excelfiles/${fileId}/download`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        }
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(link);
+        
+        toast({
+          title: "Archivo descargado",
+          description: `El archivo ${fileName} se ha descargado correctamente.`,
+        });
+      } else {
+        throw new Error("Error al descargar el archivo");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo descargar el archivo",
+        variant: "destructive",
+      });
+    }
+  };
+
 
   if (!hasToken) {
     return (
@@ -662,13 +702,13 @@ export default function ExcelFiles() {
                     </TableCell>
                      <TableCell className="text-right">
                        <div className="flex justify-end gap-2">
-                         <Button
-                           variant="ghost"
-                           size="sm"
-                           onClick={() => fetchFileDetails(file.id)}
-                         >
-                           <Eye className="h-4 w-4" />
-                         </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => downloadFile(file.id, file.fileName)}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
                          <Button
                            variant="ghost"
                            size="sm"
