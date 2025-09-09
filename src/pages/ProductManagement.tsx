@@ -1078,12 +1078,12 @@ export default function ProductManagement() {
                           </Button>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="grid grid-cols-5 gap-4">
                           <div>
                             <Label>Nombre</Label>
                             <Input
-                              defaultValue={output.outputName}
-                              onBlur={(e) => {
+                              value={output.outputName || ""}
+                              onChange={(e) => {
                                 const updatedOutput = { ...output, outputName: e.target.value };
                                 updateOutputMutation.mutate(updatedOutput);
                               }}
@@ -1110,14 +1110,11 @@ export default function ProductManagement() {
                               </SelectContent>
                             </Select>
                           </div>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-4">
                           <div>
                             <Label>Sheet</Label>
                             <Input
-                              defaultValue={output.sheet || "Main"}
-                              onBlur={(e) => {
+                              value={output.sheet || "Main"}
+                              onChange={(e) => {
                                 const updatedOutput = { ...output, sheet: e.target.value };
                                 updateOutputMutation.mutate(updatedOutput);
                               }}
@@ -1126,9 +1123,9 @@ export default function ProductManagement() {
                           <div>
                             <Label>Prompt</Label>
                             <Input
-                              defaultValue={output.prompt || ""}
+                              value={output.prompt || ""}
                               placeholder="ej: A25"
-                              onBlur={(e) => {
+                              onChange={(e) => {
                                 const updatedOutput = { ...output, prompt: e.target.value };
                                 updateOutputMutation.mutate(updatedOutput);
                               }}
@@ -1137,9 +1134,9 @@ export default function ProductManagement() {
                           <div>
                             <Label>Valor por defecto</Label>
                             <Input
-                              defaultValue={output.defaultValue || ""}
+                              value={output.defaultValue || ""}
                               placeholder="ej: B25"
-                              onBlur={(e) => {
+                              onChange={(e) => {
                                 const updatedOutput = { ...output, defaultValue: e.target.value };
                                 updateOutputMutation.mutate(updatedOutput);
                               }}
