@@ -100,6 +100,7 @@ interface EasyQuoteExcelFile {
 export default function ProductManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [subcategoryFilter, setSubcategoryFilter] = useState<string>("all");
   const [includeInactive, setIncludeInactive] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<EasyQuoteProduct | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -430,14 +431,43 @@ export default function ProductManagement() {
       product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.id?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesCategory = categoryFilter === "all" || 
-      product.category === categoryFilter;
+    // Filtrar por categorías locales usando los mappings
+    let matchesCategory = true;
+    if (categoryFilter !== "all") {
+      const mapping = getProductMapping(product.id);
+      if (categoryFilter === "uncategorized") {
+        // Mostrar productos sin categoría
+        matchesCategory = !mapping?.category_id;
+      } else {
+        // Mostrar productos de la categoría seleccionada
+        matchesCategory = mapping?.category_id === categoryFilter;
+      }
+    }
 
-    return matchesSearch && matchesCategory;
+    // Filtrar por subcategorías
+    let matchesSubcategory = true;
+    if (subcategoryFilter !== "all" && categoryFilter !== "all" && categoryFilter !== "uncategorized") {
+      const mapping = getProductMapping(product.id);
+      if (subcategoryFilter === "no-subcategory") {
+        // Mostrar productos sin subcategoría pero con categoría
+        matchesSubcategory = mapping?.category_id && !mapping?.subcategory_id;
+      } else {
+        // Mostrar productos de la subcategoría seleccionada
+        matchesSubcategory = mapping?.subcategory_id === subcategoryFilter;
+      }
+    }
+
+    return matchesSearch && matchesCategory && matchesSubcategory;
   });
 
-  // Obtener categorías únicas
-  const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+  // Obtener categorías locales activas para el filtro
+  const availableCategories = allCategories.filter(cat => cat.is_active);
+  
+  // Obtener subcategorías disponibles para la categoría seleccionada
+  const availableSubcategories = allSubcategories.filter(sub => 
+    sub.is_active && 
+    (categoryFilter === "all" || sub.category_id === categoryFilter)
+  );
 
   // Estadísticas
   const activeProducts = products.filter(p => p.isActive);
@@ -724,14 +754,42 @@ export default function ProductManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas las categorías</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
+                  <SelectItem value="uncategorized">Sin categoría</SelectItem>
+                  {availableCategories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      <div className="flex items-center space-x-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        <span>{category.name}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+            
+            {/* Filtro por subcategoría - solo se muestra si hay una categoría seleccionada */}
+            {categoryFilter !== "all" && categoryFilter !== "uncategorized" && availableSubcategories.length > 0 && (
+              <div className="w-48">
+                <Label>Subcategoría</Label>
+                <Select value={subcategoryFilter} onValueChange={setSubcategoryFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas las subcategorías" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las subcategorías</SelectItem>
+                    <SelectItem value="no-subcategory">Sin subcategoría</SelectItem>
+                    {availableSubcategories.map((subcategory) => (
+                      <SelectItem key={subcategory.id} value={subcategory.id}>
+                        {subcategory.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="flex items-center space-x-2">
               <Switch
                 id="include-inactive"
@@ -772,10 +830,10 @@ export default function ProductManagement() {
         </Card>
         <Card>
           <CardHeader className="pb-2 text-center">
-            <CardTitle className="text-sm font-medium">Categorías</CardTitle>
+            <CardTitle className="text-sm font-medium">Categorías locales</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
-            <div className="text-2xl font-bold">{categories.length}</div>
+            <div className="text-2xl font-bold">{availableCategories.length}</div>
           </CardContent>
         </Card>
       </div>
@@ -803,13 +861,14 @@ export default function ProductManagement() {
                   : "No hay productos que coincidan con los filtros"
                 }
               </p>
-              {searchTerm || categoryFilter !== "all" ? (
+              {searchTerm || categoryFilter !== "all" || subcategoryFilter !== "all" ? (
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={() => {
                     setSearchTerm("");
                     setCategoryFilter("all");
+                    setSubcategoryFilter("all");
                   }}
                   className="mt-2"
                 >
