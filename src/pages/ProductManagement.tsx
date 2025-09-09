@@ -189,7 +189,10 @@ export default function ProductManagement() {
       });
 
       if (!response.ok) throw new Error("Error creating prompt");
-      return response.json();
+      
+      // Handle potentially empty responses
+      const text = await response.text();
+      return text ? JSON.parse(text) : { success: true };
     },
     onSuccess: () => {
       toast({
@@ -222,7 +225,10 @@ export default function ProductManagement() {
       });
 
       if (!response.ok) throw new Error("Error creating output");
-      return response.json();
+      
+      // Handle potentially empty responses  
+      const text = await response.text();
+      return text ? JSON.parse(text) : { success: true };
     },
     onSuccess: () => {
       toast({
