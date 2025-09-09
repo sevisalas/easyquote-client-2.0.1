@@ -97,10 +97,17 @@ export default function ProductManagement() {
   const [isNewPromptDialogOpen, setIsNewPromptDialogOpen] = useState(false);
   const [isNewOutputDialogOpen, setIsNewOutputDialogOpen] = useState(false);
   const [newPromptData, setNewPromptData] = useState({
+    promptSheet: "Main",
     promptCell: "",
+    valueSheet: "Main",
     valueCell: "",
+    valueOptionSheet: "Main",
+    valueOptionRange: "",
     promptType: 0,
-    valueRequired: false
+    valueRequired: false,
+    valueQuantityAllowedDecimals: 0,
+    valueQuantityMin: 1,
+    valueQuantityMax: 9999
   });
   const [newOutputData, setNewOutputData] = useState({
     sheet: "Main",
@@ -471,10 +478,17 @@ export default function ProductManagement() {
     
     // Reset form data and open dialog
     setNewPromptData({
+      promptSheet: "Main",
       promptCell: "A" + (productPrompts.length + 2),
+      valueSheet: "Main",
       valueCell: "B" + (productPrompts.length + 2),
+      valueOptionSheet: "Main",
+      valueOptionRange: "",
       promptType: promptTypes[0]?.id || 0,
-      valueRequired: false
+      valueRequired: false,
+      valueQuantityAllowedDecimals: 0,
+      valueQuantityMin: 1,
+      valueQuantityMax: 9999
     });
     setIsNewPromptDialogOpen(true);
   };
@@ -486,16 +500,16 @@ export default function ProductManagement() {
       productId: selectedProduct.id,
       promptSeq: productPrompts.length + 1,
       promptType: newPromptData.promptType,
-      promptSheet: "Main",
+      promptSheet: newPromptData.promptSheet,
       promptCell: newPromptData.promptCell,
-      valueSheet: "Main", 
+      valueSheet: newPromptData.valueSheet, 
       valueCell: newPromptData.valueCell,
-      valueOptionSheet: "Main",
-      valueOptionRange: "",
+      valueOptionSheet: newPromptData.valueOptionSheet,
+      valueOptionRange: newPromptData.valueOptionRange,
       valueRequired: newPromptData.valueRequired,
-      valueQuantityAllowedDecimals: 0,
-      valueQuantityMin: 1,
-      valueQuantityMax: 9999
+      valueQuantityAllowedDecimals: newPromptData.valueQuantityAllowedDecimals,
+      valueQuantityMin: newPromptData.valueQuantityMin,
+      valueQuantityMax: newPromptData.valueQuantityMax
     };
 
     createPromptMutation.mutate(newPrompt);
@@ -1231,7 +1245,16 @@ export default function ProductManagement() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="promptSheet">Hoja del Prompt</Label>
+                <Input
+                  id="promptSheet"
+                  value={newPromptData.promptSheet}
+                  onChange={(e) => setNewPromptData({...newPromptData, promptSheet: e.target.value})}
+                  placeholder="Main"
+                />
+              </div>
               <div>
                 <Label htmlFor="promptCell">Celda del Prompt</Label>
                 <Input
@@ -1241,17 +1264,6 @@ export default function ProductManagement() {
                   placeholder="ej: A2"
                 />
               </div>
-              <div>
-                <Label htmlFor="valueCell">Celda del Valor</Label>
-                <Input
-                  id="valueCell"
-                  value={newPromptData.valueCell}
-                  onChange={(e) => setNewPromptData({...newPromptData, valueCell: e.target.value})}
-                  placeholder="ej: B2"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="promptType">Tipo</Label>
                 <Select
@@ -1270,6 +1282,26 @@ export default function ProductManagement() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="valueSheet">Hoja del Valor</Label>
+                <Input
+                  id="valueSheet"
+                  value={newPromptData.valueSheet}
+                  onChange={(e) => setNewPromptData({...newPromptData, valueSheet: e.target.value})}
+                  placeholder="Main"
+                />
+              </div>
+              <div>
+                <Label htmlFor="valueCell">Celda del Valor</Label>
+                <Input
+                  id="valueCell"
+                  value={newPromptData.valueCell}
+                  onChange={(e) => setNewPromptData({...newPromptData, valueCell: e.target.value})}
+                  placeholder="ej: B2"
+                />
+              </div>
               <div className="flex items-center space-x-2 pt-6">
                 <Switch
                   id="valueRequired"
@@ -1277,6 +1309,26 @@ export default function ProductManagement() {
                   onCheckedChange={(checked) => setNewPromptData({...newPromptData, valueRequired: checked})}
                 />
                 <Label htmlFor="valueRequired">Requerido</Label>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="valueOptionSheet">Hoja de Opciones</Label>
+                <Input
+                  id="valueOptionSheet"
+                  value={newPromptData.valueOptionSheet}
+                  onChange={(e) => setNewPromptData({...newPromptData, valueOptionSheet: e.target.value})}
+                  placeholder="Main"
+                />
+              </div>
+              <div>
+                <Label htmlFor="valueOptionRange">Rango de Opciones</Label>
+                <Input
+                  id="valueOptionRange"
+                  value={newPromptData.valueOptionRange}
+                  onChange={(e) => setNewPromptData({...newPromptData, valueOptionRange: e.target.value})}
+                  placeholder="ej: $E$2:$E$3"
+                />
               </div>
             </div>
           </div>
