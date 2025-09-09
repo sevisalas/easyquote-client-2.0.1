@@ -1011,9 +1011,9 @@ export default function ProductManagement() {
                   <div>
                     <Label htmlFor="category-select">Categoría</Label>
                     <Select
-                      value={selectedCategoryId}
+                      value={selectedCategoryId || "none"}
                       onValueChange={(value) => {
-                        setSelectedCategoryId(value);
+                        setSelectedCategoryId(value === "none" ? "" : value);
                         // Reset subcategory when category changes
                         setSelectedSubcategoryId("");
                       }}
@@ -1022,7 +1022,7 @@ export default function ProductManagement() {
                         <SelectValue placeholder="Seleccionar categoría" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Sin categoría</SelectItem>
+                        <SelectItem value="none">Sin categoría</SelectItem>
                         {allCategories.filter(cat => cat.is_active).map((category) => (
                           <SelectItem key={category.id} value={category.id}>
                             <div className="flex items-center space-x-2">
@@ -1042,14 +1042,14 @@ export default function ProductManagement() {
                     <div>
                       <Label htmlFor="subcategory-select">Subcategoría</Label>
                       <Select
-                        value={selectedSubcategoryId}
-                        onValueChange={setSelectedSubcategoryId}
+                        value={selectedSubcategoryId || "none"}
+                        onValueChange={(value) => setSelectedSubcategoryId(value === "none" ? "" : value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Sin subcategoría" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Sin subcategoría</SelectItem>
+                          <SelectItem value="none">Sin subcategoría</SelectItem>
                           {allSubcategories
                             .filter(subcat => 
                               subcat.category_id === selectedCategoryId && subcat.is_active
@@ -1198,12 +1198,12 @@ export default function ProductManagement() {
                                    <SelectTrigger>
                                      <SelectValue />
                                    </SelectTrigger>
-                                   <SelectContent className="bg-background border shadow-lg z-50">
-                                     {promptTypes.map((type) => (
-                                       <SelectItem key={type.id} value={type.id?.toString() || ""}>
-                                         {type.promptType}
-                                       </SelectItem>
-                                     ))}
+                                    <SelectContent className="bg-background border shadow-lg z-50">
+                                      {promptTypes.map((type) => (
+                                        <SelectItem key={type.id} value={type.id?.toString() || "0"}>
+                                          {type.promptType}
+                                        </SelectItem>
+                                      ))}
                                    </SelectContent>
                                  </Select>
                                </div>
@@ -1377,7 +1377,7 @@ export default function ProductManagement() {
                               </SelectTrigger>
                               <SelectContent className="bg-background border shadow-lg z-50">
                                 {outputTypes.map((type) => (
-                                  <SelectItem key={type.id} value={type.id?.toString() || ""}>
+                                  <SelectItem key={type.id} value={type.id?.toString() || "0"}>
                                     {type.outputType}
                                   </SelectItem>
                                 ))}
