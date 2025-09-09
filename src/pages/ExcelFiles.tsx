@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,12 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useDropzone } from "react-dropzone";
 import { toast } from "@/hooks/use-toast";
-import { Download, FileSpreadsheet, Plus, Trash2, Upload, AlertCircle, CheckCircle2, Package, Edit } from "lucide-react";
+import { Download, FileSpreadsheet, Plus, Trash2, Upload, AlertCircle, CheckCircle2, Package, Edit, Crown, Copy, Check } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Separator } from "@/components/ui/separator";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EasyQuoteExcelFile {
   id: string;
@@ -28,6 +29,9 @@ interface EasyQuoteExcelFile {
   subscriberId?: string;
   excelfilesSheets: any[];
   products: any[];
+  // Campos adicionales para master
+  isMaster?: boolean;
+  fileUrl?: string;
 }
 
 export default function ExcelFiles() {
@@ -46,10 +50,28 @@ export default function ExcelFiles() {
     currency: "USD"
   });
   const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
+
+  // Fetch Excel file metadata from Supabase
+  const { data: excelFilesMeta } = useQuery({
+    queryKey: ["excel-files-meta"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("excel_files")
+        .select("*");
+      
+      if (error) {
+        console.error("Error fetching excel files meta:", error);
+        return [];
+      }
+      return data;
+    },
+    enabled: hasToken
+  });
 
   // Fetch Excel files from EasyQuote API
   const { data: files = [], isLoading, error, refetch } = useQuery({
@@ -83,6 +105,105 @@ export default function ExcelFiles() {
       return failureCount < 3;
     }
   });
+
+  // Sync Excel files with Supabase
+  const syncExcelFiles = async (apiFiles: EasyQuoteExcelFile[]) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Sync each file with Supabase
+    for (const file of apiFiles) {
+      const { data: existingFile } = await supabase
+        .from("excel_files")
+        .select("*")
+        .eq("file_id", file.id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!existingFile) {
+        // Create new file record
+        await supabase
+          .from("excel_files")
+          .insert({
+            user_id: user.id,
+            file_id: file.id,
+            file_name: file.fileName,
+            is_master: false
+          });
+      }
+    }
+    // Refresh metadata after sync
+    queryClient.invalidateQueries({ queryKey: ["excel-files-meta"] });
+  };
+
+  // Combine API files with Supabase metadata
+  const filesWithMeta = files.map(file => {
+    const meta = excelFilesMeta?.find(m => m.file_id === file.id);
+    return {
+      ...file,
+      isMaster: meta?.is_master || false,
+      fileUrl: meta?.file_url || null
+    };
+  });
+
+  // Auto-sync files when they are loaded
+  useEffect(() => {
+    if (files.length > 0) {
+      syncExcelFiles(files);
+    }
+  }, [files]);
+
+  // Toggle master status
+  const toggleMasterStatus = async (fileId: string, isMaster: boolean) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const masterUrl = isMaster ? `https://api.easyquote.cloud/api/v1/excelfiles/${fileId}` : null;
+
+    const { error } = await supabase
+      .from("excel_files")
+      .update({ 
+        is_master: isMaster, 
+        file_url: masterUrl
+      })
+      .eq("file_id", fileId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el estado maestro",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: isMaster ? "Archivo marcado como maestro" : "Archivo desmarcado como maestro",
+        description: isMaster ? "Ahora puedes copiar la URL de este archivo" : "El archivo ya no es maestro",
+      });
+      queryClient.invalidateQueries({ queryKey: ["excel-files-meta"] });
+    }
+  };
+
+  // Copy URL to clipboard
+  const copyUrlToClipboard = async (url: string, fileName: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedUrl(url);
+      toast({
+        title: "URL copiada",
+        description: `URL del archivo ${fileName} copiada al portapapeles`,
+      });
+      
+      // Reset copied state after 2 seconds
+      setTimeout(() => setCopiedUrl(null), 2000);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo copiar la URL al portapapeles",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Upload Excel file to EasyQuote API
   const uploadMutation = useMutation({
@@ -640,7 +761,7 @@ export default function ExcelFiles() {
             <CardTitle className="text-sm font-medium">Total de Archivos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{files.length}</div>
+            <div className="text-2xl font-bold">{filesWithMeta.length}</div>
           </CardContent>
         </Card>
         <Card>
@@ -649,17 +770,17 @@ export default function ExcelFiles() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {files.filter(f => f.isActive).length}
+              {filesWithMeta.filter(f => f.isActive).length}
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Archivos Inactivos</CardTitle>
+            <CardTitle className="text-sm font-medium">Archivos Maestros</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {files.filter(f => !f.isActive).length}
+            <div className="text-2xl font-bold text-purple-600">
+              {filesWithMeta.filter(f => f.isMaster).length}
             </div>
           </CardContent>
         </Card>
@@ -669,7 +790,7 @@ export default function ExcelFiles() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">
-              {files.filter(f => !f.isPlanCompliant).length}
+              {filesWithMeta.filter(f => !f.isPlanCompliant).length}
             </div>
           </CardContent>
         </Card>
@@ -688,7 +809,7 @@ export default function ExcelFiles() {
             <div className="text-center py-8">
               <p className="text-muted-foreground">Cargando archivos...</p>
             </div>
-          ) : files.length === 0 ? (
+          ) : filesWithMeta.length === 0 ? (
             <div className="text-center py-8">
               <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <p className="text-muted-foreground">No hay archivos en EasyQuote</p>
@@ -703,17 +824,19 @@ export default function ExcelFiles() {
                   <TableHead>Nombre del Archivo</TableHead>
                   <TableHead>Tamaño</TableHead>
                   <TableHead>Estado</TableHead>
+                  <TableHead>Master</TableHead>
                   <TableHead>Última Modificación</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {files.map((file) => (
+                {filesWithMeta.map((file) => (
                   <TableRow key={file.id}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         <FileSpreadsheet className="h-4 w-4" />
                         {file.fileName}
+                        {file.isMaster && <Crown className="h-4 w-4 text-yellow-500" />}
                       </div>
                     </TableCell>
                     <TableCell>{formatFileSize(file.fileSizeKb)}</TableCell>
@@ -733,40 +856,67 @@ export default function ExcelFiles() {
                       </Badge>
                     </TableCell>
                     <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant={file.isMaster ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => toggleMasterStatus(file.id, !file.isMaster)}
+                          className="h-7"
+                        >
+                          <Crown className="h-3 w-3 mr-1" />
+                          {file.isMaster ? "Master" : "Normal"}
+                        </Button>
+                        {file.isMaster && file.fileUrl && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyUrlToClipboard(file.fileUrl!, file.fileName)}
+                            className="h-7"
+                          >
+                            {copiedUrl === file.fileUrl ? (
+                              <Check className="h-3 w-3 text-green-500" />
+                            ) : (
+                              <Copy className="h-3 w-3" />
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       {formatDistanceToNow(new Date(file.dateModified), {
                         addSuffix: true,
                         locale: es
                       })}
                     </TableCell>
-                     <TableCell className="text-right">
-                       <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => downloadFile(file.id, file.fileName)}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                         <Button
-                           variant="ghost"
-                           size="sm"
-                           onClick={() => {
-                             setSelectedExcelFile(file);
-                             setIsUpdateExcelDialogOpen(true);
-                           }}
-                         >
-                           <Edit className="h-4 w-4" />
-                         </Button>
-                         <Button
-                           variant="ghost"
-                           size="sm"
-                           onClick={() => deleteMutation.mutate(file.id)}
-                           disabled={deleteMutation.isPending}
-                         >
-                           <Trash2 className="h-4 w-4" />
-                         </Button>
-                       </div>
-                     </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => downloadFile(file.id, file.fileName)}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedExcelFile(file);
+                            setIsUpdateExcelDialogOpen(true);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteMutation.mutate(file.id)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

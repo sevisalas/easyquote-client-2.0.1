@@ -113,6 +113,39 @@ export type Database = {
         }
         Relationships: []
       }
+      excel_files: {
+        Row: {
+          created_at: string
+          file_id: string
+          file_name: string
+          file_url: string | null
+          id: string
+          is_master: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_id: string
+          file_name: string
+          file_url?: string | null
+          id?: string
+          is_master?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_id?: string
+          file_name?: string
+          file_url?: string | null
+          id?: string
+          is_master?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       integrations: {
         Row: {
           configuration: Json
