@@ -52,8 +52,22 @@ export default function ExcelFiles() {
   });
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   
-  // Get the subscriber ID from organization context
-  const subscriberId = organization?.id || membership?.organization?.id;
+  // Get the subscriber ID from the EasyQuote token
+  const getSubscriberIdFromToken = () => {
+    const token = localStorage.getItem("easyquote_token");
+    if (!token) return null;
+    
+    try {
+      // Decode JWT token to get subscriber ID
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.SubscriberID || null;
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
+  };
+
+  const subscriberId = getSubscriberIdFromToken();
   const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
   
   const queryClient = useQueryClient();
