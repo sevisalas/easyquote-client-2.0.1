@@ -310,6 +310,54 @@ export type Database = {
         }
         Relationships: []
       }
+      product_category_mappings: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          easyquote_product_id: string
+          id: string
+          product_name: string
+          subcategory_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          easyquote_product_id: string
+          id?: string
+          product_name: string
+          subcategory_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          easyquote_product_id?: string
+          id?: string
+          product_name?: string
+          subcategory_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_category_mappings_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_category_mappings_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "product_subcategories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_subcategories: {
         Row: {
           category_id: string
