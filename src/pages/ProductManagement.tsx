@@ -878,7 +878,7 @@ export default function ProductManagement() {
                           return (
                             <div className="grid grid-cols-12 gap-2 items-end">
                               <div className="col-span-1">
-                                <Label>Sheet</Label>
+                                <Label>Hoja</Label>
                                 <Input
                                   defaultValue={prompt.promptSheet || "Main"}
                                   onBlur={(e) => {
@@ -888,7 +888,7 @@ export default function ProductManagement() {
                                 />
                               </div>
                               <div className="col-span-1">
-                                <Label>Prompt</Label>
+                                <Label>Rótulo</Label>
                                 <Input
                                   defaultValue={prompt.promptCell}
                                   onBlur={(e) => {
@@ -898,7 +898,7 @@ export default function ProductManagement() {
                                 />
                               </div>
                               <div className="col-span-1">
-                                <Label>Default value</Label>
+                                <Label>Valor</Label>
                                 <Input
                                   defaultValue={prompt.valueCell || ""}
                                   onBlur={(e) => {
@@ -908,7 +908,7 @@ export default function ProductManagement() {
                                 />
                               </div>
                               <div className="col-span-1">
-                                <Label>Order</Label>
+                                <Label>Orden</Label>
                                 <Input
                                   type="number"
                                   defaultValue={prompt.promptSeq}
@@ -922,7 +922,7 @@ export default function ProductManagement() {
                               {/* Rango - Solo para tipos no numéricos */}
                               {!isNumericType && (
                                 <div className="col-span-2">
-                                  <Label>Range</Label>
+                                  <Label>Rango</Label>
                                   <Input
                                     defaultValue={prompt.valueOptionRange || ""}
                                     placeholder="$E$2:$E$3"
@@ -935,7 +935,7 @@ export default function ProductManagement() {
                               )}
 
                                <div className="col-span-2">
-                                 <Label>Type Content</Label>
+                                 <Label>Typo</Label>
                                  <Select
                                    value={prompt.promptType?.toString() || ""}
                                    onValueChange={(value) => {
@@ -957,7 +957,7 @@ export default function ProductManagement() {
                                </div>
 
                               <div className="col-span-1">
-                                <Label>Required</Label>
+                                <Label>Requerido</Label>
                                 <Switch
                                   checked={prompt.valueRequired}
                                   onCheckedChange={(checked) => {
@@ -971,7 +971,7 @@ export default function ProductManagement() {
                               {isNumericType && (
                                 <>
                                   <div className="col-span-1">
-                                    <Label>Decimals</Label>
+                                    <Label>Decs.</Label>
                                     <Input
                                       type="number"
                                       defaultValue={prompt.valueQuantityAllowedDecimals || 0}
@@ -982,7 +982,7 @@ export default function ProductManagement() {
                                     />
                                   </div>
                                    <div className="col-span-1">
-                                     <Label>Qty Min</Label>
+                                     <Label>Mínimo</Label>
                                      <Input
                                        type="number"
                                        defaultValue={prompt.valueQuantityMin || 1}
@@ -992,8 +992,8 @@ export default function ProductManagement() {
                                        }}
                                      />
                                    </div>
-                                   <div className="col-span-1">
-                                     <Label>Qty Max</Label>
+                                   <div className="col-span-2">
+                                     <Label>Máximo</Label>
                                      <Input
                                        type="number"
                                        defaultValue={prompt.valueQuantityMax || 9999}
@@ -1010,7 +1010,7 @@ export default function ProductManagement() {
                                {!isNumericType && <div className="col-span-2"></div>}
 
                               <div className="col-span-1">
-                                <Label>Actions</Label>
+                                <Label>Acción</Label>
                                 <div className="flex gap-1">
                                   <Button
                                     variant="ghost"
