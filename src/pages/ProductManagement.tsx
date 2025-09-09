@@ -413,7 +413,8 @@ export default function ProductManagement() {
         throw new Error("Error al actualizar el producto");
       }
 
-      return response.json();
+      // Return success without trying to parse JSON since PUT often returns empty response
+      return { success: true };
     },
     onSuccess: () => {
       toast({
