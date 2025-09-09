@@ -962,24 +962,19 @@ export default function ProductManagement() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleEditProduct(product)}
+                            title="Editar datos del producto"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleAssignCategory(product)}
+                            title="Asignar categoría"
                           >
-                            <Settings className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedProduct(product);
-                            }}
-                          >
-                            Configurar
+                            <Settings className="h-4 w-4 mr-2" />
+                            Categoría
                           </Button>
                         </div>
                       </TableCell>
