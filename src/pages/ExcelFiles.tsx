@@ -36,6 +36,7 @@ interface EasyQuoteExcelFile {
 
 export default function ExcelFiles() {
   // All hooks must be declared at the top, before any conditional logic
+  const { organization, membership } = useSubscription();
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -49,8 +50,11 @@ export default function ExcelFiles() {
     excelFileId: "",
     currency: "USD"
   });
-  const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  
+  // Get the subscriber ID from organization context
+  const subscriberId = organization?.id || membership?.organization?.id;
+  const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
   
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -140,8 +144,8 @@ export default function ExcelFiles() {
   const filesWithMeta = files.map(file => {
     const meta = excelFilesMeta?.find(m => m.file_id === file.id);
     const isMaster = meta?.is_master || false;
-    // Siempre generar la URL correcta dinámicamente
-    const fileUrl = isMaster ? `https://sheets.easyquote.cloud/${file.subscriberId}/${file.id}/${file.fileName}` : null;
+    // Usar el subscriberId del contexto en lugar del que no existe en file
+    const fileUrl = isMaster && subscriberId ? `https://sheets.easyquote.cloud/${subscriberId}/${file.id}/${file.fileName}` : null;
     return {
       ...file,
       isMaster,
