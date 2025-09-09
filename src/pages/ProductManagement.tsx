@@ -64,7 +64,7 @@ interface ProductPrompt {
 }
 
 interface ProductOutput {
-  outputId: string;
+  id: string;
   productId: string;
   outputTypeId: number;
   sheet: string;
@@ -228,7 +228,7 @@ export default function ProductManagement() {
   });
 
   const createOutputMutation = useMutation({
-    mutationFn: async (newOutput: Omit<ProductOutput, 'outputId'>) => {
+    mutationFn: async (newOutput: Omit<ProductOutput, 'id'>) => {
       const token = localStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
@@ -1130,13 +1130,13 @@ export default function ProductManagement() {
                 ) : (
                   <div className="space-y-3">
                     {productOutputs.map((output, index) => (
-                      <div key={output.outputId} className="p-4 border rounded-lg">
+                      <div key={output.id} className="p-4 border rounded-lg">
                         <div className="flex justify-between items-start mb-4">
                           <h4 className="font-medium">Campo nº {index + 1}</h4>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => deleteOutput(output.outputId)}
+                            onClick={() => deleteOutput(output.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
