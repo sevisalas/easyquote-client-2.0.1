@@ -158,7 +158,11 @@ export default function ExcelFiles() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const masterUrl = isMaster ? `https://api.easyquote.cloud/api/v1/excelfiles/${fileId}` : null;
+    // Find the file to get subscriberId and fileName
+    const file = files.find(f => f.id === fileId);
+    const masterUrl = isMaster && file ? 
+      `https://sheets.easyquote.cloud/${file.subscriberId}/${fileId}/${file.fileName}` : 
+      null;
 
     const { error } = await supabase
       .from("excel_files")
