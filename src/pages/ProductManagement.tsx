@@ -297,7 +297,9 @@ export default function ProductManagement() {
       });
 
       if (!response.ok) throw new Error("Error updating prompt");
-      return response.json();
+      
+      // Return success without trying to parse JSON since PUT often returns empty response
+      return { success: true };
     },
     onSuccess: () => {
       refetchPrompts();
