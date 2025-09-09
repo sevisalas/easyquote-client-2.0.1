@@ -1078,40 +1078,9 @@ export default function ProductManagement() {
                           </Button>
                         </div>
                         
-                        <div className="grid grid-cols-5 gap-4">
+                        <div className="grid grid-cols-4 gap-4">
                           <div>
-                            <Label>Nombre</Label>
-                            <Input
-                              value={output.outputName || ""}
-                              onChange={(e) => {
-                                const updatedOutput = { ...output, outputName: e.target.value };
-                                updateOutputMutation.mutate(updatedOutput);
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <Label>Tipo</Label>
-                            <Select
-                              value={output.outputTypeId?.toString() || ""}
-                              onValueChange={(value) => {
-                                const updatedOutput = { ...output, outputTypeId: parseInt(value) };
-                                updateOutputMutation.mutate(updatedOutput);
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="bg-background border shadow-lg z-50">
-                                {outputTypes.map((type) => (
-                                  <SelectItem key={type.id} value={type.id?.toString() || ""}>
-                                    {type.outputType}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label>Sheet</Label>
+                            <Label>Hoja</Label>
                             <Input
                               value={output.sheet || "Main"}
                               onChange={(e) => {
@@ -1141,6 +1110,27 @@ export default function ProductManagement() {
                                 updateOutputMutation.mutate(updatedOutput);
                               }}
                             />
+                          </div>
+                          <div>
+                            <Label>Tipo</Label>
+                            <Select
+                              value={output.outputTypeId?.toString() || ""}
+                              onValueChange={(value) => {
+                                const updatedOutput = { ...output, outputTypeId: parseInt(value) };
+                                updateOutputMutation.mutate(updatedOutput);
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border shadow-lg z-50">
+                                {outputTypes.map((type) => (
+                                  <SelectItem key={type.id} value={type.id?.toString() || ""}>
+                                    {type.outputType}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
                       </div>
