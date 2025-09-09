@@ -139,10 +139,13 @@ export default function ExcelFiles() {
   // Combine API files with Supabase metadata
   const filesWithMeta = files.map(file => {
     const meta = excelFilesMeta?.find(m => m.file_id === file.id);
+    const isMaster = meta?.is_master || false;
+    // Siempre generar la URL correcta dinámicamente
+    const fileUrl = isMaster ? `https://sheets.easyquote.cloud/${file.subscriberId}/${file.id}/${file.fileName}` : null;
     return {
       ...file,
-      isMaster: meta?.is_master || false,
-      fileUrl: meta?.file_url || null
+      isMaster,
+      fileUrl
     };
   });
 
@@ -158,17 +161,10 @@ export default function ExcelFiles() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Find the file to get subscriberId and fileName
-    const file = files.find(f => f.id === fileId);
-    const masterUrl = isMaster && file ? 
-      `https://sheets.easyquote.cloud/${file.subscriberId}/${fileId}/${file.fileName}` : 
-      null;
-
     const { error } = await supabase
       .from("excel_files")
       .update({ 
-        is_master: isMaster, 
-        file_url: masterUrl
+        is_master: isMaster
       })
       .eq("file_id", fileId)
       .eq("user_id", user.id);
