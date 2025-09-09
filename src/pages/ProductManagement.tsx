@@ -1311,26 +1311,50 @@ export default function ProductManagement() {
                 <Label htmlFor="valueRequired">Requerido</Label>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="valueOptionSheet">Hoja de Opciones</Label>
-                <Input
-                  id="valueOptionSheet"
-                  value={newPromptData.valueOptionSheet}
-                  onChange={(e) => setNewPromptData({...newPromptData, valueOptionSheet: e.target.value})}
-                  placeholder="Main"
-                />
-              </div>
-              <div>
-                <Label htmlFor="valueOptionRange">Rango de Opciones</Label>
-                <Input
-                  id="valueOptionRange"
-                  value={newPromptData.valueOptionRange}
-                  onChange={(e) => setNewPromptData({...newPromptData, valueOptionRange: e.target.value})}
-                  placeholder="ej: $E$2:$E$3"
-                />
-              </div>
+            <div>
+              <Label htmlFor="valueOptionRange">Rango</Label>
+              <Input
+                id="valueOptionRange"
+                value={newPromptData.valueOptionRange}
+                onChange={(e) => setNewPromptData({...newPromptData, valueOptionRange: e.target.value})}
+                placeholder="ej: $E$2:$E$3"
+              />
             </div>
+            {/* Campos numéricos - solo si el tipo es Number (0) */}
+            {newPromptData.promptType === 0 && (
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="valueQuantityAllowedDecimals">Decimales</Label>
+                  <Input
+                    id="valueQuantityAllowedDecimals"
+                    type="number"
+                    value={newPromptData.valueQuantityAllowedDecimals}
+                    onChange={(e) => setNewPromptData({...newPromptData, valueQuantityAllowedDecimals: parseInt(e.target.value) || 0})}
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="valueQuantityMin">Mínimo</Label>
+                  <Input
+                    id="valueQuantityMin"
+                    type="number"
+                    value={newPromptData.valueQuantityMin}
+                    onChange={(e) => setNewPromptData({...newPromptData, valueQuantityMin: parseFloat(e.target.value) || 1})}
+                    placeholder="1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="valueQuantityMax">Máximo</Label>
+                  <Input
+                    id="valueQuantityMax"
+                    type="number"
+                    value={newPromptData.valueQuantityMax}
+                    onChange={(e) => setNewPromptData({...newPromptData, valueQuantityMax: parseFloat(e.target.value) || 9999})}
+                    placeholder="9999"
+                  />
+                </div>
+              </div>
+            )}
           </div>
           <div className="flex justify-end space-x-2">
             <Button variant="outline" onClick={() => setIsNewPromptDialogOpen(false)}>
