@@ -231,38 +231,22 @@ export function AppSidebar() {
                       </SidebarMenuSubItem>
                       {(isSuperAdmin || isOrgAdmin) && (
                         <>
-                          <SidebarMenuSubItem>
-                            <SidebarMenuSubButton asChild isActive={currentPath === "/admin"}>
-                              <NavLink to="/admin" end className={getNavCls}>
-                                <Settings className="mr-2 h-4 w-4" />
-                                {!isCollapsed && <span>Panel Admin</span>}
-                              </NavLink>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                          <SidebarMenuSubItem>
-                            <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/integraciones"}>
-                              <NavLink to="/configuracion/integraciones" end className={getNavCls}>
-                                <Plug className="mr-2 h-4 w-4" />
-                                {!isCollapsed && <span>Integraciones</span>}
-                              </NavLink>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                          <SidebarMenuSubItem>
-                            <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/archivos-excel"}>
-                              <NavLink to="/configuracion/archivos-excel" end className={getNavCls}>
-                                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                {!isCollapsed && <span>Archivos Excel</span>}
-                              </NavLink>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                          <SidebarMenuSubItem>
-                            <SidebarMenuSubButton asChild isActive={currentPath === "/admin/dashboard"}>
-                              <NavLink to="/admin/dashboard" end className={getNavCls}>
-                                <LayoutDashboard className="mr-2 h-4 w-4" />
-                                {!isCollapsed && <span>Dashboard Admin</span>}
-                              </NavLink>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
+                           <SidebarMenuSubItem>
+                             <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/integraciones"}>
+                               <NavLink to="/configuracion/integraciones" end className={getNavCls}>
+                                 <Plug className="mr-2 h-4 w-4" />
+                                 {!isCollapsed && <span>Integraciones</span>}
+                               </NavLink>
+                             </SidebarMenuSubButton>
+                           </SidebarMenuSubItem>
+                           <SidebarMenuSubItem>
+                             <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/archivos-excel"}>
+                               <NavLink to="/configuracion/archivos-excel" end className={getNavCls}>
+                                 <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                 {!isCollapsed && <span>Archivos Excel</span>}
+                               </NavLink>
+                             </SidebarMenuSubButton>
+                           </SidebarMenuSubItem>
                           <SidebarMenuSubItem>
                             <SidebarMenuSubButton asChild isActive={currentPath === "/admin/productos"}>
                               <NavLink to="/admin/productos" end className={getNavCls}>
