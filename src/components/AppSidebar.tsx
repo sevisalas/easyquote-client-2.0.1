@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -247,14 +247,22 @@ export function AppSidebar() {
                                </NavLink>
                              </SidebarMenuSubButton>
                            </SidebarMenuSubItem>
-                          <SidebarMenuSubItem>
-                            <SidebarMenuSubButton asChild isActive={currentPath === "/admin/productos"}>
-                              <NavLink to="/admin/productos" end className={getNavCls}>
-                                <Package className="mr-2 h-4 w-4" />
-                                {!isCollapsed && <span>Productos</span>}
-                              </NavLink>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
+                           <SidebarMenuSubItem>
+                             <SidebarMenuSubButton asChild isActive={currentPath === "/admin/productos"}>
+                               <NavLink to="/admin/productos" end className={getNavCls}>
+                                 <Package className="mr-2 h-4 w-4" />
+                                 {!isCollapsed && <span>Productos</span>}
+                               </NavLink>
+                             </SidebarMenuSubButton>
+                           </SidebarMenuSubItem>
+                           <SidebarMenuSubItem>
+                             <SidebarMenuSubButton asChild isActive={currentPath === "/admin/categorias"}>
+                               <NavLink to="/admin/categorias" end className={getNavCls}>
+                                 <Tags className="mr-2 h-4 w-4" />
+                                 {!isCollapsed && <span>Categorías</span>}
+                               </NavLink>
+                             </SidebarMenuSubButton>
+                           </SidebarMenuSubItem>
                         </>
                       )}
                     </SidebarMenuSub>

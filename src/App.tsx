@@ -26,6 +26,7 @@ import IntegrationAccess from "./pages/IntegrationAccess";
 import ExcelFiles from "./pages/ExcelFiles";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProductManagement from "./pages/ProductManagement";
+import ProductCategories from "./pages/ProductCategories";
 
 import CalculadorDashboard from "./pages/CalculadorDashboard";
 import PresupuestosDashboard from "./pages/PresupuestosDashboard";
@@ -238,6 +239,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <ProductManagement />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/categorias"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ProductCategories />
                 </AppLayout>
               </ProtectedRoute>
             }
