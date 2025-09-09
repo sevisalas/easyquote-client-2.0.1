@@ -154,18 +154,17 @@ export default function ExcelFiles() {
     queryClient.invalidateQueries({ queryKey: ["excel-files-meta"] });
   };
 
-  // Generate proxy URL for master files
-  const generateProxyUrl = (fileId: string, fileName: string) => {
+  // Generate public URL for master files
+  const generatePublicUrl = (fileId: string, fileName: string) => {
     if (!subscriberId) return null;
-    // Generate a public URL that uses our proxy function
-    return `${window.location.origin}/api/master-file?fileId=${fileId}&fileName=${encodeURIComponent(fileName)}&subscriberId=${subscriberId}`;
+    return `https://sheets.easyquote.cloud/${subscriberId}/${fileId}/${encodeURIComponent(fileName)}`;
   };
 
   // Combine API files with Supabase metadata
   const filesWithMeta = files.map(file => {
     const meta = excelFilesMeta?.find(m => m.file_id === file.id);
     const isMaster = meta?.is_master || false;
-    const fileUrl = isMaster ? generateProxyUrl(file.id, file.fileName) : null;
+    const fileUrl = isMaster ? generatePublicUrl(file.id, file.fileName) : null;
     return {
       ...file,
       isMaster,
