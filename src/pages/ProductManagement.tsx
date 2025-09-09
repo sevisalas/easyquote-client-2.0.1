@@ -94,6 +94,20 @@ export default function ProductManagement() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
+  const [isNewPromptDialogOpen, setIsNewPromptDialogOpen] = useState(false);
+  const [isNewOutputDialogOpen, setIsNewOutputDialogOpen] = useState(false);
+  const [newPromptData, setNewPromptData] = useState({
+    promptCell: "",
+    valueCell: "",
+    promptType: 0,
+    valueRequired: false
+  });
+  const [newOutputData, setNewOutputData] = useState({
+    sheet: "Main",
+    prompt: "",
+    defaultValue: "",
+    outputTypeId: 0
+  });
   
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
   const queryClient = useQueryClient();
@@ -454,38 +468,69 @@ export default function ProductManagement() {
   // Add new prompt
   const addNewPrompt = () => {
     if (!selectedProduct || !promptTypes.length) return;
+    
+    // Reset form data and open dialog
+    setNewPromptData({
+      promptCell: "A" + (productPrompts.length + 2),
+      valueCell: "B" + (productPrompts.length + 2),
+      promptType: promptTypes[0]?.id || 0,
+      valueRequired: false
+    });
+    setIsNewPromptDialogOpen(true);
+  };
+
+  const createNewPrompt = () => {
+    if (!selectedProduct) return;
 
     const newPrompt = {
       productId: selectedProduct.id,
       promptSeq: productPrompts.length + 1,
-      promptType: promptTypes[0]?.id || 0,
+      promptType: newPromptData.promptType,
       promptSheet: "Main",
-      promptCell: "A" + (productPrompts.length + 2),
+      promptCell: newPromptData.promptCell,
       valueSheet: "Main", 
-      valueCell: "B" + (productPrompts.length + 2),
+      valueCell: newPromptData.valueCell,
       valueOptionSheet: "Main",
       valueOptionRange: "",
-      valueRequired: false,
+      valueRequired: newPromptData.valueRequired,
       valueQuantityAllowedDecimals: 0,
       valueQuantityMin: 1,
       valueQuantityMax: 9999
     };
 
     createPromptMutation.mutate(newPrompt);
+    setIsNewPromptDialogOpen(false);
   };
 
   // Add new output
   const addNewOutput = () => {
     if (!selectedProduct || !outputTypes.length) return;
+    
+    // Reset form data and open dialog
+    setNewOutputData({
+      sheet: "Main",
+      prompt: "A" + (productOutputs.length + 26),
+      defaultValue: "B" + (productOutputs.length + 26),
+      outputTypeId: outputTypes[0]?.id || 0
+    });
+    setIsNewOutputDialogOpen(true);
+  };
+
+  const createNewOutput = () => {
+    if (!selectedProduct) return;
 
     const newOutput = {
       productId: selectedProduct.id,
       sequence: productOutputs.length + 1,
-      outputTypeId: outputTypes[0]?.id || 0,
-      outputName: "Nuevo Output"
+      outputTypeId: newOutputData.outputTypeId,
+      outputName: "Nuevo Output",
+      sheet: newOutputData.sheet,
+      prompt: newOutputData.prompt,
+      defaultValue: newOutputData.defaultValue
     };
 
     createOutputMutation.mutate(newOutput);
+    setIsNewOutputDialogOpen(false);
   };
 
   // Delete prompt
@@ -1173,6 +1218,145 @@ export default function ProductManagement() {
               </div>
             </Tabs>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo para nuevo prompt */}
+      <Dialog open={isNewPromptDialogOpen} onOpenChange={setIsNewPromptDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Añadir Nuevo Dato de Entrada</DialogTitle>
+            <DialogDescription>
+              Configura los datos del nuevo prompt
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="promptCell">Celda del Prompt</Label>
+                <Input
+                  id="promptCell"
+                  value={newPromptData.promptCell}
+                  onChange={(e) => setNewPromptData({...newPromptData, promptCell: e.target.value})}
+                  placeholder="ej: A2"
+                />
+              </div>
+              <div>
+                <Label htmlFor="valueCell">Celda del Valor</Label>
+                <Input
+                  id="valueCell"
+                  value={newPromptData.valueCell}
+                  onChange={(e) => setNewPromptData({...newPromptData, valueCell: e.target.value})}
+                  placeholder="ej: B2"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="promptType">Tipo</Label>
+                <Select
+                  value={newPromptData.promptType.toString()}
+                  onValueChange={(value) => setNewPromptData({...newPromptData, promptType: parseInt(value)})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {promptTypes.map((type) => (
+                      <SelectItem key={type.id} value={type.id.toString()}>
+                        {type.promptType}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-2 pt-6">
+                <Switch
+                  id="valueRequired"
+                  checked={newPromptData.valueRequired}
+                  onCheckedChange={(checked) => setNewPromptData({...newPromptData, valueRequired: checked})}
+                />
+                <Label htmlFor="valueRequired">Requerido</Label>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsNewPromptDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={createNewPrompt}>
+              Crear Prompt
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo para nuevo output */}
+      <Dialog open={isNewOutputDialogOpen} onOpenChange={setIsNewOutputDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Añadir Nuevo Dato de Salida</DialogTitle>
+            <DialogDescription>
+              Configura los datos del nuevo output
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="outputSheet">Hoja</Label>
+                <Input
+                  id="outputSheet"
+                  value={newOutputData.sheet}
+                  onChange={(e) => setNewOutputData({...newOutputData, sheet: e.target.value})}
+                  placeholder="Main"
+                />
+              </div>
+              <div>
+                <Label htmlFor="outputPrompt">Rótulo</Label>
+                <Input
+                  id="outputPrompt"
+                  value={newOutputData.prompt}
+                  onChange={(e) => setNewOutputData({...newOutputData, prompt: e.target.value})}
+                  placeholder="ej: A25"
+                />
+              </div>
+              <div>
+                <Label htmlFor="outputDefault">Valor por defecto</Label>
+                <Input
+                  id="outputDefault"
+                  value={newOutputData.defaultValue}
+                  onChange={(e) => setNewOutputData({...newOutputData, defaultValue: e.target.value})}
+                  placeholder="ej: B25"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="outputType">Tipo</Label>
+              <Select
+                value={newOutputData.outputTypeId.toString()}
+                onValueChange={(value) => setNewOutputData({...newOutputData, outputTypeId: parseInt(value)})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {outputTypes.map((type) => (
+                    <SelectItem key={type.id} value={type.id.toString()}>
+                      {type.outputType}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsNewOutputDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={createNewOutput}>
+              Crear Output
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
