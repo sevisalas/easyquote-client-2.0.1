@@ -26,11 +26,13 @@ import {
   Settings,
   Plus,
   Trash2,
-  Save
+  Save,
+  TestTube
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Separator } from "@/components/ui/separator";
+import { useNavigate } from "react-router-dom";
 
 // Interface para productos del API de EasyQuote
 interface EasyQuoteProduct {
@@ -98,6 +100,7 @@ interface EasyQuoteExcelFile {
 }
 
 export default function ProductManagement() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [subcategoryFilter, setSubcategoryFilter] = useState<string>("all");
@@ -692,6 +695,16 @@ export default function ProductManagement() {
           <p className="text-muted-foreground mt-2">
             Catálogo de productos del API de EasyQuote para presupuestos
           </p>
+        </div>
+        <div className="flex gap-3">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/admin/productos/test')}
+            className="flex items-center gap-2"
+          >
+            <TestTube className="h-4 w-4" />
+            Probar productos
+          </Button>
         </div>
       </div>
 
