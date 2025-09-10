@@ -27,7 +27,7 @@ const GestionPlanes = () => {
     { id: 'custom', name: 'Personalizado', excel_limit: 1000, client_user_limit: 10 }
   ]);
 
-  const actualizarPlan = (planId: string, field: 'excel_limit' | 'client_user_limit', value: number) => {
+  const actualizarPlan = (planId: string, field: 'excel_limit' | 'client_user_limit' | 'name', value: number | string) => {
     setPlanes(prev => prev.map(plan => 
       plan.id === planId ? { ...plan, [field]: value } : plan
     ));
@@ -97,6 +97,18 @@ const GestionPlanes = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor={`name-${plan.id}`}>
+                  Nombre del plan
+                </Label>
+                <Input
+                  id={`name-${plan.id}`}
+                  type="text"
+                  value={plan.name}
+                  onChange={(e) => actualizarPlan(plan.id, 'name', e.target.value)}
+                />
+              </div>
+              
               <div>
                 <Label htmlFor={`excel-${plan.id}`}>
                   Límite de excel por mes
