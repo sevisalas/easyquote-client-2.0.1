@@ -34,6 +34,14 @@ interface SubscriptionContextType {
   hasClientAccess: () => boolean;
   getRemainingExcelLimit: () => number;
   getRemainingUserLimit: () => number;
+  hasAccessToModule: (module: string) => boolean;
+  isAPISubscription: () => boolean;
+  isClientSubscription: () => boolean;
+  canAccessClientes: () => boolean;
+  canAccessPresupuestos: () => boolean;
+  canAccessExcel: () => boolean;
+  canAccessProductos: () => boolean;
+  canAccessCategorias: () => boolean;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -137,6 +145,85 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
 
   const isOrgAdmin = organization !== null || membership?.role === 'admin' || isSuperAdmin;
 
+  // Funciones para determinar el tipo de suscripción
+  const isAPISubscription = () => {
+    const org = organization || membership?.organization;
+    return org?.subscription_plan.includes('api') || false;
+  };
+
+  const isClientSubscription = () => {
+    const org = organization || membership?.organization;
+    return org?.subscription_plan.includes('client') || false;
+  };
+
+  // Funciones para acceso a módulos específicos
+  const canAccessClientes = () => {
+    if (isSuperAdmin) return true;
+    
+    // Solo suscripciones Client pueden acceder a clientes
+    if (!isClientSubscription()) return false;
+    
+    // En Client, tanto admin como usuario pueden acceder
+    return true;
+  };
+
+  const canAccessPresupuestos = () => {
+    if (isSuperAdmin) return true;
+    
+    // Solo suscripciones Client pueden acceder a presupuestos
+    if (!isClientSubscription()) return false;
+    
+    // En Client, tanto admin como usuario pueden acceder
+    return true;
+  };
+
+  const canAccessExcel = () => {
+    if (isSuperAdmin) return true;
+    
+    // Solo API subscriptions o Client admins pueden acceder a Excel
+    if (isAPISubscription()) return true;
+    if (isClientSubscription() && isOrgAdmin) return true;
+    
+    return false;
+  };
+
+  const canAccessProductos = () => {
+    if (isSuperAdmin) return true;
+    
+    // Solo API subscriptions o Client admins pueden acceder a productos
+    if (isAPISubscription()) return true;
+    if (isClientSubscription() && isOrgAdmin) return true;
+    
+    return false;
+  };
+
+  const canAccessCategorias = () => {
+    if (isSuperAdmin) return true;
+    
+    // Solo API subscriptions o Client admins pueden acceder a categorías
+    if (isAPISubscription()) return true;
+    if (isClientSubscription() && isOrgAdmin) return true;
+    
+    return false;
+  };
+
+  const hasAccessToModule = (module: string) => {
+    switch (module) {
+      case 'clientes':
+        return canAccessClientes();
+      case 'presupuestos':
+        return canAccessPresupuestos();
+      case 'excel':
+        return canAccessExcel();
+      case 'productos':
+        return canAccessProductos();
+      case 'categorias':
+        return canAccessCategorias();
+      default:
+        return false;
+    }
+  };
+
   return (
     <SubscriptionContext.Provider
       value={{
@@ -149,6 +236,14 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         hasClientAccess,
         getRemainingExcelLimit,
         getRemainingUserLimit,
+        hasAccessToModule,
+        isAPISubscription,
+        isClientSubscription,
+        canAccessClientes,
+        canAccessPresupuestos,
+        canAccessExcel,
+        canAccessProductos,
+        canAccessCategorias,
       }}
     >
       {children}

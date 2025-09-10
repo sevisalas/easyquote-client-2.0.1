@@ -40,7 +40,15 @@ export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const navigate = useNavigate();
-  const { isSuperAdmin, isOrgAdmin } = useSubscription();
+  const { 
+    isSuperAdmin, 
+    isOrgAdmin, 
+    canAccessClientes,
+    canAccessPresupuestos,
+    canAccessExcel,
+    canAccessProductos,
+    canAccessCategorias
+  } = useSubscription();
   const { isHoldedActive } = useHoldedIntegration();
 
   const handleSignOut = async () => {
@@ -130,79 +138,83 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                   ))}
 
-                  {/* Clientes */}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={currentPath.startsWith("/clientes")}
-                    >
-                      <NavLink to="/clientes" end className={getNavCls}>
-                        <Users className="mr-2 h-4 w-4" />
-                        {!isCollapsed && <span>Clientes</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                    <SidebarMenuSub>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton
-                          asChild
-                          isActive={currentPath === "/clientes"}
-                        >
-                          <NavLink to="/clientes" end className={getNavCls}>
-                            <Users className="mr-2 h-4 w-4" />
-                            {!isCollapsed && <span>Listado</span>}
-                          </NavLink>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton
-                          asChild
-                          isActive={currentPath === "/clientes/nuevo"}
-                        >
-                          <NavLink to="/clientes/nuevo" className={getNavCls}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            {!isCollapsed && <span>Nuevo</span>}
-                          </NavLink>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </SidebarMenuItem>
+                  {/* Clientes - Solo para suscripciones Client */}
+                  {canAccessClientes() && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={currentPath.startsWith("/clientes")}
+                      >
+                        <NavLink to="/clientes" end className={getNavCls}>
+                          <Users className="mr-2 h-4 w-4" />
+                          {!isCollapsed && <span>Clientes</span>}
+                        </NavLink>
+                      </SidebarMenuButton>
+                      <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={currentPath === "/clientes"}
+                          >
+                            <NavLink to="/clientes" end className={getNavCls}>
+                              <Users className="mr-2 h-4 w-4" />
+                              {!isCollapsed && <span>Listado</span>}
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={currentPath === "/clientes/nuevo"}
+                          >
+                            <NavLink to="/clientes/nuevo" className={getNavCls}>
+                              <PlusCircle className="mr-2 h-4 w-4" />
+                              {!isCollapsed && <span>Nuevo</span>}
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      </SidebarMenuSub>
+                    </SidebarMenuItem>
+                  )}
 
-                  {/* Presupuestos */}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={currentPath.startsWith("/presupuestos")}
-                    >
-                      <NavLink to="/presupuestos" end className={getNavCls}>
-                        <FileText className="mr-2 h-4 w-4" />
-                        {!isCollapsed && <span>Presupuestos</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                    <SidebarMenuSub>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton
-                          asChild
-                          isActive={currentPath === "/presupuestos"}
-                        >
-                          <NavLink to="/presupuestos" end className={getNavCls}>
-                            <FileText className="mr-2 h-4 w-4" />
-                            {!isCollapsed && <span>Listado</span>}
-                          </NavLink>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton
-                          asChild
-                          isActive={currentPath === "/presupuestos/nuevo"}
-                        >
-                          <NavLink to="/presupuestos/nuevo" className={getNavCls}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            {!isCollapsed && <span>Nuevo</span>}
-                          </NavLink>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </SidebarMenuItem>
+                  {/* Presupuestos - Solo para suscripciones Client */}
+                  {canAccessPresupuestos() && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={currentPath.startsWith("/presupuestos")}
+                      >
+                        <NavLink to="/presupuestos" end className={getNavCls}>
+                          <FileText className="mr-2 h-4 w-4" />
+                          {!isCollapsed && <span>Presupuestos</span>}
+                        </NavLink>
+                      </SidebarMenuButton>
+                      <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={currentPath === "/presupuestos"}
+                          >
+                            <NavLink to="/presupuestos" end className={getNavCls}>
+                              <FileText className="mr-2 h-4 w-4" />
+                              {!isCollapsed && <span>Listado</span>}
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={currentPath === "/presupuestos/nuevo"}
+                          >
+                            <NavLink to="/presupuestos/nuevo" className={getNavCls}>
+                              <PlusCircle className="mr-2 h-4 w-4" />
+                              {!isCollapsed && <span>Nuevo</span>}
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      </SidebarMenuSub>
+                    </SidebarMenuItem>
+                  )}
 
                   {/* Configuración */}
                   <SidebarMenuItem>
@@ -229,41 +241,52 @@ export function AppSidebar() {
                           </NavLink>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
+                      {/* Integraciones - Solo admins */}
                       {(isSuperAdmin || isOrgAdmin) && (
-                        <>
-                           <SidebarMenuSubItem>
-                             <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/integraciones"}>
-                               <NavLink to="/configuracion/integraciones" end className={getNavCls}>
-                                 <Plug className="mr-2 h-4 w-4" />
-                                 {!isCollapsed && <span>Integraciones</span>}
-                               </NavLink>
-                             </SidebarMenuSubButton>
-                           </SidebarMenuSubItem>
-                           <SidebarMenuSubItem>
-                             <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/archivos-excel"}>
-                               <NavLink to="/configuracion/archivos-excel" end className={getNavCls}>
-                                 <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                 {!isCollapsed && <span>Archivos Excel</span>}
-                               </NavLink>
-                             </SidebarMenuSubButton>
-                           </SidebarMenuSubItem>
-                           <SidebarMenuSubItem>
-                             <SidebarMenuSubButton asChild isActive={currentPath === "/admin/productos"}>
-                               <NavLink to="/admin/productos" end className={getNavCls}>
-                                 <Package className="mr-2 h-4 w-4" />
-                                 {!isCollapsed && <span>Productos</span>}
-                               </NavLink>
-                             </SidebarMenuSubButton>
-                           </SidebarMenuSubItem>
-                           <SidebarMenuSubItem>
-                             <SidebarMenuSubButton asChild isActive={currentPath === "/admin/categorias"}>
-                               <NavLink to="/admin/categorias" end className={getNavCls}>
-                                 <Tags className="mr-2 h-4 w-4" />
-                                 {!isCollapsed && <span>Categorías</span>}
-                               </NavLink>
-                             </SidebarMenuSubButton>
-                           </SidebarMenuSubItem>
-                        </>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/integraciones"}>
+                            <NavLink to="/configuracion/integraciones" end className={getNavCls}>
+                              <Plug className="mr-2 h-4 w-4" />
+                              {!isCollapsed && <span>Integraciones</span>}
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      )}
+                      
+                      {/* Archivos Excel - Solo API suscriptions o Client admins */}
+                      {canAccessExcel() && (
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/archivos-excel"}>
+                            <NavLink to="/configuracion/archivos-excel" end className={getNavCls}>
+                              <FileSpreadsheet className="mr-2 h-4 w-4" />
+                              {!isCollapsed && <span>Archivos Excel</span>}
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      )}
+                      
+                      {/* Productos - Solo API subscriptions o Client admins */}
+                      {canAccessProductos() && (
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={currentPath === "/admin/productos"}>
+                            <NavLink to="/admin/productos" end className={getNavCls}>
+                              <Package className="mr-2 h-4 w-4" />
+                              {!isCollapsed && <span>Productos</span>}
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      )}
+                      
+                      {/* Categorías - Solo API subscriptions o Client admins */}
+                      {canAccessCategorias() && (
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={currentPath === "/admin/categorias"}>
+                            <NavLink to="/admin/categorias" end className={getNavCls}>
+                              <Tags className="mr-2 h-4 w-4" />
+                              {!isCollapsed && <span>Categorías</span>}
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
                       )}
                     </SidebarMenuSub>
                   </SidebarMenuItem>
