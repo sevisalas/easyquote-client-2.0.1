@@ -11,9 +11,6 @@ function MainContent({ children }: PropsWithChildren) {
   
   return (
     <div className="flex-1 flex flex-col min-h-screen">
-      <header className="flex h-16 shrink-0 items-center gap-2 px-4 border-b bg-background relative z-10">
-        <SidebarTrigger className="-ml-1" />
-      </header>
       <main 
         className={cn(
           "flex-1 p-4 overflow-auto transition-all duration-300 ease-in-out",
