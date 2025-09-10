@@ -109,31 +109,48 @@ const GestionPlanes = () => {
                 />
               </div>
               
-              <div>
-                <Label htmlFor={`excel-${plan.id}`}>
-                  Límite de excel por mes
-                </Label>
-                <Input
-                  id={`excel-${plan.id}`}
-                  type="number"
-                  value={plan.excel_limit}
-                  onChange={(e) => actualizarPlan(plan.id, 'excel_limit', parseInt(e.target.value) || 0)}
-                  min="0"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor={`users-${plan.id}`}>
-                  Máximo de usuarios
-                </Label>
-                <Input
-                  id={`users-${plan.id}`}
-                  type="number"
-                  value={plan.client_user_limit}
-                  onChange={(e) => actualizarPlan(plan.id, 'client_user_limit', parseInt(e.target.value) || 0)}
-                  min="1"
-                />
-              </div>
+              {plan.id === 'custom' ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Los límites del plan personalizado se configuran individualmente para cada suscriptor.
+                  </p>
+                  <div className="bg-muted/30 p-3 rounded-md">
+                    <p className="text-sm font-medium">Límites configurables por suscriptor:</p>
+                    <ul className="text-sm text-muted-foreground mt-1 space-y-1">
+                      <li>• Límite de excel: Variable según necesidades</li>
+                      <li>• Máximo de usuarios: Variable según necesidades</li>
+                    </ul>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <Label htmlFor={`excel-${plan.id}`}>
+                      Límite de excel por mes
+                    </Label>
+                    <Input
+                      id={`excel-${plan.id}`}
+                      type="number"
+                      value={plan.excel_limit}
+                      onChange={(e) => actualizarPlan(plan.id, 'excel_limit', parseInt(e.target.value) || 0)}
+                      min="0"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor={`users-${plan.id}`}>
+                      Máximo de usuarios
+                    </Label>
+                    <Input
+                      id={`users-${plan.id}`}
+                      type="number"
+                      value={plan.client_user_limit}
+                      onChange={(e) => actualizarPlan(plan.id, 'client_user_limit', parseInt(e.target.value) || 0)}
+                      min="1"
+                    />
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         ))}
