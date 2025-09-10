@@ -49,6 +49,8 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 export const useSubscription = () => {
   const context = useContext(SubscriptionContext);
   if (context === undefined) {
+    console.error('useSubscription must be used within a SubscriptionProvider');
+    console.error('Current component trying to use context:', new Error().stack);
     throw new Error('useSubscription must be used within a SubscriptionProvider');
   }
   return context;
@@ -59,6 +61,7 @@ interface SubscriptionProviderProps {
 }
 
 export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) => {
+  console.log('SubscriptionProvider rendering with children:', !!children);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [membership, setMembership] = useState<OrganizationMember | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);

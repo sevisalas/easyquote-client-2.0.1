@@ -130,7 +130,9 @@ export default function ProductManagement() {
     outputTypeId: 0
   });
   
+  console.log('ProductManagement: About to call useSubscription hook');
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
+  console.log('ProductManagement: Successfully got subscription context', { isSuperAdmin, isOrgAdmin });
   const queryClient = useQueryClient();
 
   // Hooks for categories
