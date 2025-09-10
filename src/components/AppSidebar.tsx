@@ -312,10 +312,10 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Compactar/Expandir">
-              <SidebarTrigger className="w-full flex items-center">
+            <SidebarMenuButton asChild tooltip="Contraer menú">
+              <SidebarTrigger className="w-full flex items-center justify-start">
                 <Menu className="mr-2 h-4 w-4" />
-                {!isCollapsed && <span>Compactar</span>}
+                {!isCollapsed && <span>Contraer menú</span>}
               </SidebarTrigger>
             </SidebarMenuButton>
           </SidebarMenuItem>
