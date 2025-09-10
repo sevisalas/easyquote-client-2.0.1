@@ -126,7 +126,7 @@ const GestionPlanes = () => {
                 <>
                   <div>
                     <Label htmlFor={`excel-${plan.id}`}>
-                      Límite de excel por mes
+                      Límite de excel
                     </Label>
                     <Input
                       id={`excel-${plan.id}`}
