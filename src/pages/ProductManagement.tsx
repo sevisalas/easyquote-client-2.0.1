@@ -693,16 +693,6 @@ export default function ProductManagement() {
             Catálogo de productos del API de EasyQuote para presupuestos
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button 
-            variant="outline" 
-            onClick={() => refetch()}
-            disabled={isLoading}
-          >
-            <Package className="h-4 w-4 mr-2" />
-            Actualizar
-          </Button>
-        </div>
       </div>
 
       <Separator />
