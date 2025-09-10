@@ -284,7 +284,7 @@ const App = () => (
             }
           />
           <Route
-            path="/admin/productos/prueba"
+            path="/admin/productos/test"
             element={
               <ProtectedRoute>
                 <AppLayout>

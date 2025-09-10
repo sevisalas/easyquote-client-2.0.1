@@ -696,16 +696,6 @@ export default function ProductManagement() {
             Catálogo de productos del API de EasyQuote para presupuestos
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/admin/productos/test')}
-            className="flex items-center gap-2"
-          >
-            <TestTube className="h-4 w-4" />
-            Probar productos
-          </Button>
-        </div>
       </div>
 
       <Separator />
@@ -943,17 +933,28 @@ export default function ProductManagement() {
                          );
                        })()}
                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditProduct(product)}
-                          title="Editar producto y asignar categoría"
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          Editar
-                        </Button>
-                      </TableCell>
+                       <TableCell>
+                         <div className="flex gap-2">
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={() => handleEditProduct(product)}
+                             title="Editar producto y asignar categoría"
+                           >
+                             <Edit className="h-4 w-4 mr-2" />
+                             Editar
+                           </Button>
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={() => navigate(`/admin/productos/test?productId=${product.id}`)}
+                             title="Probar producto"
+                           >
+                             <TestTube className="h-4 w-4 mr-2" />
+                             Probar
+                           </Button>
+                         </div>
+                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

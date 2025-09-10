@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,12 +43,21 @@ interface TestResult {
 }
 
 export default function ProductTestPage() {
+  const [searchParams] = useSearchParams();
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [testQuantity, setTestQuantity] = useState<string>("1");
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [isRunningTest, setIsRunningTest] = useState(false);
   
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
+
+  // Auto-select product if productId is in URL params
+  useEffect(() => {
+    const productId = searchParams.get('productId');
+    if (productId) {
+      setSelectedProductId(productId);
+    }
+  }, [searchParams]);
 
   // Check permissions
   if (!isSuperAdmin && !isOrgAdmin) {
