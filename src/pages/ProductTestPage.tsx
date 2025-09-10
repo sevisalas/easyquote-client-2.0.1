@@ -51,6 +51,20 @@ export default function ProductTestPage() {
   
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
 
+  // Fetch products (using additionals table as products) - MUST be called before any conditional returns
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: ["products-test"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("additionals")
+        .select("id, name, default_value, description, type")
+        .order("name");
+
+      if (error) throw error;
+      return data as Product[];
+    }
+  });
+
   // Auto-select product if productId is in URL params
   useEffect(() => {
     const productId = searchParams.get('productId');
@@ -59,7 +73,7 @@ export default function ProductTestPage() {
     }
   }, [searchParams]);
 
-  // Check permissions
+  // Check permissions - AFTER all hooks are called
   if (!isSuperAdmin && !isOrgAdmin) {
     return (
       <div className="container mx-auto py-10">
@@ -73,20 +87,6 @@ export default function ProductTestPage() {
       </div>
     );
   }
-
-  // Fetch products (using additionals table as products)
-  const { data: products = [], isLoading } = useQuery({
-    queryKey: ["products-test"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("additionals")
-        .select("id, name, default_value, description, type")
-        .order("name");
-
-      if (error) throw error;
-      return data as Product[];
-    }
-  });
 
   const selectedProduct = products.find(p => p.id === selectedProductId);
 
