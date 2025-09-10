@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PlanConfig {
   id: string;
@@ -19,13 +20,41 @@ const GestionPlanes = () => {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   
-  const [planes, setPlanes] = useState<PlanConfig[]>([
-    { id: 'api_base', name: 'API Base', excel_limit: 100, client_user_limit: 1 },
-    { id: 'api_pro', name: 'API Pro', excel_limit: 500, client_user_limit: 1 },
-    { id: 'client_base', name: 'Cliente Base', excel_limit: 100, client_user_limit: 2 },
-    { id: 'client_pro', name: 'Cliente Pro', excel_limit: 500, client_user_limit: 5 },
-    { id: 'custom', name: 'Personalizado', excel_limit: 1000, client_user_limit: 10 }
-  ]);
+  const [planes, setPlanes] = useState<PlanConfig[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    cargarPlanes();
+  }, []);
+
+  const cargarPlanes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('plan_configurations')
+        .select('*')
+        .order('plan_id');
+
+      if (error) throw error;
+
+      if (data) {
+        setPlanes(data.map(plan => ({
+          id: plan.plan_id,
+          name: plan.name,
+          excel_limit: plan.excel_limit,
+          client_user_limit: plan.client_user_limit
+        })));
+      }
+    } catch (error: any) {
+      console.error('Error cargando planes:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los planes",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const actualizarPlan = (planId: string, field: 'excel_limit' | 'client_user_limit' | 'name', value: number | string) => {
     setPlanes(prev => prev.map(plan => 
@@ -36,8 +65,20 @@ const GestionPlanes = () => {
   const guardarCambios = async () => {
     setSaving(true);
     try {
-      // Aquí podrías guardar en base de datos si fuera necesario
-      // Por ahora solo mostramos que se guardó
+      // Actualizar cada plan en la base de datos
+      for (const plan of planes) {
+        const { error } = await supabase
+          .from('plan_configurations')
+          .update({
+            name: plan.name,
+            excel_limit: plan.excel_limit,
+            client_user_limit: plan.client_user_limit
+          })
+          .eq('plan_id', plan.id);
+
+        if (error) throw error;
+      }
+
       toast({
         title: "Configuración guardada",
         description: "Los límites de los planes han sido actualizados",
@@ -84,8 +125,11 @@ const GestionPlanes = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {planes.map((plan) => (
+      {loading ? (
+        <div className="text-center">Cargando planes...</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {planes.map((plan) => (
           <Card key={plan.id}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -153,8 +197,9 @@ const GestionPlanes = () => {
               )}
             </CardContent>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

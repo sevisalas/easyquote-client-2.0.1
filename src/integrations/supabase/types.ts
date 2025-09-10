@@ -277,6 +277,36 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_configurations: {
+        Row: {
+          client_user_limit: number
+          created_at: string
+          excel_limit: number
+          id: string
+          name: string
+          plan_id: string
+          updated_at: string
+        }
+        Insert: {
+          client_user_limit?: number
+          created_at?: string
+          excel_limit?: number
+          id?: string
+          name: string
+          plan_id: string
+          updated_at?: string
+        }
+        Update: {
+          client_user_limit?: number
+          created_at?: string
+          excel_limit?: number
+          id?: string
+          name?: string
+          plan_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_categories: {
         Row: {
           color: string | null
