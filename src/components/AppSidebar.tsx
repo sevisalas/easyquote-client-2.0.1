@@ -313,10 +313,10 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Contraer menú">
-              <SidebarTrigger className="w-full flex items-center justify-start">
+              <button onClick={toggleSidebar} className="w-full flex items-center justify-start">
                 <Menu className="mr-2 h-4 w-4" />
-                <span>Contraer menú</span>
-              </SidebarTrigger>
+                {!isCollapsed && <span>Contraer menú</span>}
+              </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
