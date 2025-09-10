@@ -279,6 +279,7 @@ export type Database = {
       }
       plan_configurations: {
         Row: {
+          available_modules: string[] | null
           client_user_limit: number
           created_at: string
           excel_limit: number
@@ -288,6 +289,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          available_modules?: string[] | null
           client_user_limit?: number
           created_at?: string
           excel_limit?: number
@@ -297,6 +299,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          available_modules?: string[] | null
           client_user_limit?: number
           created_at?: string
           excel_limit?: number

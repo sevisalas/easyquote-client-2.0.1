@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +14,7 @@ interface PlanConfig {
   name: string;
   excel_limit: number;
   client_user_limit: number;
+  available_modules: string[];
 }
 
 const GestionPlanes = () => {
@@ -41,7 +43,8 @@ const GestionPlanes = () => {
           id: plan.plan_id,
           name: plan.name,
           excel_limit: plan.excel_limit,
-          client_user_limit: plan.client_user_limit
+          client_user_limit: plan.client_user_limit,
+          available_modules: plan.available_modules || []
         })));
       }
     } catch (error: any) {
@@ -56,10 +59,22 @@ const GestionPlanes = () => {
     }
   };
 
-  const actualizarPlan = (planId: string, field: 'excel_limit' | 'client_user_limit' | 'name', value: number | string) => {
+  const actualizarPlan = (planId: string, field: 'excel_limit' | 'client_user_limit' | 'name' | 'available_modules', value: number | string | string[]) => {
     setPlanes(prev => prev.map(plan => 
       plan.id === planId ? { ...plan, [field]: value } : plan
     ));
+  };
+
+  const toggleModule = (planId: string, module: string) => {
+    setPlanes(prev => prev.map(plan => {
+      if (plan.id === planId) {
+        const modules = plan.available_modules.includes(module)
+          ? plan.available_modules.filter(m => m !== module)
+          : [...plan.available_modules, module];
+        return { ...plan, available_modules: modules };
+      }
+      return plan;
+    }));
   };
 
   const guardarCambios = async () => {
@@ -72,7 +87,8 @@ const GestionPlanes = () => {
           .update({
             name: plan.name,
             excel_limit: plan.excel_limit,
-            client_user_limit: plan.client_user_limit
+            client_user_limit: plan.client_user_limit,
+            available_modules: plan.available_modules
           })
           .eq('plan_id', plan.id);
 
@@ -151,6 +167,29 @@ const GestionPlanes = () => {
                   value={plan.name}
                   onChange={(e) => actualizarPlan(plan.id, 'name', e.target.value)}
                 />
+              </div>
+              
+              <div>
+                <Label>
+                  Módulos disponibles
+                </Label>
+                <div className="space-y-2 mt-2">
+                  {['API', 'Client'].map((module) => (
+                    <div key={module} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`${plan.id}-${module}`}
+                        checked={plan.available_modules.includes(module)}
+                        onCheckedChange={() => toggleModule(plan.id, module)}
+                      />
+                      <Label 
+                        htmlFor={`${plan.id}-${module}`}
+                        className="text-sm font-normal"
+                      >
+                        {module}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
               
               {plan.id === 'custom' ? (
