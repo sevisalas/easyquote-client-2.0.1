@@ -71,9 +71,11 @@ export function AppSidebar() {
       <SidebarHeader>
         <Link to="/" aria-label="Ir al inicio" className="flex items-center justify-center px-2 py-2">
           {isCollapsed ? (
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-              EQ
-            </div>
+            <img
+              src="/lovable-uploads/8a40e1b7-3f4b-4f88-be65-7d90acdc54c0.png"
+              alt="EQ Logo"
+              className="h-8 w-8 object-contain"
+            />
           ) : (
             <img
               src="/lovable-uploads/0cd7b0c5-a471-4b19-93b9-4e2945ce2f81.png"
