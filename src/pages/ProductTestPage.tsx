@@ -112,7 +112,8 @@ export default function ProductTestPage() {
           const trimmed = v.trim();
           const isHex = /^#[0-9a-f]{6}$/i.test(trimmed);
           if (isHex) {
-            norm[k] = trimmed.toLowerCase();
+            // Remove the # for color values as API expects without #
+            norm[k] = trimmed.substring(1).toUpperCase();
           } else {
             const asNum = parseFloat(trimmed);
             norm[k] = Number.isNaN(asNum) ? trimmed : asNum;
