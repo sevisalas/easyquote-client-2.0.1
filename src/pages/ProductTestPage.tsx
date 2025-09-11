@@ -204,7 +204,7 @@ export default function ProductTestPage() {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/admin/calculadores" className="flex items-center gap-1">
+              <Link to="/admin" className="flex items-center gap-1">
                 <ArrowLeft className="h-4 w-4" />
                 Volver a Calculadores
               </Link>

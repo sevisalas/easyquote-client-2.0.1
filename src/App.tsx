@@ -28,7 +28,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ProductManagement from "./pages/ProductManagement";
 import ProductCategories from "./pages/ProductCategories";
 
-import CalculadorDashboard from "./pages/CalculadorDashboard";
+
 import PresupuestosDashboard from "./pages/PresupuestosDashboard";
 import ProductTestPage from "./pages/ProductTestPage";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
@@ -263,17 +263,7 @@ const App = () => (
             </ProtectedRoute>
           }
         />
-          <Route
-            path="/admin/calculadores"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <CalculadorDashboard />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
+        <Route
             path="/admin/presupuestos"
             element={
               <ProtectedRoute>
