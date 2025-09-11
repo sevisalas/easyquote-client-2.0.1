@@ -62,6 +62,19 @@ export default function ProductTestPage() {
     }
   }, [searchParams]);
 
+  // Get selected product
+  const selectedProduct = products.find(p => p.id === selectedProductId);
+
+  // Calculate price when prompt values change
+  useEffect(() => {
+    if (selectedProduct) {
+      // Simple calculation - in real implementation this would call the pricing API
+      const basePrice = selectedProduct.default_value || 0;
+      const quantity = promptValues.quantity || 1;
+      setCalculatedPrice(basePrice * quantity);
+    }
+  }, [promptValues, selectedProductId, products, selectedProduct]);
+
   // Check permissions - AFTER all hooks are called
   if (!isSuperAdmin && !isOrgAdmin) {
     return (
@@ -76,19 +89,6 @@ export default function ProductTestPage() {
       </div>
     );
   }
-
-  const selectedProduct = products.find(p => p.id === selectedProductId);
-
-  // Calculate price when prompt values change
-  useEffect(() => {
-    if (selectedProduct) {
-      // Simple calculation - in real implementation this would call the pricing API
-      const basePrice = selectedProduct.default_value || 0;
-      const quantity = promptValues.quantity || 1;
-      setCalculatedPrice(basePrice * quantity);
-    }
-  }, [promptValues, selectedProductId, products, selectedProduct]);
-
 
   const formatCurrency = (value: number) => {
     if (isNaN(value)) return "0,00 €";
