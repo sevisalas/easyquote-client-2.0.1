@@ -92,10 +92,10 @@ export default function ProductTestPage() {
     fetchProductDetail();
   }, [productId]);
 
-  // Fetch pricing data when prompts change
+  // Fetch pricing data when prompts change OR when productDetail loads (initial load)
   const { data: pricing, isLoading: pricingLoading } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues],
-    enabled: !!localStorage.getItem("easyquote_token") && !!productId && Object.keys(debouncedPromptValues).length > 0,
+    enabled: !!localStorage.getItem("easyquote_token") && !!productId,
     refetchOnWindowFocus: false,
     retry: 1,
     queryFn: async () => {

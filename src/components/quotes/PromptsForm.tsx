@@ -265,7 +265,7 @@ export default function PromptsForm({
                     key={o.value}
                     type="button"
                     onClick={() => onChange(p.id, o.value)}
-                    className={`relative overflow-hidden rounded-md border transition-shadow focus:outline-none focus:ring-2 focus:ring-primary ${selected ? "ring-2 ring-primary" : "hover:shadow"}`}
+                    className={`relative overflow-hidden rounded-md border transition-shadow focus:outline-none focus:ring-2 focus:ring-primary aspect-square ${selected ? "ring-2 ring-primary" : "hover:shadow"}`}
                     aria-pressed={selected}
                     aria-label={o.label ?? o.value}
                   >
@@ -274,10 +274,10 @@ export default function PromptsForm({
                         src={o.imageUrl}
                         alt={`Opción ${o.label ?? o.value}`}
                         loading="lazy"
-                        className="h-24 w-24 object-cover"
+                        className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="h-24 w-24 grid place-items-center text-sm text-muted-foreground">
+                      <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground p-2">
                         {o.label ?? o.value}
                       </div>
                     )}
