@@ -156,28 +156,16 @@ export default function ProductTestPage() {
   }, [pricing]);
 
   const priceOutput = useMemo(() => {
-    if (!outputs || outputs.length === 0) return 0;
+    if (!outputs || outputs.length === 0) return null;
     
     // Find the output with type "Price"
     const priceObj = outputs.find((o: any) => String(o?.type || "").toLowerCase() === "price");
-    
-    if (priceObj?.value) {
-      // Convert string to number, handling European number format
-      const priceStr = String(priceObj.value).replace(",", ".");
-      const priceNum = parseFloat(priceStr);
-      console.log("Found price object:", priceObj, "converted to:", priceNum);
-      return isNaN(priceNum) ? 0 : priceNum;
-    }
-    
-    return 0;
+    return priceObj || null;
   }, [outputs]);
 
-  const otherOutputs = useMemo(() => {
-    return outputs.filter((o: any) => {
-      const type = String(o?.type || "").toLowerCase();
-      // Exclude price-related outputs and show everything else
-      return type !== "price";
-    });
+  const allOutputs = useMemo(() => {
+    // Show all outputs including price
+    return outputs;
   }, [outputs]);
 
   const selectedProduct = products.find((p: any) => p.id === productId);
@@ -279,34 +267,16 @@ export default function ProductTestPage() {
             </Card>
           </div>
 
-          {/* Price & Results */}
-          <div className="space-y-4">
-            {/* Price Display */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Precio</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-primary mb-2">
-                    {pricingLoading ? "..." : formatCurrency(currentPrice)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Precio (IVA incl.): {formatCurrency(currentPrice * 1.21)}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Other Outputs */}
-            {otherOutputs.length > 0 && (
+          {/* Results */}
+          <div>
+            {allOutputs.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle>Resultados</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm">
-                    {otherOutputs.map((output, index) => (
+                    {allOutputs.map((output, index) => (
                       <div key={index} className="flex justify-between">
                         <span>{output.label || output.name}:</span>
                         <span className="font-medium">{output.value}</span>

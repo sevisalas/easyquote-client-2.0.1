@@ -257,7 +257,7 @@ export default function PromptsForm({
 
           {/* Image picker */}
           {p.type === "image" && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-w-[200px]">
               {p.options?.map((o) => {
                 const selected = (effectiveValues[p.id]) === o.value;
                 return (
