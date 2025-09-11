@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,9 +40,18 @@ export default function ProductTestPage() {
   const [searchParams] = useSearchParams();
   const [productId, setProductId] = useState<string>("");
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
+  const [debouncedPromptValues, setDebouncedPromptValues] = useState<Record<string, any>>({});
   const [productDetail, setProductDetail] = useState<any>(null);
   
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
+
+  // Debounce prompt values
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedPromptValues(promptValues);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [promptValues]);
 
   // Fetch products
   const { data: products = [], isLoading } = useQuery({
@@ -72,7 +81,6 @@ export default function ProductTestPage() {
         
         if (error) throw error;
         
-        console.log("Product detail loaded:", data);
         setProductDetail(data);
         
       } catch (error) {
@@ -83,6 +91,41 @@ export default function ProductTestPage() {
 
     fetchProductDetail();
   }, [productId]);
+
+  // Fetch pricing data when prompts change
+  const { data: pricing, isLoading: pricingLoading } = useQuery({
+    queryKey: ["easyquote-pricing", productId, debouncedPromptValues],
+    enabled: !!localStorage.getItem("easyquote_token") && !!productId && Object.keys(debouncedPromptValues).length > 0,
+    refetchOnWindowFocus: false,
+    retry: 1,
+    queryFn: async () => {
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
+      
+      const norm: Record<string, any> = {};
+      Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
+        if (v === "" || v === undefined || v === null) return;
+        if (typeof v === "string") {
+          const trimmed = v.trim();
+          const isHex = /^#[0-9a-f]{6}$/i.test(trimmed);
+          if (isHex) {
+            norm[k] = trimmed.toLowerCase();
+          } else {
+            const asNum = parseFloat(trimmed);
+            norm[k] = Number.isNaN(asNum) ? trimmed : asNum;
+          }
+        } else {
+          norm[k] = v;
+        }
+      });
+
+      const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
+        body: { token, productId, inputs: Object.entries(norm).map(([id, value]) => ({ id, value })) },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
 
   // Auto-select product if productId is in URL params
   useEffect(() => {
@@ -112,6 +155,29 @@ export default function ProductTestPage() {
 
   const selectedProduct = products.find((p: any) => p.id === productId);
 
+  // Derive outputs from pricing data
+  const outputs = useMemo(() => ((pricing as any)?.outputValues ?? []) as any[], [pricing]);
+  const imageOutputs = useMemo(
+    () => outputs.filter((o: any) => /^https?:\/\//i.test(String(o?.value ?? ""))),
+    [outputs]
+  );
+  const priceOutput = useMemo(
+    () => outputs.find((o: any) => String(o?.type || "").toLowerCase() === "price"),
+    [outputs]
+  );
+  const otherOutputs = useMemo(
+    () =>
+      outputs.filter((o: any) => {
+        const t = String(o?.type || "").toLowerCase();
+        const n = String(o?.name || "").toLowerCase();
+        const v = String(o?.value ?? "");
+        const isImageLike = t.includes("image") || n.includes("image");
+        const isNA = v === "" || v === "#N/A";
+        return o !== priceOutput && !isImageLike && !isNA;
+      }),
+    [outputs, priceOutput]
+  );
+
   const formatCurrency = (value: number) => {
     if (isNaN(value)) return "0,00 €";
     return new Intl.NumberFormat('es-ES', {
@@ -126,6 +192,8 @@ export default function ProductTestPage() {
       [id]: value
     }));
   };
+
+  const currentPrice = priceOutput?.value || 0;
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -193,8 +261,9 @@ export default function ProductTestPage() {
             </Card>
           </div>
 
-          {/* Price Display */}
-          <div>
+          {/* Price & Results */}
+          <div className="space-y-4">
+            {/* Price Display */}
             <Card>
               <CardHeader>
                 <CardTitle>Precio</CardTitle>
@@ -202,37 +271,56 @@ export default function ProductTestPage() {
               <CardContent>
                 <div className="text-center">
                   <div className="text-4xl font-bold text-primary mb-2">
-                    {formatCurrency(productDetail?.price || 0)}
+                    {pricingLoading ? "..." : formatCurrency(currentPrice)}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Precio (IVA incl.): {formatCurrency((productDetail?.price || 0) * 1.21)}
+                    Precio (IVA incl.): {formatCurrency(currentPrice * 1.21)}
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Debug Info */}
-            <Card className="mt-4">
-              <CardHeader>
-                <CardTitle>Debug Info</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm space-y-1">
-                <div><strong>Product ID:</strong> {productId || 'None'}</div>
-                <div><strong>Product Detail:</strong> {productDetail ? 'Loaded' : 'Not loaded'}</div>
-                <div><strong>Prompt Values:</strong></div>
-                <pre className="text-xs bg-gray-50 p-2 rounded mt-1 overflow-auto max-h-40">
-                  {JSON.stringify(promptValues, null, 2)}
-                </pre>
-                {productDetail && (
-                  <>
-                    <div><strong>Product Detail:</strong></div>
-                    <pre className="text-xs bg-gray-50 p-2 rounded mt-1 overflow-auto max-h-40">
-                      {JSON.stringify(productDetail, null, 2)}
-                    </pre>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+            {/* Other Outputs */}
+            {otherOutputs.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resultados</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm">
+                    {otherOutputs.map((output, index) => (
+                      <div key={index} className="flex justify-between">
+                        <span>{output.label || output.name}:</span>
+                        <span className="font-medium">{output.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Image Outputs */}
+            {imageOutputs.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Imágenes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-3">
+                    {imageOutputs.map((output, index) => (
+                      <div key={index} className="space-y-2">
+                        <div className="text-sm font-medium">{output.label || output.name}</div>
+                        <img 
+                          src={output.value} 
+                          alt={output.label || output.name || `Imagen ${index + 1}`}
+                          className="w-full rounded border"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       )}
