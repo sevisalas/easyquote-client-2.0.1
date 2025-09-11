@@ -161,28 +161,46 @@ export default function ProductTestPage() {
 
   const selectedProduct = products.find((p: any) => p.id === productId);
 
-  // Derive outputs from pricing data
-  const outputs = useMemo(() => ((pricing as any)?.outputValues ?? []) as any[], [pricing]);
-  const imageOutputs = useMemo(
-    () => outputs.filter((o: any) => /^https?:\/\//i.test(String(o?.value ?? ""))),
-    [outputs]
-  );
-  const priceOutput = useMemo(
-    () => outputs.find((o: any) => String(o?.type || "").toLowerCase() === "price"),
-    [outputs]
-  );
-  const otherOutputs = useMemo(
-    () =>
-      outputs.filter((o: any) => {
-        const t = String(o?.type || "").toLowerCase();
-        const n = String(o?.name || "").toLowerCase();
-        const v = String(o?.value ?? "");
-        const isImageLike = t.includes("image") || n.includes("image");
-        const isNA = v === "" || v === "#N/A";
-        return o !== priceOutput && !isImageLike && !isNA;
-      }),
-    [outputs, priceOutput]
-  );
+  // Derive outputs from pricing data - based on real API response structure
+  const outputs = useMemo(() => {
+    if (!pricing) return [];
+    
+    // Check different possible structures for outputs
+    const outputValues = pricing.outputValues || pricing.outputs || pricing.results || [];
+    console.log("Processing outputs:", outputValues);
+    
+    return Array.isArray(outputValues) ? outputValues : [];
+  }, [pricing]);
+
+  const priceOutput = useMemo(() => {
+    // Look for price in different possible locations
+    const priceValue = pricing?.price || 
+                      pricing?.total || 
+                      pricing?.finalPrice ||
+                      outputs.find((o: any) => 
+                        String(o?.type || "").toLowerCase().includes("price") ||
+                        String(o?.name || "").toLowerCase().includes("price") ||
+                        String(o?.label || "").toLowerCase().includes("price")
+                      )?.value;
+    
+    console.log("Found price value:", priceValue);
+    return priceValue || 0;
+  }, [pricing, outputs]);
+
+  const otherOutputs = useMemo(() => {
+    return outputs.filter((o: any) => {
+      const name = String(o?.name || "").toLowerCase();
+      const label = String(o?.label || "").toLowerCase();
+      const type = String(o?.type || "").toLowerCase();
+      const value = String(o?.value ?? "");
+      
+      // Skip price-related outputs and empty values
+      const isPriceRelated = name.includes("price") || label.includes("price") || type.includes("price");
+      const isEmpty = value === "" || value === "#N/A" || value === "0";
+      
+      return !isPriceRelated && !isEmpty;
+    });
+  }, [outputs]);
 
   const formatCurrency = (value: number) => {
     if (isNaN(value)) return "0,00 €";
@@ -199,7 +217,7 @@ export default function ProductTestPage() {
     }));
   };
 
-  const currentPrice = priceOutput?.value || 0;
+  const currentPrice = priceOutput;
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -315,28 +333,6 @@ export default function ProductTestPage() {
               </Card>
             )}
 
-            {/* Image Outputs */}
-            {imageOutputs.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Imágenes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-3">
-                    {imageOutputs.map((output, index) => (
-                      <div key={index} className="space-y-2">
-                        <div className="text-sm font-medium">{output.label || output.name}</div>
-                        <img 
-                          src={output.value} 
-                          alt={output.label || output.name || `Imagen ${index + 1}`}
-                          className="w-full rounded border"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
       )}
