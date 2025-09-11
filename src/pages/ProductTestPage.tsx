@@ -92,6 +92,8 @@ export default function ProductTestPage() {
         if (error) throw error;
         
         console.log("Product detail received:", data);
+        console.log("Product detail prompts:", data?.prompts);
+        console.log("Product detail keys:", Object.keys(data || {}));
         setProductDetail(data);
         
         // Set default values from prompts
@@ -318,6 +320,14 @@ export default function ProductTestPage() {
                 <CardTitle>Configuración del Producto</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Debug info */}
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
+                  <div><strong>Debug Info:</strong></div>
+                  <div>Product Detail: {productDetail ? 'Loaded' : 'Not loaded'}</div>
+                  <div>Prompts count: {productDetail?.prompts?.length || 0}</div>
+                  <div>Prompts: {JSON.stringify(productDetail?.prompts, null, 2)}</div>
+                </div>
+                
                 {productDetail?.prompts && productDetail.prompts.length > 0 ? (
                   productDetail.prompts.map(renderPromptField)
                 ) : (
