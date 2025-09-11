@@ -165,6 +165,21 @@ export default function ProductTestPage() {
     return Array.isArray(outputValues) ? outputValues : [];
   }, [pricing]);
 
+  // Separate text outputs from image outputs
+  const textOutputs = useMemo(() => {
+    return allOutputs.filter((o: any) => {
+      const value = String(o?.value ?? "");
+      return !(/^https?:\/\//i.test(value));
+    });
+  }, [allOutputs]);
+
+  const imageOutputs = useMemo(() => {
+    return allOutputs.filter((o: any) => {
+      const value = String(o?.value ?? "");
+      return /^https?:\/\//i.test(value);
+    });
+  }, [allOutputs]);
+
   const selectedProduct = products.find((p: any) => p.id === productId);
 
   // Check permissions - AFTER all hooks are called
@@ -265,20 +280,39 @@ export default function ProductTestPage() {
 
           {/* Results */}
           <div>
-            {allOutputs.length > 0 && (
+            {(textOutputs.length > 0 || imageOutputs.length > 0) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Resultados</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
-                    {allOutputs.map((output, index) => (
-                      <div key={index} className="flex justify-between">
-                        <span>{output.label || output.name}:</span>
-                        <span className="font-medium">{output.value}</span>
-                      </div>
-                    ))}
-                  </div>
+                <CardContent className="space-y-4">
+                  {/* Text outputs */}
+                  {textOutputs.length > 0 && (
+                    <div className="space-y-2 text-sm">
+                      {textOutputs.map((output, index) => (
+                        <div key={index} className="flex justify-between">
+                          <span>{output.label || output.name}:</span>
+                          <span className="font-medium">{output.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Image outputs at the end */}
+                  {imageOutputs.length > 0 && (
+                    <div className="space-y-3 border-t pt-4">
+                      {imageOutputs.map((output, index) => (
+                        <div key={index} className="space-y-2">
+                          <div className="text-sm font-medium">{output.label || output.name}</div>
+                          <img 
+                            src={output.value} 
+                            alt={output.label || output.name || `Imagen ${index + 1}`}
+                            className="w-full max-w-md rounded border"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
