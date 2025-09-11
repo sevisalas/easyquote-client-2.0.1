@@ -51,18 +51,23 @@ export default function ProductTestPage() {
   
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
 
-  // Fetch products (using additionals table as products) - MUST be called before any conditional returns
+  // Fetch products from EasyQuote API - MUST be called before any conditional returns
   const { data: products = [], isLoading } = useQuery({
-    queryKey: ["products-test"],
+    queryKey: ["easyquote-products"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("additionals")
-        .select("id, name, default_value, description, type")
-        .order("name");
-
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No hay token de EasyQuote disponible. Por favor, inicia sesión nuevamente.");
+      
+      const { data, error } = await supabase.functions.invoke("easyquote-products", {
+        body: { token },
+      });
+      
       if (error) throw error;
-      return data as Product[];
-    }
+      
+      const list = Array.isArray(data) ? data : (data?.items || data?.data || []);
+      return list as Product[];
+    },
+    enabled: !!localStorage.getItem("easyquote_token")
   });
 
   // Auto-select product if productId is in URL params
