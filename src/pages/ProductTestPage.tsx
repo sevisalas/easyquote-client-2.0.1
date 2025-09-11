@@ -156,32 +156,27 @@ export default function ProductTestPage() {
   }, [pricing]);
 
   const priceOutput = useMemo(() => {
-    // Look for price in different possible locations
-    const priceValue = pricing?.price || 
-                      pricing?.total || 
-                      pricing?.finalPrice ||
-                      outputs.find((o: any) => 
-                        String(o?.type || "").toLowerCase().includes("price") ||
-                        String(o?.name || "").toLowerCase().includes("price") ||
-                        String(o?.label || "").toLowerCase().includes("price")
-                      )?.value;
+    if (!outputs || outputs.length === 0) return 0;
     
-    console.log("Found price value:", priceValue);
-    return priceValue || 0;
-  }, [pricing, outputs]);
+    // Find the output with type "Price"
+    const priceObj = outputs.find((o: any) => String(o?.type || "").toLowerCase() === "price");
+    
+    if (priceObj?.value) {
+      // Convert string to number, handling European number format
+      const priceStr = String(priceObj.value).replace(",", ".");
+      const priceNum = parseFloat(priceStr);
+      console.log("Found price object:", priceObj, "converted to:", priceNum);
+      return isNaN(priceNum) ? 0 : priceNum;
+    }
+    
+    return 0;
+  }, [outputs]);
 
   const otherOutputs = useMemo(() => {
     return outputs.filter((o: any) => {
-      const name = String(o?.name || "").toLowerCase();
-      const label = String(o?.label || "").toLowerCase();
       const type = String(o?.type || "").toLowerCase();
-      const value = String(o?.value ?? "");
-      
-      // Skip price-related outputs and empty values
-      const isPriceRelated = name.includes("price") || label.includes("price") || type.includes("price");
-      const isEmpty = value === "" || value === "#N/A" || value === "0";
-      
-      return !isPriceRelated && !isEmpty;
+      // Exclude price-related outputs and show everything else
+      return type !== "price";
     });
   }, [outputs]);
 
@@ -300,16 +295,6 @@ export default function ProductTestPage() {
                     Precio (IVA incl.): {formatCurrency(currentPrice * 1.21)}
                   </div>
                 </div>
-                
-                {/* Temporary debug to see actual pricing data */}
-                {pricing && (
-                  <div className="mt-4 p-3 bg-gray-50 rounded text-xs">
-                    <div><strong>Raw Pricing Data:</strong></div>
-                    <pre className="overflow-auto max-h-40">
-                      {JSON.stringify(pricing, null, 2)}
-                    </pre>
-                  </div>
-                )}
               </CardContent>
             </Card>
 
