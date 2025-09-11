@@ -144,23 +144,6 @@ export default function ProductTestPage() {
     }
   }, [searchParams, products]);
 
-  // Check permissions
-  if (!isSuperAdmin && !isOrgAdmin) {
-    return (
-      <div className="container mx-auto py-10">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Acceso denegado</AlertTitle>
-          <AlertDescription>
-            Solo los administradores pueden acceder a esta página de prueba.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  const selectedProduct = products.find((p: any) => p.id === productId);
-
   // Derive outputs from pricing data - based on real API response structure
   const outputs = useMemo(() => {
     if (!pricing) return [];
@@ -202,6 +185,24 @@ export default function ProductTestPage() {
     });
   }, [outputs]);
 
+  const selectedProduct = products.find((p: any) => p.id === productId);
+  const currentPrice = priceOutput;
+
+  // Check permissions - AFTER all hooks are called
+  if (!isSuperAdmin && !isOrgAdmin) {
+    return (
+      <div className="container mx-auto py-10">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Acceso denegado</AlertTitle>
+          <AlertDescription>
+            Solo los administradores pueden acceder a esta página de prueba.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   const formatCurrency = (value: number) => {
     if (isNaN(value)) return "0,00 €";
     return new Intl.NumberFormat('es-ES', {
@@ -216,8 +217,6 @@ export default function ProductTestPage() {
       [id]: value
     }));
   };
-
-  const currentPrice = priceOutput;
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -332,7 +331,6 @@ export default function ProductTestPage() {
                 </CardContent>
               </Card>
             )}
-
           </div>
         </div>
       )}
