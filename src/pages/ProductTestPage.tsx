@@ -123,6 +123,12 @@ export default function ProductTestPage() {
         body: { token, productId, inputs: Object.entries(norm).map(([id, value]) => ({ id, value })) },
       });
       if (error) throw error;
+      
+      console.log("Pricing data received:", data);
+      console.log("Pricing outputValues:", data?.outputValues);
+      console.log("Pricing price field:", data?.price);
+      console.log("All pricing fields:", Object.keys(data || {}));
+      
       return data;
     },
   });
@@ -277,6 +283,16 @@ export default function ProductTestPage() {
                     Precio (IVA incl.): {formatCurrency(currentPrice * 1.21)}
                   </div>
                 </div>
+                
+                {/* Temporary debug to see actual pricing data */}
+                {pricing && (
+                  <div className="mt-4 p-3 bg-gray-50 rounded text-xs">
+                    <div><strong>Raw Pricing Data:</strong></div>
+                    <pre className="overflow-auto max-h-40">
+                      {JSON.stringify(pricing, null, 2)}
+                    </pre>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

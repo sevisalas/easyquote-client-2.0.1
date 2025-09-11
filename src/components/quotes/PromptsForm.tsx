@@ -274,10 +274,10 @@ export default function PromptsForm({
                         src={o.imageUrl}
                         alt={`Opción ${o.label ?? o.value}`}
                         loading="lazy"
-                        className="h-24 w-full object-cover"
+                        className="h-24 w-24 object-cover"
                       />
                     ) : (
-                      <div className="h-24 w-full grid place-items-center text-sm text-muted-foreground">
+                      <div className="h-24 w-24 grid place-items-center text-sm text-muted-foreground">
                         {o.label ?? o.value}
                       </div>
                     )}
