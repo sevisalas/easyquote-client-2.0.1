@@ -93,7 +93,7 @@ export default function ProductTestPage() {
   }, [productId]);
 
   // Fetch pricing data when prompts change OR when productDetail loads (initial load)
-  const { data: pricing, isLoading: pricingLoading } = useQuery({
+  const { data: pricing, isLoading: pricingLoading, refetch: refetchPricing } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues],
     enabled: !!localStorage.getItem("easyquote_token") && !!productId,
     refetchOnWindowFocus: false,
@@ -102,6 +102,9 @@ export default function ProductTestPage() {
       const token = localStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
       
+      console.log("Making pricing call with inputs:", debouncedPromptValues);
+      
+      // Always prepare inputs, even if empty
       const norm: Record<string, any> = {};
       Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
         if (v === "" || v === undefined || v === null) return;
@@ -119,8 +122,13 @@ export default function ProductTestPage() {
         }
       });
 
+      // Convert to array format for API
+      const inputsArray = Object.entries(norm).map(([id, value]) => ({ id, value }));
+      
+      console.log("Sending inputs to API:", inputsArray);
+
       const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
-        body: { token, productId, inputs: Object.entries(norm).map(([id, value]) => ({ id, value })) },
+        body: { token, productId, inputs: inputsArray },
       });
       if (error) throw error;
       
@@ -143,6 +151,14 @@ export default function ProductTestPage() {
       }
     }
   }, [searchParams, products]);
+
+  // Force refetch when prompts change
+  useEffect(() => {
+    if (productId && Object.keys(debouncedPromptValues).length > 0) {
+      console.log("Prompts changed, refetching pricing...");
+      refetchPricing();
+    }
+  }, [debouncedPromptValues, productId, refetchPricing]);
 
   // Derive outputs from pricing data - based on real API response structure
   const outputs = useMemo(() => {
