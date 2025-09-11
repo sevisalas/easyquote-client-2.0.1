@@ -83,9 +83,21 @@ export default function ProductTestPage() {
         
         setProductDetail(data);
         
+        // Reset prompt values with current values from API
+        if (data?.prompts) {
+          const currentValues: Record<string, any> = {};
+          data.prompts.forEach((prompt: any) => {
+            if (prompt.currentValue !== undefined && prompt.currentValue !== null) {
+              currentValues[prompt.id] = prompt.currentValue;
+            }
+          });
+          setPromptValues(currentValues);
+        }
+        
       } catch (error) {
         console.error("Error fetching product detail:", error);
         setProductDetail(null);
+        setPromptValues({});
       }
     };
 
