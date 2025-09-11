@@ -71,7 +71,7 @@ export function AppSidebar() {
       <SidebarHeader>
         <Link to="/" aria-label="Ir al inicio" className="flex items-center justify-center px-2 py-2">
           <img
-            src="/lovable-uploads/90f36d20-6541-4087-a41b-9e1574e7535d.png"
+            src="/lovable-uploads/0cd7b0c5-a471-4b19-93b9-4e2945ce2f81.png"
             alt="Logo EasyQuote"
             className={`${isCollapsed ? "h-6" : "h-8"} w-auto max-w-full object-contain`}
           />
