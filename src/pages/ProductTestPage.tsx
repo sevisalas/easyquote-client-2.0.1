@@ -150,6 +150,24 @@ export default function ProductTestPage() {
       console.log("Pricing price field:", data?.price);
       console.log("All pricing fields:", Object.keys(data || {}));
       
+      // Update prompt values with the current values from the API response
+      if (data?.prompts) {
+        const updatedValues: Record<string, any> = {};
+        data.prompts.forEach((prompt: any) => {
+          if (prompt.currentValue !== undefined && prompt.currentValue !== null) {
+            updatedValues[prompt.id] = prompt.currentValue;
+          }
+        });
+        // Only update if there are actual differences to avoid infinite loops
+        const hasChanges = Object.entries(updatedValues).some(([key, value]) => 
+          promptValues[key] !== value
+        );
+        if (hasChanges) {
+          console.log("Updating prompt values with API response:", updatedValues);
+          setPromptValues(updatedValues);
+        }
+      }
+      
       return data;
     },
   });
