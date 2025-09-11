@@ -70,11 +70,17 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <Link to="/" aria-label="Ir al inicio" className="flex items-center justify-center px-2 py-2">
-          <img
-            src="/lovable-uploads/0cd7b0c5-a471-4b19-93b9-4e2945ce2f81.png"
-            alt="Logo EasyQuote"
-            className={`${isCollapsed ? "h-6" : "h-8"} w-auto max-w-full object-contain`}
-          />
+          {isCollapsed ? (
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+              EQ
+            </div>
+          ) : (
+            <img
+              src="/lovable-uploads/0cd7b0c5-a471-4b19-93b9-4e2945ce2f81.png"
+              alt="Logo EasyQuote"
+              className="h-8 w-auto max-w-full object-contain"
+            />
+          )}
         </Link>
       </SidebarHeader>
       <SidebarContent>
