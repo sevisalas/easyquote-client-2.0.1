@@ -257,7 +257,7 @@ export default function PromptsForm({
 
           {/* Image picker */}
           {p.type === "image" && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-w-[200px]">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {p.options?.map((o) => {
                 const selected = (effectiveValues[p.id]) === o.value;
                 return (
@@ -265,7 +265,7 @@ export default function PromptsForm({
                     key={o.value}
                     type="button"
                     onClick={() => onChange(p.id, o.value)}
-                    className={`relative overflow-hidden rounded-md border transition-shadow focus:outline-none focus:ring-2 focus:ring-primary aspect-square ${selected ? "ring-2 ring-primary" : "hover:shadow"}`}
+                    className={`relative overflow-hidden rounded-md border transition-shadow focus:outline-none focus:ring-2 focus:ring-primary w-[185px] h-[185px] ${selected ? "ring-2 ring-primary" : "hover:shadow"}`}
                     aria-pressed={selected}
                     aria-label={o.label ?? o.value}
                   >

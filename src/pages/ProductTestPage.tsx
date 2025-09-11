@@ -155,21 +155,17 @@ export default function ProductTestPage() {
     return Array.isArray(outputValues) ? outputValues : [];
   }, [pricing]);
 
-  const priceOutput = useMemo(() => {
-    if (!outputs || outputs.length === 0) return null;
-    
-    // Find the output with type "Price"
-    const priceObj = outputs.find((o: any) => String(o?.type || "").toLowerCase() === "price");
-    return priceObj || null;
-  }, [outputs]);
-
+  // Show ALL outputs exactly as they come from the API - no filtering, no modifications
   const allOutputs = useMemo(() => {
-    // Show all outputs including price
-    return outputs;
-  }, [outputs]);
+    if (!pricing) return [];
+    
+    const outputValues = pricing.outputValues || pricing.outputs || pricing.results || [];
+    console.log("Showing ALL raw outputs:", outputValues);
+    
+    return Array.isArray(outputValues) ? outputValues : [];
+  }, [pricing]);
 
   const selectedProduct = products.find((p: any) => p.id === productId);
-  const currentPrice = priceOutput;
 
   // Check permissions - AFTER all hooks are called
   if (!isSuperAdmin && !isOrgAdmin) {
