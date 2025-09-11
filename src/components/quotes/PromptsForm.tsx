@@ -265,7 +265,7 @@ export default function PromptsForm({
                     key={o.value}
                     type="button"
                     onClick={() => onChange(p.id, o.value)}
-                    className={`relative overflow-hidden rounded-md border transition-shadow focus:outline-none focus:ring-2 focus:ring-primary w-[150px] h-[150px] sm:w-[160px] sm:h-[160px] md:w-[180px] md:h-[180px] ${selected ? "ring-2 ring-primary" : "hover:shadow"}`}
+                    className={`relative overflow-hidden rounded-md border transition-shadow focus:outline-none focus:ring-2 focus:ring-primary w-40 h-40 ${selected ? "ring-2 ring-primary" : "hover:shadow"}`}
                     aria-pressed={selected}
                     aria-label={o.label ?? o.value}
                   >
