@@ -77,8 +77,15 @@ const Auth = () => {
             alt="EasyQuote Logo"
             className="h-20 w-auto mb-4"
             onError={(e) => {
-              console.warn('Logo failed to load, using fallback');
-              e.currentTarget.style.display = 'none';
+              const img = e.currentTarget;
+              if (img.dataset.fallbackApplied) {
+                console.warn('Auth logo fallback also failed, hiding');
+                img.style.display = 'none';
+                return;
+              }
+              console.warn('Auth logo failed to load, switching to fallback');
+              img.src = '/lovable-uploads/logo_transparente.png';
+              img.dataset.fallbackApplied = 'true';
             }}
           />
           

@@ -56,8 +56,15 @@ const Index = () => {
               alt="EasyQuote Logo"
               className="h-16 w-auto mx-auto md:mx-0 mb-4 hover-scale"
               onError={(e) => {
-                console.warn('Index logo failed to load');
-                e.currentTarget.style.display = 'none';
+                const img = e.currentTarget;
+                if (img.dataset.fallbackApplied) {
+                  console.warn('Index logo fallback also failed, hiding');
+                  img.style.display = 'none';
+                  return;
+                }
+                console.warn('Index logo failed to load, switching to fallback');
+                img.src = '/lovable-uploads/logo_transparente.png';
+                img.dataset.fallbackApplied = 'true';
               }}
             />
             <h1 className="text-4xl md:text-5xl font-bold text-foreground bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent mb-6">
@@ -91,8 +98,15 @@ const Index = () => {
               alt="EasyQuote Illustration"
               className="h-40 w-auto hover-scale"
               onError={(e) => {
-                console.warn('Index illustration failed to load');
-                e.currentTarget.style.display = 'none';
+                const img = e.currentTarget;
+                if (img.dataset.fallbackApplied) {
+                  console.warn('Index illustration fallback also failed, hiding');
+                  img.style.display = 'none';
+                  return;
+                }
+                console.warn('Index illustration failed, switching to placeholder');
+                img.src = '/placeholder.svg';
+                img.dataset.fallbackApplied = 'true';
               }}
             />
           </div>

@@ -76,8 +76,15 @@ export function AppSidebar() {
               alt="EQ Logo"
               className="h-8 w-8 object-contain"
               onError={(e) => {
-                console.warn('Collapsed logo failed to load');
-                e.currentTarget.style.display = 'none';
+                const img = e.currentTarget;
+                if (img.dataset.fallbackApplied) {
+                  console.warn('Collapsed logo fallback also failed, hiding');
+                  img.style.display = 'none';
+                  return;
+                }
+                console.warn('Collapsed logo failed, switching to fallback');
+                img.src = '/lovable-uploads/logo_transparente.png';
+                img.dataset.fallbackApplied = 'true';
               }}
             />
           ) : (
@@ -86,8 +93,15 @@ export function AppSidebar() {
               alt="Logo EasyQuote"
               className="h-8 w-auto max-w-full object-contain"
               onError={(e) => {
-                console.warn('Expanded logo failed to load');
-                e.currentTarget.style.display = 'none';
+                const img = e.currentTarget;
+                if (img.dataset.fallbackApplied) {
+                  console.warn('Expanded logo fallback also failed, hiding');
+                  img.style.display = 'none';
+                  return;
+                }
+                console.warn('Expanded logo failed, switching to fallback');
+                img.src = '/lovable-uploads/logo_transparente.png';
+                img.dataset.fallbackApplied = 'true';
               }}
             />
           )}
