@@ -256,10 +256,21 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     }
   }, [forceRecalculate, hasToken, productId, refetchPricing]);
 
-  // Reset prompts when product changes
+  // Reset prompts when product changes and auto-expand
   useEffect(() => {
     setPromptValues({});
+    // Auto-expand when a product is selected for the first time
+    if (productId && !isExpanded) {
+      setIsExpanded(true);
+    }
   }, [productId]);
+
+  // Auto-expand when component mounts without a product
+  useEffect(() => {
+    if (!productId) {
+      setIsExpanded(true);
+    }
+  }, []);
 
   // Derive prompts and outputs
   const outputs = useMemo(() => ((pricing as any)?.outputValues ?? []) as any[], [pricing]);
