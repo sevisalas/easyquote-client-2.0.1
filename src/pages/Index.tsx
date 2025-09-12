@@ -55,6 +55,10 @@ const Index = () => {
               src="/lovable-uploads/logo_transparente-removebg-preview.png"
               alt="EasyQuote Logo"
               className="h-16 w-auto mx-auto md:mx-0 mb-4 hover-scale"
+              onError={(e) => {
+                console.warn('Index logo failed to load');
+                e.currentTarget.style.display = 'none';
+              }}
             />
             <h1 className="text-4xl md:text-5xl font-bold text-foreground bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent mb-6">
               Hola, {userName || 'Usuario'}
@@ -84,8 +88,12 @@ const Index = () => {
           <div className="flex justify-center">
             <img
               src="/lovable-uploads/easyquote 1.png"
-              alt="EasyQuote Logo"
+              alt="EasyQuote Illustration"
               className="h-40 w-auto hover-scale"
+              onError={(e) => {
+                console.warn('Index illustration failed to load');
+                e.currentTarget.style.display = 'none';
+              }}
             />
           </div>
         </div>

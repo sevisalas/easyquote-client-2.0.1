@@ -72,15 +72,23 @@ export function AppSidebar() {
         <Link to="/" aria-label="Ir al inicio" className="flex items-center justify-center px-2 py-2">
           {isCollapsed ? (
             <img
-              src="/lovable-uploads/8a40e1b7-3f4b-4f88-be65-7d90acdc54c0.png"
+              src="/lovable-uploads/logo_transparente-removebg-preview.png"
               alt="EQ Logo"
               className="h-8 w-8 object-contain"
+              onError={(e) => {
+                console.warn('Collapsed logo failed to load');
+                e.currentTarget.style.display = 'none';
+              }}
             />
           ) : (
             <img
-              src="/lovable-uploads/0cd7b0c5-a471-4b19-93b9-4e2945ce2f81.png"
+              src="/lovable-uploads/logo_transparente-removebg-preview.png"
               alt="Logo EasyQuote"
               className="h-8 w-auto max-w-full object-contain"
+              onError={(e) => {
+                console.warn('Expanded logo failed to load');
+                e.currentTarget.style.display = 'none';
+              }}
             />
           )}
         </Link>

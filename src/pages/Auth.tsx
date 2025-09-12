@@ -73,9 +73,13 @@ const Auth = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="flex flex-col items-center">
           <img
-            src="https://id-preview--ad98f81e-87a7-4a3e-8089-681d7fc4b657.lovable.app/lovable-uploads/3ff3c1d3-fd0e-4649-9146-6991b081234b.png"
-            alt="Logo"
+            src="/lovable-uploads/logo_transparente-removebg-preview.png"
+            alt="EasyQuote Logo"
             className="h-20 w-auto mb-4"
+            onError={(e) => {
+              console.warn('Logo failed to load, using fallback');
+              e.currentTarget.style.display = 'none';
+            }}
           />
           
           <CardTitle>
