@@ -696,6 +696,16 @@ export default function ProductManagement() {
             Catálogo de productos del API de EasyQuote para presupuestos
           </p>
         </div>
+        <div>
+          <Button 
+            onClick={() => navigate("/admin/productos/test")}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <TestTube className="h-4 w-4" />
+            Probar Productos
+          </Button>
+        </div>
       </div>
 
       <Separator />
