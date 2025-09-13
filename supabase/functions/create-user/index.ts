@@ -87,16 +87,13 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Create user using admin API - bypass email validation for test domains
-    const isTestEmail = email.includes('@test') || email.includes('@example') || email.includes('@demo');
-    const emailToUse = isTestEmail ? email.replace(/@.*/, '@gmail.com') : email;
-    
+    // Create user using admin API with bypass for signup restrictions
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email: emailToUse,
+      email,
       password,
       email_confirm: true, // Auto-confirm the email
       user_metadata: {
-        original_email: email // Store the original email they wanted
+        bypass_signup_disabled: true
       }
     })
 
