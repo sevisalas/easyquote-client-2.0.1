@@ -32,14 +32,25 @@ const UserInvitation = () => {
     setLoading(true);
 
     try {
-      // Usar la API admin de Supabase para crear usuarios
-      const { data, error } = await supabase.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true // Confirmar email automáticamente
+      // Get current session for authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("No hay sesión activa");
+      }
+
+      // Call the edge function to create user
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: { email, password },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
       if (error) throw error;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
       toast({
         title: "Usuario creado exitosamente",
