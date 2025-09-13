@@ -88,37 +88,42 @@ const GestionUsuarios = () => {
     }
 
     try {
-      // Crear el usuario API
-      const { data: datosAuth, error: errorAuth } = await supabase.auth.signUp({
-        email: emailApiUser,
-        password: Math.random().toString(36).slice(-8), // Contraseña temporal
+      // Crear usuario usando Edge Function que bypassa las restricciones
+      const { data: result, error: errorCreacion } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: emailApiUser,
+          password: Math.random().toString(36).slice(-8), // Contraseña temporal
+        }
       });
 
-      if (errorAuth) throw errorAuth;
+      if (errorCreacion) throw errorCreacion;
+      if (!result?.success || !result?.user?.id) {
+        throw new Error('No se pudo crear el usuario');
+      }
 
-      if (datosAuth.user) {
-        // Crear el suscriptor
-        const { error: errorOrg } = await supabase
-          .from('organizations')
-          .insert({
-            name: nombreNuevoSuscriptor,
-            subscription_plan: planNuevoSuscriptor,
-            api_user_id: datosAuth.user.id,
-          });
+      const userId = result.user.id;
 
-        if (errorOrg) throw errorOrg;
-
-        toast({
-          title: "Éxito",
-          description: `Suscriptor "${nombreNuevoSuscriptor}" creado exitosamente.`,
+      // Crear el suscriptor
+      const { error: errorOrg } = await supabase
+        .from('organizations')
+        .insert({
+          name: nombreNuevoSuscriptor,
+          subscription_plan: planNuevoSuscriptor,
+          api_user_id: userId,
         });
 
-        setNombreNuevoSuscriptor("");
-        setEmailApiUser("");
-        setPlanNuevoSuscriptor("api_base");
-        setMostrarFormulario(false);
-        obtenerSuscriptores();
-      }
+      if (errorOrg) throw errorOrg;
+
+      toast({
+        title: "Éxito",
+        description: `Suscriptor "${nombreNuevoSuscriptor}" creado exitosamente.`,
+      });
+
+      setNombreNuevoSuscriptor("");
+      setEmailApiUser("");
+      setPlanNuevoSuscriptor("api_base");
+      setMostrarFormulario(false);
+      obtenerSuscriptores();
     } catch (error: any) {
       console.error('Error al crear suscriptor:', error);
       toast({
