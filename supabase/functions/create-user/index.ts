@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
     }
 
     // Get the request body
-    const { email, password, role = 'user', organizationId } = await req.json()
+    const { email, password, role = 'user', organizationId, organizationName, subscriptionPlan } = await req.json()
 
     if (!email || !password) {
       return new Response(
@@ -105,6 +105,32 @@ Deno.serve(async (req) => {
       )
     }
 
+    let organizationData = null;
+
+    // If this is a superadmin creating an organization (new subscriber)
+    if (isSuperAdmin && organizationName && subscriptionPlan) {
+      const { data: orgData, error: orgError } = await supabaseAdmin
+        .from('organizations')
+        .insert({
+          name: organizationName,
+          subscription_plan: subscriptionPlan,
+          api_user_id: newUser.user.id,
+        })
+        .select()
+        .single();
+
+      if (orgError) {
+        console.error('Error creating organization:', orgError);
+        // Delete the user if organization creation fails
+        await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
+        return new Response(
+          JSON.stringify({ error: 'Error creating organization: ' + orgError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      organizationData = orgData;
+    }
+
     // If organizationId is provided and user is not superadmin, add user to organization
     if (organizationId && !isSuperAdmin && newUser.user) {
       const { error: memberError } = await supabaseAdmin
@@ -128,7 +154,8 @@ Deno.serve(async (req) => {
           id: newUser.user?.id,
           email: newUser.user?.email,
           created_at: newUser.user?.created_at
-        }
+        },
+        organization: organizationData
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

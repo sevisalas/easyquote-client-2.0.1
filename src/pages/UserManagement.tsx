@@ -93,6 +93,8 @@ const GestionUsuarios = () => {
         body: {
           email: emailApiUser,
           password: Math.random().toString(36).slice(-8), // Contraseña temporal
+          organizationName: nombreNuevoSuscriptor,
+          subscriptionPlan: planNuevoSuscriptor,
         }
       });
 
@@ -100,19 +102,6 @@ const GestionUsuarios = () => {
       if (!result?.success || !result?.user?.id) {
         throw new Error('No se pudo crear el usuario');
       }
-
-      const userId = result.user.id;
-
-      // Crear el suscriptor
-      const { error: errorOrg } = await supabase
-        .from('organizations')
-        .insert({
-          name: nombreNuevoSuscriptor,
-          subscription_plan: planNuevoSuscriptor,
-          api_user_id: userId,
-        });
-
-      if (errorOrg) throw errorOrg;
 
       toast({
         title: "Éxito",
