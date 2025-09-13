@@ -87,6 +87,21 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Check if user already exists
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
+    const userExists = existingUsers.users?.some(user => user.email === email)
+    
+    if (userExists) {
+      console.log('User already exists with email:', email)
+      return new Response(
+        JSON.stringify({ 
+          error: `El usuario con email ${email} ya existe en el sistema. Usa un email diferente o contacta al administrador.`,
+          code: 'USER_EXISTS'
+        }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
 
     // Create user directly with admin API - bypasses all signup restrictions
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
