@@ -295,6 +295,48 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_configurations: {
+        Row: {
+          available_modules: string[] | null
+          client_user_limit: number
+          created_at: string
+          description: string | null
+          excel_limit: number
+          id: string
+          is_active: boolean
+          name: string
+          plan_id: string
+          price: number | null
+          updated_at: string
+        }
+        Insert: {
+          available_modules?: string[] | null
+          client_user_limit?: number
+          created_at?: string
+          description?: string | null
+          excel_limit?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          plan_id: string
+          price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          available_modules?: string[] | null
+          client_user_limit?: number
+          created_at?: string
+          description?: string | null
+          excel_limit?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          plan_id?: string
+          price?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_categories: {
         Row: {
           color: string
