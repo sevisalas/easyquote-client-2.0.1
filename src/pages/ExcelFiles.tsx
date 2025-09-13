@@ -145,7 +145,9 @@ export default function ExcelFiles() {
           .insert({
             user_id: user.id,
             file_id: file.id,
-            file_name: file.fileName,
+            filename: file.fileName,
+            original_filename: file.fileName,
+            file_size: 0,
             is_master: false
           });
       }

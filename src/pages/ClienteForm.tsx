@@ -82,9 +82,15 @@ const ClienteForm = () => {
           description: "Cliente actualizado correctamente",
         });
       } else {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("No user found");
+
         const { error } = await supabase
           .from('customers')
-          .insert([formData]);
+          .insert({
+            ...formData,
+            user_id: user.id
+          });
 
         if (error) throw error;
         

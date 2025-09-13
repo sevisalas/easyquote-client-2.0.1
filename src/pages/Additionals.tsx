@@ -65,9 +65,16 @@ export default function Additionals() {
 
   const createMutation = useMutation({
     mutationFn: async (newAdditional: AdditionalForm) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+
       const { data, error } = await supabase
         .from("additionals")
-        .insert([newAdditional])
+        .insert({
+          ...newAdditional,
+          user_id: user.id,
+          assignment_type: 'article'
+        })
         .select()
         .single()
 

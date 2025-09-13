@@ -100,6 +100,7 @@ export type Database = {
           file_size: number
           filename: string
           id: string
+          is_master: boolean | null
           mime_type: string | null
           original_filename: string
           processed: boolean
@@ -114,6 +115,7 @@ export type Database = {
           file_size?: number
           filename: string
           id?: string
+          is_master?: boolean | null
           mime_type?: string | null
           original_filename: string
           processed?: boolean
@@ -128,6 +130,7 @@ export type Database = {
           file_size?: number
           filename?: string
           id?: string
+          is_master?: boolean | null
           mime_type?: string | null
           original_filename?: string
           processed?: boolean
@@ -413,6 +416,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       quote_items: {
         Row: {
