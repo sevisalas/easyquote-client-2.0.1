@@ -10,25 +10,37 @@ import { supabase } from "@/integrations/supabase/client";
 const Auth = () => {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
+  const [isReset, setIsReset] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    document.title = isLogin ? "Iniciar sesión | App" : "Crear cuenta | App";
+    document.title = isReset ? "Recuperar contraseña | App" : isLogin ? "Iniciar sesión | App" : "Crear cuenta | App";
 
     // If already logged in, redirect to dashboard
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) navigate("/", { replace: true });
     });
-  }, [isLogin, navigate]);
+  }, [isLogin, isReset, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (isLogin) {
+      if (isReset) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth`,
+        });
+        if (error) throw error;
+        toast({
+          title: "Correo enviado",
+          description: "Te enviamos un enlace para resetear tu contraseña. Revisa tu correo.",
+        });
+        setIsReset(false);
+        setIsLogin(true);
+      } else if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
 
@@ -90,7 +102,7 @@ const Auth = () => {
           />
           
           <CardTitle>
-            {isLogin ? "Inicia sesión" : "Crea tu cuenta"}
+            {isReset ? "Recuperar contraseña" : isLogin ? "Inicia sesión" : "Crea tu cuenta"}
           </CardTitle>
         </CardHeader>
 
@@ -100,22 +112,39 @@ const Auth = () => {
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-            </div>
+            {!isReset && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña</Label>
+                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              </div>
+            )}
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Procesando..." : isLogin ? "Entrar" : "Crear cuenta"}
+              {loading ? "Procesando..." : isReset ? "Enviar enlace" : isLogin ? "Entrar" : "Crear cuenta"}
             </Button>
           </form>
           <div className="mt-4 text-center space-y-2">
-            <button
-              type="button"
-              onClick={() => setIsLogin((v) => !v)}
-              className="text-primary underline underline-offset-4"
-            >
-              {isLogin ? "¿No tienes cuenta? Regístrate" : "¿Ya tienes cuenta? Inicia sesión"}
-            </button>
+            {!isReset && (
+              <button
+                type="button"
+                onClick={() => setIsLogin((v) => !v)}
+                className="text-primary underline underline-offset-4"
+              >
+                {isLogin ? "¿No tienes cuenta? Regístrate" : "¿Ya tienes cuenta? Inicia sesión"}
+              </button>
+            )}
+            
+            <div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsReset(!isReset);
+                  if (isReset) setIsLogin(true);
+                }}
+                className="text-sm text-muted-foreground underline underline-offset-4"
+              >
+                {isReset ? "Volver al login" : "¿Olvidaste tu contraseña?"}
+              </button>
+            </div>
           </div>
         </CardContent>
       </Card>
