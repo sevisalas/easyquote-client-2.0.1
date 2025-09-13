@@ -262,14 +262,6 @@ export function AppSidebar() {
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/credenciales-api"}>
-                          <NavLink to="/configuracion/credenciales-api" end className={getNavCls}>
-                            <Key className="mr-2 h-4 w-4" />
-                            {!isCollapsed && <span>Credenciales API</span>}
-                          </NavLink>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
                         <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/plantilla-pdf"}>
                           <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
                             <FileText className="mr-2 h-4 w-4" />

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Users, Edit, Key } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Users, Edit, Key, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,13 @@ const UsuariosSuscriptor = () => {
   const [emailNuevoUsuario, setEmailNuevoUsuario] = useState("");
   const [rolNuevoUsuario, setRolNuevoUsuario] = useState<"admin" | "user">("user");
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  
+  // Estados para credenciales API
+  const [apiUsername, setApiUsername] = useState("");
+  const [apiPassword, setApiPassword] = useState("");
+  const [loadingCredentials, setLoadingCredentials] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [hasCredentials, setHasCredentials] = useState(false);
 
   useEffect(() => {
     if (!isSuperAdmin && !organization) {
@@ -115,6 +122,11 @@ const UsuariosSuscriptor = () => {
 
       usuariosFormateados.push(...usuariosMiembros);
       setUsuarios(usuariosFormateados);
+      
+      // Si es superadmin, cargar credenciales API
+      if (isSuperAdmin) {
+        await cargarCredenciales(datosSuscriptor.api_user_id);
+      }
     } catch (error: any) {
       console.error('Error al obtener datos:', error);
       toast({
@@ -199,6 +211,121 @@ const UsuariosSuscriptor = () => {
       toast({
         title: "Error",
         description: error.message || "No se pudo eliminar el usuario",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const cargarCredenciales = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('easyquote_credentials')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading credentials:', error);
+      } else if (data) {
+        setApiUsername(data.api_username);
+        setApiPassword(data.api_password);
+        setHasCredentials(true);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const guardarCredenciales = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!apiUsername || !apiPassword) {
+      toast({
+        title: "Error",
+        description: "Por favor completa todos los campos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!suscriptor?.api_user_id) {
+      toast({
+        title: "Error", 
+        description: "No se puede obtener el usuario API del suscriptor",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoadingCredentials(true);
+
+    try {
+      const credentialData = {
+        user_id: suscriptor.api_user_id,
+        api_username: apiUsername,
+        api_password: apiPassword,
+      };
+
+      let result;
+      if (hasCredentials) {
+        result = await supabase
+          .from('easyquote_credentials')
+          .update(credentialData)
+          .eq('user_id', suscriptor.api_user_id);
+      } else {
+        result = await supabase
+          .from('easyquote_credentials')
+          .insert([credentialData]);
+      }
+
+      if (result.error) throw result.error;
+
+      toast({
+        title: "Éxito",
+        description: "Credenciales guardadas correctamente",
+      });
+
+      setHasCredentials(true);
+      await probarCredenciales();
+
+    } catch (error: any) {
+      console.error('Error saving credentials:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudieron guardar las credenciales",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingCredentials(false);
+    }
+  };
+
+  const probarCredenciales = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("easyquote-auth", {
+        body: { 
+          email: apiUsername, 
+          password: apiPassword 
+        },
+      });
+
+      if (error) {
+        toast({
+          title: "Credenciales inválidas",
+          description: "Las credenciales no funcionan con el API de EasyQuote",
+          variant: "destructive",
+        });
+      } else if (data?.token) {
+        toast({
+          title: "Éxito",
+          description: "Credenciales verificadas correctamente",
+        });
+      }
+    } catch (error) {
+      console.error('Error testing credentials:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron probar las credenciales",
         variant: "destructive",
       });
     }
@@ -306,6 +433,81 @@ const UsuariosSuscriptor = () => {
                 Cancelar
               </Button>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Credenciales API EasyQuote - Solo SuperAdmin */}
+      {isSuperAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5" />
+              Credenciales API EasyQuote
+            </CardTitle>
+            <CardDescription>
+              Gestionar las credenciales de EasyQuote para este suscriptor
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={guardarCredenciales} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="api-username">Usuario del API</Label>
+                  <Input 
+                    id="api-username" 
+                    type="text" 
+                    value={apiUsername} 
+                    onChange={(e) => setApiUsername(e.target.value)} 
+                    placeholder="Usuario del API de EasyQuote"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="api-password">Contraseña del API</Label>
+                  <div className="relative">
+                    <Input 
+                      id="api-password" 
+                      type={showPassword ? "text" : "password"} 
+                      value={apiPassword} 
+                      onChange={(e) => setApiPassword(e.target.value)} 
+                      placeholder="Contraseña del API de EasyQuote"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button 
+                  type="submit" 
+                  disabled={loadingCredentials || !apiUsername || !apiPassword}
+                >
+                  {loadingCredentials ? "Guardando..." : hasCredentials ? "Actualizar credenciales" : "Guardar credenciales"}
+                </Button>
+                {hasCredentials && (
+                  <Button 
+                    type="button"
+                    onClick={probarCredenciales}
+                    variant="outline"
+                  >
+                    Probar conexión
+                  </Button>
+                )}
+              </div>
+            </form>
           </CardContent>
         </Card>
       )}
