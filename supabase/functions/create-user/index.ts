@@ -105,10 +105,21 @@ Deno.serve(async (req) => {
       )
     }
 
+    if (!newUser.user) {
+      console.error('User creation returned null user')
+      return new Response(
+        JSON.stringify({ error: 'User creation failed - no user returned' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log('User created successfully:', newUser.user.email)
+
     let organizationData = null;
 
     // If this is a superadmin creating an organization (new subscriber)
     if (isSuperAdmin && organizationName && subscriptionPlan) {
+      console.log('Creating organization:', organizationName, 'for user:', newUser.user.id)
       const { data: orgData, error: orgError } = await supabaseAdmin
         .from('organizations')
         .insert({
@@ -128,6 +139,7 @@ Deno.serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
+      console.log('Organization created successfully:', orgData.id)
       organizationData = orgData;
     }
 
