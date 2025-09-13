@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Users, Building } from "lucide-react";
+import { Plus, Users, Building, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -205,7 +205,8 @@ const GestionUsuarios = () => {
               Nuevo suscriptor
             </Button>
             <Button onClick={() => setMostrarCambiarPassword(true)} className="flex items-center gap-2" variant="outline">
-              🔑 Cambiar contraseña
+              <Key className="h-4 w-4" />
+              Cambiar contraseña
             </Button>
           </>
         )}
@@ -280,7 +281,8 @@ const GestionUsuarios = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              🔑 Cambiar contraseña de usuario
+              <Key className="h-5 w-5" />
+              Cambiar contraseña de usuario
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
