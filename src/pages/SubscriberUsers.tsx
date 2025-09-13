@@ -102,14 +102,19 @@ const UsuariosSuscriptor = () => {
 
       const usuariosFormateados: Usuario[] = [];
 
-      // Agregar usuario principal primero
+      // Solo agregar el usuario principal si realmente existe y no es el superadmin actual
       if (datosSuscriptor.api_user_id) {
-        usuariosFormateados.push({
-          id: datosSuscriptor.api_user_id,
-          email: 'Administrador Principal de la API',
-          rol: 'API Administrator',
-          isPrincipal: true
-        });
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        // Si el superadmin no es el api_user_id de esta organización, mostrar el verdadero propietario
+        if (!isSuperAdmin || (isSuperAdmin && user?.id === datosSuscriptor.api_user_id)) {
+          usuariosFormateados.push({
+            id: datosSuscriptor.api_user_id,
+            email: 'Administrador Principal de la API',
+            rol: 'API Administrator', 
+            isPrincipal: true
+          });
+        }
       }
 
       // Agregar usuarios miembros adicionales
