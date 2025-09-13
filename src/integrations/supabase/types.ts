@@ -492,6 +492,54 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_additionals: {
+        Row: {
+          additional_id: string | null
+          created_at: string
+          id: string
+          name: string
+          quote_id: string
+          type: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          additional_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          quote_id: string
+          type?: string
+          updated_at?: string
+          value?: number
+        }
+        Update: {
+          additional_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          quote_id?: string
+          type?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_additionals_additional_id_fkey"
+            columns: ["additional_id"]
+            isOneToOne: false
+            referencedRelation: "additionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_additionals_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_items: {
         Row: {
           created_at: string
@@ -548,6 +596,8 @@ export type Database = {
           final_price: number
           id: string
           notes: string | null
+          product_name: string | null
+          quote_additionals: Json | null
           quote_number: string
           status: string
           subtotal: number
@@ -566,6 +616,8 @@ export type Database = {
           final_price?: number
           id?: string
           notes?: string | null
+          product_name?: string | null
+          quote_additionals?: Json | null
           quote_number: string
           status?: string
           subtotal?: number
@@ -584,6 +636,8 @@ export type Database = {
           final_price?: number
           id?: string
           notes?: string | null
+          product_name?: string | null
+          quote_additionals?: Json | null
           quote_number?: string
           status?: string
           subtotal?: number
