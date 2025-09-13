@@ -75,9 +75,11 @@ const UsuariosSuscriptor = () => {
 
       setSuscriptor(datosSuscriptor);
 
-      // Obtener usuarios del suscriptor usando la función segura
+      // Obtener usuarios del suscriptor 
       const { data: usuariosData, error: errorUsuarios } = await supabase
-        .rpc('get_organization_users', { org_id: id });
+        .from('organization_members')
+        .select('user_id, role')
+        .eq('organization_id', id);
 
       if (errorUsuarios) {
         console.error('Error al obtener usuarios:', errorUsuarios);
@@ -85,7 +87,7 @@ const UsuariosSuscriptor = () => {
 
       const usuariosFormateados = (usuariosData || []).map((usuario) => ({
         id: usuario.user_id,
-        email: usuario.email || 'N/A',
+        email: `usuario-${usuario.user_id.substring(0,8)}`, // Temporary email display
         rol: usuario.role
       }));
 

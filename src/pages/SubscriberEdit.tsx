@@ -57,7 +57,7 @@ const EditarSuscriptor = () => {
         return;
       }
 
-      setSuscriptor(data);
+      setSuscriptor(data as any);
     } catch (error: any) {
       console.error('Error al obtener suscriptor:', error);
       toast({

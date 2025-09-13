@@ -146,8 +146,10 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          integration_type: string | null
           is_active: boolean
           name: string
+          organization_id: string | null
           updated_at: string
         }
         Insert: {
@@ -155,8 +157,10 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          integration_type?: string | null
           is_active?: boolean
           name: string
+          organization_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -164,11 +168,21 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          integration_type?: string | null
           is_active?: boolean
           name?: string
+          organization_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "integrations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       organization_integration_access: {
         Row: {
@@ -546,10 +560,18 @@ export type Database = {
           description: string | null
           discount_percentage: number | null
           id: string
+          item_additionals: Json | null
+          multi: number | null
+          name: string | null
+          outputs: Json | null
+          position: number | null
+          product_id: string | null
           product_name: string
+          prompts: Json | null
           quantity: number
           quote_id: string
           subtotal: number
+          total_price: number | null
           unit_price: number
           updated_at: string
         }
@@ -558,10 +580,18 @@ export type Database = {
           description?: string | null
           discount_percentage?: number | null
           id?: string
+          item_additionals?: Json | null
+          multi?: number | null
+          name?: string | null
+          outputs?: Json | null
+          position?: number | null
+          product_id?: string | null
           product_name: string
+          prompts?: Json | null
           quantity?: number
           quote_id: string
           subtotal?: number
+          total_price?: number | null
           unit_price?: number
           updated_at?: string
         }
@@ -570,10 +600,18 @@ export type Database = {
           description?: string | null
           discount_percentage?: number | null
           id?: string
+          item_additionals?: Json | null
+          multi?: number | null
+          name?: string | null
+          outputs?: Json | null
+          position?: number | null
+          product_id?: string | null
           product_name?: string
+          prompts?: Json | null
           quantity?: number
           quote_id?: string
           subtotal?: number
+          total_price?: number | null
           unit_price?: number
           updated_at?: string
         }
@@ -599,6 +637,7 @@ export type Database = {
           product_name: string | null
           quote_additionals: Json | null
           quote_number: string
+          selections: Json | null
           status: string
           subtotal: number
           tax_amount: number
@@ -619,6 +658,7 @@ export type Database = {
           product_name?: string | null
           quote_additionals?: Json | null
           quote_number: string
+          selections?: Json | null
           status?: string
           subtotal?: number
           tax_amount?: number
@@ -639,6 +679,7 @@ export type Database = {
           product_name?: string | null
           quote_additionals?: Json | null
           quote_number?: string
+          selections?: Json | null
           status?: string
           subtotal?: number
           tax_amount?: number
