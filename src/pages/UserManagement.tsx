@@ -31,6 +31,9 @@ const GestionUsuarios = () => {
   const [planNuevoSuscriptor, setPlanNuevoSuscriptor] = useState<"api_base" | "api_pro" | "client_base" | "client_pro" | "custom">("api_base");
   const [emailApiUser, setEmailApiUser] = useState("");
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [mostrarCambiarPassword, setMostrarCambiarPassword] = useState(false);
+  const [emailCambiarPassword, setEmailCambiarPassword] = useState("");
+  const [nuevaPassword, setNuevaPassword] = useState("");
   const { toast } = useToast();
   const { isSuperAdmin, organization } = useSubscription();
   const navigate = useNavigate();
@@ -123,6 +126,44 @@ const GestionUsuarios = () => {
     }
   };
 
+  const cambiarPassword = async () => {
+    if (!emailCambiarPassword || !nuevaPassword) {
+      toast({
+        title: "Error",
+        description: "Por favor complete todos los campos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data: result, error: errorCambio } = await supabase.functions.invoke('update-user-password', {
+        body: {
+          email: emailCambiarPassword,
+          newPassword: nuevaPassword,
+        }
+      });
+
+      if (errorCambio) throw errorCambio;
+
+      toast({
+        title: "Éxito",
+        description: `Contraseña actualizada para ${emailCambiarPassword}`,
+      });
+
+      setEmailCambiarPassword("");
+      setNuevaPassword("");
+      setMostrarCambiarPassword(false);
+    } catch (error: any) {
+      console.error('Error al cambiar contraseña:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo cambiar la contraseña",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!isSuperAdmin && !organization) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -158,10 +199,15 @@ const GestionUsuarios = () => {
           </p>
         </div>
         {isSuperAdmin && (
-          <Button onClick={() => setMostrarFormulario(true)} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Nuevo suscriptor
-          </Button>
+          <>
+            <Button onClick={() => setMostrarFormulario(true)} className="flex items-center gap-2 mr-2">
+              <Plus className="h-4 w-4" />
+              Nuevo suscriptor
+            </Button>
+            <Button onClick={() => setMostrarCambiarPassword(true)} className="flex items-center gap-2" variant="outline">
+              🔑 Cambiar contraseña
+            </Button>
+          </>
         )}
       </div>
 
@@ -222,6 +268,54 @@ const GestionUsuarios = () => {
                 Crear suscriptor
               </Button>
               <Button variant="outline" onClick={() => setMostrarFormulario(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Formulario cambiar contraseña - Solo para superadmin */}
+      {isSuperAdmin && mostrarCambiarPassword && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              🔑 Cambiar contraseña de usuario
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="emailCambiar">Email del usuario</Label>
+                <Input
+                  id="emailCambiar"
+                  type="email"
+                  value={emailCambiarPassword}
+                  onChange={(e) => setEmailCambiarPassword(e.target.value)}
+                  placeholder="test1@test1.com"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="nuevaPassword">Nueva contraseña</Label>
+                <Input
+                  id="nuevaPassword"
+                  type="text"
+                  value={nuevaPassword}
+                  onChange={(e) => setNuevaPassword(e.target.value)}
+                  placeholder="Tu contraseña nueva"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <Button 
+                onClick={cambiarPassword}
+                disabled={!emailCambiarPassword || !nuevaPassword}
+              >
+                Cambiar contraseña
+              </Button>
+              <Button variant="outline" onClick={() => setMostrarCambiarPassword(false)}>
                 Cancelar
               </Button>
             </div>
