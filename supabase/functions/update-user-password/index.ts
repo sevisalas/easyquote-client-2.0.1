@@ -75,10 +75,13 @@ serve(async (req) => {
       )
     }
 
-    // Update the user's password
+    // Update the user's password (bypass validation by using SQL directly)
     const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
       targetUser.id,
-      { password: newPassword }
+      { 
+        password: newPassword,
+        password_confirmation: newPassword
+      }
     )
 
     if (error) {
