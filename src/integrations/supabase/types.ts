@@ -211,6 +211,53 @@ export type Database = {
           },
         ]
       }
+      organization_api_credentials: {
+        Row: {
+          api_key: string
+          api_secret: string
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          last_used_at: string | null
+          organization_id: string
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          api_key: string
+          api_secret: string
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          organization_id: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          api_key?: string
+          api_secret?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          organization_id?: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_api_credentials_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_integration_access: {
         Row: {
           access_token: string | null
@@ -731,7 +778,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_api_key: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_api_secret: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
