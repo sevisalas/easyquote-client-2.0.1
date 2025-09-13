@@ -78,12 +78,14 @@ const IntegrationAccess = () => {
       if (accessError) throw accessError;
 
       // Manually map organization data
-      const accessesWithOrgs = (accessData || []).map(access => ({
+      const accessesWithOrgs = (accessData || []).map((access: any) => ({
         ...access,
+        integration_type: 'holded', // Default type since we only have one integration for now
+        granted_by: access.user_id || null,
         organization: orgsData?.find(org => org.id === access.organization_id)
       }));
 
-      setIntegrationAccesses(accessesWithOrgs);
+      setIntegrationAccesses(accessesWithOrgs as any);
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
@@ -105,8 +107,8 @@ const IntegrationAccess = () => {
         .from('organization_integration_access')
         .insert({
           organization_id: selectedOrg,
-          integration_type: selectedIntegration,
-          granted_by: (await supabase.auth.getUser()).data.user?.id
+          integration_id: selectedIntegration, // Use integration_id instead of integration_type
+          is_active: true
         });
 
       if (error) throw error;

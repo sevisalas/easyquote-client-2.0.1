@@ -39,7 +39,7 @@ const GestionPlanes = () => {
       if (error) throw error;
 
       if (data) {
-        setPlanes(data.map(plan => ({
+        setPlanes(data.map((plan: any) => ({
           id: plan.plan_id,
           name: plan.name,
           excel_limit: plan.excel_limit,
