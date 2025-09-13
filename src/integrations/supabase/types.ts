@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       additionals: {
         Row: {
+          assignment_type: string | null
           created_at: string
           default_value: number | null
           description: string | null
@@ -28,6 +29,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          assignment_type?: string | null
           created_at?: string
           default_value?: number | null
           description?: string | null
@@ -40,6 +42,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          assignment_type?: string | null
           created_at?: string
           default_value?: number | null
           description?: string | null
@@ -85,6 +88,51 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      excel_files: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          file_id: string
+          file_size: number
+          filename: string
+          id: string
+          mime_type: string | null
+          original_filename: string
+          processed: boolean
+          updated_at: string
+          upload_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          file_id: string
+          file_size?: number
+          filename: string
+          id?: string
+          mime_type?: string | null
+          original_filename: string
+          processed?: boolean
+          updated_at?: string
+          upload_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          file_id?: string
+          file_size?: number
+          filename?: string
+          id?: string
+          mime_type?: string | null
+          original_filename?: string
+          processed?: boolean
+          updated_at?: string
+          upload_date?: string
           user_id?: string
         }
         Relationships: []
