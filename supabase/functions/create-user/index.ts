@@ -41,16 +41,44 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Check if user is superadmin
-    if (user.email !== 'vdp@tradsis.net') {
+    // Check if user is superadmin or organization admin
+    const isSuperAdmin = user.email === 'vdp@tradsis.net';
+    let isOrgAdmin = false;
+
+    if (!isSuperAdmin) {
+      // Check if user is owner of an organization (API user)
+      const { data: orgData, error: orgError } = await supabaseAdmin
+        .from('organizations')
+        .select('id')
+        .eq('api_user_id', user.id)
+        .maybeSingle();
+
+      if (orgData) {
+        isOrgAdmin = true;
+      } else {
+        // Check if user is admin member of an organization  
+        const { data: memberData, error: memberError } = await supabaseAdmin
+          .from('organization_members')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        if (memberData) {
+          isOrgAdmin = true;
+        }
+      }
+    }
+
+    if (!isSuperAdmin && !isOrgAdmin) {
       return new Response(
-        JSON.stringify({ error: 'Not authorized. Only superadmin can create users.' }),
+        JSON.stringify({ error: 'Not authorized. Only superadmin or organization admins can create users.' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     // Get the request body
-    const { email, password, role = 'user' } = await req.json()
+    const { email, password, role = 'user', organizationId } = await req.json()
 
     if (!email || !password) {
       return new Response(
@@ -72,6 +100,22 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: createError.message }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    // If organizationId is provided and user is not superadmin, add user to organization
+    if (organizationId && !isSuperAdmin && newUser.user) {
+      const { error: memberError } = await supabaseAdmin
+        .from('organization_members')
+        .insert({
+          organization_id: organizationId,
+          user_id: newUser.user.id,
+          role: role
+        });
+
+      if (memberError) {
+        console.error('Error adding user to organization:', memberError);
+        // Don't fail the entire operation, just log the error
+      }
     }
 
     return new Response(

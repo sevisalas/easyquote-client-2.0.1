@@ -8,12 +8,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 
 const UserInvitation = () => {
-  const { isSuperAdmin } = useSubscription();
+  const { isSuperAdmin, isOrgAdmin, organization, membership } = useSubscription();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  if (!isSuperAdmin) {
+  // Only superadmins and organization admins can access this page
+  if (!isSuperAdmin && !isOrgAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <Card className="w-full max-w-md">
@@ -38,9 +39,21 @@ const UserInvitation = () => {
         throw new Error("No hay sesión activa");
       }
 
+      // Get organization info if user is not superadmin
+      let organizationId = null;
+      if (!isSuperAdmin) {
+        const currentOrg = organization || membership?.organization;
+        organizationId = currentOrg?.id;
+      }
+
       // Call the edge function to create user
       const { data, error } = await supabase.functions.invoke('create-user', {
-        body: { email, password },
+        body: { 
+          email, 
+          password, 
+          role: 'user', // Default role for new users
+          organizationId 
+        },
         headers: {
           Authorization: `Bearer ${session.access_token}`
         }
@@ -75,6 +88,9 @@ const UserInvitation = () => {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Crear Nuevo Usuario</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            {isSuperAdmin ? "Como superadmin puedes crear usuarios para cualquier organización" : "Crear usuario para tu organización"}
+          </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleCreateUser} className="space-y-4">
@@ -98,6 +114,7 @@ const UserInvitation = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="Contraseña temporal"
+                minLength={6}
               />
             </div>
             <Button type="submit" disabled={loading} className="w-full">
