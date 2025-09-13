@@ -44,15 +44,27 @@ const Auth = () => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
 
-        // Obtener token de EasyQuote con las mismas credenciales y guardarlo
+        // Obtener token de EasyQuote usando las credenciales guardadas
         try {
-          const { data, error: fxError } = await supabase.functions.invoke("easyquote-auth", {
-            body: { email, password },
-          });
-          if (fxError) {
-            console.error("easyquote-auth error", fxError);
-          } else if ((data as any)?.token) {
-            localStorage.setItem("easyquote_token", (data as any).token);
+          const { data: credentials } = await supabase
+            .from('easyquote_credentials')
+            .select('*')
+            .single();
+
+          if (credentials) {
+            const { data, error: fxError } = await supabase.functions.invoke("easyquote-auth", {
+              body: { 
+                email: credentials.api_username, 
+                password: credentials.api_password 
+              },
+            });
+            if (fxError) {
+              console.error("easyquote-auth error", fxError);
+            } else if ((data as any)?.token) {
+              localStorage.setItem("easyquote_token", (data as any).token);
+            }
+          } else {
+            console.warn("No hay credenciales del API configuradas");
           }
         } catch (e) {
           console.warn("No se pudo obtener el token de EasyQuote", e);

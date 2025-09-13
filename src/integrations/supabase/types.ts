@@ -92,6 +92,33 @@ export type Database = {
         }
         Relationships: []
       }
+      easyquote_credentials: {
+        Row: {
+          api_password: string
+          api_username: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_password: string
+          api_username: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_password?: string
+          api_username?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       excel_files: {
         Row: {
           created_at: string

@@ -27,6 +27,7 @@ import ExcelFiles from "./pages/ExcelFiles";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProductManagement from "./pages/ProductManagement";
 import ProductCategories from "./pages/ProductCategories";
+import ApiCredentials from "./pages/ApiCredentials";
 
 
 import PresupuestosDashboard from "./pages/PresupuestosDashboard";
@@ -149,6 +150,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <SettingsPdfTemplate />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configuracion/credenciales-api"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ApiCredentials />
                 </AppLayout>
               </ProtectedRoute>
             }

@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -258,6 +258,14 @@ export function AppSidebar() {
                           <NavLink to="/configuracion/ajustes" end className={getNavCls}>
                             <Plus className="mr-2 h-4 w-4" />
                             {!isCollapsed && <span>Ajustes</span>}
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/credenciales-api"}>
+                          <NavLink to="/configuracion/credenciales-api" end className={getNavCls}>
+                            <Key className="mr-2 h-4 w-4" />
+                            {!isCollapsed && <span>Credenciales API</span>}
                           </NavLink>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
