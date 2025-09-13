@@ -87,13 +87,13 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Create user using admin API with bypass for signup restrictions
+    // Create user directly with admin API - bypasses all signup restrictions
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // Auto-confirm the email
+      email_confirm: true, // Auto-confirm so no email needed
       user_metadata: {
-        bypass_signup_disabled: true
+        created_by_admin: true
       }
     })
 
