@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Users, Edit } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Users, Edit, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,12 +17,15 @@ interface Usuario {
   id: string;
   email: string;
   rol: string;
+  isPrincipal?: boolean;
 }
 
 interface Suscriptor {
   id: string;
   name: string;
   subscription_plan: string;
+  api_user_email?: string;
+  api_user_id?: string;
 }
 
 const UsuariosSuscriptor = () => {
@@ -54,10 +57,15 @@ const UsuariosSuscriptor = () => {
 
   const obtenerDatos = async () => {
     try {
-      // Obtener datos del suscriptor
+      // Obtener datos del suscriptor incluyendo email del usuario principal
       const { data: datosSuscriptor, error: errorSuscriptor } = await supabase
         .from('organizations')
-        .select('id, name, subscription_plan')
+        .select(`
+          id, 
+          name, 
+          subscription_plan,
+          api_user_id
+        `)
         .eq('id', id)
         .maybeSingle();
 
@@ -73,9 +81,12 @@ const UsuariosSuscriptor = () => {
         return;
       }
 
-      setSuscriptor(datosSuscriptor);
+      setSuscriptor({
+        ...datosSuscriptor,
+        api_user_email: 'Administrador Principal',
+      });
 
-      // Obtener usuarios del suscriptor 
+      // Obtener usuarios miembros adicionales del suscriptor 
       const { data: usuariosData, error: errorUsuarios } = await supabase
         .from('organization_members')
         .select('user_id, role')
@@ -85,11 +96,29 @@ const UsuariosSuscriptor = () => {
         console.error('Error al obtener usuarios:', errorUsuarios);
       }
 
-      const usuariosFormateados = (usuariosData || []).map((usuario) => ({
-        id: usuario.user_id,
-        email: `usuario-${usuario.user_id.substring(0,8)}`, // Temporary email display
-        rol: usuario.role
-      }));
+      const usuariosFormateados: Usuario[] = [];
+
+      // Agregar usuario principal primero
+      if (datosSuscriptor.api_user_id) {
+        usuariosFormateados.push({
+          id: datosSuscriptor.api_user_id,
+          email: 'Administrador Principal',
+          rol: 'API Administrator',
+          isPrincipal: true
+        });
+      }
+
+      // Agregar usuarios miembros adicionales
+      if (usuariosData) {
+        for (const usuario of usuariosData) {
+          usuariosFormateados.push({
+            id: usuario.user_id,
+            email: `Usuario ${usuario.user_id.substring(0,8)}`,
+            rol: usuario.role === 'admin' ? 'Administrador' : 'Usuario',
+            isPrincipal: false
+          });
+        }
+      }
 
       setUsuarios(usuariosFormateados);
     } catch (error: any) {
@@ -234,6 +263,13 @@ const UsuariosSuscriptor = () => {
           <Edit className="h-4 w-4 mr-2" />
           Editar suscriptor
         </Button>
+        <Button
+          variant="outline"
+          onClick={() => navigate('/configuracion/credenciales-organizacion')}
+        >
+          <Key className="h-4 w-4 mr-2" />
+          Credenciales API
+        </Button>
       </div>
 
       {/* Formulario invitar usuario */}
@@ -309,34 +345,42 @@ const UsuariosSuscriptor = () => {
                 <TableRow key={usuario.id}>
                   <TableCell>{usuario.email}</TableCell>
                   <TableCell>
-                    <Badge variant={usuario.rol === 'admin' ? 'default' : 'secondary'}>
-                      {usuario.rol === 'admin' ? 'Administrador' : 'Usuario'}
+                    <Badge variant={
+                      usuario.isPrincipal ? 'default' : 
+                      usuario.rol === 'Administrador' ? 'default' : 'secondary'
+                    }>
+                      {usuario.rol}
                     </Badge>
+                    {usuario.isPrincipal && <span className="ml-2 text-xs text-muted-foreground">(Principal)</span>}
                   </TableCell>
                   <TableCell>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Eliminar usuario</DialogTitle>
-                          <DialogDescription>
-                            ¿Estás seguro de que quieres eliminar a {usuario.email} de este suscriptor?
-                          </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                          <Button
-                            variant="destructive"
-                            onClick={() => eliminarUsuario(usuario.id)}
-                          >
-                            Eliminar
+                    {usuario.isPrincipal ? (
+                      <span className="text-sm text-muted-foreground">No se puede eliminar</span>
+                    ) : (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Trash2 className="h-4 w-4" />
                           </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Eliminar usuario</DialogTitle>
+                            <DialogDescription>
+                              ¿Estás seguro de que quieres eliminar a {usuario.email} de este suscriptor?
+                            </DialogDescription>
+                          </DialogHeader>
+                          <DialogFooter>
+                            <Button
+                              variant="destructive"
+                              onClick={() => eliminarUsuario(usuario.id)}
+                            >
+                              Eliminar
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
