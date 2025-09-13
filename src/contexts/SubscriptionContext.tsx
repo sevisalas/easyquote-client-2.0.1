@@ -91,7 +91,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
           .maybeSingle();
 
         console.log('Organization data:', orgData, 'Error:', orgError);
-        setOrganization(orgData);
+        setOrganization(orgData as Organization);
 
         // Get user's membership (as client user)
         const { data: memberData, error: memberError } = await supabase
@@ -104,7 +104,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
           .maybeSingle();
 
         console.log('Member data:', memberData, 'Error:', memberError);
-        setMembership(memberData);
+        setMembership(memberData as OrganizationMember);
       } else {
         // Los superadmins no necesitan organization ni membership propios
         setOrganization(null);

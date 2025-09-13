@@ -41,11 +41,17 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
       const { data, error } = await supabase
         .from("additionals")
         .select("*")
-        .eq("assignment_type", "article")
+        .eq("is_active", true)
         .order("name")
 
       if (error) throw error
-      return data as Additional[]
+      return data.map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        type: (item.type as "net_amount" | "quantity_multiplier") || "net_amount",
+        default_value: item.default_value || 0
+      }))
     }
   })
 

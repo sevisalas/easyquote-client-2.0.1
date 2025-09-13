@@ -28,12 +28,25 @@ export const useHoldedIntegration = () => {
     }
 
     try {
-      // First check if the organization has access to Holded integration
+      // First get the Holded integration ID
+      const { data: integrationData, error: integrationError } = await supabase
+        .from('integrations')
+        .select('id')
+        .eq('name', 'Holded')
+        .maybeSingle();
+
+      if (integrationError || !integrationData) {
+        setIsHoldedActive(false);
+        setLoading(false);
+        return;
+      }
+
+      // Then check if the organization has access to Holded integration
       const { data: accessData, error: accessError } = await supabase
         .from('organization_integration_access')
-        .select('id')
+        .select('id, is_active, access_token')
         .eq('organization_id', currentOrganization.id)
-        .eq('integration_type', 'holded')
+        .eq('integration_id', integrationData.id)
         .maybeSingle();
 
       if (accessError && accessError.code !== 'PGRST116') {
@@ -50,22 +63,8 @@ export const useHoldedIntegration = () => {
         return;
       }
 
-      // Now check if integration is configured and active
-      const { data, error } = await supabase
-        .from('integrations')
-        .select('is_active, configuration')
-        .eq('organization_id', currentOrganization.id)
-        .eq('integration_type', 'holded')
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error checking Holded integration:', error);
-        setIsHoldedActive(false);
-      } else {
-        const config = data?.configuration as { apiKey?: string } || {};
-        const hasApiKey = config.apiKey?.trim();
-        setIsHoldedActive(data?.is_active && !!hasApiKey);
-      }
+      // Check if access is active and has required configuration
+      setIsHoldedActive(accessData.is_active && !!accessData.access_token);
     } catch (error) {
       console.error('Error checking Holded integration:', error);
       setIsHoldedActive(false);

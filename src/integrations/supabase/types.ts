@@ -17,31 +17,37 @@ export type Database = {
       additionals: {
         Row: {
           created_at: string
+          default_value: number | null
           description: string | null
           id: string
           is_active: boolean
           name: string
           price: number
+          type: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          default_value?: number | null
           description?: string | null
           id?: string
           is_active?: boolean
           name: string
           price?: number
+          type?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          default_value?: number | null
           description?: string | null
           id?: string
           is_active?: boolean
           name?: string
           price?: number
+          type?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -82,6 +88,7 @@ export type Database = {
       }
       integrations: {
         Row: {
+          configuration: Json | null
           created_at: string
           description: string | null
           id: string
@@ -90,6 +97,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          configuration?: Json | null
           created_at?: string
           description?: string | null
           id?: string
@@ -98,6 +106,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          configuration?: Json | null
           created_at?: string
           description?: string | null
           id?: string
@@ -264,6 +273,54 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      product_category_mappings: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          easyquote_product_id: string
+          id: string
+          product_name: string
+          subcategory_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          easyquote_product_id: string
+          id?: string
+          product_name: string
+          subcategory_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          easyquote_product_id?: string
+          id?: string
+          product_name?: string
+          subcategory_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_category_mappings_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_category_mappings_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "product_subcategories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_subcategories: {
         Row: {
