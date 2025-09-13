@@ -28,6 +28,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ProductManagement from "./pages/ProductManagement";
 import ProductCategories from "./pages/ProductCategories";
 import ApiCredentials from "./pages/ApiCredentials";
+import OrganizationApiCredentials from "./pages/OrganizationApiCredentials";
 
 
 import PresupuestosDashboard from "./pages/PresupuestosDashboard";
@@ -160,6 +161,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <ApiCredentials />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configuracion/credenciales-organizacion"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <OrganizationApiCredentials />
                 </AppLayout>
               </ProtectedRoute>
             }

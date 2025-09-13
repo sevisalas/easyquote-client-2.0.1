@@ -269,6 +269,17 @@ export function AppSidebar() {
                           </NavLink>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
+                      {/* Credenciales de Organización - Solo admins */}
+                      {(isSuperAdmin || isOrgAdmin) && (
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/credenciales-organizacion"}>
+                            <NavLink to="/configuracion/credenciales-organizacion" end className={getNavCls}>
+                              <Key className="mr-2 h-4 w-4" />
+                              {!isCollapsed && <span>Credenciales Organización</span>}
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      )}
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/plantilla-pdf"}>
                           <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
