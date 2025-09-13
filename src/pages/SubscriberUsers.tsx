@@ -57,7 +57,7 @@ const UsuariosSuscriptor = () => {
 
   const obtenerDatos = async () => {
     try {
-      // Obtener datos del suscriptor incluyendo email del usuario principal
+      // Obtener datos del suscriptor 
       const { data: datosSuscriptor, error: errorSuscriptor } = await supabase
         .from('organizations')
         .select(`
@@ -81,10 +81,7 @@ const UsuariosSuscriptor = () => {
         return;
       }
 
-      setSuscriptor({
-        ...datosSuscriptor,
-        api_user_email: 'Administrador Principal',
-      });
+      setSuscriptor(datosSuscriptor);
 
       // Obtener usuarios miembros adicionales del suscriptor 
       const { data: usuariosData, error: errorUsuarios } = await supabase
@@ -102,24 +99,21 @@ const UsuariosSuscriptor = () => {
       if (datosSuscriptor.api_user_id) {
         usuariosFormateados.push({
           id: datosSuscriptor.api_user_id,
-          email: 'Administrador Principal',
+          email: 'Administrador Principal de la API',
           rol: 'API Administrator',
           isPrincipal: true
         });
       }
 
       // Agregar usuarios miembros adicionales
-      if (usuariosData) {
-        for (const usuario of usuariosData) {
-          usuariosFormateados.push({
-            id: usuario.user_id,
-            email: `Usuario ${usuario.user_id.substring(0,8)}`,
-            rol: usuario.role === 'admin' ? 'Administrador' : 'Usuario',
-            isPrincipal: false
-          });
-        }
-      }
+      const usuariosMiembros = (usuariosData || []).map((usuario) => ({
+        id: usuario.user_id,
+        email: `Usuario ${usuario.user_id.substring(0,8)}`,
+        rol: usuario.role === 'admin' ? 'Administrador' : 'Usuario',
+        isPrincipal: false
+      }));
 
+      usuariosFormateados.push(...usuariosMiembros);
       setUsuarios(usuariosFormateados);
     } catch (error: any) {
       console.error('Error al obtener datos:', error);
