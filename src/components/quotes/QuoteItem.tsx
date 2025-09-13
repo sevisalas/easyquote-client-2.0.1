@@ -635,10 +635,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                             if (Number.isNaN(n)) return;
                             setQtyCount(Math.max(1, Math.min(MAX_QTY, n)));
                           }}
+                          className="w-20"
                         />
                       </div>
 
-                      <div className="grid grid-cols-5 gap-2">
+                      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(qtyCount, 4)}, minmax(80px, 1fr))` }}>
                         {Array.from({ length: qtyCount }, (_, i) => (
                           <div key={i} className="space-y-1">
                             <Label>Q{i + 1}</Label>
