@@ -161,7 +161,8 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
 
   // Funciones para acceso a módulos específicos
   const canAccessClientes = () => {
-    if (isSuperAdmin) return true;
+    // Los superusuarios NO tienen acceso automático a clientes
+    // Solo controlan organizaciones y configuraciones
     
     // Solo suscripciones Client pueden acceder a clientes
     if (!isClientSubscription()) return false;
@@ -171,7 +172,8 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   };
 
   const canAccessPresupuestos = () => {
-    if (isSuperAdmin) return true;
+    // Los superusuarios NO tienen acceso automático a presupuestos
+    // Solo controlan organizaciones y configuraciones
     
     // Solo suscripciones Client pueden acceder a presupuestos
     if (!isClientSubscription()) return false;
