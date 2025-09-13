@@ -257,13 +257,6 @@ const UsuariosSuscriptor = () => {
           <Edit className="h-4 w-4 mr-2" />
           Editar suscriptor
         </Button>
-        <Button
-          variant="outline"
-          onClick={() => navigate('/configuracion/credenciales-organizacion')}
-        >
-          <Key className="h-4 w-4 mr-2" />
-          Credenciales API
-        </Button>
       </div>
 
       {/* Formulario invitar usuario */}
