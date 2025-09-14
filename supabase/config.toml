@@ -1,1 +1,28 @@
 project_id = "xrjwvvemxfzmeogaptzz"
+
+[functions.create-user]
+verify_jwt = false
+
+[functions.easyquote-auth]
+verify_jwt = false
+
+[functions.easyquote-master-files]
+verify_jwt = true
+
+[functions.easyquote-pricing]
+verify_jwt = true
+
+[functions.easyquote-products]
+verify_jwt = true
+
+[functions.holded-contacts]
+verify_jwt = true
+
+[functions.holded-import-customers]
+verify_jwt = true
+
+[functions.save-holded-api-key]
+verify_jwt = true
+
+[functions.update-user-password]
+verify_jwt = false
