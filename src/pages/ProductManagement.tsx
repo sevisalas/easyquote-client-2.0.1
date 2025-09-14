@@ -687,12 +687,12 @@ export default function ProductManagement() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="p-4 lg:p-6 space-y-4 lg:space-y-6 max-w-full overflow-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl sm:text-3xl font-bold">Productos EasyQuote</h1>
-          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
+          <h1 className="text-xl lg:text-2xl xl:text-3xl font-bold">Productos EasyQuote</h1>
+          <p className="text-muted-foreground mt-1 lg:mt-2 text-sm">
             Catálogo de productos del API de EasyQuote para presupuestos
           </p>
         </div>
@@ -720,8 +720,8 @@ export default function ProductManagement() {
             Busca y filtra productos por diferentes criterios
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-4">
+        <CardContent className="space-y-3 lg:space-y-4">
+          <div className="space-y-3 lg:space-y-4">
             {/* Búsqueda - ancho completo en móvil */}
             <div className="w-full">
               <Label htmlFor="search" className="text-sm">Buscar productos</Label>
@@ -738,7 +738,7 @@ export default function ProductManagement() {
             </div>
             
             {/* Filtros en grid responsive */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-4">
               <div>
                 <Label className="text-sm">Categoría</Label>
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -798,37 +798,37 @@ export default function ProductManagement() {
       </Card>
 
       {/* Products Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         <Card>
           <CardHeader className="pb-2 text-center">
-            <CardTitle className="text-sm font-medium">Total Productos</CardTitle>
+            <CardTitle className="text-xs lg:text-sm font-medium">Total Productos</CardTitle>
           </CardHeader>
-          <CardContent className="text-center">
-            <div className="text-2xl font-bold">{products.length}</div>
+          <CardContent className="text-center pt-2">
+            <div className="text-lg lg:text-2xl font-bold">{products.length}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2 text-center">
-            <CardTitle className="text-sm font-medium">Productos activos</CardTitle>
+            <CardTitle className="text-xs lg:text-sm font-medium">Productos activos</CardTitle>
           </CardHeader>
-          <CardContent className="text-center">
-            <div className="text-2xl font-bold text-green-600">{activeProducts.length}</div>
+          <CardContent className="text-center pt-2">
+            <div className="text-lg lg:text-2xl font-bold text-green-600">{activeProducts.length}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2 text-center">
-            <CardTitle className="text-sm font-medium">Productos inactivos</CardTitle>
+            <CardTitle className="text-xs lg:text-sm font-medium">Productos inactivos</CardTitle>
           </CardHeader>
-          <CardContent className="text-center">
-            <div className="text-2xl font-bold text-red-600">{inactiveProducts.length}</div>
+          <CardContent className="text-center pt-2">
+            <div className="text-lg lg:text-2xl font-bold text-red-600">{inactiveProducts.length}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2 text-center">
-            <CardTitle className="text-sm font-medium">Categorías locales</CardTitle>
+            <CardTitle className="text-xs lg:text-sm font-medium">Categorías locales</CardTitle>
           </CardHeader>
-          <CardContent className="text-center">
-            <div className="text-2xl font-bold">{availableCategories.length}</div>
+          <CardContent className="text-center pt-2">
+            <div className="text-lg lg:text-2xl font-bold">{availableCategories.length}</div>
           </CardContent>
         </Card>
       </div>
@@ -841,7 +841,7 @@ export default function ProductManagement() {
             Lista de productos obtenidos del API de EasyQuote
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 lg:p-6">
           {isLoading ? (
             <div className="text-center py-8">
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
@@ -872,16 +872,17 @@ export default function ProductManagement() {
               ) : null}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Producto</TableHead>
-                  <TableHead>Archivo Excel</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Categoría</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[200px]">Producto</TableHead>
+                    <TableHead className="min-w-[150px] hidden lg:table-cell">Archivo Excel</TableHead>
+                    <TableHead className="min-w-[100px]">Estado</TableHead>
+                    <TableHead className="min-w-[150px] hidden lg:table-cell">Categoría</TableHead>
+                    <TableHead className="min-w-[150px]">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
               <TableBody>
                 {filteredProducts.map((product) => (
                   <TableRow key={product.id}>
@@ -898,8 +899,8 @@ export default function ProductManagement() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <span className="font-mono text-sm text-muted-foreground">
+                    <TableCell className="hidden lg:table-cell">
+                      <span className="font-mono text-xs text-muted-foreground">
                         {(() => {
                           const name = product.productName?.toLowerCase() || '';
                           if (name.includes('booklet')) return 'booklets.xlsx';
@@ -925,19 +926,19 @@ export default function ProductManagement() {
                         </div>
                       </Badge>
                     </TableCell>
-                     <TableCell>
+                     <TableCell className="hidden lg:table-cell">
                        {(() => {
                          const mapping = getProductMapping(product.id);
                          if (mapping?.product_categories) {
                            return (
                              <div className="flex items-center space-x-2">
                                <div 
-                                 className="w-3 h-3 rounded-full"
+                                 className="w-3 h-3 rounded-full flex-shrink-0"
                                  style={{ backgroundColor: mapping.product_categories.color }}
                                />
-                               <span className="text-sm">{mapping.product_categories.name}</span>
+                               <span className="text-xs truncate">{mapping.product_categories.name}</span>
                                {mapping.product_subcategories && (
-                                 <Badge variant="secondary" className="ml-2 text-xs">
+                                 <Badge variant="secondary" className="ml-1 text-xs">
                                    {mapping.product_subcategories.name}
                                  </Badge>
                                )}
@@ -951,37 +952,40 @@ export default function ProductManagement() {
                          );
                        })()}
                      </TableCell>
-                       <TableCell>
-                         <div className="flex gap-2">
-                           <Button
-                             variant="outline"
-                             size="sm"
-                             onClick={() => handleEditProduct(product)}
-                             title="Editar producto y asignar categoría"
-                           >
-                             <Edit className="h-4 w-4 mr-2" />
-                             Editar
-                           </Button>
-                           <Button
-                             variant="outline"
-                             size="sm"
-                             onClick={() => navigate(`/admin/productos/test?productId=${product.id}`)}
-                             title="Probar producto"
-                           >
-                             <TestTube className="h-4 w-4 mr-2" />
-                             Probar
-                           </Button>
-                         </div>
-                       </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col lg:flex-row gap-1 lg:gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditProduct(product)}
+                              title="Editar producto y asignar categoría"
+                              className="text-xs"
+                            >
+                              <Edit className="h-3 w-3 lg:h-4 lg:w-4 lg:mr-2" />
+                              <span className="hidden lg:inline">Editar</span>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/admin/productos/test?productId=${product.id}`)}
+                              title="Probar producto"
+                              className="text-xs"
+                            >
+                              <TestTube className="h-3 w-3 lg:h-4 lg:w-4 lg:mr-2" />
+                              <span className="hidden lg:inline">Probar</span>
+                            </Button>
+                          </div>
+                        </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+            </div>
             )}
-          </CardContent>
-                        </Card>
+        </CardContent>
+      </Card>
 
-                        {/* Edit Product Dialog */}
+      {/* Edit Product Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
