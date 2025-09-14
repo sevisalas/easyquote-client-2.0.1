@@ -1,11 +1,23 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useIntegrationAccess } from "@/hooks/useIntegrationAccess";
 
 export default function Integrations() {
-  const { hasAccessToModule } = useSubscription();
+  const { hasIntegrationAccess, loading } = useIntegrationAccess();
+
+  if (loading) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground">Cargando...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Check if user has access to integrations
-  if (!hasAccessToModule('integraciones')) {
+  if (!hasIntegrationAccess) {
     return (
       <div className="container mx-auto py-8">
         <Card>
