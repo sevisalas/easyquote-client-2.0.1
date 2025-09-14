@@ -1,0 +1,223 @@
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Edit, TestTube } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+interface EasyQuoteProduct {
+  id: string;
+  productName: string;
+  isActive: boolean;
+  description?: string;
+  excelfileId?: string;
+}
+
+interface ProductMapping {
+  category_id?: string;
+  subcategory_id?: string;
+  product_categories?: {
+    id: string;
+    name: string;
+    color: string;
+  };
+  product_subcategories?: {
+    id: string;
+    name: string;
+  };
+}
+
+interface ProductTableProps {
+  products: EasyQuoteProduct[];
+  getProductMapping: (productId: string) => ProductMapping | undefined;
+  onEditProduct: (product: EasyQuoteProduct) => void;
+}
+
+export function ProductTable({ products, getProductMapping, onEditProduct }: ProductTableProps) {
+  const navigate = useNavigate();
+
+  return (
+    <>
+      {/* Vista Desktop - Tabla */}
+      <div className="hidden lg:block">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[250px]">Producto</TableHead>
+                <TableHead className="w-[120px]">Excel</TableHead>
+                <TableHead className="w-[100px]">Estado</TableHead>
+                <TableHead className="w-[180px]">Categoría</TableHead>
+                <TableHead className="w-[140px]">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {products.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{product.productName}</div>
+                      {product.description && (
+                        <div className="text-sm text-muted-foreground truncate max-w-[200px]">
+                          {product.description.length > 50 
+                            ? product.description.substring(0, 50) + "..."
+                            : product.description
+                          }
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {product.excelfileId ? (
+                        product.productName?.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') + '.xlsx'
+                      ) : (
+                        <span className="text-muted-foreground italic">Sin archivo</span>
+                      )}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={product.isActive ? "default" : "secondary"} className="text-xs">
+                      {product.isActive ? "Activo" : "Inactivo"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {(() => {
+                      const mapping = getProductMapping(product.id);
+                      if (mapping?.product_categories) {
+                        return (
+                          <div className="flex items-center space-x-2">
+                            <div 
+                              className="w-3 h-3 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: mapping.product_categories.color }}
+                            />
+                            <span className="text-xs truncate max-w-[80px]">{mapping.product_categories.name}</span>
+                            {mapping.product_subcategories && (
+                              <Badge variant="secondary" className="text-xs">
+                                {mapping.product_subcategories.name}
+                              </Badge>
+                            )}
+                          </div>
+                        );
+                      }
+                      return (
+                        <Badge variant="outline" className="text-xs">
+                          Sin categoría
+                        </Badge>
+                      );
+                    })()}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onEditProduct(product)}
+                        title="Editar producto"
+                        className="text-xs px-2"
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/admin/productos/test?productId=${product.id}`)}
+                        title="Probar producto"
+                        className="text-xs px-2"
+                      >
+                        <TestTube className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      {/* Vista Mobile/Tablet - Cards */}
+      <div className="lg:hidden space-y-4">
+        {products.map((product) => (
+          <Card key={product.id} className="p-4">
+            <div className="space-y-3">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium truncate">{product.productName}</h3>
+                  {product.description && (
+                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                      {product.description}
+                    </p>
+                  )}
+                </div>
+                <Badge variant={product.isActive ? "default" : "secondary"} className="ml-2 text-xs">
+                  {product.isActive ? "Activo" : "Inactivo"}
+                </Badge>
+              </div>
+
+              <div className="text-sm">
+                <span className="text-muted-foreground">Excel: </span>
+                <span className="font-mono text-xs">
+                  {product.excelfileId ? (
+                    product.productName?.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') + '.xlsx'
+                  ) : (
+                    <span className="text-muted-foreground italic">Sin archivo</span>
+                  )}
+                </span>
+              </div>
+
+              <div className="text-sm">
+                <span className="text-muted-foreground">Categoría: </span>
+                {(() => {
+                  const mapping = getProductMapping(product.id);
+                  if (mapping?.product_categories) {
+                    return (
+                      <div className="inline-flex items-center space-x-2">
+                        <div 
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: mapping.product_categories.color }}
+                        />
+                        <span className="text-xs">{mapping.product_categories.name}</span>
+                        {mapping.product_subcategories && (
+                          <Badge variant="secondary" className="text-xs">
+                            {mapping.product_subcategories.name}
+                          </Badge>
+                        )}
+                      </div>
+                    );
+                  }
+                  return (
+                    <Badge variant="outline" className="text-xs">
+                      Sin categoría
+                    </Badge>
+                  );
+                })()}
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEditProduct(product)}
+                  className="flex-1 text-xs"
+                >
+                  <Edit className="h-3 w-3 mr-2" />
+                  Editar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/admin/productos/test?productId=${product.id}`)}
+                  className="flex-1 text-xs"
+                >
+                  <TestTube className="h-3 w-3 mr-2" />
+                  Probar
+                </Button>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </>
+  );
+}
