@@ -877,10 +877,10 @@ export default function ProductManagement() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="min-w-[200px]">Producto</TableHead>
-                    <TableHead className="min-w-[150px]">Archivo Excel</TableHead>
-                    <TableHead className="min-w-[100px]">Estado</TableHead>
+                    <TableHead className="w-[120px]">Excel</TableHead>
+                    <TableHead className="w-[80px]">Estado</TableHead>
                     <TableHead className="min-w-[150px]">Categoría</TableHead>
-                    <TableHead className="min-w-[150px]">Acciones</TableHead>
+                    <TableHead className="w-[120px]">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
               <TableBody>
