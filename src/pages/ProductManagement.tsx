@@ -873,13 +873,13 @@ export default function ProductManagement() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <Table>
+                  <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="min-w-[200px]">Producto</TableHead>
-                    <TableHead className="min-w-[150px] hidden lg:table-cell">Archivo Excel</TableHead>
+                    <TableHead className="min-w-[150px]">Archivo Excel</TableHead>
                     <TableHead className="min-w-[100px]">Estado</TableHead>
-                    <TableHead className="min-w-[150px] hidden lg:table-cell">Categoría</TableHead>
+                    <TableHead className="min-w-[150px]">Categoría</TableHead>
                     <TableHead className="min-w-[150px]">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -899,19 +899,14 @@ export default function ProductManagement() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="hidden lg:table-cell">
+                    <TableCell>
                       <span className="font-mono text-xs text-muted-foreground">
-                        {(() => {
-                          const name = product.productName?.toLowerCase() || '';
-                          if (name.includes('booklet')) return 'booklets.xlsx';
-                          if (name.includes('landscaping')) return 'landscaping_materials.xlsx';
-                          if (name.includes('shirt')) return 'shirts.xlsx';
-                          if (name.includes('sofa')) return 'sofas.xlsx';
-                          if (name.includes('tarjeta') || name.includes('visita')) return 'settings_una_hoja_1.0.xlsx';
-                          if (name.includes('una hoja')) return 'settings_una_hoja_1.0.xlsx';
-                          // Fallback: generar nombre basado en el producto
-                          return name.replace(/\s+/g, '_') + '.xlsx';
-                        })()}
+                        {product.excelfileId ? (
+                          // Si tiene excelfileId, generar nombre basado en el producto
+                          product.productName?.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') + '.xlsx'
+                        ) : (
+                          <span className="text-muted-foreground italic">Sin archivo</span>
+                        )}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -926,7 +921,7 @@ export default function ProductManagement() {
                         </div>
                       </Badge>
                     </TableCell>
-                     <TableCell className="hidden lg:table-cell">
+                     <TableCell>
                        {(() => {
                          const mapping = getProductMapping(product.id);
                          if (mapping?.product_categories) {
