@@ -39,7 +39,7 @@ interface IntegrationAccess {
 }
 
 const AVAILABLE_INTEGRATIONS = [
-  { value: 'holded', label: 'Holded' },
+  { value: '057530ab-4982-40c1-bc92-b2a4ff7af8a8', label: 'Holded' },
 ];
 
 const IntegrationAccess = () => {
