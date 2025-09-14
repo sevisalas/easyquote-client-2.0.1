@@ -91,24 +91,11 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Bloque de la imagen */}
+          {/* Espacio decorativo con ícono */}
           <div className="flex justify-center">
-            <img
-              src="/lovable-uploads/easyquote 1.png"
-              alt="EasyQuote Illustration"
-              className="h-40 w-auto hover-scale"
-              onError={(e) => {
-                const img = e.currentTarget;
-                if (img.dataset.fallbackApplied) {
-                  console.warn('Index illustration fallback also failed, hiding');
-                  img.style.display = 'none';
-                  return;
-                }
-                console.warn('Index illustration failed, switching to placeholder');
-                img.src = '/placeholder.svg';
-                img.dataset.fallbackApplied = 'true';
-              }}
-            />
+            <div className="w-40 h-40 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
+              <FileText className="w-16 h-16 text-primary/60" />
+            </div>
           </div>
         </div>
 
