@@ -88,7 +88,7 @@ const SuperAdminDashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Usuarios</p>
+                  <p className="text-sm font-medium text-muted-foreground">Suscriptores</p>
                   <p className="text-3xl font-bold text-primary">{stats.totalUsers}</p>
                 </div>
                 <Users className="h-8 w-8 text-primary" />
@@ -135,7 +135,7 @@ const SuperAdminDashboard = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
-                Usuarios
+                Suscriptores
               </CardTitle>
               <CardDescription>
                 Administra suscriptores
