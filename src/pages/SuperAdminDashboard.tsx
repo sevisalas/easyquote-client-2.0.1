@@ -92,11 +92,31 @@ const SuperAdminDashboard = () => {
         </div>
 
         {/* Acciones principales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-primary" />
+                Planes
+              </CardTitle>
+              <CardDescription>
+                Gestiona los planes de suscripción
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 flex items-end">
+              <Button
+                onClick={() => navigate('/planes')}
+                className="w-full bg-primary hover:bg-primary/90"
+              >
+                Gestionar Planes
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale flex flex-col">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
                 Suscriptores
               </CardTitle>
               <CardDescription>
@@ -105,7 +125,7 @@ const SuperAdminDashboard = () => {
             </CardHeader>
             <CardContent className="flex-1 flex items-end">
               <Button
-                onClick={() => navigate('/planes')}
+                onClick={() => navigate('/usuarios')}
                 className="w-full bg-primary hover:bg-primary/90"
               >
                 Gestionar Suscriptores
