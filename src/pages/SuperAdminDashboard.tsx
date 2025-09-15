@@ -66,7 +66,7 @@ const SuperAdminDashboard = () => {
             Panel de SuperAdmin
           </h1>
           <p className="text-muted-foreground text-lg">
-            Administra organizaciones, usuarios e integraciones del sistema
+            Administra suscriptores, miembros e integraciones del sistema
           </p>
         </div>
 
@@ -76,10 +76,10 @@ const SuperAdminDashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Organizaciones</p>
+                  <p className="text-sm font-medium text-muted-foreground">Suscriptores</p>
                   <p className="text-3xl font-bold text-primary">{stats.totalOrganizations}</p>
                 </div>
-                <Building2 className="h-8 w-8 text-primary" />
+                <Users className="h-8 w-8 text-primary" />
               </div>
             </CardContent>
           </Card>
@@ -88,10 +88,10 @@ const SuperAdminDashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Suscriptores</p>
+                  <p className="text-sm font-medium text-muted-foreground">Miembros</p>
                   <p className="text-3xl font-bold text-primary">{stats.totalUsers}</p>
                 </div>
-                <Users className="h-8 w-8 text-primary" />
+                <Building2 className="h-8 w-8 text-primary" />
               </div>
             </CardContent>
           </Card>
@@ -115,10 +115,10 @@ const SuperAdminDashboard = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-primary" />
-                Planes
+                Suscriptores
               </CardTitle>
               <CardDescription>
-                Gestiona los planes de suscripción
+                Gestiona planes y suscriptores
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex items-end">
@@ -126,7 +126,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => navigate('/planes')}
                 className="w-full bg-primary hover:bg-primary/90"
               >
-                Gestionar Planes
+                Gestionar Suscriptores
               </Button>
             </CardContent>
           </Card>
@@ -135,10 +135,10 @@ const SuperAdminDashboard = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
-                Suscriptores
+                Miembros
               </CardTitle>
               <CardDescription>
-                Administra suscriptores
+                Administra miembros de suscriptores
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex items-end">
@@ -146,7 +146,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => navigate('/usuarios')}
                 className="w-full bg-primary hover:bg-primary/90"
               >
-                Gestionar suscriptores
+                Gestionar Miembros
               </Button>
             </CardContent>
           </Card>
