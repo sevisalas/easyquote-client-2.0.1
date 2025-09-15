@@ -29,9 +29,6 @@ interface EasyQuoteExcelFile {
   subscriberId?: string;
   excelfilesSheets: any[];
   products: any[];
-  // Campos adicionales para master
-  isMaster?: boolean;
-  fileUrl?: string;
 }
 
 export default function ExcelFiles() {
@@ -50,7 +47,6 @@ export default function ExcelFiles() {
     excelFileId: "",
     currency: "USD"
   });
-  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   
   // Get the subscriber ID from the EasyQuote token
   const getSubscriberIdFromToken = () => {
@@ -148,7 +144,7 @@ export default function ExcelFiles() {
             filename: file.fileName,
             original_filename: file.fileName,
             file_size: 0,
-            is_master: false
+        is_master: false
           });
       }
     }
@@ -180,55 +176,6 @@ export default function ExcelFiles() {
       syncExcelFiles(files);
     }
   }, [files]);
-
-  // Toggle master status
-  const toggleMasterStatus = async (fileId: string, isMaster: boolean) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { error } = await supabase
-      .from("excel_files")
-      .update({ 
-        is_master: isMaster
-      })
-      .eq("file_id", fileId)
-      .eq("user_id", user.id);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el estado maestro",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: isMaster ? "Archivo marcado como maestro" : "Archivo desmarcado como maestro",
-        description: isMaster ? "Ahora puedes copiar la URL de este archivo" : "El archivo ya no es maestro",
-      });
-      queryClient.invalidateQueries({ queryKey: ["excel-files-meta"] });
-    }
-  };
-
-  // Copy URL to clipboard
-  const copyUrlToClipboard = async (url: string, fileName: string) => {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopiedUrl(url);
-      toast({
-        title: "URL copiada",
-        description: `URL del archivo ${fileName} copiada al portapapeles`,
-      });
-      
-      // Reset copied state after 2 seconds
-      setTimeout(() => setCopiedUrl(null), 2000);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo copiar la URL al portapapeles",
-        variant: "destructive",
-      });
-    }
-  };
 
   // Upload Excel file to EasyQuote API
   const uploadMutation = useMutation({
@@ -416,26 +363,16 @@ export default function ExcelFiles() {
     onSuccess: async (data) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user && data.oldFileId !== data.newFileId) {
-        // Check if the old file was marked as master
-        const { data: oldFile } = await supabase
-          .from("excel_files")
-          .select("is_master")
-          .eq("file_id", data.oldFileId)
-          .eq("user_id", user.id)
-          .single();
-
         // Update the file_id in Supabase to reflect the new ID from EasyQuote
-        if (oldFile) {
-          await supabase
-            .from("excel_files")
-            .update({ 
-              file_id: data.newFileId,
-              original_filename: data.fileName,
-              filename: data.fileName 
-            })
-            .eq("file_id", data.oldFileId)
-            .eq("user_id", user.id);
-        }
+        await supabase
+          .from("excel_files")
+          .update({ 
+            file_id: data.newFileId,
+            original_filename: data.fileName,
+            filename: data.fileName 
+          })
+          .eq("file_id", data.oldFileId)
+          .eq("user_id", user.id);
       }
 
       toast({
@@ -552,74 +489,8 @@ export default function ExcelFiles() {
     }
   };
 
-  // Download master file using proxy
-  const downloadMasterFile = async (fileId: string, fileName: string) => {
-    const token = localStorage.getItem("easyquote_token");
-    if (!token || !subscriberId) {
-      toast({
-        title: "Error",
-        description: "No hay token de autenticación o subscriber ID",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const response = await supabase.functions.invoke('easyquote-master-files', {
-        body: {
-          token,
-          subscriberId,
-          fileId,
-          fileName
-        }
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message || 'Error al descargar archivo');
-      }
-
-      if (response.data) {
-        // Create blob from response data
-        const blob = new Blob([response.data], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        });
-        
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        
-        // Cleanup
-        setTimeout(() => {
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(link);
-        }, 100);
-
-        toast({
-          title: "Descarga iniciada",
-          description: `Descargando ${fileName}...`,
-        });
-      }
-    } catch (error: any) {
-      console.error("Error downloading master file:", error);
-      toast({
-        title: "Error al descargar archivo maestro",
-        description: error.message || "Error desconocido",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Download file (regular files use normal API, master files use proxy)
+  // Download file from EasyQuote API
   const downloadFile = async (fileId: string, fileName: string) => {
-    // Check if this file is marked as master
-    const fileWithMeta = filesWithMeta.find(f => f.id === fileId);
-    if (fileWithMeta?.isMaster) {
-      return downloadMasterFile(fileId, fileName);
-    }
 
     const token = localStorage.getItem("easyquote_token");
     if (!token) {
@@ -874,13 +745,13 @@ export default function ExcelFiles() {
       <Separator />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total de Archivos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{filesWithMeta.length}</div>
+            <div className="text-2xl font-bold">{files.length}</div>
           </CardContent>
         </Card>
         <Card>
@@ -889,17 +760,7 @@ export default function ExcelFiles() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {filesWithMeta.filter(f => f.isActive).length}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Archivos Maestros</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {filesWithMeta.filter(f => f.isMaster).length}
+              {files.filter(f => f.isActive).length}
             </div>
           </CardContent>
         </Card>
@@ -909,7 +770,7 @@ export default function ExcelFiles() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">
-              {filesWithMeta.filter(f => !f.isPlanCompliant).length}
+              {files.filter(f => !f.isPlanCompliant).length}
             </div>
           </CardContent>
         </Card>
@@ -928,7 +789,7 @@ export default function ExcelFiles() {
             <div className="text-center py-8">
               <p className="text-muted-foreground">Cargando archivos...</p>
             </div>
-          ) : filesWithMeta.length === 0 ? (
+          ) : files.length === 0 ? (
             <div className="text-center py-8">
               <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <p className="text-muted-foreground">No hay archivos en EasyQuote</p>
@@ -943,19 +804,17 @@ export default function ExcelFiles() {
                   <TableHead>Nombre del Archivo</TableHead>
                   <TableHead>Tamaño</TableHead>
                   <TableHead>Estado</TableHead>
-                  <TableHead>Master</TableHead>
                   <TableHead>Última Modificación</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filesWithMeta.map((file) => (
+                {files.map((file) => (
                   <TableRow key={file.id}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         <FileSpreadsheet className="h-4 w-4" />
                         {file.fileName}
-                        {file.isMaster && <Crown className="h-4 w-4 text-yellow-500" />}
                       </div>
                     </TableCell>
                     <TableCell>{formatFileSize(file.fileSizeKb)}</TableCell>
@@ -973,33 +832,6 @@ export default function ExcelFiles() {
                           </>
                         )}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant={file.isMaster ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => toggleMasterStatus(file.id, !file.isMaster)}
-                          className="h-7"
-                        >
-                          <Crown className="h-3 w-3 mr-1" />
-                          {file.isMaster ? "Master" : "Normal"}
-                        </Button>
-                        {file.isMaster && file.fileUrl && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => copyUrlToClipboard(file.fileUrl!, file.fileName)}
-                            className="h-7"
-                          >
-                            {copiedUrl === file.fileUrl ? (
-                              <Check className="h-3 w-3 text-green-500" />
-                            ) : (
-                              <Copy className="h-3 w-3" />
-                            )}
-                          </Button>
-                        )}
-                      </div>
                     </TableCell>
                     <TableCell>
                       {formatDistanceToNow(new Date(file.dateModified), {
