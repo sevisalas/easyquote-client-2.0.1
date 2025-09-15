@@ -805,7 +805,7 @@ export default function ExcelFiles() {
                   <TableHead>Tamaño</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Última Modificación</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
+                  <TableHead className="text-center">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
