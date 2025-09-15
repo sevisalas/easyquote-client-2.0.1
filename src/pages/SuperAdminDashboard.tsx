@@ -11,7 +11,6 @@ const SuperAdminDashboard = () => {
   const { isSuperAdmin } = useSubscription();
   const [stats, setStats] = useState({
     totalOrganizations: 0,
-    totalUsers: 0,
     totalIntegrations: 0
   });
 
@@ -33,11 +32,6 @@ const SuperAdminDashboard = () => {
         .from('organizations')
         .select('*', { count: 'exact', head: true });
 
-      // Total miembros de organizaciones
-      const { count: usersCount } = await supabase
-        .from('organization_members')
-        .select('*', { count: 'exact', head: true });
-
       // Total accesos a integraciones
       const { count: integrationsCount } = await supabase
         .from('organization_integration_access')
@@ -45,7 +39,6 @@ const SuperAdminDashboard = () => {
 
       setStats({
         totalOrganizations: orgsCount || 0,
-        totalUsers: usersCount || 0,
         totalIntegrations: integrationsCount || 0
       });
     } catch (error) {
@@ -66,12 +59,12 @@ const SuperAdminDashboard = () => {
             Panel de SuperAdmin
           </h1>
           <p className="text-muted-foreground text-lg">
-            Administra suscriptores, miembros e integraciones del sistema
+            Administra suscriptores e integraciones del sistema
           </p>
         </div>
 
         {/* Estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Card className="border-primary/20">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -84,17 +77,6 @@ const SuperAdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-primary/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Miembros</p>
-                  <p className="text-3xl font-bold text-primary">{stats.totalUsers}</p>
-                </div>
-                <Building2 className="h-8 w-8 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
 
           <Card className="border-primary/20">
             <CardContent className="p-6">
@@ -110,7 +92,7 @@ const SuperAdminDashboard = () => {
         </div>
 
         {/* Acciones principales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -131,25 +113,6 @@ const SuperAdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale flex flex-col">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                Miembros
-              </CardTitle>
-              <CardDescription>
-                Administra miembros de suscriptores
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex items-end">
-              <Button
-                onClick={() => navigate('/usuarios')}
-                className="w-full bg-primary hover:bg-primary/90"
-              >
-                Gestionar Miembros
-              </Button>
-            </CardContent>
-          </Card>
 
           <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale flex flex-col">
             <CardHeader>
