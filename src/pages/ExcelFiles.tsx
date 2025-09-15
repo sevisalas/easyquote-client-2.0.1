@@ -410,21 +410,48 @@ export default function ExcelFiles() {
         throw new Error(`Error updating Excel file: ${errorText}`);
       }
       
-      return response.json();
+      const result = await response.json();
+      return { oldFileId: fileId, newFileId: result.id, fileName: file.name };
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && data.oldFileId !== data.newFileId) {
+        // Check if the old file was marked as master
+        const { data: oldFile } = await supabase
+          .from("excel_files")
+          .select("is_master")
+          .eq("file_id", data.oldFileId)
+          .eq("user_id", user.id)
+          .single();
+
+        // Update the file_id in Supabase to reflect the new ID from EasyQuote
+        if (oldFile) {
+          await supabase
+            .from("excel_files")
+            .update({ 
+              file_id: data.newFileId,
+              original_filename: data.fileName,
+              filename: data.fileName 
+            })
+            .eq("file_id", data.oldFileId)
+            .eq("user_id", user.id);
+        }
+      }
+
       toast({
         title: "Archivo Excel actualizado",
-        description: "El archivo Excel se ha actualizado correctamente.",
+        description: data.oldFileId !== data.newFileId 
+          ? "El archivo se actualizó y se generó un nuevo ID. Las URLs se han actualizado automáticamente."
+          : "El archivo Excel se ha actualizado correctamente.",
       });
       setIsUpdateExcelDialogOpen(false);
       setSelectedFileForUpdate(null);
-      setSelectedExcelFile(null);
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ["easyquote-excel-files"] });
+      queryClient.invalidateQueries({ queryKey: ["excel-files-meta"] });
     },
     onError: (error) => {
       toast({
-        title: "Error",
+        title: "Error al actualizar archivo",
         description: error.message,
         variant: "destructive",
       });
