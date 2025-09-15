@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings, Users, Building2, Plug } from "lucide-react";
+import { Users, Building2, Network } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -103,14 +103,14 @@ const SuperAdminDashboard = () => {
                   <p className="text-sm font-medium text-muted-foreground">Integraciones Activas</p>
                   <p className="text-3xl font-bold text-primary">{stats.totalIntegrations}</p>
                 </div>
-                <Plug className="h-8 w-8 text-primary" />
+                <Network className="h-8 w-8 text-primary" />
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Acciones principales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -154,7 +154,7 @@ const SuperAdminDashboard = () => {
           <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Plug className="h-5 w-5 text-primary" />
+                <Network className="h-5 w-5 text-primary" />
                 Integraciones
               </CardTitle>
               <CardDescription>
@@ -171,27 +171,6 @@ const SuperAdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale flex flex-col">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5 text-primary" />
-                Sistema
-              </CardTitle>
-              <CardDescription>
-                Configuración global del sistema
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex items-end">
-              <Button
-                onClick={() => navigate('/configuracion/sistema')}
-                variant="outline"
-                className="w-full"
-                disabled
-              >
-                Próximamente
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
