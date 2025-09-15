@@ -111,7 +111,7 @@ const SuperAdminDashboard = () => {
 
         {/* Acciones principales */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale">
+          <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-primary" />
@@ -121,7 +121,7 @@ const SuperAdminDashboard = () => {
                 Gestiona las organizaciones del sistema
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 flex items-end">
               <Button
                 onClick={() => navigate('/planes')}
                 className="w-full bg-primary hover:bg-primary/90"
@@ -131,7 +131,7 @@ const SuperAdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale">
+          <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
@@ -141,7 +141,7 @@ const SuperAdminDashboard = () => {
                 Administra usuarios y permisos
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 flex items-end">
               <Button
                 onClick={() => navigate('/usuarios')}
                 className="w-full bg-primary hover:bg-primary/90"
@@ -151,7 +151,7 @@ const SuperAdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale">
+          <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Plug className="h-5 w-5 text-primary" />
@@ -161,7 +161,7 @@ const SuperAdminDashboard = () => {
                 Controla el acceso a integraciones
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 flex items-end">
               <Button
                 onClick={() => navigate('/integraciones-acceso')}
                 className="w-full bg-primary hover:bg-primary/90"
@@ -171,7 +171,7 @@ const SuperAdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale">
+          <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-5 w-5 text-primary" />
@@ -181,7 +181,7 @@ const SuperAdminDashboard = () => {
                 Configuración global del sistema
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 flex items-end">
               <Button
                 onClick={() => navigate('/configuracion/sistema')}
                 variant="outline"
