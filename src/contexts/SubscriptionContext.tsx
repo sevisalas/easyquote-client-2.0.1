@@ -90,7 +90,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
           .eq('api_user_id', user.id)
           .maybeSingle();
 
-        console.log('Organization data:', orgData, 'Error:', orgError);
+        // console.log('Organization data:', orgData, 'Error:', orgError);
         setOrganization(orgData as Organization);
 
         // Get user's membership (as client user)
@@ -103,7 +103,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
           .eq('user_id', user.id)
           .maybeSingle();
 
-        console.log('Member data:', memberData, 'Error:', memberError);
+        // console.log('Member data:', memberData, 'Error:', memberError);
         setMembership(memberData as OrganizationMember);
       } else {
         // Los superadmins no necesitan organization ni membership propios
