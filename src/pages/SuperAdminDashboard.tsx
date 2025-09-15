@@ -115,10 +115,10 @@ const SuperAdminDashboard = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-primary" />
-                Organizaciones
+                Planes
               </CardTitle>
               <CardDescription>
-                Gestiona las organizaciones del sistema
+                Gestiona los planes de suscripción
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex items-end">
@@ -138,7 +138,7 @@ const SuperAdminDashboard = () => {
                 Usuarios
               </CardTitle>
               <CardDescription>
-                Administra usuarios y permisos
+                Administra suscriptores
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex items-end">
@@ -146,7 +146,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => navigate('/usuarios')}
                 className="w-full bg-primary hover:bg-primary/90"
               >
-                Gestionar Usuarios
+                Gestionar suscriptores
               </Button>
             </CardContent>
           </Card>
