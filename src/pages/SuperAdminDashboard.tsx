@@ -10,6 +10,7 @@ const SuperAdminDashboard = () => {
   const navigate = useNavigate();
   const { isSuperAdmin } = useSubscription();
   const [stats, setStats] = useState({
+    totalPlans: 0,
     totalOrganizations: 0,
     totalIntegrations: 0
   });
@@ -27,6 +28,11 @@ const SuperAdminDashboard = () => {
 
   const loadStats = async () => {
     try {
+      // Total planes
+      const { count: plansCount } = await supabase
+        .from('plan_configurations')
+        .select('*', { count: 'exact', head: true });
+
       // Total organizaciones
       const { count: orgsCount } = await supabase
         .from('organizations')
@@ -38,6 +44,7 @@ const SuperAdminDashboard = () => {
         .select('*', { count: 'exact', head: true });
 
       setStats({
+        totalPlans: plansCount || 0,
         totalOrganizations: orgsCount || 0,
         totalIntegrations: integrationsCount || 0
       });
@@ -59,12 +66,24 @@ const SuperAdminDashboard = () => {
             Panel de SuperAdmin
           </h1>
           <p className="text-muted-foreground text-lg">
-            Administra suscriptores e integraciones del sistema
+            Administra planes, suscriptores e integraciones del sistema
           </p>
         </div>
 
         {/* Estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="border-primary/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Planes</p>
+                  <p className="text-3xl font-bold text-primary">{stats.totalPlans}</p>
+                </div>
+                <Building2 className="h-8 w-8 text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="border-primary/20">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
