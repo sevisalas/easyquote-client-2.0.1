@@ -127,7 +127,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => navigate('/planes')}
                 className="w-full bg-primary hover:bg-primary/90"
               >
-                Gestionar Planes
+                Gestionar planes
               </Button>
             </CardContent>
           </Card>
@@ -139,7 +139,7 @@ const SuperAdminDashboard = () => {
                 Suscriptores
               </CardTitle>
               <CardDescription>
-                Gestiona planes y suscriptores
+                Gestiona suscriptores
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex items-end">
@@ -147,7 +147,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => navigate('/usuarios')}
                 className="w-full bg-primary hover:bg-primary/90"
               >
-                Gestionar Suscriptores
+                Gestionar suscriptores
               </Button>
             </CardContent>
           </Card>
@@ -168,7 +168,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => navigate('/integraciones-acceso')}
                 className="w-full bg-primary hover:bg-primary/90"
               >
-                Gestionar Accesos
+                Gestionar integraciones
               </Button>
             </CardContent>
           </Card>
