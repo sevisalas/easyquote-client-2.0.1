@@ -20,6 +20,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const { token, subscriberId, fileId, fileName } = await req.json();
+    console.log("easyquote-master-files: Request received", { subscriberId, fileId, fileName });
     
     if (!token || !subscriberId || !fileId || !fileName) {
       return new Response(JSON.stringify({ 

@@ -20,6 +20,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const { token, productId, inputs } = await req.json();
+    console.log("easyquote-pricing: Request received", { productId, inputsCount: Array.isArray(inputs) ? inputs.length : (inputs ? Object.keys(inputs).length : 0) });
     if (!token || !productId) {
       return new Response(JSON.stringify({ error: "Missing token or productId" }), {
         status: 400,
@@ -100,6 +101,13 @@ serve(async (req: Request): Promise<Response> => {
 
     if (!res.ok) {
       console.error("easyquote-pricing: fetch failed", res.status, data);
+      console.error("easyquote-pricing: full response", { 
+        status: res.status, 
+        statusText: res.statusText, 
+        url: res.url,
+        productId,
+        data 
+      });
       return new Response(JSON.stringify({ error: data?.message || "Failed to fetch pricing" }), {
         status: res.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
