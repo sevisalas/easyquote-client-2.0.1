@@ -820,7 +820,7 @@ export default function ExcelFiles() {
                     </TableCell>
                     <TableCell>{formatFileSize(file.fileSizeKb)}</TableCell>
                     <TableCell>
-                      <Badge variant={file.isActive ? "sucess" : "secondary"}>
+                      <Badge variant={file.isActive ? "success" : "secondary"}>
                         {file.isActive ? (
                           <>
                             <CheckCircle2 className="h-3 w-3 mr-1" />
