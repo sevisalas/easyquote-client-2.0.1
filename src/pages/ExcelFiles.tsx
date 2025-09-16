@@ -748,7 +748,7 @@ export default function ExcelFiles() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total de Archivos</CardTitle>
+            <CardTitle className="text-sm font-medium">Total archivos</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{files.length}</div>
@@ -756,7 +756,7 @@ export default function ExcelFiles() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Archivos Activos</CardTitle>
+            <CardTitle className="text-sm font-medium">Activos</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
@@ -766,7 +766,7 @@ export default function ExcelFiles() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">No Conformes</CardTitle>
+            <CardTitle className="text-sm font-medium">Inactivos</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">
