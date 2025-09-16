@@ -893,6 +893,7 @@ export default function ProductManagement() {
           </DialogHeader>
           
           {selectedProduct && (
+          <div>
             <Tabs defaultValue="general" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="general">General</TabsTrigger>
@@ -1315,29 +1316,30 @@ export default function ProductManagement() {
                   </div>
                 )}
               </TabsContent>
-
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsEditDialogOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  onClick={handleSaveProduct}
-                  disabled={updateProductMutation.isPending}
-                >
-                  {updateProductMutation.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Guardando...
-                    </>
-                  ) : (
-                    'Guardar cambios'
-                  )}
-                </Button>
-              </div>
             </Tabs>
+
+            <div className="flex justify-end space-x-2 pt-4 border-t">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsEditDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSaveProduct}
+                disabled={updateProductMutation.isPending}
+              >
+                {updateProductMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  'Guardar cambios'
+                )}
+              </Button>
+            </div>
+          </div>
           )}
         </DialogContent>
       </Dialog>
