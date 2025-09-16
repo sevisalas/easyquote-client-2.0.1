@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useDropzone } from "react-dropzone";
 import { toast } from "@/hooks/use-toast";
@@ -42,6 +43,7 @@ export default function ExcelFiles() {
   const [isCreateProductDialogOpen, setIsCreateProductDialogOpen] = useState(false);
   const [isUpdateExcelDialogOpen, setIsUpdateExcelDialogOpen] = useState(false);
   const [selectedFileForUpdate, setSelectedFileForUpdate] = useState<File | null>(null);
+  const [includeInactive, setIncludeInactive] = useState(false);
   const [newProductData, setNewProductData] = useState({
     productName: "",
     excelFileId: "",
@@ -158,7 +160,7 @@ export default function ExcelFiles() {
     return `https://sheets.easyquote.cloud/${subscriberId}/${fileId}/${encodeURIComponent(fileName)}`;
   };
 
-  // Combine API files with Supabase metadata
+  // Combine API files with Supabase metadata and filter by active status
   const filesWithMeta = files.map(file => {
     const meta = excelFilesMeta?.find(m => m.file_id === file.id);
     const isMaster = meta?.is_master || false;
@@ -169,6 +171,11 @@ export default function ExcelFiles() {
       fileUrl
     };
   });
+
+  // Filter files based on includeInactive setting
+  const filteredFiles = includeInactive 
+    ? filesWithMeta 
+    : filesWithMeta.filter(file => file.isActive);
 
   // Auto-sync files when they are loaded
   useEffect(() => {
@@ -642,7 +649,7 @@ export default function ExcelFiles() {
                       <SelectValue placeholder="Selecciona un archivo Excel" />
                     </SelectTrigger>
                     <SelectContent>
-                      {files.filter(f => f.isActive).map((file) => (
+                      {filesWithMeta.filter(f => f.isActive).map((file) => (
                         <SelectItem key={file.id} value={file.id}>
                           {file.fileName}
                         </SelectItem>
@@ -770,7 +777,7 @@ export default function ExcelFiles() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">
-              {files.filter(f => !f.isPlanCompliant).length}
+              {files.filter(f => !f.isActive).length}
             </div>
           </CardContent>
         </Card>
@@ -779,22 +786,44 @@ export default function ExcelFiles() {
       {/* Files Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Archivos Excel</CardTitle>
-          <CardDescription>
-            Lista de archivos Excel disponibles en EasyQuote
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Archivos Excel</CardTitle>
+              <CardDescription>
+                Lista de archivos Excel disponibles en EasyQuote
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="include-inactive" className="text-sm font-medium">
+                Mostrar inactivos
+              </Label>
+              <Switch
+                id="include-inactive"
+                checked={includeInactive}
+                onCheckedChange={setIncludeInactive}
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">Cargando archivos...</p>
             </div>
-          ) : files.length === 0 ? (
+          ) : filteredFiles.length === 0 ? (
             <div className="text-center py-8">
               <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">No hay archivos en EasyQuote</p>
+              <p className="text-muted-foreground">
+                {!includeInactive && files.some(f => !f.isActive) 
+                  ? "No hay archivos activos" 
+                  : "No hay archivos en EasyQuote"
+                }
+              </p>
               <p className="text-sm text-muted-foreground">
-                Sube tu primer archivo Excel para comenzar
+                {!includeInactive && files.some(f => !f.isActive)
+                  ? "Activa el switch 'Mostrar inactivos' para ver todos los archivos"
+                  : "Sube tu primer archivo Excel para comenzar"
+                }
               </p>
             </div>
           ) : (
@@ -810,7 +839,7 @@ export default function ExcelFiles() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {files.map((file) => (
+                {filteredFiles.map((file) => (
                   <TableRow key={file.id}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
