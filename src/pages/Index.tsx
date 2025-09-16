@@ -97,6 +97,17 @@ const Index = () => {
               src="/lovable-uploads/easyquote 1.png"
               alt="EasyQuote Illustration"
               className="h-40 w-auto hover-scale"
+              onError={(e) => {
+                const img = e.currentTarget;
+                if (img.dataset.fallbackApplied) {
+                  console.warn('EasyQuote image fallback also failed, hiding');
+                  img.style.display = 'none';
+                  return;
+                }
+                console.warn('EasyQuote image failed to load, trying alternative');
+                img.src = '/lovable-uploads/90590fde-3895-4073-bd6a-2744ba8ceb02.png';
+                img.dataset.fallbackApplied = 'true';
+              }}
             />
           </div>
         </div>
