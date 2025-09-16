@@ -804,6 +804,7 @@ export default function ExcelFiles() {
                   <TableHead>Nombre del Archivo</TableHead>
                   <TableHead>Tamaño</TableHead>
                   <TableHead>Estado</TableHead>
+                  <TableHead className="w-24">Plan</TableHead>
                   <TableHead>Última Modificación</TableHead>
                   <TableHead className="text-center">Acciones</TableHead>
                 </TableRow>
@@ -829,6 +830,21 @@ export default function ExcelFiles() {
                           <>
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Inactivo
+                          </>
+                        )}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="w-24">
+                      <Badge variant={file.isPlanCompliant ? "default" : "destructive"} className="text-xs">
+                        {file.isPlanCompliant ? (
+                          <>
+                            <Check className="h-3 w-3 mr-1" />
+                            Sí
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            No
                           </>
                         )}
                       </Badge>
