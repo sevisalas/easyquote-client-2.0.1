@@ -820,7 +820,7 @@ export default function ExcelFiles() {
                     </TableCell>
                     <TableCell>{formatFileSize(file.fileSizeKb)}</TableCell>
                     <TableCell>
-                      <Badge variant={file.isActive ? "default" : "secondary"}>
+                      <Badge variant={file.isActive ? "sucess" : "secondary"}>
                         {file.isActive ? (
                           <>
                             <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -835,7 +835,7 @@ export default function ExcelFiles() {
                       </Badge>
                     </TableCell>
                     <TableCell className="w-24">
-                      <Badge variant={file.isPlanCompliant ? "default" : "destructive"} className="text-xs">
+                      <Badge variant={file.isPlanCompliant ? "success" : "destructive"} className="text-xs">
                         {file.isPlanCompliant ? (
                           <>
                             <Check className="h-3 w-3 mr-1" />
