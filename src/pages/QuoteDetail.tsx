@@ -130,7 +130,7 @@ export default function QuoteDetail() {
       {/* Quote Info */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Información del Presupuesto</CardTitle>
+          <CardTitle className="text-lg">Información del presupuesto</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
