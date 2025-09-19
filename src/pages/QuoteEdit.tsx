@@ -115,8 +115,10 @@ export default function QuoteEdit() {
   const [formData, setFormData] = useState<Partial<Quote>>({});
   const [items, setItems] = useState<QuoteItem[]>([]);
   const [quoteAdditionals, setQuoteAdditionals] = useState<SelectedQuoteAdditional[]>([]);
-  const [editingItem, setEditingItem] = useState<QuoteItem | null>(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
+
+  // Check if user has EasyQuote token
+  const hasToken = Boolean(localStorage.getItem("easyquote_token"));
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ['quote', id],
@@ -365,36 +367,8 @@ export default function QuoteEdit() {
     updateQuoteMutation.mutate(formData);
   };
 
-  const handleEditItem = (item: QuoteItem) => {
-    setEditingItem(item);
-    setEditDialogOpen(true);
-  };
-
-  const handleSaveEditedItem = () => {
-    if (!editingItem) return;
-    
-    setItems(prev => prev.map(item => 
-      item.id === editingItem.id ? editingItem : item
-    ));
-    
-    setEditDialogOpen(false);
-    setEditingItem(null);
-    toast.success('Artículo actualizado');
-  };
-
-  const handleEditItemFieldChange = (field: keyof QuoteItem, value: any) => {
-    if (!editingItem) return;
-    
-    const updatedItem = { ...editingItem, [field]: value };
-    
-    // Recalculate totals when quantity or unit_price changes
-    if (field === 'quantity' || field === 'unit_price') {
-      updatedItem.subtotal = updatedItem.quantity * updatedItem.unit_price;
-      updatedItem.total_price = updatedItem.subtotal;
-      updatedItem.price = updatedItem.subtotal;
-    }
-    
-    setEditingItem(updatedItem);
+  const handleEditItem = (index: number) => {
+    setEditingItemIndex(index);
   };
 
   if (isLoading) {
@@ -552,43 +526,58 @@ export default function QuoteEdit() {
           <div className="space-y-3">
             {items.map((item, index) => (
               <div key={item.id || index} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
-                <div className="flex justify-between items-center">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-4">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-foreground text-sm truncate">
-                          {item.itemDescription || item.product_name || `Artículo ${index + 1}`}
-                        </p>
-                        {item.description && (
-                          <p className="text-xs text-muted-foreground truncate">{item.description}</p>
-                        )}
-                      </div>
-                      <div className="text-sm font-medium text-secondary text-right shrink-0">
-                        {fmtEUR(item.price || item.unit_price * item.quantity || 0)}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 ml-4 shrink-0">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-foreground">Producto {index + 1}</h4>
+                  <div className="flex gap-2">
                     <Button
-                      onClick={() => handleEditItem(item)}
+                      onClick={() => handleEditItem(index)}
+                      variant="ghost"
                       size="sm"
-                      variant="outline"
-                      className="gap-1"
+                      className="text-primary hover:bg-primary/10"
                     >
-                      <Edit className="h-3 w-3" />
-                      Editar
+                      <Edit className="w-4 h-4" />
                     </Button>
                     <Button
                       onClick={() => handleItemRemove(item.id || index)}
+                      variant="ghost"
                       size="sm"
-                      variant="outline"
-                      className="gap-1 text-destructive hover:bg-destructive/10"
+                      className="text-destructive hover:bg-destructive/10"
                     >
-                      <Trash2 className="h-3 w-3" />
-                      Eliminar
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
+                
+                {editingItemIndex === index ? (
+                  <QuoteItem
+                    hasToken={hasToken}
+                    id={index}
+                    initialData={{
+                      productId: item.productId || '',
+                      prompts: item.prompts || {},
+                      outputs: item.outputs || [],
+                      price: item.price || item.unit_price,
+                      multi: item.multi || 1,
+                      itemDescription: item.itemDescription || item.product_name,
+                      itemAdditionals: item.itemAdditionals || [],
+                    }}
+                    onChange={handleItemChange}
+                    onRemove={() => {}}
+                  />
+                ) : (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Descripción</Label>
+                        <p className="text-foreground">{item.itemDescription || item.product_name || "Sin descripción"}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Precio</Label>
+                        <p className="text-foreground font-medium">{fmtEUR(item.price || item.unit_price * item.quantity || 0)}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
 
@@ -631,75 +620,6 @@ export default function QuoteEdit() {
         </CardContent>
       </Card>
 
-      {/* Edit Item Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Editar Artículo</DialogTitle>
-          </DialogHeader>
-          {editingItem && (
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-product-name">nombre del producto</Label>
-                <Input
-                  id="edit-product-name"
-                  value={editingItem.product_name}
-                  onChange={(e) => handleEditItemFieldChange('product_name', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-description">descripción</Label>
-                <Textarea
-                  id="edit-description"
-                  value={editingItem.description || ''}
-                  onChange={(e) => handleEditItemFieldChange('description', e.target.value)}
-                  rows={3}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-quantity">cantidad</Label>
-                  <Input
-                    id="edit-quantity"
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={editingItem.quantity}
-                    onChange={(e) => handleEditItemFieldChange('quantity', Number(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-unit-price">precio unitario</Label>
-                  <Input
-                    id="edit-unit-price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={editingItem.unit_price}
-                    onChange={(e) => handleEditItemFieldChange('unit_price', Number(e.target.value))}
-                  />
-                </div>
-              </div>
-              <div className="pt-4 border-t">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Total:</span>
-                  <span className="text-lg font-semibold text-secondary">
-                    {fmtEUR(editingItem.quantity * editingItem.unit_price)}
-                  </span>
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleSaveEditedItem}>
-                  Guardar cambios
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
