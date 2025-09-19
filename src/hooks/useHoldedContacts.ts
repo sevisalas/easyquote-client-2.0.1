@@ -39,13 +39,20 @@ export const fetchHoldedContacts = async (searchTerm?: string): Promise<HoldedCo
     }
 
     console.log('✅ Holded contacts fetched successfully:', data?.length, 'contacts');
-    console.log('📋 Sample contacts:', data?.slice(0, 3));
+    console.log('📋 Sample raw data from Holded:', JSON.stringify(data?.slice(0, 3), null, 2));
     
     // Usar un índice único para evitar duplicados
     const uniqueContacts = new Map<string, HoldedContact>();
     
     (data || []).forEach((contact, index) => {
       const uniqueId = `holded_${contact.holded_id}`;
+      console.log('🔍 Processing contact:', { 
+        holded_id: contact.holded_id, 
+        name: contact.name, 
+        code: contact.code, 
+        email: contact.email_original 
+      });
+      
       if (!uniqueContacts.has(uniqueId)) {
         uniqueContacts.set(uniqueId, {
           ...contact,
@@ -55,7 +62,10 @@ export const fetchHoldedContacts = async (searchTerm?: string): Promise<HoldedCo
       }
     });
     
-    return Array.from(uniqueContacts.values());
+    const result = Array.from(uniqueContacts.values());
+    console.log('📋 Final processed contacts:', result.slice(0, 3));
+    
+    return result;
   } catch (error) {
     console.error('❌ Error in fetchHoldedContacts:', error);
     return [];
