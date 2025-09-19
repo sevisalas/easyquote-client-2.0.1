@@ -8,6 +8,7 @@ import { Check, ChevronsUpDown, Building, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchHoldedContacts, type HoldedContact } from "@/hooks/useHoldedContacts";
+import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 
 interface LocalCustomer {
   id: string;
@@ -45,15 +46,39 @@ const fetchLocalCustomers = async (): Promise<LocalCustomer[]> => {
   }));
 };
 
-const fetchAllCustomers = async (searchTerm?: string): Promise<Customer[]> => {
+const fetchAllCustomers = async (searchTerm?: string, includeHolded = false): Promise<Customer[]> => {
   try {
-    console.log('🚀 Fetching all customers with search term:', searchTerm);
+    console.log('🚀 Fetching all customers with search term:', searchTerm, 'includeHolded:', includeHolded);
     
-    // Ejecutar ambas consultas en paralelo
-    const [localCustomers, holdedContacts] = await Promise.all([
-      fetchLocalCustomers(),
-      fetchHoldedContacts(searchTerm)
-    ]);
+    // Obtener clientes locales siempre
+    const localCustomers = await fetchLocalCustomers();
+    
+    // Solo obtener contactos de Holded si la integración está activa
+    let holdedContacts: HoldedContact[] = [];
+    if (includeHolded) {
+      try {
+        // Usar la edge function que respeta la organización
+        const { data, error } = await supabase.functions.invoke('holded-contacts', {
+          body: { searchTerm }
+        });
+        
+        if (error) {
+          console.error('❌ Error from Holded edge function:', error);
+        } else {
+          holdedContacts = (data?.contacts || []).map((contact: any) => ({
+            id: `holded_${contact.id}`,
+            holded_id: contact.id,
+            name: contact.name || contact.code || contact.id,
+            email_original: contact.email,
+            code: contact.code,
+            vatnumber: contact.vatnumber,
+            source: 'holded' as const
+          }));
+        }
+      } catch (error) {
+        console.error('❌ Error calling Holded edge function:', error);
+      }
+    }
 
     console.log('📊 Results summary:', { 
       localCustomers: localCustomers.length, 
@@ -90,11 +115,14 @@ export const CustomerSelector = ({
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
-  // Cargar todos los clientes (locales y de Holded)
+  // Verificar si la integración de Holded está activa
+  const { isHoldedActive, loading: holdedLoading } = useHoldedIntegration();
+
+  // Cargar todos los clientes (locales y opcionalmente de Holded)
   const { data: customers, isLoading, error } = useQuery({ 
-    queryKey: ["all-customers", searchValue], 
-    queryFn: () => fetchAllCustomers(searchValue.trim() ? searchValue : undefined),
-    enabled: true
+    queryKey: ["all-customers", searchValue, isHoldedActive], 
+    queryFn: () => fetchAllCustomers(searchValue.trim() ? searchValue : undefined, isHoldedActive),
+    enabled: !holdedLoading // Solo ejecutar cuando ya sepamos si Holded está activo
   });
 
   // Debug error si existe
