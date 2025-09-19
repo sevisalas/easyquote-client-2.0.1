@@ -186,25 +186,20 @@ export default function QuoteDetail() {
             <div className="space-y-3">
               {/* Mostrar items de la tabla quote_items */}
               {quote.items && quote.items.map((item: any, index: number) => (
-                <div key={`item-${index}`} className="border rounded-lg p-3">
+                <div key={`item-${index}`} className="bg-gradient-to-r from-card to-card/50 border border-border/50 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-center">
                     <div className="flex-1">
-                      <h4 className="font-medium text-sm">{item.product_name || item.description || `Artículo ${index + 1}`}</h4>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        Cantidad: {item.quantity} × {fmtEUR(item.unit_price || 0)}
+                      <h4 className="font-semibold text-foreground">{item.product_name || item.description || `Artículo ${index + 1}`}</h4>
+                      <div className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+                        <span className="bg-primary/10 text-primary px-2 py-1 rounded-md font-medium">
+                          Cantidad: {item.quantity}
+                        </span>
+                        <span className="text-muted-foreground">×</span>
+                        <span className="font-medium">{fmtEUR(item.unit_price || 0)}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <p className="font-semibold text-sm">{fmtEUR((item.total_price || item.subtotal) || 0)}</p>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => navigate(`/presupuestos/editar/${quote.id}`)}
-                        className="gap-1"
-                      >
-                        <Edit className="h-3 w-3" />
-                        Editar
-                      </Button>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-primary">{fmtEUR((item.total_price || item.subtotal) || 0)}</p>
                     </div>
                   </div>
                 </div>
@@ -218,35 +213,26 @@ export default function QuoteDetail() {
                   `Producto ${index + 1}`;
                 
                 return (
-                  <div key={`selection-${index}`} className="border rounded-lg p-3">
+                  <div key={`selection-${index}`} className="bg-gradient-to-r from-card to-card/50 border border-border/50 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-center">
                       <div className="flex-1">
-                        <h4 className="font-medium text-sm">
-                          {productName}
-                        </h4>
+                        <h4 className="font-semibold text-foreground">{productName}</h4>
                       </div>
-                    <div className="flex items-center gap-3">
-                      <p className="font-semibold text-sm">{fmtEUR(selection.price || 0)}</p>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => navigate(`/presupuestos/editar/${quote.id}`)}
-                        className="gap-1"
-                      >
-                        <Edit className="h-3 w-3" />
-                        Editar
-                      </Button>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-primary">{fmtEUR(selection.price || 0)}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
                 );
               })}
               
-              <Separator />
+              <Separator className="my-4" />
               
-              <div className="flex justify-between items-center pt-2">
-                <span className="font-semibold">Total:</span>
-                <span className="font-semibold text-lg">{fmtEUR(quote.final_price || 0)}</span>
+              <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-semibold text-foreground">Total:</span>
+                  <span className="text-xl font-bold text-primary">{fmtEUR(quote.final_price || 0)}</span>
+                </div>
               </div>
             </div>
           ) : (
