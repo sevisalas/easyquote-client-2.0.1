@@ -23,12 +23,14 @@ interface QuoteItem {
   unit_price: number;
   subtotal: number;
   total_price?: number;
+  isFromSelections?: boolean;
 }
 
 interface Quote {
   id: string;
   quote_number: string;
   customer_id?: string;
+  product_name?: string;
   title?: string;
   description?: string;
   notes?: string;
@@ -39,6 +41,7 @@ interface Quote {
   tax_amount: number;
   final_price: number;
   items?: QuoteItem[];
+  selections?: any;
   customer?: { name: string };
 }
 
@@ -120,7 +123,31 @@ export default function QuoteEdit() {
       });
       
       console.log('Quote items:', quote.items); // Debug log
-      setItems(quote.items || []);
+      console.log('Quote selections:', quote.selections); // Debug log
+      
+      // Combinar items y selections para mostrar todos los productos
+      const allItems: QuoteItem[] = [];
+      
+      // Agregar items de la tabla quote_items
+      if (quote.items && quote.items.length > 0) {
+        allItems.push(...quote.items);
+      }
+      
+      // Agregar items del campo selections (formato anterior)
+      if (Array.isArray(quote.selections) && quote.selections.length > 0) {
+        const selectionItems = quote.selections.map((selection: any, index: number) => ({
+          id: `selection-${index}`,
+          product_name: quote.product_name || `Producto ${index + 1}`,
+          description: selection.itemDescription || '',
+          quantity: 1,
+          unit_price: selection.price || 0,
+          subtotal: selection.price || 0,
+          isFromSelections: true, // Marcar como proveniente de selections
+        }));
+        allItems.push(...selectionItems);
+      }
+      
+      setItems(allItems);
     }
   }, [quote]);
 
@@ -392,68 +419,34 @@ export default function QuoteEdit() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-2">
             {items.map((item, index) => (
-              <div key={item.id || index} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-medium">Artículo {index + 1}</h4>
-                  <Button
-                    onClick={() => removeItem(index)}
-                    size="sm"
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Eliminar
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Nombre del producto</Label>
-                    <Input
-                      value={item.product_name}
-                      onChange={(e) => handleItemChange(index, 'product_name', e.target.value)}
-                      placeholder="Nombre del producto"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Descripción</Label>
-                    <Input
-                      value={item.description || ''}
-                      onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                      placeholder="Descripción del artículo"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Cantidad</Label>
-                    <Input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Precio unitario</Label>
-                    <Input
-                      type="number"
-                      value={item.unit_price}
-                      onChange={(e) => handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                      min="0"
-                      step="0.01"
-                    />
+              <div key={item.id || index} className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex-1">
+                  <div className="flex items-center gap-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm truncate">{item.product_name}</p>
+                      {item.description && (
+                        <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                      )}
+                    </div>
+                    <div className="text-sm font-semibold text-right">
+                      {fmtEUR(item.unit_price * item.quantity)}
+                    </div>
                   </div>
                 </div>
-
-                <div className="mt-4 text-right">
-                  <p className="text-sm text-muted-foreground">
-                    Subtotal: <span className="font-semibold">{fmtEUR(item.quantity * item.unit_price)}</span>
-                  </p>
+                <div className="flex items-center gap-2 ml-4">
+                  {!item.isFromSelections && (
+                    <Button
+                      onClick={() => removeItem(index)}
+                      size="sm"
+                      variant="outline"
+                      className="gap-1"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      Eliminar
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
