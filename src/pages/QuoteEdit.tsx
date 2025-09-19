@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -114,6 +115,8 @@ export default function QuoteEdit() {
   const [formData, setFormData] = useState<Partial<Quote>>({});
   const [items, setItems] = useState<QuoteItem[]>([]);
   const [quoteAdditionals, setQuoteAdditionals] = useState<SelectedQuoteAdditional[]>([]);
+  const [editingItem, setEditingItem] = useState<QuoteItem | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ['quote', id],
@@ -362,6 +365,38 @@ export default function QuoteEdit() {
     updateQuoteMutation.mutate(formData);
   };
 
+  const handleEditItem = (item: QuoteItem) => {
+    setEditingItem(item);
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEditedItem = () => {
+    if (!editingItem) return;
+    
+    setItems(prev => prev.map(item => 
+      item.id === editingItem.id ? editingItem : item
+    ));
+    
+    setEditDialogOpen(false);
+    setEditingItem(null);
+    toast.success('Artículo actualizado');
+  };
+
+  const handleEditItemFieldChange = (field: keyof QuoteItem, value: any) => {
+    if (!editingItem) return;
+    
+    const updatedItem = { ...editingItem, [field]: value };
+    
+    // Recalculate totals when quantity or unit_price changes
+    if (field === 'quantity' || field === 'unit_price') {
+      updatedItem.subtotal = updatedItem.quantity * updatedItem.unit_price;
+      updatedItem.total_price = updatedItem.subtotal;
+      updatedItem.price = updatedItem.subtotal;
+    }
+    
+    setEditingItem(updatedItem);
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-4">
@@ -535,10 +570,7 @@ export default function QuoteEdit() {
                   </div>
                   <div className="flex items-center gap-2 ml-4 shrink-0">
                     <Button
-                      onClick={() => {
-                        // TODO: Implementar edición de artículo individual
-                        console.log('Edit item:', item);
-                      }}
+                      onClick={() => handleEditItem(item)}
                       size="sm"
                       variant="outline"
                       className="gap-1"
@@ -598,6 +630,76 @@ export default function QuoteEdit() {
           />
         </CardContent>
       </Card>
+
+      {/* Edit Item Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Editar Artículo</DialogTitle>
+          </DialogHeader>
+          {editingItem && (
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-product-name">nombre del producto</Label>
+                <Input
+                  id="edit-product-name"
+                  value={editingItem.product_name}
+                  onChange={(e) => handleEditItemFieldChange('product_name', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-description">descripción</Label>
+                <Textarea
+                  id="edit-description"
+                  value={editingItem.description || ''}
+                  onChange={(e) => handleEditItemFieldChange('description', e.target.value)}
+                  rows={3}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-quantity">cantidad</Label>
+                  <Input
+                    id="edit-quantity"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={editingItem.quantity}
+                    onChange={(e) => handleEditItemFieldChange('quantity', Number(e.target.value))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-unit-price">precio unitario</Label>
+                  <Input
+                    id="edit-unit-price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={editingItem.unit_price}
+                    onChange={(e) => handleEditItemFieldChange('unit_price', Number(e.target.value))}
+                  />
+                </div>
+              </div>
+              <div className="pt-4 border-t">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Total:</span>
+                  <span className="text-lg font-semibold text-secondary">
+                    {fmtEUR(editingItem.quantity * editingItem.unit_price)}
+                  </span>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleSaveEditedItem}>
+                  Guardar cambios
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
