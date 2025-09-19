@@ -102,16 +102,10 @@ export const CustomerSelector = ({
   const getCustomerDisplayName = (customer: Customer) => {
     if (customer.source === 'holded') {
       const holdedCustomer = customer as HoldedContact;
-      // Priorizar nombre, luego código, luego holded_id
-      if (holdedCustomer.name && holdedCustomer.name.trim()) {
-        return holdedCustomer.name.trim();
-      }
-      if (holdedCustomer.code && holdedCustomer.code.trim()) {
-        return `Cliente ${holdedCustomer.code.trim()}`;
-      }
-      return `Cliente ${holdedCustomer.holded_id}`;
+      // Mostrar solo el nombre real, sin prefijos
+      return holdedCustomer.name || holdedCustomer.code || holdedCustomer.holded_id;
     }
-    return customer.name || "Cliente sin nombre";
+    return customer.name || "Sin nombre";
   };
 
   const getCustomerEmail = (customer: Customer) => {
