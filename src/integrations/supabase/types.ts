@@ -61,6 +61,7 @@ export type Database = {
           address: string | null
           created_at: string
           email: string | null
+          holded_id: string | null
           id: string
           name: string
           notes: string | null
@@ -72,6 +73,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           email?: string | null
+          holded_id?: string | null
           id?: string
           name: string
           notes?: string | null
@@ -83,6 +85,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           email?: string | null
+          holded_id?: string | null
           id?: string
           name?: string
           notes?: string | null
@@ -789,6 +792,22 @@ export type Database = {
       is_superadmin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      search_customers: {
+        Args: {
+          page_limit?: number
+          page_offset?: number
+          search_term: string
+          user_uuid: string
+        }
+        Returns: {
+          created_at: string
+          email: string
+          holded_id: string
+          id: string
+          name: string
+          phone: string
+        }[]
       }
     }
     Enums: {
