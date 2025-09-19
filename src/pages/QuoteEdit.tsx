@@ -192,7 +192,7 @@ export default function QuoteEdit() {
           status: data.status,
           valid_until: data.valid_until,
           subtotal: calculateSubtotal(),
-          final_price: calculateTotal(), // Usar calculateTotal() que incluye adicionales
+          final_price: calculateTotal(), // Usar calculateTotal() que incluye ajustes
           updated_at: new Date().toISOString(),
         })
         .eq('id', id);
@@ -273,9 +273,9 @@ export default function QuoteEdit() {
     let total = subtotal;
     
     console.log('🔢 Calculando total - Subtotal:', subtotal);
-    console.log('🔢 Adicionales a aplicar:', quoteAdditionals);
+    console.log('🔢 Ajustes a aplicar:', quoteAdditionals);
     
-    // Aplicar adicionales
+    // Aplicar ajustes
     quoteAdditionals.forEach(additional => {
       switch (additional.type) {
         case 'net_amount':
@@ -505,7 +505,7 @@ export default function QuoteEdit() {
                 id="notes"
                 value={formData.notes || ''}
                 onChange={(e) => handleInputChange('notes', e.target.value)}
-                placeholder="Notas adicionales"
+               placeholder="Notas adicionales"
                 rows={2}
               />
             </div>
@@ -619,10 +619,10 @@ export default function QuoteEdit() {
         </CardContent>
       </Card>
 
-      {/* Quote Additionals */}
+      {/* Quote Adjustments */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Adicionales del Presupuesto</CardTitle>
+          <CardTitle className="text-lg">Ajustes del Presupuesto</CardTitle>
         </CardHeader>
         <CardContent>
           <QuoteAdditionalsSelector

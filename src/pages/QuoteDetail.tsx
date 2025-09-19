@@ -211,7 +211,7 @@ export default function QuoteDetail() {
                   <span className="text-sm font-medium">{fmtEUR(quote.subtotal || 0)}</span>
                 </div>
                 
-                {/* Mostrar adicionales aplicados */}
+                {/* Mostrar ajustes aplicados */}
                 {quote.quote_additionals && quote.quote_additionals.length > 0 && (
                   <>
                     {quote.quote_additionals.map((additional: any, index: number) => {
@@ -295,11 +295,11 @@ export default function QuoteDetail() {
         </CardContent>
       </Card>
 
-      {/* Quote Additionals */}
+      {/* Quote Adjustments */}
       {((quote.quote_additionals && Array.isArray(quote.quote_additionals) && quote.quote_additionals.length > 0)) && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Adicionales del Presupuesto</CardTitle>
+            <CardTitle className="text-lg">Ajustes del Presupuesto</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
