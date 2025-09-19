@@ -20,19 +20,37 @@ export const fetchHoldedContacts = async (searchTerm?: string): Promise<HoldedCo
   try {
     console.log('🚀 FETCHANDO CONTACTOS DE HOLDED - SEARCH:', searchTerm);
     
-    // Seleccionar TODOS los campos para debuggear
+    // Primero, intentar con tabla principal 'holded_contacts'
     let query = holdedSupabase
-      .from("holded_contacts_index")
+      .from("holded_contacts")
       .select("*")
       .order("name", { ascending: true, nullsFirst: false });
 
-    // Si hay un término de búsqueda, filtrar
-    if (searchTerm && searchTerm.trim()) {
-      query = query.or(`name.ilike.%${searchTerm}%,email_original.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
+    console.log('📡 INTENTANDO CONSULTA EN holded_contacts...');
+    let { data, error } = await query.limit(15);
+    
+    // Si no funciona, probar con holded_contacts_index
+    if (error || !data || data.length === 0) {
+      console.log('⚠️ holded_contacts falló, probando holded_contacts_index...');
+      query = holdedSupabase
+        .from("holded_contacts_index")
+        .select("*")
+        .order("id", { ascending: false }); // Ordenar por ID descendente para obtener los más recientes
+
+      const result = await query.limit(15);
+      data = result.data;
+      error = result.error;
     }
 
-    console.log('📡 EJECUTANDO CONSULTA A HOLDED...');
-    const { data, error } = await query.limit(15); // Limitar a 15 para debuggear
+    // Si hay un término de búsqueda, filtrar después
+    if (searchTerm && searchTerm.trim() && data) {
+      const searchLower = searchTerm.toLowerCase();
+      data = data.filter(contact => 
+        (contact.name && contact.name.toLowerCase().includes(searchLower)) ||
+        (contact.email_original && contact.email_original.toLowerCase().includes(searchLower)) ||
+        (contact.code && contact.code.toLowerCase().includes(searchLower))
+      );
+    }
     
     if (error) {
       console.error('❌ ERROR EN CONSULTA HOLDED:', error);
