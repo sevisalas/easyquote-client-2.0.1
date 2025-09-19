@@ -254,7 +254,29 @@ export default function QuoteDetail() {
                 <Separator className="my-2" />
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-semibold text-foreground">Total del Presupuesto:</span>
-                  <span className="text-2xl font-bold text-secondary">{fmtEUR(quote.final_price || 0)}</span>
+                  <span className="text-2xl font-bold text-secondary">
+                    {fmtEUR((() => {
+                      let total = quote.subtotal || 0;
+                      if (quote.quote_additionals) {
+                        quote.quote_additionals.forEach((additional: any) => {
+                          switch (additional.type) {
+                            case 'percentage':
+                              total += (quote.subtotal * additional.value) / 100;
+                              break;
+                            case 'net_amount':
+                              total += additional.value;
+                              break;
+                            case 'quantity_multiplier':
+                              total *= additional.value;
+                              break;
+                            default:
+                              total += additional.value;
+                          }
+                        });
+                      }
+                      return total;
+                    })())}
+                  </span>
                 </div>
               </div>
             </div>
