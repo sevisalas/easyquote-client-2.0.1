@@ -6,19 +6,19 @@ export default function QuoteEdit() {
   const navigate = useNavigate();
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-4">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center justify-between text-lg">
             <span>Editar Presupuesto</span>
-            <Button onClick={() => navigate(-1)}>Volver</Button>
+            <Button onClick={() => navigate(-1)} size="sm">Volver</Button>
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sm">
             Página en construcción. La edición de presupuestos estará disponible próximamente.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
+        <CardContent className="pt-3">
+          <p className="text-muted-foreground text-sm">
             Esta funcionalidad está siendo desarrollada.
           </p>
         </CardContent>
