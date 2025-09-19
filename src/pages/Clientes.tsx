@@ -80,13 +80,23 @@ const Clientes = () => {
       }
 
       // Procesar contactos de Holded (mapear a la interfaz Cliente)
-      const holdedClients: HoldedClientAdapted[] = holdedContacts.map(contact => ({
-        ...contact,
-        email: contact.email_original || '',
-        phone: '', // Holded no tiene teléfono en este dataset
-        notes: contact.code || '',
-        created_at: new Date().toISOString(), // Fecha por defecto
-      }));
+      const holdedClients: HoldedClientAdapted[] = holdedContacts.map(contact => {
+        console.log('🔍 PROCESSING HOLDED CONTACT:', {
+          holded_id: contact.holded_id,
+          name: contact.name,
+          code: contact.code,
+          email_original: contact.email_original,
+          vatnumber: contact.vatnumber
+        });
+        
+        return {
+          ...contact,
+          email: contact.email_original || '',
+          phone: '', // Holded no tiene teléfono en este dataset
+          notes: contact.vatnumber ? `NIF: ${contact.vatnumber}` : (contact.code || ''),
+          created_at: new Date().toISOString(), // Fecha por defecto
+        };
+      });
 
       allClients.push(...holdedClients);
 
@@ -147,7 +157,30 @@ const Clientes = () => {
   const getClientDisplayName = (cliente: Cliente) => {
     if (cliente.source === 'holded') {
       const holdedClient = cliente as HoldedClientAdapted;
-      return holdedClient.name || holdedClient.code || holdedClient.holded_id;
+      
+      console.log('🔍 DEBUG HOLDED CLIENT:', {
+        original_holded_id: holdedClient.holded_id,
+        name_field: holdedClient.name,
+        name_type: typeof holdedClient.name,
+        name_length: holdedClient.name?.length,
+        code_field: holdedClient.code,
+        email_field: holdedClient.email_original,
+        full_object: holdedClient
+      });
+      
+      // PRIORIDAD CORRECTA: name -> code -> holded_id 
+      if (holdedClient.name && holdedClient.name.trim() !== '' && holdedClient.name !== 'null') {
+        console.log('✅ Using NAME:', holdedClient.name);
+        return holdedClient.name;
+      }
+      
+      if (holdedClient.code && holdedClient.code.trim() !== '' && holdedClient.code !== 'EMPTY') {
+        console.log('✅ Using CODE:', holdedClient.code);
+        return holdedClient.code;
+      }
+      
+      console.log('❌ FALLBACK to holded_id:', holdedClient.holded_id);
+      return holdedClient.holded_id;
     }
     return cliente.name;
   };
