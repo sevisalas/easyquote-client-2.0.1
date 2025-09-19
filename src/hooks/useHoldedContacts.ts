@@ -18,11 +18,12 @@ export interface HoldedContact {
 
 export const fetchHoldedContacts = async (searchTerm?: string): Promise<HoldedContact[]> => {
   try {
-    console.log('🔍 Fetching Holded contacts...', { searchTerm });
+    console.log('🚀 FETCHANDO CONTACTOS DE HOLDED - SEARCH:', searchTerm);
     
+    // Seleccionar TODOS los campos para debuggear
     let query = holdedSupabase
       .from("holded_contacts_index")
-      .select("id, holded_id, name, email_original, code, vatnumber")
+      .select("*")
       .order("name", { ascending: true, nullsFirst: false });
 
     // Si hay un término de búsqueda, filtrar
@@ -30,63 +31,84 @@ export const fetchHoldedContacts = async (searchTerm?: string): Promise<HoldedCo
       query = query.or(`name.ilike.%${searchTerm}%,email_original.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
     }
 
-    console.log('📡 Making request to Holded database...');
-    const { data, error } = await query.limit(10); // Limitar para debuggear
+    console.log('📡 EJECUTANDO CONSULTA A HOLDED...');
+    const { data, error } = await query.limit(15); // Limitar a 15 para debuggear
     
     if (error) {
-      console.error('❌ Error fetching Holded contacts:', error);
+      console.error('❌ ERROR EN CONSULTA HOLDED:', error);
       return [];
     }
 
-    console.log('✅ Holded contacts fetched successfully:', data?.length, 'contacts');
-    console.log('📋 FULL RAW DATA from Supabase:', data);
+    console.log('✅ DATOS OBTENIDOS DE HOLDED:', data?.length, 'contactos');
+    console.log('🔍 PRIMER CONTACTO COMPLETO:', data?.[0]);
+    console.log('🔍 CAMPOS DISPONIBLES:', data?.[0] ? Object.keys(data[0]) : 'NO DATA');
     
-    // Usar un índice único para evitar duplicados
-    const uniqueContacts = new Map<string, HoldedContact>();
-    
-    (data || []).forEach((contact, index) => {
-      const uniqueId = `holded_${contact.holded_id}`;
-      console.log('🔍 Processing contact:', { 
-        holded_id: contact.holded_id, 
-        name: contact.name, 
-        code: contact.code, 
-        email: contact.email_original 
+    if (!data || data.length === 0) {
+      console.log('⚠️ NO HAY DATOS EN HOLDED');
+      return [];
+    }
+
+    // Procesar cada contacto individualmente
+    const processedContacts = data.map((rawContact, index) => {
+      console.log(`🔎 PROCESANDO CONTACTO ${index + 1}:`, {
+        raw_data: rawContact,
+        id_field: rawContact.id,
+        holded_id_field: rawContact.holded_id,
+        name_field: rawContact.name,
+        name_type: typeof rawContact.name,
+        name_length: rawContact.name?.length,
+        code_field: rawContact.code,
+        email_field: rawContact.email_original,
+        vatnumber_field: rawContact.vatnumber
       });
-      
-      if (!uniqueContacts.has(uniqueId)) {
-        uniqueContacts.set(uniqueId, {
-          ...contact,
-          id: uniqueId,
-          source: 'holded' as const
-        });
-      }
+
+      const processedContact: HoldedContact = {
+        id: `holded_${rawContact.holded_id}`,
+        holded_id: rawContact.holded_id,
+        name: rawContact.name,
+        email_original: rawContact.email_original,
+        code: rawContact.code,
+        vatnumber: rawContact.vatnumber,
+        source: 'holded' as const
+      };
+
+      console.log(`✅ CONTACTO ${index + 1} PROCESADO:`, processedContact);
+      return processedContact;
     });
+
+    console.log('🎯 CONTACTOS FINALES PARA RETORNAR:', processedContacts.slice(0, 3));
+    return processedContacts;
     
-    const result = Array.from(uniqueContacts.values());
-    console.log('📋 Final processed contacts:', result.slice(0, 3));
-    
-    return result;
   } catch (error) {
-    console.error('❌ Error in fetchHoldedContacts:', error);
+    console.error('💥 ERROR FATAL EN fetchHoldedContacts:', error);
     return [];
   }
 };
 
 export const getHoldedContactById = async (holdedId: string): Promise<HoldedContact | null> => {
   try {
+    console.log('🔍 Buscando contacto específico por ID:', holdedId);
+    
     const { data, error } = await holdedSupabase
       .from("holded_contacts_index")
-      .select("id, holded_id, name, email_original, code, vatnumber")
+      .select("*")
       .eq("holded_id", holdedId)
       .maybeSingle();
 
     if (error || !data) {
+      console.log('❌ No se encontró el contacto:', error);
       return null;
     }
 
+    console.log('✅ Contacto encontrado:', data);
+
     return {
-      ...data,
       id: `holded_${data.holded_id}`,
+      holded_id: data.holded_id,
+      name: data.name,
+      email_original: data.email_original,
+      code: data.code,
+      vatnumber: data.vatnumber,
       source: 'holded'
     };
   } catch (error) {
