@@ -15,7 +15,8 @@ const fetchQuote = async (id: string) => {
     .select(`
       *,
       items:quote_items(*),
-      customer:customers(name)
+      customer:customers(name),
+      quote_additionals:quote_additionals(*)
     `)
     .eq('id', id)
     .maybeSingle();
@@ -217,9 +218,6 @@ export default function QuoteDetail() {
                     <div className="flex justify-between items-center">
                       <div className="flex-1">
                         <h4 className="font-semibold text-foreground mb-1">{productName}</h4>
-                        <div className="text-sm text-muted-foreground">
-                          Producto personalizado
-                        </div>
                       </div>
                       <div className="text-right ml-4">
                         <p className="text-lg font-bold text-primary">{fmtEUR(selection.price || 0)}</p>
