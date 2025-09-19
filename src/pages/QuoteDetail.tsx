@@ -132,14 +132,14 @@ export default function QuoteDetail() {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Información del presupuesto</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Cliente</label>
+              <label className="text-sm font-medium text-muted-foreground">cliente</label>
               <p className="text-sm font-medium">{quote.customer?.name || 'No especificado'}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Estado</label>
+              <label className="text-sm font-medium text-muted-foreground">estado</label>
               <div className="mt-1">
                 <Badge variant={getStatusVariant(quote.status)}>
                   {statusLabel(quote.status)}
@@ -147,11 +147,11 @@ export default function QuoteDetail() {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Total</label>
+              <label className="text-sm font-medium text-muted-foreground">total</label>
               <p className="text-lg font-semibold">{fmtEUR(quote.final_price || 0)}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Válido hasta</label>
+              <label className="text-sm font-medium text-muted-foreground">válido hasta</label>
               <p className="text-sm">
                 {quote.valid_until 
                   ? format(new Date(quote.valid_until), 'dd/MM/yyyy', { locale: es })
@@ -163,14 +163,14 @@ export default function QuoteDetail() {
           
           {quote.description && (
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Descripción</label>
+              <label className="text-sm font-medium text-muted-foreground">descripción</label>
               <p className="text-sm mt-1">{quote.description}</p>
             </div>
           )}
 
           {quote.notes && (
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Notas</label>
+              <label className="text-sm font-medium text-muted-foreground">notas</label>
               <p className="text-sm mt-1">{quote.notes}</p>
             </div>
           )}
