@@ -190,7 +190,7 @@ export default function QuoteDetail() {
             <div className="space-y-3">
               {/* Mostrar items de la tabla quote_items */}
               {quote.items && quote.items.map((item: any, index: number) => (
-                <div key={`item-${index}`} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
+                <div key={`item-${index}`} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-primary hover:shadow-md transition-all duration-200">
                   <div className="flex justify-between items-center">
                     <div className="flex-1">
                       <h4 className="text-foreground mb-1">{item.product_name || item.description || `Artículo ${index + 1}`}</h4>
@@ -203,7 +203,7 @@ export default function QuoteDetail() {
                       </div>
                     </div>
                     <div className="text-right ml-4">
-                      <p className="text-lg text-secondary">{fmtEUR((item.total_price || item.subtotal) || 0)}</p>
+                      <p className="text-lg text-primary">{fmtEUR((item.total_price || item.subtotal) || 0)}</p>
                     </div>
                   </div>
                 </div>
@@ -217,13 +217,13 @@ export default function QuoteDetail() {
                   `Producto ${index + 1}`;
                 
                 return (
-                  <div key={`selection-${index}`} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
+                  <div key={`selection-${index}`} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-primary hover:shadow-md transition-all duration-200">
                     <div className="flex justify-between items-center">
                       <div className="flex-1">
                         <h4 className="text-foreground mb-1">{productName}</h4>
                       </div>
                       <div className="text-right ml-4">
-                        <p className="text-lg text-secondary">{fmtEUR(selection.price || 0)}</p>
+                        <p className="text-lg text-primary">{fmtEUR(selection.price || 0)}</p>
                       </div>
                     </div>
                   </div>
