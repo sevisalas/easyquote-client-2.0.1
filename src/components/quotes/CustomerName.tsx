@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { supabase } from "@/integrations/supabase/client";
-import { getHoldedContactById } from "@/hooks/useHoldedContacts";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 interface CustomerNameProps {
   customerId: string | null | undefined;
@@ -9,9 +9,10 @@ interface CustomerNameProps {
 }
 
 export const CustomerName = ({ customerId, fallback = "—" }: CustomerNameProps) => {
-  const { isHoldedActive, getHoldedContacts } = useHoldedIntegration();
+  const { isHoldedActive } = useHoldedIntegration();
+  const { organization, membership } = useSubscription();
   const [customerName, setCustomerName] = useState<string>(fallback);
-  const [loading, setLoading] = useState(false);
+  const currentOrganization = organization || membership?.organization;
 
   useEffect(() => {
     if (!customerId) {
@@ -20,47 +21,50 @@ export const CustomerName = ({ customerId, fallback = "—" }: CustomerNameProps
     }
 
     const fetchCustomerName = async () => {
-      setLoading(true);
       try {
-        // Verificar si es un contacto de Holded (prefijo "holded_")
-        if (customerId.startsWith("holded_")) {
-          const holdedId = customerId.replace("holded_", "");
-          const holdedContact = await getHoldedContactById(holdedId);
-          
-          if (holdedContact?.name) {
-            setCustomerName(holdedContact.name);
-          } else {
-            setCustomerName(`Contacto ${holdedContact?.code || holdedId}`);
-          }
-        } else {
-          // Buscar en clientes locales
-          const { data, error } = await supabase
-            .from("customers")
-            .select("name")
-            .eq("id", customerId)
+        // Primero intentar buscar en clientes locales
+        if (!customerId.startsWith('holded_')) {
+          const { data: localCustomer } = await supabase
+            .from('customers')
+            .select('name')
+            .eq('id', customerId)
             .maybeSingle();
-          
-          if (error) {
-            console.error('Error fetching customer:', error);
-            setCustomerName(fallback);
-          } else {
-            setCustomerName(data?.name || fallback);
+
+          if (localCustomer) {
+            setCustomerName(localCustomer.name || fallback);
+            return;
           }
         }
+
+        // Si es de Holded y la integración está activa
+        if (customerId.startsWith('holded_') && isHoldedActive && currentOrganization?.id) {
+          try {
+            const { data, error } = await supabase.functions.invoke('holded-contacts', {
+              body: { organizationId: currentOrganization.id }
+            });
+
+            if (!error && data?.contacts) {
+              const holdedId = customerId.replace('holded_', '');
+              const contact = data.contacts.find((c: any) => c.id === holdedId);
+              if (contact) {
+                setCustomerName(contact.name || contact.customName || contact.code || fallback);
+                return;
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching Holded contact:', error);
+          }
+        }
+
+        setCustomerName(fallback);
       } catch (error) {
         console.error('Error fetching customer name:', error);
         setCustomerName(fallback);
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchCustomerName();
-  }, [customerId, isHoldedActive, getHoldedContacts, fallback]);
-
-  if (loading) {
-    return <span className="text-muted-foreground">Cargando...</span>;
-  }
+  }, [customerId, fallback, isHoldedActive, currentOrganization?.id]);
 
   return <span>{customerName}</span>;
 };

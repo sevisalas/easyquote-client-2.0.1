@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, Building, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { fetchHoldedContacts, type HoldedContact } from "@/hooks/useHoldedContacts";
+import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 interface LocalClient {
   id: string;
@@ -19,47 +20,44 @@ interface LocalClient {
   source: 'local';
 }
 
-interface HoldedClientAdapted extends HoldedContact {
-  created_at: string;
+interface HoldedClient {
+  id: string;
+  name: string;
+  email: string;
   phone: string;
   notes: string;
-  email: string; // Agregamos email para compatibilidad
+  created_at: string;
+  holded_id: string;
+  code: string;
+  vatnumber: string;
+  source: 'holded';
 }
 
-type Cliente = LocalClient | HoldedClientAdapted;
+type Cliente = LocalClient | HoldedClient;
 
-const Clientes = () => {
+export default function Clientes() {
+  const navigate = useNavigate();
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-  
-  const ITEMS_PER_PAGE = 25;
+  const itemsPerPage = 10;
 
-  useEffect(() => {
-    fetchClientes();
-  }, [currentPage]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-    fetchClientes();
-  }, [searchTerm]);
+  // Verificar integración de Holded
+  const { isHoldedActive } = useHoldedIntegration();
+  const { organization, membership } = useSubscription();
+  const currentOrganization = organization || membership?.organization;
 
   const fetchClientes = async () => {
     setLoading(true);
     try {
-      // Obtener clientes locales y de Holded en paralelo
-      const [localClientsResponse, holdedContacts] = await Promise.all([
-        supabase
-          .from('customers')
-          .select('*', { count: 'exact' })
-          .order('created_at', { ascending: false }),
-        fetchHoldedContacts(searchTerm)
-      ]);
-
       let allClients: Cliente[] = [];
+
+      // Obtener clientes locales
+      const localClientsResponse = await supabase
+        .from('customers')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false });
 
       // Procesar clientes locales
       if (localClientsResponse.data) {
@@ -67,48 +65,70 @@ const Clientes = () => {
           ...client,
           source: 'local' as const
         }));
-
-        // Filtrar clientes locales por búsqueda si es necesario
-        const filteredLocalClients = searchTerm 
-          ? localClients.filter(client => 
-              client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              client.email.toLowerCase().includes(searchTerm.toLowerCase())
-            )
-          : localClients;
-
-        allClients.push(...filteredLocalClients);
+        allClients = [...localClients];
       }
 
-      // Procesar contactos de Holded (mapear a la interfaz Cliente)
-      const holdedClients: HoldedClientAdapted[] = holdedContacts.map(contact => {
-        console.log('🔍 PROCESSING HOLDED CONTACT:', {
-          holded_id: contact.holded_id,
-          name: contact.name,
-          code: contact.code,
-          email_original: contact.email_original,
-          vatnumber: contact.vatnumber
-        });
-        
-        return {
-          ...contact,
-          email: contact.email_original || '',
-          phone: '', // Holded no tiene teléfono en este dataset
-          notes: contact.vatnumber ? `NIF: ${contact.vatnumber}` : (contact.code || ''),
-          created_at: new Date().toISOString(), // Fecha por defecto
-        };
-      });
+      // Solo obtener contactos de Holded si la integración está activa y tenemos organización
+      if (isHoldedActive && currentOrganization?.id) {
+        try {
+          console.log('🔄 Fetching Holded contacts for organization:', currentOrganization.id);
+          const { data, error } = await supabase.functions.invoke('holded-contacts', {
+            body: { 
+              organizationId: currentOrganization.id,
+              searchTerm: searchTerm || undefined
+            }
+          });
 
-      allClients.push(...holdedClients);
+          if (!error && data?.contacts) {
+            console.log('✅ Holded contacts received:', data.contacts.length);
+            const holdedClients: HoldedClient[] = data.contacts.map((contact: any) => ({
+              id: `holded_${contact.id}`,
+              name: contact.name || contact.customName || contact.code || 'Sin nombre',
+              email: contact.email || '',
+              phone: contact.phone || '',
+              notes: '',
+              created_at: new Date().toISOString(),
+              holded_id: contact.id,
+              code: contact.code || '',
+              vatnumber: contact.vatNumber || '',
+              source: 'holded' as const
+            }));
+            allClients = [...allClients, ...holdedClients];
+          } else if (error) {
+            console.error('❌ Error fetching Holded contacts:', error);
+          }
+        } catch (error) {
+          console.error('❌ Error calling Holded edge function:', error);
+        }
+      } else if (isHoldedActive && !currentOrganization?.id) {
+        console.warn('⚠️ Holded integration active but no organization ID');
+      }
 
-      // Aplicar paginación
-      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-      const endIndex = startIndex + ITEMS_PER_PAGE;
+      // Aplicar filtro de búsqueda si existe
+      if (searchTerm) {
+        const filtered = allClients.filter(client => 
+          client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (client.source === 'holded' && client.code.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+        allClients = filtered;
+      }
+
+      // Paginación
+      const totalItems = allClients.length;
+      const totalPages = Math.ceil(totalItems / itemsPerPage);
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
       const paginatedClients = allClients.slice(startIndex, endIndex);
 
       setClientes(paginatedClients);
-      setTotalCount(allClients.length);
+      
+      // Ajustar página actual si es necesario
+      if (currentPage > totalPages && totalPages > 0) {
+        setCurrentPage(totalPages);
+      }
     } catch (error) {
-      console.error('Error fetching clients:', error);
+      console.error('Error fetching clientes:', error);
       toast({
         title: "Error",
         description: "No se pudieron cargar los clientes",
@@ -119,18 +139,33 @@ const Clientes = () => {
     }
   };
 
-  const deleteCliente = async (id: string, source: 'local' | 'holded') => {
+  // Effect para cargar clientes cuando cambie la página o el término de búsqueda
+  useEffect(() => {
+    fetchClientes();
+  }, [currentPage, isHoldedActive, currentOrganization?.id]);
+
+  // Effect separado para búsqueda (resetear página)
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      fetchClientes();
+    }
+  }, [searchTerm]);
+
+  const deleteCliente = async (id: string, source: string) => {
     // Solo permitir eliminar clientes locales
-    if (source !== 'local') {
+    if (source === 'holded') {
       toast({
-        title: "No permitido",
-        description: "Los contactos de Holded no se pueden eliminar desde aquí",
+        title: "Acción no permitida",
+        description: "No se pueden eliminar clientes de Holded desde aquí",
         variant: "destructive",
       });
       return;
     }
 
-    if (!confirm("¿Estás seguro de que quieres eliminar este cliente?")) return;
+    const confirmed = window.confirm('¿Estás seguro de que quieres eliminar este cliente?');
+    if (!confirmed) return;
 
     try {
       const { error } = await supabase
@@ -139,13 +174,15 @@ const Clientes = () => {
         .eq('id', id);
 
       if (error) throw error;
-      
-      await fetchClientes(); // Recargar la lista
+
       toast({
-        title: "Éxito",
-        description: "Cliente eliminado correctamente",
+        title: "Cliente eliminado",
+        description: "El cliente ha sido eliminado correctamente",
       });
+
+      fetchClientes();
     } catch (error) {
+      console.error('Error deleting cliente:', error);
       toast({
         title: "Error",
         description: "No se pudo eliminar el cliente",
@@ -154,244 +191,163 @@ const Clientes = () => {
     }
   };
 
-  const getClientDisplayName = (cliente: Cliente) => {
-    if (cliente.source === 'holded') {
-      const holdedClient = cliente as HoldedClientAdapted;
-      
-      console.log('🔍 DEBUG HOLDED CLIENT:', {
-        original_holded_id: holdedClient.holded_id,
-        name_field: holdedClient.name,
-        name_type: typeof holdedClient.name,
-        name_length: holdedClient.name?.length,
-        code_field: holdedClient.code,
-        email_field: holdedClient.email_original,
-        full_object: holdedClient
-      });
-      
-      // PRIORIDAD CORRECTA: name -> code -> holded_id 
-      if (holdedClient.name && holdedClient.name.trim() !== '' && holdedClient.name !== 'null') {
-        console.log('✅ Using NAME:', holdedClient.name);
-        return holdedClient.name;
-      }
-      
-      if (holdedClient.code && holdedClient.code.trim() !== '' && holdedClient.code !== 'EMPTY') {
-        console.log('✅ Using CODE:', holdedClient.code);
-        return holdedClient.code;
-      }
-      
-      console.log('❌ FALLBACK to holded_id:', holdedClient.holded_id);
-      return holdedClient.holded_id;
+  const getClientDisplayName = (cliente: Cliente): string => {
+    if (cliente.source === 'local') {
+      return cliente.name || 'Sin nombre';
+    } else {
+      return cliente.name || cliente.code || 'Sin nombre';
     }
-    return cliente.name;
-  };
-
-  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
   };
 
   if (loading) {
     return (
-    <div className="min-h-screen bg-background p-2">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center py-20">
-            <p className="text-muted-foreground">Cargando clientes...</p>
-          </div>
-        </div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-lg">Cargando clientes...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-2">
-      <div className="max-w-7xl mx-auto">
-        <header className="mb-8">
-          <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-3">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Clientes</h1>
-              <p className="text-muted-foreground">Gestiona tu base de datos de clientes (locales y de Holded)</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-              <Button 
-                onClick={() => navigate('/clientes/nuevo')}
-                className="w-full sm:w-auto bg-primary hover:bg-primary/90"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nuevo Cliente
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        <div className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input
-              placeholder="Buscar clientes por nombre o email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+    <div className="container mx-auto p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
+          <p className="text-muted-foreground">
+            Gestiona tus clientes locales y visualiza los de Holded
+          </p>
         </div>
+        <Button onClick={() => navigate('/clientes/nuevo')} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Nuevo Cliente
+        </Button>
+      </div>
 
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
+      <div className="flex items-center gap-4 mb-6">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Buscar clientes..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Origen</TableHead>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Teléfono/Código</TableHead>
+              <TableHead>Notas</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {clientes.length === 0 ? (
               <TableRow>
-                <TableHead>Origen</TableHead>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Teléfono/Código</TableHead>
-                <TableHead>Notas</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
+                <TableCell colSpan={6} className="text-center py-8">
+                  {searchTerm ? 'No se encontraron clientes que coincidan con la búsqueda.' : 'No hay clientes registrados.'}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {clientes.map((cliente) => (
-                <TableRow key={`${cliente.source}-${cliente.id}`} className="hover:bg-muted/50 h-12">
-                  <TableCell className="py-2">
-                    <Badge variant={cliente.source === 'local' ? 'default' : 'secondary'} className="flex items-center w-fit">
+            ) : (
+              clientes.map((cliente) => (
+                <TableRow key={cliente.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
                       {cliente.source === 'local' ? (
                         <>
-                          <User className="w-3 h-3 mr-1" />
-                          Local
+                          <User className="h-4 w-4 text-blue-500" />
+                          <Badge variant="secondary">Local</Badge>
                         </>
                       ) : (
                         <>
-                          <Building className="w-3 h-3 mr-1" />
-                          Holded
+                          <Building className="h-4 w-4 text-green-500" />
+                          <Badge variant="outline">Holded</Badge>
                         </>
-                      )}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-medium py-2">{getClientDisplayName(cliente)}</TableCell>
-                  <TableCell className="py-2">{cliente.email || 'No especificado'}</TableCell>
-                  <TableCell className="py-2">
-                    {cliente.source === 'local' 
-                      ? (cliente.phone || 'No especificado')
-                      : (cliente as HoldedClientAdapted).code || 'Sin código'
-                    }
-                  </TableCell>
-                  <TableCell className="max-w-xs truncate py-2">
-                    {cliente.source === 'local' 
-                      ? (cliente.notes || 'Sin notas')
-                      : ((cliente as HoldedClientAdapted).vatnumber ? `NIF: ${(cliente as HoldedClientAdapted).vatnumber}` : 'Sin datos')
-                    }
-                  </TableCell>
-                  <TableCell className="text-right py-2">
-                    <div className="flex justify-end gap-1">
-                      {cliente.source === 'local' && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(`/clientes/${cliente.id}/editar`)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Edit className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteCliente(cliente.id, cliente.source)}
-                            className="text-destructive hover:text-destructive h-8 w-8 p-0"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </>
-                      )}
-                      {cliente.source === 'holded' && (
-                        <Badge variant="outline" className="text-xs">
-                          Solo lectura
-                        </Badge>
                       )}
                     </div>
                   </TableCell>
+                  <TableCell className="font-medium">
+                    {getClientDisplayName(cliente)}
+                  </TableCell>
+                  <TableCell>{cliente.email}</TableCell>
+                  <TableCell>
+                    {cliente.source === 'local' ? (
+                      cliente.phone
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        {cliente.code && `Código: ${cliente.code}`}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {cliente.source === 'local' ? (
+                      cliente.notes
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        {cliente.vatnumber && `CIF: ${cliente.vatnumber}`}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {cliente.source === 'local' ? (
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/clientes/${cliente.id}/editar`)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteCliente(cliente.id, cliente.source)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Solo lectura</span>
+                    )}
+                  </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-
-        
-        {/* Controles de paginación */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-6">
-            <div className="text-sm text-muted-foreground">
-              Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} de {totalCount} clientes
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Anterior
-              </Button>
-              
-              <div className="flex items-center gap-1">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNumber;
-                  if (totalPages <= 5) {
-                    pageNumber = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNumber = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNumber = totalPages - 4 + i;
-                  } else {
-                    pageNumber = currentPage - 2 + i;
-                  }
-                  
-                  return (
-                    <Button
-                      key={pageNumber}
-                      variant={currentPage === pageNumber ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handlePageChange(pageNumber)}
-                      className="w-10"
-                    >
-                      {pageNumber}
-                    </Button>
-                  );
-                })}
-              </div>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                Siguiente
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {clientes.length === 0 && !loading && (
-          <div className="text-center py-20">
-            <p className="text-muted-foreground">
-              {searchTerm ? 'No se encontraron clientes' : 'Aún no tienes clientes registrados'}
-            </p>
-            {!searchTerm && (
-              <Button 
-                onClick={() => navigate('/clientes/nuevo')}
-                className="mt-4 bg-primary hover:bg-primary/90"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Crear primer cliente
-              </Button>
+              ))
             )}
-          </div>
-        )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Paginación */}
+      <div className="flex items-center justify-between mt-4">
+        <div className="text-sm text-muted-foreground">
+          Mostrando {Math.min((currentPage - 1) * itemsPerPage + 1, clientes.length)} - {Math.min(currentPage * itemsPerPage, clientes.length)} de {clientes.length} clientes
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Anterior
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => prev + 1)}
+            disabled={clientes.length < itemsPerPage}
+          >
+            Siguiente
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );
 };
-
-export default Clientes;
