@@ -186,19 +186,19 @@ export default function QuoteDetail() {
             <div className="space-y-3">
               {/* Mostrar items de la tabla quote_items */}
               {quote.items && quote.items.map((item: any, index: number) => (
-                <div key={`item-${index}`} className="bg-gradient-to-r from-card to-card/50 border border-border/50 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                <div key={`item-${index}`} className="bg-card border border-border rounded-lg p-4 border-r-4 border-r-primary hover:shadow-md transition-all duration-200">
                   <div className="flex justify-between items-center">
                     <div className="flex-1">
-                      <h4 className="font-semibold text-foreground">{item.product_name || item.description || `Artículo ${index + 1}`}</h4>
-                      <div className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
-                        <span className="bg-primary/10 text-primary px-2 py-1 rounded-md font-medium">
+                      <h4 className="font-semibold text-foreground mb-1">{item.product_name || item.description || `Artículo ${index + 1}`}</h4>
+                      <div className="text-sm text-muted-foreground flex items-center gap-2">
+                        <span className="bg-muted px-2 py-1 rounded-md">
                           Cantidad: {item.quantity}
                         </span>
-                        <span className="text-muted-foreground">×</span>
+                        <span>×</span>
                         <span className="font-medium">{fmtEUR(item.unit_price || 0)}</span>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right ml-4">
                       <p className="text-lg font-bold text-primary">{fmtEUR((item.total_price || item.subtotal) || 0)}</p>
                     </div>
                   </div>
@@ -213,12 +213,15 @@ export default function QuoteDetail() {
                   `Producto ${index + 1}`;
                 
                 return (
-                  <div key={`selection-${index}`} className="bg-gradient-to-r from-card to-card/50 border border-border/50 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                  <div key={`selection-${index}`} className="bg-card border border-border rounded-lg p-4 border-r-4 border-r-primary hover:shadow-md transition-all duration-200">
                     <div className="flex justify-between items-center">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-foreground">{productName}</h4>
+                        <h4 className="font-semibold text-foreground mb-1">{productName}</h4>
+                        <div className="text-sm text-muted-foreground">
+                          Producto personalizado
+                        </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right ml-4">
                         <p className="text-lg font-bold text-primary">{fmtEUR(selection.price || 0)}</p>
                       </div>
                     </div>
@@ -228,10 +231,10 @@ export default function QuoteDetail() {
               
               <Separator className="my-4" />
               
-              <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
+              <div className="bg-card rounded-lg p-4 border border-border border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold text-foreground">Total:</span>
-                  <span className="text-xl font-bold text-primary">{fmtEUR(quote.final_price || 0)}</span>
+                  <span className="text-lg font-semibold text-foreground">Total del Presupuesto:</span>
+                  <span className="text-2xl font-bold text-secondary">{fmtEUR(quote.final_price || 0)}</span>
                 </div>
               </div>
             </div>
