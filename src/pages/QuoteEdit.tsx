@@ -396,7 +396,7 @@ export default function QuoteEdit() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-xl">#{quote.quote_number}</CardTitle>
+              <CardTitle className="text-xl">Presupuesto: {quote.quote_number}</CardTitle>
             </div>
             <div className="flex gap-2">
               <Button
