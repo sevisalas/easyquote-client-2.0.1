@@ -182,10 +182,6 @@ export default function QuoteEdit() {
 
   const updateQuoteMutation = useMutation({
     mutationFn: async (data: Partial<Quote>) => {
-      console.log('Updating quote with data:', data); // Debug log
-      console.log('Items to update:', items); // Debug log
-      console.log('Additionals to update:', quoteAdditionals); // Debug log
-      
       const { error } = await supabase
         .from('quotes')
         .update({
@@ -223,7 +219,7 @@ export default function QuoteEdit() {
           product_id: item.productId || null,
           prompts: item.prompts || {},
           outputs: item.outputs || [],
-          multi: typeof item.multi === 'number' ? item.multi : 1,
+          multi: item.multi || null, // Guardar el objeto completo o null, no forzar a número
           item_additionals: item.itemAdditionals || [],
         }));
 
