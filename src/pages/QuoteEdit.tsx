@@ -114,6 +114,7 @@ export default function QuoteEdit() {
   const [formData, setFormData] = useState<Partial<Quote>>({});
   const [items, setItems] = useState<QuoteItem[]>([]);
   const [quoteAdditionals, setQuoteAdditionals] = useState<SelectedQuoteAdditional[]>([]);
+  const [editingItems, setEditingItems] = useState<Set<string>>(new Set());
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ['quote', id],
@@ -306,6 +307,20 @@ export default function QuoteEdit() {
 
   const handleInputChange = (field: keyof Quote, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleItemEdit = (itemId: string | number) => {
+    const id = itemId.toString();
+    setEditingItems(prev => new Set([...prev, id]));
+  };
+
+  const handleItemSaveEdit = (itemId: string | number) => {
+    const id = itemId.toString();
+    setEditingItems(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(id);
+      return newSet;
+    });
   };
 
   const handleItemChange = (itemId: string | number, snapshot: any) => {
@@ -515,50 +530,96 @@ export default function QuoteEdit() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {items.map((item, index) => (
-              <div key={item.id || index} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
-                <div className="flex justify-between items-center">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-4">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-foreground text-sm truncate">
-                          {item.itemDescription || item.product_name || `Artículo ${index + 1}`}
-                        </p>
-                        {item.description && (
-                          <p className="text-xs text-muted-foreground truncate">{item.description}</p>
-                        )}
+            {items.map((item, index) => {
+              const itemId = (item.id || index).toString();
+              const isEditing = editingItems.has(itemId);
+              
+              return (
+                <div key={item.id || index} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
+                  {isEditing ? (
+                    // Editing mode - show full QuoteItem component
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-foreground">Editando Artículo {index + 1}</h4>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handleItemSaveEdit(itemId)}
+                            size="sm"
+                            variant="outline"
+                            className="gap-1"
+                          >
+                            Guardar
+                          </Button>
+                          <Button
+                            onClick={() => handleItemRemove(item.id || index)}
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Eliminar
+                          </Button>
+                        </div>
                       </div>
-                      <div className="text-sm font-medium text-secondary text-right shrink-0">
-                        {fmtEUR(item.price || item.unit_price * item.quantity || 0)}
+                      <QuoteItem
+                        hasToken={true}
+                        id={itemId}
+                        initialData={{
+                          productId: item.productId || '',
+                          prompts: item.prompts || {},
+                          outputs: item.outputs || [],
+                          price: item.price || item.unit_price || 0,
+                          multi: item.multi || 1,
+                          itemDescription: item.itemDescription || item.product_name || '',
+                          itemAdditionals: item.itemAdditionals || [],
+                        }}
+                        onChange={handleItemChange}
+                        onRemove={handleItemRemove}
+                      />
+                    </div>
+                  ) : (
+                    // Compressed mode - show summary
+                    <div className="flex justify-between items-center">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-4">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-foreground text-sm truncate">
+                              {item.itemDescription || item.product_name || `Artículo ${index + 1}`}
+                            </p>
+                            {item.description && (
+                              <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                            )}
+                          </div>
+                          <div className="text-sm font-medium text-secondary text-right shrink-0">
+                            {fmtEUR(item.price || item.unit_price * item.quantity || 0)}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 ml-4 shrink-0">
+                        <Button
+                          onClick={() => handleItemEdit(itemId)}
+                          size="sm"
+                          variant="outline"
+                          className="gap-1"
+                        >
+                          <Edit className="h-3 w-3" />
+                          Editar
+                        </Button>
+                        <Button
+                          onClick={() => handleItemRemove(item.id || index)}
+                          size="sm"
+                          variant="outline"
+                          className="gap-1 text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Eliminar
+                        </Button>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 ml-4 shrink-0">
-                    <Button
-                      onClick={() => {
-                        // TODO: Implementar edición de artículo individual
-                        console.log('Edit item:', item);
-                      }}
-                      size="sm"
-                      variant="outline"
-                      className="gap-1"
-                    >
-                      <Edit className="h-3 w-3" />
-                      Editar
-                    </Button>
-                    <Button
-                      onClick={() => handleItemRemove(item.id || index)}
-                      size="sm"
-                      variant="outline"
-                      className="gap-1 text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                      Eliminar
-                    </Button>
-                  </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {items.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
