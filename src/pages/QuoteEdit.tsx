@@ -13,6 +13,8 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus } from "lucide-react";
 import { format } from "date-fns";
+import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
+import QuoteItem from "@/components/quotes/QuoteItem";
 
 interface QuoteItem {
   id: string;
@@ -24,6 +26,22 @@ interface QuoteItem {
   subtotal: number;
   total_price?: number;
   isFromSelections?: boolean;
+  // QuoteItem component compatibility
+  productId?: string;
+  prompts?: Record<string, any>;
+  outputs?: any[];
+  price?: number;
+  multi?: any;
+  itemDescription?: string;
+  itemAdditionals?: any[];
+}
+
+interface SelectedQuoteAdditional {
+  id: string
+  name: string
+  type: "net_amount" | "quantity_multiplier" | "custom"
+  value: number
+  isCustom?: boolean
 }
 
 interface Quote {
@@ -41,6 +59,7 @@ interface Quote {
   items?: QuoteItem[];
   selections?: any;
   customer?: { name: string };
+  quote_additionals?: any[];
 }
 
 const fetchQuote = async (id: string): Promise<Quote> => {
@@ -49,7 +68,8 @@ const fetchQuote = async (id: string): Promise<Quote> => {
     .select(`
       *,
       items:quote_items(*),
-      customer:customers(name)
+      customer:customers(name),
+      quote_additionals:quote_additionals(*)
     `)
     .eq('id', id)
     .maybeSingle();
@@ -58,7 +78,7 @@ const fetchQuote = async (id: string): Promise<Quote> => {
   if (!data) throw new Error('Presupuesto no encontrado');
   
   console.log('Quote data loaded:', data); // Debug log
-  return data;
+  return data as any;
 };
 
 const fetchCustomers = async () => {
@@ -93,6 +113,7 @@ export default function QuoteEdit() {
 
   const [formData, setFormData] = useState<Partial<Quote>>({});
   const [items, setItems] = useState<QuoteItem[]>([]);
+  const [quoteAdditionals, setQuoteAdditionals] = useState<SelectedQuoteAdditional[]>([]);
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ['quote', id],
@@ -120,13 +141,43 @@ export default function QuoteEdit() {
       
       console.log('Quote items:', quote.items); // Debug log
       console.log('Quote selections:', quote.selections); // Debug log
+      console.log('Quote additionals:', quote.quote_additionals); // Debug log
+      
+      // Load quote additionals
+      if (quote.quote_additionals && Array.isArray(quote.quote_additionals)) {
+        const additionals = quote.quote_additionals.map((additional: any) => ({
+          id: additional.additional_id || additional.id,
+          name: additional.name,
+          type: additional.type || 'net_amount',
+          value: additional.value || 0,
+          isCustom: !additional.additional_id
+        }));
+        setQuoteAdditionals(additionals);
+      }
       
       // Combinar items y selections para mostrar todos los productos
       const allItems: QuoteItem[] = [];
       
       // Agregar items de la tabla quote_items
       if (quote.items && quote.items.length > 0) {
-        allItems.push(...quote.items);
+        const dbItems = quote.items.map((item: any) => ({
+          id: item.id,
+          product_name: item.product_name,
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          subtotal: item.subtotal,
+          total_price: item.total_price,
+          // QuoteItem compatibility
+          productId: item.product_id || '',
+          prompts: typeof item.prompts === 'object' ? item.prompts : {},
+          outputs: Array.isArray(item.outputs) ? item.outputs : [],
+          price: item.total_price || item.subtotal,
+          multi: item.multi || 1,
+          itemDescription: item.product_name,
+          itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
+        }));
+        allItems.push(...dbItems);
       }
       
       // Agregar items del campo selections (formato anterior)
@@ -141,6 +192,14 @@ export default function QuoteEdit() {
           unit_price: selection.price || 0,
           subtotal: selection.price || 0,
           isFromSelections: true, // Marcar como proveniente de selections
+          // QuoteItem compatibility
+          productId: selection.productId || '',
+          prompts: selection.prompts || {},
+          outputs: selection.outputs || [],
+          price: selection.price || 0,
+          multi: selection.multi || 1,
+          itemDescription: selection.itemDescription || '',
+          itemAdditionals: selection.itemAdditionals || [],
         }));
         allItems.push(...selectionItems);
       }
@@ -153,6 +212,7 @@ export default function QuoteEdit() {
     mutationFn: async (data: Partial<Quote>) => {
       console.log('Updating quote with data:', data); // Debug log
       console.log('Items to update:', items); // Debug log
+      console.log('Additionals to update:', quoteAdditionals); // Debug log
       
       const { error } = await supabase
         .from('quotes')
@@ -188,6 +248,11 @@ export default function QuoteEdit() {
           subtotal: item.quantity * item.unit_price,
           total_price: item.quantity * item.unit_price,
           position: index,
+          product_id: item.productId || null,
+          prompts: item.prompts || {},
+          outputs: item.outputs || [],
+          multi: item.multi || 1,
+          item_additionals: item.itemAdditionals || [],
         }));
 
         const { error: itemsError } = await supabase
@@ -195,6 +260,28 @@ export default function QuoteEdit() {
           .insert(itemsToInsert);
 
         if (itemsError) throw itemsError;
+      }
+
+      // Update quote additionals
+      await supabase
+        .from('quote_additionals')
+        .delete()
+        .eq('quote_id', id);
+
+      if (quoteAdditionals.length > 0) {
+        const additionalsToInsert = quoteAdditionals.map((additional) => ({
+          quote_id: id,
+          additional_id: additional.isCustom ? null : additional.id,
+          name: additional.name,
+          type: additional.type,
+          value: additional.value,
+        }));
+
+        const { error: additionalsError } = await supabase
+          .from('quote_additionals')
+          .insert(additionalsToInsert);
+
+        if (additionalsError) throw additionalsError;
       }
     },
     onSuccess: () => {
@@ -221,17 +308,33 @@ export default function QuoteEdit() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleItemChange = (index: number, field: keyof QuoteItem, value: any) => {
-    setItems(prev => prev.map((item, i) => 
-      i === index 
-        ? { 
-            ...item, 
-            [field]: value,
-            subtotal: field === 'quantity' || field === 'unit_price' 
-              ? (field === 'quantity' ? value : item.quantity) * (field === 'unit_price' ? value : item.unit_price)
-              : item.subtotal
+  const handleItemChange = (itemId: string | number, snapshot: any) => {
+    setItems(prev => prev.map((item, index) => 
+      (item.id === itemId || index.toString() === itemId.toString()) 
+        ? {
+            ...item,
+            product_name: snapshot.itemDescription || item.product_name,
+            description: snapshot.itemDescription || item.description,
+            quantity: 1, // QuoteItem manages quantity differently
+            unit_price: snapshot.price || 0,
+            subtotal: snapshot.price || 0,
+            total_price: snapshot.price || 0,
+            // Update QuoteItem fields
+            productId: snapshot.productId,
+            prompts: snapshot.prompts,
+            outputs: snapshot.outputs,
+            price: snapshot.price,
+            multi: snapshot.multi,
+            itemDescription: snapshot.itemDescription,
+            itemAdditionals: snapshot.itemAdditionals,
           }
         : item
+    ));
+  };
+
+  const handleItemRemove = (itemId: string | number) => {
+    setItems(prev => prev.filter((item, index) => 
+      !(item.id === itemId || index.toString() === itemId.toString())
     ));
   };
 
@@ -243,12 +346,16 @@ export default function QuoteEdit() {
       quantity: 1,
       unit_price: 0,
       subtotal: 0,
+      // QuoteItem compatibility
+      productId: '',
+      prompts: {},
+      outputs: [],
+      price: 0,
+      multi: 1,
+      itemDescription: 'Nuevo artículo',
+      itemAdditionals: [],
     };
     setItems(prev => [...prev, newItem]);
-  };
-
-  const removeItem = (index: number) => {
-    setItems(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSave = () => {
@@ -406,35 +513,35 @@ export default function QuoteEdit() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="space-y-4">
             {items.map((item, index) => (
-              <div key={item.id || index} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex-1">
-                  <div className="flex items-center gap-4">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-sm truncate">{item.product_name}</p>
-                      {item.description && (
-                        <p className="text-xs text-muted-foreground truncate">{item.description}</p>
-                      )}
-                    </div>
-                    <div className="text-sm font-semibold text-right">
-                      {fmtEUR(item.unit_price * item.quantity)}
-                    </div>
-                  </div>
+              <div key={item.id || index} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-medium">Artículo {index + 1}</h4>
+                  <Button
+                    onClick={() => handleItemRemove(item.id || index)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-                <div className="flex items-center gap-2 ml-4">
-                  {!item.isFromSelections && (
-                    <Button
-                      onClick={() => removeItem(index)}
-                      size="sm"
-                      variant="outline"
-                      className="gap-1"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                      Eliminar
-                    </Button>
-                  )}
-                </div>
+                <QuoteItem
+                  hasToken={true}
+                  id={item.id || index}
+                  initialData={{
+                    productId: item.productId || '',
+                    prompts: item.prompts || {},
+                    outputs: item.outputs || [],
+                    price: item.price || item.unit_price || 0,
+                    multi: item.multi || 1,
+                    itemDescription: item.itemDescription || item.product_name,
+                    itemAdditionals: item.itemAdditionals || [],
+                  }}
+                  onChange={handleItemChange}
+                  onRemove={handleItemRemove}
+                />
               </div>
             ))}
 
@@ -461,6 +568,19 @@ export default function QuoteEdit() {
               </div>
             </>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Quote Additionals */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Adicionales del Presupuesto</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <QuoteAdditionalsSelector
+            selectedAdditionals={quoteAdditionals}
+            onChange={setQuoteAdditionals}
+          />
         </CardContent>
       </Card>
     </div>
