@@ -186,10 +186,10 @@ export default function QuoteDetail() {
           <CardTitle className="text-lg">Artículos del Presupuesto</CardTitle>
         </CardHeader>
         <CardContent>
-          {((quote.items && quote.items.length > 0) || (Array.isArray(quote.selections) && quote.selections.length > 0)) ? (
+          {(quote.items && quote.items.length > 0) ? (
             <div className="space-y-3">
-              {/* Mostrar items de la tabla quote_items */}
-              {quote.items && quote.items.map((item: any, index: number) => (
+              {/* Solo mostrar items de la tabla quote_items */}
+              {quote.items.map((item: any, index: number) => (
                 <div key={`item-${index}`} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-primary hover:shadow-md transition-all duration-200">
                   <div className="flex justify-between items-center">
                     <div className="flex-1">
@@ -208,27 +208,6 @@ export default function QuoteDetail() {
                   </div>
                 </div>
               ))}
-              
-              {/* Mostrar items del campo selections (formato anterior) */}
-              {Array.isArray(quote.selections) && quote.selections.map((selection: any, index: number) => {
-                // Buscar el nombre del producto en los outputs o usar descripción
-                const productName = selection.itemDescription || 
-                  (selection.outputs && selection.outputs.find((o: any) => o.name === 'PRODUCTO')?.value) ||
-                  `Producto ${index + 1}`;
-                
-                return (
-                  <div key={`selection-${index}`} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-primary hover:shadow-md transition-all duration-200">
-                    <div className="flex justify-between items-center">
-                      <div className="flex-1">
-                        <h4 className="text-foreground mb-1">{productName}</h4>
-                      </div>
-                      <div className="text-right ml-4">
-                        <p className="text-lg text-primary">{fmtEUR(selection.price || 0)}</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
               
               <Separator className="my-4" />
               
