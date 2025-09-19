@@ -102,9 +102,16 @@ export const CustomerSelector = ({
   const getCustomerDisplayName = (customer: Customer) => {
     if (customer.source === 'holded') {
       const holdedCustomer = customer as HoldedContact;
-      return holdedCustomer.name || `Contacto ${holdedCustomer.code || holdedCustomer.holded_id}`;
+      // Priorizar nombre, luego código, luego holded_id
+      if (holdedCustomer.name && holdedCustomer.name.trim()) {
+        return holdedCustomer.name.trim();
+      }
+      if (holdedCustomer.code && holdedCustomer.code.trim()) {
+        return `Cliente ${holdedCustomer.code.trim()}`;
+      }
+      return `Cliente ${holdedCustomer.holded_id}`;
     }
-    return customer.name;
+    return customer.name || "Cliente sin nombre";
   };
 
   const getCustomerEmail = (customer: Customer) => {
@@ -194,11 +201,11 @@ export const CustomerSelector = ({
                 <CommandGroup heading="Contactos Holded">
                   {filteredCustomers
                     .filter(c => c.source === 'holded')
-                    .map((customer) => {
+                    .map((customer, index) => {
                       const holdedCustomer = customer as HoldedContact;
                       return (
                         <CommandItem
-                          key={customer.id}
+                          key={`holded-${holdedCustomer.holded_id}-${index}`}
                           value={customer.id}
                           onSelect={() => {
                             onValueChange(customer.id);
@@ -221,6 +228,9 @@ export const CustomerSelector = ({
                               )}
                               {holdedCustomer.code && (
                                 <span>• Código: {holdedCustomer.code}</span>
+                              )}
+                              {holdedCustomer.vatnumber && (
+                                <span>• NIF: {holdedCustomer.vatnumber}</span>
                               )}
                             </div>
                           </div>

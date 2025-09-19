@@ -23,7 +23,7 @@ export const fetchHoldedContacts = async (searchTerm?: string): Promise<HoldedCo
     let query = holdedSupabase
       .from("holded_contacts_index")
       .select("id, holded_id, name, email_original, code, vatnumber")
-      .order("name", { ascending: true });
+      .order("name", { ascending: true, nullsFirst: false });
 
     // Si hay un término de búsqueda, filtrar
     if (searchTerm && searchTerm.trim()) {
@@ -39,12 +39,23 @@ export const fetchHoldedContacts = async (searchTerm?: string): Promise<HoldedCo
     }
 
     console.log('✅ Holded contacts fetched successfully:', data?.length, 'contacts');
+    console.log('📋 Sample contacts:', data?.slice(0, 3));
     
-    return (data || []).map(contact => ({
-      ...contact,
-      id: `holded_${contact.holded_id}`, // Prefijo para evitar conflictos con IDs locales
-      source: 'holded' as const
-    }));
+    // Usar un índice único para evitar duplicados
+    const uniqueContacts = new Map<string, HoldedContact>();
+    
+    (data || []).forEach((contact, index) => {
+      const uniqueId = `holded_${contact.holded_id}`;
+      if (!uniqueContacts.has(uniqueId)) {
+        uniqueContacts.set(uniqueId, {
+          ...contact,
+          id: uniqueId,
+          source: 'holded' as const
+        });
+      }
+    });
+    
+    return Array.from(uniqueContacts.values());
   } catch (error) {
     console.error('❌ Error in fetchHoldedContacts:', error);
     return [];
