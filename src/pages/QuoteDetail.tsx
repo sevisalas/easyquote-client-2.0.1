@@ -194,13 +194,6 @@ export default function QuoteDetail() {
                   <div className="flex justify-between items-center">
                     <div className="flex-1">
                       <h4 className="text-foreground mb-1">{item.product_name || item.description || `Artículo ${index + 1}`}</h4>
-                      <div className="text-sm text-muted-foreground flex items-center gap-2">
-                        <span className="bg-muted px-2 py-1 rounded-md">
-                          Cantidad: {item.quantity}
-                        </span>
-                        <span>×</span>
-                        <span>{fmtEUR(item.unit_price || 0)}</span>
-                      </div>
                     </div>
                     <div className="text-right ml-4">
                       <p className="text-lg text-primary">{fmtEUR((item.total_price || item.subtotal) || 0)}</p>
