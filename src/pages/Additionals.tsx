@@ -72,8 +72,7 @@ export default function Additionals() {
         .from("additionals")
         .insert({
           ...newAdditional,
-          user_id: user.id,
-          assignment_type: 'article'
+          user_id: user.id
         })
         .select()
         .single()
