@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -115,10 +114,6 @@ export default function QuoteEdit() {
   const [formData, setFormData] = useState<Partial<Quote>>({});
   const [items, setItems] = useState<QuoteItem[]>([]);
   const [quoteAdditionals, setQuoteAdditionals] = useState<SelectedQuoteAdditional[]>([]);
-  const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
-
-  // Check if user has EasyQuote token
-  const hasToken = Boolean(localStorage.getItem("easyquote_token"));
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ['quote', id],
@@ -367,10 +362,6 @@ export default function QuoteEdit() {
     updateQuoteMutation.mutate(formData);
   };
 
-  const handleEditItem = (index: number) => {
-    setEditingItemIndex(index);
-  };
-
   if (isLoading) {
     return (
       <div className="container mx-auto py-4">
@@ -526,58 +517,46 @@ export default function QuoteEdit() {
           <div className="space-y-3">
             {items.map((item, index) => (
               <div key={item.id || index} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-foreground">Producto {index + 1}</h4>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleEditItem(index)}
-                      variant="ghost"
-                      size="sm"
-                      className="text-primary hover:bg-primary/10"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      onClick={() => handleItemRemove(item.id || index)}
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                
-                {editingItemIndex === index ? (
-                  <QuoteItem
-                    hasToken={hasToken}
-                    id={index}
-                    initialData={{
-                      productId: item.productId || '',
-                      prompts: item.prompts || {},
-                      outputs: item.outputs || [],
-                      price: item.price || item.unit_price,
-                      multi: item.multi || 1,
-                      itemDescription: item.itemDescription || item.product_name,
-                      itemAdditionals: item.itemAdditionals || [],
-                    }}
-                    onChange={handleItemChange}
-                    onRemove={() => {}}
-                  />
-                ) : (
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-sm text-muted-foreground">Descripción</Label>
-                        <p className="text-foreground">{item.itemDescription || item.product_name || "Sin descripción"}</p>
+                <div className="flex justify-between items-center">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-4">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-foreground text-sm truncate">
+                          {item.itemDescription || item.product_name || `Artículo ${index + 1}`}
+                        </p>
+                        {item.description && (
+                          <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                        )}
                       </div>
-                      <div>
-                        <Label className="text-sm text-muted-foreground">Precio</Label>
-                        <p className="text-foreground font-medium">{fmtEUR(item.price || item.unit_price * item.quantity || 0)}</p>
+                      <div className="text-sm font-medium text-secondary text-right shrink-0">
+                        {fmtEUR(item.price || item.unit_price * item.quantity || 0)}
                       </div>
                     </div>
                   </div>
-                )}
+                  <div className="flex items-center gap-2 ml-4 shrink-0">
+                    <Button
+                      onClick={() => {
+                        // TODO: Implementar edición de artículo individual
+                        console.log('Edit item:', item);
+                      }}
+                      size="sm"
+                      variant="outline"
+                      className="gap-1"
+                    >
+                      <Edit className="h-3 w-3" />
+                      Editar
+                    </Button>
+                    <Button
+                      onClick={() => handleItemRemove(item.id || index)}
+                      size="sm"
+                      variant="outline"
+                      className="gap-1 text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      Eliminar
+                    </Button>
+                  </div>
+                </div>
               </div>
             ))}
 
@@ -619,7 +598,6 @@ export default function QuoteEdit() {
           />
         </CardContent>
       </Card>
-
     </div>
   );
 }
