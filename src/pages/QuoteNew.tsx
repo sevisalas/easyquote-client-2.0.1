@@ -308,17 +308,17 @@ export default function QuoteNew() {
         <CardHeader>
           <CardTitle>Información del presupuesto</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <CustomerSelector
               value={customerId}
               onValueChange={setCustomerId}
-              label="Cliente *"
+              label="cliente *"
               placeholder="Seleccionar cliente..."
             />
             
             <div className="space-y-2">
-              <Label htmlFor="title">Título</Label>
+              <Label htmlFor="title">título</Label>
               <Input
                 id="title"
                 value={title}
@@ -328,36 +328,37 @@ export default function QuoteNew() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descripción del presupuesto..."
-              rows={3}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="valid-until">Válido hasta</Label>
-              <Input
-                id="valid-until"
-                type="date"
-                value={validUntil}
-                onChange={(e) => setValidUntil(e.target.value)}
+              <Label htmlFor="description">descripción</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Descripción del presupuesto..."
+                rows={3}
               />
             </div>
-            
             <div className="space-y-2">
-              <Label htmlFor="notes">Notas internas</Label>
+              <Label htmlFor="notes">notas internas</Label>
               <Textarea
                 id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Notas para uso interno..."
                 rows={2}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="valid-until">válido hasta</Label>
+              <Input
+                id="valid-until"
+                type="date"
+                value={validUntil}
+                onChange={(e) => setValidUntil(e.target.value)}
               />
             </div>
           </div>
@@ -386,9 +387,9 @@ export default function QuoteNew() {
             </div>
           ) : (
             Object.entries(items).map(([id, item]) => (
-              <div key={id} className="border rounded-lg p-4">
+              <div key={id} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-medium">Producto {Number(id) + 1}</h4>
+                  <h4 className="text-foreground">Producto {Number(id) + 1}</h4>
                   <Button
                     onClick={() => handleItemRemove(id)}
                     variant="ghost"
@@ -430,9 +431,9 @@ export default function QuoteNew() {
           <CardTitle>Resumen</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex justify-between">
-              <span>Subtotal:</span>
+              <span>subtotal:</span>
               <span>{formatEUR(totals.subtotal)}</span>
             </div>
             {totals.taxAmount > 0 && (
@@ -443,14 +444,16 @@ export default function QuoteNew() {
             )}
             {totals.discountAmount > 0 && (
               <div className="flex justify-between text-green-600">
-                <span>Descuento:</span>
+                <span>descuento:</span>
                 <span>-{formatEUR(totals.discountAmount)}</span>
               </div>
             )}
             <Separator />
-            <div className="flex justify-between font-bold text-lg">
-              <span>Total:</span>
-              <span>{formatEUR(totals.finalPrice)}</span>
+            <div className="bg-card rounded-lg p-4 border border-border border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
+              <div className="flex justify-between items-center">
+                <span className="text-lg font-semibold text-foreground">total:</span>
+                <span className="text-2xl font-bold text-secondary">{formatEUR(totals.finalPrice)}</span>
+              </div>
             </div>
           </div>
         </CardContent>

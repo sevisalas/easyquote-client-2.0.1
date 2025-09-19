@@ -417,9 +417,9 @@ export default function QuoteEdit() {
       {/* Quote Details */}
       <Card>
         <CardContent className="space-y-3 pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="customer">Cliente</Label>
+              <Label htmlFor="customer">cliente</Label>
               <Select
                 value={formData.customer_id || ''}
                 onValueChange={(value) => handleInputChange('customer_id', value)}
@@ -438,7 +438,7 @@ export default function QuoteEdit() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="status">Estado</Label>
+              <Label htmlFor="status">estado</Label>
               <Select
                 value={formData.status || 'draft'}
                 onValueChange={(value) => handleInputChange('status', value)}
@@ -457,7 +457,7 @@ export default function QuoteEdit() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="title">Título</Label>
+              <Label htmlFor="title">título</Label>
               <Input
                 id="title"
                 value={formData.title || ''}
@@ -467,7 +467,7 @@ export default function QuoteEdit() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="valid_until">Válido hasta</Label>
+              <Label htmlFor="valid_until">válido hasta</Label>
               <Input
                 id="valid_until"
                 type="date"
@@ -477,26 +477,27 @@ export default function QuoteEdit() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
-            <Textarea
-              id="description"
-              value={formData.description || ''}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Descripción del presupuesto"
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notas</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes || ''}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
-              placeholder="Notas adicionales"
-              rows={2}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="description">descripción</Label>
+              <Textarea
+                id="description"
+                value={formData.description || ''}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                placeholder="Descripción del presupuesto"
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">notas</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes || ''}
+                onChange={(e) => handleInputChange('notes', e.target.value)}
+                placeholder="Notas adicionales"
+                rows={2}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -513,46 +514,48 @@ export default function QuoteEdit() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {items.map((item, index) => (
-              <div key={item.id || index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-4">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-sm truncate">
-                        {item.itemDescription || item.product_name || `Artículo ${index + 1}`}
-                      </p>
-                      {item.description && (
-                        <p className="text-xs text-muted-foreground truncate">{item.description}</p>
-                      )}
-                    </div>
-                    <div className="text-sm font-semibold text-right shrink-0">
-                      {fmtEUR(item.price || item.unit_price * item.quantity || 0)}
+              <div key={item.id || index} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
+                <div className="flex justify-between items-center">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-4">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-foreground text-sm truncate">
+                          {item.itemDescription || item.product_name || `Artículo ${index + 1}`}
+                        </p>
+                        {item.description && (
+                          <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                        )}
+                      </div>
+                      <div className="text-sm font-medium text-secondary text-right shrink-0">
+                        {fmtEUR(item.price || item.unit_price * item.quantity || 0)}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 ml-4 shrink-0">
-                  <Button
-                    onClick={() => {
-                      // TODO: Implementar edición de artículo individual
-                      console.log('Edit item:', item);
-                    }}
-                    size="sm"
-                    variant="outline"
-                    className="gap-1"
-                  >
-                    <Edit className="h-3 w-3" />
-                    Editar
-                  </Button>
-                  <Button
-                    onClick={() => handleItemRemove(item.id || index)}
-                    size="sm"
-                    variant="outline"
-                    className="gap-1 text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                    Eliminar
-                  </Button>
+                  <div className="flex items-center gap-2 ml-4 shrink-0">
+                    <Button
+                      onClick={() => {
+                        // TODO: Implementar edición de artículo individual
+                        console.log('Edit item:', item);
+                      }}
+                      size="sm"
+                      variant="outline"
+                      className="gap-1"
+                    >
+                      <Edit className="h-3 w-3" />
+                      Editar
+                    </Button>
+                    <Button
+                      onClick={() => handleItemRemove(item.id || index)}
+                      size="sm"
+                      variant="outline"
+                      className="gap-1 text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      Eliminar
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -572,10 +575,10 @@ export default function QuoteEdit() {
             <>
               <Separator className="my-4" />
               
-              <div className="flex justify-end">
-                <div className="text-right">
-                  <Label className="text-sm font-medium">Total</Label>
-                  <div className="text-xl font-bold">{fmtEUR(calculateSubtotal())}</div>
+              <div className="bg-card rounded-lg p-4 border border-border border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-semibold text-foreground">Total del Presupuesto:</span>
+                  <span className="text-2xl font-bold text-secondary">{fmtEUR(calculateSubtotal())}</span>
                 </div>
               </div>
             </>
