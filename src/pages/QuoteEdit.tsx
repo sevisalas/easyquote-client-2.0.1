@@ -37,8 +37,6 @@ interface Quote {
   status: string;
   valid_until?: string;
   subtotal: number;
-  discount_amount: number;
-  tax_amount: number;
   final_price: number;
   items?: QuoteItem[];
   selections?: any;
@@ -118,8 +116,6 @@ export default function QuoteEdit() {
         notes: quote.notes,
         status: quote.status,
         valid_until: quote.valid_until,
-        discount_amount: quote.discount_amount,
-        tax_amount: quote.tax_amount,
       });
       
       console.log('Quote items:', quote.items); // Debug log
@@ -137,7 +133,9 @@ export default function QuoteEdit() {
       if (Array.isArray(quote.selections) && quote.selections.length > 0) {
         const selectionItems = quote.selections.map((selection: any, index: number) => ({
           id: `selection-${index}`,
-          product_name: quote.product_name || `Producto ${index + 1}`,
+          product_name: selection.itemDescription || 
+            (selection.outputs && selection.outputs.find((o: any) => o.name === 'PRODUCTO')?.value) ||
+            `Artículo ${index + 1}`,
           description: selection.itemDescription || '',
           quantity: 1,
           unit_price: selection.price || 0,
@@ -165,10 +163,8 @@ export default function QuoteEdit() {
           notes: data.notes,
           status: data.status,
           valid_until: data.valid_until,
-          discount_amount: data.discount_amount || 0,
-          tax_amount: data.tax_amount || 0,
           subtotal: calculateSubtotal(),
-          final_price: calculateTotal(),
+          final_price: calculateSubtotal(),
           updated_at: new Date().toISOString(),
         })
         .eq('id', id);
@@ -218,10 +214,7 @@ export default function QuoteEdit() {
   };
 
   const calculateTotal = () => {
-    const subtotal = calculateSubtotal();
-    const discount = formData.discount_amount || 0;
-    const tax = formData.tax_amount || 0;
-    return subtotal - discount + tax;
+    return calculateSubtotal();
   };
 
   const handleInputChange = (field: keyof Quote, value: any) => {
@@ -296,10 +289,7 @@ export default function QuoteEdit() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-xl">Editar Presupuesto #{quote.quote_number}</CardTitle>
-              <CardDescription className="text-sm">
-                Modifica los detalles del presupuesto
-              </CardDescription>
+              <CardTitle className="text-xl">#{quote.quote_number}</CardTitle>
             </div>
             <div className="flex gap-2">
               <Button
@@ -319,11 +309,8 @@ export default function QuoteEdit() {
 
       {/* Quote Details */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Información del Presupuesto</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="space-y-3 pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="customer">Cliente</Label>
               <Select
@@ -464,49 +451,13 @@ export default function QuoteEdit() {
 
           {items.length > 0 && (
             <>
-              <Separator className="my-6" />
+              <Separator className="my-4" />
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="discount">Descuento (€)</Label>
-                  <Input
-                    id="discount"
-                    type="number"
-                    value={formData.discount_amount || 0}
-                    onChange={(e) => handleInputChange('discount_amount', parseFloat(e.target.value) || 0)}
-                    min="0"
-                    step="0.01"
-                  />
+              <div className="flex justify-end">
+                <div className="text-right">
+                  <Label className="text-sm font-medium">Total</Label>
+                  <div className="text-xl font-bold">{fmtEUR(calculateSubtotal())}</div>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="tax">Impuestos (€)</Label>
-                  <Input
-                    id="tax"
-                    type="number"
-                    value={formData.tax_amount || 0}
-                    onChange={(e) => handleInputChange('tax_amount', parseFloat(e.target.value) || 0)}
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Total final</Label>
-                  <div className="p-2 bg-muted rounded-md">
-                    <p className="text-lg font-semibold">{fmtEUR(calculateTotal())}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 text-sm text-muted-foreground space-y-1">
-                <p>Subtotal: {fmtEUR(calculateSubtotal())}</p>
-                <p>Descuento: -{fmtEUR(formData.discount_amount || 0)}</p>
-                <p>Impuestos: +{fmtEUR(formData.tax_amount || 0)}</p>
-                <Separator className="my-2" />
-                <p className="text-base font-semibold text-foreground">
-                  Total: {fmtEUR(calculateTotal())}
-                </p>
               </div>
             </>
           )}
