@@ -4,16 +4,20 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Building, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchHoldedContacts, type HoldedContact } from "@/hooks/useHoldedContacts";
 
-interface Customer {
+interface LocalCustomer {
   id: string;
   name: string;
   email?: string;
   phone?: string;
+  source: 'local';
 }
+
+type Customer = LocalCustomer | HoldedContact;
 
 interface CustomerSelectorProps {
   value: string;
@@ -22,13 +26,37 @@ interface CustomerSelectorProps {
   placeholder?: string;
 }
 
-const fetchLocalCustomers = async (): Promise<Customer[]> => {
+const fetchLocalCustomers = async (): Promise<LocalCustomer[]> => {
   const { data, error } = await supabase
     .from("customers")
     .select("id, name, email, phone")
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return data as Customer[];
+  return (data || []).map(customer => ({
+    ...customer,
+    source: 'local' as const
+  }));
+};
+
+const fetchAllCustomers = async (searchTerm?: string): Promise<Customer[]> => {
+  try {
+    // Ejecutar ambas consultas en paralelo
+    const [localCustomers, holdedContacts] = await Promise.all([
+      fetchLocalCustomers(),
+      fetchHoldedContacts(searchTerm)
+    ]);
+
+    // Combinar y ordenar por nombre
+    const allCustomers = [...localCustomers, ...holdedContacts];
+    return allCustomers.sort((a, b) => {
+      const nameA = a.name || "";
+      const nameB = b.name || "";
+      return nameA.localeCompare(nameB);
+    });
+  } catch (error) {
+    console.error('Error fetching customers:', error);
+    return [];
+  }
 };
 
 export const CustomerSelector = ({ 
@@ -40,19 +68,44 @@ export const CustomerSelector = ({
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
-  // Cargar clientes locales
+  // Cargar todos los clientes (locales y de Holded)
   const { data: customers, isLoading } = useQuery({ 
-    queryKey: ["customers"], 
-    queryFn: fetchLocalCustomers
+    queryKey: ["all-customers", searchValue], 
+    queryFn: () => fetchAllCustomers(searchValue.trim() ? searchValue : undefined),
+    enabled: true
   });
 
-  // Filtrar clientes basado en la búsqueda
-  const filteredCustomers = customers?.filter(customer =>
-    customer.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-    (customer.email && customer.email.toLowerCase().includes(searchValue.toLowerCase()))
-  ) || [];
+  // Filtrar clientes basado en la búsqueda (filtro adicional del lado cliente)
+  const filteredCustomers = customers?.filter(customer => {
+    if (!searchValue) return true;
+    const search = searchValue.toLowerCase();
+    const name = customer.name?.toLowerCase() || "";
+    const email = customer.source === 'local' 
+      ? (customer as LocalCustomer).email?.toLowerCase() || ""
+      : (customer as HoldedContact).email_original?.toLowerCase() || "";
+    const code = customer.source === 'holded' 
+      ? (customer as HoldedContact).code?.toLowerCase() || ""
+      : "";
+    
+    return name.includes(search) || email.includes(search) || code.includes(search);
+  }) || [];
 
   const selectedCustomer = customers?.find(customer => customer.id === value);
+
+  const getCustomerDisplayName = (customer: Customer) => {
+    if (customer.source === 'holded') {
+      const holdedCustomer = customer as HoldedContact;
+      return holdedCustomer.name || `Contacto ${holdedCustomer.code || holdedCustomer.holded_id}`;
+    }
+    return customer.name;
+  };
+
+  const getCustomerEmail = (customer: Customer) => {
+    if (customer.source === 'holded') {
+      return (customer as HoldedContact).email_original;
+    }
+    return (customer as LocalCustomer).email;
+  };
 
   return (
     <div className="space-y-2">
@@ -67,11 +120,18 @@ export const CustomerSelector = ({
             disabled={isLoading}
           >
             {selectedCustomer ? (
-              <div className="flex flex-col items-start">
-                <span>{selectedCustomer.name}</span>
-                {selectedCustomer.email && (
-                  <span className="text-xs text-muted-foreground">{selectedCustomer.email}</span>
+              <div className="flex items-center gap-2">
+                {selectedCustomer.source === 'holded' ? (
+                  <Building className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <User className="h-4 w-4 text-muted-foreground" />
                 )}
+                <div className="flex flex-col items-start">
+                  <span>{getCustomerDisplayName(selectedCustomer)}</span>
+                  {getCustomerEmail(selectedCustomer) && (
+                    <span className="text-xs text-muted-foreground">{getCustomerEmail(selectedCustomer)}</span>
+                  )}
+                </div>
               </div>
             ) : (
               placeholder
@@ -88,32 +148,80 @@ export const CustomerSelector = ({
             />
             <CommandList>
               <CommandEmpty>No se encontraron clientes.</CommandEmpty>
-              <CommandGroup>
-                {filteredCustomers.map((customer) => (
-                  <CommandItem
-                    key={customer.id}
-                    value={customer.id}
-                    onSelect={() => {
-                      onValueChange(customer.id);
-                      setOpen(false);
-                      setSearchValue("");
-                    }}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        value === customer.id ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    <div className="flex flex-col">
-                      <span>{customer.name}</span>
-                      {customer.email && (
-                        <span className="text-xs text-muted-foreground">{customer.email}</span>
-                      )}
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
+              
+              {/* Clientes locales */}
+              {filteredCustomers.some(c => c.source === 'local') && (
+                <CommandGroup heading="Clientes locales">
+                  {filteredCustomers
+                    .filter(c => c.source === 'local')
+                    .map((customer) => (
+                    <CommandItem
+                      key={customer.id}
+                      value={customer.id}
+                      onSelect={() => {
+                        onValueChange(customer.id);
+                        setOpen(false);
+                        setSearchValue("");
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          value === customer.id ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      <User className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <div className="flex flex-col">
+                        <span>{getCustomerDisplayName(customer)}</span>
+                        {getCustomerEmail(customer) && (
+                          <span className="text-xs text-muted-foreground">{getCustomerEmail(customer)}</span>
+                        )}
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+
+              {/* Contactos de Holded */}
+              {filteredCustomers.some(c => c.source === 'holded') && (
+                <CommandGroup heading="Contactos Holded">
+                  {filteredCustomers
+                    .filter(c => c.source === 'holded')
+                    .map((customer) => {
+                      const holdedCustomer = customer as HoldedContact;
+                      return (
+                        <CommandItem
+                          key={customer.id}
+                          value={customer.id}
+                          onSelect={() => {
+                            onValueChange(customer.id);
+                            setOpen(false);
+                            setSearchValue("");
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              value === customer.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <Building className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <div className="flex flex-col">
+                            <span>{getCustomerDisplayName(customer)}</span>
+                            <div className="text-xs text-muted-foreground space-x-2">
+                              {holdedCustomer.email_original && (
+                                <span>{holdedCustomer.email_original}</span>
+                              )}
+                              {holdedCustomer.code && (
+                                <span>• Código: {holdedCustomer.code}</span>
+                              )}
+                            </div>
+                          </div>
+                        </CommandItem>
+                      );
+                    })}
+                </CommandGroup>
+              )}
             </CommandList>
           </Command>
         </PopoverContent>

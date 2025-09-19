@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { supabase } from "@/integrations/supabase/client";
+import { getHoldedContactById } from "@/hooks/useHoldedContacts";
 
 interface CustomerNameProps {
   customerId: string | null | undefined;
@@ -21,18 +22,30 @@ export const CustomerName = ({ customerId, fallback = "—" }: CustomerNameProps
     const fetchCustomerName = async () => {
       setLoading(true);
       try {
-        // Buscar en clientes locales
-        const { data, error } = await supabase
-          .from("customers")
-          .select("name")
-          .eq("id", customerId)
-          .maybeSingle();
-        
-        if (error) {
-          console.error('Error fetching customer:', error);
-          setCustomerName(fallback);
+        // Verificar si es un contacto de Holded (prefijo "holded_")
+        if (customerId.startsWith("holded_")) {
+          const holdedId = customerId.replace("holded_", "");
+          const holdedContact = await getHoldedContactById(holdedId);
+          
+          if (holdedContact?.name) {
+            setCustomerName(holdedContact.name);
+          } else {
+            setCustomerName(`Contacto ${holdedContact?.code || holdedId}`);
+          }
         } else {
-          setCustomerName(data?.name || fallback);
+          // Buscar en clientes locales
+          const { data, error } = await supabase
+            .from("customers")
+            .select("name")
+            .eq("id", customerId)
+            .maybeSingle();
+          
+          if (error) {
+            console.error('Error fetching customer:', error);
+            setCustomerName(fallback);
+          } else {
+            setCustomerName(data?.name || fallback);
+          }
         }
       } catch (error) {
         console.error('Error fetching customer name:', error);
