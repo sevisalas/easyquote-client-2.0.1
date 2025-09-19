@@ -51,9 +51,12 @@ const fetchQuote = async (id: string): Promise<Quote> => {
       customer:customers(name)
     `)
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Presupuesto no encontrado');
+  
+  console.log('Quote data loaded:', data); // Debug log
   return data;
 };
 
@@ -103,6 +106,7 @@ export default function QuoteEdit() {
 
   useEffect(() => {
     if (quote) {
+      console.log('Setting form data with quote:', quote); // Debug log
       setFormData({
         quote_number: quote.quote_number,
         customer_id: quote.customer_id,
@@ -114,12 +118,17 @@ export default function QuoteEdit() {
         discount_amount: quote.discount_amount,
         tax_amount: quote.tax_amount,
       });
+      
+      console.log('Quote items:', quote.items); // Debug log
       setItems(quote.items || []);
     }
   }, [quote]);
 
   const updateQuoteMutation = useMutation({
     mutationFn: async (data: Partial<Quote>) => {
+      console.log('Updating quote with data:', data); // Debug log
+      console.log('Items to update:', items); // Debug log
+      
       const { error } = await supabase
         .from('quotes')
         .update({
@@ -139,21 +148,30 @@ export default function QuoteEdit() {
 
       if (error) throw error;
 
-      // Update items
-      for (const item of items) {
-        if (item.id) {
-          await supabase
-            .from('quote_items')
-            .update({
-              product_name: item.product_name,
-              description: item.description,
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-              subtotal: item.quantity * item.unit_price,
-              total_price: item.quantity * item.unit_price,
-            })
-            .eq('id', item.id);
-        }
+      // Delete existing items and insert new ones to simplify the update process
+      await supabase
+        .from('quote_items')
+        .delete()
+        .eq('quote_id', id);
+
+      // Insert all current items
+      if (items.length > 0) {
+        const itemsToInsert = items.map((item, index) => ({
+          quote_id: id,
+          product_name: item.product_name,
+          description: item.description || '',
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          subtotal: item.quantity * item.unit_price,
+          total_price: item.quantity * item.unit_price,
+          position: index,
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('quote_items')
+          .insert(itemsToInsert);
+
+        if (itemsError) throw itemsError;
       }
     },
     onSuccess: () => {

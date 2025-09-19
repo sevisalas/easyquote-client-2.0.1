@@ -18,9 +18,12 @@ const fetchQuote = async (id: string) => {
       customer:customers(name)
     `)
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Presupuesto no encontrado');
+  
+  console.log('Quote detail data:', data); // Debug log
   return data;
 };
 
@@ -168,24 +171,24 @@ export default function QuoteDetail() {
       </Card>
 
       {/* Quote Items */}
-      {quote.items && quote.items.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Artículos del Presupuesto</CardTitle>
-          </CardHeader>
-          <CardContent>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Artículos del Presupuesto</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {quote.items && quote.items.length > 0 ? (
             <div className="space-y-3">
               {quote.items.map((item: any, index: number) => (
                 <div key={index} className="border rounded-lg p-3">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <h4 className="font-medium text-sm">{item.description || `Artículo ${index + 1}`}</h4>
+                      <h4 className="font-medium text-sm">{item.product_name || item.description || `Artículo ${index + 1}`}</h4>
                       <div className="text-xs text-muted-foreground mt-1">
                         Cantidad: {item.quantity} × {fmtEUR(item.unit_price || 0)}
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-sm">{fmtEUR(item.total || 0)}</p>
+                      <p className="font-semibold text-sm">{fmtEUR((item.total_price || item.subtotal) || 0)}</p>
                     </div>
                   </div>
                 </div>
@@ -198,9 +201,20 @@ export default function QuoteDetail() {
                 <span className="font-semibold text-lg">{fmtEUR(quote.final_price || 0)}</span>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>Este presupuesto no tiene artículos añadidos</p>
+              <Button 
+                onClick={() => navigate(`/presupuestos/editar/${quote.id}`)}
+                className="mt-4 gap-2"
+              >
+                <Edit className="h-4 w-4" />
+                Añadir artículos
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
