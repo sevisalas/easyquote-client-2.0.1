@@ -176,10 +176,11 @@ export default function QuoteDetail() {
           <CardTitle className="text-lg">Artículos del Presupuesto</CardTitle>
         </CardHeader>
         <CardContent>
-          {quote.items && quote.items.length > 0 ? (
+          {((quote.items && quote.items.length > 0) || (Array.isArray(quote.selections) && quote.selections.length > 0)) ? (
             <div className="space-y-3">
-              {quote.items.map((item: any, index: number) => (
-                <div key={index} className="border rounded-lg p-3">
+              {/* Mostrar items de la tabla quote_items */}
+              {quote.items && quote.items.map((item: any, index: number) => (
+                <div key={`item-${index}`} className="border rounded-lg p-3">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <h4 className="font-medium text-sm">{item.product_name || item.description || `Artículo ${index + 1}`}</h4>
@@ -189,6 +190,36 @@ export default function QuoteDetail() {
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-sm">{fmtEUR((item.total_price || item.subtotal) || 0)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {/* Mostrar items del campo selections (formato anterior) */}
+              {Array.isArray(quote.selections) && quote.selections.map((selection: any, index: number) => (
+                <div key={`selection-${index}`} className="border rounded-lg p-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm">
+                        {quote.product_name || selection.itemDescription || `Producto ${index + 1}`}
+                      </h4>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {selection.outputs && selection.outputs.find((o: any) => o.name === 'PRECIO') && (
+                          <span>Precio: {fmtEUR(selection.price || 0)}</span>
+                        )}
+                      </div>
+                      {selection.outputs && selection.outputs.length > 0 && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {selection.outputs.map((output: any, outputIndex: number) => (
+                            <div key={outputIndex}>
+                              {output.name}: {output.value}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-sm">{fmtEUR(selection.price || 0)}</p>
                     </div>
                   </div>
                 </div>
