@@ -252,7 +252,7 @@ export default function QuoteEdit() {
           product_id: item.productId || null,
           prompts: item.prompts || {},
           outputs: item.outputs || [],
-          multi: item.multi || 1,
+          multi: typeof item.multi === 'number' ? item.multi : 1,
           item_additionals: item.itemAdditionals || [],
         }));
 

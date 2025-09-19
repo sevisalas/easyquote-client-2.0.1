@@ -41,6 +41,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
       const { data, error } = await supabase
         .from("additionals")
         .select("*")
+        .eq("assignment_type", "quote")
         .order("name")
 
       if (error) throw error
