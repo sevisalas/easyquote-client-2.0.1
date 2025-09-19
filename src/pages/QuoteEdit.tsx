@@ -537,46 +537,22 @@ export default function QuoteEdit() {
               return (
                 <div key={item.id || index} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
                   {isEditing ? (
-                    // Editing mode - show full QuoteItem component
-                    <div>
-                      <div className="flex items-center justify-between mb-4">
-                        <h4 className="text-foreground">Editando Artículo {index + 1}</h4>
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() => handleItemSaveEdit(itemId)}
-                            size="sm"
-                            variant="outline"
-                            className="gap-1"
-                          >
-                            Guardar
-                          </Button>
-                          <Button
-                            onClick={() => handleItemRemove(item.id || index)}
-                            size="sm"
-                            variant="outline"
-                            className="gap-1 text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                            Eliminar
-                          </Button>
-                        </div>
-                      </div>
-                      <QuoteItem
-                        hasToken={true}
-                        id={itemId}
-                        initialData={{
-                          productId: item.productId || '',
-                          prompts: item.prompts || {},
-                          outputs: item.outputs || [],
-                          price: item.price || item.unit_price || 0,
-                          multi: item.multi || 1,
-                          itemDescription: item.itemDescription || item.product_name || '',
-                          itemAdditionals: item.itemAdditionals || [],
-                        }}
-                        onChange={handleItemChange}
-                        onRemove={handleItemRemove}
-                      />
-                    </div>
+                    // Editing mode - show only QuoteItem component
+                    <QuoteItem
+                      hasToken={true}
+                      id={itemId}
+                      initialData={{
+                        productId: item.productId || '',
+                        prompts: item.prompts || {},
+                        outputs: item.outputs || [],
+                        price: item.price || item.unit_price || 0,
+                        multi: item.multi || 1,
+                        itemDescription: item.itemDescription || item.product_name || '',
+                        itemAdditionals: item.itemAdditionals || [],
+                      }}
+                      onChange={handleItemChange}
+                      onRemove={handleItemRemove}
+                    />
                   ) : (
                     // Compressed mode - show summary
                     <div className="flex justify-between items-center">
