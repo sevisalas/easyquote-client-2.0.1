@@ -203,7 +203,7 @@ export default function QuoteDetail() {
                       </div>
                     </div>
                     <div className="text-right ml-4">
-                      <p className="text-lg text-secondary font-medium">{fmtEUR((item.total_price || item.subtotal) || 0)}</p>
+                      <p className="text-lg text-secondary">{fmtEUR((item.total_price || item.subtotal) || 0)}</p>
                     </div>
                   </div>
                 </div>
@@ -223,7 +223,7 @@ export default function QuoteDetail() {
                         <h4 className="text-foreground mb-1">{productName}</h4>
                       </div>
                       <div className="text-right ml-4">
-                        <p className="text-lg text-secondary font-medium">{fmtEUR(selection.price || 0)}</p>
+                        <p className="text-lg text-secondary">{fmtEUR(selection.price || 0)}</p>
                       </div>
                     </div>
                   </div>
