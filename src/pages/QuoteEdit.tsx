@@ -173,7 +173,8 @@ export default function QuoteEdit() {
           prompts: typeof item.prompts === 'object' ? item.prompts : {},
           outputs: Array.isArray(item.outputs) ? item.outputs : [],
           price: item.total_price || item.subtotal,
-          multi: typeof item.multi === 'number' ? item.multi : 1,
+          // Solo pasar multi si tiene datos de múltiples cantidades, no solo el número
+          multi: (item.multi && typeof item.multi === 'object' && (item.multi.qtyInputs || item.multi.qtyPrompt)) ? item.multi : undefined,
           itemDescription: item.description || item.product_name,
           itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
         }));
