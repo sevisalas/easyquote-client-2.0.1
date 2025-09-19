@@ -11,7 +11,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Edit } from "lucide-react";
 import { format } from "date-fns";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 import QuoteItem from "@/components/quotes/QuoteItem";
@@ -513,35 +513,47 @@ export default function QuoteEdit() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-2">
             {items.map((item, index) => (
-              <div key={item.id || index} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-medium">Artículo {index + 1}</h4>
+              <div key={item.id || index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm truncate">
+                        {item.itemDescription || item.product_name || `Artículo ${index + 1}`}
+                      </p>
+                      {item.description && (
+                        <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                      )}
+                    </div>
+                    <div className="text-sm font-semibold text-right shrink-0">
+                      {fmtEUR(item.price || item.unit_price * item.quantity || 0)}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 ml-4 shrink-0">
+                  <Button
+                    onClick={() => {
+                      // TODO: Implementar edición de artículo individual
+                      console.log('Edit item:', item);
+                    }}
+                    size="sm"
+                    variant="outline"
+                    className="gap-1"
+                  >
+                    <Edit className="h-3 w-3" />
+                    Editar
+                  </Button>
                   <Button
                     onClick={() => handleItemRemove(item.id || index)}
-                    variant="ghost"
                     size="sm"
-                    className="text-destructive hover:bg-destructive/10"
+                    variant="outline"
+                    className="gap-1 text-destructive hover:bg-destructive/10"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3 w-3" />
+                    Eliminar
                   </Button>
                 </div>
-                <QuoteItem
-                  hasToken={true}
-                  id={item.id || index}
-                  initialData={{
-                    productId: item.productId || '',
-                    prompts: item.prompts || {},
-                    outputs: item.outputs || [],
-                    price: item.price || item.unit_price || 0,
-                    multi: item.multi || 1,
-                    itemDescription: item.itemDescription || item.product_name,
-                    itemAdditionals: item.itemAdditionals || [],
-                  }}
-                  onChange={handleItemChange}
-                  onRemove={handleItemRemove}
-                />
               </div>
             ))}
 
