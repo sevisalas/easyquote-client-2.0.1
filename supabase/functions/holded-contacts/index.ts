@@ -27,30 +27,49 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get the Holded integration configuration
-    const { data: integration, error: integrationError } = await supabaseClient
+    // Get the Holded integration ID first
+    const { data: holdedIntegration, error: integrationError } = await supabaseClient
       .from('integrations')
-      .select('configuration, is_active')
-      .eq('organization_id', organizationId)
-      .eq('integration_type', 'holded')
+      .select('id')
+      .eq('name', 'Holded')
       .maybeSingle()
 
-    if (integrationError || !integration?.is_active) {
+    if (integrationError || !holdedIntegration) {
+      console.error('Holded integration not found:', integrationError)
       return new Response(
-        JSON.stringify({ error: 'Holded integration not found or inactive' }),
+        JSON.stringify({ error: 'Holded integration not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const apiKey = integration.configuration?.apiKey
-    if (!apiKey) {
+    // Get the organization's access to Holded integration
+    const { data: orgAccess, error: accessError } = await supabaseClient
+      .from('organization_integration_access')
+      .select('access_token, is_active')
+      .eq('organization_id', organizationId)
+      .eq('integration_id', holdedIntegration.id)
+      .maybeSingle()
+
+    if (accessError || !orgAccess?.is_active || !orgAccess.access_token) {
+      console.error('Organization access to Holded not found or inactive:', accessError)
       return new Response(
-        JSON.stringify({ error: 'Holded API key not configured' }),
+        JSON.stringify({ error: 'Holded integration not active for this organization or API key missing' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const apiKey = orgAccess.access_token
+    if (!apiKey) {
+      console.error('Holded API key not found for organization:', organizationId)
+      return new Response(
+        JSON.stringify({ error: 'Holded API key not configured for this organization' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Call Holded API
+    console.log('Making request to Holded API for organization:', organizationId)
+
+    // Call Holded API with the organization-specific API key
     const holdedResponse = await fetch('https://api.holded.com/api/invoicing/v1/contacts', {
       method: 'GET',
       headers: {
@@ -60,14 +79,16 @@ serve(async (req) => {
     })
 
     if (!holdedResponse.ok) {
-      console.error('Holded API error:', holdedResponse.status, await holdedResponse.text())
+      const errorText = await holdedResponse.text()
+      console.error('Holded API error for org', organizationId, ':', holdedResponse.status, errorText)
       return new Response(
-        JSON.stringify({ error: 'Error fetching data from Holded API' }),
+        JSON.stringify({ error: 'Error fetching data from Holded API', details: errorText }),
         { status: holdedResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     const holdedData = await holdedResponse.json()
+    console.log('Holded API response for org', organizationId, '- contacts found:', holdedData?.length || 0)
 
     // Transform Holded contacts to our format
     const contacts = holdedData.map((contact: any) => ({

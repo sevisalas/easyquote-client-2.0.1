@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchHoldedContacts, type HoldedContact } from "@/hooks/useHoldedContacts";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 interface LocalCustomer {
   id: string;
@@ -46,38 +47,42 @@ const fetchLocalCustomers = async (): Promise<LocalCustomer[]> => {
   }));
 };
 
-const fetchAllCustomers = async (searchTerm?: string, includeHolded = false): Promise<Customer[]> => {
+const fetchAllCustomers = async (searchTerm?: string, includeHolded = false, organizationId?: string): Promise<Customer[]> => {
   try {
-    console.log('🚀 Fetching all customers with search term:', searchTerm, 'includeHolded:', includeHolded);
+    console.log('🚀 Fetching all customers with search term:', searchTerm, 'includeHolded:', includeHolded, 'orgId:', organizationId);
     
     // Obtener clientes locales siempre
     const localCustomers = await fetchLocalCustomers();
     
-    // Solo obtener contactos de Holded si la integración está activa
+    // Solo obtener contactos de Holded si la integración está activa y tenemos organizationId
     let holdedContacts: HoldedContact[] = [];
-    if (includeHolded) {
+    if (includeHolded && organizationId) {
       try {
+        console.log('📡 Calling holded-contacts edge function for organization:', organizationId);
         // Usar la edge function que respeta la organización
         const { data, error } = await supabase.functions.invoke('holded-contacts', {
-          body: { searchTerm }
+          body: { organizationId, searchTerm }
         });
         
         if (error) {
           console.error('❌ Error from Holded edge function:', error);
         } else {
+          console.log('✅ Holded contacts received:', data?.contacts?.length || 0);
           holdedContacts = (data?.contacts || []).map((contact: any) => ({
             id: `holded_${contact.id}`,
             holded_id: contact.id,
-            name: contact.name || contact.code || contact.id,
+            name: contact.name || contact.customName || 'Sin nombre',
             email_original: contact.email,
             code: contact.code,
-            vatnumber: contact.vatnumber,
+            vatnumber: contact.vatNumber,
             source: 'holded' as const
           }));
         }
       } catch (error) {
         console.error('❌ Error calling Holded edge function:', error);
       }
+    } else if (includeHolded && !organizationId) {
+      console.warn('⚠️ Holded integration active but no organization ID available');
     }
 
     console.log('📊 Results summary:', { 
@@ -117,11 +122,19 @@ export const CustomerSelector = ({
 
   // Verificar si la integración de Holded está activa
   const { isHoldedActive, loading: holdedLoading } = useHoldedIntegration();
+  
+  // Obtener información de la organización
+  const { organization, membership } = useSubscription();
+  const currentOrganization = organization || membership?.organization;
 
   // Cargar todos los clientes (locales y opcionalmente de Holded)
   const { data: customers, isLoading, error } = useQuery({ 
-    queryKey: ["all-customers", searchValue, isHoldedActive], 
-    queryFn: () => fetchAllCustomers(searchValue.trim() ? searchValue : undefined, isHoldedActive),
+    queryKey: ["all-customers", searchValue, isHoldedActive, currentOrganization?.id], 
+    queryFn: () => fetchAllCustomers(
+      searchValue.trim() ? searchValue : undefined, 
+      isHoldedActive,
+      currentOrganization?.id
+    ),
     enabled: !holdedLoading // Solo ejecutar cuando ya sepamos si Holded está activo
   });
 
