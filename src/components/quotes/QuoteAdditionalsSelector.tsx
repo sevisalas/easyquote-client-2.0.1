@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Trash2, Plus } from "lucide-react"
 
 interface Additional {
@@ -105,61 +104,56 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
     <div className="space-y-4">
       {/* Selected Additionals */}
       {selectedAdditionals.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           <h4 className="font-medium">Ajustes del Presupuesto</h4>
           {selectedAdditionals.map((additional) => (
-            <Card key={additional.id} className="relative">
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      {additional.name}
-                      {additional.isCustom && (
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                          Personalizado
-                        </span>
-                      )}
-                    </CardTitle>
-                    <p className="text-xs text-muted-foreground">
-                      {additional.type === "net_amount" 
-                        ? "Importe neto" 
-                        : additional.type === "quantity_multiplier" 
-                        ? "Por cantidad total" 
-                        : "Porcentaje sobre subtotal"}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeAdditional(additional.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor={`quote-value-${additional.id}`} className="text-sm">
-                    Valor:
-                  </Label>
-                  <Input
-                    id={`quote-value-${additional.id}`}
-                    type="number"
-                    step="0.01"
-                    value={additional.value}
-                    onChange={(e) => updateAdditionalValue(additional.id, parseFloat(e.target.value) || 0)}
-                    className="w-24"
-                  />
-                  <span className="text-sm text-muted-foreground">
-                    {additional.type === "net_amount" 
-                      ? "€" 
-                      : additional.type === "quantity_multiplier" 
-                      ? "x" 
-                      : "%"}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
+            <div key={additional.id} className="flex items-center gap-3 p-2 bg-muted/30 rounded border">
+              <div className="flex-1">
+                <span className="text-sm font-medium">
+                  {additional.name}
+                  {additional.isCustom && (
+                    <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                      Personalizado
+                    </span>
+                  )}
+                </span>
+                <span className="ml-2 text-xs text-muted-foreground">
+                  {additional.type === "net_amount" 
+                    ? "Importe neto" 
+                    : additional.type === "quantity_multiplier" 
+                    ? "Por cantidad total" 
+                    : "Porcentaje sobre subtotal"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor={`quote-value-${additional.id}`} className="text-sm">
+                  Valor:
+                </Label>
+                <Input
+                  id={`quote-value-${additional.id}`}
+                  type="number"
+                  step="0.01"
+                  value={additional.value}
+                  onChange={(e) => updateAdditionalValue(additional.id, parseFloat(e.target.value) || 0)}
+                  className="w-20"
+                />
+                <span className="text-sm text-muted-foreground w-4">
+                  {additional.type === "net_amount" 
+                    ? "€" 
+                    : additional.type === "quantity_multiplier" 
+                    ? "x" 
+                    : "%"}
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => removeAdditional(additional.id)}
+                className="p-1 h-8 w-8"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           ))}
         </div>
       )}
