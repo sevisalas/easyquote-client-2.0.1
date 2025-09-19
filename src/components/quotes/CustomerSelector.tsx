@@ -102,15 +102,28 @@ export const CustomerSelector = ({
   const getCustomerDisplayName = (customer: Customer) => {
     if (customer.source === 'holded') {
       const holdedCustomer = customer as HoldedContact;
+      
+      console.log('🔍 Debug customer display name:', {
+        holded_id: holdedCustomer.holded_id,
+        name: holdedCustomer.name,
+        nameType: typeof holdedCustomer.name,
+        nameLength: holdedCustomer.name?.length,
+        code: holdedCustomer.code,
+        fullObject: holdedCustomer
+      });
+      
       // Mostrar directamente el campo name de la tabla
       if (holdedCustomer.name && holdedCustomer.name.trim() !== '') {
+        console.log('✅ Using name:', holdedCustomer.name.trim());
         return holdedCustomer.name.trim();
       }
       // Si no hay nombre, usar el código
       if (holdedCustomer.code && holdedCustomer.code.trim() !== '' && holdedCustomer.code !== 'EMPTY') {
+        console.log('✅ Using code:', holdedCustomer.code.trim());
         return holdedCustomer.code.trim();
       }
       // Como último recurso, usar el holded_id
+      console.log('❌ Fallback to holded_id:', holdedCustomer.holded_id);
       return holdedCustomer.holded_id;
     }
     return customer.name || "Sin nombre";

@@ -31,7 +31,7 @@ export const fetchHoldedContacts = async (searchTerm?: string): Promise<HoldedCo
     }
 
     console.log('📡 Making request to Holded database...');
-    const { data, error } = await query;
+    const { data, error } = await query.limit(10); // Limitar para debuggear
     
     if (error) {
       console.error('❌ Error fetching Holded contacts:', error);
@@ -39,7 +39,7 @@ export const fetchHoldedContacts = async (searchTerm?: string): Promise<HoldedCo
     }
 
     console.log('✅ Holded contacts fetched successfully:', data?.length, 'contacts');
-    console.log('📋 Sample raw data from Holded:', JSON.stringify(data?.slice(0, 3), null, 2));
+    console.log('📋 FULL RAW DATA from Supabase:', data);
     
     // Usar un índice único para evitar duplicados
     const uniqueContacts = new Map<string, HoldedContact>();
