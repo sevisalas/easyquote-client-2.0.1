@@ -129,7 +129,7 @@ export default function QuoteEdit() {
 
   useEffect(() => {
     if (quote) {
-      console.log('Setting form data with quote:', quote); // Debug log
+      console.log('🔍 Setting form data with quote:', quote); // Debug log
       setFormData({
         quote_number: quote.quote_number,
         customer_id: quote.customer_id,
@@ -140,9 +140,9 @@ export default function QuoteEdit() {
         valid_until: quote.valid_until,
       });
       
-      console.log('Quote items:', quote.items); // Debug log
-      console.log('Quote selections:', quote.selections); // Debug log
-      console.log('Quote additionals:', quote.quote_additionals); // Debug log
+      console.log('🔍 Quote items from DB:', quote.items); // Debug log
+      console.log('🔍 Quote selections:', quote.selections); // Debug log
+      console.log('🔍 Quote additionals:', quote.quote_additionals); // Debug log
       
       // Load quote additionals
       if (quote.quote_additionals && Array.isArray(quote.quote_additionals)) {
@@ -160,27 +160,33 @@ export default function QuoteEdit() {
       const allItems: QuoteItem[] = [];
       
       if (quote.items && quote.items.length > 0) {
-        const dbItems = quote.items.map((item: any) => ({
-          id: item.id,
-          product_name: item.product_name,
-          description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          subtotal: item.subtotal,
-          total_price: item.total_price,
-          // QuoteItem compatibility
-          productId: item.product_id || '',
-          prompts: typeof item.prompts === 'object' ? item.prompts : {},
-          outputs: Array.isArray(item.outputs) ? item.outputs : [],
-          price: item.total_price || item.subtotal,
-          // Solo pasar multi si tiene datos de múltiples cantidades, no solo el número
-          multi: (item.multi && typeof item.multi === 'object' && (item.multi.qtyInputs || item.multi.qtyPrompt)) ? item.multi : undefined,
-          itemDescription: item.description || item.product_name,
-          itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
-        }));
+        console.log('🔍 Processing', quote.items.length, 'items from database');
+        const dbItems = quote.items.map((item: any, index: number) => {
+          console.log(`🔍 Processing item ${index}:`, item);
+          return {
+            id: item.id,
+            product_name: item.product_name,
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            subtotal: item.subtotal,
+            total_price: item.total_price,
+            // QuoteItem compatibility
+            productId: item.product_id || '',
+            prompts: typeof item.prompts === 'object' ? item.prompts : {},
+            outputs: Array.isArray(item.outputs) ? item.outputs : [],
+            price: item.total_price || item.subtotal,
+            // Solo pasar multi si tiene datos de múltiples cantidades, no solo el número
+            multi: (item.multi && typeof item.multi === 'object' && (item.multi.qtyInputs || item.multi.qtyPrompt)) ? item.multi : undefined,
+            itemDescription: item.description || item.product_name,
+            itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
+          };
+        });
+        console.log('🔍 Final processed items:', dbItems);
         allItems.push(...dbItems);
       }
       
+      console.log('🔍 Setting items state with:', allItems.length, 'items');
       setItems(allItems);
     }
   }, [quote]);
