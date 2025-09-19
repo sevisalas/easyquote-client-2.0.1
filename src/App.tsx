@@ -126,7 +126,7 @@ const App = () => (
             }
           />
           <Route
-            path="/presupuestos/editar/:id"
+            path="/presupuestos/:id/editar"
             element={
               <ProtectedRoute>
                 <AppLayout>
