@@ -452,40 +452,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const selectedProductInfo = products?.find((p: any) => String(p.id) === String(productId));
   const productName = selectedProductInfo ? getProductLabel(selectedProductInfo) : "";
 
-  // Estado comprimido
-  if (!isExpanded && productId) {
-    return (
-      <Card className="border-l-4 border-l-primary">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-3">
-                <div>
-                  <h3 className="font-medium">{itemDescription || productName || "Artículo sin nombre"}</h3>
-                  {itemDescription && productName && (
-                    <p className="text-sm text-muted-foreground mt-1">{productName}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {priceOutput && (
-                <span className="font-semibold text-primary">
-                  {formatEUR(finalPrice)}
-                </span>
-              )}
-              <Button variant="outline" size="sm" onClick={() => setIsExpanded(true)}>
-                Ver detalles
-              </Button>
-              <Button variant="destructive" size="sm" onClick={() => onRemove?.(id)}>
-                Eliminar
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Los artículos siempre se muestran expandidos cuando tienen producto para mejor presentación visual
 
   return (
     <Card>
@@ -493,11 +460,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         <CardTitle className="flex items-center justify-between">
           <span>Artículo</span>
           <div className="flex gap-2">
-            {productId && (
-              <Button variant="outline" size="sm" onClick={() => setIsExpanded(false)}>
-                Ocultar
-              </Button>
-            )}
             <Button variant="destructive" size="sm" onClick={() => onRemove?.(id)}>
               Eliminar
             </Button>
