@@ -192,7 +192,7 @@ export default function QuoteEdit() {
           status: data.status,
           valid_until: data.valid_until,
           subtotal: calculateSubtotal(),
-          final_price: calculateSubtotal(),
+          final_price: calculateTotal(), // Usar calculateTotal() que incluye adicionales
           updated_at: new Date().toISOString(),
         })
         .eq('id', id);
