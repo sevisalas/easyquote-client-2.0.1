@@ -190,20 +190,20 @@ export default function QuoteDetail() {
             <div className="space-y-3">
               {/* Mostrar items de la tabla quote_items */}
               {quote.items && quote.items.map((item: any, index: number) => (
-                <div key={`item-${index}`} className="bg-card border border-border rounded-lg p-4 border-r-4 border-r-primary hover:shadow-md transition-all duration-200">
+                <div key={`item-${index}`} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-primary hover:shadow-md transition-all duration-200">
                   <div className="flex justify-between items-center">
                     <div className="flex-1">
-                      <h4 className="font-semibold text-foreground mb-1">{item.product_name || item.description || `Artículo ${index + 1}`}</h4>
+                      <h4 className="text-foreground mb-1">{item.product_name || item.description || `Artículo ${index + 1}`}</h4>
                       <div className="text-sm text-muted-foreground flex items-center gap-2">
                         <span className="bg-muted px-2 py-1 rounded-md">
                           Cantidad: {item.quantity}
                         </span>
                         <span>×</span>
-                        <span className="font-medium">{fmtEUR(item.unit_price || 0)}</span>
+                        <span>{fmtEUR(item.unit_price || 0)}</span>
                       </div>
                     </div>
                     <div className="text-right ml-4">
-                      <p className="text-lg font-bold text-primary">{fmtEUR((item.total_price || item.subtotal) || 0)}</p>
+                      <p className="text-lg text-primary">{fmtEUR((item.total_price || item.subtotal) || 0)}</p>
                     </div>
                   </div>
                 </div>
@@ -217,13 +217,13 @@ export default function QuoteDetail() {
                   `Producto ${index + 1}`;
                 
                 return (
-                  <div key={`selection-${index}`} className="bg-card border border-border rounded-lg p-4 border-r-4 border-r-primary hover:shadow-md transition-all duration-200">
+                  <div key={`selection-${index}`} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-primary hover:shadow-md transition-all duration-200">
                     <div className="flex justify-between items-center">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-foreground mb-1">{productName}</h4>
+                        <h4 className="text-foreground mb-1">{productName}</h4>
                       </div>
                       <div className="text-right ml-4">
-                        <p className="text-lg font-bold text-primary">{fmtEUR(selection.price || 0)}</p>
+                        <p className="text-lg text-primary">{fmtEUR(selection.price || 0)}</p>
                       </div>
                     </div>
                   </div>
