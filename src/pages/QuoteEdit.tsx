@@ -311,99 +311,102 @@ export default function QuoteEdit() {
 
       {/* Quote Details */}
       <Card className="shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Información del Presupuesto</CardTitle>
+        <CardHeader className="py-2">
+          <CardTitle className="text-sm font-medium">Información del Presupuesto</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <CustomerSelector
-              value={customerId}
-              onValueChange={setCustomerId}
-              label="Cliente *"
-              placeholder="Seleccionar cliente..."
-            />
+        <CardContent className="py-3 space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="customer" className="text-xs">Cliente *</Label>
+              <CustomerSelector
+                value={customerId}
+                onValueChange={setCustomerId}
+                label=""
+                placeholder="Seleccionar cliente..."
+              />
+            </div>
             
             <div className="space-y-1">
-              <Label htmlFor="title" className="text-sm">Título</Label>
+              <Label htmlFor="title" className="text-xs">Título</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Título del presupuesto..."
-                className="h-9"
+                className="h-8 text-sm"
               />
             </div>
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="description" className="text-sm">Descripción</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descripción del presupuesto..."
-              rows={2}
-              className="resize-none"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div className="space-y-1">
-              <Label htmlFor="valid-until" className="text-sm">Válido hasta</Label>
+              <Label htmlFor="description" className="text-xs">Descripción</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Descripción del presupuesto..."
+                rows={2}
+                className="resize-none text-sm"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="valid-until" className="text-xs">Válido hasta</Label>
               <Input
                 id="valid-until"
                 type="date"
                 value={validUntil}
                 onChange={(e) => setValidUntil(e.target.value)}
-                className="h-9"
+                className="h-8 text-sm"
               />
             </div>
-            
-            <div className="space-y-1">
-              <Label htmlFor="notes" className="text-sm">Notas internas</Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Notas para uso interno..."
-                rows={2}
-                className="resize-none"
-              />
-            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="notes" className="text-xs">Notas internas</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Notas para uso interno..."
+              rows={1}
+              className="resize-none text-sm"
+            />
           </div>
         </CardContent>
       </Card>
 
       {/* Quote Items */}
       <Card className="shadow-sm">
-        <CardHeader className="pb-3">
+        <CardHeader className="py-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Productos</CardTitle>
-            <Button onClick={addNewItem} variant="outline" size="sm">
-              <Plus className="w-4 h-4 mr-1" />
+            <CardTitle className="text-sm font-medium">Productos</CardTitle>
+            <Button onClick={addNewItem} variant="outline" size="sm" className="h-7 px-2 text-xs">
+              <Plus className="w-3 h-3 mr-1" />
               Agregar
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="py-2 space-y-2">
           {Object.keys(items).length === 0 ? (
-            <div className="text-center py-6 text-muted-foreground">
-              <p className="text-sm">No hay productos agregados.</p>
-              <Button onClick={addNewItem} className="mt-3" size="sm">
-                <Plus className="w-4 h-4 mr-1" />
+            <div className="text-center py-4 text-muted-foreground">
+              <p className="text-xs">No hay productos agregados.</p>
+              <Button onClick={addNewItem} className="mt-2 h-7 px-3 text-xs" size="sm">
+                <Plus className="w-3 h-3 mr-1" />
                 Agregar Primer Producto
               </Button>
             </div>
           ) : (
             Object.entries(items).map(([id, item]) => (
-              <div key={id} className="border rounded-md p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-sm">Producto {Number(id) + 1}</h4>
+              <div key={id} className="border rounded p-2">
+                <div className="flex items-center justify-between mb-1">
+                  <h4 className="font-medium text-xs">Producto {Number(id) + 1}</h4>
                   <Button
                     onClick={() => handleItemRemove(id)}
                     variant="ghost"
                     size="sm"
-                    className="text-destructive hover:bg-destructive/10 h-7 w-7 p-0"
+                    className="text-destructive hover:bg-destructive/10 h-6 w-6 p-0"
                   >
                     <Trash2 className="w-3 h-3" />
                   </Button>
@@ -423,10 +426,10 @@ export default function QuoteEdit() {
 
       {/* Quote-level Additionals */}
       <Card className="shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Ajustes del Presupuesto</CardTitle>
+        <CardHeader className="py-2">
+          <CardTitle className="text-sm font-medium">Ajustes del Presupuesto</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="py-2">
           <AdditionalsSelector
             selectedAdditionals={quoteAdditionals}
             onChange={setQuoteAdditionals}
@@ -436,11 +439,11 @@ export default function QuoteEdit() {
 
       {/* Totals */}
       <Card className="shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Resumen</CardTitle>
+        <CardHeader className="py-2">
+          <CardTitle className="text-sm font-medium">Resumen</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-1 text-sm">
+        <CardContent className="py-2">
+          <div className="space-y-1 text-xs">
             <div className="flex justify-between">
               <span>Subtotal:</span>
               <span>{formatEUR(totals.subtotal)}</span>
@@ -457,8 +460,8 @@ export default function QuoteEdit() {
                 <span>-{formatEUR(totals.discountAmount)}</span>
               </div>
             )}
-            <Separator className="my-2" />
-            <div className="flex justify-between font-bold text-base">
+            <Separator className="my-1" />
+            <div className="flex justify-between font-bold text-sm">
               <span>Total:</span>
               <span>{formatEUR(totals.finalPrice)}</span>
             </div>
@@ -468,23 +471,25 @@ export default function QuoteEdit() {
 
       {/* Actions */}
       <Card className="shadow-sm">
-        <CardContent className="pt-4">
-          <div className="flex gap-3 justify-end">
+        <CardContent className="py-2">
+          <div className="flex gap-2 justify-end">
             <Button
               onClick={() => handleSave("draft")}
               disabled={loading}
               variant="outline"
               size="sm"
+              className="h-8 px-3 text-xs"
             >
-              <Save className="w-4 h-4 mr-1" />
+              <Save className="w-3 h-3 mr-1" />
               Guardar Borrador
             </Button>
             <Button
               onClick={() => handleSave("sent")}
               disabled={loading}
               size="sm"
+              className="h-8 px-3 text-xs"
             >
-              <Save className="w-4 h-4 mr-1" />
+              <Save className="w-3 h-3 mr-1" />
               Guardar y Enviar
             </Button>
           </div>
