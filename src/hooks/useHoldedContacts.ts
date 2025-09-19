@@ -18,6 +18,8 @@ export interface HoldedContact {
 
 export const fetchHoldedContacts = async (searchTerm?: string): Promise<HoldedContact[]> => {
   try {
+    console.log('🔍 Fetching Holded contacts...', { searchTerm });
+    
     let query = holdedSupabase
       .from("holded_contacts_index")
       .select("id, holded_id, name, email_original, code, vatnumber")
@@ -28,20 +30,23 @@ export const fetchHoldedContacts = async (searchTerm?: string): Promise<HoldedCo
       query = query.or(`name.ilike.%${searchTerm}%,email_original.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
     }
 
+    console.log('📡 Making request to Holded database...');
     const { data, error } = await query;
     
     if (error) {
-      console.error('Error fetching Holded contacts:', error);
+      console.error('❌ Error fetching Holded contacts:', error);
       return [];
     }
 
+    console.log('✅ Holded contacts fetched successfully:', data?.length, 'contacts');
+    
     return (data || []).map(contact => ({
       ...contact,
       id: `holded_${contact.holded_id}`, // Prefijo para evitar conflictos con IDs locales
       source: 'holded' as const
     }));
   } catch (error) {
-    console.error('Error in fetchHoldedContacts:', error);
+    console.error('❌ Error in fetchHoldedContacts:', error);
     return [];
   }
 };

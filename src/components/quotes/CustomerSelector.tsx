@@ -40,11 +40,18 @@ const fetchLocalCustomers = async (): Promise<LocalCustomer[]> => {
 
 const fetchAllCustomers = async (searchTerm?: string): Promise<Customer[]> => {
   try {
+    console.log('🚀 Fetching all customers...');
+    
     // Ejecutar ambas consultas en paralelo
     const [localCustomers, holdedContacts] = await Promise.all([
       fetchLocalCustomers(),
       fetchHoldedContacts(searchTerm)
     ]);
+
+    console.log('📊 Results:', { 
+      localCustomers: localCustomers.length, 
+      holdedContacts: holdedContacts.length 
+    });
 
     // Combinar y ordenar por nombre
     const allCustomers = [...localCustomers, ...holdedContacts];
@@ -54,7 +61,7 @@ const fetchAllCustomers = async (searchTerm?: string): Promise<Customer[]> => {
       return nameA.localeCompare(nameB);
     });
   } catch (error) {
-    console.error('Error fetching customers:', error);
+    console.error('❌ Error fetching customers:', error);
     return [];
   }
 };
