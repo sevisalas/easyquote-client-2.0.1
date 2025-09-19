@@ -7,10 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Check, ChevronsUpDown, Building, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchHoldedContacts, type HoldedContact } from "@/hooks/useHoldedContacts";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 
+// Tipos
 interface LocalCustomer {
   id: string;
   name: string;
@@ -19,15 +19,26 @@ interface LocalCustomer {
   source: 'local';
 }
 
+interface HoldedContact {
+  id: string;
+  holded_id: string;
+  name: string | null;
+  email_original: string | null;
+  code: string | null;
+  vatnumber: string | null;
+  source: 'holded';
+}
+
 type Customer = LocalCustomer | HoldedContact;
 
 interface CustomerSelectorProps {
-  value: string;
+  value?: string;
   onValueChange: (value: string) => void;
   label?: string;
   placeholder?: string;
 }
 
+// Función para obtener clientes locales
 const fetchLocalCustomers = async (): Promise<LocalCustomer[]> => {
   const { data, error } = await supabase
     .from("customers")
@@ -47,9 +58,10 @@ const fetchLocalCustomers = async (): Promise<LocalCustomer[]> => {
   }));
 };
 
+// Función principal para obtener todos los clientes
 const fetchAllCustomers = async (searchTerm?: string, includeHolded = false, organizationId?: string): Promise<Customer[]> => {
   try {
-    console.log('🚀 Fetching all customers with search term:', searchTerm, 'includeHolded:', includeHolded, 'orgId:', organizationId);
+    console.log('🚀 Fetching all customers - includeHolded:', includeHolded, 'orgId:', organizationId);
     
     // Obtener clientes locales siempre
     const localCustomers = await fetchLocalCustomers();
@@ -59,7 +71,6 @@ const fetchAllCustomers = async (searchTerm?: string, includeHolded = false, org
     if (includeHolded && organizationId) {
       try {
         console.log('📡 Calling holded-contacts edge function for organization:', organizationId);
-        // Usar la edge function que respeta la organización
         const { data, error } = await supabase.functions.invoke('holded-contacts', {
           body: { organizationId, searchTerm }
         });
@@ -92,13 +103,6 @@ const fetchAllCustomers = async (searchTerm?: string, includeHolded = false, org
 
     // Combinar y ordenar por nombre
     const allCustomers = [...localCustomers, ...holdedContacts];
-    
-    console.log('🔍 Sample customers for debugging:', allCustomers.slice(0, 3).map(c => ({
-      id: c.id,
-      name: c.name,
-      source: c.source,
-      type: typeof c.name
-    })));
     
     return allCustomers.sort((a, b) => {
       const nameA = a.name || "";
@@ -160,80 +164,67 @@ export const CustomerSelector = ({
     return name.includes(search) || email.includes(search) || code.includes(search);
   }) || [];
 
+  // Separar clientes por origen
+  const localCustomers = filteredCustomers.filter(c => c.source === 'local') as LocalCustomer[];
+  const holdedCustomers = filteredCustomers.filter(c => c.source === 'holded') as HoldedContact[];
+
+  // Encontrar el cliente seleccionado
   const selectedCustomer = customers?.find(customer => customer.id === value);
 
-  const getCustomerDisplayName = (customer: Customer) => {
-    if (customer.source === 'holded') {
-      const holdedCustomer = customer as HoldedContact;
-      
-      console.log('🔍 Getting display name for Holded customer:', {
-        holded_id: holdedCustomer.holded_id,
-        name: holdedCustomer.name,
-        name_type: typeof holdedCustomer.name,
-        name_length: holdedCustomer.name?.length,
-        code: holdedCustomer.code
-      });
-      
-      // Prioridad: name -> code -> holded_id
-      if (holdedCustomer.name && holdedCustomer.name.trim() !== '') {
-        console.log('✅ Using name for display:', holdedCustomer.name);
-        return holdedCustomer.name.trim();
-      }
-      
-      if (holdedCustomer.code && holdedCustomer.code.trim() !== '' && holdedCustomer.code !== 'EMPTY') {
-        console.log('✅ Using code for display:', holdedCustomer.code);
-        return holdedCustomer.code.trim();
-      }
-      
-      console.log('⚠️ Fallback to holded_id:', holdedCustomer.holded_id);
-      return holdedCustomer.holded_id;
+  // Función para obtener el nombre de visualización de un cliente
+  const getCustomerDisplayName = (customer: Customer): string => {
+    if (customer.source === 'local') {
+      return customer.name || 'Sin nombre';
+    } else {
+      // Para Holded, priorizar nombre > código > ID
+      return customer.name || customer.code || customer.holded_id || 'Sin nombre';
     }
-    
-    return customer.name || "Sin nombre";
   };
 
-  const getCustomerEmail = (customer: Customer) => {
-    if (customer.source === 'holded') {
-      return (customer as HoldedContact).email_original;
+  // Función para obtener el email de un cliente
+  const getCustomerEmail = (customer: Customer): string => {
+    if (customer.source === 'local') {
+      return customer.email || '';
+    } else {
+      return customer.email_original || '';
     }
-    return (customer as LocalCustomer).email;
   };
-
-  console.log('🎯 CustomerSelector render - customers count:', customers?.length, 'selected:', value);
 
   return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
+    <div className="flex flex-col space-y-2">
+      {label && <Label htmlFor="customer-selector">{label}</Label>}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
+            id="customer-selector"
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between"
-            disabled={isLoading}
+            className="justify-between min-h-[40px]"
           >
             {selectedCustomer ? (
-              <div className="flex items-center gap-2">
-                {selectedCustomer.source === 'holded' ? (
-                  <Building className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-2 truncate">
+                {selectedCustomer.source === 'local' ? (
+                  <User className="h-4 w-4 text-blue-500 flex-shrink-0" />
                 ) : (
-                  <User className="h-4 w-4 text-muted-foreground" />
+                  <Building className="h-4 w-4 text-green-500 flex-shrink-0" />
                 )}
-                <div className="flex flex-col items-start">
-                  <span>{getCustomerDisplayName(selectedCustomer)}</span>
+                <div className="flex flex-col items-start truncate">
+                  <span className="font-medium truncate">{getCustomerDisplayName(selectedCustomer)}</span>
                   {getCustomerEmail(selectedCustomer) && (
-                    <span className="text-xs text-muted-foreground">{getCustomerEmail(selectedCustomer)}</span>
+                    <span className="text-xs text-muted-foreground truncate">
+                      {getCustomerEmail(selectedCustomer)}
+                    </span>
                   )}
                 </div>
               </div>
             ) : (
-              placeholder
+              <span className="text-muted-foreground">{placeholder}</span>
             )}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-0 bg-background border border-border shadow-md z-50">
+        <PopoverContent className="w-[400px] p-0">
           <Command>
             <CommandInput 
               placeholder="Buscar cliente..." 
@@ -241,87 +232,93 @@ export const CustomerSelector = ({
               onValueChange={setSearchValue}
             />
             <CommandList>
-              <CommandEmpty>No se encontraron clientes.</CommandEmpty>
-              
-              {/* Clientes locales */}
-              {filteredCustomers.some(c => c.source === 'local') && (
-                <CommandGroup heading="Clientes locales">
-                  {filteredCustomers
-                    .filter(c => c.source === 'local')
-                    .map((customer) => (
-                    <CommandItem
-                      key={`local-${customer.id}`}
-                      value={customer.id}
-                      onSelect={() => {
-                        console.log('🎯 Selected local customer:', customer.id, customer.name);
-                        onValueChange(customer.id);
-                        setOpen(false);
-                        setSearchValue("");
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          value === customer.id ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      <User className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <div className="flex flex-col">
-                        <span>{getCustomerDisplayName(customer)}</span>
-                        {getCustomerEmail(customer) && (
-                          <span className="text-xs text-muted-foreground">{getCustomerEmail(customer)}</span>
-                        )}
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
-
-              {/* Contactos de Holded */}
-              {filteredCustomers.some(c => c.source === 'holded') && (
-                <CommandGroup heading="Contactos Holded">
-                  {filteredCustomers
-                    .filter(c => c.source === 'holded')
-                    .map((customer, index) => {
-                      const holdedCustomer = customer as HoldedContact;
-                      const displayName = getCustomerDisplayName(customer);
-                      
-                      return (
+              {isLoading ? (
+                <div className="p-4 text-sm text-muted-foreground">Cargando clientes...</div>
+              ) : (
+                <>
+                  <CommandEmpty>No se encontraron clientes.</CommandEmpty>
+                  
+                  {/* Clientes locales */}
+                  {localCustomers.length > 0 && (
+                    <CommandGroup heading="Clientes Locales">
+                      {localCustomers.map((customer) => (
                         <CommandItem
-                          key={`holded-${holdedCustomer.holded_id}-${index}`}
+                          key={customer.id}
                           value={customer.id}
                           onSelect={() => {
-                            console.log('🎯 Selected Holded customer:', customer.id, 'display name:', displayName);
                             onValueChange(customer.id);
                             setOpen(false);
-                            setSearchValue("");
                           }}
                         >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              value === customer.id ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          <Building className="mr-2 h-4 w-4 text-muted-foreground" />
-                          <div className="flex flex-col">
-                            <span>{displayName}</span>
-                            <div className="text-xs text-muted-foreground space-x-2">
-                              {holdedCustomer.email_original && (
-                                <span>{holdedCustomer.email_original}</span>
-                              )}
-                              {holdedCustomer.code && holdedCustomer.code !== 'EMPTY' && (
-                                <span>• Código: {holdedCustomer.code}</span>
-                              )}
-                              {holdedCustomer.vatnumber && (
-                                <span>• NIF: {holdedCustomer.vatnumber}</span>
+                          <div className="flex items-center gap-2 w-full">
+                            <User className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                            <div className="flex flex-col flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium truncate">{customer.name}</span>
+                                <Check
+                                  className={cn(
+                                    "ml-auto h-4 w-4",
+                                    value === customer.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                              </div>
+                              {customer.email && (
+                                <span className="text-xs text-muted-foreground truncate">
+                                  {customer.email}
+                                </span>
                               )}
                             </div>
                           </div>
                         </CommandItem>
-                      );
-                    })}
-                </CommandGroup>
+                      ))}
+                    </CommandGroup>
+                  )}
+
+                  {/* Clientes de Holded */}
+                  {holdedCustomers.length > 0 && (
+                    <CommandGroup heading="Clientes Holded">
+                      {holdedCustomers.map((customer) => (
+                        <CommandItem
+                          key={customer.id}
+                          value={customer.id}
+                          onSelect={() => {
+                            onValueChange(customer.id);
+                            setOpen(false);
+                          }}
+                        >
+                          <div className="flex items-center gap-2 w-full">
+                            <Building className="h-4 w-4 text-green-500 flex-shrink-0" />
+                            <div className="flex flex-col flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium truncate">
+                                  {getCustomerDisplayName(customer)}
+                                </span>
+                                <Check
+                                  className={cn(
+                                    "ml-auto h-4 w-4",
+                                    value === customer.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                              </div>
+                              <div className="flex flex-col">
+                                {customer.email_original && (
+                                  <span className="text-xs text-muted-foreground truncate">
+                                    {customer.email_original}
+                                  </span>
+                                )}
+                                {customer.code && (
+                                  <span className="text-xs text-muted-foreground">
+                                    Código: {customer.code}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  )}
+                </>
               )}
             </CommandList>
           </Command>
