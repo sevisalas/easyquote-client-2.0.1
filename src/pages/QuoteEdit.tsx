@@ -272,23 +272,32 @@ export default function QuoteEdit() {
     const subtotal = calculateSubtotal();
     let total = subtotal;
     
+    console.log('🔢 Calculando total - Subtotal:', subtotal);
+    console.log('🔢 Adicionales a aplicar:', quoteAdditionals);
+    
     // Aplicar adicionales
     quoteAdditionals.forEach(additional => {
       switch (additional.type) {
         case 'net_amount':
+          console.log(`🔢 Aplicando net_amount: ${additional.value}`);
           total += additional.value;
           break;
         case 'percentage':
-          total += (subtotal * additional.value) / 100;
+          const percentageAmount = (subtotal * additional.value) / 100;
+          console.log(`🔢 Aplicando percentage: ${additional.value}% = ${percentageAmount}`);
+          total += percentageAmount;
           break;
         case 'quantity_multiplier':
+          console.log(`🔢 Aplicando multiplier: ×${additional.value}`);
           total *= additional.value;
           break;
         default:
+          console.log(`🔢 Aplicando default: ${additional.value}`);
           total += additional.value;
       }
     });
     
+    console.log('🔢 Total final calculado:', total);
     return total;
   };
 
