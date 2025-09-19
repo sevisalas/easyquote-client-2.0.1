@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
@@ -256,21 +257,17 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     }
   }, [forceRecalculate, hasToken, productId, refetchPricing]);
 
-  // Reset prompts when product changes and auto-expand
+  // Reset prompts when product changes
   useEffect(() => {
     setPromptValues({});
-    // Auto-expand when a product is selected for the first time
-    if (productId && !isExpanded) {
-      setIsExpanded(true);
-    }
-  }, [productId]);
-
-  // Auto-expand when component mounts without a product
-  useEffect(() => {
+    // Only auto-expand if no product is selected yet (new item)
     if (!productId) {
       setIsExpanded(true);
+    } else {
+      // If product is selected, default to collapsed view
+      setIsExpanded(false);
     }
-  }, []);
+  }, [productId]);
 
   // Derive prompts and outputs
   const outputs = useMemo(() => ((pricing as any)?.outputValues ?? []) as any[], [pricing]);
@@ -454,30 +451,73 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Estado comprimido
   if (!isExpanded && productId) {
+    const hasConfiguration = Object.keys(promptValues).length > 0;
+    const hasMultiQty = multiEnabled && multiRows.length > 0;
+    const totalQty = hasMultiQty ? multiRows.reduce((sum, row) => sum + row.qty, 0) : 1;
+    
     return (
-      <Card className="border-l-4 border-l-primary">
+      <Card className="border-l-4 border-l-primary/30 bg-muted/20">
         <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-3">
-                <div>
-                  <h3 className="font-medium">{itemDescription || productName || "Artículo sin nombre"}</h3>
-                  {itemDescription && productName && (
-                    <p className="text-sm text-muted-foreground mt-1">{productName}</p>
-                  )}
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="font-semibold text-lg">{itemDescription || getProductLabel(selectedProductInfo) || "Producto sin nombre"}</h3>
+                <Badge variant="secondary" className="shrink-0">Configurado</Badge>
+              </div>
+              
+              {itemDescription && selectedProductInfo && (
+                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                  Producto: {getProductLabel(selectedProductInfo)}
+                </p>
+              )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div className="flex flex-col">
+                  <span className="text-muted-foreground font-medium">Configuración</span>
+                  <span className="mt-1">
+                    {hasConfiguration ? `${Object.keys(promptValues).length} parámetros configurados` : "Sin configurar"}
+                  </span>
+                </div>
+                
+                <div className="flex flex-col">
+                  <span className="text-muted-foreground font-medium">Cantidad</span>
+                  <span className="mt-1 font-medium">
+                    {hasMultiQty ? `${totalQty} unidades (múltiples)` : "1 unidad"}
+                  </span>
+                </div>
+                
+                <div className="flex flex-col">
+                  <span className="text-muted-foreground font-medium">Precio Total</span>
+                  <span className="mt-1 font-bold text-xl text-primary">
+                    {finalPrice > 0 ? formatEUR(finalPrice) : "Calculando..."}
+                  </span>
                 </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {priceOutput && (
-                <span className="font-semibold text-primary">
-                  {formatEUR(finalPrice)}
-                </span>
+              
+              {itemAdditionals && itemAdditionals.length > 0 && (
+                <div className="mt-3 flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs">
+                    {itemAdditionals.length} ajuste(s) aplicado(s)
+                  </Badge>
+                </div>
               )}
-              <Button variant="outline" size="sm" onClick={() => setIsExpanded(true)}>
-                Ver detalles
+            </div>
+            
+            <div className="flex flex-col gap-2 shrink-0">
+              <Button
+                onClick={() => setIsExpanded(true)}
+                variant="default"
+                size="sm"
+                className="px-4"
+              >
+                Editar
               </Button>
-              <Button variant="destructive" size="sm" onClick={() => onRemove?.(id)}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onRemove?.(id)}
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              >
                 Eliminar
               </Button>
             </div>
@@ -495,7 +535,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           <div className="flex gap-2">
             {productId && (
               <Button variant="outline" size="sm" onClick={() => setIsExpanded(false)}>
-                Ocultar
+                Minimizar
               </Button>
             )}
             <Button variant="destructive" size="sm" onClick={() => onRemove?.(id)}>
