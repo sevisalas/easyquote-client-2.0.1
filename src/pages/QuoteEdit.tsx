@@ -292,17 +292,17 @@ export default function QuoteEdit() {
   }
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="container mx-auto py-4 space-y-4">
       {/* Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center justify-between text-lg">
+            <div className="flex items-center gap-3">
               <span>Editar Presupuesto {quote.quote_number}</span>
-              <Badge variant="secondary">Editando</Badge>
+              <Badge variant="secondary" className="text-xs">Editando</Badge>
             </div>
-            <Button onClick={() => navigate(-1)} variant="outline">
-              <ArrowLeft className="w-4 h-4 mr-2" />
+            <Button onClick={() => navigate(-1)} variant="outline" size="sm">
+              <ArrowLeft className="w-4 h-4 mr-1" />
               Volver
             </Button>
           </CardTitle>
@@ -310,12 +310,12 @@ export default function QuoteEdit() {
       </Card>
 
       {/* Quote Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Información del Presupuesto</CardTitle>
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Información del Presupuesto</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <CustomerSelector
               value={customerId}
               onValueChange={setCustomerId}
@@ -323,47 +323,51 @@ export default function QuoteEdit() {
               placeholder="Seleccionar cliente..."
             />
             
-            <div className="space-y-2">
-              <Label htmlFor="title">Título</Label>
+            <div className="space-y-1">
+              <Label htmlFor="title" className="text-sm">Título</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Título del presupuesto..."
+                className="h-9"
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
+          <div className="space-y-1">
+            <Label htmlFor="description" className="text-sm">Descripción</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Descripción del presupuesto..."
-              rows={3}
+              rows={2}
+              className="resize-none"
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="valid-until">Válido hasta</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="valid-until" className="text-sm">Válido hasta</Label>
               <Input
                 id="valid-until"
                 type="date"
                 value={validUntil}
                 onChange={(e) => setValidUntil(e.target.value)}
+                className="h-9"
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notas internas</Label>
+            <div className="space-y-1">
+              <Label htmlFor="notes" className="text-sm">Notas internas</Label>
               <Textarea
                 id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Notas para uso interno..."
                 rows={2}
+                className="resize-none"
               />
             </div>
           </div>
@@ -371,37 +375,37 @@ export default function QuoteEdit() {
       </Card>
 
       {/* Quote Items */}
-      <Card>
-        <CardHeader>
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle>Productos</CardTitle>
-            <Button onClick={addNewItem} variant="outline">
-              <Plus className="w-4 h-4 mr-2" />
-              Agregar Producto
+            <CardTitle className="text-base">Productos</CardTitle>
+            <Button onClick={addNewItem} variant="outline" size="sm">
+              <Plus className="w-4 h-4 mr-1" />
+              Agregar
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-3">
           {Object.keys(items).length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No hay productos agregados.</p>
-              <Button onClick={addNewItem} className="mt-4">
-                <Plus className="w-4 h-4 mr-2" />
+            <div className="text-center py-6 text-muted-foreground">
+              <p className="text-sm">No hay productos agregados.</p>
+              <Button onClick={addNewItem} className="mt-3" size="sm">
+                <Plus className="w-4 h-4 mr-1" />
                 Agregar Primer Producto
               </Button>
             </div>
           ) : (
             Object.entries(items).map(([id, item]) => (
-              <div key={id} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-medium">Producto {Number(id) + 1}</h4>
+              <div key={id} className="border rounded-md p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-sm">Producto {Number(id) + 1}</h4>
                   <Button
                     onClick={() => handleItemRemove(id)}
                     variant="ghost"
                     size="sm"
-                    className="text-destructive hover:bg-destructive/10"
+                    className="text-destructive hover:bg-destructive/10 h-7 w-7 p-0"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3 h-3" />
                   </Button>
                 </div>
                 <QuoteItem
@@ -418,9 +422,9 @@ export default function QuoteEdit() {
       </Card>
 
       {/* Quote-level Additionals */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Ajustes del Presupuesto</CardTitle>
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Ajustes del Presupuesto</CardTitle>
         </CardHeader>
         <CardContent>
           <AdditionalsSelector
@@ -431,12 +435,12 @@ export default function QuoteEdit() {
       </Card>
 
       {/* Totals */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Resumen</CardTitle>
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Resumen</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="space-y-1 text-sm">
             <div className="flex justify-between">
               <span>Subtotal:</span>
               <span>{formatEUR(totals.subtotal)}</span>
@@ -453,8 +457,8 @@ export default function QuoteEdit() {
                 <span>-{formatEUR(totals.discountAmount)}</span>
               </div>
             )}
-            <Separator />
-            <div className="flex justify-between font-bold text-lg">
+            <Separator className="my-2" />
+            <div className="flex justify-between font-bold text-base">
               <span>Total:</span>
               <span>{formatEUR(totals.finalPrice)}</span>
             </div>
@@ -463,22 +467,24 @@ export default function QuoteEdit() {
       </Card>
 
       {/* Actions */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-4 justify-end">
+      <Card className="shadow-sm">
+        <CardContent className="pt-4">
+          <div className="flex gap-3 justify-end">
             <Button
               onClick={() => handleSave("draft")}
               disabled={loading}
               variant="outline"
+              size="sm"
             >
-              <Save className="w-4 h-4 mr-2" />
+              <Save className="w-4 h-4 mr-1" />
               Guardar Borrador
             </Button>
             <Button
               onClick={() => handleSave("sent")}
               disabled={loading}
+              size="sm"
             >
-              <Save className="w-4 h-4 mr-2" />
+              <Save className="w-4 h-4 mr-1" />
               Guardar y Enviar
             </Button>
           </div>
