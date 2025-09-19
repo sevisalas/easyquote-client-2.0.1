@@ -156,10 +156,9 @@ export default function QuoteEdit() {
         setQuoteAdditionals(additionals);
       }
       
-      // Combinar items y selections para mostrar todos los productos
+      // Solo usar items de la tabla quote_items (evitar duplicación)
       const allItems: QuoteItem[] = [];
       
-      // Agregar items de la tabla quote_items
       if (quote.items && quote.items.length > 0) {
         const dbItems = quote.items.map((item: any) => ({
           id: item.id,
@@ -174,35 +173,11 @@ export default function QuoteEdit() {
           prompts: typeof item.prompts === 'object' ? item.prompts : {},
           outputs: Array.isArray(item.outputs) ? item.outputs : [],
           price: item.total_price || item.subtotal,
-          multi: item.multi || 1,
-          itemDescription: item.product_name,
+          multi: typeof item.multi === 'number' ? item.multi : 1,
+          itemDescription: item.description || item.product_name,
           itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
         }));
         allItems.push(...dbItems);
-      }
-      
-      // Agregar items del campo selections (formato anterior)
-      if (Array.isArray(quote.selections) && quote.selections.length > 0) {
-        const selectionItems = quote.selections.map((selection: any, index: number) => ({
-          id: `selection-${index}`,
-          product_name: selection.itemDescription || 
-            (selection.outputs && selection.outputs.find((o: any) => o.name === 'PRODUCTO')?.value) ||
-            `Artículo ${index + 1}`,
-          description: selection.itemDescription || '',
-          quantity: 1,
-          unit_price: selection.price || 0,
-          subtotal: selection.price || 0,
-          isFromSelections: true, // Marcar como proveniente de selections
-          // QuoteItem compatibility
-          productId: selection.productId || '',
-          prompts: selection.prompts || {},
-          outputs: selection.outputs || [],
-          price: selection.price || 0,
-          multi: selection.multi || 1,
-          itemDescription: selection.itemDescription || '',
-          itemAdditionals: selection.itemAdditionals || [],
-        }));
-        allItems.push(...selectionItems);
       }
       
       setItems(allItems);
@@ -302,7 +277,27 @@ export default function QuoteEdit() {
   };
 
   const calculateTotal = () => {
-    return calculateSubtotal();
+    const subtotal = calculateSubtotal();
+    let total = subtotal;
+    
+    // Aplicar adicionales
+    quoteAdditionals.forEach(additional => {
+      switch (additional.type) {
+        case 'net_amount':
+          total += additional.value;
+          break;
+        case 'percentage':
+          total += (subtotal * additional.value) / 100;
+          break;
+        case 'quantity_multiplier':
+          total *= additional.value;
+          break;
+        default:
+          total += additional.value;
+      }
+    });
+    
+    return total;
   };
 
   const handleInputChange = (field: keyof Quote, value: any) => {
@@ -612,12 +607,12 @@ export default function QuoteEdit() {
             <>
               <Separator className="my-4" />
               
-              <div className="bg-card rounded-lg p-4 border border-border border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold text-foreground">Total del Presupuesto:</span>
-                  <span className="text-2xl font-bold text-secondary">{fmtEUR(calculateSubtotal())}</span>
+                <div className="bg-card rounded-lg p-4 border border-border border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-semibold text-foreground">Total del Presupuesto:</span>
+                    <span className="text-2xl font-bold text-secondary">{fmtEUR(calculateTotal())}</span>
+                  </div>
                 </div>
-              </div>
             </>
           )}
         </CardContent>
