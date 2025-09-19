@@ -12,14 +12,14 @@ interface Additional {
   id: string
   name: string
   description: string | null
-  type: "net_amount" | "quantity_multiplier"
+  type: "net_amount" | "quantity_multiplier" | "percentage"
   default_value: number
 }
 
 interface SelectedQuoteAdditional {
   id: string
   name: string
-  type: "net_amount" | "quantity_multiplier" | "custom"
+  type: "net_amount" | "quantity_multiplier" | "percentage" | "custom"
   value: number
   isCustom?: boolean
 }
@@ -33,7 +33,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
   const [newAdditionalId, setNewAdditionalId] = useState<string>("")
   const [customName, setCustomName] = useState("")
   const [customValue, setCustomValue] = useState(0)
-  const [customType, setCustomType] = useState<"net_amount" | "quantity_multiplier">("net_amount")
+  const [customType, setCustomType] = useState<"net_amount" | "quantity_multiplier" | "percentage">("net_amount")
 
   const { data: availableAdditionals = [] } = useQuery({
     queryKey: ["additionals"],
@@ -41,7 +41,6 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
       const { data, error } = await supabase
         .from("additionals")
         .select("*")
-        .eq("assignment_type", "quote")
         .order("name")
 
       if (error) throw error
@@ -121,7 +120,11 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
                       )}
                     </CardTitle>
                     <p className="text-xs text-muted-foreground">
-                      {additional.type === "net_amount" ? "Importe neto" : "Por cantidad total"}
+                      {additional.type === "net_amount" 
+                        ? "Importe neto" 
+                        : additional.type === "quantity_multiplier" 
+                        ? "Por cantidad total" 
+                        : "Porcentaje sobre subtotal"}
                     </p>
                   </div>
                   <Button
@@ -147,7 +150,11 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
                     className="w-24"
                   />
                   <span className="text-sm text-muted-foreground">
-                    {additional.type === "net_amount" ? "€" : "x"}
+                    {additional.type === "net_amount" 
+                      ? "€" 
+                      : additional.type === "quantity_multiplier" 
+                      ? "x" 
+                      : "%"}
                   </span>
                 </div>
               </CardContent>
@@ -168,7 +175,13 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
               <SelectContent>
                 {unselectedAdditionals.map((additional) => (
                   <SelectItem key={additional.id} value={additional.id}>
-                    {additional.name} ({additional.type === "net_amount" ? "Importe" : "Multiplicador"})
+                    {additional.name} ({
+                      additional.type === "net_amount" 
+                        ? "Importe" 
+                        : additional.type === "quantity_multiplier" 
+                        ? "Multiplicador" 
+                        : "Porcentaje"
+                    })
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -195,13 +208,14 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
           </div>
           <div>
             <Label htmlFor="quote-custom-type" className="text-sm">Tipo</Label>
-            <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier") => setCustomType(value)}>
+            <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier" | "percentage") => setCustomType(value)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="net_amount">Importe Neto</SelectItem>
                 <SelectItem value="quantity_multiplier">Multiplicador por Cantidad Total</SelectItem>
+                <SelectItem value="percentage">Porcentaje sobre Subtotal</SelectItem>
               </SelectContent>
             </Select>
           </div>

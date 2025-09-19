@@ -39,7 +39,7 @@ interface QuoteItem {
 interface SelectedQuoteAdditional {
   id: string
   name: string
-  type: "net_amount" | "quantity_multiplier" | "custom"
+  type: "net_amount" | "quantity_multiplier" | "percentage" | "custom"
   value: number
   isCustom?: boolean
 }
