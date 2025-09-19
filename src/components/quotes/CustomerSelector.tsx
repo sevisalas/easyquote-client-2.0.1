@@ -102,8 +102,16 @@ export const CustomerSelector = ({
   const getCustomerDisplayName = (customer: Customer) => {
     if (customer.source === 'holded') {
       const holdedCustomer = customer as HoldedContact;
-      // Mostrar solo el nombre real, sin prefijos
-      return holdedCustomer.name || holdedCustomer.code || holdedCustomer.holded_id;
+      // Mostrar directamente el campo name de la tabla
+      if (holdedCustomer.name && holdedCustomer.name.trim() !== '') {
+        return holdedCustomer.name.trim();
+      }
+      // Si no hay nombre, usar el código
+      if (holdedCustomer.code && holdedCustomer.code.trim() !== '' && holdedCustomer.code !== 'EMPTY') {
+        return holdedCustomer.code.trim();
+      }
+      // Como último recurso, usar el holded_id
+      return holdedCustomer.holded_id;
     }
     return customer.name || "Sin nombre";
   };
