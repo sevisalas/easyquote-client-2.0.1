@@ -3,20 +3,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Edit, Trash2, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, Building, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
-import { useSubscription } from "@/contexts/SubscriptionContext";
+import { fetchHoldedContacts, type HoldedContact } from "@/hooks/useHoldedContacts";
 
-interface Cliente {
+interface LocalClient {
   id: string;
   name: string;
   email: string;
   phone: string;
   notes: string;
   created_at: string;
+  source: 'local';
 }
+
+interface HoldedClientAdapted extends HoldedContact {
+  created_at: string;
+  phone: string;
+  notes: string;
+  email: string; // Agregamos email para compatibilidad
+}
+
+type Cliente = LocalClient | HoldedClientAdapted;
 
 const Clientes = () => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -24,22 +34,13 @@ const Clientes = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const [importing, setImporting] = useState(false);
   const navigate = useNavigate();
-  const { isHoldedActive, refreshIntegration } = useHoldedIntegration();
-  const { organization, membership } = useSubscription();
   
   const ITEMS_PER_PAGE = 25;
-  const currentOrganization = organization || membership?.organization;
 
   useEffect(() => {
     fetchClientes();
   }, [currentPage]);
-
-  useEffect(() => {
-    // Refresh integration status when component mounts and when organization changes
-    refreshIntegration();
-  }, [currentOrganization?.id, refreshIntegration]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -49,27 +50,55 @@ const Clientes = () => {
   const fetchClientes = async () => {
     setLoading(true);
     try {
-      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-      const endIndex = startIndex + ITEMS_PER_PAGE - 1;
+      // Obtener clientes locales y de Holded en paralelo
+      const [localClientsResponse, holdedContacts] = await Promise.all([
+        supabase
+          .from('customers')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false }),
+        fetchHoldedContacts(searchTerm)
+      ]);
 
-      let query = supabase
-        .from('customers')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false });
+      let allClients: Cliente[] = [];
 
-      // Aplicar filtro de búsqueda si existe
-      if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      // Procesar clientes locales
+      if (localClientsResponse.data) {
+        const localClients: LocalClient[] = localClientsResponse.data.map(client => ({
+          ...client,
+          source: 'local' as const
+        }));
+
+        // Filtrar clientes locales por búsqueda si es necesario
+        const filteredLocalClients = searchTerm 
+          ? localClients.filter(client => 
+              client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              client.email.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+          : localClients;
+
+        allClients.push(...filteredLocalClients);
       }
 
-      // Aplicar paginación
-      const { data, error, count } = await query.range(startIndex, endIndex);
+      // Procesar contactos de Holded (mapear a la interfaz Cliente)
+      const holdedClients: HoldedClientAdapted[] = holdedContacts.map(contact => ({
+        ...contact,
+        email: contact.email_original || '',
+        phone: '', // Holded no tiene teléfono en este dataset
+        notes: contact.code || '',
+        created_at: new Date().toISOString(), // Fecha por defecto
+      }));
 
-      if (error) throw error;
-      
-      setClientes(data || []);
-      setTotalCount(count || 0);
+      allClients.push(...holdedClients);
+
+      // Aplicar paginación
+      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+      const endIndex = startIndex + ITEMS_PER_PAGE;
+      const paginatedClients = allClients.slice(startIndex, endIndex);
+
+      setClientes(paginatedClients);
+      setTotalCount(allClients.length);
     } catch (error) {
+      console.error('Error fetching clients:', error);
       toast({
         title: "Error",
         description: "No se pudieron cargar los clientes",
@@ -80,7 +109,17 @@ const Clientes = () => {
     }
   };
 
-  const deleteCliente = async (id: string) => {
+  const deleteCliente = async (id: string, source: 'local' | 'holded') => {
+    // Solo permitir eliminar clientes locales
+    if (source !== 'local') {
+      toast({
+        title: "No permitido",
+        description: "Los contactos de Holded no se pueden eliminar desde aquí",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!confirm("¿Estás seguro de que quieres eliminar este cliente?")) return;
 
     try {
@@ -91,7 +130,7 @@ const Clientes = () => {
 
       if (error) throw error;
       
-      setClientes(clientes.filter(c => c.id !== id));
+      await fetchClientes(); // Recargar la lista
       toast({
         title: "Éxito",
         description: "Cliente eliminado correctamente",
@@ -105,44 +144,12 @@ const Clientes = () => {
     }
   };
 
-  const importFromHolded = async () => {
-    if (!currentOrganization?.id) {
-      toast({
-        title: "Error",
-        description: "No se pudo obtener la información de la organización",
-        variant: "destructive",
-      });
-      return;
+  const getClientDisplayName = (cliente: Cliente) => {
+    if (cliente.source === 'holded') {
+      const holdedClient = cliente as HoldedClientAdapted;
+      return holdedClient.name || holdedClient.code || holdedClient.holded_id;
     }
-
-    setImporting(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('holded-import-customers', {
-        body: { organizationId: currentOrganization.id }
-      });
-
-      if (error) {
-        console.error('Error importing from Holded:', error);
-        throw error;
-      }
-
-      toast({
-        title: "Importación completada",
-        description: data.message,
-      });
-
-      // Recargar la lista de clientes
-      await fetchClientes();
-    } catch (error) {
-      console.error('Error importing customers from Holded:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron importar los clientes desde Holded",
-        variant: "destructive",
-      });
-    } finally {
-      setImporting(false);
-    }
+    return cliente.name;
   };
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
@@ -170,20 +177,9 @@ const Clientes = () => {
           <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-3">
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-2">Clientes</h1>
-              <p className="text-muted-foreground">Gestiona tu base de datos de clientes</p>
+              <p className="text-muted-foreground">Gestiona tu base de datos de clientes (locales y de Holded)</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-              {isHoldedActive && (
-                <Button 
-                  onClick={importFromHolded}
-                  disabled={importing}
-                  variant="outline"
-                  className="w-full sm:w-auto"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  {importing ? "Importando..." : "Importar de Holded"}
-                </Button>
-              )}
               <Button 
                 onClick={() => navigate('/clientes/nuevo')}
                 className="w-full sm:w-auto bg-primary hover:bg-primary/90"
@@ -211,40 +207,73 @@ const Clientes = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Origen</TableHead>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Teléfono</TableHead>
+                <TableHead>Teléfono/Código</TableHead>
                 <TableHead>Notas</TableHead>
-                <TableHead>Fecha de creación</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {clientes.map((cliente) => (
-                <TableRow key={cliente.id} className="hover:bg-muted/50 h-12">
-                  <TableCell className="font-medium py-2">{cliente.name}</TableCell>
+                <TableRow key={`${cliente.source}-${cliente.id}`} className="hover:bg-muted/50 h-12">
+                  <TableCell className="py-2">
+                    <Badge variant={cliente.source === 'local' ? 'default' : 'secondary'} className="flex items-center w-fit">
+                      {cliente.source === 'local' ? (
+                        <>
+                          <User className="w-3 h-3 mr-1" />
+                          Local
+                        </>
+                      ) : (
+                        <>
+                          <Building className="w-3 h-3 mr-1" />
+                          Holded
+                        </>
+                      )}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-medium py-2">{getClientDisplayName(cliente)}</TableCell>
                   <TableCell className="py-2">{cliente.email || 'No especificado'}</TableCell>
-                  <TableCell className="py-2">{cliente.phone || 'No especificado'}</TableCell>
-                  <TableCell className="max-w-xs truncate py-2">{cliente.notes || 'Sin notas'}</TableCell>
-                  <TableCell className="py-2">{new Date(cliente.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="py-2">
+                    {cliente.source === 'local' 
+                      ? (cliente.phone || 'No especificado')
+                      : (cliente as HoldedClientAdapted).code || 'Sin código'
+                    }
+                  </TableCell>
+                  <TableCell className="max-w-xs truncate py-2">
+                    {cliente.source === 'local' 
+                      ? (cliente.notes || 'Sin notas')
+                      : ((cliente as HoldedClientAdapted).vatnumber ? `NIF: ${(cliente as HoldedClientAdapted).vatnumber}` : 'Sin datos')
+                    }
+                  </TableCell>
                   <TableCell className="text-right py-2">
                     <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigate(`/clientes/${cliente.id}/editar`)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteCliente(cliente.id)}
-                        className="text-destructive hover:text-destructive h-8 w-8 p-0"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
+                      {cliente.source === 'local' && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/clientes/${cliente.id}/editar`)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteCliente(cliente.id, cliente.source)}
+                            className="text-destructive hover:text-destructive h-8 w-8 p-0"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </>
+                      )}
+                      {cliente.source === 'holded' && (
+                        <Badge variant="outline" className="text-xs">
+                          Solo lectura
+                        </Badge>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -311,7 +340,7 @@ const Clientes = () => {
           </div>
         )}
 
-        {clientes.length === 0 && (
+        {clientes.length === 0 && !loading && (
           <div className="text-center py-20">
             <p className="text-muted-foreground">
               {searchTerm ? 'No se encontraron clientes' : 'Aún no tienes clientes registrados'}

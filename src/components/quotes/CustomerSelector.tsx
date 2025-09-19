@@ -31,7 +31,14 @@ const fetchLocalCustomers = async (): Promise<LocalCustomer[]> => {
     .from("customers")
     .select("id, name, email, phone")
     .order("created_at", { ascending: false });
-  if (error) throw error;
+  
+  if (error) {
+    console.error('❌ Error fetching local customers:', error);
+    throw error;
+  }
+  
+  console.log('✅ Local customers fetched:', data?.length);
+  
   return (data || []).map(customer => ({
     ...customer,
     source: 'local' as const
@@ -40,7 +47,7 @@ const fetchLocalCustomers = async (): Promise<LocalCustomer[]> => {
 
 const fetchAllCustomers = async (searchTerm?: string): Promise<Customer[]> => {
   try {
-    console.log('🚀 Fetching all customers...');
+    console.log('🚀 Fetching all customers with search term:', searchTerm);
     
     // Ejecutar ambas consultas en paralelo
     const [localCustomers, holdedContacts] = await Promise.all([
@@ -48,13 +55,21 @@ const fetchAllCustomers = async (searchTerm?: string): Promise<Customer[]> => {
       fetchHoldedContacts(searchTerm)
     ]);
 
-    console.log('📊 Results:', { 
+    console.log('📊 Results summary:', { 
       localCustomers: localCustomers.length, 
       holdedContacts: holdedContacts.length 
     });
 
     // Combinar y ordenar por nombre
     const allCustomers = [...localCustomers, ...holdedContacts];
+    
+    console.log('🔍 Sample customers for debugging:', allCustomers.slice(0, 3).map(c => ({
+      id: c.id,
+      name: c.name,
+      source: c.source,
+      type: typeof c.name
+    })));
+    
     return allCustomers.sort((a, b) => {
       const nameA = a.name || "";
       const nameB = b.name || "";
@@ -76,11 +91,18 @@ export const CustomerSelector = ({
   const [searchValue, setSearchValue] = useState("");
 
   // Cargar todos los clientes (locales y de Holded)
-  const { data: customers, isLoading } = useQuery({ 
+  const { data: customers, isLoading, error } = useQuery({ 
     queryKey: ["all-customers", searchValue], 
     queryFn: () => fetchAllCustomers(searchValue.trim() ? searchValue : undefined),
     enabled: true
   });
+
+  // Debug error si existe
+  useEffect(() => {
+    if (error) {
+      console.error('❌ Query error:', error);
+    }
+  }, [error]);
 
   // Filtrar clientes basado en la búsqueda (filtro adicional del lado cliente)
   const filteredCustomers = customers?.filter(customer => {
@@ -103,29 +125,29 @@ export const CustomerSelector = ({
     if (customer.source === 'holded') {
       const holdedCustomer = customer as HoldedContact;
       
-      console.log('🔍 Debug customer display name:', {
+      console.log('🔍 Getting display name for Holded customer:', {
         holded_id: holdedCustomer.holded_id,
         name: holdedCustomer.name,
-        nameType: typeof holdedCustomer.name,
-        nameLength: holdedCustomer.name?.length,
-        code: holdedCustomer.code,
-        fullObject: holdedCustomer
+        name_type: typeof holdedCustomer.name,
+        name_length: holdedCustomer.name?.length,
+        code: holdedCustomer.code
       });
       
-      // Mostrar directamente el campo name de la tabla
+      // Prioridad: name -> code -> holded_id
       if (holdedCustomer.name && holdedCustomer.name.trim() !== '') {
-        console.log('✅ Using name:', holdedCustomer.name.trim());
+        console.log('✅ Using name for display:', holdedCustomer.name);
         return holdedCustomer.name.trim();
       }
-      // Si no hay nombre, usar el código
+      
       if (holdedCustomer.code && holdedCustomer.code.trim() !== '' && holdedCustomer.code !== 'EMPTY') {
-        console.log('✅ Using code:', holdedCustomer.code.trim());
+        console.log('✅ Using code for display:', holdedCustomer.code);
         return holdedCustomer.code.trim();
       }
-      // Como último recurso, usar el holded_id
-      console.log('❌ Fallback to holded_id:', holdedCustomer.holded_id);
+      
+      console.log('⚠️ Fallback to holded_id:', holdedCustomer.holded_id);
       return holdedCustomer.holded_id;
     }
+    
     return customer.name || "Sin nombre";
   };
 
@@ -135,6 +157,8 @@ export const CustomerSelector = ({
     }
     return (customer as LocalCustomer).email;
   };
+
+  console.log('🎯 CustomerSelector render - customers count:', customers?.length, 'selected:', value);
 
   return (
     <div className="space-y-2">
@@ -185,9 +209,10 @@ export const CustomerSelector = ({
                     .filter(c => c.source === 'local')
                     .map((customer) => (
                     <CommandItem
-                      key={customer.id}
+                      key={`local-${customer.id}`}
                       value={customer.id}
                       onSelect={() => {
+                        console.log('🎯 Selected local customer:', customer.id, customer.name);
                         onValueChange(customer.id);
                         setOpen(false);
                         setSearchValue("");
@@ -218,11 +243,14 @@ export const CustomerSelector = ({
                     .filter(c => c.source === 'holded')
                     .map((customer, index) => {
                       const holdedCustomer = customer as HoldedContact;
+                      const displayName = getCustomerDisplayName(customer);
+                      
                       return (
                         <CommandItem
                           key={`holded-${holdedCustomer.holded_id}-${index}`}
                           value={customer.id}
                           onSelect={() => {
+                            console.log('🎯 Selected Holded customer:', customer.id, 'display name:', displayName);
                             onValueChange(customer.id);
                             setOpen(false);
                             setSearchValue("");
@@ -236,12 +264,12 @@ export const CustomerSelector = ({
                           />
                           <Building className="mr-2 h-4 w-4 text-muted-foreground" />
                           <div className="flex flex-col">
-                            <span>{getCustomerDisplayName(customer)}</span>
+                            <span>{displayName}</span>
                             <div className="text-xs text-muted-foreground space-x-2">
                               {holdedCustomer.email_original && (
                                 <span>{holdedCustomer.email_original}</span>
                               )}
-                              {holdedCustomer.code && (
+                              {holdedCustomer.code && holdedCustomer.code !== 'EMPTY' && (
                                 <span>• Código: {holdedCustomer.code}</span>
                               )}
                               {holdedCustomer.vatnumber && (
