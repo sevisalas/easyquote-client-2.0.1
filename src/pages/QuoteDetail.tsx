@@ -161,17 +161,20 @@ export default function QuoteDetail() {
             </div>
           </div>
           
-          {quote.description && (
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">descripción</label>
-              <p className="text-sm mt-1">{quote.description}</p>
-            </div>
-          )}
-
-          {quote.notes && (
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">notas</label>
-              <p className="text-sm mt-1">{quote.notes}</p>
+          {(quote.description || quote.notes) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {quote.description && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">descripción</label>
+                  <p className="text-sm mt-1">{quote.description}</p>
+                </div>
+              )}
+              {quote.notes && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">notas</label>
+                  <p className="text-sm mt-1">{quote.notes}</p>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
