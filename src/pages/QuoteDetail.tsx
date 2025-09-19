@@ -211,14 +211,20 @@ export default function QuoteDetail() {
               ))}
               
               {/* Mostrar items del campo selections (formato anterior) */}
-              {Array.isArray(quote.selections) && quote.selections.map((selection: any, index: number) => (
-                <div key={`selection-${index}`} className="border rounded-lg p-3">
-                  <div className="flex justify-between items-center">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-sm">
-                        {quote.product_name || selection.itemDescription || `Producto ${index + 1}`}
-                      </h4>
-                    </div>
+              {Array.isArray(quote.selections) && quote.selections.map((selection: any, index: number) => {
+                // Buscar el nombre del producto en los outputs o usar descripción
+                const productName = selection.itemDescription || 
+                  (selection.outputs && selection.outputs.find((o: any) => o.name === 'PRODUCTO')?.value) ||
+                  `Producto ${index + 1}`;
+                
+                return (
+                  <div key={`selection-${index}`} className="border rounded-lg p-3">
+                    <div className="flex justify-between items-center">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-sm">
+                          {productName}
+                        </h4>
+                      </div>
                     <div className="flex items-center gap-3">
                       <p className="font-semibold text-sm">{fmtEUR(selection.price || 0)}</p>
                       <Button
@@ -233,7 +239,8 @@ export default function QuoteDetail() {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
               
               <Separator />
               
