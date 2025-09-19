@@ -29,6 +29,7 @@ const fetchQuote = async (id: string) => {
 
 const statusLabel = (status: string) => {
   switch (status) {
+    case 'draft': return 'Borrador';
     case 'pending': return 'Pendiente';
     case 'approved': return 'Aprobado';
     case 'rejected': return 'Rechazado';
@@ -98,8 +99,13 @@ export default function QuoteDetail() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-xl">Presupuesto #{quote.quote_number}</CardTitle>
+              <CardTitle className="text-xl">
+                {quote.title ? quote.title : `Presupuesto #${quote.quote_number}`}
+              </CardTitle>
               <CardDescription className="mt-1">
+                {quote.title && (
+                  <span>Número: {quote.quote_number} • </span>
+                )}
                 Fecha: {format(new Date(quote.created_at), 'dd/MM/yyyy', { locale: es })}
               </CardDescription>
             </div>
@@ -181,15 +187,24 @@ export default function QuoteDetail() {
               {/* Mostrar items de la tabla quote_items */}
               {quote.items && quote.items.map((item: any, index: number) => (
                 <div key={`item-${index}`} className="border rounded-lg p-3">
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-center">
                     <div className="flex-1">
                       <h4 className="font-medium text-sm">{item.product_name || item.description || `Artículo ${index + 1}`}</h4>
                       <div className="text-xs text-muted-foreground mt-1">
                         Cantidad: {item.quantity} × {fmtEUR(item.unit_price || 0)}
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="flex items-center gap-3">
                       <p className="font-semibold text-sm">{fmtEUR((item.total_price || item.subtotal) || 0)}</p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate(`/presupuestos/editar/${quote.id}`)}
+                        className="gap-1"
+                      >
+                        <Edit className="h-3 w-3" />
+                        Editar
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -198,28 +213,23 @@ export default function QuoteDetail() {
               {/* Mostrar items del campo selections (formato anterior) */}
               {Array.isArray(quote.selections) && quote.selections.map((selection: any, index: number) => (
                 <div key={`selection-${index}`} className="border rounded-lg p-3">
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-center">
                     <div className="flex-1">
                       <h4 className="font-medium text-sm">
                         {quote.product_name || selection.itemDescription || `Producto ${index + 1}`}
                       </h4>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {selection.outputs && selection.outputs.find((o: any) => o.name === 'PRECIO') && (
-                          <span>Precio: {fmtEUR(selection.price || 0)}</span>
-                        )}
-                      </div>
-                      {selection.outputs && selection.outputs.length > 0 && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {selection.outputs.map((output: any, outputIndex: number) => (
-                            <div key={outputIndex}>
-                              {output.name}: {output.value}
-                            </div>
-                          ))}
-                        </div>
-                      )}
                     </div>
-                    <div className="text-right">
+                    <div className="flex items-center gap-3">
                       <p className="font-semibold text-sm">{fmtEUR(selection.price || 0)}</p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate(`/presupuestos/editar/${quote.id}`)}
+                        className="gap-1"
+                      >
+                        <Edit className="h-3 w-3" />
+                        Editar
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -246,6 +256,45 @@ export default function QuoteDetail() {
           )}
         </CardContent>
       </Card>
+
+      {/* Quote Additionals */}
+      {((quote.quote_additionals && Array.isArray(quote.quote_additionals) && quote.quote_additionals.length > 0)) && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Adicionales del Presupuesto</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {quote.quote_additionals.map((additional: any, index: number) => (
+                <div key={`additional-${index}`} className="border rounded-lg p-3">
+                  <div className="flex justify-between items-center">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm">{additional.name}</h4>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Tipo: {additional.type === 'percentage' ? 'Porcentaje' : 'Valor fijo'}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <p className="font-semibold text-sm">
+                        {additional.type === 'percentage' ? `${additional.value}%` : fmtEUR(additional.value || 0)}
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate(`/presupuestos/editar/${quote.id}`)}
+                        className="gap-1"
+                      >
+                        <Edit className="h-3 w-3" />
+                        Editar
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
