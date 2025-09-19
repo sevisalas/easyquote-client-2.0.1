@@ -204,7 +204,54 @@ export default function QuoteDetail() {
               
               <Separator className="my-4" />
               
-              <div className="bg-card rounded-lg p-4 border border-border border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
+              {/* Desglose de totales */}
+              <div className="bg-card rounded-lg p-4 border border-border space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Subtotal:</span>
+                  <span className="text-sm font-medium">{fmtEUR(quote.subtotal || 0)}</span>
+                </div>
+                
+                {/* Mostrar adicionales aplicados */}
+                {quote.quote_additionals && quote.quote_additionals.length > 0 && (
+                  <>
+                    {quote.quote_additionals.map((additional: any, index: number) => {
+                      let amount = 0;
+                      let displayText = '';
+                      
+                      switch (additional.type) {
+                        case 'percentage':
+                          amount = (quote.subtotal * additional.value) / 100;
+                          displayText = `${additional.name} (${additional.value}%)`;
+                          break;
+                        case 'net_amount':
+                          amount = additional.value;
+                          displayText = additional.name;
+                          break;
+                        case 'quantity_multiplier':
+                          // Para multiplicadores, mostrar como factor
+                          displayText = `${additional.name} (×${additional.value})`;
+                          break;
+                        default:
+                          amount = additional.value;
+                          displayText = additional.name;
+                      }
+                      
+                      if (additional.type !== 'quantity_multiplier') {
+                        return (
+                          <div key={index} className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">{displayText}:</span>
+                            <span className={`text-sm font-medium ${amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {amount >= 0 ? '+' : ''}{fmtEUR(amount)}
+                            </span>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })}
+                  </>
+                )}
+                
+                <Separator className="my-2" />
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-semibold text-foreground">Total del Presupuesto:</span>
                   <span className="text-2xl font-bold text-secondary">{fmtEUR(quote.final_price || 0)}</span>
