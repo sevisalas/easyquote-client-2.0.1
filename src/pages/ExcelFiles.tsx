@@ -317,7 +317,7 @@ export default function ExcelFiles() {
     onSuccess: (data) => {
       toast({
         title: "Producto creado",
-        description: "El producto se ha creado correctamente. Redirigiendo para configurar datos de entrada y salida...",
+        description: "Configurando datos de entrada y salida...",
       });
       setIsCreateProductDialogOpen(false);
       setNewProductData({ productName: "", excelFileId: "", currency: "EUR" });
@@ -397,7 +397,7 @@ export default function ExcelFiles() {
     onSuccess: (data) => {
       toast({
         title: "Producto creado",
-        description: "El archivo Excel se subió y el producto se creó correctamente. Redirigiendo para configurar datos de entrada y salida...",
+        description: "Configurando datos de entrada y salida...",
       });
       setIsCreateProductDialogOpen(false);
       setNewProductData({ productName: "", excelFileId: "", currency: "EUR" });
