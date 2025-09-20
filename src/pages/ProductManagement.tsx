@@ -120,11 +120,11 @@ export default function ProductManagement() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>("");
   const [newPromptData, setNewPromptData] = useState({
-    promptSheet: "Main",
+    promptSheet: "",
     promptCell: "",
-    valueSheet: "Main",
+    valueSheet: "",
     valueCell: "",
-    valueOptionSheet: "Main",
+    valueOptionSheet: "",
     valueOptionRange: "",
     promptType: 0,
     valueRequired: false,
