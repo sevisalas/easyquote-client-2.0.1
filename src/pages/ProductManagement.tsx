@@ -586,11 +586,11 @@ export default function ProductManagement() {
     
     // Reset form data and open dialog
     setNewPromptData({
-      promptSheet: "Main",
+      promptSheet: "",
       promptCell: "",
-      valueSheet: "Main",
+      valueSheet: "",
       valueCell: "",
-      valueOptionSheet: "Main",
+      valueOptionSheet: "",
       valueOptionRange: "",
       promptType: promptTypes[0]?.id || 0,
       valueRequired: false,
