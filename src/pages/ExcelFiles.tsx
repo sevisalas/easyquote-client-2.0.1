@@ -15,6 +15,7 @@ import { Download, FileSpreadsheet, Plus, Trash2, Upload, AlertCircle, CheckCirc
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,8 +48,10 @@ export default function ExcelFiles() {
   const [newProductData, setNewProductData] = useState({
     productName: "",
     excelFileId: "",
-    currency: "USD"
+    currency: "EUR"
   });
+  const [createProductOption, setCreateProductOption] = useState<"existing" | "new">("existing");
+  const [newExcelFile, setNewExcelFile] = useState<File | null>(null);
   
   // Get the subscriber ID from the EasyQuote token
   const getSubscriberIdFromToken = () => {
@@ -282,7 +285,7 @@ export default function ExcelFiles() {
     }
   });
 
-  // Create new product with Excel file
+  // Create new product with Excel file (existing file)
   const createProductMutation = useMutation({
     mutationFn: async (productData: { productName: string; excelFileId: string; currency: string }) => {
       const token = localStorage.getItem("easyquote_token");
@@ -315,7 +318,89 @@ export default function ExcelFiles() {
         description: "El producto se ha creado correctamente.",
       });
       setIsCreateProductDialogOpen(false);
-      setNewProductData({ productName: "", excelFileId: "", currency: "USD" });
+      setNewProductData({ productName: "", excelFileId: "", currency: "EUR" });
+      setNewExcelFile(null);
+      setCreateProductOption("existing");
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Create new product with new Excel file
+  const createProductWithNewFileMutation = useMutation({
+    mutationFn: async (data: { productName: string; file: File; currency: string }) => {
+      const token = localStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No token available");
+
+      // First upload the Excel file
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(data.file);
+        reader.onload = () => {
+          const result = reader.result as string;
+          const base64Data = result.split(',')[1];
+          resolve(base64Data);
+        };
+        reader.onerror = reject;
+      });
+
+      const uploadResponse = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          fileName: data.file.name,
+          fileContent: base64
+        })
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.text();
+        throw new Error(`Error uploading file: ${errorData}`);
+      }
+
+      const uploadResult = await uploadResponse.json();
+
+      // Then create the product with the uploaded file
+      const productResponse = await fetch("https://api.easyquote.cloud/api/v1/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productName: data.productName,
+          excelFileId: uploadResult.id,
+          currency: data.currency,
+          isActive: true
+        })
+      });
+
+      if (!productResponse.ok) {
+        const errorText = await productResponse.text();
+        throw new Error(`Error creating product: ${errorText}`);
+      }
+      
+      return productResponse.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Producto creado",
+        description: "El archivo Excel se subió y el producto se creó correctamente.",
+      });
+      setIsCreateProductDialogOpen(false);
+      setNewProductData({ productName: "", excelFileId: "", currency: "EUR" });
+      setNewExcelFile(null);
+      setCreateProductOption("existing");
+      // Refresh files list
+      queryClient.invalidateQueries({ queryKey: ["easyquote-excel-files"] });
     },
     onError: (error) => {
       toast({
@@ -431,6 +516,20 @@ export default function ExcelFiles() {
     }
   });
 
+  // Dropzone config for new Excel files in create product dialog
+  const { getRootProps: getNewFileRootProps, getInputProps: getNewFileInputProps, isDragActive: isNewFileDragActive } = useDropzone({
+    accept: {
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+      "application/vnd.ms-excel": [".xls"]
+    },
+    maxFiles: 1,
+    onDrop: (acceptedFiles) => {
+      if (acceptedFiles.length > 0) {
+        setNewExcelFile(acceptedFiles[0]);
+      }
+    }
+  });
+
   // Now conditional logic can happen after all hooks are declared
   
   // Check permissions
@@ -456,6 +555,20 @@ export default function ExcelFiles() {
       await uploadMutation.mutateAsync(selectedFile);
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleCreateProduct = async () => {
+    if (createProductOption === "existing") {
+      if (!newProductData.productName || !newProductData.excelFileId) return;
+      await createProductMutation.mutateAsync(newProductData);
+    } else {
+      if (!newProductData.productName || !newExcelFile) return;
+      await createProductWithNewFileMutation.mutateAsync({
+        productName: newProductData.productName,
+        file: newExcelFile,
+        currency: newProductData.currency
+      });
     }
   };
 
@@ -626,7 +739,7 @@ export default function ExcelFiles() {
               <DialogHeader>
                 <DialogTitle>Crear nuevo producto</DialogTitle>
                 <DialogDescription>
-                  Crea un nuevo producto utilizando uno de tus archivos Excel existentes.
+                  Crea un nuevo producto usando un archivo Excel existente o subiendo uno nuevo.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
@@ -639,48 +752,103 @@ export default function ExcelFiles() {
                     placeholder="Introduce el nombre del producto"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="excelFileId">Archivo Excel</Label>
-                  <Select 
-                    value={newProductData.excelFileId} 
-                    onValueChange={(value) => setNewProductData(prev => ({ ...prev, excelFileId: value }))}
+                
+                <div className="space-y-3">
+                  <Label>Archivo Excel</Label>
+                  <RadioGroup 
+                    value={createProductOption} 
+                    onValueChange={(value) => {
+                      setCreateProductOption(value as "existing" | "new");
+                      // Reset relevant fields when switching
+                      if (value === "existing") {
+                        setNewExcelFile(null);
+                      } else {
+                        setNewProductData(prev => ({ ...prev, excelFileId: "" }));
+                      }
+                    }}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un archivo Excel" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filesWithMeta.filter(f => f.isActive).map((file) => (
-                        <SelectItem key={file.id} value={file.id}>
-                          {file.fileName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="currency">Moneda</Label>
-                  <Select 
-                    value={newProductData.currency} 
-                    onValueChange={(value) => setNewProductData(prev => ({ ...prev, currency: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                      <SelectItem value="GBP">GBP</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="existing" id="existing" />
+                      <Label htmlFor="existing">Usar archivo existente</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="new" id="new" />
+                      <Label htmlFor="new">Subir archivo nuevo</Label>
+                    </div>
+                  </RadioGroup>
+                  
+                  {createProductOption === "existing" && (
+                    <Select 
+                      value={newProductData.excelFileId} 
+                      onValueChange={(value) => setNewProductData(prev => ({ ...prev, excelFileId: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un archivo Excel" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filesWithMeta.filter(f => f.isActive).map((file) => (
+                          <SelectItem key={file.id} value={file.id}>
+                            {file.fileName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  
+                  {createProductOption === "new" && (
+                    <div className="space-y-3">
+                      <div
+                        {...getNewFileRootProps()}
+                        className={`
+                          border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors
+                          ${isNewFileDragActive ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"}
+                        `}
+                      >
+                        <input {...getNewFileInputProps()} />
+                        <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          {isNewFileDragActive
+                            ? "Suelta el archivo aquí..."
+                            : "Arrastra un archivo Excel aquí o haz clic para seleccionar"
+                          }
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Formatos: .xlsx, .xls
+                        </p>
+                      </div>
+                      
+                      {newExcelFile && (
+                        <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+                          <FileSpreadsheet className="h-4 w-4" />
+                          <span className="text-sm flex-1">{newExcelFile.name}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setNewExcelFile(null)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               <DialogFooter>
                 <Button
-                  onClick={() => createProductMutation.mutate(newProductData)}
-                  disabled={!newProductData.productName || !newProductData.excelFileId || createProductMutation.isPending}
+                  onClick={handleCreateProduct}
+                  disabled={
+                    !newProductData.productName || 
+                    (createProductOption === "existing" && !newProductData.excelFileId) ||
+                    (createProductOption === "new" && !newExcelFile) ||
+                    createProductMutation.isPending ||
+                    createProductWithNewFileMutation.isPending
+                  }
                   className="w-full"
                 >
-                  {createProductMutation.isPending ? "Creando..." : "Crear Producto"}
+                  {(createProductMutation.isPending || createProductWithNewFileMutation.isPending) 
+                    ? "Creando..." 
+                    : "Crear Producto"}
                 </Button>
               </DialogFooter>
             </DialogContent>
