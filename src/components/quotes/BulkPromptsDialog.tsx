@@ -71,9 +71,9 @@ export function BulkPromptsDialog({
   };
 
   const createInitialPrompt = (seq: number, row: number) => ({
-    sheet: "Main",
-    promptCell: `A${row}`,
-    valueCell: `B${row}`,
+    sheet: "",
+    promptCell: "",
+    valueCell: "",
     promptType: promptTypes[0]?.id || 0,
     valueRequired: false,
     valueOptionRange: "",
@@ -174,6 +174,7 @@ export function BulkPromptsDialog({
                         <Input
                           value={prompt.sheet}
                           onChange={(e) => updatePrompt(index, 'sheet', e.target.value)}
+                          placeholder="Ej:"
                           className="h-8 text-xs"
                         />
                       </div>
@@ -182,6 +183,7 @@ export function BulkPromptsDialog({
                         <Input
                           value={prompt.promptCell}
                           onChange={(e) => updatePrompt(index, 'promptCell', e.target.value)}
+                          placeholder="Ej:"
                           className="h-8 text-xs"
                         />
                       </div>
@@ -190,6 +192,7 @@ export function BulkPromptsDialog({
                         <Input
                           value={prompt.valueCell}
                           onChange={(e) => updatePrompt(index, 'valueCell', e.target.value)}
+                          placeholder="Ej:"
                           className="h-8 text-xs"
                         />
                       </div>
@@ -199,6 +202,7 @@ export function BulkPromptsDialog({
                           type="number"
                           value={prompt.promptSeq}
                           onChange={(e) => updatePrompt(index, 'promptSeq', parseInt(e.target.value) || 1)}
+                          placeholder="Ej:"
                           className="h-8 text-xs"
                         />
                       </div>
