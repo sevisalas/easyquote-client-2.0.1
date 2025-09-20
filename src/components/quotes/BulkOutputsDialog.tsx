@@ -39,14 +39,20 @@ export function BulkOutputsDialog({
 
   const getNextRow = () => {
     if (existingOutputs.length === 0) return 25;
-    const existingRows = existingOutputs
+    // Obtener todas las filas utilizadas de existing outputs
+    const usedRows = existingOutputs
       .map(output => {
-        const match = output.nameCell?.match(/\d+/);
-        return match ? parseInt(match[0]) : 25;
+        const nameMatch = output.nameCell?.match(/(\d+)/);
+        const valueMatch = output.valueCell?.match(/(\d+)/);
+        return [
+          nameMatch ? parseInt(nameMatch[1]) : 0,
+          valueMatch ? parseInt(valueMatch[1]) : 0
+        ];
       })
-      .filter(row => !isNaN(row));
+      .flat()
+      .filter(row => row > 0);
     
-    return existingRows.length > 0 ? Math.max(...existingRows) + 1 : 25;
+    return usedRows.length > 0 ? Math.max(...usedRows) + 1 : 25;
   };
 
   const createInitialOutput = (row: number) => ({
@@ -59,7 +65,7 @@ export function BulkOutputsDialog({
   const [outputs, setOutputs] = useState<BulkOutputData[]>([]);
 
   const addOutput = () => {
-    const nextRow = outputs.length === 0 ? getNextRow() : getNextRow() + outputs.length;
+    const nextRow = getNextRow() + outputs.length;
     setOutputs([...outputs, createInitialOutput(nextRow)]);
   };
 

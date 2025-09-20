@@ -49,12 +49,28 @@ export function BulkPromptsDialog({
     return Math.max(...existingPrompts.map(p => p.promptSeq || 0)) + 1;
   };
 
-  const getNextRow = (seq: number) => seq + 1;
+  const getNextRow = () => {
+    if (existingPrompts.length === 0) return 2;
+    // Obtener todas las filas utilizadas de existing prompts
+    const usedRows = existingPrompts
+      .map(p => {
+        const promptMatch = p.promptCell?.match(/(\d+)/);
+        const valueMatch = p.valueCell?.match(/(\d+)/);
+        return [
+          promptMatch ? parseInt(promptMatch[1]) : 0,
+          valueMatch ? parseInt(valueMatch[1]) : 0
+        ];
+      })
+      .flat()
+      .filter(row => row > 0);
+    
+    return usedRows.length > 0 ? Math.max(...usedRows) + 1 : 2;
+  };
 
-  const createInitialPrompt = (seq: number) => ({
+  const createInitialPrompt = (seq: number, row: number) => ({
     sheet: "Main",
-    promptCell: `A${getNextRow(seq)}`,
-    valueCell: `B${getNextRow(seq)}`,
+    promptCell: `A${row}`,
+    valueCell: `B${row}`,
     promptType: promptTypes[0]?.id || 0,
     valueRequired: false,
     valueOptionRange: "",
@@ -68,7 +84,8 @@ export function BulkPromptsDialog({
 
   const addPrompt = () => {
     const nextSeq = prompts.length === 0 ? getNextSeq() : Math.max(...prompts.map(p => p.promptSeq)) + 1;
-    setPrompts([...prompts, createInitialPrompt(nextSeq)]);
+    const nextRow = getNextRow() + prompts.length;
+    setPrompts([...prompts, createInitialPrompt(nextSeq, nextRow)]);
   };
 
   const removePrompt = (index: number) => {
@@ -88,10 +105,11 @@ export function BulkPromptsDialog({
 
   const resetForm = () => {
     const startSeq = getNextSeq();
+    const startRow = getNextRow();
     setPrompts([
-      createInitialPrompt(startSeq),
-      createInitialPrompt(startSeq + 1),
-      createInitialPrompt(startSeq + 2)
+      createInitialPrompt(startSeq, startRow),
+      createInitialPrompt(startSeq + 1, startRow + 1),
+      createInitialPrompt(startSeq + 2, startRow + 2)
     ]);
   };
 
