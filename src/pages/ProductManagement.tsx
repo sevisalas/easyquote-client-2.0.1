@@ -28,12 +28,15 @@ import {
   Plus,
   Trash2,
   Save,
-  TestTube
+  TestTube,
+  Layers
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
+import { BulkPromptsDialog } from "@/components/quotes/BulkPromptsDialog";
+import { BulkOutputsDialog } from "@/components/quotes/BulkOutputsDialog";
 
 // Interface para productos del API de EasyQuote
 interface EasyQuoteProduct {
@@ -112,6 +115,8 @@ export default function ProductManagement() {
   const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
   const [isNewPromptDialogOpen, setIsNewPromptDialogOpen] = useState(false);
   const [isNewOutputDialogOpen, setIsNewOutputDialogOpen] = useState(false);
+  const [isBulkPromptsDialogOpen, setIsBulkPromptsDialogOpen] = useState(false);
+  const [isBulkOutputsDialogOpen, setIsBulkOutputsDialogOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>("");
   const [newPromptData, setNewPromptData] = useState({
@@ -622,6 +627,76 @@ export default function ProductManagement() {
     setIsNewOutputDialogOpen(false);
   };
 
+  // Bulk create prompts
+  const handleBulkSavePrompts = async (prompts: any[]) => {
+    if (!selectedProduct) return;
+    
+    try {
+      for (const promptData of prompts) {
+        const newPrompt = {
+          productId: selectedProduct.id,
+          promptSeq: promptData.promptSeq,
+          promptType: promptData.promptType,
+          promptSheet: promptData.promptSheet,
+          promptCell: promptData.promptCell,
+          valueSheet: promptData.valueSheet,
+          valueCell: promptData.valueCell,
+          valueOptionSheet: promptData.promptSheet,
+          valueOptionRange: promptData.valueOptionRange,
+          valueRequired: promptData.valueRequired,
+          valueQuantityAllowedDecimals: promptData.valueQuantityAllowedDecimals,
+          valueQuantityMin: promptData.valueQuantityMin,
+          valueQuantityMax: promptData.valueQuantityMax
+        };
+        
+        await createPromptMutation.mutateAsync(newPrompt);
+      }
+      
+      setIsBulkPromptsDialogOpen(false);
+      toast({
+        title: "Éxito",
+        description: `Se crearon ${prompts.length} campos de entrada correctamente.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Error al crear los campos de entrada",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Bulk create outputs  
+  const handleBulkSaveOutputs = async (outputs: any[]) => {
+    if (!selectedProduct) return;
+    
+    try {
+      for (const outputData of outputs) {
+        const newOutput = {
+          productId: selectedProduct.id,
+          outputTypeId: outputData.outputTypeId,
+          sheet: outputData.sheet,
+          nameCell: outputData.nameCell,
+          valueCell: outputData.valueCell
+        };
+        
+        await createOutputMutation.mutateAsync(newOutput);
+      }
+      
+      setIsBulkOutputsDialogOpen(false);
+      toast({
+        title: "Éxito",
+        description: `Se crearon ${outputs.length} campos de salida correctamente.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Error al crear los campos de salida",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Delete prompt
   const deletePrompt = (promptId: string) => {
     deletePromptMutation.mutate(promptId);
@@ -1024,10 +1099,16 @@ export default function ProductManagement() {
                       Gestiona los campos de entrada para este producto
                     </p>
                   </div>
-                  <Button onClick={addNewPrompt} size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Añadir Dato de entrada
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button onClick={addNewPrompt} size="sm" variant="outline">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Añadir uno
+                    </Button>
+                    <Button onClick={() => setIsBulkPromptsDialogOpen(true)} size="sm">
+                      <Layers className="h-4 w-4 mr-2" />
+                      Editor Masivo
+                    </Button>
+                  </div>
                 </div>
 
                 {isLoadingDetails ? (
@@ -1225,10 +1306,16 @@ export default function ProductManagement() {
                       Gestiona los campos de salida para este producto
                     </p>
                   </div>
-                  <Button onClick={addNewOutput} size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Añadir dato de salida
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button onClick={addNewOutput} size="sm" variant="outline">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Añadir uno
+                    </Button>
+                    <Button onClick={() => setIsBulkOutputsDialogOpen(true)} size="sm">
+                      <Layers className="h-4 w-4 mr-2" />
+                      Editor Masivo
+                    </Button>
+                  </div>
                 </div>
 
                 {isLoadingDetails ? (
@@ -1544,6 +1631,23 @@ export default function ProductManagement() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Diálogos masivos */}
+      <BulkPromptsDialog
+        open={isBulkPromptsDialogOpen}
+        onOpenChange={setIsBulkPromptsDialogOpen}
+        onSave={handleBulkSavePrompts}
+        promptTypes={promptTypes}
+        isSaving={createPromptMutation.isPending}
+      />
+
+      <BulkOutputsDialog
+        open={isBulkOutputsDialogOpen}
+        onOpenChange={setIsBulkOutputsDialogOpen}
+        onSave={handleBulkSaveOutputs}
+        outputTypes={outputTypes}
+        isSaving={createOutputMutation.isPending}
+      />
     </div>
   );
 }
