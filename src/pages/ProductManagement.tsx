@@ -130,7 +130,8 @@ export default function ProductManagement() {
     valueRequired: false,
     valueQuantityAllowedDecimals: 0,
     valueQuantityMin: 1,
-    valueQuantityMax: 9999
+    valueQuantityMax: 9999,
+    promptSeq: 1
   });
   const [newOutputData, setNewOutputData] = useState({
     sheet: "Main",
@@ -559,19 +560,45 @@ export default function ProductManagement() {
   const addNewPrompt = () => {
     if (!selectedProduct || !promptTypes.length) return;
     
+    // Calculate next sequence number
+    const nextSeq = productPrompts.length === 0 ? 1 : Math.max(...productPrompts.map(p => p.promptSeq || 0)) + 1;
+    
+    // Calculate next row based on existing cells
+    const getNextRow = () => {
+      if (productPrompts.length === 0) return 2;
+      
+      const usedRows = productPrompts
+        .map(p => {
+          const promptMatch = p.promptCell?.match(/(\d+)/);
+          const valueMatch = p.valueCell?.match(/(\d+)/);
+          return [
+            promptMatch ? parseInt(promptMatch[1]) : 0,
+            valueMatch ? parseInt(valueMatch[1]) : 0
+          ];
+        })
+        .flat()
+        .filter(row => row > 0);
+      
+      const maxRow = usedRows.length > 0 ? Math.max(...usedRows) : 1;
+      return maxRow + 1;
+    };
+    
+    const nextRow = getNextRow();
+    
     // Reset form data and open dialog
     setNewPromptData({
       promptSheet: "Main",
-      promptCell: "A" + (productPrompts.length + 2),
+      promptCell: `A${nextRow}`,
       valueSheet: "Main",
-      valueCell: "B" + (productPrompts.length + 2),
+      valueCell: `B${nextRow}`,
       valueOptionSheet: "Main",
       valueOptionRange: "",
       promptType: promptTypes[0]?.id || 0,
       valueRequired: false,
       valueQuantityAllowedDecimals: 0,
       valueQuantityMin: 1,
-      valueQuantityMax: 9999
+      valueQuantityMax: 9999,
+      promptSeq: nextSeq
     });
     setIsNewPromptDialogOpen(true);
   };
@@ -584,7 +611,7 @@ export default function ProductManagement() {
 
     const newPrompt = {
       productId: selectedProduct.id,
-      promptSeq: nextSeq,
+      promptSeq: newPromptData.promptSeq,
       promptType: newPromptData.promptType,
       promptSheet: newPromptData.promptSheet,
       promptCell: newPromptData.promptCell,
@@ -1472,7 +1499,7 @@ export default function ProductManagement() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div>
                 <Label htmlFor="promptSheet">Hoja del Prompt</Label>
                 <Input
@@ -1489,6 +1516,16 @@ export default function ProductManagement() {
                   value={newPromptData.promptCell}
                   onChange={(e) => setNewPromptData({...newPromptData, promptCell: e.target.value})}
                   placeholder="ej: A2"
+                />
+              </div>
+              <div>
+                <Label htmlFor="promptSeq">Orden</Label>
+                <Input
+                  id="promptSeq"
+                  type="number"
+                  value={newPromptData.promptSeq}
+                  onChange={(e) => setNewPromptData({...newPromptData, promptSeq: parseInt(e.target.value) || 1})}
+                  placeholder="1"
                 />
               </div>
               <div>
