@@ -136,7 +136,8 @@ export default function ProductManagement() {
     sheet: "Main",
     prompt: "",
     defaultValue: "",
-    outputTypeId: 0
+    outputTypeId: 0,
+    orderSeq: 1
   });
   
   console.log('ProductManagement: About to call useSubscription hook');
@@ -578,9 +579,12 @@ export default function ProductManagement() {
   const createNewPrompt = () => {
     if (!selectedProduct) return;
 
+    // Calculate next sequence number to avoid duplicates
+    const nextSeq = productPrompts.length === 0 ? 1 : Math.max(...productPrompts.map(p => p.promptSeq || 0)) + 1;
+
     const newPrompt = {
       productId: selectedProduct.id,
-      promptSeq: productPrompts.length + 1,
+      promptSeq: nextSeq,
       promptType: newPromptData.promptType,
       promptSheet: newPromptData.promptSheet,
       promptCell: newPromptData.promptCell,
@@ -602,12 +606,38 @@ export default function ProductManagement() {
   const addNewOutput = () => {
     if (!selectedProduct || !outputTypes.length) return;
     
+    // Calculate next sequence number
+    const nextSeq = productOutputs.length === 0 ? 1 : Math.max(...productOutputs.map(o => o.orderSeq || 0)) + 1;
+    
+    // Calculate next row based on existing cells
+    const getNextRow = () => {
+      if (productOutputs.length === 0) return 25;
+      
+      const usedRows = productOutputs
+        .map(output => {
+          const nameMatch = output.nameCell?.match(/(\d+)/);
+          const valueMatch = output.valueCell?.match(/(\d+)/);
+          return [
+            nameMatch ? parseInt(nameMatch[1]) : 0,
+            valueMatch ? parseInt(valueMatch[1]) : 0
+          ];
+        })
+        .flat()
+        .filter(row => row > 0);
+      
+      const maxRow = usedRows.length > 0 ? Math.max(...usedRows) : 24;
+      return maxRow + 1;
+    };
+    
+    const nextRow = getNextRow();
+    
     // Reset form data and open dialog
     setNewOutputData({
       sheet: "Main",
-      prompt: "A" + (productOutputs.length + 26),
-      defaultValue: "B" + (productOutputs.length + 26),
-      outputTypeId: outputTypes[0]?.id || 0
+      prompt: `A${nextRow}`,
+      defaultValue: `B${nextRow}`,
+      outputTypeId: outputTypes[0]?.id || 0,
+      orderSeq: nextSeq
     });
     setIsNewOutputDialogOpen(true);
   };
@@ -620,7 +650,8 @@ export default function ProductManagement() {
       outputTypeId: newOutputData.outputTypeId,
       sheet: newOutputData.sheet,
       nameCell: newOutputData.prompt,
-      valueCell: newOutputData.defaultValue
+      valueCell: newOutputData.defaultValue,
+      orderSeq: newOutputData.orderSeq
     };
 
     createOutputMutation.mutate(newOutput);
@@ -1573,7 +1604,7 @@ export default function ProductManagement() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div>
                 <Label htmlFor="outputSheet">Hoja</Label>
                 <Input
@@ -1599,6 +1630,16 @@ export default function ProductManagement() {
                   value={newOutputData.defaultValue}
                   onChange={(e) => setNewOutputData({...newOutputData, defaultValue: e.target.value})}
                   placeholder="ej: B25"
+                />
+              </div>
+              <div>
+                <Label htmlFor="outputOrder">Orden</Label>
+                <Input
+                  id="outputOrder"
+                  type="number"
+                  value={newOutputData.orderSeq}
+                  onChange={(e) => setNewOutputData({...newOutputData, orderSeq: parseInt(e.target.value) || 1})}
+                  placeholder="1"
                 />
               </div>
             </div>

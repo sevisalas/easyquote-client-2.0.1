@@ -109,13 +109,7 @@ export function BulkPromptsDialog({
   };
 
   const resetForm = () => {
-    const startSeq = getNextSeq();
-    const startRow = getNextRow();
-    setPrompts([
-      createInitialPrompt(startSeq, startRow),
-      createInitialPrompt(startSeq + 1, startRow + 1),
-      createInitialPrompt(startSeq + 2, startRow + 2)
-    ]);
+    setPrompts([]);
   };
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -127,7 +121,7 @@ export function BulkPromptsDialog({
 
   useEffect(() => {
     if (open && prompts.length === 0) {
-      resetForm();
+      // No pre-cargar nada, empezar con lista vacía
     }
   }, [open, existingPrompts]);
 

@@ -88,12 +88,7 @@ export function BulkOutputsDialog({
   };
 
   const resetForm = () => {
-    const startRow = getNextRow();
-    setOutputs([
-      createInitialOutput(startRow),
-      createInitialOutput(startRow + 1),
-      createInitialOutput(startRow + 2)
-    ]);
+    setOutputs([]);
   };
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -105,7 +100,7 @@ export function BulkOutputsDialog({
 
   useEffect(() => {
     if (open && outputs.length === 0) {
-      resetForm();
+      // No pre-cargar nada, empezar con lista vacía
     }
   }, [open, existingOutputs]);
 
