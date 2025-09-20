@@ -827,7 +827,7 @@ export default function ProductManagement() {
             Catálogo de productos del API de EasyQuote para presupuestos
           </p>
         </div>
-        <div className="flex-shrink-0">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button 
             onClick={() => navigate("/admin/productos/test")}
             variant="outline"
@@ -837,6 +837,16 @@ export default function ProductManagement() {
             <TestTube className="h-4 w-4" />
             <span className="hidden sm:inline">Probar Productos</span>
             <span className="sm:hidden">Probar</span>
+          </Button>
+          <Button 
+            onClick={() => navigate("/admin/excel-files")}
+            variant="default"
+            className="flex items-center gap-2 w-full sm:w-auto"
+            size="sm"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Crear Producto</span>
+            <span className="sm:hidden">Crear</span>
           </Button>
         </div>
       </div>
