@@ -46,11 +46,13 @@ export function BulkPromptsDialog({
   
   const getNextSeq = () => {
     if (existingPrompts.length === 0) return 1;
-    return Math.max(...existingPrompts.map(p => p.promptSeq || 0)) + 1;
+    const maxSeq = Math.max(...existingPrompts.map(p => p.promptSeq || 0));
+    return maxSeq + 1;
   };
 
   const getNextRow = () => {
     if (existingPrompts.length === 0) return 2;
+    
     // Obtener todas las filas utilizadas de existing prompts
     const usedRows = existingPrompts
       .map(p => {
@@ -64,7 +66,8 @@ export function BulkPromptsDialog({
       .flat()
       .filter(row => row > 0);
     
-    return usedRows.length > 0 ? Math.max(...usedRows) + 1 : 2;
+    const maxRow = usedRows.length > 0 ? Math.max(...usedRows) : 1;
+    return maxRow + 1;
   };
 
   const createInitialPrompt = (seq: number, row: number) => ({
@@ -83,8 +86,10 @@ export function BulkPromptsDialog({
   const [prompts, setPrompts] = useState<BulkPromptData[]>([]);
 
   const addPrompt = () => {
-    const nextSeq = prompts.length === 0 ? getNextSeq() : Math.max(...prompts.map(p => p.promptSeq)) + 1;
-    const nextRow = getNextRow() + prompts.length;
+    const baseSeq = getNextSeq();
+    const baseRow = getNextRow();
+    const nextSeq = baseSeq + prompts.length;
+    const nextRow = baseRow + prompts.length;
     setPrompts([...prompts, createInitialPrompt(nextSeq, nextRow)]);
   };
 

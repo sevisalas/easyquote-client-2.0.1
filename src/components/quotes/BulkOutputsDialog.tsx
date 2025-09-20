@@ -39,6 +39,7 @@ export function BulkOutputsDialog({
 
   const getNextRow = () => {
     if (existingOutputs.length === 0) return 25;
+    
     // Obtener todas las filas utilizadas de existing outputs
     const usedRows = existingOutputs
       .map(output => {
@@ -52,7 +53,8 @@ export function BulkOutputsDialog({
       .flat()
       .filter(row => row > 0);
     
-    return usedRows.length > 0 ? Math.max(...usedRows) + 1 : 25;
+    const maxRow = usedRows.length > 0 ? Math.max(...usedRows) : 24;
+    return maxRow + 1;
   };
 
   const createInitialOutput = (row: number) => ({
@@ -65,7 +67,8 @@ export function BulkOutputsDialog({
   const [outputs, setOutputs] = useState<BulkOutputData[]>([]);
 
   const addOutput = () => {
-    const nextRow = getNextRow() + outputs.length;
+    const baseRow = getNextRow();
+    const nextRow = baseRow + outputs.length;
     setOutputs([...outputs, createInitialOutput(nextRow)]);
   };
 
