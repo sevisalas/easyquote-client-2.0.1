@@ -1,13 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Eye, Save } from "lucide-react";
+import { Plus, Trash2, Save } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 interface PromptType {
@@ -34,7 +32,7 @@ interface BulkPromptsDialogProps {
   onSave: (prompts: BulkPromptData[]) => void;
   promptTypes: PromptType[];
   isSaving: boolean;
-  existingPrompts: any[]; // Para calcular próximos valores
+  existingPrompts: any[];
 }
 
 export function BulkPromptsDialog({ 
@@ -46,16 +44,12 @@ export function BulkPromptsDialog({
   existingPrompts = []
 }: BulkPromptsDialogProps) {
   
-  // Calcular el próximo número de secuencia basado en existentes
   const getNextSeq = () => {
     if (existingPrompts.length === 0) return 1;
     return Math.max(...existingPrompts.map(p => p.promptSeq || 0)) + 1;
   };
 
-  // Calcular la próxima fila basada en existentes
-  const getNextRow = (seq: number) => {
-    return seq + 1; // A1, A2, etc.
-  };
+  const getNextRow = (seq: number) => seq + 1;
 
   const createInitialPrompt = (seq: number) => ({
     sheet: "Main",
@@ -93,7 +87,6 @@ export function BulkPromptsDialog({
   };
 
   const resetForm = () => {
-    // Empezar con 3 campos vacíos listos para llenar
     const startSeq = getNextSeq();
     setPrompts([
       createInitialPrompt(startSeq),
@@ -104,14 +97,12 @@ export function BulkPromptsDialog({
 
   const handleOpenChange = (newOpen: boolean) => {
     if (newOpen) {
-      // Cuando se abre, resetear con campos nuevos
       resetForm();
     }
     onOpenChange(newOpen);
   };
 
-  // Inicializar cuando se abre el diálogo
-  React.useEffect(() => {
+  useEffect(() => {
     if (open && prompts.length === 0) {
       resetForm();
     }
@@ -119,225 +110,163 @@ export function BulkPromptsDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Editor Masivo de Datos de Entrada</DialogTitle>
+          <DialogTitle>Añadir Datos de Entrada Masivamente</DialogTitle>
           <DialogDescription>
-            Crea múltiples datos de entrada para el producto y previsualiza antes de guardar
+            Configura múltiples datos de entrada nuevos para el producto
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="editor" className="flex-1 overflow-hidden">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="editor">Editor</TabsTrigger>
-            <TabsTrigger value="preview">
-              <Eye className="h-4 w-4 mr-2" />
-              Vista Previa ({prompts.length})
-            </TabsTrigger>
-          </TabsList>
+        <div className="flex-1 overflow-y-auto">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-muted-foreground">
+                {prompts.length} dato{prompts.length !== 1 ? 's' : ''} nuevo{prompts.length !== 1 ? 's' : ''}
+              </p>
+              <Button onClick={addPrompt} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Añadir
+              </Button>
+            </div>
 
-          <TabsContent value="editor" className="flex-1 overflow-y-auto">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground">
-                  Configura todos los datos de entrada necesarios
-                </p>
-                <Button onClick={addPrompt} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Añadir Dato
-                </Button>
-              </div>
+            <div className="space-y-3">
+              {prompts.map((prompt, index) => {
+                const currentType = promptTypes.find(type => type.id === prompt.promptType);
+                const isNumericType = currentType?.promptType === "Number" || currentType?.promptType === "Quantity";
 
-              <div className="space-y-4">
-                {prompts.map((prompt, index) => {
-                  const currentType = promptTypes.find(type => type.id === prompt.promptType);
-                  const isNumericType = currentType?.promptType === "Number" || currentType?.promptType === "Quantity";
+                return (
+                  <div key={index} className="p-4 border rounded-lg">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="font-medium text-sm">Nuevo Dato #{index + 1}</h4>
+                      {prompts.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removePrompt(index)}
+                          className="text-destructive hover:text-destructive h-6 w-6 p-0"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-12 gap-2 items-end">
+                      <div className="col-span-1">
+                        <Label className="text-xs">Hoja</Label>
+                        <Input
+                          value={prompt.sheet}
+                          onChange={(e) => updatePrompt(index, 'sheet', e.target.value)}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <Label className="text-xs">Rótulo</Label>
+                        <Input
+                          value={prompt.promptCell}
+                          onChange={(e) => updatePrompt(index, 'promptCell', e.target.value)}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <Label className="text-xs">Valor</Label>
+                        <Input
+                          value={prompt.valueCell}
+                          onChange={(e) => updatePrompt(index, 'valueCell', e.target.value)}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <Label className="text-xs">Orden</Label>
+                        <Input
+                          type="number"
+                          value={prompt.promptSeq}
+                          onChange={(e) => updatePrompt(index, 'promptSeq', parseInt(e.target.value) || 1)}
+                          className="h-8 text-xs"
+                        />
+                      </div>
 
-                  return (
-                    <Card key={index}>
-                      <CardHeader className="pb-3">
-                        <div className="flex justify-between items-center">
-                          <CardTitle className="text-sm">Dato #{index + 1}</CardTitle>
-                          {prompts.length > 1 && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removePrompt(index)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
+                      {!isNumericType && (
+                        <div className="col-span-2">
+                          <Label className="text-xs">Rango</Label>
+                          <Input
+                            value={prompt.valueOptionRange}
+                            onChange={(e) => updatePrompt(index, 'valueOptionRange', e.target.value)}
+                            placeholder="$E$2:$E$3"
+                            className="h-8 text-xs"
+                          />
                         </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="grid grid-cols-6 gap-2">
-                          <div>
-                            <Label className="text-xs">Hoja</Label>
-                            <Input
-                              value={prompt.sheet}
-                              onChange={(e) => updatePrompt(index, 'sheet', e.target.value)}
-                              placeholder="Main"
-                              className="text-xs h-8"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-xs">Rótulo</Label>
-                            <Input
-                              value={prompt.promptCell}
-                              onChange={(e) => updatePrompt(index, 'promptCell', e.target.value)}
-                              placeholder="A2"
-                              className="text-xs h-8"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-xs">Valor</Label>
-                            <Input
-                              value={prompt.valueCell}
-                              onChange={(e) => updatePrompt(index, 'valueCell', e.target.value)}
-                              placeholder="B2"
-                              className="text-xs h-8"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-xs">Orden</Label>
+                      )}
+
+                      <div className="col-span-2">
+                        <Label className="text-xs">Tipo</Label>
+                        <Select
+                          value={prompt.promptType.toString()}
+                          onValueChange={(value) => updatePrompt(index, 'promptType', parseInt(value))}
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {promptTypes.map((type) => (
+                              <SelectItem key={type.id} value={type.id.toString()}>
+                                {type.promptType}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="col-span-1">
+                        <Label className="text-xs">Req.</Label>
+                        <div className="flex items-center h-8">
+                          <Switch
+                            checked={prompt.valueRequired}
+                            onCheckedChange={(checked) => updatePrompt(index, 'valueRequired', checked)}
+                          />
+                        </div>
+                      </div>
+
+                      {isNumericType && (
+                        <>
+                          <div className="col-span-1">
+                            <Label className="text-xs">Decs.</Label>
                             <Input
                               type="number"
-                              value={prompt.promptSeq}
-                              onChange={(e) => updatePrompt(index, 'promptSeq', parseInt(e.target.value) || 1)}
-                              className="text-xs h-8"
+                              value={prompt.valueQuantityAllowedDecimals}
+                              onChange={(e) => updatePrompt(index, 'valueQuantityAllowedDecimals', parseInt(e.target.value) || 0)}
+                              className="h-8 text-xs"
                             />
                           </div>
-                          <div>
-                            <Label className="text-xs">Tipo</Label>
-                            <Select
-                              value={prompt.promptType.toString()}
-                              onValueChange={(value) => updatePrompt(index, 'promptType', parseInt(value))}
-                            >
-                              <SelectTrigger className="text-xs h-8">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {promptTypes.map((type) => (
-                                  <SelectItem key={type.id} value={type.id.toString()}>
-                                    {type.promptType}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="flex items-center space-x-1 pt-4">
-                            <Switch
-                              checked={prompt.valueRequired}
-                              onCheckedChange={(checked) => updatePrompt(index, 'valueRequired', checked)}
-                            />
-                            <Label className="text-xs">Req.</Label>
-                          </div>
-                        </div>
-
-                        {!isNumericType && (
-                          <div>
-                            <Label className="text-xs">Rango de Opciones</Label>
+                          <div className="col-span-1">
+                            <Label className="text-xs">Min</Label>
                             <Input
-                              value={prompt.valueOptionRange}
-                              onChange={(e) => updatePrompt(index, 'valueOptionRange', e.target.value)}
-                              placeholder="$E$2:$E$3"
-                              className="text-xs h-8"
+                              type="number"
+                              value={prompt.valueQuantityMin}
+                              onChange={(e) => updatePrompt(index, 'valueQuantityMin', parseFloat(e.target.value) || 1)}
+                              className="h-8 text-xs"
                             />
                           </div>
-                        )}
-
-                        {isNumericType && (
-                          <div className="grid grid-cols-3 gap-2">
-                            <div>
-                              <Label className="text-xs">Decimales</Label>
-                              <Input
-                                type="number"
-                                value={prompt.valueQuantityAllowedDecimals}
-                                onChange={(e) => updatePrompt(index, 'valueQuantityAllowedDecimals', parseInt(e.target.value) || 0)}
-                                className="text-xs h-8"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs">Mínimo</Label>
-                              <Input
-                                type="number"
-                                value={prompt.valueQuantityMin}
-                                onChange={(e) => updatePrompt(index, 'valueQuantityMin', parseFloat(e.target.value) || 1)}
-                                className="text-xs h-8"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs">Máximo</Label>
-                              <Input
-                                type="number"
-                                value={prompt.valueQuantityMax}
-                                onChange={(e) => updatePrompt(index, 'valueQuantityMax', parseFloat(e.target.value) || 9999)}
-                                className="text-xs h-8"  
-                              />
-                            </div>
+                          <div className="col-span-1">
+                            <Label className="text-xs">Max</Label>
+                            <Input
+                              type="number"
+                              value={prompt.valueQuantityMax}
+                              onChange={(e) => updatePrompt(index, 'valueQuantityMax', parseFloat(e.target.value) || 9999)}
+                              className="h-8 text-xs"
+                            />
                           </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
+                        </>
+                      )}
+
+                      {!isNumericType && <div className="col-span-3"></div>}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </TabsContent>
-
-          <TabsContent value="preview" className="flex-1 overflow-y-auto">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium">Vista Previa</h3>
-                <p className="text-sm text-muted-foreground">
-                  {prompts.length} dato{prompts.length !== 1 ? 's' : ''} configurado{prompts.length !== 1 ? 's' : ''}
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                {prompts.map((prompt, index) => {
-                  const currentType = promptTypes.find(type => type.id === prompt.promptType);
-                  const isNumericType = currentType?.promptType === "Number" || currentType?.promptType === "Quantity";
-
-                  return (
-                    <Card key={index}>
-                      <CardContent className="pt-4">
-                        <div className="flex justify-between items-start mb-3">
-                          <h4 className="font-medium">Dato #{index + 1}</h4>
-                          <div className="text-xs text-muted-foreground">
-                            Orden: {prompt.promptSeq}
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div className="space-y-2">
-                            <div><strong>Hoja:</strong> {prompt.sheet}</div>
-                            <div><strong>Celda Rótulo:</strong> {prompt.promptCell}</div>
-                            <div><strong>Celda Valor:</strong> {prompt.valueCell}</div>
-                          </div>
-                          <div className="space-y-2">
-                            <div><strong>Tipo:</strong> {currentType?.promptType}</div>
-                            <div><strong>Requerido:</strong> {prompt.valueRequired ? 'Sí' : 'No'}</div>
-                            {!isNumericType && prompt.valueOptionRange && (
-                              <div><strong>Rango:</strong> {prompt.valueOptionRange}</div>
-                            )}
-                            {isNumericType && (
-                              <div className="space-y-1">
-                                <div><strong>Decimales:</strong> {prompt.valueQuantityAllowedDecimals}</div>
-                                <div><strong>Min-Max:</strong> {prompt.valueQuantityMin} - {prompt.valueQuantityMax}</div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
 
         <Separator />
 
@@ -354,7 +283,7 @@ export function BulkPromptsDialog({
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Guardar {prompts.length} Dato{prompts.length !== 1 ? 's' : ''}
+                Guardar {prompts.length} Nuevo{prompts.length !== 1 ? 's' : ''}
               </>
             )}
           </Button>

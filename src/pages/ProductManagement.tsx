@@ -1106,7 +1106,7 @@ export default function ProductManagement() {
                     </Button>
                     <Button onClick={() => setIsBulkPromptsDialogOpen(true)} size="sm">
                       <Layers className="h-4 w-4 mr-2" />
-                      Editor Masivo
+                      Añadir Varios
                     </Button>
                   </div>
                 </div>
@@ -1313,7 +1313,7 @@ export default function ProductManagement() {
                     </Button>
                     <Button onClick={() => setIsBulkOutputsDialogOpen(true)} size="sm">
                       <Layers className="h-4 w-4 mr-2" />
-                      Editor Masivo
+                      Añadir Varios
                     </Button>
                   </div>
                 </div>

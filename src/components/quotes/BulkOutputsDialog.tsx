@@ -1,12 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Eye, Save } from "lucide-react";
+import { Plus, Trash2, Save } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 interface OutputType {
@@ -27,7 +25,7 @@ interface BulkOutputsDialogProps {
   onSave: (outputs: BulkOutputData[]) => void;
   outputTypes: OutputType[];
   isSaving: boolean;
-  existingOutputs: any[]; // Para calcular próximos valores
+  existingOutputs: any[];
 }
 
 export function BulkOutputsDialog({ 
@@ -39,10 +37,8 @@ export function BulkOutputsDialog({
   existingOutputs = []
 }: BulkOutputsDialogProps) {
 
-  // Calcular la próxima fila basada en existentes (outputs típicamente empiezan en fila 25)
   const getNextRow = () => {
     if (existingOutputs.length === 0) return 25;
-    // Extraer números de fila de las celdas existentes (ej: "A25" -> 25)
     const existingRows = existingOutputs
       .map(output => {
         const match = output.nameCell?.match(/\d+/);
@@ -83,7 +79,6 @@ export function BulkOutputsDialog({
   };
 
   const resetForm = () => {
-    // Empezar con 3 campos vacíos listos para llenar
     const startRow = getNextRow();
     setOutputs([
       createInitialOutput(startRow),
@@ -94,14 +89,12 @@ export function BulkOutputsDialog({
 
   const handleOpenChange = (newOpen: boolean) => {
     if (newOpen) {
-      // Cuando se abre, resetear con campos nuevos
       resetForm();
     }
     onOpenChange(newOpen);
   };
 
-  // Inicializar cuando se abre el diálogo
-  React.useEffect(() => {
+  useEffect(() => {
     if (open && outputs.length === 0) {
       resetForm();
     }
@@ -111,148 +104,92 @@ export function BulkOutputsDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Editor Masivo de Datos de Salida</DialogTitle>
+          <DialogTitle>Añadir Datos de Salida Masivamente</DialogTitle>
           <DialogDescription>
-            Crea múltiples datos de salida para el producto y previsualiza antes de guardar
+            Configura múltiples datos de salida nuevos para el producto
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="editor" className="flex-1 overflow-hidden">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="editor">Editor</TabsTrigger>
-            <TabsTrigger value="preview">
-              <Eye className="h-4 w-4 mr-2" />
-              Vista Previa ({outputs.length})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="editor" className="flex-1 overflow-y-auto">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground">
-                  Configura todos los datos de salida necesarios
-                </p>
-                <Button onClick={addOutput} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Añadir Dato
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                {outputs.map((output, index) => {
-                  const currentType = outputTypes.find(type => type.id === output.outputTypeId);
-
-                  return (
-                    <Card key={index}>
-                      <CardHeader className="pb-3">
-                        <div className="flex justify-between items-center">
-                          <CardTitle className="text-sm">Dato de Salida #{index + 1}</CardTitle>
-                          {outputs.length > 1 && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeOutput(index)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="grid grid-cols-4 gap-2">
-                          <div>
-                            <Label className="text-xs">Hoja</Label>
-                            <Input
-                              value={output.sheet}
-                              onChange={(e) => updateOutput(index, 'sheet', e.target.value)}
-                              placeholder="Main"
-                              className="text-xs h-8"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-xs">Celda Rótulo</Label>
-                            <Input
-                              value={output.nameCell}
-                              onChange={(e) => updateOutput(index, 'nameCell', e.target.value)}
-                              placeholder="A25"
-                              className="text-xs h-8"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-xs">Celda Valor</Label>
-                            <Input
-                              value={output.valueCell}
-                              onChange={(e) => updateOutput(index, 'valueCell', e.target.value)}
-                              placeholder="B25"
-                              className="text-xs h-8"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-xs">Tipo</Label>
-                            <Select
-                              value={output.outputTypeId.toString()}
-                              onValueChange={(value) => updateOutput(index, 'outputTypeId', parseInt(value))}
-                            >
-                              <SelectTrigger className="text-xs h-8">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {outputTypes.map((type) => (
-                                  <SelectItem key={type.id} value={type.id.toString()}>
-                                    {type.outputType}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
+        <div className="flex-1 overflow-y-auto">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-muted-foreground">
+                {outputs.length} dato{outputs.length !== 1 ? 's' : ''} nuevo{outputs.length !== 1 ? 's' : ''}
+              </p>
+              <Button onClick={addOutput} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Añadir
+              </Button>
             </div>
-          </TabsContent>
 
-          <TabsContent value="preview" className="flex-1 overflow-y-auto">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium">Vista Previa</h3>
-                <p className="text-sm text-muted-foreground">
-                  {outputs.length} dato{outputs.length !== 1 ? 's' : ''} configurado{outputs.length !== 1 ? 's' : ''}
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                {outputs.map((output, index) => {
-                  const currentType = outputTypes.find(type => type.id === output.outputTypeId);
-
-                  return (
-                    <Card key={index}>
-                      <CardContent className="pt-4">
-                        <div className="flex justify-between items-start mb-3">
-                          <h4 className="font-medium">Dato de Salida #{index + 1}</h4>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div className="space-y-2">
-                            <div><strong>Hoja:</strong> {output.sheet}</div>
-                            <div><strong>Celda Rótulo:</strong> {output.nameCell}</div>
-                          </div>
-                          <div className="space-y-2">
-                            <div><strong>Celda Valor:</strong> {output.valueCell}</div>
-                            <div><strong>Tipo:</strong> {currentType?.outputType}</div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
+            <div className="space-y-3">
+              {outputs.map((output, index) => {
+                return (
+                  <div key={index} className="p-4 border rounded-lg">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="font-medium text-sm">Nuevo Dato de Salida #{index + 1}</h4>
+                      {outputs.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeOutput(index)}
+                          className="text-destructive hover:text-destructive h-6 w-6 p-0"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-12 gap-2 items-end">
+                      <div className="col-span-2">
+                        <Label className="text-xs">Hoja</Label>
+                        <Input
+                          value={output.sheet}
+                          onChange={(e) => updateOutput(index, 'sheet', e.target.value)}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                      <div className="col-span-3">
+                        <Label className="text-xs">Celda Rótulo</Label>
+                        <Input
+                          value={output.nameCell}
+                          onChange={(e) => updateOutput(index, 'nameCell', e.target.value)}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                      <div className="col-span-3">
+                        <Label className="text-xs">Celda Valor</Label>
+                        <Input
+                          value={output.valueCell}
+                          onChange={(e) => updateOutput(index, 'valueCell', e.target.value)}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                      <div className="col-span-4">
+                        <Label className="text-xs">Tipo</Label>
+                        <Select
+                          value={output.outputTypeId.toString()}
+                          onValueChange={(value) => updateOutput(index, 'outputTypeId', parseInt(value))}
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {outputTypes.map((type) => (
+                              <SelectItem key={type.id} value={type.id.toString()}>
+                                {type.outputType}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
 
         <Separator />
 
@@ -269,7 +206,7 @@ export function BulkOutputsDialog({
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Guardar {outputs.length} Dato{outputs.length !== 1 ? 's' : ''}
+                Guardar {outputs.length} Nuevo{outputs.length !== 1 ? 's' : ''}
               </>
             )}
           </Button>
