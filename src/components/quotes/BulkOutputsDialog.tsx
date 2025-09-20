@@ -27,6 +27,7 @@ interface BulkOutputsDialogProps {
   onSave: (outputs: BulkOutputData[]) => void;
   outputTypes: OutputType[];
   isSaving: boolean;
+  existingOutputs: any[]; // Para calcular próximos valores
 }
 
 export function BulkOutputsDialog({ 
@@ -34,26 +35,36 @@ export function BulkOutputsDialog({
   onOpenChange, 
   onSave, 
   outputTypes, 
-  isSaving 
+  isSaving,
+  existingOutputs = []
 }: BulkOutputsDialogProps) {
-  const [outputs, setOutputs] = useState<BulkOutputData[]>([
-    {
-      sheet: "Main",
-      nameCell: "A25",
-      valueCell: "B25",
-      outputTypeId: outputTypes[0]?.id || 0
-    }
-  ]);
+
+  // Calcular la próxima fila basada en existentes (outputs típicamente empiezan en fila 25)
+  const getNextRow = () => {
+    if (existingOutputs.length === 0) return 25;
+    // Extraer números de fila de las celdas existentes (ej: "A25" -> 25)
+    const existingRows = existingOutputs
+      .map(output => {
+        const match = output.nameCell?.match(/\d+/);
+        return match ? parseInt(match[0]) : 25;
+      })
+      .filter(row => !isNaN(row));
+    
+    return existingRows.length > 0 ? Math.max(...existingRows) + 1 : 25;
+  };
+
+  const createInitialOutput = (row: number) => ({
+    sheet: "Main",
+    nameCell: `A${row}`,
+    valueCell: `B${row}`,
+    outputTypeId: outputTypes[0]?.id || 0
+  });
+
+  const [outputs, setOutputs] = useState<BulkOutputData[]>([]);
 
   const addOutput = () => {
-    const nextRow = 25 + outputs.length;
-    
-    setOutputs([...outputs, {
-      sheet: "Main",
-      nameCell: `A${nextRow}`,
-      valueCell: `B${nextRow}`,
-      outputTypeId: outputTypes[0]?.id || 0
-    }]);
+    const nextRow = outputs.length === 0 ? getNextRow() : getNextRow() + outputs.length;
+    setOutputs([...outputs, createInitialOutput(nextRow)]);
   };
 
   const removeOutput = (index: number) => {
@@ -72,20 +83,29 @@ export function BulkOutputsDialog({
   };
 
   const resetForm = () => {
-    setOutputs([{
-      sheet: "Main",
-      nameCell: "A25",
-      valueCell: "B25",
-      outputTypeId: outputTypes[0]?.id || 0
-    }]);
+    // Empezar con 3 campos vacíos listos para llenar
+    const startRow = getNextRow();
+    setOutputs([
+      createInitialOutput(startRow),
+      createInitialOutput(startRow + 1),
+      createInitialOutput(startRow + 2)
+    ]);
   };
 
   const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen) {
+    if (newOpen) {
+      // Cuando se abre, resetear con campos nuevos
       resetForm();
     }
     onOpenChange(newOpen);
   };
+
+  // Inicializar cuando se abre el diálogo
+  React.useEffect(() => {
+    if (open && outputs.length === 0) {
+      resetForm();
+    }
+  }, [open, existingOutputs]);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>

@@ -34,6 +34,7 @@ interface BulkPromptsDialogProps {
   onSave: (prompts: BulkPromptData[]) => void;
   promptTypes: PromptType[];
   isSaving: boolean;
+  existingPrompts: any[]; // Para calcular próximos valores
 }
 
 export function BulkPromptsDialog({ 
@@ -41,39 +42,39 @@ export function BulkPromptsDialog({
   onOpenChange, 
   onSave, 
   promptTypes, 
-  isSaving 
+  isSaving,
+  existingPrompts = []
 }: BulkPromptsDialogProps) {
-  const [prompts, setPrompts] = useState<BulkPromptData[]>([
-    {
-      sheet: "Main",
-      promptCell: "A2",
-      valueCell: "B2",
-      promptType: promptTypes[0]?.id || 0,
-      valueRequired: false,
-      valueOptionRange: "",
-      valueQuantityAllowedDecimals: 0,
-      valueQuantityMin: 1,
-      valueQuantityMax: 9999,
-      promptSeq: 1
-    }
-  ]);
+  
+  // Calcular el próximo número de secuencia basado en existentes
+  const getNextSeq = () => {
+    if (existingPrompts.length === 0) return 1;
+    return Math.max(...existingPrompts.map(p => p.promptSeq || 0)) + 1;
+  };
+
+  // Calcular la próxima fila basada en existentes
+  const getNextRow = (seq: number) => {
+    return seq + 1; // A1, A2, etc.
+  };
+
+  const createInitialPrompt = (seq: number) => ({
+    sheet: "Main",
+    promptCell: `A${getNextRow(seq)}`,
+    valueCell: `B${getNextRow(seq)}`,
+    promptType: promptTypes[0]?.id || 0,
+    valueRequired: false,
+    valueOptionRange: "",
+    valueQuantityAllowedDecimals: 0,
+    valueQuantityMin: 1,
+    valueQuantityMax: 9999,
+    promptSeq: seq
+  });
+
+  const [prompts, setPrompts] = useState<BulkPromptData[]>([]);
 
   const addPrompt = () => {
-    const nextSeq = Math.max(...prompts.map(p => p.promptSeq)) + 1;
-    const nextRow = nextSeq + 1;
-    
-    setPrompts([...prompts, {
-      sheet: "Main",
-      promptCell: `A${nextRow}`,
-      valueCell: `B${nextRow}`,
-      promptType: promptTypes[0]?.id || 0,
-      valueRequired: false,
-      valueOptionRange: "",
-      valueQuantityAllowedDecimals: 0,
-      valueQuantityMin: 1,
-      valueQuantityMax: 9999,
-      promptSeq: nextSeq
-    }]);
+    const nextSeq = prompts.length === 0 ? getNextSeq() : Math.max(...prompts.map(p => p.promptSeq)) + 1;
+    setPrompts([...prompts, createInitialPrompt(nextSeq)]);
   };
 
   const removePrompt = (index: number) => {
@@ -92,26 +93,29 @@ export function BulkPromptsDialog({
   };
 
   const resetForm = () => {
-    setPrompts([{
-      sheet: "Main",
-      promptCell: "A2",
-      valueCell: "B2",
-      promptType: promptTypes[0]?.id || 0,
-      valueRequired: false,
-      valueOptionRange: "",
-      valueQuantityAllowedDecimals: 0,
-      valueQuantityMin: 1,
-      valueQuantityMax: 9999,
-      promptSeq: 1
-    }]);
+    // Empezar con 3 campos vacíos listos para llenar
+    const startSeq = getNextSeq();
+    setPrompts([
+      createInitialPrompt(startSeq),
+      createInitialPrompt(startSeq + 1),
+      createInitialPrompt(startSeq + 2)
+    ]);
   };
 
   const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen) {
+    if (newOpen) {
+      // Cuando se abre, resetear con campos nuevos
       resetForm();
     }
     onOpenChange(newOpen);
   };
+
+  // Inicializar cuando se abre el diálogo
+  React.useEffect(() => {
+    if (open && prompts.length === 0) {
+      resetForm();
+    }
+  }, [open, existingPrompts]);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>

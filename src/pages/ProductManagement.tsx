@@ -1639,6 +1639,7 @@ export default function ProductManagement() {
         onSave={handleBulkSavePrompts}
         promptTypes={promptTypes}
         isSaving={createPromptMutation.isPending}
+        existingPrompts={productPrompts}
       />
 
       <BulkOutputsDialog
@@ -1647,6 +1648,7 @@ export default function ProductManagement() {
         onSave={handleBulkSaveOutputs}
         outputTypes={outputTypes}
         isSaving={createOutputMutation.isPending}
+        existingOutputs={productOutputs}
       />
     </div>
   );
