@@ -202,7 +202,7 @@ const ClienteForm = () => {
                   name="integration_id"
                   value={formData.integration_id}
                   onChange={handleChange}
-                  placeholder="ID de Holded u otra integración (opcional)"
+                  placeholder="ID de app integrada (opcional)"
                 />
               </div>
 
