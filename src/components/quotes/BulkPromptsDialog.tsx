@@ -129,7 +129,7 @@ export function BulkPromptsDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Añadir Datos de Entrada Masivamente</DialogTitle>
+          <DialogTitle>Añadir datos de entrada masivos</DialogTitle>
           <DialogDescription>
             Configura múltiples datos de entrada nuevos para el producto
           </DialogDescription>
@@ -174,7 +174,6 @@ export function BulkPromptsDialog({
                         <Input
                           value={prompt.sheet}
                           onChange={(e) => updatePrompt(index, 'sheet', e.target.value)}
-                          placeholder="Ej:"
                           className="h-8 text-xs"
                         />
                       </div>
@@ -183,7 +182,6 @@ export function BulkPromptsDialog({
                         <Input
                           value={prompt.promptCell}
                           onChange={(e) => updatePrompt(index, 'promptCell', e.target.value)}
-                          placeholder="Ej:"
                           className="h-8 text-xs"
                         />
                       </div>
@@ -192,7 +190,6 @@ export function BulkPromptsDialog({
                         <Input
                           value={prompt.valueCell}
                           onChange={(e) => updatePrompt(index, 'valueCell', e.target.value)}
-                          placeholder="Ej:"
                           className="h-8 text-xs"
                         />
                       </div>
@@ -202,7 +199,6 @@ export function BulkPromptsDialog({
                           type="number"
                           value={prompt.promptSeq}
                           onChange={(e) => updatePrompt(index, 'promptSeq', parseInt(e.target.value) || 1)}
-                          placeholder="Ej:"
                           className="h-8 text-xs"
                         />
                       </div>
