@@ -134,11 +134,10 @@ export default function ProductManagement() {
     promptSeq: 1
   });
   const [newOutputData, setNewOutputData] = useState({
-    sheet: "Main",
+    sheet: "",
     prompt: "",
     defaultValue: "",
-    outputTypeId: 0,
-    orderSeq: 1
+    outputTypeId: 0
   });
   
   console.log('ProductManagement: About to call useSubscription hook');
@@ -660,11 +659,10 @@ export default function ProductManagement() {
     
     // Reset form data and open dialog
     setNewOutputData({
-      sheet: "Main",
-      prompt: `A${nextRow}`,
-      defaultValue: `B${nextRow}`,
-      outputTypeId: outputTypes[0]?.id || 0,
-      orderSeq: nextSeq
+      sheet: "",
+      prompt: "",
+      defaultValue: "",
+      outputTypeId: outputTypes[0]?.id || 0
     });
     setIsNewOutputDialogOpen(true);
   };
@@ -677,8 +675,7 @@ export default function ProductManagement() {
       outputTypeId: newOutputData.outputTypeId,
       sheet: newOutputData.sheet,
       nameCell: newOutputData.prompt,
-      valueCell: newOutputData.defaultValue,
-      orderSeq: newOutputData.orderSeq
+      valueCell: newOutputData.defaultValue
     };
 
     createOutputMutation.mutate(newOutput);
@@ -1631,14 +1628,13 @@ export default function ProductManagement() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-5 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div>
                 <Label htmlFor="outputSheet">Hoja</Label>
                 <Input
                   id="outputSheet"
                   value={newOutputData.sheet}
                   onChange={(e) => setNewOutputData({...newOutputData, sheet: e.target.value})}
-                  placeholder="ej: Main"
                 />
               </div>
               <div>
@@ -1647,7 +1643,6 @@ export default function ProductManagement() {
                   id="outputPrompt"
                   value={newOutputData.prompt}
                   onChange={(e) => setNewOutputData({...newOutputData, prompt: e.target.value})}
-                  placeholder="ej: A25"
                 />
               </div>
               <div>
@@ -1656,17 +1651,6 @@ export default function ProductManagement() {
                   id="outputDefault"
                   value={newOutputData.defaultValue}
                   onChange={(e) => setNewOutputData({...newOutputData, defaultValue: e.target.value})}
-                  placeholder="ej: B25"
-                />
-              </div>
-              <div>
-                <Label htmlFor="outputOrder">Orden</Label>
-                <Input
-                  id="outputOrder"
-                  type="number"
-                  value={newOutputData.orderSeq}
-                  onChange={(e) => setNewOutputData({...newOutputData, orderSeq: parseInt(e.target.value) || 1})}
-                  placeholder="1"
                 />
               </div>
               <div>

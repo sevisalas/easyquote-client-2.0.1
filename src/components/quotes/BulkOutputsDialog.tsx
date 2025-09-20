@@ -58,9 +58,9 @@ export function BulkOutputsDialog({
   };
 
   const createInitialOutput = (row: number) => ({
-    sheet: "Main",
-    nameCell: `A${row}`,
-    valueCell: `B${row}`,
+    sheet: "",
+    nameCell: "",
+    valueCell: "",
     outputTypeId: outputTypes[0]?.id || 0
   });
 
@@ -108,7 +108,7 @@ export function BulkOutputsDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Añadir Datos de Salida Masivamente</DialogTitle>
+          <DialogTitle>Añadir datos de salida masivos</DialogTitle>
           <DialogDescription>
             Configura múltiples datos de salida nuevos para el producto
           </DialogDescription>
