@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
 import { BulkPromptsDialog } from "@/components/quotes/BulkPromptsDialog";
 import { BulkOutputsDialog } from "@/components/quotes/BulkOutputsDialog";
+import { useSearchParams } from "react-router-dom";
 
 // Interface para productos del API de EasyQuote
 interface EasyQuoteProduct {
@@ -105,6 +106,7 @@ interface EasyQuoteExcelFile {
 
 export default function ProductManagement() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [subcategoryFilter, setSubcategoryFilter] = useState<string>("all");
@@ -483,6 +485,32 @@ export default function ProductManagement() {
   const activeProducts = products.filter(p => p.isActive);
   const inactiveProducts = products.filter(p => !p.isActive);
 
+  const handleEditProduct = (product: EasyQuoteProduct) => {
+    setSelectedProduct({ ...product });
+    
+    // Cargar categoría actual del producto
+    const mapping = getProductMapping(product.id);
+    setSelectedCategoryId(mapping?.category_id || "");
+    setSelectedSubcategoryId(mapping?.subcategory_id || "");
+    
+    setIsEditDialogOpen(true);
+  };
+
+  // Auto-open edit dialog if editProduct parameter is present
+  useEffect(() => {
+    const editProductId = searchParams.get('editProduct');
+    if (editProductId && products.length > 0) {
+      const productToEdit = products.find(p => p.id === editProductId);
+      if (productToEdit) {
+        handleEditProduct(productToEdit);
+        // Remove the parameter from URL to avoid reopening on refresh
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('editProduct');
+        setSearchParams(newSearchParams, { replace: true });
+      }
+    }
+  }, [products, searchParams, setSearchParams]);
+
   // Mutation para actualizar producto
   const updateProductMutation = useMutation({
     mutationFn: async (updatedProduct: EasyQuoteProduct) => {
@@ -524,17 +552,6 @@ export default function ProductManagement() {
       });
     }
   });
-
-  const handleEditProduct = (product: EasyQuoteProduct) => {
-    setSelectedProduct({ ...product });
-    
-    // Cargar categoría actual del producto
-    const mapping = getProductMapping(product.id);
-    setSelectedCategoryId(mapping?.category_id || "");
-    setSelectedSubcategoryId(mapping?.subcategory_id || "");
-    
-    setIsEditDialogOpen(true);
-  };
 
   const handleSaveProduct = () => {
     if (selectedProduct) {

@@ -19,6 +19,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface EasyQuoteExcelFile {
   id: string;
@@ -36,6 +37,7 @@ interface EasyQuoteExcelFile {
 export default function ExcelFiles() {
   // All hooks must be declared at the top, before any conditional logic
   const { organization, membership } = useSubscription();
+  const navigate = useNavigate();
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -312,15 +314,17 @@ export default function ExcelFiles() {
       
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Producto creado",
-        description: "El producto se ha creado correctamente.",
+        description: "El producto se ha creado correctamente. Redirigiendo para configurar datos de entrada y salida...",
       });
       setIsCreateProductDialogOpen(false);
       setNewProductData({ productName: "", excelFileId: "", currency: "EUR" });
       setNewExcelFile(null);
       setCreateProductOption("existing");
+      // Navegar a la página de productos y abrir el diálogo de edición
+      navigate(`/admin/productos?editProduct=${data.id}`);
     },
     onError: (error) => {
       toast({
@@ -390,10 +394,10 @@ export default function ExcelFiles() {
       
       return productResponse.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Producto creado",
-        description: "El archivo Excel se subió y el producto se creó correctamente.",
+        description: "El archivo Excel se subió y el producto se creó correctamente. Redirigiendo para configurar datos de entrada y salida...",
       });
       setIsCreateProductDialogOpen(false);
       setNewProductData({ productName: "", excelFileId: "", currency: "EUR" });
@@ -401,6 +405,8 @@ export default function ExcelFiles() {
       setCreateProductOption("existing");
       // Refresh files list
       queryClient.invalidateQueries({ queryKey: ["easyquote-excel-files"] });
+      // Navegar a la página de productos y abrir el diálogo de edición
+      navigate(`/admin/productos?editProduct=${data.id}`);
     },
     onError: (error) => {
       toast({
