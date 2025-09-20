@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDropzone } from "react-dropzone";
 import { toast } from "@/hooks/use-toast";
 import { Download, FileSpreadsheet, Plus, Trash2, Upload, AlertCircle, CheckCircle2, Package, Edit, Crown, Copy, Check } from "lucide-react";
@@ -18,6 +19,8 @@ import { Separator } from "@/components/ui/separator";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
+import { BulkPromptsDialog } from "@/components/quotes/BulkPromptsDialog";
+import { BulkOutputsDialog } from "@/components/quotes/BulkOutputsDialog";
 
 interface EasyQuoteExcelFile {
   id: string;
@@ -33,10 +36,9 @@ interface EasyQuoteExcelFile {
 }
 
 export default function ExcelFiles() {
-  // All hooks must be declared at the top, before any conditional logic
   const { organization, membership } = useSubscription();
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFileForUpload, setSelectedFileForUpload] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedExcelFile, setSelectedExcelFile] = useState<EasyQuoteExcelFile | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
@@ -44,11 +46,18 @@ export default function ExcelFiles() {
   const [isUpdateExcelDialogOpen, setIsUpdateExcelDialogOpen] = useState(false);
   const [selectedFileForUpdate, setSelectedFileForUpdate] = useState<File | null>(null);
   const [includeInactive, setIncludeInactive] = useState(false);
-  const [newProductData, setNewProductData] = useState({
-    productName: "",
-    excelFileId: "",
-    currency: "USD"
+  
+  // Product creation state
+  const [newProductData, setNewProductData] = useState({ 
+    productName: "", 
+    excelFileId: "", 
+    currency: ""
   });
+  const [selectedFileForProduct, setSelectedFileForProduct] = useState<File | null>(null);
+  const [createdProduct, setCreatedProduct] = useState<any>(null);
+  const [currentStep, setCurrentStep] = useState("basic");
+  const [isBulkPromptsDialogOpen, setIsBulkPromptsDialogOpen] = useState(false);
+  const [isBulkOutputsDialogOpen, setIsBulkOutputsDialogOpen] = useState(false);
   
   // Get the subscriber ID from the EasyQuote token
   const getSubscriberIdFromToken = () => {
@@ -56,7 +65,6 @@ export default function ExcelFiles() {
     if (!token) return null;
     
     try {
-      // Decode JWT token to get subscriber ID
       const payload = JSON.parse(atob(token.split('.')[1]));
       return payload.SubscriberID || null;
     } catch (error) {
@@ -66,40 +74,32 @@ export default function ExcelFiles() {
   };
 
   const subscriberId = getSubscriberIdFromToken();
-  const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
-  
   const queryClient = useQueryClient();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { isSuperAdmin, isOrgAdmin } = useSubscription();
 
-  // Fetch Excel file metadata from Supabase
-  const { data: excelFilesMeta } = useQuery({
-    queryKey: ["excel-files-meta"],
+  // Get user's files from local Supabase
+  const { data: files = [] } = useQuery({
+    queryKey: ["excel-files"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("excel_files")
-        .select("*");
-      
-      if (error) {
-        console.error("Error fetching excel files meta:", error);
-        return [];
-      }
-      return data;
-    },
-    enabled: hasToken
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    }
   });
 
-  // Fetch Excel files from EasyQuote API
-  const { data: files = [], isLoading, error, refetch } = useQuery({
-    queryKey: ["easyquote-excel-files"],
+  // Get files from EasyQuote API
+  const { data: easyQuoteFiles, refetch, isLoading, error } = useQuery({
+    queryKey: ["easyquote-files", includeInactive],
     queryFn: async () => {
       const token = localStorage.getItem("easyquote_token");
       if (!token) {
-        throw new Error("No hay token de EasyQuote disponible");
+        throw new Error("No EasyQuote token available");
       }
 
       const response = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
-        method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json"
@@ -107,133 +107,59 @@ export default function ExcelFiles() {
       });
 
       if (!response.ok) {
-        throw new Error("Error al obtener archivos Excel");
+        throw new Error("Failed to fetch files from EasyQuote");
       }
 
       const data = await response.json();
-      return data as EasyQuoteExcelFile[];
+      return includeInactive ? data : data.filter((file: EasyQuoteExcelFile) => file.isActive);
     },
-    enabled: hasToken,
-    retry: (failureCount, error: any) => {
-      if (error?.message?.includes("401")) {
-        return false;
-      }
-      return failureCount < 3;
-    }
+    enabled: !!localStorage.getItem("easyquote_token")
   });
-
-  // Sync Excel files with Supabase
-  const syncExcelFiles = async (apiFiles: EasyQuoteExcelFile[]) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    // Sync each file with Supabase
-    for (const file of apiFiles) {
-      const { data: existingFile } = await supabase
-        .from("excel_files")
-        .select("*")
-        .eq("file_id", file.id)
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!existingFile) {
-        // Create new file record
-        await supabase
-          .from("excel_files")
-          .insert({
-            user_id: user.id,
-            file_id: file.id,
-            filename: file.fileName,
-            original_filename: file.fileName,
-            file_size: 0,
-        is_master: false
-          });
-      }
-    }
-    // Refresh metadata after sync
-    queryClient.invalidateQueries({ queryKey: ["excel-files-meta"] });
-  };
-
-  // Generate public URL for master files
-  const generatePublicUrl = (fileId: string, fileName: string) => {
-    if (!subscriberId) return null;
-    return `https://sheets.easyquote.cloud/${subscriberId}/${fileId}/${encodeURIComponent(fileName)}`;
-  };
-
-  // Combine API files with Supabase metadata and filter by active status
-  const filesWithMeta = files.map(file => {
-    const meta = excelFilesMeta?.find(m => m.file_id === file.id);
-    const isMaster = meta?.is_master || false;
-    const fileUrl = isMaster ? generatePublicUrl(file.id, file.fileName) : null;
-    return {
-      ...file,
-      isMaster,
-      fileUrl
-    };
-  });
-
-  // Filter files based on includeInactive setting
-  const filteredFiles = includeInactive 
-    ? filesWithMeta 
-    : filesWithMeta.filter(file => file.isActive);
-
-  // Auto-sync files when they are loaded
-  useEffect(() => {
-    if (files.length > 0) {
-      syncExcelFiles(files);
-    }
-  }, [files]);
 
   // Upload Excel file to EasyQuote API
-  const uploadMutation = useMutation({
+  const uploadToEasyQuoteMutation = useMutation({
     mutationFn: async (file: File) => {
-      if (!file) throw new Error("No file selected");
-      
       const token = localStorage.getItem("easyquote_token");
-      if (!token) {
-        throw new Error("No hay token de EasyQuote disponible");
-      }
+      if (!token) throw new Error("No token available");
 
-      // Convert file to base64
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
-        reader.readAsDataURL(file);
         reader.onload = () => {
           const result = reader.result as string;
-          // Remove the data URL prefix (data:application/...;base64,)
-          const base64Data = result.split(',')[1];
-          resolve(base64Data);
+          const base64String = result.split(',')[1];
+          resolve(base64String);
         };
         reader.onerror = reject;
+        reader.readAsDataURL(file);
       });
 
       const response = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
           fileName: file.name,
-          fileContent: base64
+          file: base64
         })
       });
 
       if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Error al subir archivo: ${errorData}`);
+        const errorText = await response.text();
+        throw new Error(`Error uploading file: ${errorText}`);
       }
-
+      
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (uploadedFile) => {
       toast({
-        title: "Archivo subido exitosamente",
-        description: `El archivo ${data.fileName} se ha subido correctamente.`,
+        title: "Archivo subido",
+        description: "El archivo Excel se ha subido correctamente.",
       });
-      queryClient.invalidateQueries({ queryKey: ["easyquote-excel-files"] });
-      setIsUploadDialogOpen(false);
-      setSelectedFile(null);
+      setNewProductData(prev => ({ ...prev, excelFileId: uploadedFile.id }));
+      setSelectedFileForProduct(null);
+      refetch();
     },
     onError: (error) => {
       toast({
@@ -244,47 +170,9 @@ export default function ExcelFiles() {
     }
   });
 
-  // Delete file from EasyQuote API
-  const deleteMutation = useMutation({
-    mutationFn: async (fileId: string) => {
-      const token = localStorage.getItem("easyquote_token");
-      if (!token) {
-        throw new Error("No hay token de EasyQuote disponible");
-      }
-
-      const response = await fetch(`https://api.easyquote.cloud/api/v1/excelfiles/${fileId}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al eliminar archivo");
-      }
-
-      return fileId;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Archivo eliminado",
-        description: "El archivo se ha marcado como inactivo correctamente.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["easyquote-excel-files"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error al eliminar archivo",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Create new product with Excel file
+  // Create product mutation
   const createProductMutation = useMutation({
-    mutationFn: async (productData: { productName: string; excelFileId: string; currency: string }) => {
+    mutationFn: async (productData: { productName: string; excelFileId: string; currency?: string }) => {
       const token = localStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
@@ -296,7 +184,7 @@ export default function ExcelFiles() {
         },
         body: JSON.stringify({
           productName: productData.productName,
-          excelFileId: productData.excelFileId,
+          excelfileId: productData.excelFileId,
           currency: productData.currency,
           isActive: true
         })
@@ -309,13 +197,60 @@ export default function ExcelFiles() {
       
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (product) => {
       toast({
         title: "Producto creado",
-        description: "El producto se ha creado correctamente.",
+        description: "El producto base se ha creado correctamente. Ahora puedes añadir datos de entrada y salida.",
       });
-      setIsCreateProductDialogOpen(false);
-      setNewProductData({ productName: "", excelFileId: "", currency: "USD" });
+      setCreatedProduct(product);
+      setCurrentStep("inputs");
+    },
+    onError: (error) => {
+      toast({
+        title: "Error al crear producto",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Regular upload mutation for file management
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      setIsUploading(true);
+      
+      const { data, error } = await supabase.storage
+        .from("excel-files")
+        .upload(`${Date.now()}_${file.name}`, file);
+
+      if (error) throw error;
+
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Usuario no autenticado");
+
+      const { error: dbError } = await supabase
+        .from("excel_files")
+        .insert({
+          filename: file.name,
+          original_filename: file.name,
+          file_size: file.size,
+          mime_type: file.type,
+          file_id: data.path,
+          user_id: userData.user.id
+        });
+
+      if (dbError) throw dbError;
+
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Éxito",
+        description: "Archivo subido correctamente",
+      });
+      setIsUploadDialogOpen(false);
+      setSelectedFileForUpload(null);
+      queryClient.invalidateQueries({ queryKey: ["excel-files"] });
     },
     onError: (error) => {
       toast({
@@ -323,293 +258,158 @@ export default function ExcelFiles() {
         description: error.message,
         variant: "destructive",
       });
-    }
-  });
-
-  // Update Excel file
-  const updateExcelMutation = useMutation({
-    mutationFn: async ({ fileId, file }: { fileId: string; file: File }) => {
-      if (!file) throw new Error("No file selected");
-      
-      const token = localStorage.getItem("easyquote_token");
-      if (!token) throw new Error("No token available");
-
-      // Convert file to base64
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => {
-          const result = reader.result as string;
-          // Remove the data URL prefix (data:application/...;base64,)
-          const base64Data = result.split(',')[1];
-          resolve(base64Data);
-        };
-        reader.onerror = reject;
-      });
-
-      const response = await fetch(`https://api.easyquote.cloud/api/v1/excelfiles/${fileId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          fileName: file.name,
-          fileContent: base64
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error updating Excel file: ${errorText}`);
-      }
-      
-      const result = await response.json();
-      return { oldFileId: fileId, newFileId: result.id, fileName: file.name };
     },
-    onSuccess: async (data) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user && data.oldFileId !== data.newFileId) {
-        // Update the file_id in Supabase to reflect the new ID from EasyQuote
-        await supabase
-          .from("excel_files")
-          .update({ 
-            file_id: data.newFileId,
-            original_filename: data.fileName,
-            filename: data.fileName 
-          })
-          .eq("file_id", data.oldFileId)
-          .eq("user_id", user.id);
-      }
-
-      toast({
-        title: "Archivo Excel actualizado",
-        description: data.oldFileId !== data.newFileId 
-          ? "El archivo se actualizó y se generó un nuevo ID. Las URLs se han actualizado automáticamente."
-          : "El archivo Excel se ha actualizado correctamente.",
-      });
-      setIsUpdateExcelDialogOpen(false);
-      setSelectedFileForUpdate(null);
-      queryClient.invalidateQueries({ queryKey: ["easyquote-excel-files"] });
-      queryClient.invalidateQueries({ queryKey: ["excel-files-meta"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error al actualizar archivo",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Dropzone config
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: {
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
-      "application/vnd.ms-excel": [".xls"],
-      "text/csv": [".csv"]
-    },
-    maxFiles: 1,
-    onDrop: (acceptedFiles) => {
-      if (acceptedFiles.length > 0) {
-        setSelectedFile(acceptedFiles[0]);
-      }
-    }
-  });
-
-  // Dropzone config for Excel file updates
-  const { getRootProps: getUpdateRootProps, getInputProps: getUpdateInputProps, isDragActive: isUpdateDragActive } = useDropzone({
-    accept: {
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
-      "application/vnd.ms-excel": [".xls"]
-    },
-    maxFiles: 1,
-    onDrop: (acceptedFiles) => {
-      if (acceptedFiles.length > 0) {
-        setSelectedFileForUpdate(acceptedFiles[0]);
-      }
-    }
-  });
-
-  // Now conditional logic can happen after all hooks are declared
-  
-  // Check permissions
-  if (!isSuperAdmin && !isOrgAdmin) {
-    return (
-      <div className="container mx-auto py-10">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Acceso denegado</AlertTitle>
-          <AlertDescription>
-            Solo los administradores pueden acceder a esta sección.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  const handleUpload = async () => {
-    if (!selectedFile) return;
-    
-    setIsUploading(true);
-    try {
-      await uploadMutation.mutateAsync(selectedFile);
-    } finally {
+    onSettled: () => {
       setIsUploading(false);
     }
+  });
+
+  // Delete file mutation
+  const deleteFileMutation = useMutation({
+    mutationFn: async (file: any) => {
+      if (file.file_id) {
+        const { error: storageError } = await supabase.storage
+          .from("excel-files")
+          .remove([file.file_id]);
+
+        if (storageError) throw storageError;
+      }
+
+      const { error: dbError } = await supabase
+        .from("excel_files")
+        .delete()
+        .eq("id", file.id);
+
+      if (dbError) throw dbError;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Éxito",
+        description: "Archivo eliminado correctamente",
+      });
+      queryClient.invalidateQueries({ queryKey: ["excel-files"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error al eliminar archivo",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Handle file selection for product creation
+  const handleFileSelectForProduct = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFileForProduct(file);
+    }
   };
 
-  const formatFileSize = (sizeKb: number) => {
-    if (!sizeKb || sizeKb === 0) return "0 KB";
-    if (sizeKb < 1024) return `${sizeKb} KB`;
-    const sizeMb = sizeKb / 1024;
-    if (sizeMb < 1024) return `${sizeMb.toFixed(1)} MB`;
-    const sizeGb = sizeMb / 1024;
-    return `${sizeGb.toFixed(2)} GB`;
+  const handleFileUploadForProduct = () => {
+    if (selectedFileForProduct) {
+      uploadToEasyQuoteMutation.mutate(selectedFileForProduct);
+    }
   };
 
-  // Fetch file details
-  const fetchFileDetails = async (fileId: string) => {
-    const token = localStorage.getItem("easyquote_token");
-    if (!token) return;
+  const handleCreateProduct = () => {
+    if (newProductData.productName && newProductData.excelFileId) {
+      createProductMutation.mutate(newProductData);
+    }
+  };
+
+  const handleBulkSavePrompts = async (prompts: any[]) => {
+    console.log("Saving prompts:", prompts);
+    setCurrentStep("outputs");
+  };
+
+  const handleBulkSaveOutputs = async (outputs: any[]) => {
+    console.log("Saving outputs:", outputs);
+    setIsCreateProductDialogOpen(false);
+    setCreatedProduct(null);
+    setCurrentStep("basic");
+    setNewProductData({ productName: "", excelFileId: "", currency: "" });
+  };
+
+  const onDrop = (acceptedFiles: File[]) => {
+    if (acceptedFiles.length > 0) {
+      setSelectedFileForUpload(acceptedFiles[0]);
+    }
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'application/vnd.ms-excel': ['.xls']
+    },
+    multiple: false
+  });
+
+  const handleDownload = async (file: any) => {
+    if (!file.file_id) return;
 
     try {
-      const response = await fetch(`https://api.easyquote.cloud/api/v1/excelfiles/${fileId}`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
+      const { data, error } = await supabase.storage
+        .from("excel-files")
+        .download(file.file_id);
 
-      if (response.ok) {
-        const data = await response.json();
-        setSelectedExcelFile(data);
-        setIsDetailsDialogOpen(true);
-      }
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.original_filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (error) {
       toast({
         title: "Error",
-        description: "No se pudieron obtener los detalles del archivo",
+        description: "No se pudo descargar el archivo",
         variant: "destructive",
       });
     }
   };
 
-  // Download file from EasyQuote API
-  const downloadFile = async (fileId: string, fileName: string) => {
+  const handleSetMaster = async (fileId: string) => {
+    try {
+      // First, unset all master files
+      await supabase
+        .from("excel_files")
+        .update({ is_master: false })
+        .neq("id", "");
 
-    const token = localStorage.getItem("easyquote_token");
-    if (!token) {
+      // Then set the selected file as master
+      const { error } = await supabase
+        .from("excel_files")
+        .update({ is_master: true })
+        .eq("file_id", fileId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Archivo maestro actualizado",
+      });
+      queryClient.invalidateQueries({ queryKey: ["excel-files"] });
+    } catch (error) {
       toast({
         title: "Error",
-        description: "No hay token de autenticación",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      // Try the direct download endpoint first
-      let response = await fetch(`https://api.easyquote.cloud/api/v1/excelfiles/${fileId}/download`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        }
-      });
-
-      // If 404, try alternative endpoint
-      if (response.status === 404) {
-        response = await fetch(`https://api.easyquote.cloud/api/v1/excelfiles/${fileId}`, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          }
-        });
-      }
-
-      if (response.ok) {
-        const blob = await response.blob();
-        
-        // Check if we actually got a file
-        if (blob.size === 0) {
-          throw new Error("El archivo está vacío");
-        }
-
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        
-        // Cleanup
-        setTimeout(() => {
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(link);
-        }, 100);
-        
-        toast({
-          title: "Archivo descargado",
-          description: `El archivo ${fileName} se ha descargado correctamente.`,
-        });
-      } else {
-        const errorText = await response.text();
-        console.error("Download error:", response.status, errorText);
-        
-        toast({
-          title: "Error al descargar",
-          description: `Error ${response.status}: El servicio de descarga no está disponible en este momento.`,
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Download error:", error);
-      toast({
-        title: "Error de descarga",
-        description: "No se pudo descargar el archivo. Verifique su conexión e intente nuevamente.",
+        description: "No se pudo establecer como archivo maestro",
         variant: "destructive",
       });
     }
   };
 
-
-  if (!hasToken) {
-    return (
-      <div className="container mx-auto py-10">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Sesión requerida</AlertTitle>
-          <AlertDescription>
-            Para gestionar archivos Excel, necesitas iniciar sesión en EasyQuote desde la página de presupuestos.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto py-10">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            No se pudieron cargar los archivos: {error.message}
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+  const masterFile = files.find(file => file.is_master);
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold">Gestión de Archivos Excel</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Archivos Excel</h1>
           <p className="text-muted-foreground mt-2">
             Administra archivos Excel desde EasyQuote para tus productos
           </p>
@@ -619,70 +419,157 @@ export default function ExcelFiles() {
             <DialogTrigger asChild>
               <Button variant="outline">
                 <Package className="h-4 w-4 mr-2" />
-                Crear Producto
+                Crear producto
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-4xl">
               <DialogHeader>
                 <DialogTitle>Crear nuevo producto</DialogTitle>
                 <DialogDescription>
-                  Crea un nuevo producto utilizando uno de tus archivos Excel existentes.
+                  Sigue los pasos para crear un producto completo con datos de entrada y salida.
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="productName">Nombre del producto</Label>
-                  <Input
-                    id="productName"
-                    value={newProductData.productName}
-                    onChange={(e) => setNewProductData(prev => ({ ...prev, productName: e.target.value }))}
-                    placeholder="Introduce el nombre del producto"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="excelFileId">Archivo Excel</Label>
-                  <Select 
-                    value={newProductData.excelFileId} 
-                    onValueChange={(value) => setNewProductData(prev => ({ ...prev, excelFileId: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un archivo Excel" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filesWithMeta.filter(f => f.isActive).map((file) => (
-                        <SelectItem key={file.id} value={file.id}>
-                          {file.fileName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="currency">Moneda</Label>
-                  <Select 
-                    value={newProductData.currency} 
-                    onValueChange={(value) => setNewProductData(prev => ({ ...prev, currency: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                      <SelectItem value="GBP">GBP</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  onClick={() => createProductMutation.mutate(newProductData)}
-                  disabled={!newProductData.productName || !newProductData.excelFileId || createProductMutation.isPending}
-                  className="w-full"
-                >
-                  {createProductMutation.isPending ? "Creando..." : "Crear Producto"}
-                </Button>
-              </DialogFooter>
+              
+              <Tabs value={currentStep} onValueChange={setCurrentStep} className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="basic">1. Datos básicos</TabsTrigger>
+                  <TabsTrigger value="inputs" disabled={!createdProduct}>2. Datos entrada</TabsTrigger>
+                  <TabsTrigger value="outputs" disabled={!createdProduct}>3. Datos salida</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="basic" className="space-y-4">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="productName">Nombre del producto *</Label>
+                      <Input
+                        id="productName"
+                        value={newProductData.productName}
+                        onChange={(e) => setNewProductData(prev => ({ ...prev, productName: e.target.value }))}
+                        placeholder="Ingresa el nombre del producto"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Archivo Excel *</Label>
+                      <Tabs defaultValue="existing" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="existing">Usar existente</TabsTrigger>
+                          <TabsTrigger value="upload">Subir nuevo</TabsTrigger>
+                        </TabsList>
+                        
+                        <TabsContent value="existing">
+                          <Select 
+                            value={newProductData.excelFileId} 
+                            onValueChange={(value) => setNewProductData(prev => ({ ...prev, excelFileId: value }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecciona un archivo Excel" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {easyQuoteFiles?.filter(file => file.isActive && file.isPlanCompliant).map((file) => (
+                                <SelectItem key={file.id} value={file.id}>
+                                  {file.fileName} ({file.fileSizeKb}KB)
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TabsContent>
+                        
+                        <TabsContent value="upload">
+                          <div className="space-y-2">
+                            <Input
+                              type="file"
+                              accept=".xlsx,.xls"
+                              onChange={handleFileSelectForProduct}
+                              disabled={uploadToEasyQuoteMutation.isPending}
+                            />
+                            {selectedFileForProduct && (
+                              <p className="text-sm text-muted-foreground">
+                                Archivo seleccionado: {selectedFileForProduct.name}
+                              </p>
+                            )}
+                            <Button
+                              onClick={handleFileUploadForProduct}
+                              disabled={!selectedFileForProduct || uploadToEasyQuoteMutation.isPending}
+                              variant="outline"
+                              size="sm"
+                            >
+                              {uploadToEasyQuoteMutation.isPending ? "Subiendo..." : "Subir archivo"}
+                            </Button>
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="currency">Moneda</Label>
+                      <Select 
+                        value={newProductData.currency} 
+                        onValueChange={(value) => setNewProductData(prev => ({ ...prev, currency: value || undefined }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona una moneda" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="USD">USD - Dólar estadounidense</SelectItem>
+                          <SelectItem value="EUR">EUR - Euro</SelectItem>
+                          <SelectItem value="GBP">GBP - Libra esterlina</SelectItem>
+                          <SelectItem value="JPY">JPY - Yen japonés</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsCreateProductDialogOpen(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={handleCreateProduct}
+                      disabled={!newProductData.productName || !newProductData.excelFileId || createProductMutation.isPending}
+                    >
+                      {createProductMutation.isPending ? "Creando..." : "Crear producto"}
+                    </Button>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="inputs" className="space-y-4">
+                  <div className="text-center py-4">
+                    <h3 className="text-lg font-medium mb-2">Añadir datos de entrada</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Ahora puedes añadir los campos de entrada para tu producto "{createdProduct?.productName}"
+                    </p>
+                    <Button onClick={() => setIsBulkPromptsDialogOpen(true)}>
+                      Configurar datos de entrada
+                    </Button>
+                    <div className="mt-4">
+                      <Button variant="outline" onClick={() => setCurrentStep("outputs")}>
+                        Saltar este paso
+                      </Button>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="outputs" className="space-y-4">
+                  <div className="text-center py-4">
+                    <h3 className="text-lg font-medium mb-2">Añadir datos de salida</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Configura los campos de salida para tu producto "{createdProduct?.productName}"
+                    </p>
+                    <Button onClick={() => setIsBulkOutputsDialogOpen(true)}>
+                      Configurar datos de salida
+                    </Button>
+                    <div className="mt-4">
+                      <Button variant="outline" onClick={() => handleBulkSaveOutputs([])}>
+                        Finalizar producto
+                      </Button>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </DialogContent>
           </Dialog>
           
@@ -690,45 +577,41 @@ export default function ExcelFiles() {
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                Subir Archivo
+                Subir archivo
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Subir archivo Excel</DialogTitle>
                 <DialogDescription>
-                  Selecciona un archivo Excel (.xlsx, .xls) o CSV para subir a EasyQuote.
+                  Sube un archivo Excel para gestión local.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div
                   {...getRootProps()}
-                  className={`
-                    border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-                    ${isDragActive ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"}
-                  `}
+                  className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-muted-foreground/50 transition-colors"
                 >
                   <input {...getInputProps()} />
                   <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
                     {isDragActive
                       ? "Suelta el archivo aquí..."
-                      : "Arrastra un archivo aquí o haz clic para seleccionar"
+                      : "Arrastra un archivo Excel aquí o haz clic para seleccionar"
                     }
                   </p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Formatos soportados: .xlsx, .xls, .csv
-                  </p>
                 </div>
-
-                {selectedFile && (
-                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                    <FileSpreadsheet className="h-4 w-4" />
-                    <span className="text-sm flex-1">{selectedFile.name}</span>
+                
+                {selectedFileForUpload && (
+                  <div className="flex items-center justify-between p-2 bg-muted rounded">
+                    <div className="flex items-center space-x-2">
+                      <FileSpreadsheet className="h-4 w-4" />
+                      <span className="text-sm">{selectedFileForUpload.name}</span>
+                    </div>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setSelectedFile(null)}
+                      onClick={() => setSelectedFileForUpload(null)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -737,11 +620,11 @@ export default function ExcelFiles() {
               </div>
               <DialogFooter>
                 <Button
-                  onClick={handleUpload}
-                  disabled={!selectedFile || isUploading}
+                  onClick={() => selectedFileForUpload && uploadMutation.mutate(selectedFileForUpload)}
+                  disabled={!selectedFileForUpload || isUploading}
                   className="w-full"
                 >
-                  {isUploading ? "Subiendo..." : "Subir a EasyQuote"}
+                  {isUploading ? "Subiendo..." : "Subir archivo"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -749,294 +632,203 @@ export default function ExcelFiles() {
         </div>
       </div>
 
-      <Separator />
+      {masterFile && (
+        <Alert>
+          <Crown className="h-4 w-4" />
+          <AlertTitle>Archivo Maestro Activo</AlertTitle>
+          <AlertDescription>
+            El archivo <strong>{masterFile.filename}</strong> está configurado como archivo maestro.
+          </AlertDescription>
+        </Alert>
+      )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid gap-6 md:grid-cols-2">
+        
+        
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total archivos</CardTitle>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5" />
+              Archivos EasyQuote
+            </CardTitle>
+            <CardDescription>
+              Archivos Excel sincronizados desde tu cuenta de EasyQuote
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{files.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Activos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {files.filter(f => f.isActive).length}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="includeInactive"
+                  checked={includeInactive}
+                  onCheckedChange={setIncludeInactive}
+                />
+                <Label htmlFor="includeInactive" className="text-sm">
+                  Incluir inactivos
+                </Label>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                disabled={isLoading}
+              >
+                Actualizar
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Inactivos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {files.filter(f => !f.isActive).length}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Files Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Archivos Excel</CardTitle>
-              <CardDescription>
-                Lista de archivos Excel disponibles en EasyQuote
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="include-inactive" className="text-sm font-medium">
-                Mostrar inactivos
-              </Label>
-              <Switch
-                id="include-inactive"
-                checked={includeInactive}
-                onCheckedChange={setIncludeInactive}
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Cargando archivos...</p>
-            </div>
-          ) : filteredFiles.length === 0 ? (
-            <div className="text-center py-8">
-              <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">
-                {!includeInactive && files.some(f => !f.isActive) 
-                  ? "No hay archivos activos" 
-                  : "No hay archivos en EasyQuote"
-                }
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {!includeInactive && files.some(f => !f.isActive)
-                  ? "Activa el switch 'Mostrar inactivos' para ver todos los archivos"
-                  : "Sube tu primer archivo Excel para comenzar"
-                }
-              </p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nombre archivo</TableHead>
-                  <TableHead>Tamaño</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="w-24">Cumple requisitos</TableHead>
-                  <TableHead>Última modificación</TableHead>
-                  <TableHead className="text-center">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredFiles.map((file) => (
-                  <TableRow key={file.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <FileSpreadsheet className="h-4 w-4" />
-                        {file.fileName}
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>
+                  {error.message}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {isLoading ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">Cargando archivos...</p>
+              </div>
+            ) : easyQuoteFiles && easyQuoteFiles.length > 0 ? (
+              <div className="space-y-2">
+                {easyQuoteFiles.map((file) => (
+                  <Card key={file.id} className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium text-sm">{file.fileName}</span>
+                          {!file.isActive && (
+                            <Badge variant="secondary" className="text-xs">
+                              Inactivo
+                            </Badge>
+                          )}
+                          {!file.isPlanCompliant && (
+                            <Badge variant="destructive" className="text-xs">
+                              No compatible
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {file.fileSizeKb}KB • {formatDistanceToNow(new Date(file.dateModified), { 
+                            addSuffix: true,
+                            locale: es 
+                          })}
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell>{formatFileSize(file.fileSizeKb)}</TableCell>
-                    <TableCell>
-                      <Badge variant={file.isActive ? "default" : "secondary"}>
-                        {file.isActive ? (
-                          <>
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            Activo
-                          </>
-                        ) : (
-                          <>
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            Inactivo
-                          </>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  No hay archivos disponibles en EasyQuote
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5" />
+              Archivos Locales ({files.length})
+            </CardTitle>
+            <CardDescription>
+              Archivos subidos directamente a la aplicación
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {files.length > 0 ? (
+              <div className="space-y-2">
+                {files.map((file) => (
+                  <Card key={file.id} className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium text-sm">{file.original_filename}</span>
+                          {file.is_master && (
+                            <Badge className="text-xs">
+                              <Crown className="h-3 w-3 mr-1" />
+                              Maestro
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {Math.round(file.file_size / 1024)}KB • {formatDistanceToNow(new Date(file.created_at), { 
+                            addSuffix: true,
+                            locale: es 
+                          })}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {!file.is_master && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSetMaster(file.file_id)}
+                            title="Establecer como maestro"
+                          >
+                            <Crown className="h-4 w-4" />
+                          </Button>
                         )}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="w-24">
-                      <Badge variant={file.isPlanCompliant ? "success" : "destructive"} className="text-xs">
-                        {file.isPlanCompliant ? (
-                          <>
-                            <Check className="h-3 w-3 mr-1" />
-                            Sí
-                          </>
-                        ) : (
-                          <>
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            No
-                          </>
-                        )}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {formatDistanceToNow(new Date(file.dateModified), {
-                        addSuffix: true,
-                        locale: es
-                      })}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => downloadFile(file.id, file.fileName)}
+                          onClick={() => handleDownload(file)}
+                          title="Descargar"
                         >
                           <Download className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            setSelectedExcelFile(file);
-                            setIsUpdateExcelDialogOpen(true);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteMutation.mutate(file.id)}
-                          disabled={deleteMutation.isPending}
+                          onClick={() => deleteFileMutation.mutate(file)}
+                          title="Eliminar"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </Card>
                 ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* File Details Dialog */}
-      <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Detalles del Archivo Excel</DialogTitle>
-            <DialogDescription>
-              Información detallada del archivo y sus hojas de trabajo
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedExcelFile && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Nombre del Archivo</Label>
-                  <p className="text-sm font-medium">{selectedExcelFile.fileName}</p>
-                </div>
-                <div>
-                  <Label>ID del Archivo</Label>
-                  <p className="text-sm font-mono">{selectedExcelFile.id}</p>
-                </div>
               </div>
-              
-              <div>
-                <Label>Estado</Label>
-                <div className="mt-1">
-                  <Badge variant={selectedExcelFile.isActive ? "default" : "secondary"}>
-                    {selectedExcelFile.isActive ? "Activo" : "Inactivo"}
-                  </Badge>
-                </div>
-              </div>
-
-              {selectedExcelFile.excelfilesSheets && selectedExcelFile.excelfilesSheets.length > 0 && (
-                <div>
-                  <Label>Hojas de Trabajo ({selectedExcelFile.excelfilesSheets.length})</Label>
-                  <div className="mt-2 space-y-2">
-                    {selectedExcelFile.excelfilesSheets.map((sheet, index) => (
-                      <div key={index} className="p-3 border rounded-lg">
-                        <div className="text-sm font-medium">{sheet.name || `Hoja ${index + 1}`}</div>
-                        {sheet.description && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {sheet.description}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Update Excel File Dialog */}
-      <Dialog open={isUpdateExcelDialogOpen} onOpenChange={setIsUpdateExcelDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Actualizar Archivo Excel</DialogTitle>
-            <DialogDescription>
-              Actualiza el archivo Excel "{selectedExcelFile?.fileName}" con uno nuevo.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div
-              {...getUpdateRootProps()}
-              className={`
-                border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-                ${isUpdateDragActive ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"}
-              `}
-            >
-              <input {...getUpdateInputProps()} />
-              <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                {isUpdateDragActive
-                  ? "Suelta el archivo aquí..."
-                  : "Arrastra un archivo aquí o haz clic para seleccionar"
-                }
-              </p>
-              <p className="text-xs text-muted-foreground mt-2">
-                Formatos soportados: .xlsx, .xls
-              </p>
-            </div>
-
-            {selectedFileForUpdate && (
-              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                <FileSpreadsheet className="h-4 w-4" />
-                <span className="text-sm flex-1">{selectedFileForUpdate.name}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedFileForUpdate(null)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+            ) : (
+              <div className="text-center py-8">
+                <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  No tienes archivos subidos
+                </p>
               </div>
             )}
-          </div>
-          <DialogFooter>
-            <Button
-              onClick={() => {
-                if (selectedFileForUpdate && selectedExcelFile?.id) {
-                  updateExcelMutation.mutate({ 
-                    fileId: selectedExcelFile.id, 
-                    file: selectedFileForUpdate 
-                  });
-                }
-              }}
-              disabled={!selectedFileForUpdate || updateExcelMutation.isPending}
-              className="w-full"
-            >
-              {updateExcelMutation.isPending ? "Actualizando..." : "Actualizar Archivo"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Bulk dialogs for prompts and outputs */}
+      <BulkPromptsDialog
+        open={isBulkPromptsDialogOpen}
+        onOpenChange={setIsBulkPromptsDialogOpen}
+        onSave={handleBulkSavePrompts}
+        promptTypes={[]}
+        isSaving={false}
+        existingPrompts={[]}
+      />
+
+      <BulkOutputsDialog
+        open={isBulkOutputsDialogOpen}
+        onOpenChange={setIsBulkOutputsDialogOpen}
+        onSave={handleBulkSaveOutputs}
+        outputTypes={[]}
+        isSaving={false}
+        existingOutputs={[]}
+      />
     </div>
   );
 }
