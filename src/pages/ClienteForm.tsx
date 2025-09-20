@@ -14,6 +14,7 @@ interface ClienteData {
   email: string;
   phone: string;
   notes: string;
+  integration_id: string;
 }
 
 const ClienteForm = () => {
@@ -25,7 +26,8 @@ const ClienteForm = () => {
     name: "",
     email: "",
     phone: "",
-    notes: ""
+    notes: "",
+    integration_id: ""
   });
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(isEditing);
@@ -50,7 +52,8 @@ const ClienteForm = () => {
         name: data.name || "",
         email: data.email || "",
         phone: data.phone || "",
-        notes: data.notes || ""
+        notes: data.notes || "",
+        integration_id: data.integration_id || ""
       });
     } catch (error) {
       toast({
@@ -189,6 +192,17 @@ const ClienteForm = () => {
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="+34 600 000 000"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="integration_id">ID de Integración</Label>
+                <Input
+                  id="integration_id"
+                  name="integration_id"
+                  value={formData.integration_id}
+                  onChange={handleChange}
+                  placeholder="ID de Holded u otra integración (opcional)"
                 />
               </div>
 

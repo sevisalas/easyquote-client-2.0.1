@@ -16,6 +16,7 @@ interface LocalClient {
   email: string;
   phone: string;
   notes: string;
+  integration_id: string;
   created_at: string;
   source: 'local';
 }
@@ -242,6 +243,7 @@ export default function Clientes() {
               <TableHead>Nombre</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Teléfono/Código</TableHead>
+              <TableHead>ID Integración</TableHead>
               <TableHead>Notas</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
@@ -249,7 +251,7 @@ export default function Clientes() {
           <TableBody>
             {clientes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8">
                   {searchTerm ? 'No se encontraron clientes que coincidan con la búsqueda.' : 'No hay clientes registrados.'}
                 </TableCell>
               </TableRow>
@@ -281,6 +283,15 @@ export default function Clientes() {
                     ) : (
                       <span className="text-sm text-muted-foreground">
                         {cliente.code && `Código: ${cliente.code}`}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {cliente.source === 'local' ? (
+                      <span className="text-sm">{cliente.integration_id || '—'}</span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        {cliente.holded_id}
                       </span>
                     )}
                   </TableCell>
