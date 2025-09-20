@@ -588,9 +588,9 @@ export default function ProductManagement() {
     // Reset form data and open dialog
     setNewPromptData({
       promptSheet: "Main",
-      promptCell: `A${nextRow}`,
+      promptCell: "",
       valueSheet: "Main",
-      valueCell: `B${nextRow}`,
+      valueCell: "",
       valueOptionSheet: "Main",
       valueOptionRange: "",
       promptType: promptTypes[0]?.id || 0,
@@ -1499,26 +1499,34 @@ export default function ProductManagement() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 gap-4">
-              <div>
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-2">
                 <Label htmlFor="promptSheet">Hoja del Prompt</Label>
-                <Input
-                  id="promptSheet"
-                  value={newPromptData.promptSheet}
-                  onChange={(e) => setNewPromptData({...newPromptData, promptSheet: e.target.value})}
-                  placeholder="Main"
-                />
+                <Select
+                  value={newPromptData.promptSheet || "Main"}
+                  onValueChange={(value) => setNewPromptData({...newPromptData, promptSheet: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar hoja" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Main">Main</SelectItem>
+                    <SelectItem value="Config">Config</SelectItem>
+                    <SelectItem value="Data">Data</SelectItem>
+                    <SelectItem value="Results">Results</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div>
+              <div className="col-span-2">
                 <Label htmlFor="promptCell">Celda del Prompt</Label>
                 <Input
                   id="promptCell"
                   value={newPromptData.promptCell}
                   onChange={(e) => setNewPromptData({...newPromptData, promptCell: e.target.value})}
-                  placeholder="ej: A2"
+                  placeholder="ej: A1"
                 />
               </div>
-              <div>
+              <div className="col-span-1">
                 <Label htmlFor="promptSeq">Orden</Label>
                 <Input
                   id="promptSeq"
@@ -1528,7 +1536,7 @@ export default function ProductManagement() {
                   placeholder="1"
                 />
               </div>
-              <div>
+              <div className="col-span-4">
                 <Label htmlFor="promptType">Tipo</Label>
                 <Select
                   value={newPromptData.promptType.toString()}
@@ -1546,26 +1554,34 @@ export default function ProductManagement() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
+              <div className="col-span-2">
                 <Label htmlFor="valueSheet">Hoja del Valor</Label>
-                <Input
-                  id="valueSheet"
-                  value={newPromptData.valueSheet}
-                  onChange={(e) => setNewPromptData({...newPromptData, valueSheet: e.target.value})}
-                  placeholder="Main"
-                />
+                <Select
+                  value={newPromptData.valueSheet || "Main"}
+                  onValueChange={(value) => setNewPromptData({...newPromptData, valueSheet: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar hoja" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Main">Main</SelectItem>
+                    <SelectItem value="Config">Config</SelectItem>
+                    <SelectItem value="Data">Data</SelectItem>
+                    <SelectItem value="Results">Results</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div>
+              <div className="col-span-1">
                 <Label htmlFor="valueCell">Celda del Valor</Label>
                 <Input
                   id="valueCell"
                   value={newPromptData.valueCell}
                   onChange={(e) => setNewPromptData({...newPromptData, valueCell: e.target.value})}
-                  placeholder="ej: B2"
+                  placeholder="ej: B1"
                 />
               </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
               <div className="flex items-center space-x-2 pt-6">
                 <Switch
                   id="valueRequired"
@@ -1574,15 +1590,15 @@ export default function ProductManagement() {
                 />
                 <Label htmlFor="valueRequired">Requerido</Label>
               </div>
-            </div>
-            <div>
-              <Label htmlFor="valueOptionRange">Rango</Label>
-              <Input
-                id="valueOptionRange"
-                value={newPromptData.valueOptionRange}
-                onChange={(e) => setNewPromptData({...newPromptData, valueOptionRange: e.target.value})}
-                placeholder="ej: $E$2:$E$3"
-              />
+              <div className="col-span-2">
+                <Label htmlFor="valueOptionRange">Rango</Label>
+                <Input
+                  id="valueOptionRange"
+                  value={newPromptData.valueOptionRange}
+                  onChange={(e) => setNewPromptData({...newPromptData, valueOptionRange: e.target.value})}
+                  placeholder="ej: $E$2:$E$3"
+                />
+              </div>
             </div>
             {/* Campos numéricos - solo si el tipo es Number (0) */}
             {newPromptData.promptType === 0 && (
