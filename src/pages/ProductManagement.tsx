@@ -1505,11 +1505,11 @@ export default function ProductManagement() {
                   id="promptSheet"
                   value={newPromptData.promptSheet}
                   onChange={(e) => setNewPromptData({...newPromptData, promptSheet: e.target.value})}
-                  placeholder="ej: Main"
+                  placeholder=""
                 />
               </div>
               <div className="col-span-3">
-                <Label htmlFor="promptCell">Celda título del campo</Label>
+                <Label htmlFor="promptCell">Celda rótulo</Label>
                 <Input
                   id="promptCell"
                   value={newPromptData.promptCell}
@@ -1517,7 +1517,16 @@ export default function ProductManagement() {
                   placeholder="ej: A1"
                 />
               </div>
-              <div className="col-span-1">
+              <div className="col-span-3">
+                <Label htmlFor="valueCell">Celda valor</Label>
+                <Input
+                  id="valueCell"
+                  value={newPromptData.valueCell}
+                  onChange={(e) => setNewPromptData({...newPromptData, valueCell: e.target.value})}
+                  placeholder="ej: B1"
+                />
+              </div>
+              <div className="col-span-3">
                 <Label htmlFor="promptSeq">Orden</Label>
                 <Input
                   id="promptSeq"
@@ -1527,6 +1536,8 @@ export default function ProductManagement() {
                   placeholder="1"
                 />
               </div>
+            </div>
+            <div className="grid grid-cols-12 gap-4">
               <div className="col-span-4">
                 <Label htmlFor="promptType">Tipo</Label>
                 <Select
@@ -1545,18 +1556,7 @@ export default function ProductManagement() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="col-span-2">
-                <Label htmlFor="valueCell">Celda del valor</Label>
-                <Input
-                  id="valueCell"
-                  value={newPromptData.valueCell}
-                  onChange={(e) => setNewPromptData({...newPromptData, valueCell: e.target.value})}
-                  placeholder="ej: B1"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="flex items-center space-x-2 pt-6">
+              <div className="col-span-2 flex items-center space-x-2 pt-6">
                 <Switch
                   id="valueRequired"
                   checked={newPromptData.valueRequired}
@@ -1564,7 +1564,7 @@ export default function ProductManagement() {
                 />
                 <Label htmlFor="valueRequired">Requerido</Label>
               </div>
-              <div className="col-span-2">
+              <div className="col-span-6">
                 <Label htmlFor="valueOptionRange">Rango</Label>
                 <Input
                   id="valueOptionRange"
