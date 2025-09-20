@@ -855,9 +855,9 @@ export default function ProductManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 lg:space-y-4">
-          <div className="space-y-3 lg:space-y-4">
-            {/* Búsqueda - ancho completo en móvil */}
-            <div className="w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 lg:gap-4 items-end">
+            {/* Búsqueda */}
+            <div className="lg:col-span-2">
               <Label htmlFor="search" className="text-sm">Buscar productos</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -871,63 +871,62 @@ export default function ProductManagement() {
               </div>
             </div>
             
-            {/* Filtros en grid responsive */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-4">
-              <div>
-                <Label className="text-sm">Categoría</Label>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todas las categorías" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas las categorías</SelectItem>
-                    <SelectItem value="uncategorized">Sin categoría</SelectItem>
-                    {availableCategories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        <div className="flex items-center space-x-2">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: category.color }}
-                          />
-                          <span>{category.name}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Filtro por subcategoría - solo se muestra si hay una categoría seleccionada */}
-              {categoryFilter !== "all" && categoryFilter !== "uncategorized" && availableSubcategories.length > 0 && (
-                <div>
-                  <Label className="text-sm">Subcategoría</Label>
-                  <Select value={subcategoryFilter} onValueChange={setSubcategoryFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todas las subcategorías" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas las subcategorías</SelectItem>
-                      <SelectItem value="no-subcategory">Sin subcategoría</SelectItem>
-                      {availableSubcategories.map((subcategory) => (
-                        <SelectItem key={subcategory.id} value={subcategory.id}>
-                          {subcategory.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              
-              <div className="flex items-center space-x-2 mt-6">
-                <Switch
-                  id="include-inactive"
-                  checked={includeInactive}
-                  onCheckedChange={setIncludeInactive}
-                />
-                <Label htmlFor="include-inactive" className="text-sm">Incluir inactivos</Label>
-              </div>
+            {/* Categoría */}
+            <div>
+              <Label className="text-sm">Categoría</Label>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas las categorías" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las categorías</SelectItem>
+                  <SelectItem value="uncategorized">Sin categoría</SelectItem>
+                  {availableCategories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      <div className="flex items-center space-x-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        <span>{category.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Incluir inactivos */}
+            <div className="flex items-center space-x-2 pt-6">
+              <Switch
+                id="include-inactive"
+                checked={includeInactive}
+                onCheckedChange={setIncludeInactive}
+              />
+              <Label htmlFor="include-inactive" className="text-sm">Incluir inactivos</Label>
             </div>
           </div>
+          
+          {/* Filtro por subcategoría - línea separada solo si hay categoría seleccionada */}
+          {categoryFilter !== "all" && categoryFilter !== "uncategorized" && availableSubcategories.length > 0 && (
+            <div className="mt-4">
+              <Label className="text-sm">Subcategoría</Label>
+              <Select value={subcategoryFilter} onValueChange={setSubcategoryFilter}>
+                <SelectTrigger className="max-w-xs">
+                  <SelectValue placeholder="Todas las subcategorías" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las subcategorías</SelectItem>
+                  <SelectItem value="no-subcategory">Sin subcategoría</SelectItem>
+                  {availableSubcategories.map((subcategory) => (
+                    <SelectItem key={subcategory.id} value={subcategory.id}>
+                      {subcategory.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </CardContent>
       </Card>
 
