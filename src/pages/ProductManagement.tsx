@@ -1490,7 +1490,7 @@ export default function ProductManagement() {
 
       {/* Diálogo para nuevo prompt */}
       <Dialog open={isNewPromptDialogOpen} onOpenChange={setIsNewPromptDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Añadir Nuevo Dato de Entrada</DialogTitle>
             <DialogDescription>
@@ -1501,20 +1501,12 @@ export default function ProductManagement() {
             <div className="grid grid-cols-12 gap-4">
               <div className="col-span-2">
                 <Label htmlFor="promptSheet">Hoja del Prompt</Label>
-                <Select
-                  value={newPromptData.promptSheet || "Main"}
-                  onValueChange={(value) => setNewPromptData({...newPromptData, promptSheet: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar hoja" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Main">Main</SelectItem>
-                    <SelectItem value="Config">Config</SelectItem>
-                    <SelectItem value="Data">Data</SelectItem>
-                    <SelectItem value="Results">Results</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="promptSheet"
+                  value={newPromptData.promptSheet}
+                  onChange={(e) => setNewPromptData({...newPromptData, promptSheet: e.target.value})}
+                  placeholder="ej: Main"
+                />
               </div>
               <div className="col-span-2">
                 <Label htmlFor="promptCell">Celda del Prompt</Label>
@@ -1555,20 +1547,12 @@ export default function ProductManagement() {
               </div>
               <div className="col-span-2">
                 <Label htmlFor="valueSheet">Hoja del Valor</Label>
-                <Select
-                  value={newPromptData.valueSheet || "Main"}
-                  onValueChange={(value) => setNewPromptData({...newPromptData, valueSheet: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar hoja" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Main">Main</SelectItem>
-                    <SelectItem value="Config">Config</SelectItem>
-                    <SelectItem value="Data">Data</SelectItem>
-                    <SelectItem value="Results">Results</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="valueSheet"
+                  value={newPromptData.valueSheet}
+                  onChange={(e) => setNewPromptData({...newPromptData, valueSheet: e.target.value})}
+                  placeholder="ej: Main"
+                />
               </div>
               <div className="col-span-1">
                 <Label htmlFor="valueCell">Celda del Valor</Label>
@@ -1648,7 +1632,7 @@ export default function ProductManagement() {
 
       {/* Diálogo para nuevo output */}
       <Dialog open={isNewOutputDialogOpen} onOpenChange={setIsNewOutputDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Añadir Nuevo Dato de Salida</DialogTitle>
             <DialogDescription>
@@ -1656,14 +1640,14 @@ export default function ProductManagement() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-5 gap-4">
               <div>
                 <Label htmlFor="outputSheet">Hoja</Label>
                 <Input
                   id="outputSheet"
                   value={newOutputData.sheet}
                   onChange={(e) => setNewOutputData({...newOutputData, sheet: e.target.value})}
-                  placeholder="Main"
+                  placeholder="ej: Main"
                 />
               </div>
               <div>
@@ -1694,24 +1678,24 @@ export default function ProductManagement() {
                   placeholder="1"
                 />
               </div>
-            </div>
-            <div>
-              <Label htmlFor="outputType">Tipo</Label>
-              <Select
-                value={newOutputData.outputTypeId.toString()}
-                onValueChange={(value) => setNewOutputData({...newOutputData, outputTypeId: parseInt(value)})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {outputTypes.map((type) => (
-                    <SelectItem key={type.id} value={type.id.toString()}>
-                      {type.outputType}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div>
+                <Label htmlFor="outputType">Tipo</Label>
+                <Select
+                  value={newOutputData.outputTypeId.toString()}
+                  onValueChange={(value) => setNewOutputData({...newOutputData, outputTypeId: parseInt(value)})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {outputTypes.map((type) => (
+                      <SelectItem key={type.id} value={type.id.toString()}>
+                        {type.outputType}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           <div className="flex justify-end space-x-2">
