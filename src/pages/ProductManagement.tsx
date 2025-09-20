@@ -1492,15 +1492,15 @@ export default function ProductManagement() {
       <Dialog open={isNewPromptDialogOpen} onOpenChange={setIsNewPromptDialogOpen}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Añadir Nuevo Dato de Entrada</DialogTitle>
+            <DialogTitle>Añadir nuevo dato de entrada</DialogTitle>
             <DialogDescription>
-              Configura los datos del nuevo prompt
+              Configura los datos del nuevo valor de entrada
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-12 gap-4">
-              <div className="col-span-2">
-                <Label htmlFor="promptSheet">Hoja del Prompt</Label>
+              <div className="col-span-3">
+                <Label htmlFor="promptSheet">Hoja</Label>
                 <Input
                   id="promptSheet"
                   value={newPromptData.promptSheet}
@@ -1508,8 +1508,8 @@ export default function ProductManagement() {
                   placeholder="ej: Main"
                 />
               </div>
-              <div className="col-span-2">
-                <Label htmlFor="promptCell">Celda del Prompt</Label>
+              <div className="col-span-3">
+                <Label htmlFor="promptCell">Celda título del campo</Label>
                 <Input
                   id="promptCell"
                   value={newPromptData.promptCell}
@@ -1546,16 +1546,7 @@ export default function ProductManagement() {
                 </Select>
               </div>
               <div className="col-span-2">
-                <Label htmlFor="valueSheet">Hoja del Valor</Label>
-                <Input
-                  id="valueSheet"
-                  value={newPromptData.valueSheet}
-                  onChange={(e) => setNewPromptData({...newPromptData, valueSheet: e.target.value})}
-                  placeholder="ej: Main"
-                />
-              </div>
-              <div className="col-span-1">
-                <Label htmlFor="valueCell">Celda del Valor</Label>
+                <Label htmlFor="valueCell">Celda del valor</Label>
                 <Input
                   id="valueCell"
                   value={newPromptData.valueCell}
@@ -1624,7 +1615,7 @@ export default function ProductManagement() {
               Cancelar
             </Button>
             <Button onClick={createNewPrompt}>
-              Crear Prompt
+              Crear valor de entrada
             </Button>
           </div>
         </DialogContent>
@@ -1634,7 +1625,7 @@ export default function ProductManagement() {
       <Dialog open={isNewOutputDialogOpen} onOpenChange={setIsNewOutputDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Añadir Nuevo Dato de Salida</DialogTitle>
+            <DialogTitle>Añadir nuevo dato de salida</DialogTitle>
             <DialogDescription>
               Configura los datos del nuevo output
             </DialogDescription>
