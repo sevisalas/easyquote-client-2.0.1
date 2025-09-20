@@ -830,11 +830,11 @@ export default function ExcelFiles() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nombre del Archivo</TableHead>
+                  <TableHead>Nombre archivo</TableHead>
                   <TableHead>Tamaño</TableHead>
                   <TableHead>Estado</TableHead>
-                  <TableHead className="w-24">Plan</TableHead>
-                  <TableHead>Última Modificación</TableHead>
+                  <TableHead className="w-24">Cumple requisitos</TableHead>
+                  <TableHead>Última modificación</TableHead>
                   <TableHead className="text-center">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
