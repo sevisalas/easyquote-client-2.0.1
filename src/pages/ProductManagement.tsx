@@ -637,11 +637,11 @@ export default function ProductManagement() {
           productId: selectedProduct.id,
           promptSeq: promptData.promptSeq,
           promptType: promptData.promptType,
-          promptSheet: promptData.promptSheet,
+          promptSheet: promptData.sheet,
           promptCell: promptData.promptCell,
-          valueSheet: promptData.valueSheet,
+          valueSheet: promptData.sheet,  // Same sheet
           valueCell: promptData.valueCell,
-          valueOptionSheet: promptData.promptSheet,
+          valueOptionSheet: promptData.sheet,  // Same sheet
           valueOptionRange: promptData.valueOptionRange,
           valueRequired: promptData.valueRequired,
           valueQuantityAllowedDecimals: promptData.valueQuantityAllowedDecimals,
@@ -655,12 +655,12 @@ export default function ProductManagement() {
       setIsBulkPromptsDialogOpen(false);
       toast({
         title: "Éxito",
-        description: `Se crearon ${prompts.length} campos de entrada correctamente.`,
+        description: `Se crearon ${prompts.length} datos de entrada correctamente.`,
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Error al crear los campos de entrada",
+        description: "Error al crear los datos de entrada",
         variant: "destructive",
       });
     }
@@ -686,12 +686,12 @@ export default function ProductManagement() {
       setIsBulkOutputsDialogOpen(false);
       toast({
         title: "Éxito",
-        description: `Se crearon ${outputs.length} campos de salida correctamente.`,
+        description: `Se crearon ${outputs.length} datos de salida correctamente.`,
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Error al crear los campos de salida",
+        description: "Error al crear los datos de salida",
         variant: "destructive",
       });
     }

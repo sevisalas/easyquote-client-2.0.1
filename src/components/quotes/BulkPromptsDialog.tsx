@@ -16,9 +16,8 @@ interface PromptType {
 }
 
 interface BulkPromptData {
-  promptSheet: string;
+  sheet: string;
   promptCell: string;
-  valueSheet: string;
   valueCell: string;
   promptType: number;
   valueRequired: boolean;
@@ -46,9 +45,8 @@ export function BulkPromptsDialog({
 }: BulkPromptsDialogProps) {
   const [prompts, setPrompts] = useState<BulkPromptData[]>([
     {
-      promptSheet: "Main",
+      sheet: "Main",
       promptCell: "A2",
-      valueSheet: "Main", 
       valueCell: "B2",
       promptType: promptTypes[0]?.id || 0,
       valueRequired: false,
@@ -65,9 +63,8 @@ export function BulkPromptsDialog({
     const nextRow = nextSeq + 1;
     
     setPrompts([...prompts, {
-      promptSheet: "Main",
+      sheet: "Main",
       promptCell: `A${nextRow}`,
-      valueSheet: "Main",
       valueCell: `B${nextRow}`,
       promptType: promptTypes[0]?.id || 0,
       valueRequired: false,
@@ -96,9 +93,8 @@ export function BulkPromptsDialog({
 
   const resetForm = () => {
     setPrompts([{
-      promptSheet: "Main",
+      sheet: "Main",
       promptCell: "A2",
-      valueSheet: "Main",
       valueCell: "B2",
       promptType: promptTypes[0]?.id || 0,
       valueRequired: false,
@@ -123,7 +119,7 @@ export function BulkPromptsDialog({
         <DialogHeader>
           <DialogTitle>Editor Masivo de Datos de Entrada</DialogTitle>
           <DialogDescription>
-            Crea múltiples campos de entrada para el producto y previsualiza antes de guardar
+            Crea múltiples datos de entrada para el producto y previsualiza antes de guardar
           </DialogDescription>
         </DialogHeader>
 
@@ -140,11 +136,11 @@ export function BulkPromptsDialog({
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <p className="text-sm text-muted-foreground">
-                  Configura todos los campos de entrada necesarios
+                  Configura todos los datos de entrada necesarios
                 </p>
                 <Button onClick={addPrompt} size="sm">
                   <Plus className="h-4 w-4 mr-2" />
-                  Añadir Campo
+                  Añadir Dato
                 </Button>
               </div>
 
@@ -157,7 +153,7 @@ export function BulkPromptsDialog({
                     <Card key={index}>
                       <CardHeader className="pb-3">
                         <div className="flex justify-between items-center">
-                          <CardTitle className="text-sm">Campo #{index + 1}</CardTitle>
+                          <CardTitle className="text-sm">Dato #{index + 1}</CardTitle>
                           {prompts.length > 1 && (
                             <Button
                               variant="ghost"
@@ -170,50 +166,51 @@ export function BulkPromptsDialog({
                           )}
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-4 gap-3">
+                      <CardContent className="space-y-3">
+                        <div className="grid grid-cols-6 gap-2">
                           <div>
-                            <Label>Hoja Prompt</Label>
+                            <Label className="text-xs">Hoja</Label>
                             <Input
-                              value={prompt.promptSheet}
-                              onChange={(e) => updatePrompt(index, 'promptSheet', e.target.value)}
+                              value={prompt.sheet}
+                              onChange={(e) => updatePrompt(index, 'sheet', e.target.value)}
                               placeholder="Main"
+                              className="text-xs h-8"
                             />
                           </div>
                           <div>
-                            <Label>Celda Prompt</Label>
+                            <Label className="text-xs">Rótulo</Label>
                             <Input
                               value={prompt.promptCell}
                               onChange={(e) => updatePrompt(index, 'promptCell', e.target.value)}
                               placeholder="A2"
+                              className="text-xs h-8"
                             />
                           </div>
                           <div>
-                            <Label>Hoja Valor</Label>
-                            <Input
-                              value={prompt.valueSheet}
-                              onChange={(e) => updatePrompt(index, 'valueSheet', e.target.value)}
-                              placeholder="Main"
-                            />
-                          </div>
-                          <div>
-                            <Label>Celda Valor</Label>
+                            <Label className="text-xs">Valor</Label>
                             <Input
                               value={prompt.valueCell}
                               onChange={(e) => updatePrompt(index, 'valueCell', e.target.value)}
                               placeholder="B2"
+                              className="text-xs h-8"
                             />
                           </div>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-3">
                           <div>
-                            <Label>Tipo</Label>
+                            <Label className="text-xs">Orden</Label>
+                            <Input
+                              type="number"
+                              value={prompt.promptSeq}
+                              onChange={(e) => updatePrompt(index, 'promptSeq', parseInt(e.target.value) || 1)}
+                              className="text-xs h-8"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Tipo</Label>
                             <Select
                               value={prompt.promptType.toString()}
                               onValueChange={(value) => updatePrompt(index, 'promptType', parseInt(value))}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="text-xs h-8">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -225,58 +222,54 @@ export function BulkPromptsDialog({
                               </SelectContent>
                             </Select>
                           </div>
-                          <div>
-                            <Label>Orden</Label>
-                            <Input
-                              type="number"
-                              value={prompt.promptSeq}
-                              onChange={(e) => updatePrompt(index, 'promptSeq', parseInt(e.target.value) || 1)}
-                            />
-                          </div>
-                          <div className="flex items-center space-x-2 pt-6">
+                          <div className="flex items-center space-x-1 pt-4">
                             <Switch
                               checked={prompt.valueRequired}
                               onCheckedChange={(checked) => updatePrompt(index, 'valueRequired', checked)}
                             />
-                            <Label>Requerido</Label>
+                            <Label className="text-xs">Req.</Label>
                           </div>
                         </div>
 
                         {!isNumericType && (
                           <div>
-                            <Label>Rango de Opciones</Label>
+                            <Label className="text-xs">Rango de Opciones</Label>
                             <Input
                               value={prompt.valueOptionRange}
                               onChange={(e) => updatePrompt(index, 'valueOptionRange', e.target.value)}
                               placeholder="$E$2:$E$3"
+                              className="text-xs h-8"
                             />
                           </div>
                         )}
 
                         {isNumericType && (
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="grid grid-cols-3 gap-2">
                             <div>
-                              <Label>Decimales</Label>
+                              <Label className="text-xs">Decimales</Label>
                               <Input
                                 type="number"
                                 value={prompt.valueQuantityAllowedDecimals}
                                 onChange={(e) => updatePrompt(index, 'valueQuantityAllowedDecimals', parseInt(e.target.value) || 0)}
+                                className="text-xs h-8"
                               />
                             </div>
                             <div>
-                              <Label>Mínimo</Label>
+                              <Label className="text-xs">Mínimo</Label>
                               <Input
                                 type="number"
                                 value={prompt.valueQuantityMin}
                                 onChange={(e) => updatePrompt(index, 'valueQuantityMin', parseFloat(e.target.value) || 1)}
+                                className="text-xs h-8"
                               />
                             </div>
                             <div>
-                              <Label>Máximo</Label>
+                              <Label className="text-xs">Máximo</Label>
                               <Input
                                 type="number"
                                 value={prompt.valueQuantityMax}
                                 onChange={(e) => updatePrompt(index, 'valueQuantityMax', parseFloat(e.target.value) || 9999)}
+                                className="text-xs h-8"  
                               />
                             </div>
                           </div>
@@ -294,7 +287,7 @@ export function BulkPromptsDialog({
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-medium">Vista Previa</h3>
                 <p className="text-sm text-muted-foreground">
-                  {prompts.length} campo{prompts.length !== 1 ? 's' : ''} configurado{prompts.length !== 1 ? 's' : ''}
+                  {prompts.length} dato{prompts.length !== 1 ? 's' : ''} configurado{prompts.length !== 1 ? 's' : ''}
                 </p>
               </div>
 
@@ -307,7 +300,7 @@ export function BulkPromptsDialog({
                     <Card key={index}>
                       <CardContent className="pt-4">
                         <div className="flex justify-between items-start mb-3">
-                          <h4 className="font-medium">Campo #{index + 1}</h4>
+                          <h4 className="font-medium">Dato #{index + 1}</h4>
                           <div className="text-xs text-muted-foreground">
                             Orden: {prompt.promptSeq}
                           </div>
@@ -315,8 +308,8 @@ export function BulkPromptsDialog({
                         
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div className="space-y-2">
-                            <div><strong>Hoja:</strong> {prompt.promptSheet}</div>
-                            <div><strong>Celda Prompt:</strong> {prompt.promptCell}</div>
+                            <div><strong>Hoja:</strong> {prompt.sheet}</div>
+                            <div><strong>Celda Rótulo:</strong> {prompt.promptCell}</div>
                             <div><strong>Celda Valor:</strong> {prompt.valueCell}</div>
                           </div>
                           <div className="space-y-2">
@@ -357,7 +350,7 @@ export function BulkPromptsDialog({
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Guardar {prompts.length} Campo{prompts.length !== 1 ? 's' : ''}
+                Guardar {prompts.length} Dato{prompts.length !== 1 ? 's' : ''}
               </>
             )}
           </Button>

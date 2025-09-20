@@ -93,7 +93,7 @@ export function BulkOutputsDialog({
         <DialogHeader>
           <DialogTitle>Editor Masivo de Datos de Salida</DialogTitle>
           <DialogDescription>
-            Crea múltiples campos de salida para el producto y previsualiza antes de guardar
+            Crea múltiples datos de salida para el producto y previsualiza antes de guardar
           </DialogDescription>
         </DialogHeader>
 
@@ -110,11 +110,11 @@ export function BulkOutputsDialog({
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <p className="text-sm text-muted-foreground">
-                  Configura todos los campos de salida necesarios
+                  Configura todos los datos de salida necesarios
                 </p>
                 <Button onClick={addOutput} size="sm">
                   <Plus className="h-4 w-4 mr-2" />
-                  Añadir Campo
+                  Añadir Dato
                 </Button>
               </div>
 
@@ -126,7 +126,7 @@ export function BulkOutputsDialog({
                     <Card key={index}>
                       <CardHeader className="pb-3">
                         <div className="flex justify-between items-center">
-                          <CardTitle className="text-sm">Campo de Salida #{index + 1}</CardTitle>
+                          <CardTitle className="text-sm">Dato de Salida #{index + 1}</CardTitle>
                           {outputs.length > 1 && (
                             <Button
                               variant="ghost"
@@ -139,39 +139,42 @@ export function BulkOutputsDialog({
                           )}
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-4 gap-3">
+                      <CardContent className="space-y-3">
+                        <div className="grid grid-cols-4 gap-2">
                           <div>
-                            <Label>Hoja</Label>
+                            <Label className="text-xs">Hoja</Label>
                             <Input
                               value={output.sheet}
                               onChange={(e) => updateOutput(index, 'sheet', e.target.value)}
                               placeholder="Main"
+                              className="text-xs h-8"
                             />
                           </div>
                           <div>
-                            <Label>Celda Rótulo</Label>
+                            <Label className="text-xs">Celda Rótulo</Label>
                             <Input
                               value={output.nameCell}
                               onChange={(e) => updateOutput(index, 'nameCell', e.target.value)}
                               placeholder="A25"
+                              className="text-xs h-8"
                             />
                           </div>
                           <div>
-                            <Label>Celda Valor</Label>
+                            <Label className="text-xs">Celda Valor</Label>
                             <Input
                               value={output.valueCell}
                               onChange={(e) => updateOutput(index, 'valueCell', e.target.value)}
                               placeholder="B25"
+                              className="text-xs h-8"
                             />
                           </div>
                           <div>
-                            <Label>Tipo</Label>
+                            <Label className="text-xs">Tipo</Label>
                             <Select
                               value={output.outputTypeId.toString()}
                               onValueChange={(value) => updateOutput(index, 'outputTypeId', parseInt(value))}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="text-xs h-8">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -197,7 +200,7 @@ export function BulkOutputsDialog({
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-medium">Vista Previa</h3>
                 <p className="text-sm text-muted-foreground">
-                  {outputs.length} campo{outputs.length !== 1 ? 's' : ''} configurado{outputs.length !== 1 ? 's' : ''}
+                  {outputs.length} dato{outputs.length !== 1 ? 's' : ''} configurado{outputs.length !== 1 ? 's' : ''}
                 </p>
               </div>
 
@@ -209,7 +212,7 @@ export function BulkOutputsDialog({
                     <Card key={index}>
                       <CardContent className="pt-4">
                         <div className="flex justify-between items-start mb-3">
-                          <h4 className="font-medium">Campo de Salida #{index + 1}</h4>
+                          <h4 className="font-medium">Dato de Salida #{index + 1}</h4>
                         </div>
                         
                         <div className="grid grid-cols-2 gap-4 text-sm">
@@ -246,7 +249,7 @@ export function BulkOutputsDialog({
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Guardar {outputs.length} Campo{outputs.length !== 1 ? 's' : ''}
+                Guardar {outputs.length} Dato{outputs.length !== 1 ? 's' : ''}
               </>
             )}
           </Button>
