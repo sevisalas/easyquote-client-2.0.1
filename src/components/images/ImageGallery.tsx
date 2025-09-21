@@ -296,7 +296,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                       {Object.entries(viewingImage.variants?.original || {}).map(([size, url]) => (
                         url && (
                           <div key={size} className="flex items-center gap-3 p-3 border rounded-lg">
-                            <div className="flex items-center justify-center w-24 h-16 bg-gray-50 flex-shrink-0">
+                            <div className="flex items-center justify-center w-32 h-20 bg-gray-50 flex-shrink-0">
                               <img 
                                 src={url as string} 
                                 alt={`${size} preview`}
@@ -310,12 +310,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                               size="sm"
                               variant="outline"
                               onClick={() => copyToClipboard(url as string)}
-                              className="h-8 flex-shrink-0"
+                              className="h-7 px-2 flex-shrink-0"
                             >
-                              {copiedUrl === url ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                              <span className="ml-1 text-xs">
-                                {copiedUrl === url ? 'Copiado' : 'Copiar URL'}
-                              </span>
+                              {copiedUrl === url ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                             </Button>
                           </div>
                         )
@@ -331,7 +328,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                       {Object.entries(viewingImage.variants?.square || {}).map(([size, url]) => (
                         url && (
                           <div key={size} className="flex items-center gap-3 p-3 border rounded-lg">
-                            <div className="flex items-center justify-center w-24 h-16 bg-gray-50 flex-shrink-0">
+                            <div className="flex items-center justify-center w-32 h-20 bg-gray-50 flex-shrink-0">
                               <img 
                                 src={url as string} 
                                 alt={`${size} square preview`}
@@ -345,12 +342,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                               size="sm"
                               variant="outline"
                               onClick={() => copyToClipboard(url as string)}
-                              className="h-8 flex-shrink-0"
+                              className="h-7 px-2 flex-shrink-0"
                             >
-                              {copiedUrl === url ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                              <span className="ml-1 text-xs">
-                                {copiedUrl === url ? 'Copiado' : 'Copiar URL'}
-                              </span>
+                              {copiedUrl === url ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                             </Button>
                           </div>
                         )
