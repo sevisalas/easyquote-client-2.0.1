@@ -292,27 +292,28 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                 <div className="space-y-4">
                   <div>
                     <h5 className="text-md font-medium mb-3">Originales</h5>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                       {Object.entries(viewingImage.variants?.original || {}).map(([size, url]) => (
                         url && (
-                          <div key={size} className="flex items-center gap-3 p-3 border rounded-lg">
-                            <div className="flex items-center justify-center w-32 h-20 bg-gray-50 flex-shrink-0">
+                          <div key={size} className="flex flex-col items-center gap-2 p-3 border rounded-lg">
+                            <div className="flex items-center justify-center w-32 h-20 bg-gray-50">
                               <img 
                                 src={url as string} 
                                 alt={`${size} preview`}
                                 className={`${getPreviewSize(size)} object-contain`}
                               />
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <span className="text-sm font-medium capitalize block">{size}</span>
-                            </div>
+                            <span className="text-sm font-medium capitalize">{size}</span>
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => copyToClipboard(url as string)}
-                              className="h-7 px-2 flex-shrink-0"
+                              className="h-7 px-2 w-full"
                             >
-                              {copiedUrl === url ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                              {copiedUrl === url ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
+                              <span className="text-xs">
+                                {copiedUrl === url ? 'Copiado' : 'Copiar URL'}
+                              </span>
                             </Button>
                           </div>
                         )
@@ -324,27 +325,28 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                   
                   <div>
                     <h5 className="text-md font-medium mb-3">Cuadradas</h5>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                       {Object.entries(viewingImage.variants?.square || {}).map(([size, url]) => (
                         url && (
-                          <div key={size} className="flex items-center gap-3 p-3 border rounded-lg">
-                            <div className="flex items-center justify-center w-32 h-20 bg-gray-50 flex-shrink-0">
+                          <div key={size} className="flex flex-col items-center gap-2 p-3 border rounded-lg">
+                            <div className="flex items-center justify-center w-32 h-20 bg-gray-50">
                               <img 
                                 src={url as string} 
                                 alt={`${size} square preview`}
                                 className={`${getPreviewSize(size)} object-contain`}
                               />
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <span className="text-sm font-medium capitalize block">{size}</span>
-                            </div>
+                            <span className="text-sm font-medium capitalize">{size}</span>
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => copyToClipboard(url as string)}
-                              className="h-7 px-2 flex-shrink-0"
+                              className="h-7 px-2 w-full"
                             >
-                              {copiedUrl === url ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                              {copiedUrl === url ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
+                              <span className="text-xs">
+                                {copiedUrl === url ? 'Copiado' : 'Copiar URL'}
+                              </span>
                             </Button>
                           </div>
                         )
