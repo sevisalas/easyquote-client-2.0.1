@@ -127,7 +127,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
                       )}
                     </CardTitle>
                     <p className="text-xs text-muted-foreground">
-                      {additional.type === "net_amount" ? "Importe neto" : "Por cantidad"}
+                      {additional.type === "net_amount" ? "Importe neto" : "Precio unidad"}
                     </p>
                   </div>
                   <Button
@@ -174,7 +174,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
               <SelectContent>
                 {unselectedAdditionals.map((additional) => (
                   <SelectItem key={additional.id} value={additional.id}>
-                    {additional.name} ({additional.type === "net_amount" ? "Importe" : "Multiplicador"})
+                    {additional.name} ({additional.type === "net_amount" ? "Importe" : "Precio ud."})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -206,7 +206,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="net_amount">Importe</SelectItem>
-                <SelectItem value="quantity_multiplier">Multiplicador</SelectItem>
+                <SelectItem value="quantity_multiplier">Precio ud.</SelectItem>
               </SelectContent>
             </Select>
           </div>

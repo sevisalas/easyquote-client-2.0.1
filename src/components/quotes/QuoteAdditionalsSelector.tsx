@@ -32,7 +32,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
   const [newAdditionalId, setNewAdditionalId] = useState<string>("")
   const [customName, setCustomName] = useState("")
   const [customValue, setCustomValue] = useState(0)
-  const [customType, setCustomType] = useState<"net_amount" | "quantity_multiplier" | "percentage">("net_amount")
+  const [customType, setCustomType] = useState<"net_amount" | "percentage">("net_amount")
 
   const { data: availableAdditionals = [] } = useQuery({
     queryKey: ["additionals"],
@@ -203,13 +203,12 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
           </div>
           <div className="w-40">
             <Label htmlFor="quote-custom-type" className="text-sm">Tipo</Label>
-            <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier" | "percentage") => setCustomType(value)}>
+            <Select value={customType} onValueChange={(value: "net_amount" | "percentage") => setCustomType(value)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="net_amount">Importe Neto</SelectItem>
-                <SelectItem value="quantity_multiplier">Multiplicador</SelectItem>
                 <SelectItem value="percentage">Porcentaje</SelectItem>
               </SelectContent>
             </Select>
