@@ -292,11 +292,11 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                 <div className="space-y-4">
                   <div>
                     <h5 className="text-md font-medium mb-3">Originales</h5>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {Object.entries(viewingImage.variants?.original || {}).map(([size, url]) => (
                         url && (
                           <div key={size} className="flex flex-col items-center gap-2 p-3 border rounded-lg">
-                            <div className="flex items-center justify-center w-32 h-20 bg-gray-50">
+                            <div className="flex items-center justify-center w-40 h-24 bg-gray-50">
                               <img 
                                 src={url as string} 
                                 alt={`${size} preview`}
@@ -325,11 +325,11 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                   
                   <div>
                     <h5 className="text-md font-medium mb-3">Cuadradas</h5>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {Object.entries(viewingImage.variants?.square || {}).map(([size, url]) => (
                         url && (
                           <div key={size} className="flex flex-col items-center gap-2 p-3 border rounded-lg">
-                            <div className="flex items-center justify-center w-32 h-20 bg-gray-50">
+                            <div className="flex items-center justify-center w-40 h-24 bg-gray-50">
                               <img 
                                 src={url as string} 
                                 alt={`${size} square preview`}
