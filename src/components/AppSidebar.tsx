@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -312,6 +312,18 @@ export function AppSidebar() {
                             <NavLink to="/admin/categorias" end className={getNavCls}>
                               <Tags className="mr-2 h-4 w-4" />
                               {!isCollapsed && <span>Categorías</span>}
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      )}
+                      
+                      {/* Gestión de imágenes - Solo API subscriptions o Client admins */}
+                      {canAccessProductos() && (
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/imagenes"}>
+                            <NavLink to="/configuracion/imagenes" end className={getNavCls}>
+                              <Image className="mr-2 h-4 w-4" />
+                              {!isCollapsed && <span>Imágenes</span>}
                             </NavLink>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>

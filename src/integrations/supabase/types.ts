@@ -173,6 +173,57 @@ export type Database = {
         }
         Relationships: []
       }
+      images: {
+        Row: {
+          created_at: string
+          description: string | null
+          file_size: number
+          filename: string
+          height: number | null
+          id: string
+          is_active: boolean
+          mime_type: string
+          original_filename: string
+          storage_path: string
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+          width: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          file_size?: number
+          filename: string
+          height?: number | null
+          id?: string
+          is_active?: boolean
+          mime_type: string
+          original_filename: string
+          storage_path: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+          width?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          file_size?: number
+          filename?: string
+          height?: number | null
+          id?: string
+          is_active?: boolean
+          mime_type?: string
+          original_filename?: string
+          storage_path?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+          width?: number | null
+        }
+        Relationships: []
+      }
       integrations: {
         Row: {
           configuration: Json | null

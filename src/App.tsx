@@ -33,6 +33,7 @@ import ProductCategories from "./pages/ProductCategories";
 
 import PresupuestosDashboard from "./pages/PresupuestosDashboard";
 import ProductTestPage from "./pages/ProductTestPage";
+import ImageManagement from "./pages/ImageManagement";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 const queryClient = new QueryClient();
 
@@ -281,6 +282,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <ProductTestPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configuracion/imagenes"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ImageManagement />
                 </AppLayout>
               </ProtectedRoute>
             }
