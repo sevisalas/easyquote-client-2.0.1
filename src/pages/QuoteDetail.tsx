@@ -186,106 +186,133 @@ export default function QuoteDetail() {
           <CardTitle className="text-lg">Artículos del presupuesto</CardTitle>
         </CardHeader>
         <CardContent>
-          {(quote.items && quote.items.length > 0) ? (
-            <div className="space-y-3">
-              {/* Solo mostrar items de la tabla quote_items */}
-              {quote.items.map((item: any, index: number) => (
-                <div key={`item-${index}`} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-primary hover:shadow-md transition-all duration-200">
-                  <div className="flex justify-between items-center">
-                    <div className="flex-1">
-                      <h4 className="text-foreground mb-1">{item.product_name || item.description || `Artículo ${index + 1}`}</h4>
-                    </div>
-                    <div className="text-right ml-4">
-                      <p className="text-lg text-primary">{fmtEUR((item.total_price || item.subtotal) || 0)}</p>
+          {(() => {
+            // Obtener items de la tabla quote_items
+            const tableItems = quote.items || [];
+            
+            // Obtener items del JSON selections
+            const jsonSelections = Array.isArray(quote.selections) ? quote.selections : [];
+            const jsonItems = jsonSelections.map((selection: any, index: number) => ({
+              product_name: selection.productName || `Producto ${index + 1}`,
+              description: selection.itemDescription || '',
+              total_price: selection.price || 0,
+              subtotal: selection.price || 0,
+              quantity: selection.quantity || 1,
+              outputs: selection.outputs || [],
+              prompts: selection.prompts || {},
+              multi: selection.multi || 1,
+              isFromJson: true
+            }));
+            
+            // Combinar ambas fuentes
+            const allItems = [...tableItems, ...jsonItems];
+            
+            return allItems.length > 0 ? (
+              <div className="space-y-3">
+                {allItems.map((item: any, index: number) => (
+                  <div key={`item-${index}`} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-primary hover:shadow-md transition-all duration-200">
+                    <div className="flex justify-between items-center">
+                      <div className="flex-1">
+                        <h4 className="text-foreground mb-1">{item.product_name || item.description || `Artículo ${index + 1}`}</h4>
+                        {item.description && item.description.trim() && (
+                          <p className="text-sm text-muted-foreground">{item.description}</p>
+                        )}
+                        {item.quantity && item.quantity > 1 && (
+                          <p className="text-xs text-muted-foreground mt-1">Cantidad: {item.quantity}</p>
+                        )}
+                      </div>
+                      <div className="text-right ml-4">
+                        <p className="text-lg text-primary">{fmtEUR((item.total_price || item.subtotal) || 0)}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              
-              <Separator className="my-4" />
-              
-              {/* Desglose de totales */}
-              <div className="bg-card rounded-lg p-4 border border-border space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Subtotal:</span>
-                  <span className="text-sm font-medium">{fmtEUR(quote.subtotal || 0)}</span>
-                </div>
+                ))}
                 
-                {/* Mostrar ajustes aplicados */}
-                {quote.quote_additionals && quote.quote_additionals.length > 0 && (
-                  <>
-                    {quote.quote_additionals.map((additional: any, index: number) => {
-                      let amount = 0;
-                      let displayText = '';
-                      
-                      switch (additional.type) {
-                        case 'percentage':
-                          amount = (quote.subtotal * additional.value) / 100;
-                          displayText = `${additional.name} (${additional.value}%)`;
-                          break;
-                        case 'net_amount':
-                          amount = additional.value;
-                          displayText = additional.name;
-                          break;
-                        case 'quantity_multiplier':
-                          // Para multiplicadores, mostrar como factor
-                          displayText = `${additional.name} (×${additional.value})`;
-                          break;
-                        default:
-                          amount = additional.value;
-                          displayText = additional.name;
-                      }
-                      
-                      if (additional.type !== 'quantity_multiplier') {
-                        return (
-                          <div key={index} className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">{displayText}:</span>
-                            <span className={`text-sm font-medium ${amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {amount >= 0 ? '+' : ''}{fmtEUR(amount)}
-                            </span>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })}
-                  </>
-                )}
+                <Separator className="my-4" />
                 
-                <Separator className="my-2" />
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold text-foreground">Total del presupuesto:</span>
-                  <span className="text-2xl font-bold text-secondary">
-                    {fmtEUR((() => {
-                      let total = quote.subtotal || 0;
-                      if (quote.quote_additionals) {
-                        quote.quote_additionals.forEach((additional: any) => {
-                          switch (additional.type) {
-                            case 'percentage':
-                              total += (quote.subtotal * additional.value) / 100;
-                              break;
-                            case 'net_amount':
-                              total += additional.value;
-                              break;
-                            case 'quantity_multiplier':
-                              total *= additional.value;
-                              break;
-                            default:
-                              total += additional.value;
-                          }
-                        });
-                      }
-                      return total;
-                    })())}
-                  </span>
+                {/* Desglose de totales */}
+                <div className="bg-card rounded-lg p-4 border border-border space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Subtotal:</span>
+                    <span className="text-sm font-medium">{fmtEUR(quote.subtotal || 0)}</span>
+                  </div>
+                  
+                  {/* Mostrar ajustes aplicados */}
+                  {quote.quote_additionals && quote.quote_additionals.length > 0 && (
+                    <>
+                      {quote.quote_additionals.map((additional: any, index: number) => {
+                        let amount = 0;
+                        let displayText = '';
+                        
+                        switch (additional.type) {
+                          case 'percentage':
+                            amount = (quote.subtotal * additional.value) / 100;
+                            displayText = `${additional.name} (${additional.value}%)`;
+                            break;
+                          case 'net_amount':
+                            amount = additional.value;
+                            displayText = additional.name;
+                            break;
+                          case 'quantity_multiplier':
+                            // Para multiplicadores, mostrar como factor
+                            displayText = `${additional.name} (×${additional.value})`;
+                            break;
+                          default:
+                            amount = additional.value;
+                            displayText = additional.name;
+                        }
+                        
+                        if (additional.type !== 'quantity_multiplier') {
+                          return (
+                            <div key={index} className="flex justify-between items-center">
+                              <span className="text-sm text-muted-foreground">{displayText}:</span>
+                              <span className={`text-sm font-medium ${amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {amount >= 0 ? '+' : ''}{fmtEUR(amount)}
+                              </span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })}
+                    </>
+                  )}
+                  
+                  <Separator className="my-2" />
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-semibold text-foreground">Total del presupuesto:</span>
+                    <span className="text-2xl font-bold text-secondary">
+                      {fmtEUR((() => {
+                        let total = quote.subtotal || 0;
+                        if (quote.quote_additionals) {
+                          quote.quote_additionals.forEach((additional: any) => {
+                            switch (additional.type) {
+                              case 'percentage':
+                                total += (quote.subtotal * additional.value) / 100;
+                                break;
+                              case 'net_amount':
+                                total += additional.value;
+                                break;
+                              case 'quantity_multiplier':
+                                total *= additional.value;
+                                break;
+                              default:
+                                total += additional.value;
+                            }
+                          });
+                        }
+                        return total;
+                      })())}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>Este presupuesto no tiene artículos añadidos</p>
-              <p className="text-sm mt-2">Para añadir artículos, utiliza el botón "Editar" en la parte superior</p>
-            </div>
-          )}
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Este presupuesto no tiene artículos añadidos</p>
+                <p className="text-sm mt-2">Para añadir artículos, utiliza el botón "Editar" en la parte superior</p>
+              </div>
+            );
+          })()}
         </CardContent>
       </Card>
 
