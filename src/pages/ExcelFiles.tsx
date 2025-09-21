@@ -113,20 +113,32 @@ export default function ExcelFiles() {
       });
 
       if (!response.ok) {
-        throw new Error("Error al obtener archivos Excel");
+        throw new Error("Error al obtener archivos Excel de EasyQuote");
       }
 
       const data = await response.json();
       return data as EasyQuoteExcelFile[];
     },
     enabled: hasToken,
-    retry: (failureCount, error: any) => {
-      if (error?.message?.includes("401")) {
-        return false;
-      }
-      return failureCount < 3;
-    }
+    retry: false // No reintentar si falla
   });
+
+  // Fallback: Create files from Supabase metadata when EasyQuote API fails
+  const fallbackFiles = excelFilesMeta?.map(meta => ({
+    id: meta.file_id,
+    fileName: meta.filename,
+    fileSizeKb: Math.round((meta.file_size || 0) / 1024),
+    dateCreated: meta.created_at,
+    dateModified: meta.updated_at,
+    isActive: true,
+    isPlanCompliant: true,
+    subscriberId: subscriberId,
+    excelfilesSheets: [],
+    products: []
+  })) || [];
+
+  // Use EasyQuote files if available, otherwise fallback to Supabase metadata
+  const actualFiles = error ? fallbackFiles : files;
 
   // Sync Excel files with Supabase
   const syncExcelFiles = async (apiFiles: EasyQuoteExcelFile[]) => {
@@ -167,7 +179,7 @@ export default function ExcelFiles() {
   };
 
   // Combine API files with Supabase metadata and filter by active status
-  const filesWithMeta = files.map(file => {
+  const filesWithMeta = actualFiles.map(file => {
     const meta = excelFilesMeta?.find(m => m.file_id === file.id);
     const isMaster = meta?.is_master || false;
     const fileUrl = isMaster ? generatePublicUrl(file.id, file.fileName) : null;
@@ -185,10 +197,10 @@ export default function ExcelFiles() {
 
   // Auto-sync files when they are loaded
   useEffect(() => {
-    if (files.length > 0) {
-      syncExcelFiles(files);
+    if (actualFiles.length > 0 && !error) {
+      syncExcelFiles(actualFiles);
     }
-  }, [files]);
+  }, [actualFiles, error]);
 
   // Upload Excel file to EasyQuote API
   const uploadMutation = useMutation({
