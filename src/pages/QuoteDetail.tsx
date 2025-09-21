@@ -283,13 +283,7 @@ export default function QuoteDetail() {
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               <p>Este presupuesto no tiene artículos añadidos</p>
-              <Button 
-                onClick={() => navigate(`/presupuestos/editar/${quote.id}`)}
-                className="mt-4 gap-2"
-              >
-                <Edit className="h-4 w-4" />
-                Añadir artículos
-              </Button>
+              <p className="text-sm mt-2">Para añadir artículos, utiliza el botón "Editar" en la parte superior</p>
             </div>
           )}
         </CardContent>
