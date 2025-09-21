@@ -42,6 +42,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
         .from("additionals")
         .select("*")
         .eq("is_active", true)
+        .eq("assignment_type", "article")
         .order("name")
 
       if (error) throw error
