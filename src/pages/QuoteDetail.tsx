@@ -299,7 +299,7 @@ export default function QuoteDetail() {
       {((quote.quote_additionals && Array.isArray(quote.quote_additionals) && quote.quote_additionals.length > 0)) && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Ajustes del Presupuesto</CardTitle>
+            <CardTitle className="text-lg">Ajustes del presupuesto</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
