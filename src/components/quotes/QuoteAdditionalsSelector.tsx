@@ -192,7 +192,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
       <div className="space-y-3">
         <h4 className="font-medium">Añadir ajuste personalizado</h4>
         <div className="flex gap-2 items-end">
-          <div className="flex-1">
+          <div className="w-48">
             <Label htmlFor="quote-custom-name" className="text-sm">Concepto</Label>
             <Input
               id="quote-custom-name"
@@ -226,7 +226,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
           <Button 
             onClick={addCustomAdditional} 
             disabled={!customName.trim()}
-            className="gap-2 min-w-[100px]"
+            className="gap-2 min-w-[120px]"
           >
             <Plus className="h-4 w-4" />
             Añadir
