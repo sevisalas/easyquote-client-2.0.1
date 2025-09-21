@@ -52,14 +52,25 @@ Deno.serve(async (req) => {
               id: image.id,
               filename: image.name,
               original_filename: image.name,
-              url: image.mediumImage || image.smallImage,
-              mime_type: 'image/jpeg',
-              file_size: null,
-              width: null,
-              height: null,
-              tags: [],
-              description: null,
-              created_at: image.dateCreated
+              dateCreated: image.dateCreated,
+              variants: {
+                original: {
+                  xSmall: image.xSmallImageOriginal,
+                  small: image.smallImageOriginal,
+                  medium: image.mediumImageOriginal,
+                  large: image.largeImageOriginal,
+                  xLarge: image.xLargeImageOriginal,
+                  xxLarge: image.xxLargeImageOriginal,
+                },
+                square: {
+                  xSmall: image.xSmallImageSquare,
+                  small: image.smallImageSquare,
+                  medium: image.mediumImageSquare,
+                  large: image.largeImageSquare,
+                  xLarge: image.xLargeImageSquare,
+                  xxLarge: image.xxLargeImageSquare,
+                }
+              }
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           )

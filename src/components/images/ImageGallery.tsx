@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Trash2, Edit, Tag, Eye } from "lucide-react";
+import { Trash2, Edit, Tag, Eye, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,8 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { useImageManagement, ImageData } from "@/hooks/useImageManagement";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 interface ImageGalleryProps {
   onImageSelect?: (image: ImageData) => void;
@@ -23,16 +25,31 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
   selectionMode = false,
   className = "",
 }) => {
-  const { images, isLoading, deleteImage, updateImage, isDeleting } = useImageManagement();
+  const { images, isLoading, deleteImage, updateImage, isDeleting, fetchImageDetails } = useImageManagement();
   const [editingImage, setEditingImage] = useState<ImageData | null>(null);
-  const [viewingImage, setViewingImage] = useState<ImageData | null>(null);
+  const [viewingImage, setViewingImage] = useState<any | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [editTags, setEditTags] = useState<string>("");
   const [editDescription, setEditDescription] = useState<string>("");
+  const [copiedUrl, setCopiedUrl] = useState<string>("");
 
   const handleEditImage = (image: ImageData) => {
     setEditingImage(image);
     setEditTags(image.tags.join(", "));
     setEditDescription(image.description || "");
+  };
+
+  const handleViewImage = async (image: ImageData) => {
+    setLoadingDetails(true);
+    try {
+      const details = await fetchImageDetails(image.id);
+      setViewingImage(details);
+    } catch (error) {
+      toast.error("Error al cargar los detalles de la imagen");
+      console.error(error);
+    } finally {
+      setLoadingDetails(false);
+    }
   };
 
   const handleSaveEdit = () => {
@@ -50,6 +67,13 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     });
 
     setEditingImage(null);
+  };
+
+  const copyToClipboard = (url: string) => {
+    navigator.clipboard.writeText(url);
+    setCopiedUrl(url);
+    toast.success("URL copiada al portapapeles");
+    setTimeout(() => setCopiedUrl(""), 2000);
   };
 
   const formatFileSize = (bytes: number) => {
@@ -117,7 +141,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                       className="h-8 w-8 p-0"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setViewingImage(image);
+                        handleViewImage(image);
                       }}
                     >
                       <Eye className="w-4 h-4" />
@@ -154,9 +178,6 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
               <div className="p-3">
                 <p className="text-sm font-medium truncate mb-1">
                   {image.original_filename}
-                </p>
-                <p className="text-xs text-muted-foreground mb-2">
-                  {formatFileSize(image.file_size)} • {image.width}×{image.height}
                 </p>
                 
                 {image.tags.length > 0 && (
@@ -228,57 +249,86 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
 
       {/* View Dialog */}
       <Dialog open={!!viewingImage} onOpenChange={() => setViewingImage(null)}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{viewingImage?.original_filename}</DialogTitle>
+            <DialogTitle>{viewingImage?.filename}</DialogTitle>
           </DialogHeader>
           
-          {viewingImage && (
+          {loadingDetails ? (
             <div className="space-y-4">
+              <Skeleton className="h-64 w-full" />
+              <div className="grid grid-cols-2 gap-4">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+              </div>
+            </div>
+          ) : viewingImage && (
+            <div className="space-y-6">
               <div className="flex justify-center">
                 <img
-                  src={viewingImage.url}
-                  alt={viewingImage.original_filename}
+                  src={viewingImage.variants?.original?.medium || viewingImage.variants?.original?.small}
+                  alt={viewingImage.filename}
                   className="max-w-full max-h-96 object-contain rounded-lg"
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Tamaño:</span> {formatFileSize(viewingImage.file_size)}
-                </div>
-                <div>
-                  <span className="font-medium">Dimensiones:</span> {viewingImage.width}×{viewingImage.height}
-                </div>
-                <div>
-                  <span className="font-medium">Tipo:</span> {viewingImage.mime_type}
-                </div>
-                <div>
-                  <span className="font-medium">Creada:</span> {new Date(viewingImage.created_at).toLocaleDateString()}
-                </div>
-              </div>
-              
-              {viewingImage.tags.length > 0 && (
-                <div>
-                  <span className="font-medium text-sm">Etiquetas:</span>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {viewingImage.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary">
-                        {tag}
-                      </Badge>
-                    ))}
+              <div>
+                <h4 className="text-lg font-semibold mb-3">Variantes disponibles</h4>
+                
+                <div className="space-y-4">
+                  <div>
+                    <h5 className="text-md font-medium mb-2">Originales</h5>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {Object.entries(viewingImage.variants?.original || {}).map(([size, url]) => (
+                        url && (
+                          <div key={size} className="flex items-center justify-between p-2 border rounded">
+                            <span className="text-sm capitalize">{size}</span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => copyToClipboard(url as string)}
+                              className="h-8"
+                            >
+                              {copiedUrl === url ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                              <span className="ml-1 text-xs">
+                                {copiedUrl === url ? 'Copiado' : 'Copiar URL'}
+                              </span>
+                            </Button>
+                          </div>
+                        )
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div>
+                    <h5 className="text-md font-medium mb-2">Cuadradas</h5>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {Object.entries(viewingImage.variants?.square || {}).map(([size, url]) => (
+                        url && (
+                          <div key={size} className="flex items-center justify-between p-2 border rounded">
+                            <span className="text-sm capitalize">{size}</span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => copyToClipboard(url as string)}
+                              className="h-8"
+                            >
+                              {copiedUrl === url ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                              <span className="ml-1 text-xs">
+                                {copiedUrl === url ? 'Copiado' : 'Copiar URL'}
+                              </span>
+                            </Button>
+                          </div>
+                        )
+                      ))}
+                    </div>
                   </div>
                 </div>
-              )}
-              
-              {viewingImage.description && (
-                <div>
-                  <span className="font-medium text-sm">Descripción:</span>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {viewingImage.description}
-                  </p>
-                </div>
-              )}
+              </div>
             </div>
           )}
         </DialogContent>

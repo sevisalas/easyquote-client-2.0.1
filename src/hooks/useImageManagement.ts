@@ -106,7 +106,15 @@ export const useImageManagement = () => {
     },
   });
 
-  // Update image metadata mutation
+  // Fetch single image details
+  const fetchImageDetails = async (imageId: string) => {
+    const { data, error } = await supabase.functions.invoke(`easyquote-images/${imageId}`, {
+      method: 'GET'
+    });
+
+    if (error) throw error;
+    return data;
+  };
   const updateImageMutation = useMutation({
     mutationFn: async ({ 
       imageId, 
@@ -146,6 +154,7 @@ export const useImageManagement = () => {
     uploadImage: uploadImageMutation.mutate,
     deleteImage: deleteImageMutation.mutate,
     updateImage: updateImageMutation.mutate,
+    fetchImageDetails,
     isUploading: uploadImageMutation.isPending,
     isDeleting: deleteImageMutation.isPending,
     isUpdating: updateImageMutation.isPending,
