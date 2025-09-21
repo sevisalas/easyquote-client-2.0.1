@@ -263,7 +263,7 @@ export default function QuoteNew() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>Nuevo Presupuesto</span>
+              <span>Nuevo presupuesto</span>
               <Button onClick={() => navigate(-1)} variant="outline">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Volver
@@ -322,7 +322,7 @@ export default function QuoteNew() {
             />
             
             <div className="space-y-2">
-              <Label htmlFor="valid-until">válido hasta</Label>
+              <Label htmlFor="valid-until">Válido hasta</Label>
               <Input
                 id="valid-until"
                 type="date"
@@ -334,7 +334,7 @@ export default function QuoteNew() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="description">descripción</Label>
+              <Label htmlFor="description">Descripción</Label>
               <Textarea
                 id="description"
                 value={description}
@@ -344,7 +344,7 @@ export default function QuoteNew() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="notes">notas internas</Label>
+              <Label htmlFor="notes">Notas internas</Label>
               <Textarea
                 id="notes"
                 value={notes}
@@ -404,7 +404,7 @@ export default function QuoteNew() {
       {/* Quote-level Discounts and Adjustments */}
       <Card>
         <CardHeader>
-          <CardTitle>Descuentos y Ajustes del Presupuesto</CardTitle>
+          <CardTitle>Ajustes del presupuesto</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="bg-primary/5 p-4 rounded-lg border border-primary/10">
