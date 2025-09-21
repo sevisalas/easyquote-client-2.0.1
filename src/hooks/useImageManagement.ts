@@ -37,41 +37,18 @@ export const useImageManagement = () => {
   const { data: images = [], isLoading, error } = useQuery({
     queryKey: ["user-images"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
-      const { data, error } = await supabase
-        .from("images")
-        .select("*")
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.functions.invoke('easyquote-images', {
+        method: 'GET'
+      });
 
       if (error) throw error;
-
-      // Get public URLs for images
-      const imagesWithUrls = await Promise.all(
-        data.map(async (image) => {
-          const { data: urlData } = supabase.storage
-            .from("product-images")
-            .getPublicUrl(image.storage_path);
-          
-          return {
-            ...image,
-            url: urlData.publicUrl
-          };
-        })
-      );
-
-      return imagesWithUrls as ImageData[];
+      return data as ImageData[];
     },
   });
 
   // Upload image mutation
   const uploadImageMutation = useMutation({
     mutationFn: async ({ file, tags = [], description }: UploadImageData) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
       // Validate file
       if (file.size > MAX_FILE_SIZE) {
         throw new Error("El archivo es demasiado grande. Máximo 10MB.");
@@ -81,45 +58,21 @@ export const useImageManagement = () => {
         throw new Error("Tipo de archivo no permitido. Use JPG, PNG, WebP o GIF.");
       }
 
-      // Generate unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-
       setUploadProgress(0);
 
-      // Upload to storage
-      const { error: uploadError } = await supabase.storage
-        .from("product-images")
-        .upload(fileName, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
+      // Create form data
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('tags', JSON.stringify(tags));
+      if (description) formData.append('description', description);
 
-      if (uploadError) throw uploadError;
+      const { data, error } = await supabase.functions.invoke('easyquote-images', {
+        method: 'POST',
+        body: formData
+      });
 
-      // Get image dimensions
-      const dimensions = await getImageDimensions(file);
-
-      // Save metadata to database
-      const { data, error: dbError } = await supabase
-        .from("images")
-        .insert({
-          user_id: user.id,
-          filename: fileName.split('/').pop() || fileName,
-          original_filename: file.name,
-          file_size: file.size,
-          mime_type: file.type,
-          width: dimensions.width,
-          height: dimensions.height,
-          storage_path: fileName,
-          tags,
-          description,
-        })
-        .select()
-        .single();
-
-      if (dbError) throw dbError;
-
+      if (error) throw error;
+      
       setUploadProgress(100);
       return data;
     },
@@ -137,24 +90,11 @@ export const useImageManagement = () => {
   // Delete image mutation
   const deleteImageMutation = useMutation({
     mutationFn: async (imageId: string) => {
-      const image = images.find(img => img.id === imageId);
-      if (!image) throw new Error("Imagen no encontrada");
+      const { error } = await supabase.functions.invoke(`easyquote-images/${imageId}`, {
+        method: 'DELETE'
+      });
 
-      // Delete from storage
-      const { error: storageError } = await supabase.storage
-        .from("product-images")
-        .remove([image.storage_path]);
-
-      if (storageError) throw storageError;
-
-      // Delete from database
-      const { error: dbError } = await supabase
-        .from("images")
-        .delete()
-        .eq("id", imageId);
-
-      if (dbError) throw dbError;
-
+      if (error) throw error;
       return imageId;
     },
     onSuccess: () => {
@@ -181,12 +121,10 @@ export const useImageManagement = () => {
       if (tags !== undefined) updateData.tags = tags;
       if (description !== undefined) updateData.description = description;
 
-      const { data, error } = await supabase
-        .from("images")
-        .update(updateData)
-        .eq("id", imageId)
-        .select()
-        .single();
+      const { data, error } = await supabase.functions.invoke(`easyquote-images/${imageId}`, {
+        method: 'PATCH',
+        body: updateData
+      });
 
       if (error) throw error;
       return data;
