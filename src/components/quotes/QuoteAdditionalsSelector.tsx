@@ -160,7 +160,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
       {/* Add Predefined Additional */}
       {unselectedAdditionals.length > 0 && (
         <div className="space-y-3">
-          <h4 className="font-medium">Añadir Ajuste Predefinido</h4>
+          <h4 className="font-medium">Añadir ajuste predefinido</h4>
           <div className="flex gap-2">
             <Select value={newAdditionalId} onValueChange={setNewAdditionalId}>
               <SelectTrigger className="flex-1">
@@ -190,7 +190,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
 
       {/* Add Custom Additional */}
       <div className="space-y-3">
-        <h4 className="font-medium">Añadir Ajuste Personalizado</h4>
+        <h4 className="font-medium">Añadir ajuste personalizado</h4>
         <div className="flex gap-2 items-end">
           <div className="flex-1">
             <Label htmlFor="quote-custom-name" className="text-sm">Concepto</Label>
@@ -208,7 +208,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="net_amount">Importe Neto</SelectItem>
+                <SelectItem value="net_amount">Importe neto</SelectItem>
                 <SelectItem value="percentage">Porcentaje</SelectItem>
               </SelectContent>
             </Select>
