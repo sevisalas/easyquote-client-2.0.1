@@ -287,7 +287,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                             <img 
                               src={url as string} 
                               alt={`${size} preview`}
-                              className="w-12 h-12 object-cover rounded border flex-shrink-0"
+                              className="w-12 h-12 object-cover flex-shrink-0"
                             />
                             <div className="flex-1 min-w-0">
                               <span className="text-sm font-medium capitalize block">{size}</span>
@@ -320,7 +320,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                             <img 
                               src={url as string} 
                               alt={`${size} square preview`}
-                              className="w-12 h-12 object-cover rounded border flex-shrink-0"
+                              className="w-12 h-12 object-cover flex-shrink-0"
                             />
                             <div className="flex-1 min-w-0">
                               <span className="text-sm font-medium capitalize block">{size}</span>
