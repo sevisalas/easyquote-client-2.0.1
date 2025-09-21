@@ -98,7 +98,7 @@ export default function PresupuestosDashboard() {
               </Link>
             </Button>
           </div>
-          <h1 className="text-3xl font-bold">Gestión de Presupuestos</h1>
+          <h1 className="text-3xl font-bold">Gestión de presupuestos</h1>
           <p className="text-muted-foreground">
             Administra presupuestos, clientes y estadísticas de ventas
           </p>
@@ -115,7 +115,7 @@ export default function PresupuestosDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Presupuestos</CardTitle>
+            <CardTitle className="text-sm font-medium">Total presupuestos</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -128,7 +128,7 @@ export default function PresupuestosDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
+            <CardTitle className="text-sm font-medium">Valor total</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -173,10 +173,10 @@ export default function PresupuestosDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              Gestión de Presupuestos
+              Gestión de presupuestos
             </CardTitle>
             <CardDescription>
-              Administra cotizaciones y presupuestos de clientes
+              Administra presupuestos de clientes
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -221,7 +221,7 @@ export default function PresupuestosDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Gestión de Clientes
+              Gestión de clientes
             </CardTitle>
             <CardDescription>
               Administra la base de datos de clientes y contactos
@@ -268,7 +268,7 @@ export default function PresupuestosDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Análisis de Ventas
+              Análisis de ventas
             </CardTitle>
             <CardDescription>
               Métricas y estadísticas de rendimiento comercial
@@ -294,7 +294,7 @@ export default function PresupuestosDashboard() {
             
             <Button size="sm" variant="outline" className="w-full">
               <BarChart3 className="h-4 w-4 mr-2" />
-              Ver Reportes Completos
+              Ver reportes completos
             </Button>
           </CardContent>
         </Card>
@@ -343,7 +343,7 @@ export default function PresupuestosDashboard() {
             <Button size="sm" variant="outline" asChild className="w-full">
               <Link to="/presupuestos">
                 <Eye className="h-4 w-4 mr-2" />
-                Ver Todos
+                Ver todos
               </Link>
             </Button>
           </CardContent>
@@ -353,7 +353,7 @@ export default function PresupuestosDashboard() {
       {/* Quick Access */}
       <Card>
         <CardHeader>
-          <CardTitle>Acceso Rápido</CardTitle>
+          <CardTitle>Acceso rápido</CardTitle>
           <CardDescription>
             Funciones más utilizadas para la gestión comercial
           </CardDescription>
@@ -363,28 +363,28 @@ export default function PresupuestosDashboard() {
             <Button variant="outline" size="sm" asChild className="h-auto flex-col gap-2 py-4">
               <Link to="/presupuestos/nuevo">
                 <Plus className="h-6 w-6" />
-                <span className="text-xs">Nuevo Presupuesto</span>
+                <span className="text-xs">Nuevo presupuesto</span>
               </Link>
             </Button>
             
             <Button variant="outline" size="sm" asChild className="h-auto flex-col gap-2 py-4">
               <Link to="/clientes/nuevo">
                 <Users className="h-6 w-6" />
-                <span className="text-xs">Nuevo Cliente</span>
+                <span className="text-xs">Nuevo cliente</span>
               </Link>
             </Button>
             
             <Button variant="outline" size="sm" asChild className="h-auto flex-col gap-2 py-4">
               <Link to="/presupuestos">
                 <FileText className="h-6 w-6" />
-                <span className="text-xs">Ver Presupuestos</span>
+                <span className="text-xs">Ver presupuestos</span>
               </Link>
             </Button>
             
             <Button variant="outline" size="sm" asChild className="h-auto flex-col gap-2 py-4">
               <Link to="/clientes">
                 <BarChart3 className="h-6 w-6" />
-                <span className="text-xs">Ver Clientes</span>
+                <span className="text-xs">Ver clientes</span>
               </Link>
             </Button>
           </div>
