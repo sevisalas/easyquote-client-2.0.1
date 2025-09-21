@@ -20,6 +20,7 @@ import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { EasyQuoteConnectivityTest } from "@/components/diagnostics/EasyQuoteConnectivityTest";
 
 interface EasyQuoteExcelFile {
   id: string;
@@ -924,6 +925,9 @@ export default function ExcelFiles() {
       </div>
 
       <Separator />
+
+      {/* Test de Conectividad */}
+      <EasyQuoteConnectivityTest />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
