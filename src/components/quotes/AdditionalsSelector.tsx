@@ -191,7 +191,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
       <div className="space-y-3">
         <h4 className="font-medium">Añadir personalizado</h4>
         <div className="flex gap-2">
-          <div className="flex-1">
+          <div className="w-48">
             <Input
               id="custom-name"
               value={customName}
@@ -223,7 +223,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
           <Button 
             onClick={addCustomAdditional} 
             disabled={!customName.trim()}
-            className="w-20"
+            className="w-28"
           >
             <Plus className="h-4 w-4 mr-2" />
             Añadir
