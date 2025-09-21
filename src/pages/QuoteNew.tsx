@@ -435,7 +435,7 @@ export default function QuoteNew() {
             )}
             {totals.discountAmount > 0 && (
               <div className="flex justify-between text-green-600">
-                <span>descuento:</span>
+                <span>Descuento:</span>
                 <span>-{formatEUR(totals.discountAmount)}</span>
               </div>
             )}
@@ -460,14 +460,14 @@ export default function QuoteNew() {
               variant="outline"
             >
               <Save className="w-4 h-4 mr-2" />
-              Guardar Borrador
+              Guardar borrador
             </Button>
             <Button
               onClick={() => handleSave("sent")}
               disabled={loading}
             >
               <Save className="w-4 h-4 mr-2" />
-              Guardar y Enviar
+              Guardar y enviar
             </Button>
           </div>
         </CardContent>
