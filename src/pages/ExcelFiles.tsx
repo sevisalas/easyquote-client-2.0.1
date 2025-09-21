@@ -120,25 +120,13 @@ export default function ExcelFiles() {
       return data as EasyQuoteExcelFile[];
     },
     enabled: hasToken,
-    retry: false // No reintentar si falla
+    retry: (failureCount, error: any) => {
+      if (error?.message?.includes("401")) {
+        return false;
+      }
+      return failureCount < 3;
+    }
   });
-
-  // Fallback: Create files from Supabase metadata when EasyQuote API fails
-  const fallbackFiles = excelFilesMeta?.map(meta => ({
-    id: meta.file_id,
-    fileName: meta.filename,
-    fileSizeKb: Math.round((meta.file_size || 0) / 1024),
-    dateCreated: meta.created_at,
-    dateModified: meta.updated_at,
-    isActive: true,
-    isPlanCompliant: true,
-    subscriberId: subscriberId,
-    excelfilesSheets: [],
-    products: []
-  })) || [];
-
-  // Use EasyQuote files if available, otherwise fallback to Supabase metadata
-  const actualFiles = error ? fallbackFiles : files;
 
   // Sync Excel files with Supabase
   const syncExcelFiles = async (apiFiles: EasyQuoteExcelFile[]) => {
@@ -179,7 +167,7 @@ export default function ExcelFiles() {
   };
 
   // Combine API files with Supabase metadata and filter by active status
-  const filesWithMeta = actualFiles.map(file => {
+  const filesWithMeta = files.map(file => {
     const meta = excelFilesMeta?.find(m => m.file_id === file.id);
     const isMaster = meta?.is_master || false;
     const fileUrl = isMaster ? generatePublicUrl(file.id, file.fileName) : null;
@@ -197,10 +185,10 @@ export default function ExcelFiles() {
 
   // Auto-sync files when they are loaded
   useEffect(() => {
-    if (actualFiles.length > 0 && !error) {
-      syncExcelFiles(actualFiles);
+    if (files.length > 0) {
+      syncExcelFiles(files);
     }
-  }, [actualFiles, error]);
+  }, [files]);
 
   // Upload Excel file to EasyQuote API
   const uploadMutation = useMutation({
@@ -724,14 +712,37 @@ export default function ExcelFiles() {
 
   if (error) {
     return (
-      <div className="container mx-auto py-10">
+      <div className="container mx-auto py-10 space-y-6">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            No se pudieron cargar los archivos: {error.message}
+          <AlertTitle>EasyQuote no disponible</AlertTitle>
+          <AlertDescription className="space-y-3">
+            <div>
+              No se puede conectar con EasyQuote para cargar los archivos Excel. 
+              Los archivos están almacenados en EasyQuote, no en Supabase.
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => refetch()}
+              disabled={isLoading}
+            >
+              {isLoading ? "Reintentando..." : "Reintentar conexión"}
+            </Button>
           </AlertDescription>
         </Alert>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Test de Conectividad</CardTitle>
+            <CardDescription>
+              Usa este test para diagnosticar problemas de conexión con EasyQuote
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <EasyQuoteConnectivityTest />
+          </CardContent>
+        </Card>
       </div>
     );
   }
