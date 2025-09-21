@@ -191,7 +191,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
       <div className="space-y-3">
         <h4 className="font-medium">Añadir personalizado</h4>
         <div className="flex gap-2">
-          <div className="w-48">
+          <div className="flex-1">
             <Input
               id="custom-name"
               value={customName}
