@@ -68,13 +68,13 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <Link to="/" aria-label="Ir al inicio" className="flex items-center justify-center px-2 py-2">
+      <SidebarHeader className="p-2">
+        <Link to="/" aria-label="Ir al inicio" className="flex items-center justify-center px-1 py-1">
           {isCollapsed ? (
             <img
               src="/lovable-uploads/logo_transparente-removebg-preview.png"
               alt="EQ Logo"
-              className="h-8 w-8 object-contain"
+              className="h-6 w-6 object-contain"
               onError={(e) => {
                 const img = e.currentTarget;
                 if (img.dataset.fallbackApplied) {
@@ -91,7 +91,7 @@ export function AppSidebar() {
             <img
               src="/lovable-uploads/logo_transparente-removebg-preview.png"
               alt="Logo EasyQuote"
-              className="h-8 w-auto max-w-full object-contain"
+              className="h-6 w-auto max-w-full object-contain"
               onError={(e) => {
                 const img = e.currentTarget;
                 if (img.dataset.fallbackApplied) {
@@ -107,47 +107,47 @@ export function AppSidebar() {
           )}
         </Link>
       </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
+      <SidebarContent className="py-2">
+        <SidebarGroup className="py-0">
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {/* Menú para SuperAdmin */}
               {isSuperAdmin && (
                 <>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={currentPath === "/"}>
-                      <NavLink to="/" end className={getNavCls}>
-                        <Home className="mr-2 h-4 w-4" />
-                        {!isCollapsed && <span>Dashboard</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
+                     <SidebarMenuButton asChild isActive={currentPath === "/"} className="h-8 px-2">
+                       <NavLink to="/" end className={getNavCls}>
+                         <Home className="mr-1.5 h-3.5 w-3.5" />
+                         {!isCollapsed && <span className="text-sm">Dashboard</span>}
+                       </NavLink>
+                     </SidebarMenuButton>
                   </SidebarMenuItem>
 
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={currentPath === "/planes"}>
-                      <NavLink to="/planes" end className={getNavCls}>
-                        <Settings className="mr-2 h-4 w-4" />
-                        {!isCollapsed && <span>Planes</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
+                     <SidebarMenuButton asChild isActive={currentPath === "/planes"} className="h-8 px-2">
+                       <NavLink to="/planes" end className={getNavCls}>
+                         <Settings className="mr-1.5 h-3.5 w-3.5" />
+                         {!isCollapsed && <span className="text-sm">Planes</span>}
+                       </NavLink>
+                     </SidebarMenuButton>
                   </SidebarMenuItem>
 
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={currentPath === "/usuarios"}>
-                      <NavLink to="/usuarios" end className={getNavCls}>
-                        <UserCog className="mr-2 h-4 w-4" />
-                        {!isCollapsed && <span>Suscriptores</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
+                     <SidebarMenuButton asChild isActive={currentPath === "/usuarios"} className="h-8 px-2">
+                       <NavLink to="/usuarios" end className={getNavCls}>
+                         <UserCog className="mr-1.5 h-3.5 w-3.5" />
+                         {!isCollapsed && <span className="text-sm">Suscriptores</span>}
+                       </NavLink>
+                     </SidebarMenuButton>
                   </SidebarMenuItem>
 
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={currentPath === "/integraciones-acceso"}>
-                      <NavLink to="/integraciones-acceso" end className={getNavCls}>
-                        <Plug className="mr-2 h-4 w-4" />
-                        {!isCollapsed && <span>Integraciones</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
+                     <SidebarMenuButton asChild isActive={currentPath === "/integraciones-acceso"} className="h-8 px-2">
+                       <NavLink to="/integraciones-acceso" end className={getNavCls}>
+                         <Plug className="mr-1.5 h-3.5 w-3.5" />
+                         {!isCollapsed && <span className="text-sm">Integraciones</span>}
+                       </NavLink>
+                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </>
               )}
@@ -157,212 +157,217 @@ export function AppSidebar() {
                 <>
                   {items.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild isActive={currentPath === item.url}>
-                        <NavLink to={item.url} end className={getNavCls}>
-                          <item.icon className="mr-2 h-4 w-4" />
-                          {!isCollapsed && <span>{item.title}</span>}
-                        </NavLink>
-                      </SidebarMenuButton>
+                       <SidebarMenuButton asChild isActive={currentPath === item.url} className="h-8 px-2">
+                         <NavLink to={item.url} end className={getNavCls}>
+                           <item.icon className="mr-1.5 h-3.5 w-3.5" />
+                           {!isCollapsed && <span className="text-sm">{item.title}</span>}
+                         </NavLink>
+                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
 
                   {/* Clientes - Solo para suscripciones Client */}
                   {canAccessClientes() && (
                     <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={currentPath.startsWith("/clientes")}
-                      >
-                        <NavLink to="/clientes" end className={getNavCls}>
-                          <Users className="mr-2 h-4 w-4" />
-                          {!isCollapsed && <span>Clientes</span>}
-                        </NavLink>
-                      </SidebarMenuButton>
-                      <SidebarMenuSub>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton
-                            asChild
-                            isActive={currentPath === "/clientes"}
-                          >
-                            <NavLink to="/clientes" end className={getNavCls}>
-                              <Users className="mr-2 h-4 w-4" />
-                              {!isCollapsed && <span>Listado</span>}
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton
-                            asChild
-                            isActive={currentPath === "/clientes/nuevo"}
-                          >
-                            <NavLink to="/clientes/nuevo" className={getNavCls}>
-                              <PlusCircle className="mr-2 h-4 w-4" />
-                              {!isCollapsed && <span>Nuevo</span>}
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      </SidebarMenuSub>
+                       <SidebarMenuButton
+                         asChild
+                         isActive={currentPath.startsWith("/clientes")}
+                         className="h-8 px-2"
+                       >
+                         <NavLink to="/clientes" end className={getNavCls}>
+                           <Users className="mr-1.5 h-3.5 w-3.5" />
+                           {!isCollapsed && <span className="text-sm">Clientes</span>}
+                         </NavLink>
+                       </SidebarMenuButton>
+                       <SidebarMenuSub className="ml-3 space-y-0.5">
+                         <SidebarMenuSubItem>
+                           <SidebarMenuSubButton
+                             asChild
+                             isActive={currentPath === "/clientes"}
+                             className="h-7 px-2"
+                           >
+                             <NavLink to="/clientes" end className={getNavCls}>
+                               <Users className="mr-1.5 h-3 w-3" />
+                               {!isCollapsed && <span className="text-xs">Listado</span>}
+                             </NavLink>
+                           </SidebarMenuSubButton>
+                         </SidebarMenuSubItem>
+                         <SidebarMenuSubItem>
+                           <SidebarMenuSubButton
+                             asChild
+                             isActive={currentPath === "/clientes/nuevo"}
+                             className="h-7 px-2"
+                           >
+                             <NavLink to="/clientes/nuevo" className={getNavCls}>
+                               <PlusCircle className="mr-1.5 h-3 w-3" />
+                               {!isCollapsed && <span className="text-xs">Nuevo</span>}
+                             </NavLink>
+                           </SidebarMenuSubButton>
+                         </SidebarMenuSubItem>
+                       </SidebarMenuSub>
                     </SidebarMenuItem>
                   )}
 
                   {/* Presupuestos - Solo para suscripciones Client */}
                   {canAccessPresupuestos() && (
                     <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={currentPath.startsWith("/presupuestos")}
-                      >
-                        <NavLink to="/presupuestos" end className={getNavCls}>
-                          <FileText className="mr-2 h-4 w-4" />
-                          {!isCollapsed && <span>Presupuestos</span>}
-                        </NavLink>
-                      </SidebarMenuButton>
-                      <SidebarMenuSub>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton
-                            asChild
-                            isActive={currentPath === "/presupuestos"}
-                          >
-                            <NavLink to="/presupuestos" end className={getNavCls}>
-                              <FileText className="mr-2 h-4 w-4" />
-                              {!isCollapsed && <span>Listado</span>}
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton
-                            asChild
-                            isActive={currentPath === "/presupuestos/nuevo"}
-                          >
-                            <NavLink to="/presupuestos/nuevo" className={getNavCls}>
-                              <PlusCircle className="mr-2 h-4 w-4" />
-                              {!isCollapsed && <span>Nuevo</span>}
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      </SidebarMenuSub>
+                       <SidebarMenuButton
+                         asChild
+                         isActive={currentPath.startsWith("/presupuestos")}
+                         className="h-8 px-2"
+                       >
+                         <NavLink to="/presupuestos" end className={getNavCls}>
+                           <FileText className="mr-1.5 h-3.5 w-3.5" />
+                           {!isCollapsed && <span className="text-sm">Presupuestos</span>}
+                         </NavLink>
+                       </SidebarMenuButton>
+                       <SidebarMenuSub className="ml-3 space-y-0.5">
+                         <SidebarMenuSubItem>
+                           <SidebarMenuSubButton
+                             asChild
+                             isActive={currentPath === "/presupuestos"}
+                             className="h-7 px-2"
+                           >
+                             <NavLink to="/presupuestos" end className={getNavCls}>
+                               <FileText className="mr-1.5 h-3 w-3" />
+                               {!isCollapsed && <span className="text-xs">Listado</span>}
+                             </NavLink>
+                           </SidebarMenuSubButton>
+                         </SidebarMenuSubItem>
+                         <SidebarMenuSubItem>
+                           <SidebarMenuSubButton
+                             asChild
+                             isActive={currentPath === "/presupuestos/nuevo"}
+                             className="h-7 px-2"
+                           >
+                             <NavLink to="/presupuestos/nuevo" className={getNavCls}>
+                               <PlusCircle className="mr-1.5 h-3 w-3" />
+                               {!isCollapsed && <span className="text-xs">Nuevo</span>}
+                             </NavLink>
+                           </SidebarMenuSubButton>
+                         </SidebarMenuSubItem>
+                       </SidebarMenuSub>
                     </SidebarMenuItem>
                   )}
 
-                  {/* Configuración */}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={currentPath.startsWith("/configuracion")}>
-                      <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
-                        <Palette className="mr-2 h-4 w-4" />
-                        {!isCollapsed && <span>Configuración</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                    <SidebarMenuSub>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/ajustes"}>
-                          <NavLink to="/configuracion/ajustes" end className={getNavCls}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            {!isCollapsed && <span>Ajustes</span>}
-                          </NavLink>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/plantilla-pdf"}>
-                          <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
-                            <FileText className="mr-2 h-4 w-4" />
-                            {!isCollapsed && <span>Plantilla PDF</span>}
-                          </NavLink>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      {/* Integraciones - Solo admins */}
-                      {(isSuperAdmin || isOrgAdmin) && (
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/integraciones"}>
-                            <NavLink to="/configuracion/integraciones" end className={getNavCls}>
-                              <Plug className="mr-2 h-4 w-4" />
-                              {!isCollapsed && <span>Integraciones</span>}
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      )}
-                      
-                      {/* Archivos Excel - Solo API suscriptions o Client admins */}
-                      {canAccessExcel() && (
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/archivos-excel"}>
-                            <NavLink to="/configuracion/archivos-excel" end className={getNavCls}>
-                              <FileSpreadsheet className="mr-2 h-4 w-4" />
-                              {!isCollapsed && <span>Archivos Excel</span>}
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      )}
-                      
-                      {/* Productos - Solo API subscriptions o Client admins */}
-                      {canAccessProductos() && (
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild isActive={currentPath === "/admin/productos"}>
-                            <NavLink to="/admin/productos" end className={getNavCls}>
-                              <Package className="mr-2 h-4 w-4" />
-                              {!isCollapsed && <span>Productos</span>}
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      )}
-                      
-                      {/* Categorías - Solo API subscriptions o Client admins */}
-                      {canAccessCategorias() && (
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild isActive={currentPath === "/admin/categorias"}>
-                            <NavLink to="/admin/categorias" end className={getNavCls}>
-                              <Tags className="mr-2 h-4 w-4" />
-                              {!isCollapsed && <span>Categorías</span>}
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      )}
-                      
-                      {/* Gestión de imágenes - Solo API subscriptions o Client admins */}
-                      {canAccessProductos() && (
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/imagenes"}>
-                            <NavLink to="/configuracion/imagenes" end className={getNavCls}>
-                              <Image className="mr-2 h-4 w-4" />
-                              {!isCollapsed && <span>Imágenes</span>}
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      )}
-                    </SidebarMenuSub>
-                  </SidebarMenuItem>
+                   <SidebarMenuItem>
+                     <SidebarMenuButton asChild isActive={currentPath.startsWith("/configuracion")} className="h-8 px-2">
+                       <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
+                         <Palette className="mr-1.5 h-3.5 w-3.5" />
+                         {!isCollapsed && <span className="text-sm">Configuración</span>}
+                       </NavLink>
+                     </SidebarMenuButton>
+                     <SidebarMenuSub className="ml-3 space-y-0.5">
+                       <SidebarMenuSubItem>
+                         <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/ajustes"} className="h-7 px-2">
+                           <NavLink to="/configuracion/ajustes" end className={getNavCls}>
+                             <Plus className="mr-1.5 h-3 w-3" />
+                             {!isCollapsed && <span className="text-xs">Ajustes</span>}
+                           </NavLink>
+                         </SidebarMenuSubButton>
+                       </SidebarMenuSubItem>
+                       <SidebarMenuSubItem>
+                         <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/plantilla-pdf"} className="h-7 px-2">
+                           <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
+                             <FileText className="mr-1.5 h-3 w-3" />
+                             {!isCollapsed && <span className="text-xs">Plantilla PDF</span>}
+                           </NavLink>
+                         </SidebarMenuSubButton>
+                       </SidebarMenuSubItem>
+                       {/* Integraciones - Solo admins */}
+                       {(isSuperAdmin || isOrgAdmin) && (
+                         <SidebarMenuSubItem>
+                           <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/integraciones"} className="h-7 px-2">
+                             <NavLink to="/configuracion/integraciones" end className={getNavCls}>
+                               <Plug className="mr-1.5 h-3 w-3" />
+                               {!isCollapsed && <span className="text-xs">Integraciones</span>}
+                             </NavLink>
+                           </SidebarMenuSubButton>
+                         </SidebarMenuSubItem>
+                       )}
+                       
+                       {/* Archivos Excel - Solo API suscriptions o Client admins */}
+                       {canAccessExcel() && (
+                         <SidebarMenuSubItem>
+                           <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/archivos-excel"} className="h-7 px-2">
+                             <NavLink to="/configuracion/archivos-excel" end className={getNavCls}>
+                               <FileSpreadsheet className="mr-1.5 h-3 w-3" />
+                               {!isCollapsed && <span className="text-xs">Archivos Excel</span>}
+                             </NavLink>
+                           </SidebarMenuSubButton>
+                         </SidebarMenuSubItem>
+                       )}
+                       
+                       {/* Productos - Solo API subscriptions o Client admins */}
+                       {canAccessProductos() && (
+                         <SidebarMenuSubItem>
+                           <SidebarMenuSubButton asChild isActive={currentPath === "/admin/productos"} className="h-7 px-2">
+                             <NavLink to="/admin/productos" end className={getNavCls}>
+                               <Package className="mr-1.5 h-3 w-3" />
+                               {!isCollapsed && <span className="text-xs">Productos</span>}
+                             </NavLink>
+                           </SidebarMenuSubButton>
+                         </SidebarMenuSubItem>
+                       )}
+                       
+                       {/* Categorías - Solo API subscriptions o Client admins */}
+                       {canAccessCategorias() && (
+                         <SidebarMenuSubItem>
+                           <SidebarMenuSubButton asChild isActive={currentPath === "/admin/categorias"} className="h-7 px-2">
+                             <NavLink to="/admin/categorias" end className={getNavCls}>
+                               <Tags className="mr-1.5 h-3 w-3" />
+                               {!isCollapsed && <span className="text-xs">Categorías</span>}
+                             </NavLink>
+                           </SidebarMenuSubButton>
+                         </SidebarMenuSubItem>
+                       )}
+                       
+                       {/* Gestión de imágenes - Solo API subscriptions o Client admins */}
+                       {canAccessProductos() && (
+                         <SidebarMenuSubItem>
+                           <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/imagenes"} className="h-7 px-2">
+                             <NavLink to="/configuracion/imagenes" end className={getNavCls}>
+                               <Image className="mr-1.5 h-3 w-3" />
+                               {!isCollapsed && <span className="text-xs">Imágenes</span>}
+                             </NavLink>
+                           </SidebarMenuSubButton>
+                         </SidebarMenuSubItem>
+                       )}
+                     </SidebarMenuSub>
+                   </SidebarMenuItem>
                 </>
               )}
 
               {/* Gestión de usuarios - solo para org admin (no superadmin, ya está arriba) */}
-              {!isSuperAdmin && isOrgAdmin && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={currentPath === "/usuarios"}>
-                    <NavLink to="/usuarios" end className={getNavCls}>
-                      <UserCog className="mr-2 h-4 w-4" />
-                      {!isCollapsed && <span>Gestión de usuarios</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
+               {!isSuperAdmin && isOrgAdmin && (
+                 <SidebarMenuItem>
+                   <SidebarMenuButton asChild isActive={currentPath === "/usuarios"} className="h-8 px-2">
+                     <NavLink to="/usuarios" end className={getNavCls}>
+                       <UserCog className="mr-1.5 h-3.5 w-3.5" />
+                       {!isCollapsed && <span className="text-sm">Gestión de usuarios</span>}
+                     </NavLink>
+                   </SidebarMenuButton>
+                 </SidebarMenuItem>
+               )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu>
+      <SidebarFooter className="p-2">
+        <SidebarMenu className="space-y-1">
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Contraer menú">
+            <SidebarMenuButton asChild tooltip="Contraer menú" className="h-8 px-2">
               <button onClick={toggleSidebar} className="w-full flex items-center justify-start">
-                <Menu className="mr-2 h-4 w-4" />
-                {!isCollapsed && <span>Contraer menú</span>}
+                <Menu className="mr-1.5 h-3.5 w-3.5" />
+                {!isCollapsed && <span className="text-sm">Contraer menú</span>}
               </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Cerrar sesión">
+            <SidebarMenuButton asChild tooltip="Cerrar sesión" className="h-8 px-2">
               <button onClick={handleSignOut} className="w-full flex items-center">
-                <LogOut className="mr-2 h-4 w-4" />
-                {!isCollapsed && <span>Cerrar sesión</span>}
+                <LogOut className="mr-1.5 h-3.5 w-3.5" />
+                {!isCollapsed && <span className="text-sm">Cerrar sesión</span>}
               </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
