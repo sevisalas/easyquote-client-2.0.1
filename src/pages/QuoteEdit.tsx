@@ -392,7 +392,7 @@ export default function QuoteEdit() {
           <CardContent className="p-6">
             <p className="text-destructive">Presupuesto no encontrado</p>
             <Button onClick={() => navigate('/presupuestos')} className="mt-4">
-              Volver a Presupuestos
+              Volver a presupuestos
             </Button>
           </CardContent>
         </Card>
@@ -478,7 +478,7 @@ export default function QuoteEdit() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="valid_until">válido hasta</Label>
+              <Label htmlFor="valid_until">Válido hasta</Label>
               <Input
                 id="valid_until"
                 type="date"
@@ -490,7 +490,7 @@ export default function QuoteEdit() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="description">descripción</Label>
+              <Label htmlFor="description">Descripción</Label>
               <Textarea
                 id="description"
                 value={formData.description || ''}
@@ -500,7 +500,7 @@ export default function QuoteEdit() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="notes">notas</Label>
+              <Label htmlFor="notes">Notas</Label>
               <Textarea
                 id="notes"
                 value={formData.notes || ''}
@@ -610,7 +610,7 @@ export default function QuoteEdit() {
               
                 <div className="bg-card rounded-lg p-4 border border-border border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
                   <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold text-foreground">Total del Presupuesto:</span>
+                    <span className="text-lg font-semibold text-foreground">Total del presupuesto:</span>
                     <span className="text-2xl font-bold text-secondary">{fmtEUR(calculateTotal())}</span>
                   </div>
                 </div>
@@ -622,7 +622,7 @@ export default function QuoteEdit() {
       {/* Quote Adjustments */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Ajustes del Presupuesto</CardTitle>
+          <CardTitle className="text-lg">Ajustes del presupuesto</CardTitle>
         </CardHeader>
         <CardContent>
           <QuoteAdditionalsSelector
