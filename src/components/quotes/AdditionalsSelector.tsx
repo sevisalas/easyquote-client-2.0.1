@@ -165,10 +165,10 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
       {/* Add Predefined Additional */}
       {unselectedAdditionals.length > 0 && (
         <div className="space-y-3">
-          <h4 className="font-medium">Añadir Ajuste Predefinido</h4>
+          <h4 className="font-medium">Añadir ajuste predefinido</h4>
           <div className="flex gap-2">
             <Select value={newAdditionalId} onValueChange={setNewAdditionalId}>
-              <SelectTrigger className="flex-1">
+              <SelectTrigger className="flex-[3]">
                 <SelectValue placeholder="Selecciona un ajuste..." />
               </SelectTrigger>
               <SelectContent>
@@ -179,8 +179,9 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId}>
-              <Plus className="h-4 w-4" />
+            <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} className="flex-1">
+              <Plus className="h-4 w-4 mr-2" />
+              Añadir
             </Button>
           </div>
         </div>
@@ -188,49 +189,45 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
 
       {/* Add Custom Additional */}
       <div className="space-y-3">
-        <h4 className="font-medium">Añadir Ajuste Personalizado</h4>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <Label htmlFor="custom-name" className="text-sm">Concepto</Label>
+        <h4 className="font-medium">Añadir personalizado</h4>
+        <div className="flex gap-2">
+          <div className="flex-1">
             <Input
               id="custom-name"
               value={customName}
               onChange={(e) => setCustomName(e.target.value)}
-              placeholder="Ej: Diseño personalizado"
+              placeholder="Concepto"
             />
           </div>
-          <div>
-            <Label htmlFor="custom-type" className="text-sm">Tipo</Label>
+          <div className="w-32">
             <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier") => setCustomType(value)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="net_amount">Importe Neto</SelectItem>
-                <SelectItem value="quantity_multiplier">Multiplicador por Cantidad</SelectItem>
+                <SelectItem value="net_amount">Importe</SelectItem>
+                <SelectItem value="quantity_multiplier">Multiplicador</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label htmlFor="custom-value" className="text-sm">Valor</Label>
+          <div className="w-24">
             <Input
               id="custom-value"
               type="number"
               step="0.01"
               value={customValue}
               onChange={(e) => setCustomValue(parseFloat(e.target.value) || 0)}
+              placeholder="Valor"
             />
           </div>
-          <div className="flex items-end">
-            <Button 
-              onClick={addCustomAdditional} 
-              disabled={!customName.trim()}
-              className="w-full"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Añadir
-            </Button>
-          </div>
+          <Button 
+            onClick={addCustomAdditional} 
+            disabled={!customName.trim()}
+            className="w-20"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Añadir
+          </Button>
         </div>
       </div>
     </div>
