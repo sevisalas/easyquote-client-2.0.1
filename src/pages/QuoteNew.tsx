@@ -309,7 +309,7 @@ export default function QuoteNew() {
           <CardTitle>Información del presupuesto</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <CustomerSelector
               value={customerId}
               onValueChange={setCustomerId}
@@ -318,12 +318,12 @@ export default function QuoteNew() {
             />
             
             <div className="space-y-2">
-              <Label htmlFor="title">título</Label>
+              <Label htmlFor="valid-until">válido hasta</Label>
               <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Título del presupuesto..."
+                id="valid-until"
+                type="date"
+                value={validUntil}
+                onChange={(e) => setValidUntil(e.target.value)}
               />
             </div>
           </div>
@@ -351,17 +351,6 @@ export default function QuoteNew() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="valid-until">válido hasta</Label>
-              <Input
-                id="valid-until"
-                type="date"
-                value={validUntil}
-                onChange={(e) => setValidUntil(e.target.value)}
-              />
-            </div>
-          </div>
         </CardContent>
       </Card>
 
@@ -370,7 +359,7 @@ export default function QuoteNew() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Productos</CardTitle>
-            <Button onClick={addNewItem} variant="outline">
+            <Button onClick={addNewItem} variant="secondary">
               <Plus className="w-4 h-4 mr-2" />
               Agregar Producto
             </Button>
@@ -380,10 +369,6 @@ export default function QuoteNew() {
           {Object.keys(items).length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p>No hay productos agregados.</p>
-              <Button onClick={addNewItem} className="mt-4">
-                <Plus className="w-4 h-4 mr-2" />
-                Agregar Primer Producto
-              </Button>
             </div>
           ) : (
             Object.entries(items).map(([id, item]) => (
