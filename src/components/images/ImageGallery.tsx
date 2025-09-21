@@ -270,7 +270,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                 <img
                   src={viewingImage.variants?.original?.medium || viewingImage.variants?.original?.small}
                   alt={viewingImage.filename}
-                  className="max-w-full max-h-96 object-contain rounded-lg"
+                  className="max-w-full max-h-48 object-contain rounded-lg"
                 />
               </div>
               
@@ -279,17 +279,24 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                 
                 <div className="space-y-4">
                   <div>
-                    <h5 className="text-md font-medium mb-2">Originales</h5>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <h5 className="text-md font-medium mb-3">Originales</h5>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {Object.entries(viewingImage.variants?.original || {}).map(([size, url]) => (
                         url && (
-                          <div key={size} className="flex items-center justify-between p-2 border rounded">
-                            <span className="text-sm capitalize">{size}</span>
+                          <div key={size} className="flex items-center gap-3 p-3 border rounded-lg">
+                            <img 
+                              src={url as string} 
+                              alt={`${size} preview`}
+                              className="w-12 h-12 object-cover rounded border flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-sm font-medium capitalize block">{size}</span>
+                            </div>
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => copyToClipboard(url as string)}
-                              className="h-8"
+                              className="h-8 flex-shrink-0"
                             >
                               {copiedUrl === url ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                               <span className="ml-1 text-xs">
@@ -305,17 +312,24 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                   <Separator />
                   
                   <div>
-                    <h5 className="text-md font-medium mb-2">Cuadradas</h5>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <h5 className="text-md font-medium mb-3">Cuadradas</h5>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {Object.entries(viewingImage.variants?.square || {}).map(([size, url]) => (
                         url && (
-                          <div key={size} className="flex items-center justify-between p-2 border rounded">
-                            <span className="text-sm capitalize">{size}</span>
+                          <div key={size} className="flex items-center gap-3 p-3 border rounded-lg">
+                            <img 
+                              src={url as string} 
+                              alt={`${size} square preview`}
+                              className="w-12 h-12 object-cover rounded border flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-sm font-medium capitalize block">{size}</span>
+                            </div>
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => copyToClipboard(url as string)}
-                              className="h-8"
+                              className="h-8 flex-shrink-0"
                             >
                               {copiedUrl === url ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                               <span className="ml-1 text-xs">
