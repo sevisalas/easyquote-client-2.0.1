@@ -68,8 +68,7 @@ const fetchQuote = async (id: string): Promise<Quote> => {
     .select(`
       *,
       items:quote_items(*),
-      customer:customers(name),
-      quote_additionals:quote_additionals(*)
+      customer:customers(name)
     `)
     .eq('id', id)
     .maybeSingle();
@@ -143,32 +142,19 @@ export default function QuoteEdit() {
       const loadedAdditionals: SelectedQuoteAdditional[] = [];
       
       console.log('Raw quote_additionals data:', quote.quote_additionals);
+      console.log('Type of quote_additionals:', typeof quote.quote_additionals);
       
       // Check if quote_additionals is a direct JSON array (most common case)
       if (Array.isArray(quote.quote_additionals)) {
-        const jsonAdditionals = quote.quote_additionals.map((additional: any) => ({
-          id: additional.id || `temp-${Date.now()}`,
+        const jsonAdditionals = quote.quote_additionals.map((additional: any, index: number) => ({
+          id: additional.id || `temp-${Date.now()}-${index}`,
           name: additional.name,
           type: additional.type || 'net_amount',
-          value: additional.value || 0,
-          isCustom: !additional.id // If no ID, it's custom
+          value: parseFloat(additional.value) || 0,
+          isCustom: !additional.id // If no predefined ID, it's custom
         }));
         loadedAdditionals.push(...jsonAdditionals);
         console.log('Loaded from JSON array:', jsonAdditionals);
-      }
-      
-      // Fallback: Load from quote_additionals table (if the join worked)
-      if (loadedAdditionals.length === 0 && quote.quote_additionals && typeof quote.quote_additionals === 'object' && !Array.isArray(quote.quote_additionals)) {
-        // This would be if the Supabase query joined the quote_additionals table
-        const tableAdditionals = Object.values(quote.quote_additionals as any).filter(Boolean).map((additional: any) => ({
-          id: additional.additional_id || additional.id,
-          name: additional.name,
-          type: additional.type || 'net_amount',
-          value: additional.value || 0,
-          isCustom: !additional.additional_id
-        }));
-        loadedAdditionals.push(...tableAdditionals);
-        console.log('Loaded from table data:', tableAdditionals);
       }
       
       setQuoteAdditionals(loadedAdditionals);
