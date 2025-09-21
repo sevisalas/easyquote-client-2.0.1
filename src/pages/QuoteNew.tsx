@@ -378,7 +378,7 @@ export default function QuoteNew() {
             Object.entries(items).map(([id, item]) => (
               <div key={id} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-foreground">Producto {Number(id) + 1}</h4>
+                  <h4 className="text-foreground">Producto {Number(id)}</h4>
                   <Button
                     onClick={() => handleItemRemove(id)}
                     variant="ghost"
