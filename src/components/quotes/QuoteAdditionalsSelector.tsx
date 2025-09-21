@@ -180,8 +180,9 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId}>
+            <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} className="gap-2 min-w-[100px]">
               <Plus className="h-4 w-4" />
+              Añadir
             </Button>
           </div>
         </div>
@@ -190,52 +191,47 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
       {/* Add Custom Additional */}
       <div className="space-y-3">
         <h4 className="font-medium">Añadir Ajuste Personalizado</h4>
-        <div className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="quote-custom-name" className="text-sm">Concepto</Label>
-              <Input
-                id="quote-custom-name"
-                value={customName}
-                onChange={(e) => setCustomName(e.target.value)}
-                placeholder="Ej: Descuento especial"
-              />
-            </div>
-            <div>
-              <Label htmlFor="quote-custom-type" className="text-sm">Tipo</Label>
-              <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier" | "percentage") => setCustomType(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="net_amount">Importe Neto</SelectItem>
-                  <SelectItem value="quantity_multiplier">Multiplicador por Cantidad Total</SelectItem>
-                  <SelectItem value="percentage">Porcentaje sobre Subtotal</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <Label htmlFor="quote-custom-name" className="text-sm">Concepto</Label>
+            <Input
+              id="quote-custom-name"
+              value={customName}
+              onChange={(e) => setCustomName(e.target.value)}
+              placeholder="Ej: Descuento especial"
+            />
           </div>
-          <div className="flex gap-3 items-end">
-            <div className="flex-1">
-              <Label htmlFor="quote-custom-value" className="text-sm">Valor</Label>
-              <Input
-                id="quote-custom-value"
-                type="number"
-                step="0.01"
-                value={customValue}
-                onChange={(e) => setCustomValue(parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            <Button 
-              onClick={addCustomAdditional} 
-              disabled={!customName.trim()}
-              size="sm"
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Añadir
-            </Button>
+          <div className="w-40">
+            <Label htmlFor="quote-custom-type" className="text-sm">Tipo</Label>
+            <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier" | "percentage") => setCustomType(value)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="net_amount">Importe Neto</SelectItem>
+                <SelectItem value="quantity_multiplier">Multiplicador</SelectItem>
+                <SelectItem value="percentage">Porcentaje</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+          <div className="w-24">
+            <Label htmlFor="quote-custom-value" className="text-sm">Valor</Label>
+            <Input
+              id="quote-custom-value"
+              type="number"
+              step="0.01"
+              value={customValue}
+              onChange={(e) => setCustomValue(parseFloat(e.target.value) || 0)}
+            />
+          </div>
+          <Button 
+            onClick={addCustomAdditional} 
+            disabled={!customName.trim()}
+            className="gap-2 min-w-[100px]"
+          >
+            <Plus className="h-4 w-4" />
+            Añadir
+          </Button>
         </div>
       </div>
     </div>

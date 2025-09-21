@@ -407,10 +407,12 @@ export default function QuoteNew() {
           <CardTitle>Descuentos y Ajustes del Presupuesto</CardTitle>
         </CardHeader>
         <CardContent>
-          <QuoteAdditionalsSelector
-            selectedAdditionals={quoteAdditionals}
-            onChange={setQuoteAdditionals}
-          />
+          <div className="bg-muted/20 p-4 rounded-lg">
+            <QuoteAdditionalsSelector
+              selectedAdditionals={quoteAdditionals}
+              onChange={setQuoteAdditionals}
+            />
+          </div>
         </CardContent>
       </Card>
 
