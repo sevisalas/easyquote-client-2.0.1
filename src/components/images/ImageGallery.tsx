@@ -69,6 +69,18 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     setEditingImage(null);
   };
 
+  const getPreviewSize = (size: string) => {
+    const sizes = {
+      xsmall: "w-6 h-6",
+      small: "w-8 h-8", 
+      medium: "w-12 h-12",
+      large: "w-16 h-16",
+      xlarge: "w-20 h-20",
+      xxlarge: "w-24 h-24"
+    };
+    return sizes[size.toLowerCase() as keyof typeof sizes] || "w-12 h-12";
+  };
+
   const copyToClipboard = (url: string) => {
     navigator.clipboard.writeText(url);
     setCopiedUrl(url);
@@ -284,11 +296,13 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                       {Object.entries(viewingImage.variants?.original || {}).map(([size, url]) => (
                         url && (
                           <div key={size} className="flex items-center gap-3 p-3 border rounded-lg">
-                            <img 
-                              src={url as string} 
-                              alt={`${size} preview`}
-                              className="w-12 h-12 object-cover flex-shrink-0"
-                            />
+                            <div className="flex items-center justify-center w-24 h-16 bg-gray-50 flex-shrink-0">
+                              <img 
+                                src={url as string} 
+                                alt={`${size} preview`}
+                                className={`${getPreviewSize(size)} object-contain`}
+                              />
+                            </div>
                             <div className="flex-1 min-w-0">
                               <span className="text-sm font-medium capitalize block">{size}</span>
                             </div>
@@ -317,11 +331,13 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                       {Object.entries(viewingImage.variants?.square || {}).map(([size, url]) => (
                         url && (
                           <div key={size} className="flex items-center gap-3 p-3 border rounded-lg">
-                            <img 
-                              src={url as string} 
-                              alt={`${size} square preview`}
-                              className="w-12 h-12 object-cover flex-shrink-0"
-                            />
+                            <div className="flex items-center justify-center w-24 h-16 bg-gray-50 flex-shrink-0">
+                              <img 
+                                src={url as string} 
+                                alt={`${size} square preview`}
+                                className={`${getPreviewSize(size)} object-contain`}
+                              />
+                            </div>
                             <div className="flex-1 min-w-0">
                               <span className="text-sm font-medium capitalize block">{size}</span>
                             </div>
