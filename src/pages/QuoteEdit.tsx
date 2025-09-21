@@ -151,9 +151,10 @@ export default function QuoteEdit() {
         setQuoteAdditionals(additionals);
       }
       
-      // Solo usar items de la tabla quote_items (evitar duplicación)
+      // Load existing items from both sources: database items and JSON selections
       const allItems: QuoteItem[] = [];
       
+      // Load from database (quote_items table) 
       if (quote.items && quote.items.length > 0) {
         const dbItems = quote.items.map((item: any) => ({
           id: item.id,
@@ -168,12 +169,34 @@ export default function QuoteEdit() {
           prompts: typeof item.prompts === 'object' ? item.prompts : {},
           outputs: Array.isArray(item.outputs) ? item.outputs : [],
           price: item.total_price || item.subtotal,
-          // Solo pasar multi si tiene datos de múltiples cantidades, no solo el número
           multi: (item.multi && typeof item.multi === 'object' && (item.multi.qtyInputs || item.multi.qtyPrompt)) ? item.multi : undefined,
           itemDescription: item.description || item.product_name,
           itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
         }));
         allItems.push(...dbItems);
+      }
+      
+      // Load from JSON selections (if no database items)
+      if (allItems.length === 0 && quote.selections && Array.isArray(quote.selections)) {
+        const jsonItems = quote.selections.map((selection: any, index: number) => ({
+          id: `json-${index}`,
+          product_name: selection.productName || `Producto ${index + 1}`,
+          description: selection.itemDescription || '',
+          quantity: selection.quantity || 1,
+          unit_price: selection.price || 0,
+          subtotal: selection.price || 0,
+          total_price: selection.price || 0,
+          isFromSelections: true,
+          // QuoteItem compatibility
+          productId: selection.productId || '',
+          prompts: selection.prompts || {},
+          outputs: selection.outputs || [],
+          price: selection.price || 0,
+          multi: selection.multi,
+          itemDescription: selection.itemDescription || selection.productName || `Producto ${index + 1}`,
+          itemAdditionals: selection.itemAdditionals || [],
+        }));
+        allItems.push(...jsonItems);
       }
       
       setItems(allItems);
@@ -265,7 +288,11 @@ export default function QuoteEdit() {
   });
 
   const calculateSubtotal = () => {
-    return items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+    return items.reduce((sum, item) => {
+      // Usar el precio correcto dependiendo del tipo de item
+      const price = item.price || (item.quantity * item.unit_price) || 0;
+      return sum + price;
+    }, 0);
   };
 
   const calculateTotal = () => {
@@ -596,10 +623,7 @@ export default function QuoteEdit() {
             {items.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <p>No hay artículos en este presupuesto</p>
-                <Button onClick={addItem} className="mt-4 gap-2">
-                  <Plus className="h-4 w-4" />
-                  Añadir primer artículo
-                </Button>
+                <p className="text-sm mt-2">Utiliza el botón "Añadir artículo" de arriba para comenzar</p>
               </div>
             )}
           </div>
@@ -608,12 +632,58 @@ export default function QuoteEdit() {
             <>
               <Separator className="my-4" />
               
-                <div className="bg-card rounded-lg p-4 border border-border border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold text-foreground">Total del presupuesto:</span>
-                    <span className="text-2xl font-bold text-secondary">{fmtEUR(calculateTotal())}</span>
-                  </div>
+              <div className="bg-muted/30 rounded-lg p-4 border border-border space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Subtotal:</span>
+                  <span className="text-sm font-medium">{fmtEUR(calculateSubtotal())}</span>
                 </div>
+                
+                {/* Mostrar ajustes aplicados */}
+                {quoteAdditionals.length > 0 && (
+                  <>
+                    {quoteAdditionals.map((additional, index) => {
+                      let amount = 0;
+                      let displayText = '';
+                      const subtotal = calculateSubtotal();
+                      
+                      switch (additional.type) {
+                        case 'percentage':
+                          amount = (subtotal * additional.value) / 100;
+                          displayText = `${additional.name} (${additional.value}%)`;
+                          break;
+                        case 'net_amount':
+                          amount = additional.value;
+                          displayText = additional.name;
+                          break;
+                        case 'quantity_multiplier':
+                          displayText = `${additional.name} (×${additional.value})`;
+                          break;
+                        default:
+                          amount = additional.value;
+                          displayText = additional.name;
+                      }
+                      
+                      if (additional.type !== 'quantity_multiplier') {
+                        return (
+                          <div key={index} className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">{displayText}:</span>
+                            <span className={`text-sm font-medium ${amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {amount >= 0 ? '+' : ''}{fmtEUR(amount)}
+                            </span>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })}
+                  </>
+                )}
+                
+                <Separator className="my-2" />
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-semibold text-foreground">Total del presupuesto:</span>
+                  <span className="text-2xl font-bold text-secondary">{fmtEUR(calculateTotal())}</span>
+                </div>
+              </div>
             </>
           )}
         </CardContent>
