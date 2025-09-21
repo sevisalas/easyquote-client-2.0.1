@@ -139,48 +139,40 @@ export default function QuoteEdit() {
         valid_until: quote.valid_until,
       });
       
-      // Load quote additionals from both sources
+      // Load quote additionals - the data is stored as JSON array in quotes.quote_additionals field
       const loadedAdditionals: SelectedQuoteAdditional[] = [];
       
-      // Load from database table (quote_additionals)
-      if (quote.quote_additionals && Array.isArray(quote.quote_additionals)) {
-        const dbAdditionals = quote.quote_additionals.map((additional: any) => ({
+      console.log('Raw quote_additionals data:', quote.quote_additionals);
+      
+      // Check if quote_additionals is a direct JSON array (most common case)
+      if (Array.isArray(quote.quote_additionals)) {
+        const jsonAdditionals = quote.quote_additionals.map((additional: any) => ({
+          id: additional.id || `temp-${Date.now()}`,
+          name: additional.name,
+          type: additional.type || 'net_amount',
+          value: additional.value || 0,
+          isCustom: !additional.id // If no ID, it's custom
+        }));
+        loadedAdditionals.push(...jsonAdditionals);
+        console.log('Loaded from JSON array:', jsonAdditionals);
+      }
+      
+      // Fallback: Load from quote_additionals table (if the join worked)
+      if (loadedAdditionals.length === 0 && quote.quote_additionals && typeof quote.quote_additionals === 'object' && !Array.isArray(quote.quote_additionals)) {
+        // This would be if the Supabase query joined the quote_additionals table
+        const tableAdditionals = Object.values(quote.quote_additionals as any).filter(Boolean).map((additional: any) => ({
           id: additional.additional_id || additional.id,
           name: additional.name,
           type: additional.type || 'net_amount',
           value: additional.value || 0,
           isCustom: !additional.additional_id
         }));
-        loadedAdditionals.push(...dbAdditionals);
-      }
-      
-      // Load from JSON field (for older quotes or direct JSON storage)
-      if (loadedAdditionals.length === 0 && quote.quote_additionals && typeof quote.quote_additionals === 'object' && !Array.isArray(quote.quote_additionals)) {
-        // Handle case where quote_additionals is stored as JSON object array
-        const jsonAdditionals = Object.values(quote.quote_additionals as any).filter(Boolean).map((additional: any) => ({
-          id: additional.id || `json-${Date.now()}`,
-          name: additional.name,
-          type: additional.type || 'net_amount',
-          value: additional.value || 0,
-          isCustom: !additional.id
-        }));
-        loadedAdditionals.push(...jsonAdditionals);
-      }
-      
-      // Also check the direct JSON array format
-      if (loadedAdditionals.length === 0 && Array.isArray((quote as any).quote_additionals)) {
-        const jsonArrayAdditionals = (quote as any).quote_additionals.map((additional: any) => ({
-          id: additional.id || `json-${Date.now()}`,
-          name: additional.name,
-          type: additional.type || 'net_amount',
-          value: additional.value || 0,
-          isCustom: !additional.id
-        }));
-        loadedAdditionals.push(...jsonArrayAdditionals);
+        loadedAdditionals.push(...tableAdditionals);
+        console.log('Loaded from table data:', tableAdditionals);
       }
       
       setQuoteAdditionals(loadedAdditionals);
-      console.log('Loaded additionals:', loadedAdditionals); // Debug log
+      console.log('Final loaded additionals:', loadedAdditionals);
       
       // Load existing items from both sources: database items and JSON selections
       const allItems: QuoteItem[] = [];
