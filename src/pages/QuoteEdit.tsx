@@ -139,17 +139,48 @@ export default function QuoteEdit() {
         valid_until: quote.valid_until,
       });
       
-      // Load quote additionals
+      // Load quote additionals from both sources
+      const loadedAdditionals: SelectedQuoteAdditional[] = [];
+      
+      // Load from database table (quote_additionals)
       if (quote.quote_additionals && Array.isArray(quote.quote_additionals)) {
-        const additionals = quote.quote_additionals.map((additional: any) => ({
+        const dbAdditionals = quote.quote_additionals.map((additional: any) => ({
           id: additional.additional_id || additional.id,
           name: additional.name,
           type: additional.type || 'net_amount',
           value: additional.value || 0,
           isCustom: !additional.additional_id
         }));
-        setQuoteAdditionals(additionals);
+        loadedAdditionals.push(...dbAdditionals);
       }
+      
+      // Load from JSON field (for older quotes or direct JSON storage)
+      if (loadedAdditionals.length === 0 && quote.quote_additionals && typeof quote.quote_additionals === 'object' && !Array.isArray(quote.quote_additionals)) {
+        // Handle case where quote_additionals is stored as JSON object array
+        const jsonAdditionals = Object.values(quote.quote_additionals as any).filter(Boolean).map((additional: any) => ({
+          id: additional.id || `json-${Date.now()}`,
+          name: additional.name,
+          type: additional.type || 'net_amount',
+          value: additional.value || 0,
+          isCustom: !additional.id
+        }));
+        loadedAdditionals.push(...jsonAdditionals);
+      }
+      
+      // Also check the direct JSON array format
+      if (loadedAdditionals.length === 0 && Array.isArray((quote as any).quote_additionals)) {
+        const jsonArrayAdditionals = (quote as any).quote_additionals.map((additional: any) => ({
+          id: additional.id || `json-${Date.now()}`,
+          name: additional.name,
+          type: additional.type || 'net_amount',
+          value: additional.value || 0,
+          isCustom: !additional.id
+        }));
+        loadedAdditionals.push(...jsonArrayAdditionals);
+      }
+      
+      setQuoteAdditionals(loadedAdditionals);
+      console.log('Loaded additionals:', loadedAdditionals); // Debug log
       
       // Load existing items from both sources: database items and JSON selections
       const allItems: QuoteItem[] = [];
