@@ -85,7 +85,7 @@ export default function QuoteDetail() {
           <CardContent className="p-6">
             <p className="text-destructive">Error al cargar el presupuesto</p>
             <Button onClick={() => navigate('/presupuestos')} className="mt-4">
-              Volver a Presupuestos
+              Volver a presupuestos
             </Button>
           </CardContent>
         </Card>
@@ -183,7 +183,7 @@ export default function QuoteDetail() {
       {/* Quote Items */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Artículos del Presupuesto</CardTitle>
+          <CardTitle className="text-lg">Artículos del presupuesto</CardTitle>
         </CardHeader>
         <CardContent>
           {(quote.items && quote.items.length > 0) ? (
@@ -253,7 +253,7 @@ export default function QuoteDetail() {
                 
                 <Separator className="my-2" />
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold text-foreground">Total del Presupuesto:</span>
+                  <span className="text-lg font-semibold text-foreground">Total del presupuesto:</span>
                   <span className="text-2xl font-bold text-secondary">
                     {fmtEUR((() => {
                       let total = quote.subtotal || 0;
