@@ -107,45 +107,45 @@ export function AppSidebar() {
           )}
         </Link>
       </SidebarHeader>
-      <SidebarContent className="py-2">
+      <SidebarContent className="py-1">
         <SidebarGroup className="py-0">
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-0">
               {/* Menú para SuperAdmin */}
               {isSuperAdmin && (
                 <>
                   <SidebarMenuItem>
-                     <SidebarMenuButton asChild isActive={currentPath === "/"} className="h-8 px-2">
+                     <SidebarMenuButton asChild isActive={currentPath === "/"} className="h-7 px-2">
                        <NavLink to="/" end className={getNavCls}>
-                         <Home className="mr-1.5 h-3.5 w-3.5" />
-                         {!isCollapsed && <span className="text-sm">Dashboard</span>}
+                         <Home className="mr-2 h-4 w-4" />
+                         {!isCollapsed && <span>Dashboard</span>}
                        </NavLink>
                      </SidebarMenuButton>
                   </SidebarMenuItem>
 
                   <SidebarMenuItem>
-                     <SidebarMenuButton asChild isActive={currentPath === "/planes"} className="h-8 px-2">
+                     <SidebarMenuButton asChild isActive={currentPath === "/planes"} className="h-7 px-2">
                        <NavLink to="/planes" end className={getNavCls}>
-                         <Settings className="mr-1.5 h-3.5 w-3.5" />
-                         {!isCollapsed && <span className="text-sm">Planes</span>}
+                         <Settings className="mr-2 h-4 w-4" />
+                         {!isCollapsed && <span>Planes</span>}
                        </NavLink>
                      </SidebarMenuButton>
                   </SidebarMenuItem>
 
                   <SidebarMenuItem>
-                     <SidebarMenuButton asChild isActive={currentPath === "/usuarios"} className="h-8 px-2">
+                     <SidebarMenuButton asChild isActive={currentPath === "/usuarios"} className="h-7 px-2">
                        <NavLink to="/usuarios" end className={getNavCls}>
-                         <UserCog className="mr-1.5 h-3.5 w-3.5" />
-                         {!isCollapsed && <span className="text-sm">Suscriptores</span>}
+                         <UserCog className="mr-2 h-4 w-4" />
+                         {!isCollapsed && <span>Suscriptores</span>}
                        </NavLink>
                      </SidebarMenuButton>
                   </SidebarMenuItem>
 
                   <SidebarMenuItem>
-                     <SidebarMenuButton asChild isActive={currentPath === "/integraciones-acceso"} className="h-8 px-2">
+                     <SidebarMenuButton asChild isActive={currentPath === "/integraciones-acceso"} className="h-7 px-2">
                        <NavLink to="/integraciones-acceso" end className={getNavCls}>
-                         <Plug className="mr-1.5 h-3.5 w-3.5" />
-                         {!isCollapsed && <span className="text-sm">Integraciones</span>}
+                         <Plug className="mr-2 h-4 w-4" />
+                         {!isCollapsed && <span>Integraciones</span>}
                        </NavLink>
                      </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -157,10 +157,10 @@ export function AppSidebar() {
                 <>
                   {items.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                       <SidebarMenuButton asChild isActive={currentPath === item.url} className="h-8 px-2">
+                       <SidebarMenuButton asChild isActive={currentPath === item.url} className="h-7 px-2">
                          <NavLink to={item.url} end className={getNavCls}>
-                           <item.icon className="mr-1.5 h-3.5 w-3.5" />
-                           {!isCollapsed && <span className="text-sm">{item.title}</span>}
+                           <item.icon className="mr-2 h-4 w-4" />
+                           {!isCollapsed && <span>{item.title}</span>}
                          </NavLink>
                        </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -172,23 +172,23 @@ export function AppSidebar() {
                        <SidebarMenuButton
                          asChild
                          isActive={currentPath.startsWith("/clientes")}
-                         className="h-8 px-2"
+                         className="h-7 px-2"
                        >
                          <NavLink to="/clientes" end className={getNavCls}>
-                           <Users className="mr-1.5 h-3.5 w-3.5" />
-                           {!isCollapsed && <span className="text-sm">Clientes</span>}
+                           <Users className="mr-2 h-4 w-4" />
+                           {!isCollapsed && <span>Clientes</span>}
                          </NavLink>
                        </SidebarMenuButton>
-                       <SidebarMenuSub className="ml-3 space-y-0.5">
+                       <SidebarMenuSub className="ml-2">
                          <SidebarMenuSubItem>
                            <SidebarMenuSubButton
                              asChild
                              isActive={currentPath === "/clientes"}
-                             className="h-7 px-2"
+                             className="h-6 px-2"
                            >
                              <NavLink to="/clientes" end className={getNavCls}>
-                               <Users className="mr-1.5 h-3 w-3" />
-                               {!isCollapsed && <span className="text-xs">Listado</span>}
+                               <Users className="mr-2 h-4 w-4" />
+                               {!isCollapsed && <span>Listado</span>}
                              </NavLink>
                            </SidebarMenuSubButton>
                          </SidebarMenuSubItem>
@@ -196,11 +196,11 @@ export function AppSidebar() {
                            <SidebarMenuSubButton
                              asChild
                              isActive={currentPath === "/clientes/nuevo"}
-                             className="h-7 px-2"
+                             className="h-6 px-2"
                            >
                              <NavLink to="/clientes/nuevo" className={getNavCls}>
-                               <PlusCircle className="mr-1.5 h-3 w-3" />
-                               {!isCollapsed && <span className="text-xs">Nuevo</span>}
+                               <PlusCircle className="mr-2 h-4 w-4" />
+                               {!isCollapsed && <span>Nuevo</span>}
                              </NavLink>
                            </SidebarMenuSubButton>
                          </SidebarMenuSubItem>
@@ -214,23 +214,23 @@ export function AppSidebar() {
                        <SidebarMenuButton
                          asChild
                          isActive={currentPath.startsWith("/presupuestos")}
-                         className="h-8 px-2"
+                         className="h-7 px-2"
                        >
                          <NavLink to="/presupuestos" end className={getNavCls}>
-                           <FileText className="mr-1.5 h-3.5 w-3.5" />
-                           {!isCollapsed && <span className="text-sm">Presupuestos</span>}
+                           <FileText className="mr-2 h-4 w-4" />
+                           {!isCollapsed && <span>Presupuestos</span>}
                          </NavLink>
                        </SidebarMenuButton>
-                       <SidebarMenuSub className="ml-3 space-y-0.5">
+                       <SidebarMenuSub className="ml-2">
                          <SidebarMenuSubItem>
                            <SidebarMenuSubButton
                              asChild
                              isActive={currentPath === "/presupuestos"}
-                             className="h-7 px-2"
+                             className="h-6 px-2"
                            >
                              <NavLink to="/presupuestos" end className={getNavCls}>
-                               <FileText className="mr-1.5 h-3 w-3" />
-                               {!isCollapsed && <span className="text-xs">Listado</span>}
+                               <FileText className="mr-2 h-4 w-4" />
+                               {!isCollapsed && <span>Listado</span>}
                              </NavLink>
                            </SidebarMenuSubButton>
                          </SidebarMenuSubItem>
@@ -238,11 +238,11 @@ export function AppSidebar() {
                            <SidebarMenuSubButton
                              asChild
                              isActive={currentPath === "/presupuestos/nuevo"}
-                             className="h-7 px-2"
+                             className="h-6 px-2"
                            >
                              <NavLink to="/presupuestos/nuevo" className={getNavCls}>
-                               <PlusCircle className="mr-1.5 h-3 w-3" />
-                               {!isCollapsed && <span className="text-xs">Nuevo</span>}
+                               <PlusCircle className="mr-2 h-4 w-4" />
+                               {!isCollapsed && <span>Nuevo</span>}
                              </NavLink>
                            </SidebarMenuSubButton>
                          </SidebarMenuSubItem>
@@ -251,36 +251,36 @@ export function AppSidebar() {
                   )}
 
                    <SidebarMenuItem>
-                     <SidebarMenuButton asChild isActive={currentPath.startsWith("/configuracion")} className="h-8 px-2">
+                     <SidebarMenuButton asChild isActive={currentPath.startsWith("/configuracion")} className="h-7 px-2">
                        <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
-                         <Palette className="mr-1.5 h-3.5 w-3.5" />
-                         {!isCollapsed && <span className="text-sm">Configuración</span>}
+                         <Palette className="mr-2 h-4 w-4" />
+                         {!isCollapsed && <span>Configuración</span>}
                        </NavLink>
                      </SidebarMenuButton>
-                     <SidebarMenuSub className="ml-3 space-y-0.5">
+                     <SidebarMenuSub className="ml-2">
                        <SidebarMenuSubItem>
-                         <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/ajustes"} className="h-7 px-2">
+                         <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/ajustes"} className="h-6 px-2">
                            <NavLink to="/configuracion/ajustes" end className={getNavCls}>
-                             <Plus className="mr-1.5 h-3 w-3" />
-                             {!isCollapsed && <span className="text-xs">Ajustes</span>}
+                             <Plus className="mr-2 h-4 w-4" />
+                             {!isCollapsed && <span>Ajustes</span>}
                            </NavLink>
                          </SidebarMenuSubButton>
                        </SidebarMenuSubItem>
                        <SidebarMenuSubItem>
-                         <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/plantilla-pdf"} className="h-7 px-2">
+                         <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/plantilla-pdf"} className="h-6 px-2">
                            <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
-                             <FileText className="mr-1.5 h-3 w-3" />
-                             {!isCollapsed && <span className="text-xs">Plantilla PDF</span>}
+                             <FileText className="mr-2 h-4 w-4" />
+                             {!isCollapsed && <span>Plantilla PDF</span>}
                            </NavLink>
                          </SidebarMenuSubButton>
                        </SidebarMenuSubItem>
                        {/* Integraciones - Solo admins */}
                        {(isSuperAdmin || isOrgAdmin) && (
                          <SidebarMenuSubItem>
-                           <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/integraciones"} className="h-7 px-2">
+                           <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/integraciones"} className="h-6 px-2">
                              <NavLink to="/configuracion/integraciones" end className={getNavCls}>
-                               <Plug className="mr-1.5 h-3 w-3" />
-                               {!isCollapsed && <span className="text-xs">Integraciones</span>}
+                               <Plug className="mr-2 h-4 w-4" />
+                               {!isCollapsed && <span>Integraciones</span>}
                              </NavLink>
                            </SidebarMenuSubButton>
                          </SidebarMenuSubItem>
@@ -289,10 +289,10 @@ export function AppSidebar() {
                        {/* Archivos Excel - Solo API suscriptions o Client admins */}
                        {canAccessExcel() && (
                          <SidebarMenuSubItem>
-                           <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/archivos-excel"} className="h-7 px-2">
+                           <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/archivos-excel"} className="h-6 px-2">
                              <NavLink to="/configuracion/archivos-excel" end className={getNavCls}>
-                               <FileSpreadsheet className="mr-1.5 h-3 w-3" />
-                               {!isCollapsed && <span className="text-xs">Archivos Excel</span>}
+                               <FileSpreadsheet className="mr-2 h-4 w-4" />
+                               {!isCollapsed && <span>Archivos Excel</span>}
                              </NavLink>
                            </SidebarMenuSubButton>
                          </SidebarMenuSubItem>
@@ -301,10 +301,10 @@ export function AppSidebar() {
                        {/* Productos - Solo API subscriptions o Client admins */}
                        {canAccessProductos() && (
                          <SidebarMenuSubItem>
-                           <SidebarMenuSubButton asChild isActive={currentPath === "/admin/productos"} className="h-7 px-2">
+                           <SidebarMenuSubButton asChild isActive={currentPath === "/admin/productos"} className="h-6 px-2">
                              <NavLink to="/admin/productos" end className={getNavCls}>
-                               <Package className="mr-1.5 h-3 w-3" />
-                               {!isCollapsed && <span className="text-xs">Productos</span>}
+                               <Package className="mr-2 h-4 w-4" />
+                               {!isCollapsed && <span>Productos</span>}
                              </NavLink>
                            </SidebarMenuSubButton>
                          </SidebarMenuSubItem>
@@ -313,10 +313,10 @@ export function AppSidebar() {
                        {/* Categorías - Solo API subscriptions o Client admins */}
                        {canAccessCategorias() && (
                          <SidebarMenuSubItem>
-                           <SidebarMenuSubButton asChild isActive={currentPath === "/admin/categorias"} className="h-7 px-2">
+                           <SidebarMenuSubButton asChild isActive={currentPath === "/admin/categorias"} className="h-6 px-2">
                              <NavLink to="/admin/categorias" end className={getNavCls}>
-                               <Tags className="mr-1.5 h-3 w-3" />
-                               {!isCollapsed && <span className="text-xs">Categorías</span>}
+                               <Tags className="mr-2 h-4 w-4" />
+                               {!isCollapsed && <span>Categorías</span>}
                              </NavLink>
                            </SidebarMenuSubButton>
                          </SidebarMenuSubItem>
@@ -325,10 +325,10 @@ export function AppSidebar() {
                        {/* Gestión de imágenes - Solo API subscriptions o Client admins */}
                        {canAccessProductos() && (
                          <SidebarMenuSubItem>
-                           <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/imagenes"} className="h-7 px-2">
+                           <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/imagenes"} className="h-6 px-2">
                              <NavLink to="/configuracion/imagenes" end className={getNavCls}>
-                               <Image className="mr-1.5 h-3 w-3" />
-                               {!isCollapsed && <span className="text-xs">Imágenes</span>}
+                               <Image className="mr-2 h-4 w-4" />
+                               {!isCollapsed && <span>Imágenes</span>}
                              </NavLink>
                            </SidebarMenuSubButton>
                          </SidebarMenuSubItem>
@@ -341,10 +341,10 @@ export function AppSidebar() {
               {/* Gestión de usuarios - solo para org admin (no superadmin, ya está arriba) */}
                {!isSuperAdmin && isOrgAdmin && (
                  <SidebarMenuItem>
-                   <SidebarMenuButton asChild isActive={currentPath === "/usuarios"} className="h-8 px-2">
+                   <SidebarMenuButton asChild isActive={currentPath === "/usuarios"} className="h-7 px-2">
                      <NavLink to="/usuarios" end className={getNavCls}>
-                       <UserCog className="mr-1.5 h-3.5 w-3.5" />
-                       {!isCollapsed && <span className="text-sm">Gestión de usuarios</span>}
+                       <UserCog className="mr-2 h-4 w-4" />
+                       {!isCollapsed && <span>Gestión de usuarios</span>}
                      </NavLink>
                    </SidebarMenuButton>
                  </SidebarMenuItem>
@@ -353,21 +353,21 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-2">
-        <SidebarMenu className="space-y-1">
+      <SidebarFooter className="p-1">
+        <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Contraer menú" className="h-8 px-2">
+            <SidebarMenuButton asChild tooltip="Contraer menú" className="h-7 px-2">
               <button onClick={toggleSidebar} className="w-full flex items-center justify-start">
-                <Menu className="mr-1.5 h-3.5 w-3.5" />
-                {!isCollapsed && <span className="text-sm">Contraer menú</span>}
+                <Menu className="mr-2 h-4 w-4" />
+                {!isCollapsed && <span>Contraer menú</span>}
               </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Cerrar sesión" className="h-8 px-2">
+            <SidebarMenuButton asChild tooltip="Cerrar sesión" className="h-7 px-2">
               <button onClick={handleSignOut} className="w-full flex items-center">
-                <LogOut className="mr-1.5 h-3.5 w-3.5" />
-                {!isCollapsed && <span className="text-sm">Cerrar sesión</span>}
+                <LogOut className="mr-2 h-4 w-4" />
+                {!isCollapsed && <span>Cerrar sesión</span>}
               </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
