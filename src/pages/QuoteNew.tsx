@@ -14,6 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { CustomerSelector } from "@/components/quotes/CustomerSelector";
 import QuoteItem from "@/components/quotes/QuoteItem";
 import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
+import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 
 type ItemSnapshot = {
   productId: string;
@@ -29,7 +30,7 @@ type ItemSnapshot = {
 type SelectedAdditional = {
   id: string;
   name: string;
-  type: "net_amount" | "quantity_multiplier" | "custom";
+  type: "net_amount" | "quantity_multiplier" | "percentage" | "custom";
   value: number;
   isCustom?: boolean;
 };
@@ -142,6 +143,9 @@ export default function QuoteNew() {
       } else if (additional.type === 'quantity_multiplier') {
         // For quantity type, we could implement total quantity calculation
         additionalsTotal += additional.value;
+      } else if (additional.type === 'percentage') {
+        // For percentage type, apply to subtotal
+        additionalsTotal += (subtotal * additional.value) / 100;
       }
     });
     
@@ -397,13 +401,13 @@ export default function QuoteNew() {
         </CardContent>
       </Card>
 
-      {/* Quote-level Additionals */}
+      {/* Quote-level Discounts and Adjustments */}
       <Card>
         <CardHeader>
-          <CardTitle>Ajustes del Presupuesto</CardTitle>
+          <CardTitle>Descuentos y Ajustes del Presupuesto</CardTitle>
         </CardHeader>
         <CardContent>
-          <AdditionalsSelector
+          <QuoteAdditionalsSelector
             selectedAdditionals={quoteAdditionals}
             onChange={setQuoteAdditionals}
           />
