@@ -43,9 +43,10 @@ serve(async (req: Request): Promise<Response> => {
         message: `Auth endpoint accessible (${authResponse.status})`
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       testResults.auth_endpoint = {
         accessible: false,
-        error: error.message
+        error: errorMessage
       };
     }
 
@@ -64,9 +65,10 @@ serve(async (req: Request): Promise<Response> => {
         message: `Products endpoint status: ${productsResponse.status}`
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       testResults.products_endpoint = {
         accessible: false,
-        error: error.message
+        error: errorMessage
       };
     }
 
@@ -81,9 +83,10 @@ serve(async (req: Request): Promise<Response> => {
         message: `Main site accessible (${basicResponse.status})`
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       testResults.main_site = {
         accessible: false,
-        error: error.message
+        error: errorMessage
       };
     }
 
@@ -98,9 +101,10 @@ serve(async (req: Request): Promise<Response> => {
         message: `API base accessible (${apiBaseResponse.status})`
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       testResults.api_base = {
         accessible: false,
-        error: error.message
+        error: errorMessage
       };
     }
 
@@ -115,9 +119,10 @@ serve(async (req: Request): Promise<Response> => {
 
   } catch (err) {
     console.error("test-easyquote-connectivity: unexpected error", err);
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     return new Response(JSON.stringify({ 
       error: "Unexpected error",
-      details: err.message 
+      details: errorMessage 
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -100,7 +100,7 @@ serve(async (req) => {
     console.log(`Found ${allContacts.length} contacts from Holded API`)
 
     // Filter out contacts that already exist
-    const newContacts = allContacts.filter(contact => !existingHoldedIds.has(contact.id.toString()))
+    const newContacts = allContacts.filter((contact: any) => !existingHoldedIds.has(contact.id.toString()))
     console.log(`${newContacts.length} new contacts to import (${allContacts.length - newContacts.length} already exist)`)
 
     const holdedContacts = newContacts

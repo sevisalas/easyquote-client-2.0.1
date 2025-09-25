@@ -18,9 +18,79 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Get the bearer token from your EasyQuote API
+    // Get user from JWT token
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authorization header required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
+
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Get EasyQuote credentials for the user
+    let easyQuoteToken = null
+    try {
+      const { data: credentials, error: credError } = await supabaseAdmin.rpc('get_user_credentials', {
+        p_user_id: user.id
+      })
+
+      if (credError) {
+        console.error('Error getting user credentials:', credError)
+        return new Response(
+          JSON.stringify({ error: 'Unable to get EasyQuote credentials' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      if (credentials && credentials.length > 0) {
+        const userCredentials = credentials[0]
+        if (userCredentials.api_username && userCredentials.api_password) {
+          // Get fresh EasyQuote token
+          const authResponse = await fetch(`${supabaseUrl}/functions/v1/easyquote-auth`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              email: userCredentials.api_username,
+              password: userCredentials.api_password
+            })
+          })
+
+          if (authResponse.ok) {
+            const authData = await authResponse.json()
+            easyQuoteToken = authData.token
+          }
+        }
+      }
+
+      if (!easyQuoteToken) {
+        return new Response(
+          JSON.stringify({ error: 'EasyQuote authentication failed' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    } catch (authError) {
+      console.error('Error authenticating with EasyQuote:', authError)
+      return new Response(
+        JSON.stringify({ error: 'EasyQuote authentication failed' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // EasyQuote API configuration
     const easyQuoteApiUrl = 'https://api.easyquote.cloud/api/v1/images'
-    const easyQuoteToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6ImMxMWY4ZGIzLThkZmEtNGYxOS04ZWVmLTBkNjU3MmJjZjFkNyIsIlN1YnNjcmliZXJJRCI6IjM0NjhmNWZiLTRkMTktNGE1NS1hYTNmLWJkZDY2OTY5MTJjNCIsIm5iZiI6MTc1ODQzNzk4MiwiZXhwIjoxNzU4NTI0MzgyLCJpYXQiOjE3NTg0Mzc5ODJ9.7zCVEMBCbjrqWhnnHSsubGNG0HmQXlBOFx5PinZeQHs'
 
     const url = new URL(req.url)
     const pathSegments = url.pathname.split('/').filter(Boolean)
@@ -30,7 +100,6 @@ Deno.serve(async (req) => {
     switch (req.method) {
       case 'GET':
         if (imageId && imageId !== 'easyquote-images') {
-          // Get single image by ID
           const response = await fetch(`${easyQuoteApiUrl}/${imageId}`, {
             headers: {
               'Authorization': `Bearer ${easyQuoteToken}`,
@@ -262,8 +331,9 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Error in easyquote-images function:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error'
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
