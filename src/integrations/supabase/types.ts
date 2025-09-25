@@ -101,7 +101,9 @@ export type Database = {
       easyquote_credentials: {
         Row: {
           api_password: string
+          api_password_encrypted: string | null
           api_username: string
+          api_username_encrypted: string | null
           created_at: string
           id: string
           updated_at: string
@@ -109,7 +111,9 @@ export type Database = {
         }
         Insert: {
           api_password: string
+          api_password_encrypted?: string | null
           api_username: string
+          api_username_encrypted?: string | null
           created_at?: string
           id?: string
           updated_at?: string
@@ -117,7 +121,9 @@ export type Database = {
         }
         Update: {
           api_password?: string
+          api_password_encrypted?: string | null
           api_username?: string
+          api_username_encrypted?: string | null
           created_at?: string
           id?: string
           updated_at?: string
@@ -835,6 +841,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrypt_credential: {
+        Args: { encrypted_data: string }
+        Returns: string
+      }
+      encrypt_credential: {
+        Args: { credential_text: string }
+        Returns: string
+      }
       generate_api_key: {
         Args: Record<PropertyKey, never>
         Returns: string
