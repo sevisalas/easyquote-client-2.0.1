@@ -72,7 +72,7 @@ export function AppSidebar() {
         <Link to="/" aria-label="Ir al inicio" className="flex items-center justify-center px-1 py-1">
           {isCollapsed ? (
             <img
-              src="/lovable-uploads/logo_transparente-removebg-preview.png"
+              src="/lovable-uploads/favicon.png"
               alt="EQ Logo"
               className="h-6 w-6 object-contain"
               onError={(e) => {
