@@ -100,30 +100,24 @@ export type Database = {
       }
       easyquote_credentials: {
         Row: {
-          api_password: string
-          api_password_encrypted: string | null
-          api_username: string
-          api_username_encrypted: string | null
+          api_password_encrypted: string
+          api_username_encrypted: string
           created_at: string
           id: string
           updated_at: string
           user_id: string
         }
         Insert: {
-          api_password: string
-          api_password_encrypted?: string | null
-          api_username: string
-          api_username_encrypted?: string | null
+          api_password_encrypted: string
+          api_username_encrypted: string
           created_at?: string
           id?: string
           updated_at?: string
           user_id: string
         }
         Update: {
-          api_password?: string
-          api_password_encrypted?: string | null
-          api_username?: string
-          api_username_encrypted?: string | null
+          api_password_encrypted?: string
+          api_username_encrypted?: string
           created_at?: string
           id?: string
           updated_at?: string
@@ -857,6 +851,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_user_credentials: {
+        Args: { p_user_id: string }
+        Returns: {
+          api_password: string
+          api_username: string
+          created_at: string
+          id: string
+          updated_at: string
+        }[]
+      }
       is_superadmin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -876,6 +880,10 @@ export type Database = {
           name: string
           phone: string
         }[]
+      }
+      set_user_credentials: {
+        Args: { p_password: string; p_user_id: string; p_username: string }
+        Returns: string
       }
     }
     Enums: {
