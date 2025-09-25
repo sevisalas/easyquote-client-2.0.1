@@ -32,35 +32,48 @@ const Auth = () => {
 
       // Obtener token de EasyQuote usando las credenciales guardadas (secure encrypted version)
       try {
-        const { data: credentials } = await supabase
-          .from('easyquote_credentials')
-          .select('*')
-          .single();
+        const { data: session } = await supabase.auth.getSession();
+        if (!session?.session?.user?.id) {
+          console.warn("No se pudo obtener el ID del usuario");
+          return;
+        }
 
-        if (credentials) {
-          // Decrypt credentials using secure functions
-          const { data: decryptedUsername } = await supabase.rpc('decrypt_credential', { 
-            encrypted_data: credentials.api_username_encrypted 
-          });
-          const { data: decryptedPassword } = await supabase.rpc('decrypt_credential', { 
-            encrypted_data: credentials.api_password_encrypted 
-          });
-          const { data, error: fxError } = await supabase.functions.invoke("easyquote-auth", {
-            body: { 
-              email: decryptedUsername, 
-              password: decryptedPassword 
-            },
-          });
-          if (fxError) {
-            console.error("easyquote-auth error", fxError);
-          } else if ((data as any)?.token) {
-            localStorage.setItem("easyquote_token", (data as any).token);
+        // Usar la función segura para obtener credenciales
+        const { data: credentials, error: credError } = await supabase.rpc('get_user_credentials', {
+          p_user_id: session.session.user.id
+        });
+
+        if (credError) {
+          console.error("Error obteniendo credenciales:", credError);
+          return;
+        }
+
+        if (credentials && credentials.length > 0) {
+          const userCredentials = credentials[0];
+          if (userCredentials.api_username && userCredentials.api_password) {
+            const { data, error: fxError } = await supabase.functions.invoke("easyquote-auth", {
+              body: { 
+                email: userCredentials.api_username, 
+                password: userCredentials.api_password 
+              },
+            });
+            if (fxError) {
+              console.error("easyquote-auth error", fxError);
+            } else if ((data as any)?.token) {
+              localStorage.setItem("easyquote_token", (data as any).token);
+              console.log("Token de EasyQuote obtenido correctamente");
+              
+              // Disparar evento para notificar que el token fue actualizado
+              window.dispatchEvent(new CustomEvent('easyquote-token-updated'));
+            }
+          } else {
+            console.warn("Credenciales de EasyQuote incompletas");
           }
         } else {
-          console.warn("No hay credenciales del API configuradas");
+          console.warn("No hay credenciales del API configuradas para este usuario");
         }
       } catch (e) {
-        console.warn("No se pudo obtener el token de EasyQuote", e);
+        console.error("Error obteniendo el token de EasyQuote:", e);
       }
 
       toast({ title: "Bienvenido", description: "Sesión iniciada correctamente" });

@@ -115,6 +115,28 @@ export default function ProductManagement() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
+  
+  // Escuchar cambios en el token de EasyQuote
+  useEffect(() => {
+    const checkToken = () => {
+      const token = localStorage.getItem("easyquote_token");
+      setHasToken(!!token);
+    };
+
+    // Verificar token al cargar el componente
+    checkToken();
+
+    // Escuchar cambios en localStorage
+    window.addEventListener('storage', checkToken);
+    
+    // También escuchar un evento personalizado para cambios en la misma pestaña
+    window.addEventListener('easyquote-token-updated', checkToken);
+
+    return () => {
+      window.removeEventListener('storage', checkToken);
+      window.removeEventListener('easyquote-token-updated', checkToken);
+    };
+  }, []);
   const [isNewPromptDialogOpen, setIsNewPromptDialogOpen] = useState(false);
   const [isNewOutputDialogOpen, setIsNewOutputDialogOpen] = useState(false);
   const [isBulkPromptsDialogOpen, setIsBulkPromptsDialogOpen] = useState(false);
@@ -800,9 +822,12 @@ export default function ProductManagement() {
       <div className="container mx-auto py-10">
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Sesión requerida</AlertTitle>
-          <AlertDescription>
-            Para ver los productos, necesitas iniciar sesión en EasyQuote desde la página de presupuestos.
+          <AlertTitle>Configuración de EasyQuote requerida</AlertTitle>
+          <AlertDescription className="space-y-2">
+            <p>Para ver los productos, necesitas configurar tus credenciales de EasyQuote.</p>
+            <p className="text-sm text-muted-foreground">
+              Si eres administrador, ve a la sección de usuarios para configurar las credenciales de la API de EasyQuote.
+            </p>
           </AlertDescription>
         </Alert>
       </div>

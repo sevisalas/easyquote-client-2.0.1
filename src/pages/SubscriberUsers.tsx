@@ -275,46 +275,31 @@ const UsuariosSuscriptor = () => {
     setLoadingCredentials(true);
 
     try {
-      const credentialData = {
-        user_id: suscriptor.api_user_id,
-        api_username: apiUsername,
-        api_password: apiPassword,
-      };
-
       let result;
       if (hasCredentials && credentialId) {
-        // Update credentials using standard Supabase update with encrypted columns
-        const { data: encryptedUsername } = await supabase.rpc('encrypt_credential', { 
-          credential_text: apiUsername 
-        });
-        const { data: encryptedPassword } = await supabase.rpc('encrypt_credential', { 
-          credential_text: apiPassword 
+        // Update credentials using the secure function
+        const updateResult = await supabase.rpc('set_user_credentials', {
+          p_user_id: suscriptor.api_user_id,
+          p_username: apiUsername,
+          p_password: apiPassword
         });
         
-        result = await supabase
-          .from('easyquote_credentials')
-          .update({
-            api_username_encrypted: encryptedUsername,
-            api_password_encrypted: encryptedPassword,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', credentialId);
+        if (updateResult.error) {
+          throw updateResult.error;
+        }
+        result = { error: null };
       } else {
-        // Insert new credentials with encryption
-        const { data: encryptedUsername } = await supabase.rpc('encrypt_credential', { 
-          credential_text: apiUsername 
-        });
-        const { data: encryptedPassword } = await supabase.rpc('encrypt_credential', { 
-          credential_text: apiPassword 
+        // Insert new credentials using the secure function
+        const insertResult = await supabase.rpc('set_user_credentials', {
+          p_user_id: suscriptor.api_user_id,
+          p_username: apiUsername,
+          p_password: apiPassword
         });
         
-        result = await supabase
-          .from('easyquote_credentials')
-          .insert([{
-            user_id: suscriptor.api_user_id,
-            api_username_encrypted: encryptedUsername,
-            api_password_encrypted: encryptedPassword
-          }]);
+        if (insertResult.error) {
+          throw insertResult.error;
+        }
+        result = { error: null };
       }
 
       if (result.error) throw result.error;
