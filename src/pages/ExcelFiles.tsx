@@ -757,17 +757,19 @@ export default function ExcelFiles() {
           </AlertDescription>
         </Alert>
         
-        <Card>
-          <CardHeader>
-            <CardTitle>Test de Conectividad</CardTitle>
-            <CardDescription>
-              Usa este test para diagnosticar problemas de conexión con EasyQuote
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <EasyQuoteConnectivityTest />
-          </CardContent>
-        </Card>
+        {isSuperAdmin && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Test de Conectividad</CardTitle>
+              <CardDescription>
+                Usa este test para diagnosticar problemas de conexión con EasyQuote
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EasyQuoteConnectivityTest />
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   }
@@ -974,8 +976,8 @@ export default function ExcelFiles() {
 
       <Separator />
 
-      {/* Test de Conectividad */}
-      <EasyQuoteConnectivityTest />
+      {/* Test de Conectividad - Solo para superadmin */}
+      {isSuperAdmin && <EasyQuoteConnectivityTest />}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
