@@ -46,6 +46,7 @@ const UsuariosSuscriptor = () => {
   const [loadingCredentials, setLoadingCredentials] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [hasCredentials, setHasCredentials] = useState(false);
+  const [credentialId, setCredentialId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isSuperAdmin && !organization) {
@@ -232,8 +233,17 @@ const UsuariosSuscriptor = () => {
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading credentials:', error);
       } else if (data) {
-        setApiUsername(data.api_username);
-        setApiPassword(data.api_password);
+        // Decrypt the existing credentials to display them
+        const { data: decryptedUsername } = await supabase.rpc('decrypt_credential', { 
+          encrypted_data: data.api_username_encrypted 
+        });
+        const { data: decryptedPassword } = await supabase.rpc('decrypt_credential', { 
+          encrypted_data: data.api_password_encrypted 
+        });
+        
+        setApiUsername(decryptedUsername || '');
+        setApiPassword(decryptedPassword || '');
+        setCredentialId(data.id);
         setHasCredentials(true);
       }
     } catch (error) {
@@ -272,15 +282,39 @@ const UsuariosSuscriptor = () => {
       };
 
       let result;
-      if (hasCredentials) {
+      if (hasCredentials && credentialId) {
+        // Update credentials using standard Supabase update with encrypted columns
+        const { data: encryptedUsername } = await supabase.rpc('encrypt_credential', { 
+          credential_text: apiUsername 
+        });
+        const { data: encryptedPassword } = await supabase.rpc('encrypt_credential', { 
+          credential_text: apiPassword 
+        });
+        
         result = await supabase
           .from('easyquote_credentials')
-          .update(credentialData)
-          .eq('user_id', suscriptor.api_user_id);
+          .update({
+            api_username_encrypted: encryptedUsername,
+            api_password_encrypted: encryptedPassword,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', credentialId);
       } else {
+        // Insert new credentials with encryption
+        const { data: encryptedUsername } = await supabase.rpc('encrypt_credential', { 
+          credential_text: apiUsername 
+        });
+        const { data: encryptedPassword } = await supabase.rpc('encrypt_credential', { 
+          credential_text: apiPassword 
+        });
+        
         result = await supabase
           .from('easyquote_credentials')
-          .insert([credentialData]);
+          .insert([{
+            user_id: suscriptor.api_user_id,
+            api_username_encrypted: encryptedUsername,
+            api_password_encrypted: encryptedPassword
+          }]);
       }
 
       if (result.error) throw result.error;

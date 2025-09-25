@@ -30,7 +30,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
-      // Obtener token de EasyQuote usando las credenciales guardadas
+      // Obtener token de EasyQuote usando las credenciales guardadas (secure encrypted version)
       try {
         const { data: credentials } = await supabase
           .from('easyquote_credentials')
@@ -38,10 +38,17 @@ const Auth = () => {
           .single();
 
         if (credentials) {
+          // Decrypt credentials using secure functions
+          const { data: decryptedUsername } = await supabase.rpc('decrypt_credential', { 
+            encrypted_data: credentials.api_username_encrypted 
+          });
+          const { data: decryptedPassword } = await supabase.rpc('decrypt_credential', { 
+            encrypted_data: credentials.api_password_encrypted 
+          });
           const { data, error: fxError } = await supabase.functions.invoke("easyquote-auth", {
             body: { 
-              email: credentials.api_username, 
-              password: credentials.api_password 
+              email: decryptedUsername, 
+              password: decryptedPassword 
             },
           });
           if (fxError) {
