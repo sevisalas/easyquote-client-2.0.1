@@ -70,44 +70,30 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
                     <View style={{ marginLeft: 12, marginTop: 4, backgroundColor: "#f9fafb", padding: 8 }}>
                       <Text style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>Configuración:</Text>
                       {Object.entries(item.prompts).map(([key, value]: [string, any], j: number) => {
-                        // Convertir IDs técnicos a nombres legibles
-                        const getPromptName = (promptKey: string) => {
-                          if (promptKey.includes('qty') || promptKey.toLowerCase().includes('cantidad')) return 'Cantidad';
-                          if (promptKey.includes('size') || promptKey.toLowerCase().includes('tamaño')) return 'Tamaño';
-                          if (promptKey.includes('color')) return 'Color';
-                          if (promptKey.includes('material')) return 'Material';
-                          if (promptKey.includes('finish') || promptKey.toLowerCase().includes('acabado')) return 'Acabado';
-                          // Si no coincide con ningún patrón conocido, mostrar "Opción" seguido del índice
-                          return `Opción ${j + 1}`;
-                        };
-                        
+                        // Mostrar valor directamente sin etiqueta genérica si no hay contexto
+                        const displayValue = String(value);
                         return (
                           <Text key={j} style={{ fontSize: 9, marginBottom: 2 }}>
-                            • {getPromptName(key)}: {String(value)}
+                            • {displayValue}
                           </Text>
                         );
                       })}
                     </View>
                   )}
                   
-                  {/* Mostrar detalles si no hay prompts pero hay otros datos */}
-                  {(!item?.prompts || Object.keys(item.prompts).length === 0) && item?.multi && (
+                  {/* Mostrar información adicional si existe */}
+                  {item?.multi && typeof item.multi === 'object' && item.multi !== 1 && (
                     <View style={{ marginLeft: 12, marginTop: 4, backgroundColor: "#f9fafb", padding: 8 }}>
-                      <Text style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>Configuración:</Text>
+                      <Text style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>Información adicional:</Text>
                       {Object.entries(item.multi).map(([key, value]: [string, any], j: number) => {
-                        // Convertir nombres técnicos a nombres legibles
-                        const getFieldName = (fieldKey: string) => {
-                          if (fieldKey === 'rows') return 'Cantidades';
-                          if (fieldKey === 'qtyInputs') return 'Valores de cantidad';
-                          if (fieldKey === 'qtyPrompt') return 'Campo de cantidad';
-                          return fieldKey.charAt(0).toUpperCase() + fieldKey.slice(1);
-                        };
-                        
-                        return (
-                          <Text key={j} style={{ fontSize: 9, marginBottom: 2 }}>
-                            • {getFieldName(key)}: {String(value)}
-                          </Text>
-                        );
+                        if (key === 'rows' || key === 'qtyInputs') {
+                          return (
+                            <Text key={j} style={{ fontSize: 9, marginBottom: 2 }}>
+                              • Cantidad: {String(value)}
+                            </Text>
+                          );
+                        }
+                        return null;
                       })}
                     </View>
                   )}
