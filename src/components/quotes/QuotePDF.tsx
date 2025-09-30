@@ -65,38 +65,18 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
                     <Text style={styles.td}>{fmtEUR(totalPrice)}</Text>
                   </View>
                   
-                  {/* Detalles de configuración */}
+                  {/* Cantidad seleccionada */}
                   {item?.prompts && Object.keys(item.prompts).length > 0 && (
                     <View style={{ marginLeft: 12, marginTop: 4, backgroundColor: "#f9fafb", padding: 8 }}>
-                      <Text style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>Cantidad seleccionada:</Text>
+                      <Text style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>Cantidad:</Text>
                       {Object.entries(item.prompts).map(([key, value]: [string, any], j: number) => {
                         const displayValue = String(value);
                         return (
                           <Text key={j} style={{ fontSize: 9, marginBottom: 2 }}>
-                            • {displayValue} unidades
+                            {displayValue} unidades
                           </Text>
                         );
                       })}
-                    </View>
-                  )}
-                  
-                  {/* Mostrar opciones de cantidad disponibles */}
-                  {item?.multi && typeof item.multi === 'object' && Array.isArray(item.multi.rows) && (
-                    <View style={{ marginLeft: 12, marginTop: 4, backgroundColor: "#f0f9ff", padding: 8 }}>
-                      <Text style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>Opciones de cantidad disponibles:</Text>
-                      {item.multi.rows
-                        .filter((row: any) => row && row.qty > 0)
-                        .map((row: any, idx: number) => {
-                          const qty = row.qty;
-                          const unitPrice = row.unit;
-                          const total = row.totalStr || (qty * unitPrice);
-                          
-                          return (
-                            <Text key={idx} style={{ fontSize: 9, marginBottom: 2 }}>
-                              • {qty} unidades - {fmtEUR(unitPrice)}/ud - Total: {typeof total === 'string' ? total : fmtEUR(total)}
-                            </Text>
-                          );
-                        })}
                     </View>
                   )}
                   
