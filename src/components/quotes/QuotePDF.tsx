@@ -55,25 +55,21 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
               <Text style={styles.th}>Precio</Text>
             </View>
             {allItems.map((item: any, i: number) => {
-              const totalPrice = item?.total_price || 0;
+              const description = item?.itemDescription || item?.product_name || item?.name || `Artículo ${i + 1}`;
               
               return (
                 <View key={i} style={{ marginBottom: 12 }}>
-                  <View style={styles.row}>
-                    <Text style={styles.td}>{item?.name || item?.itemDescription || `Artículo ${i + 1}`}</Text>
-                    <Text style={styles.td}>{item?.itemDescription || item?.name || ""}</Text>
-                    <Text style={styles.td}>{fmtEUR(totalPrice)}</Text>
-                  </View>
+                  {/* Descripción del artículo */}
+                  <Text style={{ fontSize: 11, fontWeight: 700, marginBottom: 4 }}>{description}</Text>
                   
-                  {/* Opciones de cantidad disponibles */}
+                  {/* Opciones de cantidad */}
                   {item?.multi && typeof item.multi === 'object' && Array.isArray(item.multi.rows) && (
-                    <View style={{ marginLeft: 12, marginTop: 4, backgroundColor: "#f9fafb", padding: 8 }}>
-                      <Text style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>Cantidad:</Text>
+                    <View style={{ marginLeft: 8, marginTop: 4 }}>
                       {item.multi.rows
                         .filter((row: any) => row && row.qty > 0)
                         .map((row: any, idx: number) => (
-                          <Text key={idx} style={{ fontSize: 9, marginBottom: 2 }}>
-                            • {row.qty} unidades × {fmtEUR(row.unit)} = {fmtEUR(row.totalStr)}
+                          <Text key={idx} style={{ fontSize: 10, marginBottom: 2 }}>
+                            {row.qty} unidades × {fmtEUR(row.unit)} = {fmtEUR(row.totalStr)}
                           </Text>
                         ))}
                     </View>
