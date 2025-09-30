@@ -68,54 +68,35 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
                   {/* Detalles de configuración */}
                   {item?.prompts && Object.keys(item.prompts).length > 0 && (
                     <View style={{ marginLeft: 12, marginTop: 4, backgroundColor: "#f9fafb", padding: 8 }}>
-                      <Text style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>Configuración:</Text>
+                      <Text style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>Cantidad seleccionada:</Text>
                       {Object.entries(item.prompts).map(([key, value]: [string, any], j: number) => {
-                        // Mostrar valor directamente sin etiqueta genérica si no hay contexto
                         const displayValue = String(value);
                         return (
                           <Text key={j} style={{ fontSize: 9, marginBottom: 2 }}>
-                            • {displayValue}
+                            • {displayValue} unidades
                           </Text>
                         );
                       })}
                     </View>
                   )}
                   
-                  {/* Mostrar cantidades si existen */}
-                  {item?.multi && typeof item.multi === 'object' && item.multi !== 1 && (
-                    <View style={{ marginLeft: 12, marginTop: 4, backgroundColor: "#f9fafb", padding: 8 }}>
-                      <Text style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>Cantidades:</Text>
-                      {(() => {
-                        const { rows, qtyInputs } = item.multi;
-                        
-                        // Si tenemos rows (array de objetos con qty)
-                        if (Array.isArray(rows) && rows.length > 0) {
-                          return rows.map((row: any, idx: number) => {
-                            if (row && typeof row === 'object' && row.qty) {
-                              return (
-                                <Text key={idx} style={{ fontSize: 9, marginBottom: 2 }}>
-                                  • {row.qty} unidades
-                                </Text>
-                              );
-                            }
-                            return null;
-                          });
-                        }
-                        
-                        // Si tenemos qtyInputs (array de números)
-                        if (Array.isArray(qtyInputs) && qtyInputs.length > 0) {
-                          const validQties = qtyInputs.filter((qty: any) => qty !== '' && qty !== null && qty !== undefined);
-                          if (validQties.length > 0) {
-                            return (
-                              <Text style={{ fontSize: 9, marginBottom: 2 }}>
-                                • {validQties.join(', ')} unidades
-                              </Text>
-                            );
-                          }
-                        }
-                        
-                        return null;
-                      })()}
+                  {/* Mostrar opciones de cantidad disponibles */}
+                  {item?.multi && typeof item.multi === 'object' && Array.isArray(item.multi.rows) && (
+                    <View style={{ marginLeft: 12, marginTop: 4, backgroundColor: "#f0f9ff", padding: 8 }}>
+                      <Text style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>Opciones de cantidad disponibles:</Text>
+                      {item.multi.rows
+                        .filter((row: any) => row && row.qty > 0)
+                        .map((row: any, idx: number) => {
+                          const qty = row.qty;
+                          const unitPrice = row.unit;
+                          const total = row.totalStr || (qty * unitPrice);
+                          
+                          return (
+                            <Text key={idx} style={{ fontSize: 9, marginBottom: 2 }}>
+                              • {qty} unidades - {fmtEUR(unitPrice)}/ud - Total: {typeof total === 'string' ? total : fmtEUR(total)}
+                            </Text>
+                          );
+                        })}
                     </View>
                   )}
                   
