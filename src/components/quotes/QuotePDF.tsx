@@ -60,23 +60,22 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
               return (
                 <View key={i} style={{ marginBottom: 12 }}>
                   <View style={styles.row}>
-                    <Text style={styles.td}>{item?.name || `Artículo ${i + 1}`}</Text>
-                    <Text style={styles.td}>{item?.name || ""}</Text>
+                    <Text style={styles.td}>{item?.name || item?.itemDescription || `Artículo ${i + 1}`}</Text>
+                    <Text style={styles.td}>{item?.itemDescription || item?.name || ""}</Text>
                     <Text style={styles.td}>{fmtEUR(totalPrice)}</Text>
                   </View>
                   
-                  {/* Cantidad seleccionada */}
-                  {item?.prompts && Object.keys(item.prompts).length > 0 && (
+                  {/* Opciones de cantidad disponibles */}
+                  {item?.multi && typeof item.multi === 'object' && Array.isArray(item.multi.rows) && (
                     <View style={{ marginLeft: 12, marginTop: 4, backgroundColor: "#f9fafb", padding: 8 }}>
                       <Text style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>Cantidad:</Text>
-                      {Object.entries(item.prompts).map(([key, value]: [string, any], j: number) => {
-                        const displayValue = String(value);
-                        return (
-                          <Text key={j} style={{ fontSize: 9, marginBottom: 2 }}>
-                            {displayValue} unidades
+                      {item.multi.rows
+                        .filter((row: any) => row && row.qty > 0)
+                        .map((row: any, idx: number) => (
+                          <Text key={idx} style={{ fontSize: 9, marginBottom: 2 }}>
+                            • {row.qty} unidades × {fmtEUR(row.unit)} = {fmtEUR(row.totalStr)}
                           </Text>
-                        );
-                      })}
+                        ))}
                     </View>
                   )}
                   
