@@ -55,7 +55,9 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
               <Text style={styles.th}>Precio</Text>
             </View>
             {allItems.map((item: any, i: number) => {
-              const description = item?.itemDescription || item?.product_name || item?.name || `Artículo ${i + 1}`;
+              // Obtener el nombre del producto y la descripción
+              const productName = item?.product_name || item?.name || `Producto ${i + 1}`;
+              const itemDesc = item?.itemDescription || item?.description || "";
               
               // Filtrar outputs: excluir Price, imágenes y valores vacíos/N/A
               const detailOutputs = (item?.outputs || []).filter((output: any) => {
@@ -71,11 +73,11 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
               return (
                 <View key={i} style={{ marginBottom: 16, paddingBottom: 12, borderBottom: "1px solid #e5e7eb" }}>
                   {/* Nombre del producto */}
-                  <Text style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{item?.product_name || item?.name || `Producto ${i + 1}`}</Text>
+                  <Text style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{productName}</Text>
                   
                   {/* Descripción del artículo */}
-                  {description && description !== (item?.product_name || item?.name) && (
-                    <Text style={{ fontSize: 10, color: "#6b7280", marginBottom: 8 }}>{description}</Text>
+                  {itemDesc && itemDesc !== productName && (
+                    <Text style={{ fontSize: 10, color: "#6b7280", marginBottom: 8 }}>{itemDesc}</Text>
                   )}
                   
                   {/* Detalles/Prompts seleccionados */}

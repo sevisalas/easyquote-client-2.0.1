@@ -374,12 +374,17 @@ export default function QuoteDetail() {
         customer={quote.customer}
         main={{ title: quote.title, description: quote.description }}
         items={(() => {
-          const tableItems = quote.items || [];
+          // Mapear items de la base de datos para incluir ambos campos
+          const tableItems = (quote.items || []).map((item: any) => ({
+            ...item,
+            itemDescription: item.description || item.itemDescription || ''
+          }));
           const jsonSelections = Array.isArray(quote.selections) ? quote.selections : [];
           const jsonItems = jsonSelections.map((selection: any, index: number) => ({
             product_name: selection.productName || `Producto ${index + 1}`,
             name: selection.productName || `Producto ${index + 1}`,
-            description: selection.itemDescription || '',
+            itemDescription: selection.itemDescription || selection.description || '',
+            description: selection.itemDescription || selection.description || '',
             total_price: selection.price || 0,
             subtotal: selection.price || 0,
             quantity: selection.quantity || 1,
