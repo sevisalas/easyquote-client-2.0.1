@@ -57,31 +57,50 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
             {allItems.map((item: any, i: number) => {
               const description = item?.itemDescription || item?.product_name || item?.name || `Artículo ${i + 1}`;
               
+              // Filtrar outputs: excluir Price, imágenes y valores vacíos/N/A
+              const detailOutputs = (item?.outputs || []).filter((output: any) => {
+                const name = String(output?.name || "").toLowerCase();
+                const type = String(output?.type || "").toLowerCase();
+                const value = String(output?.value ?? "");
+                const isPrice = type === "price" || name.includes("price") || name.includes("precio");
+                const isImage = type.includes("image") || name.includes("image") || /^https?:\/\//i.test(value);
+                const isEmpty = value === "" || value === "#N/A";
+                return !isPrice && !isImage && !isEmpty;
+              });
+              
               return (
-                <View key={i} style={{ marginBottom: 12 }}>
-                  {/* Descripción del artículo */}
-                  <Text style={{ fontSize: 11, fontWeight: 700, marginBottom: 4 }}>{description}</Text>
+                <View key={i} style={{ marginBottom: 16, paddingBottom: 12, borderBottom: "1px solid #e5e7eb" }}>
+                  {/* Nombre del producto */}
+                  <Text style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{item?.product_name || item?.name || `Producto ${i + 1}`}</Text>
                   
-                  {/* Opciones de cantidad */}
-                  {item?.multi && typeof item.multi === 'object' && Array.isArray(item.multi.rows) && (
-                    <View style={{ marginLeft: 8, marginTop: 4 }}>
-                      {item.multi.rows
-                        .filter((row: any) => row && row.qty > 0)
-                        .map((row: any, idx: number) => (
-                          <Text key={idx} style={{ fontSize: 10, marginBottom: 2 }}>
-                            {row.qty} unidades × {fmtEUR(row.unit)} = {fmtEUR(row.totalStr)}
-                          </Text>
-                        ))}
+                  {/* Descripción del artículo */}
+                  {description && description !== (item?.product_name || item?.name) && (
+                    <Text style={{ fontSize: 10, color: "#6b7280", marginBottom: 8 }}>{description}</Text>
+                  )}
+                  
+                  {/* Detalles/Prompts seleccionados */}
+                  {detailOutputs.length > 0 && (
+                    <View style={{ marginLeft: 8, marginBottom: 8, backgroundColor: "#f9fafb", padding: 8, borderRadius: 4 }}>
+                      <Text style={{ fontSize: 9, fontWeight: 700, marginBottom: 4, color: "#374151" }}>Opciones seleccionadas:</Text>
+                      {detailOutputs.map((output: any, idx: number) => (
+                        <Text key={idx} style={{ fontSize: 9, marginBottom: 2, color: "#4b5563" }}>
+                          • {output.name || output.id}: {output.value}
+                        </Text>
+                      ))}
                     </View>
                   )}
                   
-                  {/* Precio (solo Price output) */}
-                  {item?.outputs && item.outputs.find((output: any) => output.name === "Price") && (
-                    <View style={{ marginLeft: 12, marginTop: 4, backgroundColor: "#f0f9ff", padding: 8 }}>
-                      <Text style={{ fontSize: 10, fontWeight: 700, marginBottom: 4 }}>Precio:</Text>
-                      <Text style={{ fontSize: 9 }}>
-                        • {item.outputs.find((output: any) => output.name === "Price").value}
-                      </Text>
+                  {/* Opciones de cantidad múltiple */}
+                  {item?.multi && typeof item.multi === 'object' && Array.isArray(item.multi.rows) && item.multi.rows.some((row: any) => row && row.qty > 0) && (
+                    <View style={{ marginLeft: 8 }}>
+                      <Text style={{ fontSize: 9, fontWeight: 700, marginBottom: 4, color: "#374151" }}>Múltiples cantidades:</Text>
+                      {item.multi.rows
+                        .filter((row: any) => row && row.qty > 0)
+                        .map((row: any, idx: number) => (
+                          <Text key={idx} style={{ fontSize: 9, marginBottom: 2, color: "#4b5563" }}>
+                            • {row.qty} unidades × {fmtEUR(row.unit)}/ud = {fmtEUR(row.totalStr)}
+                          </Text>
+                        ))}
                     </View>
                   )}
                 </View>
