@@ -58,28 +58,20 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
               <Text style={styles.th}>Precio</Text>
             </View>
             {allItems.map((item: any, i: number) => {
-              console.log('Processing item:', i, item);
-              
               // Obtener el nombre del producto y la descripción
               const productName = item?.product_name || item?.name || `Producto ${i + 1}`;
               const itemDesc = item?.itemDescription || item?.description || "";
               
-              console.log('Product name:', productName);
-              console.log('Item description:', itemDesc);
-              console.log('Outputs:', item?.outputs);
-              
-              // Filtrar outputs: excluir Price, imágenes y valores vacíos/N/A
+              // Mostrar todos los outputs excepto los de tipo "Price" exacto
               const detailOutputs = (item?.outputs || []).filter((output: any) => {
-                const name = String(output?.name || "").toLowerCase();
                 const type = String(output?.type || "").toLowerCase();
+                const name = String(output?.name || "").toLowerCase();
                 const value = String(output?.value ?? "");
-                const isPrice = type === "price" || name.includes("price") || name.includes("precio");
-                const isImage = type.includes("image") || name.includes("image") || /^https?:\/\//i.test(value);
-                const isEmpty = value === "" || value === "#N/A";
-                return !isPrice && !isImage && !isEmpty;
+                // Solo excluir si es explícitamente Price y no está vacío
+                const isPrice = type === "price";
+                const isEmpty = value === "" || value === "#N/A" || value === "null";
+                return !isPrice && !isEmpty;
               });
-              
-              console.log('Filtered outputs:', detailOutputs);
               
               return (
                 <View key={i} style={{ marginBottom: 16, paddingBottom: 12, borderBottom: "1px solid #e5e7eb" }}>
