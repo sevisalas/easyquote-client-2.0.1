@@ -25,6 +25,9 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
   const today = new Date();
   // Solo usar los items reales
   const allItems = Array.isArray(items) ? items : [];
+  
+  // Debug: log para ver qué datos llegan
+  console.log('PDF Items:', allItems);
 
   return (
     <Document>
@@ -55,9 +58,15 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
               <Text style={styles.th}>Precio</Text>
             </View>
             {allItems.map((item: any, i: number) => {
+              console.log('Processing item:', i, item);
+              
               // Obtener el nombre del producto y la descripción
               const productName = item?.product_name || item?.name || `Producto ${i + 1}`;
               const itemDesc = item?.itemDescription || item?.description || "";
+              
+              console.log('Product name:', productName);
+              console.log('Item description:', itemDesc);
+              console.log('Outputs:', item?.outputs);
               
               // Filtrar outputs: excluir Price, imágenes y valores vacíos/N/A
               const detailOutputs = (item?.outputs || []).filter((output: any) => {
@@ -69,6 +78,8 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
                 const isEmpty = value === "" || value === "#N/A";
                 return !isPrice && !isImage && !isEmpty;
               });
+              
+              console.log('Filtered outputs:', detailOutputs);
               
               return (
                 <View key={i} style={{ marginBottom: 16, paddingBottom: 12, borderBottom: "1px solid #e5e7eb" }}>
