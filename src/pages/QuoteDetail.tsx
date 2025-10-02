@@ -8,7 +8,6 @@ import { Separator } from "@/components/ui/separator";
 import { Edit, Download, Copy } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import QuotePdfTemplateDialog from "@/components/quotes/QuotePdfTemplateDialog";
 import { useState } from "react";
 
 const fetchQuote = async (id: string) => {
@@ -61,7 +60,6 @@ const fmtEUR = (amount: number) => {
 export default function QuoteDetail() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
 
   const { data: quote, isLoading, error } = useQuery({
     queryKey: ['quote', id],
@@ -114,15 +112,6 @@ export default function QuoteDetail() {
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button
-                onClick={() => setPdfDialogOpen(true)}
-                size="sm"
-                className="gap-2"
-                variant="secondary"
-              >
-                <Download className="h-4 w-4" />
-                Descargar PDF
-              </Button>
               <Button
                 onClick={() => navigate(`/presupuestos/editar/${quote.id}`)}
                 size="sm"
@@ -367,38 +356,6 @@ export default function QuoteDetail() {
         </Card>
       )}
 
-      {/* PDF Dialog */}
-      <QuotePdfTemplateDialog
-        open={pdfDialogOpen}
-        onOpenChange={setPdfDialogOpen}
-        customer={quote.customer}
-        main={{ title: quote.title, description: quote.description }}
-        items={(() => {
-          // Mapear items de la base de datos
-          const tableItems = (quote.items || []).map((item: any) => ({
-            ...item,
-            itemDescription: item.description || item.itemDescription || ''
-          }));
-          
-          // Mapear items del JSON selections con TODOS los datos
-          const jsonSelections = Array.isArray(quote.selections) ? quote.selections : [];
-          const jsonItems = jsonSelections.map((selection: any, index: number) => ({
-            product_name: quote.product_name || selection.productName || selection.itemDescription || `Producto ${index + 1}`,
-            name: quote.product_name || selection.productName || selection.itemDescription || `Producto ${index + 1}`,
-            itemDescription: selection.itemDescription || selection.description || '',
-            description: selection.itemDescription || selection.description || '',
-            total_price: selection.price || 0,
-            subtotal: selection.price || 0,
-            quantity: selection.quantity || 1,
-            outputs: selection.outputs || [],
-            prompts: selection.prompts || {},
-            multi: selection.multi || null,
-            isFromJson: true
-          }));
-          return [...tableItems, ...jsonItems];
-        })()}
-        quote={quote}
-      />
     </div>
   );
 }
