@@ -25,9 +25,6 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
   const today = new Date();
   // Solo usar los items reales
   const allItems = Array.isArray(items) ? items : [];
-  
-  // Debug: log para ver qué datos llegan
-  console.log('PDF Items:', allItems);
 
   return (
     <Document>
@@ -62,16 +59,32 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
               const productName = item?.product_name || item?.name || `Producto ${i + 1}`;
               const itemDesc = item?.itemDescription || item?.description || "";
               
-              // Mostrar todos los outputs excepto los de tipo "Price" exacto
-              const detailOutputs = (item?.outputs || []).filter((output: any) => {
-                const type = String(output?.type || "").toLowerCase();
-                const name = String(output?.name || "").toLowerCase();
-                const value = String(output?.value ?? "");
-                // Solo excluir si es explícitamente Price y no está vacío
-                const isPrice = type === "price";
-                const isEmpty = value === "" || value === "#N/A" || value === "null";
-                return !isPrice && !isEmpty;
-              });
+              // Extraer los outputs del calculador desde multi.rows[].outs
+              let detailOutputs: any[] = [];
+              if (item?.multi && typeof item.multi === 'object' && Array.isArray(item.multi.rows)) {
+                // Tomar los outputs de la primera fila válida (con qty > 0)
+                const firstValidRow = item.multi.rows.find((row: any) => row && row.qty > 0);
+                if (firstValidRow && Array.isArray(firstValidRow.outs)) {
+                  detailOutputs = firstValidRow.outs.filter((output: any) => {
+                    const type = String(output?.type || "").toLowerCase();
+                    const value = String(output?.value ?? "");
+                    const isPrice = type === "price";
+                    const isEmpty = value === "" || value === "#N/A" || value === "null";
+                    return !isPrice && !isEmpty;
+                  });
+                }
+              }
+              
+              // Si no hay outputs en multi.rows, usar los outputs directos del item
+              if (detailOutputs.length === 0) {
+                detailOutputs = (item?.outputs || []).filter((output: any) => {
+                  const type = String(output?.type || "").toLowerCase();
+                  const value = String(output?.value ?? "");
+                  const isPrice = type === "price";
+                  const isEmpty = value === "" || value === "#N/A" || value === "null";
+                  return !isPrice && !isEmpty;
+                });
+              }
               
               return (
                 <View key={i} style={{ marginBottom: 16, paddingBottom: 12, borderBottom: "1px solid #e5e7eb" }}>
