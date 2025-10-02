@@ -25,6 +25,8 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
   const today = new Date();
   // Solo usar los items reales
   const allItems = Array.isArray(items) ? items : [];
+  
+  console.log('PDF Full Data:', JSON.stringify(allItems, null, 2));
 
   return (
     <Document>
@@ -59,30 +61,28 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
               const productName = item?.product_name || item?.name || `Producto ${i + 1}`;
               const itemDesc = item?.itemDescription || item?.description || "";
               
-              // Extraer los outputs del calculador desde multi.rows[].outs
-              let detailOutputs: any[] = [];
-              if (item?.multi && typeof item.multi === 'object' && Array.isArray(item.multi.rows)) {
-                // Tomar los outputs de la primera fila válida (con qty > 0)
-                const firstValidRow = item.multi.rows.find((row: any) => row && row.qty > 0);
-                if (firstValidRow && Array.isArray(firstValidRow.outs)) {
-                  detailOutputs = firstValidRow.outs.filter((output: any) => {
-                    const type = String(output?.type || "").toLowerCase();
-                    const value = String(output?.value ?? "");
-                    const isPrice = type === "price";
-                    const isEmpty = value === "" || value === "#N/A" || value === "null";
-                    return !isPrice && !isEmpty;
-                  });
-                }
+              // Extraer PROMPTS (inputs del usuario) - necesitamos los nombres y valores
+              const selectedPrompts: any[] = [];
+              
+              // Los prompts están en item.prompts como { id: valor }
+              // Los nombres de los prompts necesitamos buscarlos en la estructura
+              if (item?.prompts && typeof item.prompts === 'object') {
+                Object.entries(item.prompts).forEach(([promptId, promptValue]) => {
+                  if (promptValue) {
+                    selectedPrompts.push({
+                      name: promptId, // Por ahora usamos el ID, luego buscaremos el nombre
+                      value: promptValue
+                    });
+                  }
+                });
               }
               
-              // Si no hay outputs en multi.rows, usar los outputs directos del item
-              if (detailOutputs.length === 0) {
-                detailOutputs = (item?.outputs || []).filter((output: any) => {
+              // Extraer el precio del output
+              let priceOutput = null;
+              if (item?.outputs && Array.isArray(item.outputs)) {
+                priceOutput = item.outputs.find((output: any) => {
                   const type = String(output?.type || "").toLowerCase();
-                  const value = String(output?.value ?? "");
-                  const isPrice = type === "price";
-                  const isEmpty = value === "" || value === "#N/A" || value === "null";
-                  return !isPrice && !isEmpty;
+                  return type === "price";
                 });
               }
               
@@ -96,15 +96,24 @@ export default function QuotePDF({ customer, main, items, template, quote }: any
                     <Text style={{ fontSize: 10, color: "#6b7280", marginBottom: 8 }}>{itemDesc}</Text>
                   )}
                   
-                  {/* Detalles/Prompts seleccionados */}
-                  {detailOutputs.length > 0 && (
+                  {/* Prompts (inputs) seleccionados */}
+                  {selectedPrompts.length > 0 && (
                     <View style={{ marginLeft: 8, marginBottom: 8, backgroundColor: "#f9fafb", padding: 8, borderRadius: 4 }}>
                       <Text style={{ fontSize: 9, fontWeight: 700, marginBottom: 4, color: "#374151" }}>Opciones seleccionadas:</Text>
-                      {detailOutputs.map((output: any, idx: number) => (
+                      {selectedPrompts.map((prompt: any, idx: number) => (
                         <Text key={idx} style={{ fontSize: 9, marginBottom: 2, color: "#4b5563" }}>
-                          • {output.name || output.id}: {output.value}
+                          • {prompt.name}: {prompt.value}
                         </Text>
                       ))}
+                    </View>
+                  )}
+                  
+                  {/* Precio del artículo */}
+                  {priceOutput && (
+                    <View style={{ marginLeft: 8, marginBottom: 8 }}>
+                      <Text style={{ fontSize: 10, fontWeight: 700, color: "#059669" }}>
+                        Precio: {priceOutput.value}
+                      </Text>
                     </View>
                   )}
                   
