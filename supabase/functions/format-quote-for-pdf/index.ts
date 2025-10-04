@@ -125,7 +125,10 @@ Deno.serve(async (req) => {
         const processedItem: any = {
           product_name: item.product_name,
           description: item.description,
-          price: item.total_price,
+          quantity: item.quantity,
+          subtotal: item.subtotal,
+          total_price: item.total_price,
+          discount_percentage: item.discount_percentage,
           outputs: item.outputs || [],
           prompts: [],
           item_additionals: item.item_additionals || []
