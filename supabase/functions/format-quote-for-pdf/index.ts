@@ -124,13 +124,14 @@ Deno.serve(async (req) => {
       for (const item of quote.items) {
         const processedItem: any = {
           id: item.id,
-          name: item.name || item.product_name,
+          name: item.name,
           product_name: item.product_name,
           description: item.description,
           quantity: item.quantity,
           unit_price: item.unit_price,
           subtotal: item.subtotal,
           total_price: item.total_price,
+          discount_percentage: item.discount_percentage,
           outputs: item.outputs || [],
           prompts: [],
           item_additionals: item.item_additionals || []
@@ -195,14 +196,13 @@ Deno.serve(async (req) => {
     if (quote.selections && Array.isArray(quote.selections)) {
       for (const selection of quote.selections) {
         const processedItem: any = {
-          name: selection.productName || selection.itemDescription || 'Producto',
           product_name: selection.productName,
-          description: selection.itemDescription || selection.description,
-          quantity: selection.quantity || 1,
-          total_price: selection.price || 0,
+          description: selection.itemDescription,
+          price: selection.price,
           outputs: selection.outputs || [],
           prompts: [],
-          item_additionals: selection.itemAdditionals || []
+          item_additionals: selection.itemAdditionals || [],
+          multi: selection.multi
         };
 
         // If has productId and token, fetch product
