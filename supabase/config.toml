@@ -9,6 +9,9 @@ verify_jwt = false
 [functions.easyquote-master-files]
 verify_jwt = true
 
+[functions.format-quote-for-pdf]
+verify_jwt = true
+
 [functions.easyquote-pricing]
 verify_jwt = true
 
