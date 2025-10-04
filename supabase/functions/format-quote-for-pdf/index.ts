@@ -123,15 +123,9 @@ Deno.serve(async (req) => {
     if (quote.items && Array.isArray(quote.items)) {
       for (const item of quote.items) {
         const processedItem: any = {
-          id: item.id,
-          name: item.name,
           product_name: item.product_name,
           description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          subtotal: item.subtotal,
-          total_price: item.total_price,
-          discount_percentage: item.discount_percentage,
+          price: item.total_price,
           outputs: item.outputs || [],
           prompts: [],
           item_additionals: item.item_additionals || []
@@ -152,8 +146,9 @@ Deno.serve(async (req) => {
               );
 
               if (product) {
+                console.log('Product found:', JSON.stringify(product, null, 2));
                 const promptDefs = extractPrompts(product);
-                console.log('Found prompt definitions:', promptDefs.length);
+                console.log('Prompt definitions:', JSON.stringify(promptDefs, null, 2));
 
                 // Transform prompts from {id: value} to {name, value, type}
                 const itemPrompts = item.prompts || {};
@@ -162,7 +157,7 @@ Deno.serve(async (req) => {
                   return {
                     id: promptId,
                     name: promptDef?.name || promptId,
-                    type: promptDef?.type || 'text',
+                    type: promptDef?.type || 'unknown',
                     value: value
                   };
                 });
@@ -174,7 +169,7 @@ Deno.serve(async (req) => {
             processedItem.prompts = Object.entries(item.prompts || {}).map(([id, value]) => ({
               id,
               name: id,
-              type: 'text',
+              type: 'unknown',
               value
             }));
           }
@@ -183,7 +178,7 @@ Deno.serve(async (req) => {
           processedItem.prompts = Object.entries(item.prompts || {}).map(([id, value]) => ({
             id,
             name: id,
-            type: 'text',
+            type: 'unknown',
             value
           }));
         }
@@ -225,7 +220,7 @@ Deno.serve(async (req) => {
                   return {
                     id: promptId,
                     name: promptDef?.name || promptId,
-                    type: promptDef?.type || 'text',
+                    type: promptDef?.type || 'unknown',
                     value: value
                   };
                 });
@@ -236,7 +231,7 @@ Deno.serve(async (req) => {
             processedItem.prompts = Object.entries(selection.prompts || {}).map(([id, value]) => ({
               id,
               name: id,
-              type: 'text',
+              type: 'unknown',
               value
             }));
           }
@@ -244,7 +239,7 @@ Deno.serve(async (req) => {
           processedItem.prompts = Object.entries(selection.prompts || {}).map(([id, value]) => ({
             id,
             name: id,
-            type: 'text',
+            type: 'unknown',
             value
           }));
         }
