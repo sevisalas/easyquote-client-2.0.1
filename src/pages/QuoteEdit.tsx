@@ -21,16 +21,12 @@ interface QuoteItem {
   name?: string;
   product_name: string;
   description?: string;
-  quantity: number;
-  unit_price: number;
-  subtotal: number;
-  total_price?: number;
+  price: number;
   isFromSelections?: boolean;
   // QuoteItem component compatibility
   productId?: string;
   prompts?: Record<string, any>;
   outputs?: any[];
-  price?: number;
   multi?: any;
   itemDescription?: string;
   itemAdditionals?: any[];
@@ -169,15 +165,11 @@ export default function QuoteEdit() {
           id: item.id,
           product_name: item.product_name,
           description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          subtotal: item.subtotal,
-          total_price: item.total_price,
+          price: item.price || 0,
           // QuoteItem compatibility
           productId: item.product_id || '',
           prompts: typeof item.prompts === 'object' ? item.prompts : {},
           outputs: Array.isArray(item.outputs) ? item.outputs : [],
-          price: item.total_price || item.subtotal,
           multi: (item.multi && typeof item.multi === 'object' && (item.multi.qtyInputs || item.multi.qtyPrompt)) ? item.multi : undefined,
           itemDescription: item.description || item.product_name,
           itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
@@ -191,16 +183,12 @@ export default function QuoteEdit() {
           id: `json-${index}`,
           product_name: selection.productName || `Producto ${index + 1}`,
           description: selection.itemDescription || '',
-          quantity: selection.quantity || 1,
-          unit_price: selection.price || 0,
-          subtotal: selection.price || 0,
-          total_price: selection.price || 0,
+          price: selection.price || 0,
           isFromSelections: true,
           // QuoteItem compatibility
           productId: selection.productId || '',
           prompts: selection.prompts || {},
           outputs: selection.outputs || [],
-          price: selection.price || 0,
           multi: selection.multi,
           itemDescription: selection.itemDescription || selection.productName || `Producto ${index + 1}`,
           itemAdditionals: selection.itemAdditionals || [],
@@ -243,15 +231,12 @@ export default function QuoteEdit() {
           quote_id: id,
           product_name: item.product_name,
           description: item.description || '',
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          subtotal: item.quantity * item.unit_price,
-          total_price: item.quantity * item.unit_price,
+          price: item.price || 0,
           position: index,
           product_id: item.productId || null,
           prompts: item.prompts || {},
           outputs: item.outputs || [],
-          multi: item.multi || null, // Guardar el objeto completo o null, no forzar a número
+          multi: item.multi || null,
           item_additionals: item.itemAdditionals || [],
         }));
 
@@ -297,11 +282,7 @@ export default function QuoteEdit() {
   });
 
   const calculateSubtotal = () => {
-    return items.reduce((sum, item) => {
-      // Usar el precio correcto dependiendo del tipo de item
-      const price = item.price || (item.quantity * item.unit_price) || 0;
-      return sum + price;
-    }, 0);
+    return items.reduce((sum, item) => sum + (item.price || 0), 0);
   };
 
   const calculateTotal = () => {
@@ -362,15 +343,11 @@ export default function QuoteEdit() {
             ...item,
             product_name: snapshot.itemDescription || item.product_name,
             description: snapshot.itemDescription || item.description,
-            quantity: 1, // QuoteItem manages quantity differently
-            unit_price: snapshot.price || 0,
-            subtotal: snapshot.price || 0,
-            total_price: snapshot.price || 0,
+            price: snapshot.price || 0,
             // Update QuoteItem fields
             productId: snapshot.productId,
             prompts: snapshot.prompts,
             outputs: snapshot.outputs,
-            price: snapshot.price,
             multi: snapshot.multi,
             itemDescription: snapshot.itemDescription,
             itemAdditionals: snapshot.itemAdditionals,
@@ -390,15 +367,12 @@ export default function QuoteEdit() {
       id: `temp-${Date.now()}`,
       product_name: 'Nuevo artículo',
       description: '',
-      quantity: 1,
-      unit_price: 0,
-      subtotal: 0,
+      price: 0,
       // QuoteItem compatibility
       productId: '',
       prompts: {},
       outputs: [],
-      price: 0,
-      multi: 1,
+      multi: undefined,
       itemDescription: 'Nuevo artículo',
       itemAdditionals: [],
     };
@@ -569,7 +543,7 @@ export default function QuoteEdit() {
               return (
                 <div key={item.id || index} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
                   {isEditing ? (
-                    // Editing mode - show only QuoteItem component
+                     // Editing mode - show only QuoteItem component
                      <QuoteItem
                        hasToken={true}
                        id={itemId}
@@ -577,7 +551,7 @@ export default function QuoteEdit() {
                          productId: item.productId || '',
                          prompts: item.prompts || {},
                          outputs: item.outputs || [],
-                         price: item.price || item.unit_price || 0,
+                         price: item.price || 0,
                          multi: item.multi, // No forzar valor por defecto
                          itemDescription: item.itemDescription || item.product_name || '',
                          itemAdditionals: item.itemAdditionals || [],
@@ -599,7 +573,7 @@ export default function QuoteEdit() {
                             )}
                           </div>
                           <div className="text-sm font-medium text-secondary text-right shrink-0">
-                            {fmtEUR(item.price || item.unit_price * item.quantity || 0)}
+                            {fmtEUR(item.price || 0)}
                           </div>
                         </div>
                       </div>

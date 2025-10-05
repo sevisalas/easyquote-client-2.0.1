@@ -125,13 +125,11 @@ Deno.serve(async (req) => {
         const processedItem: any = {
           product_name: item.product_name,
           description: item.description,
-          quantity: item.quantity,
-          subtotal: item.subtotal,
-          total_price: item.total_price,
-          discount_percentage: item.discount_percentage,
+          price: item.price || 0,
           outputs: item.outputs || [],
           prompts: [],
-          item_additionals: item.item_additionals || []
+          item_additionals: item.item_additionals || [],
+          multi: item.multi
         };
 
         // If has product_id and token, fetch product to get prompt names

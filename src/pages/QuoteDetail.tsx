@@ -196,12 +196,10 @@ export default function QuoteDetail() {
             const jsonItems = jsonSelections.map((selection: any, index: number) => ({
               product_name: selection.productName || `Producto ${index + 1}`,
               description: selection.itemDescription || '',
-              total_price: selection.price || 0,
-              subtotal: selection.price || 0,
-              quantity: selection.quantity || 1,
+              price: selection.price || 0,
               outputs: selection.outputs || [],
               prompts: selection.prompts || {},
-              multi: selection.multi || 1,
+              multi: selection.multi,
               isFromJson: true
             }));
             
@@ -218,12 +216,9 @@ export default function QuoteDetail() {
                         {item.description && item.description.trim() && (
                           <p className="text-sm text-muted-foreground">{item.description}</p>
                         )}
-                        {item.quantity && item.quantity > 1 && (
-                          <p className="text-xs text-muted-foreground mt-1">Cantidad: {item.quantity}</p>
-                        )}
                       </div>
                       <div className="text-right ml-4">
-                        <p className="text-lg text-primary">{fmtEUR((item.total_price || item.subtotal) || 0)}</p>
+                        <p className="text-lg text-primary">{fmtEUR(item.price || 0)}</p>
                       </div>
                     </div>
                   </div>

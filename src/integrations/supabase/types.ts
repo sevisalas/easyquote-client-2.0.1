@@ -689,61 +689,49 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
-          discount_percentage: number | null
           id: string
           item_additionals: Json | null
           multi: number | null
           name: string | null
           outputs: Json | null
           position: number | null
+          price: number
           product_id: string | null
           product_name: string
           prompts: Json | null
-          quantity: number
           quote_id: string
-          subtotal: number
-          total_price: number | null
-          unit_price: number
           updated_at: string
         }
         Insert: {
           created_at?: string
           description?: string | null
-          discount_percentage?: number | null
           id?: string
           item_additionals?: Json | null
           multi?: number | null
           name?: string | null
           outputs?: Json | null
           position?: number | null
+          price?: number
           product_id?: string | null
           product_name: string
           prompts?: Json | null
-          quantity?: number
           quote_id: string
-          subtotal?: number
-          total_price?: number | null
-          unit_price?: number
           updated_at?: string
         }
         Update: {
           created_at?: string
           description?: string | null
-          discount_percentage?: number | null
           id?: string
           item_additionals?: Json | null
           multi?: number | null
           name?: string | null
           outputs?: Json | null
           position?: number | null
+          price?: number
           product_id?: string | null
           product_name?: string
           prompts?: Json | null
-          quantity?: number
           quote_id?: string
-          subtotal?: number
-          total_price?: number | null
-          unit_price?: number
           updated_at?: string
         }
         Relationships: [
