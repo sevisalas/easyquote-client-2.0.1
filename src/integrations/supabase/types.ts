@@ -689,6 +689,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          discount_percentage: number | null
           id: string
           item_additionals: Json | null
           multi: number | null
@@ -699,12 +700,14 @@ export type Database = {
           product_id: string | null
           product_name: string
           prompts: Json | null
+          quantity: number | null
           quote_id: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           description?: string | null
+          discount_percentage?: number | null
           id?: string
           item_additionals?: Json | null
           multi?: number | null
@@ -715,12 +718,14 @@ export type Database = {
           product_id?: string | null
           product_name: string
           prompts?: Json | null
+          quantity?: number | null
           quote_id: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           description?: string | null
+          discount_percentage?: number | null
           id?: string
           item_additionals?: Json | null
           multi?: number | null
@@ -731,6 +736,7 @@ export type Database = {
           product_id?: string | null
           product_name?: string
           prompts?: Json | null
+          quantity?: number | null
           quote_id?: string
           updated_at?: string
         }
