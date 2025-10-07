@@ -45,7 +45,7 @@ const Index = () => {
   }
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-secondary/5 via-background to-secondary/10 px-6 py-8">
+    <div className="w-full min-h-screen bg-muted/20 px-6 py-8">
       <div className="max-w-5xl mx-auto">
         {/* Primera fila: logo + saludo + botones a la izquierda, imagen a la derecha */}
         <div className="grid md:grid-cols-2 gap-8 items-center mb-12">
