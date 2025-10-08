@@ -379,7 +379,7 @@ export default function QuoteNew() {
             )}
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-2">
           {Object.keys(items).length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p>No hay productos agregados.</p>

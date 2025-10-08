@@ -487,10 +487,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const isComplete = productId && priceOutput && finalPrice > 0;
 
   return (
-    <div className="border rounded-lg border-r-4 border-r-primary p-4">
+    <div className="border rounded-lg border-r-4 border-r-primary p-2">
       {/* Collapsed view - simple line with action buttons */}
       {isComplete && !isExpanded ? (
-        <div className="flex items-center justify-between py-2 hover:bg-muted/30 transition-colors rounded">
+        <div className="flex items-center justify-between py-1 hover:bg-muted/30 transition-colors rounded">
           <span className="text-base font-medium text-muted-foreground">{itemDescription || productName}</span>
           <div className="flex items-center gap-4">
             <span className="text-xl font-bold">{formatEUR(finalPrice)}</span>
