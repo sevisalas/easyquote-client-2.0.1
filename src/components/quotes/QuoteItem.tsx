@@ -54,7 +54,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [itemDescription, setItemDescription] = useState<string>("");
   const selectRef = useRef<HTMLButtonElement>(null);
 
-  // Auto-expand when shouldExpand changes
+  // Auto-expand when shouldExpand changes (only expand, don't collapse)
   useEffect(() => {
     if (shouldExpand) {
       setIsExpanded(true);
@@ -62,9 +62,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setTimeout(() => {
         selectRef.current?.click();
       }, 100);
-    } else {
-      setIsExpanded(false);
     }
+    // Don't collapse when shouldExpand is false - let users manage expansion manually
   }, [shouldExpand]);
 
   // Multi-cantidades
