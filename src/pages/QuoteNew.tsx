@@ -53,6 +53,11 @@ export default function QuoteNew() {
   // Generate next item ID
   const nextItemId = useMemo(() => Math.max(0, ...Object.keys(items).map(k => Number(k) || 0)) + 1, [items]);
 
+  // Check if all items are complete (have productId)
+  const hasIncompleteItems = useMemo(() => {
+    return Object.values(items).some(item => !item.productId);
+  }, [items]);
+
   // Check if user has EasyQuote token
   const hasToken = Boolean(localStorage.getItem("easyquote_token"));
 
@@ -358,10 +363,12 @@ export default function QuoteNew() {
       <Card>
         <CardHeader className="py-3 px-4">
           <div className="flex items-center justify-between">
-            <Button onClick={addNewItem} variant="secondary" size="sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Agregar producto
-            </Button>
+            {!hasIncompleteItems && (
+              <Button onClick={addNewItem} variant="secondary" size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar producto
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
