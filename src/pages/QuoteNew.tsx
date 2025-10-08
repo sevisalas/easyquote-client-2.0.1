@@ -379,8 +379,7 @@ export default function QuoteNew() {
           ) : (
             Object.entries(items).map(([id, item]) => (
               <div key={id} className="relative border rounded-lg p-4 bg-muted/30">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="font-medium">Producto #{parseInt(id as string) + 1}</h3>
+                <div className="flex justify-end mb-4">
                   <Button 
                     variant="destructive" 
                     size="sm" 
