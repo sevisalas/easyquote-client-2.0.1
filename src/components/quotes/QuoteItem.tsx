@@ -466,41 +466,39 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
-            <Label>Producto</Label>
-            <Select onValueChange={(value) => {
-              setProductId(value);
-            }} value={productId} disabled={!hasToken}>
-              <SelectTrigger>
-                <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
-              </SelectTrigger>
-              <SelectContent>
-                {products?.map((p: any) => (
-                  <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <div className="grid gap-4 md:grid-cols-3 items-end">
+        <div className="space-y-2">
+          <Label>Producto</Label>
+          <Select onValueChange={(value) => {
+            setProductId(value);
+          }} value={productId} disabled={!hasToken}>
+            <SelectTrigger>
+              <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
+            </SelectTrigger>
+            <SelectContent>
+              {products?.map((p: any) => (
+                <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {productId && (
+          <div className="space-y-2 md:col-span-2">
+            <Label>Nombre o descripción</Label>
+            <Input
+              value={itemDescription}
+              onChange={(e) => setItemDescription(e.target.value)}
+              placeholder="Editar nombre del producto..."
+            />
           </div>
-
-          {productId && (
-            <div className="space-y-2 md:col-span-2">
-              <Label>Nombre o descripción</Label>
-              <Input
-                value={itemDescription}
-                onChange={(e) => setItemDescription(e.target.value)}
-                placeholder="Editar nombre del producto..."
-              />
-            </div>
-          )}
-        </div>
-
-        <div className="flex justify-end">
-          <Button variant="destructive" size="sm" onClick={() => onRemove?.(id)}>
-            Eliminar
-          </Button>
-        </div>
+        )}
+        
+        {!productId && <div className="md:col-span-2"></div>}
+        
+        <Button variant="destructive" size="sm" onClick={() => onRemove?.(id)} className="w-full md:w-auto">
+          Eliminar
+        </Button>
       </div>
 
         {productId ? (
