@@ -602,19 +602,29 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                         />
                       </div>
 
-                      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(qtyCount, 4)}, minmax(80px, 1fr))` }}>
-                        {Array.from({ length: qtyCount }, (_, i) => (
-                          <div key={i} className="space-y-1">
-                            <Label>Q{i + 1}</Label>
+                      <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Q1</Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={qtyInputs[0] ?? ""}
+                            readOnly
+                            className="bg-muted"
+                          />
+                        </div>
+                        {Array.from({ length: qtyCount - 1 }, (_, i) => i + 1).map((idx) => (
+                          <div key={idx} className="space-y-1">
+                            <Label className="text-xs">Q{idx + 1}</Label>
                             <Input
                               type="number"
                               min={1}
-                              value={qtyInputs[i] ?? ""}
+                              value={qtyInputs[idx] ?? ""}
                               onChange={(e) => {
                                 const v = e.target.value;
                                 setQtyInputs((prev) => {
                                   const next = [...prev];
-                                  next[i] = v;
+                                  next[idx] = v;
                                   return next;
                                 });
                               }}
