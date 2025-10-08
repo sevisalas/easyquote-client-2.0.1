@@ -192,14 +192,17 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
               </SelectContent>
             </Select>
             {newAdditionalId && (
-              <Input
-                type="number"
-                step="0.01"
-                value={newAdditionalValue}
-                onChange={(e) => setNewAdditionalValue(parseFloat(e.target.value) || 0)}
-                placeholder="Valor"
-                className="w-24"
-              />
+              <div className="flex items-center gap-1 w-32">
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={newAdditionalValue}
+                  onChange={(e) => setNewAdditionalValue(parseFloat(e.target.value) || 0)}
+                  placeholder="Valor"
+                  className="w-full"
+                />
+                <span className="text-sm text-muted-foreground">€</span>
+              </div>
             )}
             <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} className="w-28">
               <Plus className="h-4 w-4 mr-2" />
