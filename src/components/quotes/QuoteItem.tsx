@@ -266,16 +266,26 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     }
   }, [forceRecalculate, hasToken, productId, refetchPricing]);
 
-  // Reset prompts when product changes and auto-expand
+  // Track if prompts were initialized from saved data
+  const previousProductIdRef = useRef<string>("");
+  
+  // Reset prompts only when product changes (not on initial load with saved data)
   useEffect(() => {
-    setPromptValues({});
+    // Only reset if product actually changed (not initial load)
+    if (previousProductIdRef.current && previousProductIdRef.current !== productId) {
+      setPromptValues({});
+    }
+    previousProductIdRef.current = productId;
     
     // Auto-fill product description when product is selected
     if (productId && products) {
       const selectedProduct = products.find((p: any) => String(p.id) === String(productId));
       if (selectedProduct) {
         const productLabel = getProductLabel(selectedProduct);
-        setItemDescription(productLabel);
+        // Only auto-fill if description is empty
+        if (!itemDescription) {
+          setItemDescription(productLabel);
+        }
       }
     }
     
