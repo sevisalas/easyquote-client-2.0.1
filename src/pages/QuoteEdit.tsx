@@ -413,6 +413,33 @@ export default function QuoteEdit() {
     );
   }
 
+  // Check if quote is editable
+  const isEditable = quote.status === 'draft' || quote.status === 'pending';
+  
+  if (!isEditable) {
+    return (
+      <div className="container mx-auto py-2">
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <p className="text-destructive font-medium">Este presupuesto no se puede editar</p>
+            <p className="text-sm text-muted-foreground">
+              Los presupuestos en estado "{statusOptions.find(opt => opt.value === quote.status)?.label || quote.status}" 
+              no pueden ser modificados. Si necesitas realizar cambios, puedes duplicarlo como una nueva versión.
+            </p>
+            <div className="flex gap-2">
+              <Button onClick={() => navigate(`/presupuestos/${id}`)} className="mt-2">
+                Ver presupuesto
+              </Button>
+              <Button onClick={() => navigate('/presupuestos')} variant="outline" className="mt-2">
+                Volver a lista
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-2 space-y-3">
       {/* Header */}

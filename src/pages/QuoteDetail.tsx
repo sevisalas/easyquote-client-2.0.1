@@ -1,14 +1,14 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Edit, Download, Copy } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { useState } from "react";
+import { toast } from "sonner";
 
 const fetchQuote = async (id: string) => {
   const { data, error } = await supabase
@@ -60,12 +60,123 @@ const fmtEUR = (amount: number) => {
 export default function QuoteDetail() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
 
   const { data: quote, isLoading, error } = useQuery({
     queryKey: ['quote', id],
     queryFn: () => fetchQuote(id!),
     enabled: !!id,
   });
+
+  const duplicateQuoteMutation = useMutation({
+    mutationFn: async (quoteId: string) => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) throw new Error('Usuario no autenticado');
+
+      // Obtener el presupuesto original con todos sus datos
+      const { data: originalQuote, error: fetchError } = await supabase
+        .from('quotes')
+        .select('*, items:quote_items(*), quote_additionals:quote_additionals(*)')
+        .eq('id', quoteId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Generar nuevo número de presupuesto
+      const { data: latestQuote } = await supabase
+        .from('quotes')
+        .select('quote_number')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      let newNumber = '00001';
+      if (latestQuote?.quote_number) {
+        const lastNum = parseInt(latestQuote.quote_number);
+        newNumber = String(lastNum + 1).padStart(5, '0');
+      }
+
+      // Crear nuevo presupuesto
+      const { data: newQuote, error: insertError } = await supabase
+        .from('quotes')
+        .insert({
+          user_id: session.session.user.id,
+          quote_number: newNumber,
+          customer_id: originalQuote.customer_id,
+          title: originalQuote.title ? `${originalQuote.title} (copia)` : null,
+          description: originalQuote.description,
+          notes: originalQuote.notes,
+          status: 'draft',
+          valid_until: null,
+          subtotal: originalQuote.subtotal,
+          final_price: originalQuote.final_price,
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Copiar items
+      if (originalQuote.items && originalQuote.items.length > 0) {
+        const itemsToInsert = originalQuote.items.map((item: any) => ({
+          quote_id: newQuote.id,
+          product_name: item.product_name,
+          description: item.description,
+          price: item.price,
+          position: item.position,
+          product_id: item.product_id,
+          prompts: item.prompts,
+          outputs: item.outputs,
+          multi: item.multi,
+          item_additionals: item.item_additionals,
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('quote_items')
+          .insert(itemsToInsert);
+
+        if (itemsError) throw itemsError;
+      }
+
+      // Copiar ajustes
+      if (originalQuote.quote_additionals && originalQuote.quote_additionals.length > 0) {
+        const additionalsToInsert = originalQuote.quote_additionals.map((additional: any) => ({
+          quote_id: newQuote.id,
+          additional_id: additional.additional_id,
+          name: additional.name,
+          type: additional.type,
+          value: additional.value,
+        }));
+
+        const { error: additionalsError } = await supabase
+          .from('quote_additionals')
+          .insert(additionalsToInsert);
+
+        if (additionalsError) throw additionalsError;
+      }
+
+      return newQuote;
+    },
+    onSuccess: (newQuote) => {
+      toast.success('Presupuesto duplicado correctamente');
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      navigate(`/presupuestos/editar/${newQuote.id}`);
+    },
+    onError: (error) => {
+      toast.error('Error al duplicar el presupuesto');
+      console.error('Error:', error);
+    },
+  });
+
+  const isEditable = quote?.status === 'draft' || quote?.status === 'pending';
+
+  const handleEditOrDuplicate = () => {
+    if (isEditable) {
+      navigate(`/presupuestos/editar/${quote.id}`);
+    } else {
+      duplicateQuoteMutation.mutate(quote.id);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -113,12 +224,22 @@ export default function QuoteDetail() {
             </div>
             <div className="flex gap-2">
               <Button
-                onClick={() => navigate(`/presupuestos/editar/${quote.id}`)}
+                onClick={handleEditOrDuplicate}
                 size="sm"
                 className="gap-2"
+                disabled={duplicateQuoteMutation.isPending}
               >
-                <Edit className="h-4 w-4" />
-                Editar
+                {isEditable ? (
+                  <>
+                    <Edit className="h-4 w-4" />
+                    Editar
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4" />
+                    {duplicateQuoteMutation.isPending ? 'Duplicando...' : 'Duplicar como nuevo'}
+                  </>
+                )}
               </Button>
               <Button onClick={() => navigate('/presupuestos')} size="sm" variant="outline">
                 Volver
