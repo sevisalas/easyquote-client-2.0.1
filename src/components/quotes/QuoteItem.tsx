@@ -58,10 +58,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   useEffect(() => {
     if (shouldExpand) {
       setIsExpanded(true);
-      // Focus on product select after a short delay
-      setTimeout(() => {
-        selectRef.current?.click();
-      }, 100);
     }
     // Don't collapse when shouldExpand is false - let users manage expansion manually
   }, [shouldExpand]);
