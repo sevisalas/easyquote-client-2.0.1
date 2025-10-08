@@ -639,25 +639,27 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                         <p className="text-sm text-muted-foreground">Calculando...</p>
                       ) : (Array.isArray(multiRows) && multiRows.length > 0 ? (
                         <>
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                {multiRows.map((_, idx) => (
-                                  <TableHead key={idx}>Q{idx + 1}</TableHead>
-                                ))}
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              <TableRow>
-                                {multiRows.map((r, idx) => {
-                                  const priceOut = (r.outs || []).find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
-                                  return (
-                                    <TableCell key={idx}>{formatEUR(priceOut?.value)}</TableCell>
-                                  );
-                                })}
-                              </TableRow>
-                            </TableBody>
-                          </Table>
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  {multiRows.map((_, idx) => (
+                                    <TableHead key={idx} className="px-2 py-1 text-xs">Q{idx + 1}</TableHead>
+                                  ))}
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                <TableRow>
+                                  {multiRows.map((r, idx) => {
+                                    const priceOut = (r.outs || []).find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
+                                    return (
+                                      <TableCell key={idx} className="px-2 py-1 text-xs">{formatEUR(priceOut?.value)}</TableCell>
+                                    );
+                                  })}
+                                </TableRow>
+                              </TableBody>
+                            </Table>
+                          </div>
 
                           <div className="mt-3">
                             <Accordion type="single" collapsible className="w-full">
