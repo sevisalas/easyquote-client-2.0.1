@@ -467,32 +467,34 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <div className="space-y-2">
-          <Label>Producto</Label>
-          <Select onValueChange={(value) => {
-            setProductId(value);
-          }} value={productId} disabled={!hasToken}>
-            <SelectTrigger>
-              <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
-            </SelectTrigger>
-            <SelectContent>
-              {products?.map((p: any) => (
-                <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {productId && (
+        <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label>Nombre del producto en el presupuesto</Label>
-            <Input
-              value={itemDescription}
-              onChange={(e) => setItemDescription(e.target.value)}
-              placeholder="Nombre del producto..."
-            />
+            <Label>Producto</Label>
+            <Select onValueChange={(value) => {
+              setProductId(value);
+            }} value={productId} disabled={!hasToken}>
+              <SelectTrigger>
+                <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
+              </SelectTrigger>
+              <SelectContent>
+                {products?.map((p: any) => (
+                  <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        )}
+
+          {productId && (
+            <div className="space-y-2">
+              <Label>Nombre o descripción</Label>
+              <Input
+                value={itemDescription}
+                onChange={(e) => setItemDescription(e.target.value)}
+                placeholder="Editar nombre del producto..."
+              />
+            </div>
+          )}
+        </div>
 
         <div className="flex justify-end">
           <Button variant="destructive" size="sm" onClick={() => onRemove?.(id)}>
