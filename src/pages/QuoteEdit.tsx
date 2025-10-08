@@ -181,7 +181,7 @@ export default function QuoteEdit() {
       if (allItems.length === 0 && quote.selections && Array.isArray(quote.selections)) {
         const jsonItems = quote.selections.map((selection: any, index: number) => ({
           id: `json-${index}`,
-          product_name: selection.productName || `Producto ${index + 1}`,
+          product_name: selection.productName || '',
           description: selection.itemDescription || '',
           price: selection.price || 0,
           isFromSelections: true,
@@ -190,7 +190,7 @@ export default function QuoteEdit() {
           prompts: selection.prompts || {},
           outputs: selection.outputs || [],
           multi: selection.multi,
-          itemDescription: selection.itemDescription || selection.productName || `Producto ${index + 1}`,
+          itemDescription: selection.itemDescription || selection.productName || '',
           itemAdditionals: selection.itemAdditionals || [],
         }));
         allItems.push(...jsonItems);
@@ -589,14 +589,14 @@ export default function QuoteEdit() {
                      <div className="flex justify-between items-center">
                        <div className="flex-1 min-w-0">
                          <div className="flex items-center gap-4">
-                           <div className="min-w-0 flex-1">
-                             <p className="text-foreground text-sm truncate">
-                               {item.product_name || `Artículo ${index + 1}`}
-                             </p>
-                             {item.itemDescription && item.itemDescription !== item.product_name && (
-                               <p className="text-xs text-muted-foreground truncate">{item.itemDescription}</p>
-                             )}
-                           </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-foreground text-sm truncate">
+                                {item.product_name}
+                              </p>
+                              {item.itemDescription && item.itemDescription !== item.product_name && (
+                                <p className="text-xs text-muted-foreground truncate">{item.itemDescription}</p>
+                              )}
+                            </div>
                            <div className="text-sm font-medium text-secondary text-right shrink-0">
                              {fmtEUR(item.price || 0)}
                            </div>
