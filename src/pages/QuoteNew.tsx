@@ -363,29 +363,33 @@ export default function QuoteNew() {
       <Card>
         <CardHeader className="py-3 px-4">
           <div className="flex items-center justify-between">
-            <div className="flex gap-2">
-              {Object.entries(items).map(([id]) => (
-                <Button key={id} variant="destructive" size="sm" onClick={() => handleItemRemove(id)}>
-                  Eliminar
-                </Button>
-              ))}
-            </div>
-            {!hasIncompleteItems && (
-              <Button onClick={addNewItem} variant="secondary" size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Agregar producto
-              </Button>
-            )}
+            <CardTitle className="text-lg">Productos</CardTitle>
+            <Button onClick={addNewItem} variant="secondary" size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Agregar producto
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {Object.keys(items).length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p>No hay productos agregados.</p>
+              <p className="text-sm mt-2">Haz clic en "Agregar producto" para comenzar.</p>
             </div>
           ) : (
             Object.entries(items).map(([id, item]) => (
-              <div key={id}>
+              <div key={id} className="relative border rounded-lg p-4 bg-muted/30">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="font-medium">Producto #{parseInt(id as string) + 1}</h3>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    onClick={() => handleItemRemove(id)}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Eliminar
+                  </Button>
+                </div>
                 <QuoteItem
                   hasToken={hasToken}
                   id={id}
