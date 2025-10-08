@@ -167,48 +167,45 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
 
       {/* Add Predefined Additional */}
       {unselectedAdditionals.length > 0 && (
-        <div className="space-y-3">
-          <h4 className="font-medium">Añadir ajuste predefinido</h4>
-          <div className="flex gap-2">
-            <Select 
-              value={newAdditionalId} 
-              onValueChange={(value) => {
-                setNewAdditionalId(value)
-                const additional = availableAdditionals.find(a => a.id === value)
-                if (additional) {
-                  setNewAdditionalValue(additional.default_value)
-                }
-              }}
-            >
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Selecciona un ajuste..." />
-              </SelectTrigger>
-              <SelectContent>
-                {unselectedAdditionals.map((additional) => (
-                  <SelectItem key={additional.id} value={additional.id}>
-                    {additional.name} ({additional.type === "net_amount" ? "Importe" : "Precio ud."})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {newAdditionalId && (
-              <div className="flex items-center gap-1 w-32">
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={newAdditionalValue}
-                  onChange={(e) => setNewAdditionalValue(parseFloat(e.target.value) || 0)}
-                  placeholder="Valor"
-                  className="w-full"
-                />
-                <span className="text-sm text-muted-foreground">€</span>
-              </div>
-            )}
-            <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} className="w-28">
-              <Plus className="h-4 w-4 mr-2" />
-              Añadir
-            </Button>
-          </div>
+        <div className="flex gap-2">
+          <Select 
+            value={newAdditionalId} 
+            onValueChange={(value) => {
+              setNewAdditionalId(value)
+              const additional = availableAdditionals.find(a => a.id === value)
+              if (additional) {
+                setNewAdditionalValue(additional.default_value)
+              }
+            }}
+          >
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Selecciona un ajuste..." />
+            </SelectTrigger>
+            <SelectContent>
+              {unselectedAdditionals.map((additional) => (
+                <SelectItem key={additional.id} value={additional.id}>
+                  {additional.name} ({additional.type === "net_amount" ? "Importe" : "Precio ud."})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {newAdditionalId && (
+            <div className="flex items-center gap-1 w-32">
+              <Input
+                type="number"
+                step="0.01"
+                value={newAdditionalValue}
+                onChange={(e) => setNewAdditionalValue(parseFloat(e.target.value) || 0)}
+                placeholder="Valor"
+                className="w-full"
+              />
+              <span className="text-sm text-muted-foreground">€</span>
+            </div>
+          )}
+          <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} className="w-28">
+            <Plus className="h-4 w-4 mr-2" />
+            Añadir
+          </Button>
         </div>
       )}
 
