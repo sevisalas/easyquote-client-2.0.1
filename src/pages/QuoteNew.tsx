@@ -286,11 +286,11 @@ export default function QuoteNew() {
   }
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="container mx-auto py-4 space-y-3">
       {/* Header */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="flex items-center justify-between text-base">
             <span>
               {duplicateFromId ? "Duplicar Presupuesto" : "Nuevo Presupuesto"}
               {duplicateFromId && (
@@ -299,7 +299,7 @@ export default function QuoteNew() {
                 </Badge>
               )}
             </span>
-            <Button onClick={() => navigate(-1)} variant="outline">
+            <Button onClick={() => navigate(-1)} variant="outline" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Volver
             </Button>
@@ -309,8 +309,8 @@ export default function QuoteNew() {
 
       {/* Quote Details */}
       <Card>
-        <CardHeader>
-          <CardTitle>Información del presupuesto</CardTitle>
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="text-base">Información del presupuesto</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
@@ -360,10 +360,10 @@ export default function QuoteNew() {
 
       {/* Quote Items */}
       <Card>
-        <CardHeader>
+        <CardHeader className="py-3 px-4">
           <div className="flex items-center justify-between">
-            <CardTitle>Productos</CardTitle>
-            <Button onClick={addNewItem} variant="secondary">
+            <CardTitle className="text-base">Productos</CardTitle>
+            <Button onClick={addNewItem} variant="secondary" size="sm">
               <Plus className="w-4 h-4 mr-2" />
               Agregar Producto
             </Button>
@@ -403,8 +403,8 @@ export default function QuoteNew() {
 
       {/* Quote-level Discounts and Adjustments */}
       <Card>
-        <CardHeader>
-          <CardTitle>Ajustes del presupuesto</CardTitle>
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="text-base">Ajustes del presupuesto</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="bg-muted/30 p-4 rounded-lg border border-border">
@@ -418,8 +418,8 @@ export default function QuoteNew() {
 
       {/* Totals */}
       <Card>
-        <CardHeader>
-          <CardTitle>Resumen</CardTitle>
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="text-base">Resumen</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
