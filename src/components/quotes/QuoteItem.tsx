@@ -639,26 +639,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                         <p className="text-sm text-muted-foreground">Calculando...</p>
                       ) : (Array.isArray(multiRows) && multiRows.length > 0 ? (
                         <>
-                          <div className="overflow-x-auto -mx-2">
-                            <Table className="table-fixed w-full">
-                              <TableHeader>
-                                <TableRow>
-                                  {multiRows.map((_, idx) => (
-                                    <TableHead key={idx} className="px-1 py-0.5 text-[10px] text-center">Q{idx + 1}</TableHead>
-                                  ))}
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                <TableRow>
-                                  {multiRows.map((r, idx) => {
-                                    const priceOut = (r.outs || []).find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
-                                    return (
-                                      <TableCell key={idx} className="px-1 py-0.5 text-[10px] text-center whitespace-nowrap">{formatEUR(priceOut?.value)}</TableCell>
-                                    );
-                                  })}
-                                </TableRow>
-                              </TableBody>
-                            </Table>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            {multiRows.map((r, idx) => {
+                              const priceOut = (r.outs || []).find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
+                              return (
+                                <div key={idx} className="border rounded p-2">
+                                  <div className="text-xs text-muted-foreground mb-1">Q{idx + 1}</div>
+                                  <div className="text-sm font-semibold">{formatEUR(priceOut?.value)}</div>
+                                </div>
+                              );
+                            })}
                           </div>
 
                           <div className="mt-3">
