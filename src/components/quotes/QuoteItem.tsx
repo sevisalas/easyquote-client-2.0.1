@@ -610,7 +610,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                             min={1}
                             value={qtyInputs[0] ?? ""}
                             readOnly
-                            className="bg-muted"
+                            className="bg-muted px-2"
                           />
                         </div>
                         {Array.from({ length: qtyCount - 1 }, (_, i) => i + 1).map((idx) => (
@@ -628,6 +628,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                                   return next;
                                 });
                               }}
+                              className="px-2"
                             />
                           </div>
                         ))}
