@@ -389,7 +389,7 @@ export default function QuoteNew() {
               return (
                 <div key={id} className="space-y-4">
                   {index > 0 && <Separator className="my-6" />}
-                  {item.productId && (
+                  {item.productId && item.outputs && item.outputs.length > 0 && (
                     <div className="flex justify-end">
                       <Button 
                         variant="destructive" 
