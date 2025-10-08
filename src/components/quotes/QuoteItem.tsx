@@ -455,44 +455,38 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Los artículos siempre se muestran expandidos cuando tienen producto para mejor presentación visual
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Artículo</span>
-          <div className="flex gap-2">
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label>Producto</Label>
+          <Select onValueChange={(value) => {
+            setProductId(value);
+          }} value={productId} disabled={!hasToken}>
+            <SelectTrigger>
+              <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
+            </SelectTrigger>
+            <SelectContent>
+              {products?.map((p: any) => (
+                <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Descripción del artículo (opcional)</Label>
             <Button variant="destructive" size="sm" onClick={() => onRemove?.(id)}>
               Eliminar
             </Button>
           </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Producto</Label>
-            <Select onValueChange={(value) => {
-              setProductId(value);
-            }} value={productId} disabled={!hasToken}>
-              <SelectTrigger>
-                <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
-              </SelectTrigger>
-              <SelectContent>
-                {products?.map((p: any) => (
-                  <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Descripción del artículo (opcional)</Label>
-            <Input
-              value={itemDescription}
-              onChange={(e) => setItemDescription(e.target.value)}
-              placeholder="Detalles adicionales..."
-            />
-          </div>
+          <Input
+            value={itemDescription}
+            onChange={(e) => setItemDescription(e.target.value)}
+            placeholder="Detalles adicionales..."
+          />
         </div>
+      </div>
 
         {productId ? (
           <div className="grid gap-6 md:grid-cols-5">
@@ -738,7 +732,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             </AccordionItem>
           </Accordion>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }
