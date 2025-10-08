@@ -369,7 +369,15 @@ export default function QuoteNew() {
       {/* Quote Items */}
       <Card>
         <CardHeader className="py-3 px-4">
-          <CardTitle className="text-lg">Productos</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">Productos</CardTitle>
+            {Object.keys(items).length === 0 && (
+              <Button onClick={addNewItem} variant="secondary" size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar producto
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {Object.keys(items).length === 0 ? (
