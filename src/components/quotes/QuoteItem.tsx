@@ -390,21 +390,23 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     if (!qtyPrompt && numericPrompts.length > 0) setQtyPrompt(numericPrompts[0].id);
   }, [numericPrompts, qtyPrompt]);
 
-  // Sync first quantity with form value - automatically populate q1 when field has a value
+  // Always sync Q1 with the first numeric field value
   useEffect(() => {
-    if (!multiEnabled || !qtyPrompt) return;
-    const current = (promptValues as any)[qtyPrompt];
-    // Automatically populate Q1 with the current value of the selected field
+    // Get the first numeric field ID
+    const firstNumericField = numericPrompts.length > 0 ? numericPrompts[0].id : qtyPrompt;
+    if (!firstNumericField) return;
+    
+    const current = (promptValues as any)[firstNumericField];
+    // Automatically populate Q1 with the current value of the first numeric field
     if (current !== undefined && current !== null && String(current).trim() !== "") {
       const asStr = String(current);
-      // Force update Q1 immediately
       setQtyInputs((prev) => {
         const next = [...prev];
         next[0] = asStr;
         return next;
       });
     }
-  }, [multiEnabled, qtyPrompt, promptValues]);
+  }, [numericPrompts, qtyPrompt, promptValues]);
 
   // Adjust qty inputs length
   useEffect(() => {
