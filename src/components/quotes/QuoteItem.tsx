@@ -642,10 +642,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                             {multiRows.map((r, idx) => {
                               const priceOut = (r.outs || []).find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
+                              const priceValue = typeof priceOut?.value === "number" ? priceOut.value : parseFloat(String(priceOut?.value).replace(/\./g, "").replace(",", "."));
+                              const formattedPrice = !isNaN(priceValue) ? new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(priceValue) : "0,00";
                               return (
                                 <div key={idx} className="border rounded p-2">
                                   <div className="text-xs text-muted-foreground mb-1">Q{idx + 1}</div>
-                                  <div className="text-sm font-semibold">{formatEUR(priceOut?.value)}</div>
+                                  <div className="text-xs">{formattedPrice}</div>
                                 </div>
                               );
                             })}
