@@ -476,21 +476,15 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   return (
     <div className="space-y-4">
-      {/* Collapsed view - only show summary */}
+      {/* Collapsed view - simple line with border accent */}
       {isComplete && !isExpanded ? (
-        <Card className="cursor-pointer hover:bg-accent/5 transition-colors" onClick={() => setIsExpanded(true)}>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="font-medium">{itemDescription || productName}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-lg font-semibold text-primary">{formatEUR(finalPrice)}</span>
-                <ChevronDown className="w-5 h-5 text-muted-foreground" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div 
+          className="flex items-center justify-between py-4 px-6 border-l-4 border-r-4 border-r-secondary hover:bg-muted/30 cursor-pointer transition-colors rounded-sm"
+          onClick={() => setIsExpanded(true)}
+        >
+          <span className="text-base font-medium text-foreground/80">{itemDescription || productName}</span>
+          <span className="text-xl font-bold text-secondary">{formatEUR(finalPrice)}</span>
+        </div>
       ) : (
         <>
           {/* Expanded view - show all fields */}
