@@ -57,8 +57,10 @@ export default function QuoteNew() {
   const [lastAddedItemId, setLastAddedItemId] = useState<number | null>(null);
 
   // Check if all items are complete (have productId and valid price)
-  const hasIncompleteItems = useMemo(() => {
-    return Object.values(items).some(item => !item.productId || !item.price || item.price <= 0);
+  const allItemsComplete = useMemo(() => {
+    const itemsArray = Object.values(items);
+    if (itemsArray.length === 0) return true; // No items means we can add
+    return itemsArray.every(item => item.productId && item.price && item.price > 0);
   }, [items]);
 
   // Check if user has EasyQuote token
@@ -369,7 +371,7 @@ export default function QuoteNew() {
         <CardHeader className="py-3 px-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Productos</CardTitle>
-            {(Object.keys(items).length === 0 || !hasIncompleteItems) && (
+            {allItemsComplete && (
               <Button onClick={addNewItem} variant="secondary" size="sm">
                 <Plus className="w-4 h-4 mr-2" />
                 Agregar producto
