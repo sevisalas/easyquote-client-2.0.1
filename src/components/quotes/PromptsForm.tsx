@@ -207,9 +207,9 @@ export default function PromptsForm({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {visiblePrompts.map((p) => (
-        <div key={p.id} className="space-y-1.5">
+        <div key={p.id} className="space-y-1">
           <Label htmlFor={p.id} className="text-sm">{p.label}{p.required ? " *" : ""}</Label>
           {p.description && (
             <p className="text-xs text-muted-foreground">{p.description}</p>
