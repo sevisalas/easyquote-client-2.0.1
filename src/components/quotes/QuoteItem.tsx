@@ -474,18 +474,19 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label>Descripción del artículo (opcional)</Label>
-            <Button variant="destructive" size="sm" onClick={() => onRemove?.(id)}>
-              Eliminar
-            </Button>
-          </div>
+          <Label>Descripción del producto (opcional)</Label>
           <Input
             value={itemDescription}
             onChange={(e) => setItemDescription(e.target.value)}
             placeholder="Detalles adicionales..."
           />
         </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button variant="destructive" size="sm" onClick={() => onRemove?.(id)}>
+          Eliminar
+        </Button>
       </div>
 
         {productId ? (
