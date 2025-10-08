@@ -372,18 +372,7 @@ export default function QuoteNew() {
             </div>
           ) : (
             Object.entries(items).map(([id, item]) => (
-              <div key={id} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-foreground">Producto {Number(id)}</h4>
-                  <Button
-                    onClick={() => handleItemRemove(id)}
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
+              <div key={id}>
                 <QuoteItem
                   hasToken={hasToken}
                   id={id}
