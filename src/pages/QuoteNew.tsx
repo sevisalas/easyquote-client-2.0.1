@@ -393,18 +393,6 @@ export default function QuoteNew() {
               return (
                 <div key={id} className="space-y-4">
                   {index > 0 && <Separator className="my-6" />}
-                  {isComplete && Object.keys(items).length > 1 && (
-                    <div className="flex justify-end">
-                      <Button 
-                        variant="destructive" 
-                        size="sm" 
-                        onClick={() => handleItemRemove(id)}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Eliminar
-                      </Button>
-                    </div>
-                  )}
                   <QuoteItem
                     hasToken={hasToken}
                     id={id}
