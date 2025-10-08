@@ -529,7 +529,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                       src={String(o.value)} 
                       alt={`resultado imagen ${idx + 1}`} 
                       loading="lazy" 
-                      className={imageOutputs.length === 1 ? "max-w-[300px] w-full h-auto rounded-md" : "w-full h-auto rounded-md"}
+                      className={imageOutputs.length === 1 ? "max-w-[180px] w-full h-auto rounded-md" : "w-full h-auto rounded-md"}
                     />
                   ))}
                 </section>
