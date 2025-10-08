@@ -378,8 +378,8 @@ export default function QuoteNew() {
             </div>
           ) : (
             Object.entries(items).map(([id, item]) => (
-              <div key={id} className="relative border rounded-lg p-4 bg-muted/30">
-                <div className="flex justify-end mb-4">
+              <div key={id} className="space-y-4">
+                <div className="flex justify-end">
                   <Button 
                     variant="destructive" 
                     size="sm" 
@@ -396,6 +396,7 @@ export default function QuoteNew() {
                   onChange={handleItemChange}
                   onRemove={handleItemRemove}
                 />
+                {Object.keys(items).length > 1 && <Separator className="my-6" />}
               </div>
             ))
           )}
