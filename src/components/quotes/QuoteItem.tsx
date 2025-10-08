@@ -487,7 +487,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const isComplete = productId && priceOutput && finalPrice > 0;
 
   return (
-    <div className="border rounded-lg border-r-4 border-r-primary p-2">
+    <div className={`border rounded-lg p-2 ${isExpanded ? 'border-r-4 border-r-primary' : 'border-r-4 border-r-secondary'}`}>
       {/* Collapsed view - simple line with action buttons */}
       {isComplete && !isExpanded ? (
         <div className="flex items-center justify-between py-1 hover:bg-muted/30 transition-colors rounded">
