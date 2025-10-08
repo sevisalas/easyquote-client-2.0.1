@@ -602,7 +602,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                         />
                       </div>
 
-                      <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
+                      <div className="grid gap-2 grid-cols-3 md:grid-cols-5">
                         <div className="space-y-1">
                           <Label className="text-xs">Q1</Label>
                           <Input
