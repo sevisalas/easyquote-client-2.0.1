@@ -386,23 +386,37 @@ export default function QuoteNew() {
               <p className="text-sm mt-2">Haz clic en "Agregar producto" para comenzar.</p>
             </div>
           ) : (
-            Object.entries(items).map(([id, item], index) => {
-              const isLastAdded = Number(id) === lastAddedItemId;
-              const isComplete = item.productId && item.price && item.price > 0;
-              const shouldExpand = isLastAdded || Object.keys(items).length === 1;
-              return (
-                <div key={id}>
-                  <QuoteItem
-                    hasToken={hasToken}
-                    id={id}
-                    initialData={item}
-                    onChange={handleItemChange}
-                    onRemove={handleItemRemove}
-                    shouldExpand={shouldExpand}
-                  />
-                </div>
-              );
-            })
+            Object.entries(items)
+              .sort(([idA, itemA], [idB, itemB]) => {
+                // Incomplete items first, complete items last
+                const isCompleteA = itemA.productId && itemA.price && itemA.price > 0;
+                const isCompleteB = itemB.productId && itemB.price && itemB.price > 0;
+                
+                if (isCompleteA === isCompleteB) {
+                  // Same completion status, maintain order by ID
+                  return Number(idA) - Number(idB);
+                }
+                
+                // Incomplete first (false < true), complete last
+                return isCompleteA ? 1 : -1;
+              })
+              .map(([id, item], index) => {
+                const isLastAdded = Number(id) === lastAddedItemId;
+                const isComplete = item.productId && item.price && item.price > 0;
+                const shouldExpand = isLastAdded || Object.keys(items).length === 1;
+                return (
+                  <div key={id}>
+                    <QuoteItem
+                      hasToken={hasToken}
+                      id={id}
+                      initialData={item}
+                      onChange={handleItemChange}
+                      onRemove={handleItemRemove}
+                      shouldExpand={shouldExpand}
+                    />
+                  </div>
+                );
+              })
           )}
         </CardContent>
       </Card>
