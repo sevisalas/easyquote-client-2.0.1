@@ -313,7 +313,7 @@ export default function QuoteNew() {
             <CustomerSelector
               value={customerId}
               onValueChange={setCustomerId}
-              label="cliente *"
+              label="Cliente *"
               placeholder="Seleccionar cliente..."
             />
             
