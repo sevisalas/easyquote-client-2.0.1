@@ -259,11 +259,21 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Reset prompts when product changes and auto-expand
   useEffect(() => {
     setPromptValues({});
+    
+    // Auto-fill product description when product is selected
+    if (productId && products) {
+      const selectedProduct = products.find((p: any) => String(p.id) === String(productId));
+      if (selectedProduct) {
+        const productLabel = getProductLabel(selectedProduct);
+        setItemDescription(productLabel);
+      }
+    }
+    
     // Auto-expand when a product is selected for the first time
     if (productId && !isExpanded) {
       setIsExpanded(true);
     }
-  }, [productId]);
+  }, [productId, products]);
 
   // Auto-expand when component mounts without a product
   useEffect(() => {
@@ -456,7 +466,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="space-y-4">
         <div className="space-y-2">
           <Label>Producto</Label>
           <Select onValueChange={(value) => {
@@ -473,20 +483,22 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label>Descripción del producto (opcional)</Label>
-          <Input
-            value={itemDescription}
-            onChange={(e) => setItemDescription(e.target.value)}
-            placeholder="Detalles adicionales..."
-          />
-        </div>
-      </div>
+        {productId && (
+          <div className="space-y-2">
+            <Label>Nombre del producto en el presupuesto</Label>
+            <Input
+              value={itemDescription}
+              onChange={(e) => setItemDescription(e.target.value)}
+              placeholder="Nombre del producto..."
+            />
+          </div>
+        )}
 
-      <div className="flex justify-end">
-        <Button variant="destructive" size="sm" onClick={() => onRemove?.(id)}>
-          Eliminar
-        </Button>
+        <div className="flex justify-end">
+          <Button variant="destructive" size="sm" onClick={() => onRemove?.(id)}>
+            Eliminar
+          </Button>
+        </div>
       </div>
 
         {productId ? (
