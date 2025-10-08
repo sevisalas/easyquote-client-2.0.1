@@ -31,6 +31,7 @@ interface AdditionalsSelectorProps {
 
 export default function AdditionalsSelector({ selectedAdditionals, onChange }: AdditionalsSelectorProps) {
   const [newAdditionalId, setNewAdditionalId] = useState<string>("")
+  const [newAdditionalValue, setNewAdditionalValue] = useState<number>(0)
   const [customName, setCustomName] = useState("")
   const [customValue, setCustomValue] = useState(0)
   const [customType, setCustomType] = useState<"net_amount" | "quantity_multiplier">("net_amount")
@@ -69,11 +70,12 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
       id: additional.id,
       name: additional.name,
       type: additional.type,
-      value: additional.default_value
+      value: newAdditionalValue
     }
 
     onChange([...selectedAdditionals, newSelected])
     setNewAdditionalId("")
+    setNewAdditionalValue(0)
   }
 
   const addCustomAdditional = () => {
@@ -168,8 +170,17 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
         <div className="space-y-3">
           <h4 className="font-medium">Añadir ajuste predefinido</h4>
           <div className="flex gap-2">
-            <Select value={newAdditionalId} onValueChange={setNewAdditionalId}>
-              <SelectTrigger className="flex-[3]">
+            <Select 
+              value={newAdditionalId} 
+              onValueChange={(value) => {
+                setNewAdditionalId(value)
+                const additional = availableAdditionals.find(a => a.id === value)
+                if (additional) {
+                  setNewAdditionalValue(additional.default_value)
+                }
+              }}
+            >
+              <SelectTrigger className="flex-1">
                 <SelectValue placeholder="Selecciona un ajuste..." />
               </SelectTrigger>
               <SelectContent>
@@ -180,7 +191,17 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} className="flex-1">
+            {newAdditionalId && (
+              <Input
+                type="number"
+                step="0.01"
+                value={newAdditionalValue}
+                onChange={(e) => setNewAdditionalValue(parseFloat(e.target.value) || 0)}
+                placeholder="Valor"
+                className="w-24"
+              />
+            )}
+            <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} className="w-28">
               <Plus className="h-4 w-4 mr-2" />
               Añadir
             </Button>
