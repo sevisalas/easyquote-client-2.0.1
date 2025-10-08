@@ -559,8 +559,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               </Card>
 
               <Card className="border-accent/50 bg-muted/30">
-                <CardHeader>
-                  <CardTitle>Múltiples cantidades</CardTitle>
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-base">Múltiples cantidades</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
