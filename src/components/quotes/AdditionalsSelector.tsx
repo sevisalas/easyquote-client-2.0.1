@@ -114,53 +114,35 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
     <div className="space-y-4">
       {/* Selected Additionals */}
       {selectedAdditionals.length > 0 && (
-        <div className="space-y-3">
-          <h4 className="font-medium">Ajustes Seleccionados</h4>
+        <div className="space-y-2">
           {selectedAdditionals.map((additional) => (
-            <Card key={additional.id} className="relative">
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      {additional.name}
-                      {additional.isCustom && (
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                          Personalizado
-                        </span>
-                      )}
-                    </CardTitle>
-                    <p className="text-xs text-muted-foreground">
-                      {additional.type === "net_amount" ? "Importe neto" : "Precio unidad"}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeAdditional(additional.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+            <div key={additional.id} className="flex items-center gap-2 p-2 border rounded-lg">
+              <div className="flex-1">
+                <div className="text-sm font-medium">{additional.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {additional.type === "net_amount" ? "Importe neto" : "Precio unidad"}
                 </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor={`value-${additional.id}`} className="text-sm">
-                    Valor:
-                  </Label>
-                  <Input
-                    id={`value-${additional.id}`}
-                    type="number"
-                    step="0.01"
-                    value={additional.value}
-                    onChange={(e) => updateAdditionalValue(additional.id, parseFloat(e.target.value) || 0)}
-                    className="w-24"
-                  />
-                  <span className="text-sm text-muted-foreground">
-                    {additional.type === "net_amount" ? "€" : "x"}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={additional.value}
+                  onChange={(e) => updateAdditionalValue(additional.id, parseFloat(e.target.value) || 0)}
+                  className="w-24"
+                />
+                <span className="text-sm text-muted-foreground">
+                  {additional.type === "net_amount" ? "€" : "x"}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeAdditional(additional.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -210,47 +192,41 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
       )}
 
       {/* Add Custom Additional */}
-      <div className="space-y-3">
-        <h4 className="font-medium">Añadir personalizado</h4>
-        <div className="flex gap-2">
-          <div className="flex-1">
-            <Input
-              id="custom-name"
-              value={customName}
-              onChange={(e) => setCustomName(e.target.value)}
-              placeholder="Concepto"
-            />
-          </div>
-          <div className="w-32">
-            <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier") => setCustomType(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="net_amount">Importe</SelectItem>
-                <SelectItem value="quantity_multiplier">Precio ud.</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="w-24">
-            <Input
-              id="custom-value"
-              type="number"
-              step="0.01"
-              value={customValue}
-              onChange={(e) => setCustomValue(parseFloat(e.target.value) || 0)}
-              placeholder="Valor"
-            />
-          </div>
-          <Button 
-            onClick={addCustomAdditional} 
-            disabled={!customName.trim()}
-            className="w-28"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Añadir
-          </Button>
+      <div className="flex gap-2">
+        <Input
+          value={customName}
+          onChange={(e) => setCustomName(e.target.value)}
+          placeholder="Concepto personalizado"
+          className="flex-1"
+        />
+        <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier") => setCustomType(value)}>
+          <SelectTrigger className="w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="net_amount">Importe</SelectItem>
+            <SelectItem value="quantity_multiplier">Precio ud.</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex items-center gap-1 w-32">
+          <Input
+            type="number"
+            step="0.01"
+            value={customValue}
+            onChange={(e) => setCustomValue(parseFloat(e.target.value) || 0)}
+            placeholder="Valor"
+            className="w-full"
+          />
+          <span className="text-sm text-muted-foreground">€</span>
         </div>
+        <Button 
+          onClick={addCustomAdditional} 
+          disabled={!customName.trim()}
+          className="w-28"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Añadir
+        </Button>
       </div>
     </div>
   )
