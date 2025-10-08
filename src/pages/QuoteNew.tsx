@@ -389,6 +389,7 @@ export default function QuoteNew() {
             Object.entries(items).map(([id, item], index) => {
               const isLastAdded = Number(id) === lastAddedItemId;
               const isComplete = item.productId && item.price && item.price > 0;
+              const shouldExpand = isLastAdded || Object.keys(items).length === 1;
               return (
                 <div key={id} className="space-y-4">
                   {index > 0 && <Separator className="my-6" />}
@@ -410,7 +411,7 @@ export default function QuoteNew() {
                     initialData={item}
                     onChange={handleItemChange}
                     onRemove={handleItemRemove}
-                    shouldExpand={isLastAdded}
+                    shouldExpand={shouldExpand}
                   />
                 </div>
               );

@@ -15,6 +15,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 type ItemSnapshot = {
   productId: string;
@@ -54,12 +55,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [itemDescription, setItemDescription] = useState<string>("");
   const selectRef = useRef<HTMLButtonElement>(null);
 
-  // Auto-expand when shouldExpand changes (only expand, don't collapse)
+  // Auto-expand/collapse based on shouldExpand prop
   useEffect(() => {
-    if (shouldExpand) {
-      setIsExpanded(true);
+    if (shouldExpand !== undefined) {
+      setIsExpanded(shouldExpand);
     }
-    // Don't collapse when shouldExpand is false - let users manage expansion manually
   }, [shouldExpand]);
 
   // Multi-cantidades
@@ -472,10 +472,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const selectedProductInfo = products?.find((p: any) => String(p.id) === String(productId));
   const productName = selectedProductInfo ? getProductLabel(selectedProductInfo) : "";
 
-  // Los artículos siempre se muestran expandidos cuando tienen producto para mejor presentación visual
+  const isComplete = productId && priceOutput && finalPrice > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Product selector and description - always visible */}
       <div className="grid gap-4 md:grid-cols-3">
         <div className="space-y-2">
           <Label>Productos</Label>
@@ -505,261 +506,279 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         )}
       </div>
 
-        {productId ? (
-          <div className="grid gap-6 md:grid-cols-5">
-            <Card className="md:col-span-3">
+      {/* Collapsible toggle for completed items */}
+      {isComplete && (
+        <Button 
+          variant="ghost" 
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full flex items-center justify-between"
+        >
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{itemDescription || productName}</span>
+            <span className="text-sm text-muted-foreground">{formatEUR(finalPrice)}</span>
+          </div>
+          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </Button>
+      )}
+
+      {/* Expandable content */}
+      {isExpanded && productId && (
+        <div className="grid gap-6 md:grid-cols-5">
+          <Card className="md:col-span-3">
+            <CardHeader>
+              <CardTitle>Opciones</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {pricing ? (
+                <PromptsForm product={pricing} values={promptValues} onChange={handlePromptChange} />
+              ) : (
+                <p className="text-sm text-muted-foreground">Cargando prompts…</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <div className="md:col-span-2 md:sticky md:top-6 self-start space-y-3">
+            {imageOutputs.length > 0 && (
+              <section className={imageOutputs.length === 1 ? "flex justify-center" : "grid grid-cols-2 gap-3"}>
+                {imageOutputs.map((o: any, idx: number) => (
+                  <img 
+                    key={idx} 
+                    src={String(o.value)} 
+                    alt={`resultado imagen ${idx + 1}`} 
+                    loading="lazy" 
+                    className={imageOutputs.length === 1 ? "max-w-[180px] w-full h-auto rounded-md" : "w-full h-auto rounded-md"}
+                  />
+                ))}
+              </section>
+            )}
+
+            <Card className="border-accent/50 bg-muted/50">
               <CardHeader>
-                <CardTitle>Opciones</CardTitle>
+                <CardTitle>Resultado</CardTitle>
               </CardHeader>
               <CardContent>
-                {pricing ? (
-                  <PromptsForm product={pricing} values={promptValues} onChange={handlePromptChange} />
-                ) : (
-                  <p className="text-sm text-muted-foreground">Cargando prompts…</p>
+                {pricingError && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertTitle>Producto sin pricing</AlertTitle>
+                    <AlertDescription>El producto seleccionado no existe o es incorrecto.</AlertDescription>
+                  </Alert>
+                )}
+
+                {priceOutput ? (
+                  <div className="p-3 rounded-md border bg-card/50">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Precio</span>
+                      <span className="px-2 py-1 rounded-full bg-accent text-accent-foreground text-lg font-semibold">
+                        {formatEUR((priceOutput as any).value)}
+                      </span>
+                    </div>
+                  </div>
+                ) : (!pricingError && <p className="text-sm text-muted-foreground">Selecciona opciones para ver el resultado.</p>)}
+
+                {otherOutputs.length > 0 && (
+                  <>
+                    <Separator className="my-4" />
+                    <section className="space-y-2">
+                      {otherOutputs.map((o: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between text-sm px-1">
+                          <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
+                          <span className="truncate ml-2">{String(o.value)}</span>
+                        </div>
+                      ))}
+                    </section>
+                  </>
                 )}
               </CardContent>
             </Card>
 
-            <div className="md:col-span-2 md:sticky md:top-6 self-start space-y-3">
-              {imageOutputs.length > 0 && (
-                <section className={imageOutputs.length === 1 ? "flex justify-center" : "grid grid-cols-2 gap-3"}>
-                  {imageOutputs.map((o: any, idx: number) => (
-                    <img 
-                      key={idx} 
-                      src={String(o.value)} 
-                      alt={`resultado imagen ${idx + 1}`} 
-                      loading="lazy" 
-                      className={imageOutputs.length === 1 ? "max-w-[180px] w-full h-auto rounded-md" : "w-full h-auto rounded-md"}
-                    />
-                  ))}
-                </section>
-              )}
-
-              <Card className="border-accent/50 bg-muted/50">
-                <CardHeader>
-                  <CardTitle>Resultado</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {pricingError && (
-                    <Alert variant="destructive" className="mb-4">
-                      <AlertTitle>Producto sin pricing</AlertTitle>
-                      <AlertDescription>El producto seleccionado no existe o es incorrecto.</AlertDescription>
-                    </Alert>
-                  )}
-
-                  {priceOutput ? (
-                    <div className="p-3 rounded-md border bg-card/50">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Precio</span>
-                        <span className="px-2 py-1 rounded-full bg-accent text-accent-foreground text-lg font-semibold">
-                          {formatEUR((priceOutput as any).value)}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (!pricingError && <p className="text-sm text-muted-foreground">Selecciona opciones para ver el resultado.</p>)}
-
-                  {otherOutputs.length > 0 && (
-                    <>
-                      <Separator className="my-4" />
-                      <section className="space-y-2">
-                        {otherOutputs.map((o: any, idx: number) => (
-                          <div key={idx} className="flex items-center justify-between text-sm px-1">
-                            <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
-                            <span className="truncate ml-2">{String(o.value)}</span>
-                          </div>
-                        ))}
-                      </section>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card className="border-accent/50 bg-muted/30">
-                <CardHeader className="py-2 px-3">
-                  <CardTitle className="text-base">Múltiples cantidades</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <Label>Activar</Label>
-                    </div>
-                    <Switch checked={multiEnabled} onCheckedChange={setMultiEnabled} />
+            <Card className="border-accent/50 bg-muted/30">
+              <CardHeader className="py-2 px-3">
+                <CardTitle className="text-base">Múltiples cantidades</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label>Activar</Label>
                   </div>
+                  <Switch checked={multiEnabled} onCheckedChange={setMultiEnabled} />
+                </div>
 
-                  {multiEnabled && (
-                    <>
-                      <div className="space-y-2">
-                        <Label>Prompt de cantidad</Label>
-                        <Select value={qtyPrompt} onValueChange={setQtyPrompt} disabled={numericPrompts.length === 0}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona prompt numérico" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {numericPrompts.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                {multiEnabled && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Prompt de cantidad</Label>
+                      <Select value={qtyPrompt} onValueChange={setQtyPrompt} disabled={numericPrompts.length === 0}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona prompt numérico" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {numericPrompts.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                      <div className="space-y-2">
-                        <Label>¿Cuántos?</Label>
+                    <div className="space-y-2">
+                      <Label>¿Cuántos?</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={MAX_QTY}
+                        value={qtyCount}
+                        onChange={(e) => {
+                          const n = parseInt(e.target.value || "0", 10);
+                          if (Number.isNaN(n)) return;
+                          setQtyCount(Math.max(1, Math.min(MAX_QTY, n)));
+                        }}
+                        className="w-20"
+                      />
+                    </div>
+
+                    <div className="grid gap-2 grid-cols-2 md:grid-cols-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Q1</Label>
                         <Input
                           type="number"
                           min={1}
-                          max={MAX_QTY}
-                          value={qtyCount}
-                          onChange={(e) => {
-                            const n = parseInt(e.target.value || "0", 10);
-                            if (Number.isNaN(n)) return;
-                            setQtyCount(Math.max(1, Math.min(MAX_QTY, n)));
-                          }}
-                          className="w-20"
+                          value={qtyInputs[0] ?? ""}
+                          readOnly
+                          className="bg-muted px-2"
                         />
                       </div>
-
-                      <div className="grid gap-2 grid-cols-2 md:grid-cols-3">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Q1</Label>
+                      {Array.from({ length: qtyCount - 1 }, (_, i) => i + 1).map((idx) => (
+                        <div key={idx} className="space-y-1">
+                          <Label className="text-xs">Q{idx + 1}</Label>
                           <Input
                             type="number"
                             min={1}
-                            value={qtyInputs[0] ?? ""}
-                            readOnly
-                            className="bg-muted px-2"
+                            value={qtyInputs[idx] ?? ""}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setQtyInputs((prev) => {
+                                const next = [...prev];
+                                next[idx] = v;
+                                return next;
+                              });
+                            }}
+                            className="px-2"
                           />
                         </div>
-                        {Array.from({ length: qtyCount - 1 }, (_, i) => i + 1).map((idx) => (
-                          <div key={idx} className="space-y-1">
-                            <Label className="text-xs">Q{idx + 1}</Label>
-                            <Input
-                              type="number"
-                              min={1}
-                              value={qtyInputs[idx] ?? ""}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                setQtyInputs((prev) => {
-                                  const next = [...prev];
-                                  next[idx] = v;
-                                  return next;
-                                });
-                              }}
-                              className="px-2"
-                            />
-                          </div>
-                        ))}
-                      </div>
-
-                       <Separator className="my-2" />
-                       {multiLoading ? (
-                        <p className="text-sm text-muted-foreground">Calculando...</p>
-                      ) : (Array.isArray(multiRows) && multiRows.length > 0 ? (
-                        <>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            {multiRows.map((r, idx) => {
-                              const priceOut = (r.outs || []).find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
-                              const priceValue = typeof priceOut?.value === "number" ? priceOut.value : parseFloat(String(priceOut?.value).replace(/\./g, "").replace(",", "."));
-                              const formattedPrice = !isNaN(priceValue) ? new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(priceValue) : "0,00";
-                              return (
-                                <div key={idx} className="border rounded p-2">
-                                  <div className="text-xs text-muted-foreground mb-1">Q{idx + 1}</div>
-                                  <div className="text-xs">{formattedPrice}</div>
-                                </div>
-                              );
-                            })}
-                          </div>
-
-                          <div className="mt-3">
-                            <Accordion type="single" collapsible className="w-full">
-                              <AccordionItem value="detalles">
-                                <AccordionTrigger>Detalles</AccordionTrigger>
-                                <AccordionContent>
-                                  <Tabs defaultValue="q1" className="w-full">
-                                    <TabsList className="mb-3">
-                                      {multiRows.map((_, idx) => (
-                                        <TabsTrigger key={idx} value={`q${idx + 1}`}>Q{idx + 1}</TabsTrigger>
-                                      ))}
-                                    </TabsList>
-
-                                    {multiRows.map((r, idx) => {
-                                      const outs = r.outs || [];
-                                      const priceOut = outs.find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
-                                      const details = outs.filter((o:any) => {
-                                        const t = String(o?.type || '').toLowerCase();
-                                        const n = String(o?.name || '').toLowerCase();
-                                        const v = String(o?.value ?? '');
-                                        const isImageLike = t.includes('image') || n.includes('image');
-                                        const isNA = v === '' || v === '#N/A';
-                                        return o !== priceOut && !isImageLike && !isNA;
-                                      });
-                                      return (
-                                        <TabsContent key={idx} value={`q${idx + 1}`}>
-                                          <div className="p-3 rounded-md border bg-card/50 space-y-2">
-                                            <div className="flex items-center justify-between">
-                                              <span className="text-sm text-muted-foreground">Precio total</span>
-                                              <span className="font-semibold">{formatEUR(priceOut?.value)}</span>
-                                            </div>
-                                            {details.length > 0 && (
-                                              <>
-                                                <Separator className="my-2" />
-                                                <div className="space-y-1">
-                                                  {details.map((o:any, i:number) => (
-                                                    <div key={i} className="flex items-center justify-between text-sm">
-                                                      <span className="text-muted-foreground">{o.name ?? 'Dato'}</span>
-                                                      <span>{String(o.value)}</span>
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                              </>
-                                            )}
-                                          </div>
-                                        </TabsContent>
-                                      );
-                                    })}
-                                  </Tabs>
-                                </AccordionContent>
-                              </AccordionItem>
-                            </Accordion>
-                          </div>
-                        </>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Añade cantidades para ver precios.</p>
                       ))}
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">Selecciona un producto para configurar este artículo.</p>
-        )}
+                    </div>
 
-        {/* Additionals Section */}
-        {productId && (
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="additionals">
-              <AccordionTrigger>
-                <div className="flex items-center gap-2">
-                  <span>Ajustes del artículo</span>
-                  {Array.isArray(itemAdditionals) && itemAdditionals.length > 0 && (
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                      {itemAdditionals.length} activos
-                    </span>
-                  )}
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="pt-2">
-                  <AdditionalsSelector 
-                    selectedAdditionals={Array.isArray(itemAdditionals) ? itemAdditionals : []}
-                    onChange={setItemAdditionals}
-                  />
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        )}
+                     <Separator className="my-2" />
+                     {multiLoading ? (
+                      <p className="text-sm text-muted-foreground">Calculando...</p>
+                    ) : (Array.isArray(multiRows) && multiRows.length > 0 ? (
+                      <>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {multiRows.map((r, idx) => {
+                            const priceOut = (r.outs || []).find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
+                            const priceValue = typeof priceOut?.value === "number" ? priceOut.value : parseFloat(String(priceOut?.value).replace(/\./g, "").replace(",", "."));
+                            const formattedPrice = !isNaN(priceValue) ? new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(priceValue) : "0,00";
+                            return (
+                              <div key={idx} className="border rounded p-2">
+                                <div className="text-xs text-muted-foreground mb-1">Q{idx + 1}</div>
+                                <div className="text-xs">{formattedPrice}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        <div className="mt-3">
+                          <Accordion type="single" collapsible className="w-full">
+                            <AccordionItem value="detalles">
+                              <AccordionTrigger>Detalles</AccordionTrigger>
+                              <AccordionContent>
+                                <Tabs defaultValue="q1" className="w-full">
+                                  <TabsList className="mb-3">
+                                    {multiRows.map((_, idx) => (
+                                      <TabsTrigger key={idx} value={`q${idx + 1}`}>Q{idx + 1}</TabsTrigger>
+                                    ))}
+                                  </TabsList>
+
+                                  {multiRows.map((r, idx) => {
+                                    const outs = r.outs || [];
+                                    const priceOut = outs.find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
+                                    const details = outs.filter((o:any) => {
+                                      const t = String(o?.type || '').toLowerCase();
+                                      const n = String(o?.name || '').toLowerCase();
+                                      const v = String(o?.value ?? '');
+                                      const isImageLike = t.includes('image') || n.includes('image');
+                                      const isNA = v === '' || v === '#N/A';
+                                      return o !== priceOut && !isImageLike && !isNA;
+                                    });
+                                    return (
+                                      <TabsContent key={idx} value={`q${idx + 1}`}>
+                                        <div className="p-3 rounded-md border bg-card/50 space-y-2">
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-sm text-muted-foreground">Precio total</span>
+                                            <span className="font-semibold">{formatEUR(priceOut?.value)}</span>
+                                          </div>
+                                          {details.length > 0 && (
+                                            <>
+                                              <Separator className="my-2" />
+                                              <div className="space-y-1">
+                                                {details.map((o:any, i:number) => (
+                                                  <div key={i} className="flex items-center justify-between text-sm">
+                                                    <span className="text-muted-foreground">{o.name ?? 'Dato'}</span>
+                                                    <span>{String(o.value)}</span>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </>
+                                          )}
+                                        </div>
+                                      </TabsContent>
+                                    );
+                                  })}
+                                </Tabs>
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Añade cantidades para ver precios.</p>
+                    ))}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {!isExpanded && productId && (
+        <p className="text-sm text-muted-foreground">Haz clic arriba para ver las opciones de configuración.</p>
+      )}
+
+      {/* Additionals Section */}
+      {productId && isExpanded && (
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="additionals">
+            <AccordionTrigger>
+              <div className="flex items-center gap-2">
+                <span>Ajustes del artículo</span>
+                {Array.isArray(itemAdditionals) && itemAdditionals.length > 0 && (
+                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                    {itemAdditionals.length} activos
+                  </span>
+                )}
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="pt-2">
+                <AdditionalsSelector 
+                  selectedAdditionals={Array.isArray(itemAdditionals) ? itemAdditionals : []}
+                  onChange={setItemAdditionals}
+                />
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
     </div>
   );
 }
