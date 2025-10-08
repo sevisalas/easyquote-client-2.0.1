@@ -390,14 +390,15 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     if (!qtyPrompt && numericPrompts.length > 0) setQtyPrompt(numericPrompts[0].id);
   }, [numericPrompts, qtyPrompt]);
 
-  // Sync first quantity with form value
+  // Sync first quantity with form value - automatically populate q1 when field has a value
   useEffect(() => {
     if (!multiEnabled || !qtyPrompt) return;
     const current = (promptValues as any)[qtyPrompt];
-    if (current !== undefined && current !== null && String(current) !== "") {
+    // Automatically populate Q1 with the current value of the selected field
+    if (current !== undefined && current !== null && String(current).trim() !== "") {
       setQtyInputs((prev) => {
         const asStr = String(current);
-        if (String(prev[0] ?? "") === asStr) return prev;
+        // Always update Q1 when qtyPrompt changes or value changes
         const next = [...prev];
         next[0] = asStr;
         return next;
