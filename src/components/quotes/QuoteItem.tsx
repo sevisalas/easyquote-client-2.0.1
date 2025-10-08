@@ -390,14 +390,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     if (!qtyPrompt && numericPrompts.length > 0) setQtyPrompt(numericPrompts[0].id);
   }, [numericPrompts, qtyPrompt]);
 
-  // Always sync Q1 with the first numeric field value
+  // Always sync Q1 with the selected qtyPrompt field value
   useEffect(() => {
-    // Get the first numeric field ID
-    const firstNumericField = numericPrompts.length > 0 ? numericPrompts[0].id : qtyPrompt;
-    if (!firstNumericField) return;
+    if (!qtyPrompt) return;
     
-    const current = (promptValues as any)[firstNumericField];
-    // Automatically populate Q1 with the current value of the first numeric field
+    const current = (promptValues as any)[qtyPrompt];
+    // Automatically populate Q1 with the current value of the selected field
     if (current !== undefined && current !== null && String(current).trim() !== "") {
       const asStr = String(current);
       setQtyInputs((prev) => {
@@ -406,7 +404,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         return next;
       });
     }
-  }, [numericPrompts, qtyPrompt, promptValues]);
+  }, [qtyPrompt, promptValues]);
 
   // Adjust qty inputs length
   useEffect(() => {
@@ -641,7 +639,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 {multiEnabled && (
                   <>
                     <div className="space-y-2">
-                      <Label>Prompt de cantidad</Label>
+                      <Label>Selecciona el campo a usar</Label>
                       <Select value={qtyPrompt} onValueChange={setQtyPrompt} disabled={numericPrompts.length === 0}>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona prompt numérico" />
