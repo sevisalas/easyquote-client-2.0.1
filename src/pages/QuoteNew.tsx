@@ -369,10 +369,12 @@ export default function QuoteNew() {
         <CardHeader className="py-3 px-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Productos</CardTitle>
-            <Button onClick={addNewItem} variant="secondary" size="sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Agregar producto
-            </Button>
+            {!hasIncompleteItems && (
+              <Button onClick={addNewItem} variant="secondary" size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar producto
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -387,16 +389,18 @@ export default function QuoteNew() {
               return (
                 <div key={id} className="space-y-4">
                   {index > 0 && <Separator className="my-6" />}
-                  <div className="flex justify-end">
-                    <Button 
-                      variant="destructive" 
-                      size="sm" 
-                      onClick={() => handleItemRemove(id)}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Eliminar
-                    </Button>
-                  </div>
+                  {item.productId && (
+                    <div className="flex justify-end">
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={() => handleItemRemove(id)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Eliminar
+                      </Button>
+                    </div>
+                  )}
                   <QuoteItem
                     hasToken={hasToken}
                     id={id}
