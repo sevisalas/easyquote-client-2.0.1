@@ -362,7 +362,14 @@ export default function QuoteNew() {
       {/* Quote Items */}
       <Card>
         <CardHeader className="py-3 px-4">
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-2">
+              {Object.entries(items).map(([id]) => (
+                <Button key={id} variant="destructive" size="sm" onClick={() => handleItemRemove(id)}>
+                  Eliminar
+                </Button>
+              ))}
+            </div>
             {!hasIncompleteItems && (
               <Button onClick={addNewItem} variant="secondary" size="sm">
                 <Plus className="w-4 h-4 mr-2" />
@@ -378,13 +385,7 @@ export default function QuoteNew() {
             </div>
           ) : (
             Object.entries(items).map(([id, item]) => (
-              <div key={id} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex-1"></div>
-                  <Button variant="destructive" size="sm" onClick={() => handleItemRemove(id)}>
-                    Eliminar
-                  </Button>
-                </div>
+              <div key={id}>
                 <QuoteItem
                   hasToken={hasToken}
                   id={id}
