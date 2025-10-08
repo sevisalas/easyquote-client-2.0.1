@@ -392,17 +392,26 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Always sync Q1 with the selected qtyPrompt field value
   useEffect(() => {
-    if (!qtyPrompt) return;
+    console.log("🔄 Q1 sync effect triggered", { qtyPrompt, promptValues });
+    if (!qtyPrompt) {
+      console.log("⚠️ No qtyPrompt selected");
+      return;
+    }
     
     const current = (promptValues as any)[qtyPrompt];
+    console.log("📊 Current value for qtyPrompt:", qtyPrompt, "=", current);
+    
     // Automatically populate Q1 with the current value of the selected field
     if (current !== undefined && current !== null && String(current).trim() !== "") {
       const asStr = String(current);
+      console.log("✅ Setting Q1 to:", asStr);
       setQtyInputs((prev) => {
         const next = [...prev];
         next[0] = asStr;
         return next;
       });
+    } else {
+      console.log("❌ Current value is empty or invalid");
     }
   }, [qtyPrompt, promptValues]);
 
