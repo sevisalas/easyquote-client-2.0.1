@@ -56,9 +56,9 @@ export default function QuoteNew() {
   // Track the last added item to keep it expanded
   const [lastAddedItemId, setLastAddedItemId] = useState<number | null>(null);
 
-  // Check if all items are complete (have productId)
+  // Check if all items are complete (have productId and valid price)
   const hasIncompleteItems = useMemo(() => {
-    return Object.values(items).some(item => !item.productId);
+    return Object.values(items).some(item => !item.productId || !item.price || item.price <= 0);
   }, [items]);
 
   // Check if user has EasyQuote token
@@ -389,7 +389,7 @@ export default function QuoteNew() {
               return (
                 <div key={id} className="space-y-4">
                   {index > 0 && <Separator className="my-6" />}
-                  {item.productId && item.outputs && item.outputs.length > 0 && (
+                  {item.productId && item.price && item.price > 0 && (
                     <div className="flex justify-end">
                       <Button 
                         variant="destructive" 
