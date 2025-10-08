@@ -396,15 +396,15 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     const current = (promptValues as any)[qtyPrompt];
     // Automatically populate Q1 with the current value of the selected field
     if (current !== undefined && current !== null && String(current).trim() !== "") {
+      const asStr = String(current);
+      // Force update Q1 immediately
       setQtyInputs((prev) => {
-        const asStr = String(current);
-        // Always update Q1 when qtyPrompt changes or value changes
         const next = [...prev];
         next[0] = asStr;
         return next;
       });
     }
-  }, [promptValues, qtyPrompt, multiEnabled]);
+  }, [multiEnabled, qtyPrompt, promptValues]);
 
   // Adjust qty inputs length
   useEffect(() => {
