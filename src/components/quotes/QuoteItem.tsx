@@ -33,6 +33,7 @@ interface QuoteItemProps {
   initialData?: ItemSnapshot;
   onChange?: (id: string | number, snapshot: ItemSnapshot) => void;
   onRemove?: (id: string | number) => void;
+  shouldExpand?: boolean;
 }
 
 interface Additional {
@@ -43,14 +44,28 @@ interface Additional {
   default_value: number;
 }
 
-export default function QuoteItem({ hasToken, id, initialData, onChange, onRemove }: QuoteItemProps) {
+export default function QuoteItem({ hasToken, id, initialData, onChange, onRemove, shouldExpand }: QuoteItemProps) {
   // Local state per item
   const [productId, setProductId] = useState<string>("");
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
   const [debouncedPromptValues, setDebouncedPromptValues] = useState<Record<string, any>>({});
   const [forceRecalculate, setForceRecalculate] = useState<boolean>(false);
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [isExpanded, setIsExpanded] = useState<boolean>(shouldExpand || false);
   const [itemDescription, setItemDescription] = useState<string>("");
+  const selectRef = useRef<HTMLButtonElement>(null);
+
+  // Auto-expand when shouldExpand changes
+  useEffect(() => {
+    if (shouldExpand) {
+      setIsExpanded(true);
+      // Focus on product select after a short delay
+      setTimeout(() => {
+        selectRef.current?.click();
+      }, 100);
+    } else {
+      setIsExpanded(false);
+    }
+  }, [shouldExpand]);
 
   // Multi-cantidades
   const [multiEnabled, setMultiEnabled] = useState<boolean>(false);
@@ -472,7 +487,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           <Select onValueChange={(value) => {
             setProductId(value);
           }} value={productId} disabled={!hasToken}>
-            <SelectTrigger>
+            <SelectTrigger ref={selectRef}>
               <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
             </SelectTrigger>
             <SelectContent>

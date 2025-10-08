@@ -52,6 +52,9 @@ export default function QuoteNew() {
 
   // Generate next item ID
   const nextItemId = useMemo(() => Math.max(0, ...Object.keys(items).map(k => Number(k) || 0)) + 1, [items]);
+  
+  // Track the last added item to keep it expanded
+  const [lastAddedItemId, setLastAddedItemId] = useState<number | null>(null);
 
   // Check if all items are complete (have productId)
   const hasIncompleteItems = useMemo(() => {
@@ -188,13 +191,15 @@ export default function QuoteNew() {
   };
 
   const addNewItem = () => {
-    setItems(prev => ({ ...prev, [nextItemId]: {
+    const newId = nextItemId;
+    setItems(prev => ({ ...prev, [newId]: {
       productId: "",
       prompts: {},
       outputs: [],
       itemDescription: "",
       itemAdditionals: [],
     }}));
+    setLastAddedItemId(newId);
   };
 
   const handleSave = async (status: "draft" | "sent" = "draft") => {
@@ -377,28 +382,32 @@ export default function QuoteNew() {
               <p className="text-sm mt-2">Haz clic en "Agregar producto" para comenzar.</p>
             </div>
           ) : (
-            Object.entries(items).map(([id, item]) => (
-              <div key={id} className="space-y-4">
-                <div className="flex justify-end">
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    onClick={() => handleItemRemove(id)}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Eliminar
-                  </Button>
+            Object.entries(items).map(([id, item], index) => {
+              const isLastAdded = Number(id) === lastAddedItemId;
+              return (
+                <div key={id} className="space-y-4">
+                  {index > 0 && <Separator className="my-6" />}
+                  <div className="flex justify-end">
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={() => handleItemRemove(id)}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Eliminar
+                    </Button>
+                  </div>
+                  <QuoteItem
+                    hasToken={hasToken}
+                    id={id}
+                    initialData={item}
+                    onChange={handleItemChange}
+                    onRemove={handleItemRemove}
+                    shouldExpand={isLastAdded}
+                  />
                 </div>
-                <QuoteItem
-                  hasToken={hasToken}
-                  id={id}
-                  initialData={item}
-                  onChange={handleItemChange}
-                  onRemove={handleItemRemove}
-                />
-                {Object.keys(items).length > 1 && <Separator className="my-6" />}
-              </div>
-            ))
+              );
+            })
           )}
         </CardContent>
       </Card>
