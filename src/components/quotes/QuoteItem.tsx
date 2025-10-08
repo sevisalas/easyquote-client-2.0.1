@@ -532,10 +532,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   )}
 
                   {priceOutput ? (
-                    <div className="p-4 rounded-md border bg-card/50">
+                    <div className="p-3 rounded-md border bg-card/50">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Precio</span>
-                        <span className="px-3 py-1 rounded-full bg-accent text-accent-foreground text-lg font-semibold">
+                        <span className="px-2 py-1 rounded-full bg-accent text-accent-foreground text-lg font-semibold">
                           {formatEUR((priceOutput as any).value)}
                         </span>
                       </div>
@@ -547,9 +547,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                       <Separator className="my-4" />
                       <section className="space-y-2">
                         {otherOutputs.map((o: any, idx: number) => (
-                          <div key={idx} className="flex items-center justify-between text-sm">
+                          <div key={idx} className="flex items-center justify-between text-sm px-1">
                             <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
-                            <span>{String(o.value)}</span>
+                            <span className="truncate ml-2">{String(o.value)}</span>
                           </div>
                         ))}
                       </section>
