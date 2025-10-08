@@ -194,7 +194,7 @@ export default function QuoteDetail() {
             // Obtener items del JSON selections
             const jsonSelections = Array.isArray(quote.selections) ? quote.selections : [];
             const jsonItems = jsonSelections.map((selection: any, index: number) => ({
-              product_name: selection.productName || `Producto ${index + 1}`,
+              product_name: selection.productName || selection.itemDescription || '',
               description: selection.itemDescription || '',
               price: selection.price || 0,
               outputs: selection.outputs || [],
