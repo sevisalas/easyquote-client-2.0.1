@@ -634,17 +634,17 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                         ))}
                       </div>
 
-                      <Separator className="my-2" />
-                      {multiLoading ? (
+                       <Separator className="my-2" />
+                       {multiLoading ? (
                         <p className="text-sm text-muted-foreground">Calculando...</p>
                       ) : (Array.isArray(multiRows) && multiRows.length > 0 ? (
                         <>
-                          <div className="overflow-x-auto">
-                            <Table>
+                          <div className="overflow-x-auto -mx-2">
+                            <Table className="table-fixed w-full">
                               <TableHeader>
                                 <TableRow>
                                   {multiRows.map((_, idx) => (
-                                    <TableHead key={idx} className="px-2 py-1 text-xs">Q{idx + 1}</TableHead>
+                                    <TableHead key={idx} className="px-1 py-0.5 text-[10px] text-center">Q{idx + 1}</TableHead>
                                   ))}
                                 </TableRow>
                               </TableHeader>
@@ -653,7 +653,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                                   {multiRows.map((r, idx) => {
                                     const priceOut = (r.outs || []).find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
                                     return (
-                                      <TableCell key={idx} className="px-2 py-1 text-xs">{formatEUR(priceOut?.value)}</TableCell>
+                                      <TableCell key={idx} className="px-1 py-0.5 text-[10px] text-center whitespace-nowrap">{formatEUR(priceOut?.value)}</TableCell>
                                     );
                                   })}
                                 </TableRow>
