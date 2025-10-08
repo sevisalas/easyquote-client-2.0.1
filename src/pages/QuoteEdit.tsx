@@ -585,23 +585,23 @@ export default function QuoteEdit() {
                        </div>
                      </>
                    ) : (
-                    // Compressed mode - show summary
-                    <div className="flex justify-between items-center">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-4">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-foreground text-sm truncate">
-                              {item.itemDescription || item.product_name || `Artículo ${index + 1}`}
-                            </p>
-                            {item.description && (
-                              <p className="text-xs text-muted-foreground truncate">{item.description}</p>
-                            )}
-                          </div>
-                          <div className="text-sm font-medium text-secondary text-right shrink-0">
-                            {fmtEUR(item.price || 0)}
-                          </div>
-                        </div>
-                      </div>
+                     // Compressed mode - show summary
+                     <div className="flex justify-between items-center">
+                       <div className="flex-1 min-w-0">
+                         <div className="flex items-center gap-4">
+                           <div className="min-w-0 flex-1">
+                             <p className="text-foreground text-sm truncate">
+                               {item.product_name || `Artículo ${index + 1}`}
+                             </p>
+                             {item.itemDescription && item.itemDescription !== item.product_name && (
+                               <p className="text-xs text-muted-foreground truncate">{item.itemDescription}</p>
+                             )}
+                           </div>
+                           <div className="text-sm font-medium text-secondary text-right shrink-0">
+                             {fmtEUR(item.price || 0)}
+                           </div>
+                         </div>
+                       </div>
                       <div className="flex items-center gap-2 ml-4 shrink-0">
                         <Button
                           onClick={() => handleItemEdit(itemId)}
