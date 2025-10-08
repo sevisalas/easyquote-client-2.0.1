@@ -385,9 +385,9 @@ export default function QuoteEdit() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-4">
+      <div className="container mx-auto py-2">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <p className="text-muted-foreground">Cargando presupuesto...</p>
           </CardContent>
         </Card>
@@ -397,11 +397,11 @@ export default function QuoteEdit() {
 
   if (!quote) {
     return (
-      <div className="container mx-auto py-4">
+      <div className="container mx-auto py-2">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <p className="text-destructive">Presupuesto no encontrado</p>
-            <Button onClick={() => navigate('/presupuestos')} className="mt-4">
+            <Button onClick={() => navigate('/presupuestos')} className="mt-3">
               Volver a presupuestos
             </Button>
           </CardContent>
@@ -411,13 +411,13 @@ export default function QuoteEdit() {
   }
 
   return (
-    <div className="container mx-auto py-4 space-y-4">
+    <div className="container mx-auto py-2 space-y-3">
       {/* Header */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-xl">Presupuesto: {quote.quote_number}</CardTitle>
+              <CardTitle className="text-lg">Presupuesto: {quote.quote_number}</CardTitle>
             </div>
             <div className="flex gap-2">
               <Button
@@ -437,10 +437,10 @@ export default function QuoteEdit() {
 
       {/* Quote Details */}
       <Card>
-        <CardContent className="space-y-3 pt-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="customer">cliente</Label>
+        <CardContent className="space-y-2 pt-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="customer" className="text-xs">cliente</Label>
               <Select
                 value={formData.customer_id || ''}
                 onValueChange={(value) => handleInputChange('customer_id', value)}
@@ -458,8 +458,8 @@ export default function QuoteEdit() {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="status">estado</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="status" className="text-xs">estado</Label>
               <Select
                 value={formData.status || 'draft'}
                 onValueChange={(value) => handleInputChange('status', value)}
@@ -477,8 +477,8 @@ export default function QuoteEdit() {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="title">título</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="title" className="text-xs">título</Label>
               <Input
                 id="title"
                 value={formData.title || ''}
@@ -487,8 +487,8 @@ export default function QuoteEdit() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="valid_until">Válido hasta</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="valid_until" className="text-xs">Válido hasta</Label>
               <Input
                 id="valid_until"
                 type="date"
@@ -498,25 +498,27 @@ export default function QuoteEdit() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="description">Descripción</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="description" className="text-xs">Descripción</Label>
               <Textarea
                 id="description"
                 value={formData.description || ''}
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 placeholder="Descripción del presupuesto"
-                rows={3}
+                rows={2}
+                className="text-sm"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notas</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="notes" className="text-xs">Notas</Label>
               <Textarea
                 id="notes"
                 value={formData.notes || ''}
                 onChange={(e) => handleInputChange('notes', e.target.value)}
-               placeholder="Notas adicionales"
+                placeholder="Notas adicionales"
                 rows={2}
+                className="text-sm"
               />
             </div>
           </div>
@@ -525,23 +527,23 @@ export default function QuoteEdit() {
 
       {/* Quote Items */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Artículos del Presupuesto</CardTitle>
+            <CardTitle className="text-base">Artículos del Presupuesto</CardTitle>
             <Button onClick={addItem} size="sm" className="gap-2">
               <Plus className="h-4 w-4" />
               Añadir artículo
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
+        <CardContent className="pt-0">
+          <div className="space-y-2">
             {items.map((item, index) => {
               const itemId = (item.id || index).toString();
               const isEditing = editingItems.has(itemId);
               
               return (
-                <div key={item.id || index} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
+                <div key={item.id || index} className="bg-card border border-border rounded-md p-2 border-r-2 border-r-secondary hover:shadow transition-all duration-200">
                   {isEditing ? (
                      // Editing mode - show only QuoteItem component
                      <QuoteItem
@@ -604,20 +606,20 @@ export default function QuoteEdit() {
             })}
 
             {items.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>No hay artículos en este presupuesto</p>
-                <p className="text-sm mt-2">Utiliza el botón "Añadir artículo" de arriba para comenzar</p>
+              <div className="text-center py-6 text-muted-foreground">
+                <p className="text-sm">No hay artículos en este presupuesto</p>
+                <p className="text-xs mt-1">Utiliza el botón "Añadir artículo" de arriba para comenzar</p>
               </div>
             )}
           </div>
 
           {items.length > 0 && (
             <>
-              <Separator className="my-4" />
+              <Separator className="my-2" />
               
-              <div className="bg-muted/30 rounded-lg p-4 border border-border space-y-2">
+              <div className="bg-muted/30 rounded-md p-3 border border-border space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Subtotal:</span>
+                  <span className="text-xs text-muted-foreground">Subtotal:</span>
                   <span className="text-sm font-medium">{fmtEUR(calculateSubtotal())}</span>
                 </div>
                 
@@ -649,7 +651,7 @@ export default function QuoteEdit() {
                       if (additional.type !== 'quantity_multiplier') {
                         return (
                           <div key={index} className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">{displayText}:</span>
+                            <span className="text-xs text-muted-foreground">{displayText}:</span>
                             <span className={`text-sm font-medium ${amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                               {amount >= 0 ? '+' : ''}{fmtEUR(amount)}
                             </span>
@@ -661,10 +663,10 @@ export default function QuoteEdit() {
                   </>
                 )}
                 
-                <Separator className="my-2" />
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold text-foreground">Total del presupuesto:</span>
-                  <span className="text-2xl font-bold text-secondary">{fmtEUR(calculateTotal())}</span>
+                <Separator className="my-1.5" />
+                <div className="flex justify-between items-center pt-1">
+                  <span className="text-base font-semibold text-foreground">Total del presupuesto:</span>
+                  <span className="text-xl font-bold text-secondary">{fmtEUR(calculateTotal())}</span>
                 </div>
               </div>
             </>
@@ -674,10 +676,10 @@ export default function QuoteEdit() {
 
       {/* Quote Adjustments */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Ajustes del presupuesto</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Ajustes del presupuesto</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <QuoteAdditionalsSelector
             selectedAdditionals={quoteAdditionals}
             onChange={setQuoteAdditionals}

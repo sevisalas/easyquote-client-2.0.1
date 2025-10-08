@@ -69,9 +69,9 @@ export default function QuoteDetail() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-4">
+      <div className="container mx-auto py-2">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <p className="text-muted-foreground">Cargando presupuesto...</p>
           </CardContent>
         </Card>
@@ -81,11 +81,11 @@ export default function QuoteDetail() {
 
   if (error || !quote) {
     return (
-      <div className="container mx-auto py-4">
+      <div className="container mx-auto py-2">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <p className="text-destructive">Error al cargar el presupuesto</p>
-            <Button onClick={() => navigate('/presupuestos')} className="mt-4">
+            <Button onClick={() => navigate('/presupuestos')} className="mt-3">
               Volver a presupuestos
             </Button>
           </CardContent>
@@ -95,16 +95,16 @@ export default function QuoteDetail() {
   }
 
   return (
-    <div className="container mx-auto py-4 space-y-4">
+    <div className="container mx-auto py-2 space-y-3">
       {/* Header */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-xl">
+              <CardTitle className="text-lg">
                 {quote.title ? quote.title : `Presupuesto #${quote.quote_number}`}
               </CardTitle>
-              <CardDescription className="mt-1">
+              <CardDescription className="mt-0.5">
                 {quote.title && (
                   <span>Número: {quote.quote_number} • </span>
                 )}
@@ -130,30 +130,30 @@ export default function QuoteDetail() {
 
       {/* Quote Info */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Información del presupuesto</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Información del presupuesto</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <CardContent className="space-y-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <div>
-              <label className="text-sm font-medium text-muted-foreground">cliente</label>
-              <p className="text-sm font-medium">{quote.customer?.name || 'No especificado'}</p>
+              <label className="text-xs font-medium text-muted-foreground">cliente</label>
+              <p className="text-sm font-medium mt-0.5">{quote.customer?.name || 'No especificado'}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground">estado</label>
-              <div className="mt-1">
-                <Badge variant={getStatusVariant(quote.status)}>
+              <label className="text-xs font-medium text-muted-foreground">estado</label>
+              <div className="mt-0.5">
+                <Badge variant={getStatusVariant(quote.status)} className="text-xs">
                   {statusLabel(quote.status)}
                 </Badge>
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground">total</label>
-              <p className="text-lg font-semibold">{fmtEUR(quote.final_price || 0)}</p>
+              <label className="text-xs font-medium text-muted-foreground">total</label>
+              <p className="text-base font-semibold mt-0.5">{fmtEUR(quote.final_price || 0)}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground">válido hasta</label>
-              <p className="text-sm">
+              <label className="text-xs font-medium text-muted-foreground">válido hasta</label>
+              <p className="text-sm mt-0.5">
                 {quote.valid_until 
                   ? format(new Date(quote.valid_until), 'dd/MM/yyyy', { locale: es })
                   : 'No especificado'
@@ -163,17 +163,17 @@ export default function QuoteDetail() {
           </div>
           
           {(quote.description || quote.notes) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
               {quote.description && (
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">descripción</label>
-                  <p className="text-sm mt-1">{quote.description}</p>
+                  <label className="text-xs font-medium text-muted-foreground">descripción</label>
+                  <p className="text-sm mt-0.5">{quote.description}</p>
                 </div>
               )}
               {quote.notes && (
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">notas</label>
-                  <p className="text-sm mt-1">{quote.notes}</p>
+                  <label className="text-xs font-medium text-muted-foreground">notas</label>
+                  <p className="text-sm mt-0.5">{quote.notes}</p>
                 </div>
               )}
             </div>
@@ -183,10 +183,10 @@ export default function QuoteDetail() {
 
       {/* Quote Items */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Artículos del presupuesto</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Artículos del presupuesto</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           {(() => {
             // Obtener items de la tabla quote_items
             const tableItems = quote.items || [];
@@ -207,27 +207,27 @@ export default function QuoteDetail() {
             const allItems = [...tableItems, ...jsonItems];
             
             return allItems.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {allItems.map((item: any, index: number) => (
-                  <div key={`item-${index}`} className="bg-card border border-border rounded-lg p-3 border-r-4 border-r-primary hover:shadow-md transition-all duration-200">
+                  <div key={`item-${index}`} className="bg-card border border-border rounded-md p-2 border-r-2 border-r-primary hover:shadow transition-all duration-200">
                     <div className="flex justify-between items-center">
                       <div className="flex-1">
-                        <h4 className="text-foreground mb-1">{item.product_name || item.description || `Artículo ${index + 1}`}</h4>
+                        <h4 className="text-sm font-medium mb-0.5">{item.product_name || item.description || `Artículo ${index + 1}`}</h4>
                         {item.description && item.description.trim() && (
-                          <p className="text-sm text-muted-foreground">{item.description}</p>
+                          <p className="text-xs text-muted-foreground">{item.description}</p>
                         )}
                       </div>
-                      <div className="text-right ml-4">
-                        <p className="text-lg text-primary">{fmtEUR(item.price || 0)}</p>
+                      <div className="text-right ml-3">
+                        <p className="text-base font-semibold text-primary">{fmtEUR(item.price || 0)}</p>
                       </div>
                     </div>
                   </div>
                 ))}
                 
-                <Separator className="my-4" />
+                <Separator className="my-2" />
                 
                 {/* Desglose de totales */}
-                <div className="bg-card rounded-lg p-4 border border-border space-y-2">
+                <div className="bg-card rounded-md p-3 border border-border space-y-1.5">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Subtotal:</span>
                     <span className="text-sm font-medium">{fmtEUR(quote.subtotal || 0)}</span>
@@ -273,10 +273,10 @@ export default function QuoteDetail() {
                     </>
                   )}
                   
-                  <Separator className="my-2" />
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold text-foreground">Total del presupuesto:</span>
-                    <span className="text-2xl font-bold text-secondary">
+                  <Separator className="my-1.5" />
+                  <div className="flex justify-between items-center pt-1">
+                    <span className="text-base font-semibold text-foreground">Total del presupuesto:</span>
+                    <span className="text-xl font-bold text-secondary">
                       {fmtEUR((() => {
                         let total = quote.subtotal || 0;
                         if (quote.quote_additionals) {
@@ -303,9 +303,9 @@ export default function QuoteDetail() {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>Este presupuesto no tiene artículos añadidos</p>
-                <p className="text-sm mt-2">Para añadir artículos, utiliza el botón "Editar" en la parte superior</p>
+              <div className="text-center py-6 text-muted-foreground">
+                <p className="text-sm">Este presupuesto no tiene artículos añadidos</p>
+                <p className="text-xs mt-1">Para añadir artículos, utiliza el botón "Editar" en la parte superior</p>
               </div>
             );
           })()}
@@ -315,13 +315,13 @@ export default function QuoteDetail() {
       {/* Quote Adjustments */}
       {((quote.quote_additionals && Array.isArray(quote.quote_additionals) && quote.quote_additionals.length > 0)) && (
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Ajustes del presupuesto</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Ajustes del presupuesto</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+          <CardContent className="pt-0">
+            <div className="space-y-2">
               {quote.quote_additionals.map((additional: any, index: number) => (
-                <div key={`additional-${index}`} className="border rounded-lg p-3">
+                <div key={`additional-${index}`} className="border rounded-md p-2">
                   <div className="flex justify-between items-center">
                     <div className="flex-1">
                       <h4 className="font-medium text-sm">{additional.name}</h4>
