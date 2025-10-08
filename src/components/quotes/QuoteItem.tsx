@@ -522,9 +522,15 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
             <div className="md:col-span-2 md:sticky md:top-6 self-start space-y-3">
               {imageOutputs.length > 0 && (
-                <section className="grid grid-cols-2 sm:grid-cols-2 gap-3">
+                <section className={imageOutputs.length === 1 ? "flex justify-center" : "grid grid-cols-2 gap-3"}>
                   {imageOutputs.map((o: any, idx: number) => (
-                    <img key={idx} src={String(o.value)} alt={`resultado imagen ${idx + 1}`} loading="lazy" className="w-full h-auto rounded-md" />
+                    <img 
+                      key={idx} 
+                      src={String(o.value)} 
+                      alt={`resultado imagen ${idx + 1}`} 
+                      loading="lazy" 
+                      className={imageOutputs.length === 1 ? "max-w-[300px] w-full h-auto rounded-md" : "w-full h-auto rounded-md"}
+                    />
                   ))}
                 </section>
               )}

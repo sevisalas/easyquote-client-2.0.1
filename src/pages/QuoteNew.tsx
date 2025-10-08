@@ -369,7 +369,7 @@ export default function QuoteNew() {
         <CardHeader className="py-3 px-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Productos</CardTitle>
-            {!hasIncompleteItems && (
+            {Object.keys(items).length > 0 && !hasIncompleteItems && (
               <Button onClick={addNewItem} variant="secondary" size="sm">
                 <Plus className="w-4 h-4 mr-2" />
                 Agregar producto
@@ -386,10 +386,11 @@ export default function QuoteNew() {
           ) : (
             Object.entries(items).map(([id, item], index) => {
               const isLastAdded = Number(id) === lastAddedItemId;
+              const isComplete = item.productId && item.price && item.price > 0;
               return (
                 <div key={id} className="space-y-4">
                   {index > 0 && <Separator className="my-6" />}
-                  {item.productId && item.price && item.price > 0 && (
+                  {isComplete && Object.keys(items).length > 1 && (
                     <div className="flex justify-end">
                       <Button 
                         variant="destructive" 
