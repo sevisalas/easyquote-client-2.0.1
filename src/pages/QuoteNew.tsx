@@ -290,7 +290,7 @@ export default function QuoteNew() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">
-          {duplicateFromId ? "Duplicar Presupuesto" : "Nuevo Presupuesto"}
+          {duplicateFromId ? "Duplicar presupuesto" : "Nuevo presupuesto"}
           {duplicateFromId && (
             <Badge variant="secondary" className="ml-2">
               Duplicando
@@ -361,7 +361,7 @@ export default function QuoteNew() {
             <CardTitle className="text-lg">Productos</CardTitle>
             <Button onClick={addNewItem} variant="secondary" size="sm">
               <Plus className="w-4 h-4 mr-2" />
-              Agregar Producto
+              Agregar producto
             </Button>
           </div>
         </CardHeader>
