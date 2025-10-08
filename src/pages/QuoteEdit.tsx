@@ -363,8 +363,9 @@ export default function QuoteEdit() {
   };
 
   const addItem = () => {
+    const newItemId = `temp-${Date.now()}`;
     const newItem: QuoteItem = {
-      id: `temp-${Date.now()}`,
+      id: newItemId,
       product_name: 'Nuevo artículo',
       description: '',
       price: 0,
@@ -377,6 +378,8 @@ export default function QuoteEdit() {
       itemAdditionals: [],
     };
     setItems(prev => [...prev, newItem]);
+    // Abrir automáticamente en modo edición
+    setEditingItems(prev => new Set([...prev, newItemId]));
   };
 
   const handleSave = () => {
@@ -546,22 +549,42 @@ export default function QuoteEdit() {
                 <div key={item.id || index} className="bg-card border border-border rounded-md p-2 border-r-2 border-r-secondary hover:shadow transition-all duration-200">
                   {isEditing ? (
                      // Editing mode - show only QuoteItem component
-                     <QuoteItem
-                       hasToken={true}
-                       id={itemId}
-                       initialData={{
-                         productId: item.productId || '',
-                         prompts: item.prompts || {},
-                         outputs: item.outputs || [],
-                         price: item.price || 0,
-                         multi: item.multi, // No forzar valor por defecto
-                         itemDescription: item.itemDescription || item.product_name || '',
-                         itemAdditionals: item.itemAdditionals || [],
-                       }}
-                       onChange={handleItemChange}
-                       onRemove={handleItemRemove}
-                     />
-                  ) : (
+                     <>
+                       <QuoteItem
+                         hasToken={true}
+                         id={itemId}
+                         initialData={{
+                           productId: item.productId || '',
+                           prompts: item.prompts || {},
+                           outputs: item.outputs || [],
+                           price: item.price || 0,
+                           multi: item.multi, // No forzar valor por defecto
+                           itemDescription: item.itemDescription || item.product_name || '',
+                           itemAdditionals: item.itemAdditionals || [],
+                         }}
+                         onChange={handleItemChange}
+                         onRemove={handleItemRemove}
+                       />
+                       <div className="flex justify-end gap-2 mt-2 pt-2 border-t">
+                         <Button
+                           onClick={() => handleItemSaveEdit(itemId)}
+                           size="sm"
+                           variant="default"
+                         >
+                           Finalizar edición
+                         </Button>
+                         <Button
+                           onClick={() => handleItemRemove(item.id || index)}
+                           size="sm"
+                           variant="outline"
+                           className="text-destructive hover:bg-destructive/10"
+                         >
+                           <Trash2 className="h-3 w-3 mr-1" />
+                           Eliminar
+                         </Button>
+                       </div>
+                     </>
+                   ) : (
                     // Compressed mode - show summary
                     <div className="flex justify-between items-center">
                       <div className="flex-1 min-w-0">
