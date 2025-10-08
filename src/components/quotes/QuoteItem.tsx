@@ -467,7 +467,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
             <Label>Producto</Label>
             <Select onValueChange={(value) => {
@@ -485,7 +485,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           </div>
 
           {productId && (
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label>Nombre o descripción</Label>
               <Input
                 value={itemDescription}
