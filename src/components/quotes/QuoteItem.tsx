@@ -392,11 +392,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Always sync Q1 with the selected qtyPrompt field value
   useEffect(() => {
-    console.log("🔄 Q1 sync effect triggered", { qtyPrompt, promptValues, pricing });
-    if (!qtyPrompt) {
-      console.log("⚠️ No qtyPrompt selected");
-      return;
-    }
+    if (!qtyPrompt) return;
     
     // Get current value from promptValues or from pricing defaults
     let current = (promptValues as any)[qtyPrompt];
@@ -410,19 +406,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       }
     }
     
-    console.log("📊 Current value for qtyPrompt:", qtyPrompt, "=", current);
-    
     // Automatically populate Q1 with the current value of the selected field
     if (current !== undefined && current !== null && String(current).trim() !== "") {
       const asStr = String(current);
-      console.log("✅ Setting Q1 to:", asStr);
       setQtyInputs((prev) => {
         const next = [...prev];
         next[0] = asStr;
         return next;
       });
-    } else {
-      console.log("❌ Current value is empty or invalid");
     }
   }, [qtyPrompt, promptValues, pricing]);
 
@@ -496,10 +487,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const isComplete = productId && priceOutput && finalPrice > 0;
 
   return (
-    <div className="space-y-4">
+    <div className="border rounded-lg border-r-4 border-r-primary p-4">
       {/* Collapsed view - simple line with action buttons */}
       {isComplete && !isExpanded ? (
-        <div className="flex items-center justify-between py-4 px-6 border rounded-lg hover:bg-muted/30 transition-colors">
+        <div className="flex items-center justify-between py-2 hover:bg-muted/30 transition-colors rounded">
           <span className="text-base font-medium text-muted-foreground">{itemDescription || productName}</span>
           <div className="flex items-center gap-4">
             <span className="text-xl font-bold">{formatEUR(finalPrice)}</span>

@@ -391,8 +391,7 @@ export default function QuoteNew() {
               const isComplete = item.productId && item.price && item.price > 0;
               const shouldExpand = isLastAdded || Object.keys(items).length === 1;
               return (
-                <div key={id} className="space-y-4">
-                  {index > 0 && <Separator className="my-6" />}
+                <div key={id}>
                   <QuoteItem
                     hasToken={hasToken}
                     id={id}
