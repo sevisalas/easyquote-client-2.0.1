@@ -476,53 +476,70 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   return (
     <div className="space-y-4">
-      {/* Product selector and description - always visible */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="space-y-2">
-          <Label>Productos</Label>
-          <Select onValueChange={(value) => {
-            setProductId(value);
-          }} value={productId} disabled={!hasToken}>
-            <SelectTrigger ref={selectRef}>
-              <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
-            </SelectTrigger>
-            <SelectContent>
-              {products?.map((p: any) => (
-                <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      {/* Collapsed view - only show summary */}
+      {isComplete && !isExpanded ? (
+        <Card className="cursor-pointer hover:bg-accent/5 transition-colors" onClick={() => setIsExpanded(true)}>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">{itemDescription || productName}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-lg font-semibold text-primary">{formatEUR(finalPrice)}</span>
+                <ChevronDown className="w-5 h-5 text-muted-foreground" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Expanded view - show all fields */}
+          {isComplete && (
+            <div className="flex justify-end">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setIsExpanded(false)}
+              >
+                <ChevronUp className="w-4 h-4 mr-2" />
+                Contraer
+              </Button>
+            </div>
+          )}
+          
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label>Productos</Label>
+              <Select onValueChange={(value) => {
+                setProductId(value);
+              }} value={productId} disabled={!hasToken}>
+                <SelectTrigger ref={selectRef}>
+                  <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {products?.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        {productId && (
-          <div className="space-y-2 md:col-span-2">
-            <Label>Nombre o descripción</Label>
-            <Input
-              value={itemDescription}
-              onChange={(e) => setItemDescription(e.target.value)}
-              placeholder="Editar nombre del producto..."
-            />
+            {productId && (
+              <div className="space-y-2 md:col-span-2">
+                <Label>Nombre o descripción</Label>
+                <Input
+                  value={itemDescription}
+                  onChange={(e) => setItemDescription(e.target.value)}
+                  placeholder="Editar nombre del producto..."
+                />
+              </div>
+            )}
           </div>
-        )}
-      </div>
-
-      {/* Collapsible toggle for completed items */}
-      {isComplete && (
-        <Button 
-          variant="ghost" 
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full flex items-center justify-between"
-        >
-          <div className="flex items-center gap-2">
-            <span className="font-medium">{itemDescription || productName}</span>
-            <span className="text-sm text-muted-foreground">{formatEUR(finalPrice)}</span>
-          </div>
-          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </Button>
+        </>
       )}
 
-      {/* Expandable content */}
-      {isExpanded && productId && (
+      {/* Expandable content - only show when expanded */}
+      {productId && isExpanded && (
         <div className="grid gap-6 md:grid-cols-5">
           <Card className="md:col-span-3">
             <CardHeader>
@@ -750,9 +767,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         </div>
       )}
 
-      {!isExpanded && productId && (
-        <p className="text-sm text-muted-foreground">Haz clic arriba para ver las opciones de configuración.</p>
-      )}
 
       {/* Additionals Section */}
       {productId && isExpanded && (
