@@ -15,7 +15,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
 
 type ItemSnapshot = {
   productId: string;
@@ -476,14 +476,35 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   return (
     <div className="space-y-4">
-      {/* Collapsed view - simple line with border accent */}
+      {/* Collapsed view - simple line with action buttons */}
       {isComplete && !isExpanded ? (
-        <div 
-          className="flex items-center justify-between py-4 px-6 border-l-4 border-r-4 border-r-secondary hover:bg-muted/30 cursor-pointer transition-colors rounded-sm"
-          onClick={() => setIsExpanded(true)}
-        >
-          <span className="text-base font-medium text-foreground/80">{itemDescription || productName}</span>
-          <span className="text-xl font-bold text-secondary">{formatEUR(finalPrice)}</span>
+        <div className="flex items-center justify-between py-4 px-6 border rounded-lg hover:bg-muted/30 transition-colors">
+          <span className="text-base font-medium text-muted-foreground">{itemDescription || productName}</span>
+          <div className="flex items-center gap-4">
+            <span className="text-xl font-bold">{formatEUR(finalPrice)}</span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsExpanded(true)}
+                className="gap-2"
+              >
+                <Pencil className="w-4 h-4" />
+                Editar
+              </Button>
+              {onRemove && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onRemove(id)}
+                  className="gap-2 text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Eliminar
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       ) : (
         <>
