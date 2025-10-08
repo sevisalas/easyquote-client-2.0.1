@@ -392,13 +392,24 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Always sync Q1 with the selected qtyPrompt field value
   useEffect(() => {
-    console.log("🔄 Q1 sync effect triggered", { qtyPrompt, promptValues });
+    console.log("🔄 Q1 sync effect triggered", { qtyPrompt, promptValues, pricing });
     if (!qtyPrompt) {
       console.log("⚠️ No qtyPrompt selected");
       return;
     }
     
-    const current = (promptValues as any)[qtyPrompt];
+    // Get current value from promptValues or from pricing defaults
+    let current = (promptValues as any)[qtyPrompt];
+    
+    // If not in promptValues, try to get it from pricing prompts defaults
+    if ((current === undefined || current === null || String(current).trim() === "") && pricing) {
+      const prompts = (pricing as any)?.prompts || [];
+      const prompt = prompts.find((p: any) => String(p.id) === String(qtyPrompt));
+      if (prompt) {
+        current = prompt.currentValue ?? prompt.default ?? prompt.defaultValue ?? prompt.value;
+      }
+    }
+    
     console.log("📊 Current value for qtyPrompt:", qtyPrompt, "=", current);
     
     // Automatically populate Q1 with the current value of the selected field
@@ -413,7 +424,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     } else {
       console.log("❌ Current value is empty or invalid");
     }
-  }, [qtyPrompt, promptValues]);
+  }, [qtyPrompt, promptValues, pricing]);
 
   // Adjust qty inputs length
   useEffect(() => {
