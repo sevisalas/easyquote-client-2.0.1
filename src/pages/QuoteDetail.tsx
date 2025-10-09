@@ -353,36 +353,15 @@ export default function QuoteDetail() {
             
             // Obtener items del JSON selections
             const jsonSelections = Array.isArray(quote.selections) ? quote.selections : [];
-            const jsonItems = jsonSelections.map((selection: any, index: number) => {
-              // Crear descripción desde outputs si no hay itemDescription
-              let description = selection.itemDescription || '';
-              let productName = selection.productName || selection.itemDescription || '';
-              
-              if (!description && selection.outputs && Array.isArray(selection.outputs)) {
-                const nonPriceOutputs = selection.outputs.filter((o: any) => 
-                  o.type !== 'Price' && o.value !== undefined
-                );
-                if (nonPriceOutputs.length > 0) {
-                  description = nonPriceOutputs
-                    .map((o: any) => `${o.name}: ${o.value}`)
-                    .join(' • ');
-                }
-              }
-              
-              if (!productName && description) {
-                productName = 'Artículo personalizado';
-              }
-              
-              return {
-                product_name: productName,
-                description: description,
-                price: selection.price || 0,
-                outputs: selection.outputs || [],
-                prompts: selection.prompts || {},
-                multi: selection.multi,
-                isFromJson: true
-              };
-            });
+            const jsonItems = jsonSelections.map((selection: any, index: number) => ({
+              product_name: selection.productName || quote.product_name || 'Artículo',
+              description: selection.itemDescription || '',
+              price: selection.price || 0,
+              outputs: selection.outputs || [],
+              prompts: selection.prompts || {},
+              multi: selection.multi,
+              isFromJson: true
+            }));
             
             // Combinar ambas fuentes
             const allItems = [...tableItems, ...jsonItems];
