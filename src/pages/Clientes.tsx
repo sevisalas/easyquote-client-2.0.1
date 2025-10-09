@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, Building, User, Eye } from "lucide-react";
+import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, Building, User, Eye, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
@@ -46,7 +46,7 @@ export default function Clientes() {
   const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [totalClients, setTotalClients] = useState(0);
-  const itemsPerPage = 10;
+  const itemsPerPage = 25;
   const maxClients = 100; // Límite total de clientes
 
   // Verificar integración de Holded
@@ -242,18 +242,18 @@ export default function Clientes() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Origen</TableHead>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Teléfono/Código</TableHead>
-              <TableHead>Notas</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
+              <TableHead className="py-2">Origen</TableHead>
+              <TableHead className="py-2">Nombre</TableHead>
+              <TableHead className="py-2">Email</TableHead>
+              <TableHead className="py-2">Teléfono/Código</TableHead>
+              <TableHead className="py-2">Notas</TableHead>
+              <TableHead className="py-2 text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {clientes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={6} className="text-center py-6">
                   {searchTerm
                     ? "No se encontraron clientes que coincidan con la búsqueda."
                     : "No hay clientes registrados."}
@@ -262,7 +262,7 @@ export default function Clientes() {
             ) : (
               clientes.map((cliente) => (
                 <TableRow key={cliente.id}>
-                  <TableCell>
+                  <TableCell className="py-2">
                     <div className="flex items-center gap-2">
                       {cliente.source === "local" ? (
                         <>
@@ -277,16 +277,16 @@ export default function Clientes() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium">{getClientDisplayName(cliente)}</TableCell>
-                  <TableCell>{cliente.email}</TableCell>
-                  <TableCell>
+                  <TableCell className="py-2 font-medium">{getClientDisplayName(cliente)}</TableCell>
+                  <TableCell className="py-2">{cliente.email}</TableCell>
+                  <TableCell className="py-2">
                     {cliente.source === "local" ? (
                       cliente.phone
                     ) : (
                       <span className="text-sm text-muted-foreground">{cliente.code && `Código: ${cliente.code}`}</span>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-2">
                     {cliente.source === "local" ? (
                       cliente.notes
                     ) : (
@@ -295,7 +295,7 @@ export default function Clientes() {
                       </span>
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="py-2 text-right">
                     {cliente.source === "local" ? (
                       <div className="flex items-center justify-end gap-2">
                         <Button variant="ghost" size="sm" onClick={() => navigate(`/clientes/${cliente.id}/editar`)}>
@@ -324,24 +324,111 @@ export default function Clientes() {
           Mostrando {clientes.length > 0 ? ((currentPage - 1) * itemsPerPage + 1) : 0} -{" "}
           {Math.min(currentPage * itemsPerPage, totalClients)} de {totalClients} clientes
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(1)}
+            disabled={currentPage === 1}
+            title="Primera página"
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
+            title="Anterior"
           >
             <ChevronLeft className="h-4 w-4" />
-            Anterior
           </Button>
+          
+          {/* Números de página */}
+          {(() => {
+            const totalPages = Math.ceil(totalClients / itemsPerPage);
+            const pageNumbers = [];
+            const showPages = 5; // Número de páginas a mostrar
+            
+            let startPage = Math.max(1, currentPage - Math.floor(showPages / 2));
+            let endPage = Math.min(totalPages, startPage + showPages - 1);
+            
+            if (endPage - startPage < showPages - 1) {
+              startPage = Math.max(1, endPage - showPages + 1);
+            }
+            
+            // Primera página si no está visible
+            if (startPage > 1) {
+              pageNumbers.push(
+                <Button
+                  key={1}
+                  variant={currentPage === 1 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(1)}
+                >
+                  1
+                </Button>
+              );
+              if (startPage > 2) {
+                pageNumbers.push(
+                  <span key="dots1" className="px-2">...</span>
+                );
+              }
+            }
+            
+            // Páginas intermedias
+            for (let i = startPage; i <= endPage; i++) {
+              pageNumbers.push(
+                <Button
+                  key={i}
+                  variant={currentPage === i ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(i)}
+                >
+                  {i}
+                </Button>
+              );
+            }
+            
+            // Última página si no está visible
+            if (endPage < totalPages) {
+              if (endPage < totalPages - 1) {
+                pageNumbers.push(
+                  <span key="dots2" className="px-2">...</span>
+                );
+              }
+              pageNumbers.push(
+                <Button
+                  key={totalPages}
+                  variant={currentPage === totalPages ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                >
+                  {totalPages}
+                </Button>
+              );
+            }
+            
+            return pageNumbers;
+          })()}
+          
           <Button
             variant="outline"
             size="sm"
             onClick={() => setCurrentPage((prev) => prev + 1)}
             disabled={currentPage * itemsPerPage >= totalClients}
+            title="Siguiente"
           >
-            Siguiente
             <ChevronRight className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(Math.ceil(totalClients / itemsPerPage))}
+            disabled={currentPage * itemsPerPage >= totalClients}
+            title="Última página"
+          >
+            <ChevronsRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
