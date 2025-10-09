@@ -112,8 +112,34 @@ serve(async (req) => {
       );
 
       if (!response.ok) {
-        console.error('Holded API error:', response.status, await response.text());
-        break;
+        const errorText = await response.text();
+        console.error('Holded API error:', response.status, errorText);
+        return new Response(
+          JSON.stringify({ 
+            error: `Holded API error: ${response.status}`,
+            details: errorText.substring(0, 500)
+          }),
+          { 
+            status: response.status,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const errorText = await response.text();
+        console.error('Holded API returned non-JSON:', errorText.substring(0, 500));
+        return new Response(
+          JSON.stringify({ 
+            error: 'Holded API key inválida o error de autenticación',
+            details: 'Verifica que tu API key de Holded sea correcta'
+          }),
+          { 
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
       }
 
       const contacts = await response.json();
