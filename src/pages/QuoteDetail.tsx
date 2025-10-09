@@ -348,20 +348,21 @@ export default function QuoteDetail() {
             // Obtener items de la tabla quote_items
             const tableItems = quote.items || [];
             
-            // Obtener items del JSON selections
-            const jsonSelections = Array.isArray(quote.selections) ? quote.selections : [];
-            const jsonItems = jsonSelections.map((selection: any, index: number) => ({
-              product_name: selection.itemDescription || quote.product_name || 'Producto',
-              description: selection.itemDescription || '',
-              price: selection.price || 0,
-              outputs: selection.outputs || [],
-              prompts: selection.prompts || {},
-              multi: selection.multi,
-              isFromJson: true
-            }));
+            // Si no hay items en la tabla, usar selections como fallback
+            let allItems: any[] = tableItems;
             
-            // Combinar ambas fuentes
-            const allItems = [...tableItems, ...jsonItems];
+            if (tableItems.length === 0) {
+              const jsonSelections = Array.isArray(quote.selections) ? quote.selections : [];
+              allItems = jsonSelections.map((selection: any) => ({
+                product_name: selection.itemDescription || quote.product_name || 'Producto',
+                description: selection.itemDescription || '',
+                price: selection.price || 0,
+                outputs: selection.outputs || [],
+                prompts: selection.prompts || {},
+                multi: selection.multi,
+                isFromJson: true
+              }));
+            }
             
             return allItems.length > 0 ? (
               <div className="space-y-2">
