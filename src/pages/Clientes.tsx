@@ -154,34 +154,6 @@ export default function Clientes() {
     }
   }, [searchTerm]);
 
-  const deleteAllCustomers = async () => {
-    const confirmed = window.confirm(
-      '¿Estás seguro de que quieres eliminar TODOS los clientes locales? Esta acción no se puede deshacer.'
-    );
-    
-    if (!confirmed) return;
-
-    try {
-      const { error } = await supabase.functions.invoke('delete-all-customers');
-
-      if (error) throw error;
-
-      toast({
-        title: "Clientes eliminados",
-        description: "Todos los clientes locales han sido eliminados.",
-      });
-
-      fetchClientes();
-    } catch (error) {
-      console.error('Error deleting customers:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron eliminar los clientes.",
-        variant: "destructive",
-      });
-    }
-  };
-
   const deleteAllHoldedClientes = async () => {
     const confirmed = window.confirm(
       '¿Estás seguro de que quieres eliminar TODOS los clientes importados de Holded? Esta acción no se puede deshacer.'
@@ -274,14 +246,6 @@ export default function Clientes() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="destructive" 
-            onClick={deleteAllCustomers}
-            className="flex items-center gap-2"
-          >
-            <Trash2 className="h-4 w-4" />
-            Eliminar Todos los Clientes
-          </Button>
           {isHoldedActive && (
             <Button 
               variant="destructive" 

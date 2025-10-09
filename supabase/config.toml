@@ -38,6 +38,3 @@ verify_jwt = true
 
 [functions.delete-holded-customers]
 verify_jwt = true
-
-[functions.delete-all-customers]
-verify_jwt = true
