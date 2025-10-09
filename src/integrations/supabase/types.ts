@@ -742,7 +742,7 @@ export type Database = {
           discount_percentage: number | null
           id: string
           item_additionals: Json | null
-          multi: number | null
+          multi: Json | null
           name: string | null
           outputs: Json | null
           position: number | null
@@ -760,7 +760,7 @@ export type Database = {
           discount_percentage?: number | null
           id?: string
           item_additionals?: Json | null
-          multi?: number | null
+          multi?: Json | null
           name?: string | null
           outputs?: Json | null
           position?: number | null
@@ -778,7 +778,7 @@ export type Database = {
           discount_percentage?: number | null
           id?: string
           item_additionals?: Json | null
-          multi?: number | null
+          multi?: Json | null
           name?: string | null
           outputs?: Json | null
           position?: number | null
