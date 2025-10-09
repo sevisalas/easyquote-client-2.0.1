@@ -154,6 +154,34 @@ export default function Clientes() {
     }
   }, [searchTerm]);
 
+  const deleteAllHoldedClientes = async () => {
+    const confirmed = window.confirm(
+      '¿Estás seguro de que quieres eliminar TODOS los clientes importados de Holded? Esta acción no se puede deshacer.'
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      const { error } = await supabase.functions.invoke('delete-holded-customers');
+
+      if (error) throw error;
+
+      toast({
+        title: "Clientes eliminados",
+        description: "Todos los clientes importados de Holded han sido eliminados.",
+      });
+
+      fetchClientes();
+    } catch (error) {
+      console.error('Error deleting Holded customers:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron eliminar los clientes de Holded.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const deleteCliente = async (id: string, source: string) => {
     // Solo permitir eliminar clientes locales
     if (source === 'holded') {
@@ -217,10 +245,22 @@ export default function Clientes() {
             Gestiona tus clientes locales y visualiza los de Holded
           </p>
         </div>
-        <Button onClick={() => navigate('/clientes/nuevo')} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Nuevo Cliente
-        </Button>
+        <div className="flex gap-2">
+          {isHoldedActive && (
+            <Button 
+              variant="destructive" 
+              onClick={deleteAllHoldedClientes}
+              className="flex items-center gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Eliminar Clientes Holded
+            </Button>
+          )}
+          <Button onClick={() => navigate('/clientes/nuevo')} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Nuevo Cliente
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center gap-4 mb-6">

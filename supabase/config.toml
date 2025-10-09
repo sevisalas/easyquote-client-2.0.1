@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.test-product-info]
 verify_jwt = true
+
+[functions.delete-holded-customers]
+verify_jwt = true
