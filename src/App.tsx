@@ -27,6 +27,7 @@ import ExcelFiles from "./pages/ExcelFiles";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProductManagement from "./pages/ProductManagement";
 import ProductCategories from "./pages/ProductCategories";
+import HoldedConfig from "./pages/HoldedConfig";
 
 
 
@@ -213,6 +214,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <IntegrationAccess />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/holded-config"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <HoldedConfig />
                 </AppLayout>
               </ProtectedRoute>
             }
