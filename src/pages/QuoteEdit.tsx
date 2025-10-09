@@ -181,7 +181,7 @@ export default function QuoteEdit() {
       if (allItems.length === 0 && quote.selections && Array.isArray(quote.selections)) {
         const jsonItems = quote.selections.map((selection: any, index: number) => ({
           id: `json-${index}`,
-          product_name: selection.productName || selection.itemDescription || 'Nombre o descripción',
+          product_name: selection.productName || '',
           description: selection.itemDescription || '',
           price: selection.price || 0,
           isFromSelections: true,
@@ -190,7 +190,7 @@ export default function QuoteEdit() {
           prompts: selection.prompts || {},
           outputs: selection.outputs || [],
           multi: selection.multi,
-          itemDescription: selection.itemDescription || selection.productName || 'Nombre o descripción',
+          itemDescription: selection.itemDescription || '',
           itemAdditionals: selection.itemAdditionals || [],
         }));
         allItems.push(...jsonItems);
