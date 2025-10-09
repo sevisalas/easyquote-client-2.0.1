@@ -285,14 +285,6 @@ export function AppSidebar() {
                                 </NavLink>
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
-                            <SidebarMenuSubItem>
-                              <SidebarMenuSubButton asChild isActive={currentPath === "/holded-config"} className="h-6 px-2">
-                                <NavLink to="/holded-config" end className={getNavCls}>
-                                  <Building className="mr-2 h-4 w-4" />
-                                  {!isCollapsed && <span>Config. Holded</span>}
-                                </NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
                           </>
                         )}
                        
