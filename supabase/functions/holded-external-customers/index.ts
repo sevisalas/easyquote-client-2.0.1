@@ -90,12 +90,13 @@ Deno.serve(async (req) => {
     const externalSupabase = createClient(externalSupabaseUrl, externalSupabaseKey);
     console.log('External Supabase client created');
 
-    // Fetch contacts
+    // Fetch contacts (aumentar límite para obtener todos los registros)
     console.log('Fetching contacts from holded_contacts_index');
     const { data: contacts, error: contactsError } = await externalSupabase
       .from('holded_contacts_index')
       .select('*')
-      .order('name', { ascending: true });
+      .order('name', { ascending: true })
+      .limit(50000);
 
     if (contactsError) {
       console.error('Error fetching external contacts:', contactsError.message);

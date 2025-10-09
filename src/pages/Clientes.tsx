@@ -47,7 +47,6 @@ export default function Clientes() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [totalClients, setTotalClients] = useState(0);
   const itemsPerPage = 25;
-  const maxClients = 100; // Límite total de clientes
 
   // Verificar integración de Holded
   const { isHoldedActive } = useHoldedIntegration();
@@ -59,12 +58,11 @@ export default function Clientes() {
     try {
       let allClients: Cliente[] = [];
 
-      // Obtener clientes locales (limitar a maxClients)
+      // Obtener clientes locales
       const localClientsResponse = await supabase
         .from("customers")
         .select("*", { count: "exact" })
-        .order("created_at", { ascending: false })
-        .limit(maxClients);
+        .order("created_at", { ascending: false });
 
       // Procesar clientes locales
       if (localClientsResponse.data) {
@@ -91,9 +89,7 @@ export default function Clientes() {
             console.error('Error fetching external customers:', externalError);
           } else if (externalData?.data) {
             const externalClients: HoldedClient[] = externalData.data;
-            // Limitar el total combinado a maxClients
-            const remainingSlots = maxClients - allClients.length;
-            allClients = [...allClients, ...externalClients.slice(0, remainingSlots)];
+            allClients = [...allClients, ...externalClients];
           }
         } catch (err) {
           console.error('Error calling holded-external-customers function:', err);
