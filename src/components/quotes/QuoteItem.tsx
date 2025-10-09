@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 import PromptsForm from "@/components/quotes/PromptsForm";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -122,17 +123,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     const token = localStorage.getItem("easyquote_token");
     if (!token) throw new Error("No hay token de EasyQuote disponible. Por favor, inicia sesión nuevamente.");
     
-    const { data, error } = await supabase.functions.invoke("easyquote-products", {
-      body: { token },
-    });
+    const { data, error } = await invokeEasyQuoteFunction("easyquote-products", { token });
     
-    if (error) {
-      // Si es error 401 o relacionado con autenticación
-      if (error.message?.includes("401") || error.message?.includes("Failed to fetch products") || error.message?.includes("Unauthorized")) {
-        throw new Error("Tu sesión de EasyQuote ha expirado. Por favor, cierra sesión y vuelve a iniciar sesión para continuar.");
-      }
-      throw error;
-    }
+    if (error) throw error;
     
     const list = Array.isArray(data) ? data : (data?.items || data?.data || []);
     // Filtrar solo productos activos (backup en frontend)
@@ -242,17 +235,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           throw e;
         }
         
-        const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
-          body: { token, productId, inputs: Object.entries(norm).map(([id, value]) => ({ id, value })) },
+        const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
+          token,
+          productId,
+          inputs: Object.entries(norm).map(([id, value]) => ({ id, value }))
         });
-        if (error) {
-          // Detectar si es un error 401 y notificar
-          if (error.message?.includes('401') || error.context?.res?.status === 401) {
-            const { notifyUnauthorized } = await import('@/hooks/useTokenRefresh');
-            notifyUnauthorized(401, 'easyquote.cloud/pricing');
-          }
-          throw error as any;
-        }
+        
+        if (error) throw error;
         return data;
       }
     },
@@ -362,17 +351,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       const results = await Promise.all(
         qtys.map(async (qty) => {
           const replaced = list.filter((it) => it.id !== qtyPrompt).concat([{ id: qtyPrompt, value: qty }]);
-          const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
-            body: { token, productId, inputs: replaced },
+          const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
+            token,
+            productId,
+            inputs: replaced
           });
-          if (error) {
-            // Detectar si es un error 401 y notificar
-            if (error.message?.includes('401') || error.context?.res?.status === 401) {
-              const { notifyUnauthorized } = await import('@/hooks/useTokenRefresh');
-              notifyUnauthorized(401, 'easyquote.cloud/pricing');
-            }
-            throw error as any;
-          }
+          
+          if (error) throw error;
           return { qty, data };
         })
       );
