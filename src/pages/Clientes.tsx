@@ -69,41 +69,7 @@ export default function Clientes() {
         allClients = [...localClients];
       }
 
-      // Solo obtener contactos de Holded si la integración está activa y tenemos organización
-      if (isHoldedActive && currentOrganization?.id) {
-        try {
-          console.log('🔄 Fetching Holded contacts for organization:', currentOrganization.id);
-          const { data, error } = await supabase.functions.invoke('holded-contacts', {
-            body: { 
-              organizationId: currentOrganization.id,
-              searchTerm: searchTerm || undefined
-            }
-          });
-
-          if (!error && data?.contacts) {
-            console.log('✅ Holded contacts received:', data.contacts.length);
-            const holdedClients: HoldedClient[] = data.contacts.map((contact: any) => ({
-              id: `holded_${contact.id}`,
-              name: contact.name || contact.customName || contact.code || 'Sin nombre',
-              email: contact.email || '',
-              phone: contact.phone || '',
-              notes: '',
-              created_at: new Date().toISOString(),
-              holded_id: contact.id,
-              code: contact.code || '',
-              vatnumber: contact.vatNumber || '',
-              source: 'holded' as const
-            }));
-            allClients = [...allClients, ...holdedClients];
-          } else if (error) {
-            console.error('❌ Error fetching Holded contacts:', error);
-          }
-        } catch (error) {
-          console.error('❌ Error calling Holded edge function:', error);
-        }
-      } else if (isHoldedActive && !currentOrganization?.id) {
-        console.warn('⚠️ Holded integration active but no organization ID');
-      }
+      // Conexión con Holded desactivada - solo clientes locales
 
       // Aplicar filtro de búsqueda si existe
       if (searchTerm) {
@@ -153,36 +119,6 @@ export default function Clientes() {
       fetchClientes();
     }
   }, [searchTerm]);
-
-  const disableHoldedIntegration = async () => {
-    const confirmed = window.confirm(
-      '¿Estás seguro de que quieres desactivar la integración de Holded? Los contactos de Holded dejarán de aparecer.'
-    );
-    
-    if (!confirmed) return;
-
-    try {
-      const { error } = await supabase.functions.invoke('disable-holded-integration', {
-        body: { organizationId: currentOrganization?.id }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Integración desactivada",
-        description: "La integración de Holded ha sido desactivada correctamente.",
-      });
-
-      fetchClientes();
-    } catch (error) {
-      console.error('Error disabling Holded integration:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo desactivar la integración de Holded.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const deleteCliente = async (id: string, source: string) => {
     // Solo permitir eliminar clientes locales
@@ -248,16 +184,6 @@ export default function Clientes() {
           </p>
         </div>
         <div className="flex gap-2">
-          {isHoldedActive && (
-            <Button 
-              variant="destructive" 
-              onClick={disableHoldedIntegration}
-              className="flex items-center gap-2"
-            >
-              <Trash2 className="h-4 w-4" />
-              Desactivar Holded
-            </Button>
-          )}
           <Button onClick={() => navigate('/clientes/nuevo')} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Nuevo Cliente
