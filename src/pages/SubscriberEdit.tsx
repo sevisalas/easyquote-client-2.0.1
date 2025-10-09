@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -18,6 +19,7 @@ interface Suscriptor {
   excel_extra?: number;
   client_user_limit?: number;
   client_user_extra?: number;
+  holded_external_customers?: boolean;
 }
 
 const EditarSuscriptor = () => {
@@ -78,6 +80,7 @@ const EditarSuscriptor = () => {
       const updateData: any = {
         name: suscriptor.name,
         subscription_plan: suscriptor.subscription_plan,
+        holded_external_customers: suscriptor.holded_external_customers || false,
       };
       
       // Solo actualizar límites si es plan personalizado
@@ -189,6 +192,21 @@ const EditarSuscriptor = () => {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Holded External Customers */}
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="holded_external"
+              checked={suscriptor.holded_external_customers || false}
+              onCheckedChange={(checked) => setSuscriptor({ ...suscriptor, holded_external_customers: checked as boolean })}
+            />
+            <Label 
+              htmlFor="holded_external"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Holded Externo (mostrar clientes de Holded además de clientes locales)
+            </Label>
           </div>
 
           {/* Mostrar campos adicionales solo para plan personalizado */}

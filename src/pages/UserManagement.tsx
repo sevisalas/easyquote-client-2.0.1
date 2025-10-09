@@ -22,6 +22,7 @@ interface Suscriptor {
   client_user_extra: number;
   api_user_id: string;
   api_user_email?: string;
+  holded_external_customers?: boolean;
 }
 
 const GestionUsuarios = () => {
@@ -339,6 +340,7 @@ const GestionUsuarios = () => {
               <TableRow>
                 <TableHead>Suscriptor</TableHead>
                 <TableHead>Plan</TableHead>
+                <TableHead>Holded Externo</TableHead>
                 <TableHead>Límite excel</TableHead>
                 <TableHead>Límite usuarios</TableHead>
                 <TableHead>Acciones</TableHead>
@@ -350,6 +352,13 @@ const GestionUsuarios = () => {
                   <TableCell className="font-medium">{suscriptor.name}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{suscriptor.subscription_plan}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    {suscriptor.holded_external_customers && (
+                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                        Activo
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell>{suscriptor.excel_limit + suscriptor.excel_extra}</TableCell>
                   <TableCell>{suscriptor.client_user_limit + suscriptor.client_user_extra}</TableCell>
