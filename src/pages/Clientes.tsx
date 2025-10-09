@@ -154,29 +154,31 @@ export default function Clientes() {
     }
   }, [searchTerm]);
 
-  const deleteAllHoldedClientes = async () => {
+  const disableHoldedIntegration = async () => {
     const confirmed = window.confirm(
-      '¿Estás seguro de que quieres eliminar TODOS los clientes importados de Holded? Esta acción no se puede deshacer.'
+      '¿Estás seguro de que quieres desactivar la integración de Holded? Los contactos de Holded dejarán de aparecer.'
     );
     
     if (!confirmed) return;
 
     try {
-      const { error } = await supabase.functions.invoke('delete-holded-customers');
+      const { error } = await supabase.functions.invoke('disable-holded-integration', {
+        body: { organizationId: currentOrganization?.id }
+      });
 
       if (error) throw error;
 
       toast({
-        title: "Clientes eliminados",
-        description: "Todos los clientes importados de Holded han sido eliminados.",
+        title: "Integración desactivada",
+        description: "La integración de Holded ha sido desactivada correctamente.",
       });
 
       fetchClientes();
     } catch (error) {
-      console.error('Error deleting Holded customers:', error);
+      console.error('Error disabling Holded integration:', error);
       toast({
         title: "Error",
-        description: "No se pudieron eliminar los clientes de Holded.",
+        description: "No se pudo desactivar la integración de Holded.",
         variant: "destructive",
       });
     }
@@ -249,11 +251,11 @@ export default function Clientes() {
           {isHoldedActive && (
             <Button 
               variant="destructive" 
-              onClick={deleteAllHoldedClientes}
+              onClick={disableHoldedIntegration}
               className="flex items-center gap-2"
             >
               <Trash2 className="h-4 w-4" />
-              Eliminar Clientes Holded
+              Desactivar Holded
             </Button>
           )}
           <Button onClick={() => navigate('/clientes/nuevo')} className="flex items-center gap-2">
