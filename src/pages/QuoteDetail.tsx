@@ -73,6 +73,8 @@ export default function QuoteDetail() {
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.user) throw new Error('Usuario no autenticado');
 
+      console.log('Duplicando presupuesto:', quoteId);
+
       // Obtener el presupuesto original con todos sus datos
       const { data: originalQuote, error: fetchError } = await supabase
         .from('quotes')
@@ -80,21 +82,38 @@ export default function QuoteDetail() {
         .eq('id', quoteId)
         .single();
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('Error obteniendo presupuesto original:', fetchError);
+        throw fetchError;
+      }
 
-      // Generar nuevo número de presupuesto
-      const { data: latestQuote } = await supabase
+      console.log('Presupuesto original:', originalQuote);
+      console.log('Items originales:', originalQuote.items);
+      console.log('Additionals originales:', originalQuote.quote_additionals);
+
+      // Generar nuevo número de presupuesto con formato DD-MM-YYYY-NNNNN
+      const today = new Date();
+      const datePrefix = format(today, 'dd-MM-yyyy');
+      
+      // Obtener el último presupuesto del día
+      const { data: todayQuotes } = await supabase
         .from('quotes')
         .select('quote_number')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .like('quote_number', `${datePrefix}%`)
+        .order('quote_number', { ascending: false })
+        .limit(1);
 
-      let newNumber = '00001';
-      if (latestQuote?.quote_number) {
-        const lastNum = parseInt(latestQuote.quote_number);
-        newNumber = String(lastNum + 1).padStart(5, '0');
+      let dailyNumber = 1;
+      if (todayQuotes && todayQuotes.length > 0) {
+        const lastNumber = todayQuotes[0].quote_number;
+        const parts = lastNumber.split('-');
+        if (parts.length === 4) {
+          dailyNumber = parseInt(parts[3]) + 1;
+        }
       }
+
+      const newNumber = `${datePrefix}-${String(dailyNumber).padStart(5, '0')}`;
+      console.log('Nuevo número de presupuesto:', newNumber);
 
       // Crear nuevo presupuesto
       const { data: newQuote, error: insertError } = await supabase
@@ -110,14 +129,21 @@ export default function QuoteDetail() {
           valid_until: null,
           subtotal: originalQuote.subtotal,
           final_price: originalQuote.final_price,
+          selections: originalQuote.selections,
         })
         .select()
         .single();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Error creando nuevo presupuesto:', insertError);
+        throw insertError;
+      }
 
-      // Copiar items
+      console.log('Nuevo presupuesto creado:', newQuote);
+
+      // Copiar items de quote_items
       if (originalQuote.items && originalQuote.items.length > 0) {
+        console.log('Copiando', originalQuote.items.length, 'items');
         const itemsToInsert = originalQuote.items.map((item: any) => ({
           quote_id: newQuote.id,
           product_name: item.product_name,
@@ -129,17 +155,25 @@ export default function QuoteDetail() {
           outputs: item.outputs,
           multi: item.multi,
           item_additionals: item.item_additionals,
+          quantity: item.quantity,
+          discount_percentage: item.discount_percentage,
         }));
 
-        const { error: itemsError } = await supabase
+        const { data: insertedItems, error: itemsError } = await supabase
           .from('quote_items')
-          .insert(itemsToInsert);
+          .insert(itemsToInsert)
+          .select();
 
-        if (itemsError) throw itemsError;
+        if (itemsError) {
+          console.error('Error copiando items:', itemsError);
+          throw itemsError;
+        }
+        console.log('Items copiados:', insertedItems);
       }
 
-      // Copiar ajustes
+      // Copiar ajustes de quote_additionals
       if (originalQuote.quote_additionals && originalQuote.quote_additionals.length > 0) {
+        console.log('Copiando', originalQuote.quote_additionals.length, 'ajustes');
         const additionalsToInsert = originalQuote.quote_additionals.map((additional: any) => ({
           quote_id: newQuote.id,
           additional_id: additional.additional_id,
@@ -148,11 +182,16 @@ export default function QuoteDetail() {
           value: additional.value,
         }));
 
-        const { error: additionalsError } = await supabase
+        const { data: insertedAdditionals, error: additionalsError } = await supabase
           .from('quote_additionals')
-          .insert(additionalsToInsert);
+          .insert(additionalsToInsert)
+          .select();
 
-        if (additionalsError) throw additionalsError;
+        if (additionalsError) {
+          console.error('Error copiando ajustes:', additionalsError);
+          throw additionalsError;
+        }
+        console.log('Ajustes copiados:', insertedAdditionals);
       }
 
       return newQuote;
