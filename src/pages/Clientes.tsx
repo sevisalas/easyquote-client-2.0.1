@@ -45,7 +45,9 @@ export default function Clientes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [totalClients, setTotalClients] = useState(0);
   const itemsPerPage = 10;
+  const maxClients = 100; // Límite total de clientes
 
   // Verificar integración de Holded
   const { isHoldedActive } = useHoldedIntegration();
@@ -57,11 +59,12 @@ export default function Clientes() {
     try {
       let allClients: Cliente[] = [];
 
-      // Obtener clientes locales
+      // Obtener clientes locales (limitar a maxClients)
       const localClientsResponse = await supabase
         .from("customers")
         .select("*", { count: "exact" })
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(maxClients);
 
       // Procesar clientes locales
       if (localClientsResponse.data) {
@@ -88,12 +91,17 @@ export default function Clientes() {
             console.error('Error fetching external customers:', externalError);
           } else if (externalData?.data) {
             const externalClients: HoldedClient[] = externalData.data;
-            allClients = [...allClients, ...externalClients];
+            // Limitar el total combinado a maxClients
+            const remainingSlots = maxClients - allClients.length;
+            allClients = [...allClients, ...externalClients.slice(0, remainingSlots)];
           }
         } catch (err) {
           console.error('Error calling holded-external-customers function:', err);
         }
       }
+
+      // Guardar total antes de filtrar
+      const totalBeforeSearch = allClients.length;
 
       // Aplicar filtro de búsqueda si existe
       if (searchTerm) {
@@ -105,6 +113,8 @@ export default function Clientes() {
         );
         allClients = filtered;
       }
+
+      setTotalClients(searchTerm ? allClients.length : totalBeforeSearch);
 
       // Paginación
       const totalItems = allClients.length;
@@ -311,8 +321,8 @@ export default function Clientes() {
       {/* Paginación */}
       <div className="flex items-center justify-between mt-4">
         <div className="text-sm text-muted-foreground">
-          Mostrando {Math.min((currentPage - 1) * itemsPerPage + 1, clientes.length)} -{" "}
-          {Math.min(currentPage * itemsPerPage, clientes.length)} de {clientes.length} clientes
+          Mostrando {clientes.length > 0 ? ((currentPage - 1) * itemsPerPage + 1) : 0} -{" "}
+          {Math.min(currentPage * itemsPerPage, totalClients)} de {totalClients} clientes
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -328,7 +338,7 @@ export default function Clientes() {
             variant="outline"
             size="sm"
             onClick={() => setCurrentPage((prev) => prev + 1)}
-            disabled={clientes.length < itemsPerPage}
+            disabled={currentPage * itemsPerPage >= totalClients}
           >
             Siguiente
             <ChevronRight className="h-4 w-4" />
