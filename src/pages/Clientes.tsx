@@ -3,10 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download } from "lucide-react";
+import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface LocalClient {
   id: string;
@@ -25,7 +24,6 @@ export default function Clientes() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [totalClients, setTotalClients] = useState(0);
-  const [isImporting, setIsImporting] = useState(false);
   const itemsPerPage = 25;
 
   const fetchClientes = async () => {
@@ -106,45 +104,6 @@ export default function Clientes() {
     }
   };
 
-  const handleImportHolded = async () => {
-    setIsImporting(true);
-    try {
-      // Get organization ID
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
-
-      const { data: org } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('api_user_id', user.id)
-        .single();
-
-      if (!org) throw new Error('No organization found');
-
-      const { data, error } = await supabase.functions.invoke('holded-import-contacts', {
-        body: { organizationId: org.id }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Importación exitosa",
-        description: `Se importaron ${data.imported} contactos de Holded`,
-      });
-
-      fetchClientes();
-    } catch (error: any) {
-      console.error('Error importing Holded contacts:', error);
-      toast({
-        title: "Error",
-        description: error.message || "No se pudieron importar los contactos de Holded",
-        variant: "destructive",
-      });
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -154,8 +113,8 @@ export default function Clientes() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="container mx-auto p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
           <p className="text-muted-foreground">Gestiona tus clientes</p>
@@ -167,33 +126,6 @@ export default function Clientes() {
           </Button>
         </div>
       </div>
-
-      {/* Card para importar contactos de Holded */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Contactos de Holded</CardTitle>
-          <CardDescription>
-            Importa todos los contactos desde Holded para poder buscarlos por nombre en los presupuestos.
-            Los contactos se guardan en una tabla separada y pueden ser actualizados manualmente.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button 
-            onClick={handleImportHolded} 
-            disabled={isImporting}
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            {isImporting ? "Importando..." : "Importar Contactos de Holded"}
-          </Button>
-          <p className="text-sm text-muted-foreground mt-2">
-            URL del webhook de Zapier (para nuevos contactos): 
-            <code className="ml-2 bg-muted px-2 py-1 rounded text-xs">
-              https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/holded-zapier-webhook
-            </code>
-          </p>
-        </CardContent>
-      </Card>
 
       <div className="flex items-center gap-4 mb-6">
         <div className="relative flex-1 max-w-sm">

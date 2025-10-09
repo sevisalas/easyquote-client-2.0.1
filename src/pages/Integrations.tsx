@@ -8,6 +8,8 @@ import { useIntegrationAccess } from "@/hooks/useIntegrationAccess";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Download, Trash2 } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 export default function Integrations() {
   const { hasIntegrationAccess, loading } = useIntegrationAccess();
@@ -16,6 +18,9 @@ export default function Integrations() {
   const [apiKey, setApiKey] = useState("");
   const [saving, setSaving] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [contactsCount, setContactsCount] = useState<number | null>(null);
   const { toast } = useToast();
 
   const currentOrganization = organization || membership?.organization;
@@ -23,8 +28,25 @@ export default function Integrations() {
   useEffect(() => {
     if (isHoldedActive) {
       setShowConfig(false);
+      loadContactsCount();
     }
-  }, [isHoldedActive]);
+  }, [isHoldedActive, currentOrganization]);
+
+  const loadContactsCount = async () => {
+    if (!currentOrganization?.id) return;
+    
+    try {
+      const { count, error } = await supabase
+        .from('holded_contacts')
+        .select('*', { count: 'exact', head: true })
+        .eq('organization_id', currentOrganization.id);
+
+      if (error) throw error;
+      setContactsCount(count || 0);
+    } catch (error) {
+      console.error('Error loading contacts count:', error);
+    }
+  };
 
   const handleSaveApiKey = async () => {
     if (!apiKey.trim()) {
@@ -77,6 +99,78 @@ export default function Integrations() {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleImportContacts = async () => {
+    if (!currentOrganization?.id) {
+      toast({
+        title: "Error",
+        description: "No se encontró la organización",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('holded-import-contacts', {
+        body: { organizationId: currentOrganization.id }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Importación exitosa",
+        description: `Se importaron/actualizaron ${data.imported} contactos de Holded`,
+      });
+
+      loadContactsCount();
+    } catch (error: any) {
+      console.error('Error importing Holded contacts:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudieron importar los contactos de Holded",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleDeleteContacts = async () => {
+    if (!currentOrganization?.id) return;
+
+    const confirmed = window.confirm(
+      `¿Estás seguro de que quieres eliminar TODOS los contactos de Holded importados (${contactsCount})? Esta acción no se puede deshacer.`
+    );
+    
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('holded_contacts')
+        .delete()
+        .eq('organization_id', currentOrganization.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Contactos eliminados",
+        description: "Todos los contactos de Holded han sido eliminados correctamente",
+      });
+
+      setContactsCount(0);
+    } catch (error: any) {
+      console.error('Error deleting contacts:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron eliminar los contactos",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -178,13 +272,64 @@ export default function Integrations() {
             )}
 
             {isHoldedActive && (
-              <Button 
-                variant="outline"
-                onClick={() => setShowConfig(true)}
-                className="w-full"
-              >
-                Actualizar API Key
-              </Button>
+              <>
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowConfig(true)}
+                  className="w-full"
+                >
+                  Actualizar API Key
+                </Button>
+
+                <Separator className="my-6" />
+
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold mb-2">Contactos de Holded</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Importa todos los contactos desde Holded para poder buscarlos por nombre en los presupuestos.
+                      Los contactos se guardan en una tabla separada y se actualizan con cada importación.
+                    </p>
+                    {contactsCount !== null && (
+                      <p className="text-sm mb-4">
+                        <span className="font-medium">Contactos importados:</span> {contactsCount}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleImportContacts} 
+                      disabled={isImporting}
+                      className="flex-1"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      {isImporting ? "Importando..." : "Importar Contactos"}
+                    </Button>
+
+                    {contactsCount !== null && contactsCount > 0 && (
+                      <Button 
+                        variant="destructive"
+                        onClick={handleDeleteContacts}
+                        disabled={isDeleting}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="bg-muted p-3 rounded-lg">
+                    <p className="text-xs font-medium mb-2">Webhook de Zapier (para nuevos contactos)</p>
+                    <code className="text-xs bg-background px-2 py-1 rounded block overflow-x-auto">
+                      https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/holded-zapier-webhook
+                    </code>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Configura este webhook en Zapier para que los nuevos contactos se agreguen automáticamente.
+                      Debe enviar: id, name, email, phone, mobile, organizationId
+                    </p>
+                  </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
