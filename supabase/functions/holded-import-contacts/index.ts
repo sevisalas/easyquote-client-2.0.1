@@ -102,10 +102,10 @@ serve(async (req) => {
 
     while (hasMore) {
       const response = await fetch(
-        `${HOLDED_API_BASE}/contacts/v1/contacts?page=${page}&limit=${limit}`,
+        `${HOLDED_API_BASE}/invoicing/v1/contacts?page=${page}&limit=${limit}`,
         {
           headers: {
-            'Accept': 'application/json',
+            'accept': 'application/json',
             'key': apiKey,
           },
         }
