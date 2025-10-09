@@ -170,7 +170,7 @@ export const CustomerSelector = ({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[400px] p-0">
-          <Command>
+          <Command shouldFilter={false}>
             <CommandInput 
               placeholder="Buscar cliente..." 
               value={searchValue}
