@@ -255,9 +255,6 @@ export default function QuoteDetail() {
                 {quote.title ? quote.title : `Presupuesto #${quote.quote_number}`}
               </CardTitle>
               <CardDescription className="mt-0.5">
-                {quote.title && (
-                  <span>Número: {quote.quote_number} • </span>
-                )}
                 Fecha: {format(new Date(quote.created_at), 'dd/MM/yyyy', { locale: es })}
               </CardDescription>
             </div>
