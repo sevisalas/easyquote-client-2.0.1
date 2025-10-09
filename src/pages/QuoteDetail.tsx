@@ -354,8 +354,8 @@ export default function QuoteDetail() {
             // Obtener items del JSON selections
             const jsonSelections = Array.isArray(quote.selections) ? quote.selections : [];
             const jsonItems = jsonSelections.map((selection: any, index: number) => ({
-              product_name: selection.itemDescription || '',
-              description: '',
+              product_name: selection.productName || selection.itemDescription || '',
+              description: selection.itemDescription || '',
               price: selection.price || 0,
               outputs: selection.outputs || [],
               prompts: selection.prompts || {},
@@ -370,10 +370,10 @@ export default function QuoteDetail() {
               <div className="space-y-2">
                 {allItems.map((item: any, index: number) => (
                   <div key={`item-${index}`} className="bg-card border border-border rounded-md p-2 border-r-2 border-r-primary hover:shadow transition-all duration-200">
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <h4 className="text-sm font-medium mb-0.5">{item.product_name}</h4>
-                        {item.description && item.description.trim() && item.description !== item.product_name && (
+                        {item.description && item.description.trim() && (
                           <p className="text-xs text-muted-foreground">{item.description}</p>
                         )}
                       </div>
