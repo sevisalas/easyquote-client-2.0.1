@@ -14,6 +14,7 @@ interface Organization {
   client_user_limit: number;
   client_user_extra: number;
   api_user_id: string;
+  holded_external_customers?: boolean;
 }
 
 interface OrganizationMember {

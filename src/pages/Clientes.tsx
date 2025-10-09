@@ -69,7 +69,28 @@ export default function Clientes() {
         allClients = [...localClients];
       }
 
-      // Conexión con Holded desactivada - solo clientes locales
+      // Obtener clientes externos de Holded si está habilitado
+      if (currentOrganization?.holded_external_customers) {
+        try {
+          const { data: externalData, error: externalError } = await supabase.functions.invoke(
+            'holded-external-customers',
+            {
+              headers: {
+                Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+              },
+            }
+          );
+
+          if (externalError) {
+            console.error('Error fetching external customers:', externalError);
+          } else if (externalData?.data) {
+            const externalClients: HoldedClient[] = externalData.data;
+            allClients = [...allClients, ...externalClients];
+          }
+        } catch (err) {
+          console.error('Error calling holded-external-customers function:', err);
+        }
+      }
 
       // Aplicar filtro de búsqueda si existe
       if (searchTerm) {

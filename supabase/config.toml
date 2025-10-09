@@ -41,3 +41,6 @@ verify_jwt = true
 
 [functions.disable-holded-integration]
 verify_jwt = true
+
+[functions.holded-external-customers]
+verify_jwt = true
