@@ -15,7 +15,6 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { CustomerName } from "@/components/quotes/CustomerName";
 
 const statusOptions = ["draft", "sent", "approved", "rejected"] as const;
@@ -49,7 +48,6 @@ const fetchCustomers = async () => {
 
 const QuotesList = () => {
   const navigate = useNavigate();
-  const { isHoldedActive, getHoldedContacts } = useHoldedIntegration();
   
   // Filter states
   const [customerFilter, setCustomerFilter] = useState("");
@@ -57,37 +55,16 @@ const QuotesList = () => {
   const [quoteNumberFilter, setQuoteNumberFilter] = useState("");
   const [dateFromFilter, setDateFromFilter] = useState<Date | undefined>();
   const [dateToFilter, setDateToFilter] = useState<Date | undefined>();
-  const [holdedCustomers, setHoldedCustomers] = useState<any[]>([]);
 
   useEffect(() => {
     document.title = "Presupuestos | Listado";
   }, []);
 
-  // Cargar clientes de Holded cuando esté activo
-  useEffect(() => {
-    if (!isHoldedActive) return;
-
-    const loadHoldedCustomers = async () => {
-      try {
-        const contacts = await getHoldedContacts();
-        setHoldedCustomers(contacts);
-      } catch (error) {
-        console.error('Error loading Holded customers:', error);
-        setHoldedCustomers([]);
-      }
-    };
-
-    loadHoldedCustomers();
-  }, [isHoldedActive, getHoldedContacts]);
-
   const { data: quotes = [], refetch } = useQuery({ queryKey: ["quotes"], queryFn: fetchQuotes });
-  const { data: localCustomers = [] } = useQuery({ 
+  const { data: customers = [] } = useQuery({ 
     queryKey: ["customers"], 
-    queryFn: fetchCustomers,
-    enabled: !isHoldedActive
+    queryFn: fetchCustomers
   });
-
-  const customers = isHoldedActive ? holdedCustomers : localCustomers;
 
   const getCustomerName = (id?: string | null) => customers.find((c: any) => c.id === id)?.name || "—";
 

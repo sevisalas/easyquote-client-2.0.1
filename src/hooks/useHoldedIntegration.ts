@@ -2,13 +2,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 
-interface HoldedContact {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  // Add more fields as needed from Holded API
-}
 
 export const useHoldedIntegration = () => {
   const [isHoldedActive, setIsHoldedActive] = useState(false);
@@ -73,30 +66,9 @@ export const useHoldedIntegration = () => {
     }
   };
 
-  const getHoldedContacts = async (): Promise<HoldedContact[]> => {
-    if (!currentOrganization?.id) return [];
-
-    try {
-      const { data, error } = await supabase.functions.invoke('holded-contacts', {
-        body: { organizationId: currentOrganization.id }
-      });
-
-      if (error) {
-        console.error('Error fetching Holded contacts:', error);
-        return [];
-      }
-
-      return data?.contacts || [];
-    } catch (error) {
-      console.error('Error calling Holded contacts function:', error);
-      return [];
-    }
-  };
-
   return {
     isHoldedActive,
     loading,
-    getHoldedContacts,
     refreshIntegration: checkHoldedIntegration
   };
 };
