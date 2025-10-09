@@ -217,6 +217,50 @@ export type Database = {
         }
         Relationships: []
       }
+      holded_contacts: {
+        Row: {
+          created_at: string
+          email: string | null
+          holded_id: string
+          id: string
+          mobile: string | null
+          name: string
+          organization_id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          holded_id: string
+          id?: string
+          mobile?: string | null
+          name: string
+          organization_id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          holded_id?: string
+          id?: string
+          mobile?: string | null
+          name?: string
+          organization_id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "holded_contacts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       images: {
         Row: {
           created_at: string

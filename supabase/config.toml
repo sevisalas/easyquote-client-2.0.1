@@ -41,3 +41,9 @@ verify_jwt = true
 
 [functions.disable-holded-integration]
 verify_jwt = true
+
+[functions.holded-import-contacts]
+verify_jwt = true
+
+[functions.holded-zapier-webhook]
+verify_jwt = false
