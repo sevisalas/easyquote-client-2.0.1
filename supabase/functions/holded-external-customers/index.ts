@@ -90,23 +90,46 @@ Deno.serve(async (req) => {
     const externalSupabase = createClient(externalSupabaseUrl, externalSupabaseKey);
     console.log('External Supabase client created');
 
-    // Fetch contacts (aumentar límite para obtener todos los registros)
-    console.log('Fetching contacts from holded_contacts_index');
-    const { data: contacts, error: contactsError } = await externalSupabase
-      .from('holded_contacts_index')
-      .select('*')
-      .order('name', { ascending: true })
-      .limit(50000);
+    // Fetch ALL contacts using pagination (Supabase has a 1000 record default limit)
+    console.log('Fetching contacts from holded_contacts_index with pagination');
+    let allContacts: any[] = [];
+    let from = 0;
+    const pageSize = 1000;
+    let hasMore = true;
 
-    if (contactsError) {
-      console.error('Error fetching external contacts:', contactsError.message);
-      return new Response(
-        JSON.stringify({ error: 'Error fetching external contacts', details: contactsError.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    while (hasMore) {
+      const { data: pageContacts, error: contactsError } = await externalSupabase
+        .from('holded_contacts_index')
+        .select('*')
+        .order('name', { ascending: true })
+        .range(from, from + pageSize - 1);
+
+      if (contactsError) {
+        console.error('Error fetching external contacts:', contactsError.message);
+        return new Response(
+          JSON.stringify({ 
+            error: contactsError.message,
+            details: contactsError 
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500 
+          }
+        );
+      }
+
+      if (pageContacts && pageContacts.length > 0) {
+        allContacts = [...allContacts, ...pageContacts];
+        from += pageSize;
+        hasMore = pageContacts.length === pageSize;
+        console.log(`Fetched ${pageContacts.length} contacts. Total so far: ${allContacts.length}`);
+      } else {
+        hasMore = false;
+      }
     }
 
-    console.log(`Successfully fetched ${contacts?.length || 0} contacts`);
+    const contacts = allContacts;
+    console.log(`Successfully fetched ${contacts.length} total contacts`);
 
     // Transform data
     const transformedContacts = (contacts || []).map(contact => ({
