@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, Building, User } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, Building, User, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
@@ -42,6 +43,8 @@ export default function Clientes() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const itemsPerPage = 10;
 
   // Verificar integración de Holded
@@ -185,6 +188,11 @@ export default function Clientes() {
     }
   };
 
+  const handleViewClient = (cliente: Cliente) => {
+    setSelectedClient(cliente);
+    setIsViewDialogOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -288,7 +296,9 @@ export default function Clientes() {
                         </Button>
                       </div>
                     ) : (
-                      <span className="text-sm text-muted-foreground">Solo lectura</span>
+                      <Button variant="ghost" size="sm" onClick={() => handleViewClient(cliente)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
                     )}
                   </TableCell>
                 </TableRow>
@@ -325,6 +335,42 @@ export default function Clientes() {
           </Button>
         </div>
       </div>
+
+      {/* Dialog para ver cliente externo */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Información del cliente</DialogTitle>
+            <DialogDescription>
+              Cliente externo de Holded (solo lectura)
+            </DialogDescription>
+          </DialogHeader>
+          {selectedClient && selectedClient.source === 'holded' && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Nombre</label>
+                <p className="text-base">{selectedClient.name || '—'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Email</label>
+                <p className="text-base">{selectedClient.email || '—'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Código</label>
+                <p className="text-base">{selectedClient.code || '—'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">CIF/NIF</label>
+                <p className="text-base">{selectedClient.vatnumber || '—'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">ID Holded</label>
+                <p className="text-base text-muted-foreground">{selectedClient.holded_id}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
