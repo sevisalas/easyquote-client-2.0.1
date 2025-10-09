@@ -18,7 +18,7 @@ interface LocalClient {
   notes: string;
   integration_id: string;
   created_at: string;
-  source: 'local';
+  source: "local";
 }
 
 interface HoldedClient {
@@ -31,7 +31,7 @@ interface HoldedClient {
   holded_id: string;
   code: string;
   vatnumber: string;
-  source: 'holded';
+  source: "holded";
 }
 
 type Cliente = LocalClient | HoldedClient;
@@ -56,15 +56,15 @@ export default function Clientes() {
 
       // Obtener clientes locales
       const localClientsResponse = await supabase
-        .from('customers')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false });
+        .from("customers")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false });
 
       // Procesar clientes locales
       if (localClientsResponse.data) {
-        const localClients: LocalClient[] = localClientsResponse.data.map(client => ({
+        const localClients: LocalClient[] = localClientsResponse.data.map((client) => ({
           ...client,
-          source: 'local' as const
+          source: "local" as const,
         }));
         allClients = [...localClients];
       }
@@ -73,10 +73,11 @@ export default function Clientes() {
 
       // Aplicar filtro de búsqueda si existe
       if (searchTerm) {
-        const filtered = allClients.filter(client => 
-          client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (client.source === 'holded' && client.code.toLowerCase().includes(searchTerm.toLowerCase()))
+        const filtered = allClients.filter(
+          (client) =>
+            client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (client.source === "holded" && client.code.toLowerCase().includes(searchTerm.toLowerCase())),
         );
         allClients = filtered;
       }
@@ -89,13 +90,13 @@ export default function Clientes() {
       const paginatedClients = allClients.slice(startIndex, endIndex);
 
       setClientes(paginatedClients);
-      
+
       // Ajustar página actual si es necesario
       if (currentPage > totalPages && totalPages > 0) {
         setCurrentPage(totalPages);
       }
     } catch (error) {
-      console.error('Error fetching clientes:', error);
+      console.error("Error fetching clientes:", error);
       toast({
         title: "Error",
         description: "No se pudieron cargar los clientes",
@@ -122,7 +123,7 @@ export default function Clientes() {
 
   const deleteCliente = async (id: string, source: string) => {
     // Solo permitir eliminar clientes locales
-    if (source === 'holded') {
+    if (source === "holded") {
       toast({
         title: "Acción no permitida",
         description: "No se pueden eliminar clientes de Holded desde aquí",
@@ -131,14 +132,11 @@ export default function Clientes() {
       return;
     }
 
-    const confirmed = window.confirm('¿Estás seguro de que quieres eliminar este cliente?');
+    const confirmed = window.confirm("¿Estás seguro de que quieres eliminar este cliente?");
     if (!confirmed) return;
 
     try {
-      const { error } = await supabase
-        .from('customers')
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.from("customers").delete().eq("id", id);
 
       if (error) throw error;
 
@@ -149,7 +147,7 @@ export default function Clientes() {
 
       fetchClientes();
     } catch (error) {
-      console.error('Error deleting cliente:', error);
+      console.error("Error deleting cliente:", error);
       toast({
         title: "Error",
         description: "No se pudo eliminar el cliente",
@@ -159,10 +157,10 @@ export default function Clientes() {
   };
 
   const getClientDisplayName = (cliente: Cliente): string => {
-    if (cliente.source === 'local') {
-      return cliente.name || 'Sin nombre';
+    if (cliente.source === "local") {
+      return cliente.name || "Sin nombre";
     } else {
-      return cliente.name || cliente.code || 'Sin nombre';
+      return cliente.name || cliente.code || "Sin nombre";
     }
   };
 
@@ -179,12 +177,10 @@ export default function Clientes() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
-          <p className="text-muted-foreground">
-            Gestiona tus clientes locales y visualiza los de Holded
-          </p>
+          <p className="text-muted-foreground">Gestiona tus clientes</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => navigate('/clientes/nuevo')} className="flex items-center gap-2">
+          <Button onClick={() => navigate("/clientes/nuevo")} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Nuevo Cliente
           </Button>
@@ -211,7 +207,7 @@ export default function Clientes() {
               <TableHead>Nombre</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Teléfono/Código</TableHead>
-              <TableHead>ID Integración</TableHead>
+
               <TableHead>Notas</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
@@ -220,7 +216,9 @@ export default function Clientes() {
             {clientes.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8">
-                  {searchTerm ? 'No se encontraron clientes que coincidan con la búsqueda.' : 'No hay clientes registrados.'}
+                  {searchTerm
+                    ? "No se encontraron clientes que coincidan con la búsqueda."
+                    : "No hay clientes registrados."}
                 </TableCell>
               </TableRow>
             ) : (
@@ -228,7 +226,7 @@ export default function Clientes() {
                 <TableRow key={cliente.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {cliente.source === 'local' ? (
+                      {cliente.source === "local" ? (
                         <>
                           <User className="h-4 w-4 text-blue-500" />
                           <Badge variant="secondary">Local</Badge>
@@ -241,30 +239,24 @@ export default function Clientes() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium">
-                    {getClientDisplayName(cliente)}
-                  </TableCell>
+                  <TableCell className="font-medium">{getClientDisplayName(cliente)}</TableCell>
                   <TableCell>{cliente.email}</TableCell>
                   <TableCell>
-                    {cliente.source === 'local' ? (
+                    {cliente.source === "local" ? (
                       cliente.phone
                     ) : (
-                      <span className="text-sm text-muted-foreground">
-                        {cliente.code && `Código: ${cliente.code}`}
-                      </span>
+                      <span className="text-sm text-muted-foreground">{cliente.code && `Código: ${cliente.code}`}</span>
                     )}
                   </TableCell>
                   <TableCell>
-                    {cliente.source === 'local' ? (
-                      <span className="text-sm">{cliente.integration_id || '—'}</span>
+                    {cliente.source === "local" ? (
+                      <span className="text-sm">{cliente.integration_id || "—"}</span>
                     ) : (
-                      <span className="text-sm text-muted-foreground">
-                        {cliente.holded_id}
-                      </span>
+                      <span className="text-sm text-muted-foreground">{cliente.holded_id}</span>
                     )}
                   </TableCell>
                   <TableCell>
-                    {cliente.source === 'local' ? (
+                    {cliente.source === "local" ? (
                       cliente.notes
                     ) : (
                       <span className="text-sm text-muted-foreground">
@@ -273,20 +265,12 @@ export default function Clientes() {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    {cliente.source === 'local' ? (
+                    {cliente.source === "local" ? (
                       <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/clientes/${cliente.id}/editar`)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/clientes/${cliente.id}/editar`)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteCliente(cliente.id, cliente.source)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => deleteCliente(cliente.id, cliente.source)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -304,13 +288,14 @@ export default function Clientes() {
       {/* Paginación */}
       <div className="flex items-center justify-between mt-4">
         <div className="text-sm text-muted-foreground">
-          Mostrando {Math.min((currentPage - 1) * itemsPerPage + 1, clientes.length)} - {Math.min(currentPage * itemsPerPage, clientes.length)} de {clientes.length} clientes
+          Mostrando {Math.min((currentPage - 1) * itemsPerPage + 1, clientes.length)} -{" "}
+          {Math.min(currentPage * itemsPerPage, clientes.length)} de {clientes.length} clientes
         </div>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -319,7 +304,7 @@ export default function Clientes() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentPage(prev => prev + 1)}
+            onClick={() => setCurrentPage((prev) => prev + 1)}
             disabled={clientes.length < itemsPerPage}
           >
             Siguiente
@@ -329,4 +314,4 @@ export default function Clientes() {
       </div>
     </div>
   );
-};
+}
