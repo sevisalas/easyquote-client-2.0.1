@@ -160,7 +160,16 @@ const QuotesList = () => {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Listado de presupuestos</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Listado de presupuestos</CardTitle>
+            <Button 
+              size="sm" 
+              onClick={() => navigate('/presupuestos/nuevo')}
+              className="h-8 text-xs"
+            >
+              Nuevo Presupuesto
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="p-2">
           {/* Filters Section */}
