@@ -373,9 +373,6 @@ export default function QuoteDetail() {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <h4 className="text-sm font-medium mb-0.5">{item.product_name}</h4>
-                        {item.description && item.description.trim() && (
-                          <p className="text-xs text-muted-foreground">{item.description}</p>
-                        )}
                       </div>
                       <div className="text-right ml-3">
                         <p className="text-base font-semibold text-primary">{fmtEUR(item.price || 0)}</p>
