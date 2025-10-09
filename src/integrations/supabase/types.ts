@@ -56,6 +56,50 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_access_logs: {
+        Row: {
+          accessed_at: string
+          customer_id: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          operation: string
+          record_count: number | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          accessed_at?: string
+          customer_id?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          operation: string
+          record_count?: number | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          accessed_at?: string
+          customer_id?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          operation?: string
+          record_count?: number | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_access_logs_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -833,6 +877,15 @@ export type Database = {
         Args: { encrypted_data: string }
         Returns: string
       }
+      detect_suspicious_customer_access: {
+        Args: { threshold?: number; time_window_minutes?: number }
+        Returns: {
+          access_count: number
+          first_access: string
+          last_access: string
+          user_id: string
+        }[]
+      }
       encrypt_credential: {
         Args: { credential_text: string }
         Returns: string
@@ -844,6 +897,16 @@ export type Database = {
       generate_api_secret: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_customer_audit_trail: {
+        Args: { p_customer_id: string; p_limit?: number }
+        Returns: {
+          accessed_at: string
+          id: string
+          metadata: Json
+          operation: string
+          user_id: string
+        }[]
       }
       get_user_credentials: {
         Args: { p_user_id: string }
