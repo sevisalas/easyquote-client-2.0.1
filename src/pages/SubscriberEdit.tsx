@@ -205,7 +205,7 @@ const EditarSuscriptor = () => {
               htmlFor="holded_external"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
-              Holded Externo (mostrar clientes de Holded además de clientes locales)
+              Holded Externo
             </Label>
           </div>
 
