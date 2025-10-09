@@ -54,7 +54,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
             <TableBody>
               {products.map((product) => (
                 <TableRow key={product.id}>
-                  <TableCell>
+                  <TableCell className="py-2">
                     <div>
                       <div className="font-medium">{product.productName}</div>
                       {product.description && (
@@ -67,7 +67,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-2">
                     <span className="font-mono text-xs text-muted-foreground">
                       {product.excelfileId ? (
                         product.productName?.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') + '.xlsx'
@@ -76,12 +76,12 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                       )}
                     </span>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-2">
                     <Badge variant={product.isActive ? "default" : "secondary"} className="text-xs">
                       {product.isActive ? "Activo" : "Inactivo"}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-2">
                     {(() => {
                       const mapping = getProductMapping(product.id);
                       if (mapping?.product_categories) {
@@ -107,7 +107,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                       );
                     })()}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-2">
                     <div className="flex gap-1">
                       <Button
                         variant="outline"
