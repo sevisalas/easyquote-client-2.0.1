@@ -315,7 +315,9 @@ export type Database = {
       organization_api_credentials: {
         Row: {
           api_key: string
+          api_key_encrypted: string | null
           api_secret: string
+          api_secret_encrypted: string | null
           created_at: string
           created_by: string
           id: string
@@ -327,7 +329,9 @@ export type Database = {
         }
         Insert: {
           api_key: string
+          api_key_encrypted?: string | null
           api_secret: string
+          api_secret_encrypted?: string | null
           created_at?: string
           created_by: string
           id?: string
@@ -339,7 +343,9 @@ export type Database = {
         }
         Update: {
           api_key?: string
+          api_key_encrypted?: string | null
           api_secret?: string
+          api_secret_encrypted?: string | null
           created_at?: string
           created_by?: string
           id?: string
@@ -873,6 +879,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_organization_api_credential: {
+        Args: {
+          p_api_key: string
+          p_api_secret: string
+          p_organization_id: string
+        }
+        Returns: string
+      }
       decrypt_credential: {
         Args: { encrypted_data: string }
         Returns: string
@@ -906,6 +920,18 @@ export type Database = {
           metadata: Json
           operation: string
           user_id: string
+        }[]
+      }
+      get_organization_api_credentials: {
+        Args: { p_organization_id: string }
+        Returns: {
+          api_key: string
+          api_secret: string
+          created_at: string
+          id: string
+          is_active: boolean
+          last_used_at: string
+          usage_count: number
         }[]
       }
       get_user_credentials: {
