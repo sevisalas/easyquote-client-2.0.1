@@ -186,21 +186,32 @@ serve(async (req) => {
     let apiKey: string;
     if (accessData.access_token_encrypted instanceof Uint8Array) {
       const decoder = new TextDecoder();
-      apiKey = decoder.decode(accessData.access_token_encrypted);
+      apiKey = decoder.decode(accessData.access_token_encrypted).trim();
       console.log('Decoded from Uint8Array, API key length:', apiKey.length);
     } else if (typeof accessData.access_token_encrypted === 'string') {
       // If it comes as a string, use it directly
-      apiKey = accessData.access_token_encrypted;
+      apiKey = accessData.access_token_encrypted.trim();
       console.log('Using string directly, API key length:', apiKey.length);
     } else {
       // If it's a Buffer or array-like object, convert it
       const decoder = new TextDecoder();
-      apiKey = decoder.decode(new Uint8Array(accessData.access_token_encrypted));
+      apiKey = decoder.decode(new Uint8Array(accessData.access_token_encrypted)).trim();
       console.log('Converted to Uint8Array first, API key length:', apiKey.length);
     }
     
+    // Validate the API key is not empty
+    if (!apiKey || apiKey.length === 0) {
+      console.error('API key is empty after decoding');
+      return new Response(
+        JSON.stringify({ error: 'API key no encontrado o vacío' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    console.log('API key length after trim:', apiKey.length);
     console.log('API key first 10 chars:', apiKey.substring(0, 10));
     console.log('API key last 5 chars:', apiKey.substring(apiKey.length - 5));
+    console.log('Sending API key to Holded with header "key"');
 
     // Validate API key before starting background task
     console.log('Validating Holded API key...');
