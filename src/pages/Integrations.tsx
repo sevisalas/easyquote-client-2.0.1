@@ -121,11 +121,14 @@ export default function Integrations() {
       if (error) throw error;
 
       toast({
-        title: "Importación exitosa",
-        description: `Se importaron/actualizaron ${data.imported} contactos de Holded`,
+        title: "Importación iniciada",
+        description: data?.message || "Los contactos se están importando en segundo plano. Esto puede tardar unos momentos.",
       });
 
-      loadContactsCount();
+      // Reload contacts count after a delay to allow background task to complete
+      setTimeout(() => {
+        loadContactsCount();
+      }, 5000);
     } catch (error: any) {
       console.error('Error importing Holded contacts:', error);
       toast({
