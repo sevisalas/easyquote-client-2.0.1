@@ -184,15 +184,50 @@ serve(async (req) => {
     let apiKey: string;
     
     try {
+      console.log('Raw access_token_encrypted type:', typeof accessData.access_token_encrypted);
+      
       // Handle bytea from Supabase
       if (accessData.access_token_encrypted instanceof Uint8Array) {
         apiKey = decoder.decode(accessData.access_token_encrypted);
       } else if (typeof accessData.access_token_encrypted === 'object' && accessData.access_token_encrypted !== null) {
-        // Handle Buffer-like object {data: [...]]}
-        const bytes = new Uint8Array((accessData.access_token_encrypted as any).data || accessData.access_token_encrypted);
-        apiKey = decoder.decode(bytes);
+        // Handle Buffer-like object {data: [...]} or JSON object with ASCII codes
+        const encryptedData = accessData.access_token_encrypted as any;
+        
+        // Check if it's a JSON object with ASCII codes like {"0":56,"1":56,...}
+        const keys = Object.keys(encryptedData);
+        if (keys.every(k => !isNaN(parseInt(k)))) {
+          console.log('Detected JSON with ASCII codes, converting...');
+          // It's a JSON object with numeric keys, convert ASCII codes to string
+          const charCodes: number[] = [];
+          for (let i = 0; i < keys.length; i++) {
+            charCodes.push(encryptedData[i.toString()]);
+          }
+          apiKey = String.fromCharCode(...charCodes);
+        } else {
+          // Regular buffer-like object
+          const bytes = new Uint8Array(encryptedData.data || encryptedData);
+          apiKey = decoder.decode(bytes);
+        }
       } else if (typeof accessData.access_token_encrypted === 'string') {
-        apiKey = accessData.access_token_encrypted;
+        // Check if it's a hex-encoded JSON string
+        if (accessData.access_token_encrypted.startsWith('\\x')) {
+          console.log('Detected hex-encoded string');
+          // Remove \x prefix and decode hex to bytes
+          const hexStr = accessData.access_token_encrypted.slice(2);
+          const bytes = new Uint8Array(hexStr.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
+          const jsonStr = decoder.decode(bytes);
+          console.log('Decoded JSON string:', jsonStr.substring(0, 100));
+          
+          // Parse JSON and convert ASCII codes to string
+          const asciiCodes = JSON.parse(jsonStr);
+          const charCodes: number[] = [];
+          for (let i = 0; i < Object.keys(asciiCodes).length; i++) {
+            charCodes.push(asciiCodes[i.toString()]);
+          }
+          apiKey = String.fromCharCode(...charCodes);
+        } else {
+          apiKey = accessData.access_token_encrypted;
+        }
       } else {
         console.error('Unexpected encrypted data format:', typeof accessData.access_token_encrypted);
         return new Response(
