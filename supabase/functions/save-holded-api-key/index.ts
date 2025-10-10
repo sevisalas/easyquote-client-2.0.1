@@ -68,13 +68,28 @@ serve(async (req) => {
       )
     }
 
-    // Store API key as simple text encoded as bytea
+    // Encrypt API key using database function
     const trimmedKey = apiKey.trim();
-    const encoder = new TextEncoder();
-    const encodedKey = encoder.encode(trimmedKey);
     
-    console.log('Saving API key:', trimmedKey);
+    console.log('Encrypting API key...');
     console.log('API key length:', trimmedKey.length, 'characters');
+    
+    // Use database function to encrypt the API key
+    const { data: encryptedData, error: encryptError } = await supabase
+      .rpc('encrypt_credential', { credential_text: trimmedKey });
+    
+    if (encryptError || !encryptedData) {
+      console.error('Error encrypting API key:', encryptError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to encrypt API key' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
+    console.log('API key encrypted successfully');
 
     let result
     if (existingAccess) {
@@ -91,7 +106,7 @@ serve(async (req) => {
         .insert({
           organization_id: organizationId,
           integration_id: integrationData.id,
-          access_token_encrypted: encodedKey,
+          access_token_encrypted: encryptedData,
           is_active: true
         })
         .select()
@@ -104,7 +119,7 @@ serve(async (req) => {
         .insert({
           organization_id: organizationId,
           integration_id: integrationData.id,
-          access_token_encrypted: encodedKey,
+          access_token_encrypted: encryptedData,
           is_active: true
         })
         .select()

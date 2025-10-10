@@ -179,9 +179,21 @@ serve(async (req) => {
       );
     }
 
-    // Decrypt the API key
-    const apiKey = new TextDecoder().decode(accessData.access_token_encrypted);
-    console.log('Using API key from database, length:', apiKey.length, 'characters');
+    // Decrypt the API key using database function
+    console.log('Decrypting API key...');
+    const { data: decryptedKey, error: decryptError } = await supabase
+      .rpc('decrypt_credential', { encrypted_data: accessData.access_token_encrypted });
+    
+    if (decryptError || !decryptedKey) {
+      console.error('Error decrypting API key:', decryptError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to decrypt API key' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const apiKey = decryptedKey.trim();
+    console.log('API key decrypted successfully, length:', apiKey.length, 'characters');
 
     // Validate API key before starting background task
     console.log('========================================');
