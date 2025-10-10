@@ -239,7 +239,7 @@ export default function Integrations() {
               </Button>
             )}
 
-            {(!isHoldedActive && showConfig) && (
+            {showConfig && (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="apikey">API Key</Label>
