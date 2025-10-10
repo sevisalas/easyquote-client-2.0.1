@@ -223,6 +223,13 @@ export default function QuoteNew() {
     }
 
     setIsImportingContacts(true);
+    
+    // Mostrar aviso sobre el tiempo de importación
+    toast({
+      title: "Importando contactos...",
+      description: "Este proceso puede tardar aproximadamente 1 minuto. El proceso se ejecuta en segundo plano.",
+    });
+    
     try {
       const { data, error } = await supabase.functions.invoke('holded-import-contacts', {
         body: { organizationId: currentOrganization.id }
