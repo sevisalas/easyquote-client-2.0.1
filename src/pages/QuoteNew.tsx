@@ -289,7 +289,6 @@ export default function QuoteNew() {
         terms_conditions: "", // TODO: Add terms and conditions
         selections: itemsArray,
         quote_additionals: quoteAdditionals,
-        product_api: itemsArray.length > 0 ? itemsArray[0].itemDescription || "Productos varios" : "Sin productos",
       };
 
       const { data, error } = await supabase

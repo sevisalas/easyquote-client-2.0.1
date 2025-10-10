@@ -146,7 +146,6 @@ export default function QuoteDetail() {
         console.log('Copiando', originalQuote.items.length, 'items');
         const itemsToInsert = originalQuote.items.map((item: any) => ({
           quote_id: newQuote.id,
-          product_api: item.product_api || '',
           product_name: item.product_name || '',
           description: item.description || '',
           price: item.price,
@@ -357,7 +356,6 @@ export default function QuoteDetail() {
             if (tableItems.length === 0) {
               const jsonSelections = Array.isArray(quote.selections) ? quote.selections : [];
               allItems = jsonSelections.map((selection: any) => ({
-                product_api: (quote as any).product_api || '',
                 product_name: selection.itemDescription || '',
                 description: '',
                 price: selection.price || 0,
@@ -374,17 +372,9 @@ export default function QuoteDetail() {
                   <div key={`item-${index}`} className="bg-card border border-border rounded-md p-2 border-r-2 border-r-primary hover:shadow transition-all duration-200">
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex-1 space-y-0.5">
-                        <div className="grid grid-cols-2 gap-2">
-                          {item.product_api && (
-                            <div>
-                              <p className="text-xs text-muted-foreground">Producto API</p>
-                              <p className="text-sm font-medium">{item.product_api}</p>
-                            </div>
-                          )}
-                          <div>
-                            <p className="text-xs text-muted-foreground">Nombre de producto</p>
-                            <p className="text-sm font-medium">{item.product_name || '-'}</p>
-                          </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Nombre de producto</p>
+                          <p className="text-sm font-medium">{item.product_name || '-'}</p>
                         </div>
                         {item.description && (
                           <div className="pt-1">

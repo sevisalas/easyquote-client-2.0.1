@@ -788,7 +788,6 @@ export type Database = {
           outputs: Json | null
           position: number | null
           price: number
-          product_api: string
           product_id: string | null
           product_name: string | null
           prompts: Json | null
@@ -807,7 +806,6 @@ export type Database = {
           outputs?: Json | null
           position?: number | null
           price?: number
-          product_api: string
           product_id?: string | null
           product_name?: string | null
           prompts?: Json | null
@@ -826,7 +824,6 @@ export type Database = {
           outputs?: Json | null
           position?: number | null
           price?: number
-          product_api?: string
           product_id?: string | null
           product_name?: string | null
           prompts?: Json | null
