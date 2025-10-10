@@ -164,7 +164,7 @@ serve(async (req) => {
     }
 
     // TEMPORAL: API key fijo para diagnóstico
-    const apiKey = '38e97d25b7e6b1ca6f9355f5a1d8f61ce9a37fe2';
+    const apiKey = '88610992d47b9783e7703c488a8c01cf';
     
     console.log('Using fixed API key for testing');
 
