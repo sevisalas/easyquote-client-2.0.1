@@ -246,14 +246,17 @@ serve(async (req) => {
 
     console.log('API key validated successfully');
 
-    // Import contacts directly
+    // Import contacts directly - use smaller limit for more reliable pagination
     console.log('Starting Holded contacts import...');
     let allContacts: any[] = [];
     let page = 1;
-    const limit = 500;
+    const limit = 50; // Reduced from 500 to 50 for better compatibility
     let hasMore = true;
+    const MAX_PAGES = 500; // Safety limit to prevent infinite loops
 
-    while (hasMore) {
+    while (hasMore && page <= MAX_PAGES) {
+      console.log(`Fetching page ${page}...`);
+      
       const response = await fetch(
         `${HOLDED_API_BASE}/invoicing/v1/contacts?page=${page}&limit=${limit}`,
         {
@@ -265,24 +268,33 @@ serve(async (req) => {
       );
 
       if (!response.ok) {
-        console.error('Holded API error:', response.status, await response.text());
+        const errorText = await response.text();
+        console.error(`Holded API error on page ${page}:`, response.status, errorText);
         break;
       }
 
       const contacts = await response.json();
+      console.log(`Page ${page} returned ${contacts?.length || 0} contacts`);
       
-      if (!contacts || contacts.length === 0) {
+      if (!contacts || !Array.isArray(contacts) || contacts.length === 0) {
+        console.log('No more contacts, stopping pagination');
         hasMore = false;
       } else {
         allContacts = allContacts.concat(contacts);
         console.log(`Fetched page ${page}: ${contacts.length} contacts (total: ${allContacts.length})`);
         
+        // Continue if we got a full page
         if (contacts.length < limit) {
+          console.log('Received partial page, assuming last page');
           hasMore = false;
         } else {
           page++;
         }
       }
+    }
+    
+    if (page > MAX_PAGES) {
+      console.warn(`Reached maximum pages limit (${MAX_PAGES})`);
     }
 
     console.log(`Total contacts fetched: ${allContacts.length}`);
