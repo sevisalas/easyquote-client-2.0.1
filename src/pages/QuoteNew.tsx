@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, Plus, Trash2, Save, ArrowLeft } from "lucide-react";
+import { CalendarDays, Plus, Trash2, Save, ArrowLeft, Download } from "lucide-react";
+import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { CustomerSelector } from "@/components/quotes/CustomerSelector";
@@ -49,6 +51,12 @@ export default function QuoteNew() {
   const [items, setItems] = useState<Record<string | number, ItemSnapshot>>({});
   const [quoteAdditionals, setQuoteAdditionals] = useState<SelectedAdditional[]>([]);
   const [loading, setSaving] = useState(false);
+  const [isImportingContacts, setIsImportingContacts] = useState(false);
+
+  // Holded integration
+  const { isHoldedActive } = useHoldedIntegration();
+  const { organization, membership } = useSubscription();
+  const currentOrganization = organization || membership?.organization;
 
   // Generate next item ID
   const nextItemId = useMemo(() => Math.max(0, ...Object.keys(items).map(k => Number(k) || 0)) + 1, [items]);
@@ -204,6 +212,40 @@ export default function QuoteNew() {
     setLastAddedItemId(newId);
   };
 
+  const handleImportContacts = async () => {
+    if (!currentOrganization?.id) {
+      toast({
+        title: "Error",
+        description: "No se encontró la organización",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsImportingContacts(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('holded-import-contacts', {
+        body: { organizationId: currentOrganization.id }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Importación completada",
+        description: "Los contactos de Holded han sido actualizados. Ya puedes buscar el nuevo cliente.",
+      });
+    } catch (error: any) {
+      console.error('Error importing Holded contacts:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudieron importar los contactos",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImportingContacts(false);
+    }
+  };
+
   const handleSave = async (status: "draft" | "sent" = "draft") => {
     if (!customerId) {
       toast({ title: "Error", description: "Debes seleccionar un cliente", variant: "destructive" });
@@ -301,14 +343,28 @@ export default function QuoteNew() {
     <div className="container mx-auto py-4 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">
-          {duplicateFromId ? "Duplicar presupuesto" : "Nuevo presupuesto"}
-          {duplicateFromId && (
-            <Badge variant="secondary" className="ml-2">
-              Duplicando
-            </Badge>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold">
+            {duplicateFromId ? "Duplicar presupuesto" : "Nuevo presupuesto"}
+            {duplicateFromId && (
+              <Badge variant="secondary" className="ml-2">
+                Duplicando
+              </Badge>
+            )}
+          </h1>
+          {isHoldedActive && (
+            <Button
+              onClick={handleImportContacts}
+              disabled={isImportingContacts}
+              variant="outline"
+              size="sm"
+              className="text-xs h-7"
+            >
+              <Download className="w-3 h-3 mr-1" />
+              {isImportingContacts ? "Importando..." : "Actualizar contactos"}
+            </Button>
           )}
-        </h1>
+        </div>
         <Button onClick={() => navigate(-1)} variant="outline" size="sm">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Volver
