@@ -548,7 +548,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
             {productId && (
               <div className="space-y-2 md:col-span-2">
-                <Label>Nombre o descripción</Label>
+                <Label>Nombre a mostrar del producto</Label>
                 <Input
                   value={itemDescription}
                   onChange={(e) => setItemDescription(e.target.value)}
