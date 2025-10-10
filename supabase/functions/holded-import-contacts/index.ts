@@ -180,16 +180,28 @@ serve(async (req) => {
       );
     }
 
-    // Get the API key - it's stored as plain text
-    const apiKey = accessData.access_token_encrypted;
+    // Get the API key - decode from bytea
+    let apiKey: string;
+    const tokenData = accessData.access_token_encrypted;
     
-    if (!apiKey || typeof apiKey !== 'string') {
-      console.error('Invalid API key format');
+    if (!tokenData) {
+      console.error('No API key found');
       return new Response(
-        JSON.stringify({ error: 'API key configuration error' }),
+        JSON.stringify({ error: 'API key not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Decode from bytea to string
+    if (typeof tokenData === 'string') {
+      apiKey = tokenData;
+    } else {
+      // It's a Uint8Array from bytea column
+      const decoder = new TextDecoder();
+      apiKey = decoder.decode(tokenData);
+    }
+
+    console.log('API key decoded, length:', apiKey.length);
 
     // Validate API key before starting background task
     console.log('Validating Holded API key...');
