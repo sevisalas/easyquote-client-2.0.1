@@ -187,8 +187,8 @@ export const CustomerSelector = ({
   const selectedCustomer = customers?.find(customer => customer.id === value);
 
   return (
-    <div className="flex flex-col space-y-2">
-      {label && <Label htmlFor="customer-selector">{label}</Label>}
+    <>
+      {label && <Label htmlFor="customer-selector" className="text-xs">{label}</Label>}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -333,6 +333,6 @@ export const CustomerSelector = ({
           </div>
         </PopoverContent>
       </Popover>
-    </div>
+    </>
   );
 };
