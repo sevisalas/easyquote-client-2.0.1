@@ -68,16 +68,13 @@ serve(async (req) => {
       )
     }
 
-    // Encode API key properly as bytea
+    // Store API key as simple text encoded as bytea
     const trimmedKey = apiKey.trim();
     const encoder = new TextEncoder();
     const encodedKey = encoder.encode(trimmedKey);
     
-    console.log('API key to store:', trimmedKey);
-    console.log('API key length:', trimmedKey.length, 'chars');
-    console.log('Encoded bytes length:', encodedKey.length);
-    console.log('First 10 chars:', trimmedKey.substring(0, 10));
-    console.log('Last 5 chars:', trimmedKey.substring(trimmedKey.length - 5));
+    console.log('Saving API key:', trimmedKey);
+    console.log('API key length:', trimmedKey.length, 'characters');
 
     let result
     if (existingAccess) {
