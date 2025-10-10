@@ -68,21 +68,32 @@ serve(async (req) => {
       )
     }
 
-    // Store API key as bytea (column type requirement) but as simple text encoding
+    // Store API key as bytea - encode the trimmed string
+    const trimmedKey = apiKey.trim();
+    console.log('API key to store, length:', trimmedKey.length, 'chars');
+    
     const encoder = new TextEncoder();
-    const apiKeyBytes = encoder.encode(apiKey);
+    const apiKeyBytes = encoder.encode(trimmedKey);
+    console.log('Encoded API key, length:', apiKeyBytes.length, 'bytes');
 
     let result
     if (existingAccess) {
-      // Update existing record
+      // First delete the existing record to avoid any corruption
+      console.log('Deleting existing access record to avoid corruption');
+      await supabase
+        .from('organization_integration_access')
+        .delete()
+        .eq('id', existingAccess.id);
+      
+      // Create fresh record
       const { data, error } = await supabase
         .from('organization_integration_access')
-        .update({
+        .insert({
+          organization_id: organizationId,
+          integration_id: integrationData.id,
           access_token_encrypted: apiKeyBytes,
-          is_active: true,
-          updated_at: new Date().toISOString()
+          is_active: true
         })
-        .eq('id', existingAccess.id)
         .select()
 
       result = { data, error }
