@@ -179,38 +179,60 @@ serve(async (req) => {
       );
     }
 
-    // Decrypt API key - handle Supabase's bytea format correctly
-    console.log('Raw access_token_encrypted:', JSON.stringify(accessData.access_token_encrypted));
+    // Decrypt API key - handle multiple encoding formats from Supabase
+    console.log('Raw access_token_encrypted type:', typeof accessData.access_token_encrypted);
     
     let apiKey: string;
     const encrypted = accessData.access_token_encrypted;
     
-    // Supabase returns bytea as {data: [...], type: "Buffer"}
-    if (encrypted && typeof encrypted === 'object' && 'data' in encrypted && Array.isArray(encrypted.data)) {
-      // First decode the Buffer to get the string
+    // Handle different formats
+    if (typeof encrypted === 'string') {
+      // If it starts with \x, it's a hex-encoded string
+      if (encrypted.startsWith('\\x')) {
+        console.log('Detected hex-encoded string');
+        // Remove \x prefix and convert hex pairs to bytes
+        const hexString = encrypted.substring(2);
+        const bytes = [];
+        for (let i = 0; i < hexString.length; i += 2) {
+          bytes.push(parseInt(hexString.substr(i, 2), 16));
+        }
+        const decoder = new TextDecoder();
+        const decodedString = decoder.decode(new Uint8Array(bytes));
+        
+        // Check if it's a JSON object like {"0":56,"1":56...}
+        try {
+          const jsonObj = JSON.parse(decodedString);
+          if (typeof jsonObj === 'object' && !Array.isArray(jsonObj)) {
+            // Convert the JSON object to actual string
+            const chars = Object.keys(jsonObj).sort((a, b) => parseInt(a) - parseInt(b)).map(k => String.fromCharCode(jsonObj[k]));
+            apiKey = chars.join('').trim();
+            console.log('Decoded from hex + JSON object format');
+          } else {
+            apiKey = decodedString.trim();
+          }
+        } catch {
+          apiKey = decodedString.trim();
+        }
+      } else {
+        apiKey = encrypted.trim();
+        console.log('Using string directly');
+      }
+    } else if (encrypted && typeof encrypted === 'object' && 'data' in encrypted && Array.isArray(encrypted.data)) {
       const decoder = new TextDecoder();
       const decodedString = decoder.decode(new Uint8Array(encrypted.data));
       
-      // Check if it's a JSON object like {"0":56,"1":56...}
       try {
         const jsonObj = JSON.parse(decodedString);
         if (typeof jsonObj === 'object' && !Array.isArray(jsonObj)) {
-          // Convert the JSON object to actual string
           const chars = Object.keys(jsonObj).sort((a, b) => parseInt(a) - parseInt(b)).map(k => String.fromCharCode(jsonObj[k]));
           apiKey = chars.join('').trim();
-          console.log('Decoded from JSON object format');
+          console.log('Decoded from Buffer + JSON object format');
         } else {
           apiKey = decodedString.trim();
-          console.log('Using decoded string');
         }
       } catch {
-        // Not JSON, use as is
         apiKey = decodedString.trim();
-        console.log('Using decoded string (not JSON)');
       }
-    } else if (typeof encrypted === 'string') {
-      apiKey = encrypted.trim();
-      console.log('Using string directly');
     } else {
       console.error('Unknown encrypted data format:', typeof encrypted);
       return new Response(
@@ -219,7 +241,6 @@ serve(async (req) => {
       );
     }
     
-    // Validate the API key is not empty
     if (!apiKey || apiKey.length === 0) {
       console.error('API key is empty after decoding');
       return new Response(
@@ -228,10 +249,8 @@ serve(async (req) => {
       );
     }
     
-    console.log('✓ API key decoded successfully');
+    console.log('✓ API key final:', apiKey);
     console.log('✓ Length:', apiKey.length);
-    console.log('✓ First 10 chars:', apiKey.substring(0, 10));
-    console.log('✓ Last 5 chars:', apiKey.substring(apiKey.length - 5));
 
     // Validate API key before starting background task
     console.log('Validating Holded API key...');
