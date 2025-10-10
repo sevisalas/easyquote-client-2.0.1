@@ -159,19 +159,20 @@ Deno.serve(async (req) => {
         .from('quotes')
         .update({
           holded_estimate_id: holdedData.id,
-          holded_estimate_number: holdedData.docNumber || null,
+          holded_estimate_number: holdedData.invoiceNum || null,
           status: 'sent'
         })
         .eq('id', quoteId);
 
       console.log('Quote updated with Holded estimate ID:', holdedData.id);
+      console.log('Quote updated with Holded estimate number:', holdedData.invoiceNum);
     }
 
     return new Response(
       JSON.stringify({
         success: true,
         estimateId: holdedData.id,
-        estimateNumber: holdedData.docNumber,
+        estimateNumber: holdedData.invoiceNum,
         message: 'Estimate exported to Holded successfully'
       }),
       {
