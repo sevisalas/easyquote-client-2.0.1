@@ -180,20 +180,27 @@ serve(async (req) => {
     }
 
     // Decrypt API key - convert bytea to string
+    console.log('Raw access_token_encrypted type:', typeof accessData.access_token_encrypted);
+    console.log('Raw access_token_encrypted value:', accessData.access_token_encrypted);
+    
     let apiKey: string;
     if (accessData.access_token_encrypted instanceof Uint8Array) {
       const decoder = new TextDecoder();
       apiKey = decoder.decode(accessData.access_token_encrypted);
+      console.log('Decoded from Uint8Array, API key length:', apiKey.length);
     } else if (typeof accessData.access_token_encrypted === 'string') {
       // If it comes as a string, use it directly
       apiKey = accessData.access_token_encrypted;
+      console.log('Using string directly, API key length:', apiKey.length);
     } else {
       // If it's a Buffer or array-like object, convert it
       const decoder = new TextDecoder();
       apiKey = decoder.decode(new Uint8Array(accessData.access_token_encrypted));
+      console.log('Converted to Uint8Array first, API key length:', apiKey.length);
     }
     
-    console.log('Retrieved API key from database');
+    console.log('API key first 10 chars:', apiKey.substring(0, 10));
+    console.log('API key last 5 chars:', apiKey.substring(apiKey.length - 5));
 
     // Validate API key before starting background task
     console.log('Validating Holded API key...');
