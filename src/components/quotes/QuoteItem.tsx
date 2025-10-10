@@ -531,7 +531,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
-              <Label>Productos</Label>
+              <Label>Selecciona producto</Label>
               <Select onValueChange={(value) => {
                 setProductId(value);
               }} value={productId} disabled={!hasToken}>
