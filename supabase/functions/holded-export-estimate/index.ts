@@ -80,77 +80,16 @@ Deno.serve(async (req) => {
     const apiKey = '88610992d47b9783e7703c488a8c01cf';
     console.log('Using Holded API key');
 
-    // Get EasyQuote token for enriching product details
-    const { data: credentials } = await supabase
-      .rpc('get_user_credentials', { p_user_id: user.id });
-
-    let easyquoteToken = null;
-    if (credentials && credentials.length > 0) {
-      const cred = credentials[0];
-      if (cred.api_username && cred.api_password) {
-        try {
-          const authResponse = await fetch('https://api.easyquote.cloud/api/v1/auth', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              username: cred.api_username, 
-              password: cred.api_password 
-            })
-          });
-          
-          if (authResponse.ok) {
-            const authData = await authResponse.json();
-            easyquoteToken = authData.token;
-            console.log('✅ EasyQuote token obtained successfully');
-          } else {
-            console.error('Failed to authenticate with EasyQuote:', authResponse.status);
-          }
-        } catch (err) {
-          console.error('Failed to get EasyQuote token:', err);
-        }
-      }
-    }
-
-    // Build complete payload with all quote data - enrich with product details
-    const items = await Promise.all(quoteItems.map(async (item: any) => {
+    // Build complete payload with all quote data using data already in database
+    const items = quoteItems.map((item: any) => {
       let description = '';
       
-      // Try to get product details to enrich prompts
-      let promptLabels: Record<string, string> = {};
-      if (easyquoteToken && item.product_id) {
-        try {
-          const productResponse = await fetch(
-            `https://api.easyquote.cloud/api/v1/pricing/${item.product_id}`,
-            {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${easyquoteToken}`,
-                'Content-Type': 'application/json'
-              }
-            }
-          );
-          
-          if (productResponse.ok) {
-            const productData = await productResponse.json();
-            const prompts = productData.prompts || [];
-            prompts.forEach((p: any) => {
-              promptLabels[p.id] = p.promptText || p.name || p.id;
-            });
-          }
-        } catch (err) {
-          console.error('Failed to fetch product details:', err);
-        }
-      }
-      
-      // Add prompts to description with label: value format
+      // Add prompts to description (prompts already contain the user's selections)
       if (item.prompts && typeof item.prompts === 'object') {
         const promptEntries = Object.entries(item.prompts);
         if (promptEntries.length > 0) {
           const promptsText = promptEntries
-            .map(([key, value]) => {
-              const label = promptLabels[key] || key;
-              return `${label}: ${value}`;
-            })
+            .map(([key, value]) => `${value}`)
             .join('\n');
           if (promptsText) {
             description = promptsText;
@@ -192,7 +131,7 @@ Deno.serve(async (req) => {
         tax: 21, // IVA estándar España
         discount: parseFloat(item.discount_percentage) || 0
       };
-    }));
+    });
 
     const estimatePayload = {
       docType: 'estimate',
