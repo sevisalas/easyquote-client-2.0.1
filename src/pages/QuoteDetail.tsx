@@ -486,19 +486,10 @@ export default function QuoteDetail() {
                         Tipo: {additional.type === 'percentage' ? 'Porcentaje' : 'Valor fijo'}
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div>
                       <p className="font-semibold text-sm">
                         {additional.type === 'percentage' ? `${additional.value}%` : fmtEUR(additional.value || 0)}
                       </p>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => navigate(`/presupuestos/editar/${quote.id}`)}
-                        className="gap-1"
-                      >
-                        <Edit className="h-3 w-3" />
-                        Editar
-                      </Button>
                     </div>
                   </div>
                 </div>
