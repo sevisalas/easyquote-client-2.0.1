@@ -116,7 +116,19 @@ Deno.serve(async (req) => {
     }
 
     // Decrypt the API key
-    const apiKey = new TextDecoder().decode(accessData.access_token_encrypted);
+    let apiKey: string;
+    if (typeof accessData.access_token_encrypted === 'string') {
+      // Already a string
+      apiKey = accessData.access_token_encrypted;
+    } else if (accessData.access_token_encrypted instanceof Uint8Array) {
+      // It's a Uint8Array, decode it
+      apiKey = new TextDecoder().decode(accessData.access_token_encrypted);
+    } else if (accessData.access_token_encrypted) {
+      // Try to convert to string
+      apiKey = String(accessData.access_token_encrypted);
+    } else {
+      throw new Error('Holded API key is missing or invalid');
+    }
     console.log('Got Holded API key');
 
     // Build items array
