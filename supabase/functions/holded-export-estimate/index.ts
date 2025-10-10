@@ -76,12 +76,8 @@ Deno.serve(async (req) => {
     const apiKey = '88610992d47b9783e7703c488a8c01cf';
     console.log('Using Holded API key');
 
-    // Build minimal estimate payload - only header
-    const estimatePayload = {
-      desc: `Presupuesto EasyQuote ${quote.quote_number}`,
-      date: new Date().toISOString().split('T')[0],
-      items: []
-    };
+    // Build empty payload to test connection
+    const estimatePayload = {};
 
     console.log('=== HOLDED EXPORT DEBUG ===');
     console.log('Quote ID:', quoteId);
