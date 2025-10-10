@@ -84,31 +84,22 @@ Deno.serve(async (req) => {
 
     // Build complete payload with all quote data using data already in database
     const items = quoteItems.map((item: any) => {
-      console.log('🔍 Processing item:', {
-        id: item.id,
-        product_name: item.product_name,
-        prompts: item.prompts,
-        outputs: item.outputs,
-        item_additionals: item.item_additionals
-      });
+      console.log('🔍 Processing item - ALL FIELDS:', JSON.stringify(item, null, 2));
       
       let description = '';
       
-      // Add prompts to description (prompts already contain the user's selections)
+      // Build description from prompts in the format "LABEL: value"
       if (item.prompts && typeof item.prompts === 'object') {
         const promptEntries = Object.entries(item.prompts);
         console.log('📝 Prompt entries:', promptEntries);
         if (promptEntries.length > 0) {
-          const promptsText = promptEntries
-            .map(([key, value]) => `${value}`)
+          description = promptEntries
+            .map(([key, value]) => `${key}: ${value}`)
             .join('\n');
-          if (promptsText) {
-            description = promptsText;
-          }
         }
       }
       
-      // Add outputs to description
+      // Add outputs to description (excluding price fields)
       if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
         console.log('📊 Outputs found:', item.outputs.length);
         const outputsText = item.outputs
@@ -121,29 +112,19 @@ Deno.serve(async (req) => {
           .join('\n');
         
         if (outputsText) {
-          description += (description ? '\n\n' : '') + outputsText;
+          description += (description ? '\n' : '') + outputsText;
         }
       }
       
-      // Add item additionals to description
-      if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
-        console.log('🔧 Item additionals found:', item.item_additionals.length);
-        const additionalsText = item.item_additionals
-          .map((add: any) => `${add.name}: ${add.type === 'percentage' ? add.value + '%' : add.value + '€'}`)
-          .join('\n');
-        if (additionalsText) {
-          description += (description ? '\n\nAjustes:\n' : 'Ajustes:\n') + additionalsText;
-        }
-      }
-      
-      console.log('📄 Final description:', description);
+      console.log('📄 Final description for Holded desc:', description);
+      console.log('📝 Item description field for Holded name:', item.description);
       
       return {
-        name: item.product_name || item.name || 'Producto',
+        name: item.description || item.product_name || 'Producto',
         desc: description,
         units: item.quantity || 1,
         price: parseFloat(item.price) || 0,
-        tax: 21, // IVA estándar España
+        tax: 21,
         discount: parseFloat(item.discount_percentage) || 0
       };
     });
