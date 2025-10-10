@@ -163,19 +163,10 @@ serve(async (req) => {
       );
     }
 
-    // TEMPORAL: Usar el API key del secret para diagnosticar el problema
-    const apiKey = Deno.env.get('HOLDED_API_KEY');
+    // TEMPORAL: API key fijo para diagnóstico
+    const apiKey = '38e97d25b7e6b1ca6f9355f5a1d8f61ce9a37fe2';
     
-    if (!apiKey) {
-      console.error('HOLDED_API_KEY secret not configured');
-      return new Response(
-        JSON.stringify({ error: 'Holded API key not configured in secrets' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('Using API key from secret, length:', apiKey.length);
-    console.log('API key first 8 chars:', apiKey.substring(0, 8));
+    console.log('Using fixed API key for testing');
 
     // Validate API key before starting background task
     console.log('Validating Holded API key...');
