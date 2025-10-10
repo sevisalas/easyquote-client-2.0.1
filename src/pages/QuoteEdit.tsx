@@ -615,10 +615,7 @@ export default function QuoteEdit() {
                        // Compressed mode - show summary
                        <div className="flex justify-between items-center gap-3">
                          <div className="flex-1 min-w-0 space-y-0.5">
-                           <div>
-                             <p className="text-xs text-muted-foreground">Nombre de producto</p>
-                             <p className="text-sm font-medium truncate">{item.product_name || '-'}</p>
-                           </div>
+                           <p className="text-sm font-medium truncate">{item.product_name || '-'}</p>
                            {item.description && (
                              <div className="pt-0.5">
                                <p className="text-xs text-muted-foreground">Descripción</p>
