@@ -163,62 +163,18 @@ serve(async (req) => {
       );
     }
 
-    // Get access token
-    const { data: accessData, error: accessError } = await supabase
-      .from('organization_integration_access')
-      .select('access_token_encrypted')
-      .eq('organization_id', organizationId)
-      .eq('integration_id', integration.id)
-      .eq('is_active', true)
-      .single();
-
-    if (accessError || !accessData?.access_token_encrypted) {
-      console.error('Access token error:', accessError);
-      return new Response(
-        JSON.stringify({ error: 'Holded integration not configured or inactive' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Get the API key - decode from bytea
-    const tokenData = accessData.access_token_encrypted;
+    // TEMPORAL: Usar el API key del secret para diagnosticar el problema
+    const apiKey = Deno.env.get('HOLDED_API_KEY');
     
-    if (!tokenData) {
-      console.error('No API key found');
+    if (!apiKey) {
+      console.error('HOLDED_API_KEY secret not configured');
       return new Response(
-        JSON.stringify({ error: 'API key not configured' }),
+        JSON.stringify({ error: 'Holded API key not configured in secrets' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Decode from bytea - Supabase returns bytea as hex string starting with \x
-    let apiKey: string;
-    
-    if (typeof tokenData === 'string') {
-      // Check if it's a hex string from Supabase (starts with \x)
-      if (tokenData.startsWith('\\x')) {
-        // Remove \x prefix and convert hex to bytes
-        const hexString = tokenData.substring(2);
-        const bytes = new Uint8Array(hexString.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
-        const decoder = new TextDecoder('utf-8');
-        apiKey = decoder.decode(bytes);
-      } else {
-        // Plain string
-        apiKey = tokenData;
-      }
-    } else if (tokenData instanceof Uint8Array) {
-      // Direct Uint8Array
-      const decoder = new TextDecoder('utf-8');
-      apiKey = decoder.decode(tokenData);
-    } else {
-      console.error('Unexpected token data type:', typeof tokenData);
-      return new Response(
-        JSON.stringify({ error: 'Failed to decode API key - unexpected format' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('API key decoded, length:', apiKey.length);
+    console.log('Using API key from secret, length:', apiKey.length);
     console.log('API key first 8 chars:', apiKey.substring(0, 8));
 
     // Validate API key before starting background task
