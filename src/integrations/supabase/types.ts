@@ -358,9 +358,7 @@ export type Database = {
       }
       organization_api_credentials: {
         Row: {
-          api_key: string
           api_key_encrypted: string | null
-          api_secret: string
           api_secret_encrypted: string | null
           created_at: string
           created_by: string
@@ -372,9 +370,7 @@ export type Database = {
           usage_count: number
         }
         Insert: {
-          api_key: string
           api_key_encrypted?: string | null
-          api_secret: string
           api_secret_encrypted?: string | null
           created_at?: string
           created_by: string
@@ -386,9 +382,7 @@ export type Database = {
           usage_count?: number
         }
         Update: {
-          api_key?: string
           api_key_encrypted?: string | null
-          api_secret?: string
           api_secret_encrypted?: string | null
           created_at?: string
           created_by?: string
@@ -411,36 +405,36 @@ export type Database = {
       }
       organization_integration_access: {
         Row: {
-          access_token: string | null
+          access_token_encrypted: string | null
           created_at: string
           expires_at: string | null
           id: string
           integration_id: string
           is_active: boolean
           organization_id: string
-          refresh_token: string | null
+          refresh_token_encrypted: string | null
           updated_at: string
         }
         Insert: {
-          access_token?: string | null
+          access_token_encrypted?: string | null
           created_at?: string
           expires_at?: string | null
           id?: string
           integration_id: string
           is_active?: boolean
           organization_id: string
-          refresh_token?: string | null
+          refresh_token_encrypted?: string | null
           updated_at?: string
         }
         Update: {
-          access_token?: string | null
+          access_token_encrypted?: string | null
           created_at?: string
           expires_at?: string | null
           id?: string
           integration_id?: string
           is_active?: boolean
           organization_id?: string
-          refresh_token?: string | null
+          refresh_token_encrypted?: string | null
           updated_at?: string
         }
         Relationships: [

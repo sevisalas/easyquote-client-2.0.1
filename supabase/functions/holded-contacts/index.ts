@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     // Get organization's Holded access token
     const { data: access, error: accessError } = await supabaseClient
       .from('organization_integration_access')
-      .select('access_token, is_active')
+      .select('access_token_encrypted, is_active')
       .eq('organization_id', organizationId)
       .eq('integration_id', integration.id)
       .single();
@@ -52,11 +52,15 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Decrypt the access token from bytes
+    const decoder = new TextDecoder();
+    const accessToken = decoder.decode(access.access_token_encrypted);
+
     // Call Holded API to get contacts
     const holdedResponse = await fetch('https://api.holded.com/api/contacts', {
       method: 'GET',
       headers: {
-        'key': access.access_token,
+        'key': accessToken,
         'Accept': 'application/json'
       }
     });

@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
     // Get organization's Holded API key
     const { data: access, error: accessError } = await supabaseClient
       .from('organization_integration_access')
-      .select('access_token')
+      .select('access_token_encrypted')
       .eq('organization_id', organizationId)
       .eq('integration_id', integration.id)
       .single();
@@ -74,7 +74,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    const apiKey = access.access_token;
+    // Decrypt the access token from bytes
+    const decoder = new TextDecoder();
+    const apiKey = decoder.decode(access.access_token_encrypted);
 
     // Get existing customers with holded_id to avoid duplicates
     const { data: existingCustomers, error: existingError } = await supabaseClient

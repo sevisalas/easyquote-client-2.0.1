@@ -17,6 +17,7 @@ export const CustomerName = ({ customerId, fallback = "—" }: CustomerNameProps
 
     const fetchCustomerName = async () => {
       try {
+        // Try to fetch from local customers first
         const { data: localCustomer } = await supabase
           .from('customers')
           .select('name')
@@ -25,6 +26,18 @@ export const CustomerName = ({ customerId, fallback = "—" }: CustomerNameProps
 
         if (localCustomer) {
           setCustomerName(localCustomer.name || fallback);
+          return;
+        }
+
+        // If not found, try holded_contacts
+        const { data: holdedContact } = await supabase
+          .from('holded_contacts')
+          .select('name')
+          .eq('id', customerId)
+          .maybeSingle();
+
+        if (holdedContact) {
+          setCustomerName(holdedContact.name || fallback);
         } else {
           setCustomerName(fallback);
         }

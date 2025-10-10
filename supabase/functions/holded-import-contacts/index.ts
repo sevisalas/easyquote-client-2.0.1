@@ -166,13 +166,13 @@ serve(async (req) => {
     // Get access token
     const { data: accessData, error: accessError } = await supabase
       .from('organization_integration_access')
-      .select('access_token')
+      .select('access_token_encrypted')
       .eq('organization_id', organizationId)
       .eq('integration_id', integration.id)
       .eq('is_active', true)
       .single();
 
-    if (accessError || !accessData?.access_token) {
+    if (accessError || !accessData?.access_token_encrypted) {
       console.error('Access token error:', accessError);
       return new Response(
         JSON.stringify({ error: 'Holded integration not configured or inactive' }),
@@ -180,7 +180,9 @@ serve(async (req) => {
       );
     }
 
-    const apiKey = accessData.access_token;
+    // Decrypt the access token from bytes
+    const decoder = new TextDecoder();
+    const apiKey = decoder.decode(accessData.access_token_encrypted);
 
     // Start background import task
     console.log('Starting background import task for organization:', organizationId);

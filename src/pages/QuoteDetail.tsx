@@ -9,6 +9,7 @@ import { Edit, Download, Copy } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
+import { CustomerName } from "@/components/quotes/CustomerName";
 
 const fetchQuote = async (id: string) => {
   const { data, error } = await supabase
@@ -16,7 +17,6 @@ const fetchQuote = async (id: string) => {
     .select(`
       *,
       items:quote_items(*),
-      customer:customers(name),
       quote_additionals:quote_additionals(*)
     `)
     .eq('id', id)
@@ -294,7 +294,9 @@ export default function QuoteDetail() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <div>
               <label className="text-xs font-medium text-muted-foreground">cliente</label>
-              <p className="text-sm font-medium mt-0.5">{quote.customer?.name || 'No especificado'}</p>
+              <p className="text-sm font-medium mt-0.5">
+                <CustomerName customerId={quote.customer_id} fallback="No especificado" />
+              </p>
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground">estado</label>
