@@ -148,9 +148,40 @@ serve(async (req) => {
       );
     }
 
-    // Use API key directly - hardcoded
-    const apiKey = '88610992d47b9783e7703c488a8c01cf';
-    console.log('Using hardcoded API key, length:', apiKey.length, 'characters');
+    // Get Holded integration ID
+    const { data: integration, error: intError } = await supabase
+      .from('integrations')
+      .select('id')
+      .eq('name', 'Holded')
+      .single();
+
+    if (intError || !integration) {
+      console.error('Holded integration not found:', intError);
+      return new Response(
+        JSON.stringify({ error: 'Holded integration not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get encrypted API key from organization_integration_access
+    const { data: accessData, error: accessError } = await supabase
+      .from('organization_integration_access')
+      .select('access_token_encrypted')
+      .eq('organization_id', organizationId)
+      .eq('integration_id', integration.id)
+      .single();
+
+    if (accessError || !accessData || !accessData.access_token_encrypted) {
+      console.error('Holded API key not found:', accessError);
+      return new Response(
+        JSON.stringify({ error: 'Holded API key not configured for this organization' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Decrypt the API key
+    const apiKey = new TextDecoder().decode(accessData.access_token_encrypted);
+    console.log('Using API key from database, length:', apiKey.length, 'characters');
 
     // Validate API key before starting background task
     console.log('========================================');
