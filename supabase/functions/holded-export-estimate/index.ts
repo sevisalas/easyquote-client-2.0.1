@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
       throw new Error('Failed to fetch quote items');
     }
 
-    // Get organization to get Holded API key
+    // Get organization to verify access
     const { data: organization, error: orgError } = await supabase
       .from('organizations')
       .select('id')
@@ -68,31 +68,6 @@ Deno.serve(async (req) => {
     if (orgError || !organization) {
       console.error('Organization not found:', orgError);
       throw new Error('Organization not found');
-    }
-
-    // Get Holded integration and access token
-    const { data: integration, error: integrationError } = await supabase
-      .from('integrations')
-      .select('id')
-      .eq('name', 'Holded')
-      .single();
-
-    if (integrationError || !integration) {
-      console.error('Holded integration not found:', integrationError);
-      throw new Error('Holded integration not found');
-    }
-
-    const { data: accessData, error: accessError } = await supabase
-      .from('organization_integration_access')
-      .select('access_token_encrypted')
-      .eq('organization_id', organization.id)
-      .eq('integration_id', integration.id)
-      .eq('is_active', true)
-      .single();
-
-    if (accessError || !accessData) {
-      console.error('Holded access not found:', accessError);
-      throw new Error('Holded integration not active for this organization');
     }
 
     // Organization has Holded integration active
@@ -115,19 +90,10 @@ Deno.serve(async (req) => {
       throw new Error('Holded contact does not have a valid Holded ID');
     }
 
-    // Decrypt the API key
-    let apiKey: string;
-    if (typeof accessData.access_token_encrypted === 'string') {
-      // Already a string
-      apiKey = accessData.access_token_encrypted;
-    } else if (accessData.access_token_encrypted instanceof Uint8Array) {
-      // It's a Uint8Array, decode it
-      apiKey = new TextDecoder().decode(accessData.access_token_encrypted);
-    } else if (accessData.access_token_encrypted) {
-      // Try to convert to string
-      apiKey = String(accessData.access_token_encrypted);
-    } else {
-      throw new Error('Holded API key is missing or invalid');
+    // Get API key from environment
+    const apiKey = Deno.env.get('HOLDED_API_KEY');
+    if (!apiKey) {
+      throw new Error('Holded API key not configured');
     }
     console.log('Got Holded API key');
 
