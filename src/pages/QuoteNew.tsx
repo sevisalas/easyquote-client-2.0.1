@@ -286,12 +286,12 @@ export default function QuoteNew() {
         final_price: totals.finalPrice,
         valid_until: validUntil || null,
         notes: notes || "",
-        terms_conditions: "", // TODO: Add terms and conditions
+        terms_conditions: "",
         selections: itemsArray,
         quote_additionals: quoteAdditionals,
       };
 
-      const { data, error } = await supabase
+      const { data: quote, error } = await supabase
         .from("quotes")
         .insert(quoteData)
         .select()
@@ -299,12 +299,34 @@ export default function QuoteNew() {
 
       if (error) throw error;
 
+      // Create quote_items records with prompts and outputs
+      const quoteItemsData = itemsArray.map((item, index) => ({
+        quote_id: quote.id,
+        product_id: item.productId,
+        product_name: item.itemDescription || "",
+        description: item.itemDescription || "",
+        prompts: item.prompts || {},
+        outputs: item.outputs || [],
+        multi: item.multi || null,
+        price: item.price || 0,
+        quantity: 1,
+        discount_percentage: 0,
+        position: index,
+        item_additionals: item.itemAdditionals || []
+      }));
+
+      const { error: itemsError } = await supabase
+        .from("quote_items")
+        .insert(quoteItemsData);
+
+      if (itemsError) throw itemsError;
+
       toast({ 
         title: "Presupuesto guardado", 
         description: `Presupuesto ${quoteNumber} ${status === 'draft' ? 'guardado como borrador' : 'enviado'} correctamente` 
       });
       
-      navigate(`/presupuestos/${data.id}`);
+      navigate(`/presupuestos/${quote.id}`);
     } catch (error: any) {
       console.error("Error saving quote:", error);
       toast({ 
