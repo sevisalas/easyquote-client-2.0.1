@@ -189,6 +189,46 @@ serve(async (req) => {
       apiKey = decoder.decode(accessData.access_token_encrypted);
     }
 
+    // Validate API key before starting background task
+    console.log('Validating Holded API key...');
+    const testResponse = await fetch(
+      `${HOLDED_API_BASE}/invoicing/v1/contacts?page=1&limit=1`,
+      {
+        headers: {
+          'accept': 'application/json',
+          'key': apiKey,
+        },
+      }
+    );
+
+    if (!testResponse.ok) {
+      const errorText = await testResponse.text();
+      console.error('API key validation failed:', testResponse.status, errorText);
+      
+      let errorMessage = 'API key inválida o sin acceso';
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.info) {
+          errorMessage = errorData.info;
+        }
+      } catch (e) {
+        // Use default error message
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          error: errorMessage,
+          status: testResponse.status 
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    console.log('API key validated successfully');
+
     // Start background import task
     console.log('Starting background import task for organization:', organizationId);
     EdgeRuntime.waitUntil(
