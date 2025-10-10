@@ -68,10 +68,14 @@ serve(async (req) => {
       )
     }
 
-    // Store API key as plain text (Supabase will handle the bytea conversion)
+    // Encode API key properly as bytea
     const trimmedKey = apiKey.trim();
+    const encoder = new TextEncoder();
+    const encodedKey = encoder.encode(trimmedKey);
+    
     console.log('API key to store:', trimmedKey);
     console.log('API key length:', trimmedKey.length, 'chars');
+    console.log('Encoded bytes length:', encodedKey.length);
     console.log('First 10 chars:', trimmedKey.substring(0, 10));
     console.log('Last 5 chars:', trimmedKey.substring(trimmedKey.length - 5));
 
@@ -90,7 +94,7 @@ serve(async (req) => {
         .insert({
           organization_id: organizationId,
           integration_id: integrationData.id,
-          access_token_encrypted: trimmedKey,
+          access_token_encrypted: encodedKey,
           is_active: true
         })
         .select()
@@ -103,7 +107,7 @@ serve(async (req) => {
         .insert({
           organization_id: organizationId,
           integration_id: integrationData.id,
-          access_token_encrypted: trimmedKey,
+          access_token_encrypted: encodedKey,
           is_active: true
         })
         .select()

@@ -179,64 +179,34 @@ serve(async (req) => {
       );
     }
 
-    // Decrypt API key - handle multiple encoding formats from Supabase
-    console.log('Raw access_token_encrypted type:', typeof accessData.access_token_encrypted);
-    
+    // Decode API key using TextDecoder
+    const decoder = new TextDecoder();
     let apiKey: string;
-    const encrypted = accessData.access_token_encrypted;
     
-    // Handle different formats
-    if (typeof encrypted === 'string') {
-      // If it starts with \x, it's a hex-encoded string
-      if (encrypted.startsWith('\\x')) {
-        console.log('Detected hex-encoded string');
-        // Remove \x prefix and convert hex pairs to bytes
-        const hexString = encrypted.substring(2);
-        const bytes = [];
-        for (let i = 0; i < hexString.length; i += 2) {
-          bytes.push(parseInt(hexString.substr(i, 2), 16));
-        }
-        const decoder = new TextDecoder();
-        const decodedString = decoder.decode(new Uint8Array(bytes));
-        
-        // Check if it's a JSON object like {"0":56,"1":56...}
-        try {
-          const jsonObj = JSON.parse(decodedString);
-          if (typeof jsonObj === 'object' && !Array.isArray(jsonObj)) {
-            // Convert the JSON object to actual string
-            const chars = Object.keys(jsonObj).sort((a, b) => parseInt(a) - parseInt(b)).map(k => String.fromCharCode(jsonObj[k]));
-            apiKey = chars.join('').trim();
-            console.log('Decoded from hex + JSON object format');
-          } else {
-            apiKey = decodedString.trim();
-          }
-        } catch {
-          apiKey = decodedString.trim();
-        }
+    try {
+      // Handle bytea from Supabase
+      if (accessData.access_token_encrypted instanceof Uint8Array) {
+        apiKey = decoder.decode(accessData.access_token_encrypted);
+      } else if (typeof accessData.access_token_encrypted === 'object' && accessData.access_token_encrypted !== null) {
+        // Handle Buffer-like object {data: [...]]}
+        const bytes = new Uint8Array((accessData.access_token_encrypted as any).data || accessData.access_token_encrypted);
+        apiKey = decoder.decode(bytes);
+      } else if (typeof accessData.access_token_encrypted === 'string') {
+        apiKey = accessData.access_token_encrypted;
       } else {
-        apiKey = encrypted.trim();
-        console.log('Using string directly');
+        console.error('Unexpected encrypted data format:', typeof accessData.access_token_encrypted);
+        return new Response(
+          JSON.stringify({ error: 'Formato de API key no válido' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
-    } else if (encrypted && typeof encrypted === 'object' && 'data' in encrypted && Array.isArray(encrypted.data)) {
-      const decoder = new TextDecoder();
-      const decodedString = decoder.decode(new Uint8Array(encrypted.data));
       
-      try {
-        const jsonObj = JSON.parse(decodedString);
-        if (typeof jsonObj === 'object' && !Array.isArray(jsonObj)) {
-          const chars = Object.keys(jsonObj).sort((a, b) => parseInt(a) - parseInt(b)).map(k => String.fromCharCode(jsonObj[k]));
-          apiKey = chars.join('').trim();
-          console.log('Decoded from Buffer + JSON object format');
-        } else {
-          apiKey = decodedString.trim();
-        }
-      } catch {
-        apiKey = decodedString.trim();
-      }
-    } else {
-      console.error('Unknown encrypted data format:', typeof encrypted);
+      apiKey = apiKey.trim();
+      console.log('✓ API key decoded successfully');
+    } catch (error) {
+      console.error('Error decoding API key:', error);
       return new Response(
-        JSON.stringify({ error: 'Formato de API key no válido' }),
+        JSON.stringify({ error: 'Error al decodificar la API key' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
