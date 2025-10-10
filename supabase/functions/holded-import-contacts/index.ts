@@ -179,7 +179,7 @@ serve(async (req) => {
       );
     }
 
-    // Decrypt API key - handle Supabase's bytea format
+    // Decrypt API key - handle Supabase's bytea format correctly
     console.log('Raw access_token_encrypted:', JSON.stringify(accessData.access_token_encrypted));
     
     let apiKey: string;
@@ -187,13 +187,27 @@ serve(async (req) => {
     
     // Supabase returns bytea as {data: [...], type: "Buffer"}
     if (encrypted && typeof encrypted === 'object' && 'data' in encrypted && Array.isArray(encrypted.data)) {
+      // First decode the Buffer to get the string
       const decoder = new TextDecoder();
-      apiKey = decoder.decode(new Uint8Array(encrypted.data)).trim();
-      console.log('Decoded from Supabase Buffer object');
-    } else if (encrypted instanceof Uint8Array) {
-      const decoder = new TextDecoder();
-      apiKey = decoder.decode(encrypted).trim();
-      console.log('Decoded from Uint8Array');
+      const decodedString = decoder.decode(new Uint8Array(encrypted.data));
+      
+      // Check if it's a JSON object like {"0":56,"1":56...}
+      try {
+        const jsonObj = JSON.parse(decodedString);
+        if (typeof jsonObj === 'object' && !Array.isArray(jsonObj)) {
+          // Convert the JSON object to actual string
+          const chars = Object.keys(jsonObj).sort((a, b) => parseInt(a) - parseInt(b)).map(k => String.fromCharCode(jsonObj[k]));
+          apiKey = chars.join('').trim();
+          console.log('Decoded from JSON object format');
+        } else {
+          apiKey = decodedString.trim();
+          console.log('Using decoded string');
+        }
+      } catch {
+        // Not JSON, use as is
+        apiKey = decodedString.trim();
+        console.log('Using decoded string (not JSON)');
+      }
     } else if (typeof encrypted === 'string') {
       apiKey = encrypted.trim();
       console.log('Using string directly');
@@ -214,7 +228,8 @@ serve(async (req) => {
       );
     }
     
-    console.log('✓ API key decoded successfully, length:', apiKey.length);
+    console.log('✓ API key decoded successfully');
+    console.log('✓ Length:', apiKey.length);
     console.log('✓ First 10 chars:', apiKey.substring(0, 10));
     console.log('✓ Last 5 chars:', apiKey.substring(apiKey.length - 5));
 
