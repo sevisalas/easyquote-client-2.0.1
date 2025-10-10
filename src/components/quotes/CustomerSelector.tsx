@@ -136,10 +136,15 @@ export const CustomerSelector = ({
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
-  // Cargar solo clientes locales
+  // Cargar todos los clientes
   const { data: customers, isLoading, error } = useQuery({ 
     queryKey: ["all-customers"], 
-    queryFn: fetchAllCustomers
+    queryFn: async () => {
+      console.log('🚀 Iniciando carga de clientes...');
+      const result = await fetchAllCustomers();
+      console.log('✅ Clientes cargados:', result.length, result);
+      return result;
+    }
   });
 
   // Debug error si existe
