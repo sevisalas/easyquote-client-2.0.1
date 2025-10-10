@@ -57,9 +57,28 @@ const fetchLocalCustomers = async (): Promise<LocalCustomer[]> => {
 
 // Función para obtener contactos de Holded
 const fetchHoldedCustomers = async (): Promise<HoldedCustomer[]> => {
+  // Primero obtener el organization_id del usuario
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    console.log('⚠️ No user found, skipping Holded customers');
+    return [];
+  }
+
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("id")
+    .eq("api_user_id", user.id)
+    .single();
+
+  if (!org) {
+    console.log('⚠️ No organization found, skipping Holded customers');
+    return [];
+  }
+
   const { data, error } = await supabase
     .from("holded_contacts")
     .select("id, holded_id, name, email, phone")
+    .eq("organization_id", org.id)
     .order("created_at", { ascending: false });
   
   if (error) {
