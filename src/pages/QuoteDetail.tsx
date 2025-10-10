@@ -469,36 +469,6 @@ export default function QuoteDetail() {
         </CardContent>
       </Card>
 
-      {/* Quote Adjustments */}
-      {((quote.quote_additionals && Array.isArray(quote.quote_additionals) && quote.quote_additionals.length > 0)) && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Ajustes del presupuesto</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="space-y-2">
-              {quote.quote_additionals.map((additional: any, index: number) => (
-                <div key={`additional-${index}`} className="border rounded-md p-2">
-                  <div className="flex justify-between items-center">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-sm">{additional.name}</h4>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        Tipo: {additional.type === 'percentage' ? 'Porcentaje' : 'Valor fijo'}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">
-                        {additional.type === 'percentage' ? `${additional.value}%` : fmtEUR(additional.value || 0)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
     </div>
   );
 }
