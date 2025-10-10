@@ -47,25 +47,6 @@ Deno.serve(async (req) => {
       throw new Error('Quote not found');
     }
 
-    // Get Holded contact directly (no local customers allowed)
-    if (!quote.customer_id) {
-      throw new Error('Quote does not have a customer assigned');
-    }
-
-    const { data: holdedContact, error: contactError } = await supabase
-      .from('holded_contacts')
-      .select('holded_id')
-      .eq('id', quote.customer_id)
-      .single();
-
-    if (contactError || !holdedContact) {
-      throw new Error('Holded contact not found for this quote. Only Holded contacts can be exported.');
-    }
-
-    if (!holdedContact.holded_id) {
-      throw new Error('Holded contact does not have a valid Holded ID');
-    }
-
     // Get quote items separately
     const { data: quoteItems, error: itemsError } = await supabase
       .from('quote_items')
@@ -112,6 +93,26 @@ Deno.serve(async (req) => {
     if (accessError || !accessData) {
       console.error('Holded access not found:', accessError);
       throw new Error('Holded integration not active for this organization');
+    }
+
+    // Organization has Holded integration active
+    // Check if customer_id exists in holded_contacts
+    if (!quote.customer_id) {
+      throw new Error('Quote does not have a customer assigned');
+    }
+
+    const { data: holdedContact, error: contactError } = await supabase
+      .from('holded_contacts')
+      .select('holded_id')
+      .eq('id', quote.customer_id)
+      .single();
+
+    if (contactError || !holdedContact) {
+      throw new Error('Holded contact not found for this quote. Only Holded contacts can be exported when Holded integration is active.');
+    }
+
+    if (!holdedContact.holded_id) {
+      throw new Error('Holded contact does not have a valid Holded ID');
     }
 
     // Decrypt the API key
