@@ -34,14 +34,10 @@ Deno.serve(async (req) => {
       throw new Error('quoteId is required');
     }
 
-    // Get quote with customer and items
+    // Get quote
     const { data: quote, error: quoteError } = await supabase
       .from('quotes')
-      .select(`
-        *,
-        customer:customers(id, name, email, phone, address, holded_id),
-        quote_items(*)
-      `)
+      .select('*')
       .eq('id', quoteId)
       .eq('user_id', user.id)
       .single();
@@ -51,8 +47,37 @@ Deno.serve(async (req) => {
       throw new Error('Quote not found');
     }
 
-    if (!quote.customer?.holded_id) {
+    // Get customer separately
+    let customer = null;
+    if (quote.customer_id) {
+      const { data: customerData, error: customerError } = await supabase
+        .from('customers')
+        .select('id, name, email, phone, address, holded_id')
+        .eq('id', quote.customer_id)
+        .single();
+
+      if (!customerError && customerData) {
+        customer = customerData;
+      }
+    }
+
+    if (!customer) {
+      throw new Error('Customer not found for this quote');
+    }
+
+    if (!customer.holded_id) {
       throw new Error('Customer does not have a Holded contact ID. Please sync the customer with Holded first.');
+    }
+
+    // Get quote items separately
+    const { data: quoteItems, error: itemsError } = await supabase
+      .from('quote_items')
+      .select('*')
+      .eq('quote_id', quoteId);
+
+    if (itemsError) {
+      console.error('Error fetching quote items:', itemsError);
+      throw new Error('Failed to fetch quote items');
     }
 
     // Get organization to get Holded API key
@@ -97,7 +122,7 @@ Deno.serve(async (req) => {
     console.log('Got Holded API key');
 
     // Build items array
-    const items = quote.quote_items.map((item: any) => {
+    const items = (quoteItems || []).map((item: any) => {
       const itemData: any = {
         name: item.product_name || item.name || 'Product',
         desc: item.description || '',
@@ -127,15 +152,15 @@ Deno.serve(async (req) => {
 
     // Build estimate payload
     const estimatePayload = {
-      contactId: quote.customer.holded_id,
+      contactId: customer.holded_id,
       applyContactDefaults: true,
       desc: `Presupuesto de EasyQuote numero ${quote.quote_number}`,
       date: new Date().toISOString().split('T')[0],
       items: items,
-      contactName: quote.customer.name,
-      contactAddress: quote.customer.address || '',
-      contactEmail: quote.customer.email || '',
-      contactPhone: quote.customer.phone || ''
+      contactName: customer.name,
+      contactAddress: customer.address || '',
+      contactEmail: customer.email || '',
+      contactPhone: customer.phone || ''
     };
 
     console.log('Sending estimate to Holded:', JSON.stringify(estimatePayload, null, 2));
