@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { CustomerName } from "@/components/quotes/CustomerName";
+import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 
 const statusOptions = ["draft", "sent", "approved", "rejected"] as const;
 const statusLabel: Record<string, string> = {
@@ -48,6 +49,7 @@ const fetchCustomers = async () => {
 
 const QuotesList = () => {
   const navigate = useNavigate();
+  const { isHoldedActive } = useHoldedIntegration();
   
   // Filter states
   const [customerFilter, setCustomerFilter] = useState("");
@@ -114,6 +116,30 @@ const QuotesList = () => {
       const { error } = await supabase.from("quotes").update({ status: next }).eq("id", id);
       if (error) throw error;
       toast({ title: "Estado actualizado" });
+      
+      // Si el nuevo estado es "sent" y Holded está activo, exportar automáticamente
+      if (next === "sent" && isHoldedActive) {
+        try {
+          const { data, error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
+            body: { quoteId: id }
+          });
+
+          if (holdedError) throw holdedError;
+
+          toast({
+            title: "Exportado a Holded",
+            description: `Presupuesto exportado como ${data?.estimateNumber || 'estimate'}`,
+          });
+        } catch (holdedErr: any) {
+          console.error('Error exporting to Holded:', holdedErr);
+          toast({
+            title: "Error al exportar a Holded",
+            description: holdedErr.message || "No se pudo exportar el presupuesto a Holded",
+            variant: "destructive",
+          });
+        }
+      }
+      
       refetch();
     } catch (e: any) {
       toast({ title: "No se pudo actualizar el estado", description: e?.message || "Inténtalo de nuevo", variant: "destructive" });
