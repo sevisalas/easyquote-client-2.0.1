@@ -179,9 +179,19 @@ serve(async (req) => {
       );
     }
 
-    // Decrypt API key
-    const decoder = new TextDecoder();
-    const apiKey = decoder.decode(accessData.access_token_encrypted);
+    // Decrypt API key - convert bytea to string
+    let apiKey: string;
+    if (accessData.access_token_encrypted instanceof Uint8Array) {
+      const decoder = new TextDecoder();
+      apiKey = decoder.decode(accessData.access_token_encrypted);
+    } else if (typeof accessData.access_token_encrypted === 'string') {
+      // If it comes as a string, use it directly
+      apiKey = accessData.access_token_encrypted;
+    } else {
+      // If it's a Buffer or array-like object, convert it
+      const decoder = new TextDecoder();
+      apiKey = decoder.decode(new Uint8Array(accessData.access_token_encrypted));
+    }
     
     console.log('Retrieved API key from database');
 
