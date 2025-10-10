@@ -35,7 +35,7 @@ const fmtEUR = (n: any) => {
 const fetchQuotes = async () => {
   const { data, error } = await supabase
     .from("quotes")
-    .select("id, created_at, quote_number, customer_id, product_name, final_price, status, selections, description")
+    .select("id, created_at, quote_number, customer_id, product_name, final_price, status, selections, description, holded_estimate_number")
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data || [];
@@ -305,6 +305,7 @@ const QuotesList = () => {
                   <TableHead className="py-2">Cliente</TableHead>
                   <TableHead className="py-2">Descripción</TableHead>
                   <TableHead className="py-2 text-right">Total</TableHead>
+                  {isHoldedActive && <TableHead className="py-2">Nº Holded</TableHead>}
                   <TableHead className="py-2">Estado</TableHead>
                   <TableHead className="py-2">Acciones</TableHead>
                 </TableRow>
@@ -317,6 +318,15 @@ const QuotesList = () => {
                     <TableCell className="py-2"><CustomerName customerId={q.customer_id} /></TableCell>
                     <TableCell className="py-2">{q.description || ""}</TableCell>
                     <TableCell className="py-2 text-right">{fmtEUR(q.final_price)}</TableCell>
+                    {isHoldedActive && (
+                      <TableCell className="py-2">
+                        {q.holded_estimate_number ? (
+                          <span className="text-xs font-mono text-muted-foreground">{q.holded_estimate_number}</span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell className="py-2">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
