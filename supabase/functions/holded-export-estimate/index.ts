@@ -181,17 +181,6 @@ Deno.serve(async (req) => {
       return itemData;
     });
 
-    // Add header item with quote description if exists
-    if (quote.description) {
-      items.unshift({
-        name: quote.quote_number || 'Presupuesto',
-        desc: quote.description,
-        units: 1,
-        subtotal: 0,
-        taxes: []
-      });
-    }
-
     // Build estimate payload - only contactId, no customer data
     const estimatePayload = {
       contactId: customer.holded_id,
