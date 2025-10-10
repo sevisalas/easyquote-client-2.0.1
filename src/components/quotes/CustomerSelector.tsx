@@ -57,41 +57,52 @@ const fetchLocalCustomers = async (): Promise<LocalCustomer[]> => {
 
 // Función para obtener contactos de Holded
 const fetchHoldedCustomers = async (): Promise<HoldedCustomer[]> => {
-  // Primero obtener el organization_id del usuario
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    console.log('⚠️ No user found, skipping Holded customers');
+  try {
+    // Primero obtener el organization_id del usuario
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log('🔍 Current user:', user?.id);
+    
+    if (!user) {
+      console.log('⚠️ No user found, skipping Holded customers');
+      return [];
+    }
+
+    const { data: org, error: orgError } = await supabase
+      .from("organizations")
+      .select("id")
+      .eq("api_user_id", user.id)
+      .single();
+
+    console.log('🔍 Organization found:', org?.id, 'Error:', orgError);
+
+    if (!org) {
+      console.log('⚠️ No organization found, skipping Holded customers');
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from("holded_contacts")
+      .select("id, holded_id, name, email, phone")
+      .eq("organization_id", org.id)
+      .order("created_at", { ascending: false });
+    
+    console.log('🔍 Holded contacts query result:', { count: data?.length, error });
+    
+    if (error) {
+      console.error('❌ Error fetching Holded customers:', error);
+      throw error;
+    }
+    
+    console.log('✅ Holded customers fetched:', data?.length);
+    
+    return (data || []).map(customer => ({
+      ...customer,
+      source: 'holded' as const
+    }));
+  } catch (err) {
+    console.error('❌ Exception in fetchHoldedCustomers:', err);
     return [];
   }
-
-  const { data: org } = await supabase
-    .from("organizations")
-    .select("id")
-    .eq("api_user_id", user.id)
-    .single();
-
-  if (!org) {
-    console.log('⚠️ No organization found, skipping Holded customers');
-    return [];
-  }
-
-  const { data, error } = await supabase
-    .from("holded_contacts")
-    .select("id, holded_id, name, email, phone")
-    .eq("organization_id", org.id)
-    .order("created_at", { ascending: false });
-  
-  if (error) {
-    console.error('❌ Error fetching Holded customers:', error);
-    throw error;
-  }
-  
-  console.log('✅ Holded customers fetched:', data?.length);
-  
-  return (data || []).map(customer => ({
-    ...customer,
-    source: 'holded' as const
-  }));
 };
 
 // Función principal para obtener todos los clientes
