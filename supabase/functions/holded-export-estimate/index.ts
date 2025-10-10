@@ -80,15 +80,29 @@ Deno.serve(async (req) => {
     const apiKey = '88610992d47b9783e7703c488a8c01cf';
     console.log('Using Holded API key');
 
-    // Build minimal payload with only required fields
+    // Build complete payload with all quote data
+    const items = quoteItems.map((item: any) => ({
+      name: item.product_name || item.name || 'Producto',
+      desc: item.description || '',
+      units: item.quantity || 1,
+      price: parseFloat(item.price) || 0,
+      tax: 21, // IVA estándar España
+      discount: parseFloat(item.discount_percentage) || 0
+    }));
+
     const estimatePayload = {
-      date: new Date().toISOString().split('T')[0], // Format: "2025-10-10"
-      contactId: contactId
+      docType: 'estimate',
+      date: Math.floor(new Date(quote.created_at).getTime() / 1000), // Unix timestamp
+      contactId: contactId,
+      desc: quote.description || quote.title || '',
+      notes: quote.notes || '',
+      items: items
     };
 
     console.log('=== HOLDED EXPORT DEBUG ===');
     console.log('Quote ID:', quoteId);
     console.log('Quote Number:', quote.quote_number);
+    console.log('Items count:', items.length);
     console.log('Full payload:', JSON.stringify(estimatePayload, null, 2));
     console.log('API URL:', HOLDED_API_URL);
     console.log('API Key (first 10):', apiKey.substring(0, 10) + '...');
