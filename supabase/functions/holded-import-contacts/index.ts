@@ -148,19 +148,74 @@ serve(async (req) => {
       );
     }
 
-    // Use API key directly from Supabase secrets
-    const apiKey = Deno.env.get('HOLDED_API_KEY');
-    
-    if (!apiKey) {
-      console.error('HOLDED_API_KEY not found in environment');
+    // Get Holded integration
+    const { data: integration, error: integrationError } = await supabase
+      .from('integrations')
+      .select('id')
+      .eq('name', 'Holded')
+      .single();
+
+    if (integrationError || !integration) {
+      console.error('Integration error:', integrationError);
       return new Response(
-        JSON.stringify({ error: 'HOLDED_API_KEY no configurada' }),
+        JSON.stringify({ error: 'Holded integration not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get organization integration access with API key
+    const { data: accessData, error: accessError } = await supabase
+      .from('organization_integration_access')
+      .select('access_token_encrypted, is_active')
+      .eq('organization_id', organizationId)
+      .eq('integration_id', integration.id)
+      .maybeSingle();
+
+    if (accessError || !accessData || !accessData.is_active) {
+      console.error('Error getting Holded access:', accessError);
+      return new Response(
+        JSON.stringify({ error: 'Holded integration not configured or inactive' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Decode API key from database
+    const decoder = new TextDecoder();
+    let apiKey: string;
+    
+    try {
+      if (accessData.access_token_encrypted instanceof Uint8Array) {
+        apiKey = decoder.decode(accessData.access_token_encrypted);
+      } else if (typeof accessData.access_token_encrypted === 'object' && accessData.access_token_encrypted !== null) {
+        const bytes = new Uint8Array((accessData.access_token_encrypted as any).data || accessData.access_token_encrypted);
+        apiKey = decoder.decode(bytes);
+      } else if (typeof accessData.access_token_encrypted === 'string') {
+        apiKey = accessData.access_token_encrypted;
+      } else {
+        console.error('Unexpected encrypted data format:', typeof accessData.access_token_encrypted);
+        return new Response(
+          JSON.stringify({ error: 'Formato de API key no válido' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      apiKey = apiKey.trim();
+      console.log('API key from database, length:', apiKey.length, 'characters');
+    } catch (error) {
+      console.error('Error decoding API key:', error);
+      return new Response(
+        JSON.stringify({ error: 'Error al decodificar la API key' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    console.log('Using HOLDED_API_KEY from secrets');
-    console.log('API key length:', apiKey.length, 'characters');
+    if (!apiKey || apiKey.length === 0) {
+      console.error('API key is empty after decoding');
+      return new Response(
+        JSON.stringify({ error: 'API key no encontrado o vacío' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Validate API key before starting background task
     console.log('========================================');
