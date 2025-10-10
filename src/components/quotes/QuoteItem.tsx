@@ -529,7 +529,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             </div>
           )}
           
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3 mb-4">
             <div className="space-y-2">
               <Label>Selecciona producto</Label>
               <Select onValueChange={(value) => {
