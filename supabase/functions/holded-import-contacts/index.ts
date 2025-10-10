@@ -163,10 +163,42 @@ serve(async (req) => {
       );
     }
 
-    // TEMPORAL: API key fijo para diagnóstico
-    const apiKey = '88610992d47b9783e7703c488a8c01cf';
+    // Get Holded integration and API key from database
+    const { data: integrationData, error: integrationError } = await supabase
+      .from('integrations')
+      .select('id')
+      .eq('name', 'Holded')
+      .maybeSingle();
+
+    if (integrationError || !integrationData) {
+      console.error('Error finding Holded integration:', integrationError);
+      return new Response(
+        JSON.stringify({ error: 'Holded integration not found' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get organization integration access
+    const { data: accessData, error: accessError } = await supabase
+      .from('organization_integration_access')
+      .select('access_token_encrypted, is_active')
+      .eq('organization_id', organizationId)
+      .eq('integration_id', integrationData.id)
+      .maybeSingle();
+
+    if (accessError || !accessData || !accessData.is_active) {
+      console.error('Error getting Holded access:', accessError);
+      return new Response(
+        JSON.stringify({ error: 'Holded integration not configured or inactive' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Decrypt API key
+    const decoder = new TextDecoder();
+    const apiKey = decoder.decode(accessData.access_token_encrypted);
     
-    console.log('Using fixed API key for testing');
+    console.log('Retrieved API key from database');
 
     // Validate API key before starting background task
     console.log('Validating Holded API key...');
