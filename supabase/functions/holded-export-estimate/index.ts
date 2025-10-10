@@ -122,63 +122,70 @@ Deno.serve(async (req) => {
     console.log('Got Holded API key');
 
     // Build items array
-    const items = (quoteItems || []).map((item: any) => {
-      // Build description with all article data
-      let fullDesc = '';
+    const items: any[] = [];
+    
+    (quoteItems || []).forEach((item: any) => {
+      // Build description with prompts and item additionals
+      let desc = '';
       
-      // Add product name
-      if (item.product_name) {
-        fullDesc += `Producto: ${item.product_name}\n`;
-      }
-      
-      // Add prompts
+      // Add prompts (label and value)
       if (item.prompts && typeof item.prompts === 'object') {
-        fullDesc += '\nOpciones seleccionadas:\n';
         Object.entries(item.prompts).forEach(([key, value]) => {
-          fullDesc += `- ${value}\n`;
+          desc += `${key}: ${value}\n`;
         });
       }
       
-      // Add outputs
-      if (item.outputs && Array.isArray(item.outputs)) {
-        fullDesc += '\nDetalles:\n';
-        item.outputs.forEach((output: any) => {
-          if (output.name && output.value) {
-            fullDesc += `- ${output.name}: ${output.value}\n`;
-          }
-        });
-      }
-      
-      // Add item additionals
+      // Add item additionals (not quote additionals)
       if (item.item_additionals && Array.isArray(item.item_additionals)) {
-        fullDesc += '\nAdicionales:\n';
         item.item_additionals.forEach((additional: any) => {
-          fullDesc += `- ${additional.name}: ${additional.value}\n`;
+          desc += `${additional.name}: ${additional.value}\n`;
         });
       }
       
-      // Add multi data if exists
-      if (item.multi && item.multi.rows) {
-        fullDesc += '\nCantidades:\n';
-        item.multi.rows.forEach((row: any) => {
-          fullDesc += `- ${row.qty} uds: ${row.totalStr}€\n`;
+      desc = desc.trim();
+      
+      // Get Price output
+      let priceOutput = 0;
+      if (item.outputs && Array.isArray(item.outputs)) {
+        const priceObj = item.outputs.find((out: any) => out.type === 'Price' || out.name === 'PRECIO');
+        if (priceObj && priceObj.value) {
+          priceOutput = parseFloat(String(priceObj.value).replace(',', '.'));
+        }
+      }
+      
+      // If multi exists, create one item per quantity row
+      if (item.multi && item.multi.rows && Array.isArray(item.multi.rows)) {
+        item.multi.rows.forEach((row: any, index: number) => {
+          const itemData: any = {
+            name: item.description || item.product_name || 'Artículo',
+            desc: desc,
+            units: row.qty || 1,
+            subtotal: parseFloat(String(row.totalStr || row.unit || 0).replace(',', '.')),
+            taxes: ['s_iva_21']
+          };
+          
+          if (item.discount_percentage && item.discount_percentage > 0) {
+            itemData.discount = parseFloat(item.discount_percentage);
+          }
+          
+          items.push(itemData);
         });
+      } else {
+        // Single item without multi
+        const itemData: any = {
+          name: item.description || item.product_name || 'Artículo',
+          desc: desc,
+          units: item.quantity || 1,
+          subtotal: priceOutput || parseFloat(item.price) || 0,
+          taxes: ['s_iva_21']
+        };
+        
+        if (item.discount_percentage && item.discount_percentage > 0) {
+          itemData.discount = parseFloat(item.discount_percentage);
+        }
+        
+        items.push(itemData);
       }
-
-      const itemData: any = {
-        name: item.description || item.product_name || 'Artículo',
-        desc: fullDesc.trim(),
-        units: item.quantity || 1,
-        subtotal: parseFloat(item.price) || 0,
-        taxes: ['s_iva_21'] // Default IVA 21%
-      };
-
-      // Add discount if exists
-      if (item.discount_percentage && item.discount_percentage > 0) {
-        itemData.discount = parseFloat(item.discount_percentage);
-      }
-
-      return itemData;
     });
 
     // Build estimate payload - only contactId, no customer data
