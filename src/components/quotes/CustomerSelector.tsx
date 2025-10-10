@@ -162,9 +162,12 @@ export const CustomerSelector = ({
     const search = searchValue.toLowerCase();
     const name = customer.name?.toLowerCase() || "";
     const email = customer.email?.toLowerCase() || "";
+    const phone = customer.phone?.toLowerCase() || "";
     
-    return name.includes(search) || email.includes(search);
+    return name.includes(search) || email.includes(search) || phone.includes(search);
   }) || [];
+
+  console.log(`🔍 Búsqueda "${searchValue}": ${filteredCustomers.length} resultados encontrados`);
 
   // Encontrar el cliente seleccionado
   const selectedCustomer = customers?.find(customer => customer.id === value);
@@ -207,18 +210,25 @@ export const CustomerSelector = ({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[400px] p-0">
-          <Command shouldFilter={false}>
+          <Command shouldFilter={false} loop={false} vimBindings={false}>
             <CommandInput 
               placeholder="Buscar cliente..." 
               value={searchValue}
               onValueChange={setSearchValue}
             />
-            <CommandList>
+            <CommandList className="max-h-[400px]">
               {isLoading ? (
                 <div className="p-4 text-sm text-muted-foreground">Cargando clientes...</div>
               ) : (
                 <>
-                  <CommandEmpty>No se encontraron clientes.</CommandEmpty>
+                  {filteredCustomers.length === 0 && searchValue && (
+                    <CommandEmpty>No se encontraron clientes.</CommandEmpty>
+                  )}
+                  {searchValue && filteredCustomers.length > 0 && (
+                    <div className="px-3 py-2 text-xs text-muted-foreground border-b">
+                      {filteredCustomers.length} resultado{filteredCustomers.length !== 1 ? 's' : ''} encontrado{filteredCustomers.length !== 1 ? 's' : ''}
+                    </div>
+                  )}
                   
                   {/* Clientes locales */}
                   {filteredCustomers.filter(c => c.source === 'local').length > 0 && (
