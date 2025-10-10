@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Check, ChevronsUpDown, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -210,101 +211,112 @@ export const CustomerSelector = ({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[400px] p-0">
-          <Command shouldFilter={false} loop={false} vimBindings={false}>
-            <CommandInput 
-              placeholder="Buscar cliente..." 
-              value={searchValue}
-              onValueChange={setSearchValue}
-            />
-            <CommandList className="max-h-[400px]">
-              {isLoading ? (
-                <div className="p-4 text-sm text-muted-foreground">Cargando clientes...</div>
-              ) : (
-                <>
-                  {filteredCustomers.length === 0 && searchValue && (
-                    <CommandEmpty>No se encontraron clientes.</CommandEmpty>
-                  )}
-                  {searchValue && filteredCustomers.length > 0 && (
-                    <div className="px-3 py-2 text-xs text-muted-foreground border-b">
-                      {filteredCustomers.length} resultado{filteredCustomers.length !== 1 ? 's' : ''} encontrado{filteredCustomers.length !== 1 ? 's' : ''}
+          <div className="flex flex-col">
+            <div className="p-3 border-b">
+              <Input 
+                placeholder="Buscar cliente..." 
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                className="h-9"
+              />
+            </div>
+            
+            {isLoading ? (
+              <div className="p-4 text-sm text-muted-foreground">Cargando clientes...</div>
+            ) : (
+              <>
+                {searchValue && (
+                  <div className="px-3 py-2 text-xs text-muted-foreground border-b">
+                    {filteredCustomers.length} resultado{filteredCustomers.length !== 1 ? 's' : ''} encontrado{filteredCustomers.length !== 1 ? 's' : ''}
+                  </div>
+                )}
+                
+                <ScrollArea className="h-[400px]">
+                  {filteredCustomers.length === 0 && searchValue ? (
+                    <div className="p-4 text-sm text-muted-foreground text-center">
+                      No se encontraron clientes.
+                    </div>
+                  ) : (
+                    <div className="p-2">
+                      {/* Clientes locales */}
+                      {filteredCustomers.filter(c => c.source === 'local').length > 0 && (
+                        <div className="mb-4">
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                            Clientes Locales
+                          </div>
+                          {filteredCustomers.filter(c => c.source === 'local').map((customer) => (
+                            <button
+                              key={customer.id}
+                              onClick={() => {
+                                onValueChange(customer.id);
+                                setOpen(false);
+                              }}
+                              className="w-full flex items-center gap-2 px-2 py-2 rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                            >
+                              <User className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                              <div className="flex flex-col flex-1 min-w-0 items-start">
+                                <div className="flex items-center gap-2 w-full">
+                                  <span className="font-medium truncate">{customer.name}</span>
+                                  <Check
+                                    className={cn(
+                                      "ml-auto h-4 w-4 flex-shrink-0",
+                                      value === customer.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                </div>
+                                {customer.email && (
+                                  <span className="text-xs text-muted-foreground truncate w-full text-left">
+                                    {customer.email}
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Clientes de Holded */}
+                      {filteredCustomers.filter(c => c.source === 'holded').length > 0 && (
+                        <div>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                            Contactos de Holded
+                          </div>
+                          {filteredCustomers.filter(c => c.source === 'holded').map((customer) => (
+                            <button
+                              key={customer.id}
+                              onClick={() => {
+                                onValueChange(customer.id);
+                                setOpen(false);
+                              }}
+                              className="w-full flex items-center gap-2 px-2 py-2 rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                            >
+                              <User className="h-4 w-4 text-green-500 flex-shrink-0" />
+                              <div className="flex flex-col flex-1 min-w-0 items-start">
+                                <div className="flex items-center gap-2 w-full">
+                                  <span className="font-medium truncate">{customer.name}</span>
+                                  <Check
+                                    className={cn(
+                                      "ml-auto h-4 w-4 flex-shrink-0",
+                                      value === customer.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                </div>
+                                {customer.email && (
+                                  <span className="text-xs text-muted-foreground truncate w-full text-left">
+                                    {customer.email}
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
-                  
-                  {/* Clientes locales */}
-                  {filteredCustomers.filter(c => c.source === 'local').length > 0 && (
-                    <CommandGroup heading="Clientes Locales">
-                      {filteredCustomers.filter(c => c.source === 'local').map((customer) => (
-                        <CommandItem
-                          key={customer.id}
-                          value={customer.id}
-                          onSelect={() => {
-                            onValueChange(customer.id);
-                            setOpen(false);
-                          }}
-                        >
-                          <div className="flex items-center gap-2 w-full">
-                            <User className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                            <div className="flex flex-col flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium truncate">{customer.name}</span>
-                                <Check
-                                  className={cn(
-                                    "ml-auto h-4 w-4",
-                                    value === customer.id ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                              </div>
-                              {customer.email && (
-                                <span className="text-xs text-muted-foreground truncate">
-                                  {customer.email}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  )}
-
-                  {/* Clientes de Holded */}
-                  {filteredCustomers.filter(c => c.source === 'holded').length > 0 && (
-                    <CommandGroup heading="Contactos de Holded">
-                      {filteredCustomers.filter(c => c.source === 'holded').map((customer) => (
-                        <CommandItem
-                          key={customer.id}
-                          value={customer.id}
-                          onSelect={() => {
-                            onValueChange(customer.id);
-                            setOpen(false);
-                          }}
-                        >
-                          <div className="flex items-center gap-2 w-full">
-                            <User className="h-4 w-4 text-green-500 flex-shrink-0" />
-                            <div className="flex flex-col flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium truncate">{customer.name}</span>
-                                <Check
-                                  className={cn(
-                                    "ml-auto h-4 w-4",
-                                    value === customer.id ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                              </div>
-                              {customer.email && (
-                                <span className="text-xs text-muted-foreground truncate">
-                                  {customer.email}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  )}
-                </>
-              )}
-            </CommandList>
-          </Command>
+                </ScrollArea>
+              </>
+            )}
+          </div>
         </PopoverContent>
       </Popover>
     </div>
