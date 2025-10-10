@@ -191,33 +191,33 @@ serve(async (req) => {
       );
     }
 
-    // Decode from bytea to string - handle both string and Uint8Array
+    // Decode from bytea - Supabase returns bytea as hex string starting with \x
     let apiKey: string;
+    
     if (typeof tokenData === 'string') {
-      // Already a string, use as-is
-      apiKey = tokenData;
+      // Check if it's a hex string from Supabase (starts with \x)
+      if (tokenData.startsWith('\\x')) {
+        // Remove \x prefix and convert hex to bytes
+        const hexString = tokenData.substring(2);
+        const bytes = new Uint8Array(hexString.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
+        const decoder = new TextDecoder('utf-8');
+        apiKey = decoder.decode(bytes);
+      } else {
+        // Plain string
+        apiKey = tokenData;
+      }
     } else if (tokenData instanceof Uint8Array) {
-      // It's a Uint8Array, decode it
+      // Direct Uint8Array
       const decoder = new TextDecoder('utf-8');
       apiKey = decoder.decode(tokenData);
     } else {
-      // Try to convert to Uint8Array first
-      try {
-        const bytes = new Uint8Array(tokenData);
-        const decoder = new TextDecoder('utf-8');
-        apiKey = decoder.decode(bytes);
-      } catch (e) {
-        console.error('Failed to decode API key:', e);
-        return new Response(
-          JSON.stringify({ error: 'Failed to decode API key' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+      console.error('Unexpected token data type:', typeof tokenData);
+      return new Response(
+        JSON.stringify({ error: 'Failed to decode API key - unexpected format' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Trim any whitespace or null bytes
-    apiKey = apiKey.trim().replace(/\0/g, '');
-    
     console.log('API key decoded, length:', apiKey.length);
     console.log('API key first 8 chars:', apiKey.substring(0, 8));
 
