@@ -64,8 +64,7 @@ const fetchQuote = async (id: string): Promise<Quote> => {
     .from('quotes')
     .select(`
       *,
-      items:quote_items(*),
-      customer:customers(name)
+      items:quote_items(*)
     `)
     .eq('id', id)
     .maybeSingle();
