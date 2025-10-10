@@ -198,6 +198,8 @@ Deno.serve(async (req) => {
     };
 
     console.log('Sending estimate to Holded:', JSON.stringify(estimatePayload, null, 2));
+    console.log('Holded API URL:', HOLDED_API_URL);
+    console.log('API Key (primeros 10 chars):', apiKey.substring(0, 10) + '...');
 
     // Send to Holded
     const holdedResponse = await fetch(HOLDED_API_URL, {
