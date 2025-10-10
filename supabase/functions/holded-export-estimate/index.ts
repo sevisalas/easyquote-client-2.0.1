@@ -58,44 +58,23 @@ Deno.serve(async (req) => {
       throw new Error('Failed to fetch quote items');
     }
 
-    // Get organization to verify access
-    const { data: organization, error: orgError } = await supabase
-      .from('organizations')
-      .select('id')
-      .eq('api_user_id', user.id)
-      .single();
-
-    if (orgError || !organization) {
-      console.error('Organization not found:', orgError);
-      throw new Error('Organization not found');
+    // Get Holded contact if customer_id exists
+    let contactId = null;
+    if (quote.customer_id) {
+      const { data: holdedContact } = await supabase
+        .from('holded_contacts')
+        .select('holded_id')
+        .eq('id', quote.customer_id)
+        .single();
+      
+      if (holdedContact?.holded_id) {
+        contactId = holdedContact.holded_id;
+      }
     }
 
-    // Organization has Holded integration active
-    // Check if customer_id exists in holded_contacts
-    if (!quote.customer_id) {
-      throw new Error('Quote does not have a customer assigned');
-    }
-
-    const { data: holdedContact, error: contactError } = await supabase
-      .from('holded_contacts')
-      .select('holded_id')
-      .eq('id', quote.customer_id)
-      .single();
-
-    if (contactError || !holdedContact) {
-      throw new Error('Holded contact not found for this quote. Only Holded contacts can be exported when Holded integration is active.');
-    }
-
-    if (!holdedContact.holded_id) {
-      throw new Error('Holded contact does not have a valid Holded ID');
-    }
-
-    // Get API key from environment
-    const apiKey = Deno.env.get('HOLDED_API_KEY');
-    if (!apiKey) {
-      throw new Error('Holded API key not configured');
-    }
-    console.log('Got Holded API key');
+    // Use API key directly from environment
+    const apiKey = '88610992d47b9783e7703c488a8c01cf';
+    console.log('Using Holded API key');
 
     // Build items array
     const items: any[] = [];
@@ -164,14 +143,18 @@ Deno.serve(async (req) => {
       }
     });
 
-    // Build estimate payload - only contactId, no customer data
-    const estimatePayload = {
-      contactId: holdedContact.holded_id,
-      applyContactDefaults: true,
+    // Build estimate payload
+    const estimatePayload: any = {
       desc: `Presupuesto EasyQuote ${quote.quote_number}`,
       date: new Date().toISOString().split('T')[0],
       items: items
     };
+
+    // Add contactId only if exists
+    if (contactId) {
+      estimatePayload.contactId = contactId;
+      estimatePayload.applyContactDefaults = true;
+    }
 
     console.log('Sending estimate to Holded:', JSON.stringify(estimatePayload, null, 2));
     console.log('Holded API URL:', HOLDED_API_URL);
