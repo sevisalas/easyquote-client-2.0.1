@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
 
     // Build minimal payload with only required fields
     const estimatePayload = {
-      date: Math.floor(Date.now() / 1000), // Unix timestamp in seconds
+      date: new Date().toISOString().split('T')[0], // Format: "2025-10-10"
       contactId: contactId
     };
 
