@@ -72,14 +72,18 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (!contactId) {
+      throw new Error('No se encontró contactId de Holded para este cliente');
+    }
+
     // Use API key directly from environment
     const apiKey = '88610992d47b9783e7703c488a8c01cf';
     console.log('Using Holded API key');
 
-    // Build minimal required payload
+    // Build minimal payload with only required fields
     const estimatePayload = {
-      date: new Date().toISOString().split('T')[0],
-      items: []
+      date: Math.floor(Date.now() / 1000), // Unix timestamp in seconds
+      contactId: contactId
     };
 
     console.log('=== HOLDED EXPORT DEBUG ===');
