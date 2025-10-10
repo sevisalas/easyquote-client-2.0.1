@@ -58,6 +58,8 @@ Deno.serve(async (req) => {
       throw new Error('Failed to fetch quote items');
     }
 
+    console.log('📦 Quote items fetched:', JSON.stringify(quoteItems, null, 2));
+
     // Get Holded contact if customer_id exists
     let contactId = null;
     if (quote.customer_id) {
