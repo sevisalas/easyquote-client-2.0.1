@@ -156,9 +156,16 @@ Deno.serve(async (req) => {
       estimatePayload.applyContactDefaults = true;
     }
 
-    console.log('Sending estimate to Holded:', JSON.stringify(estimatePayload, null, 2));
-    console.log('Holded API URL:', HOLDED_API_URL);
-    console.log('API Key (primeros 10 chars):', apiKey.substring(0, 10) + '...');
+    console.log('=== HOLDED EXPORT DEBUG ===');
+    console.log('Quote ID:', quoteId);
+    console.log('Quote Number:', quote.quote_number);
+    console.log('Customer ID:', quote.customer_id);
+    console.log('Contact ID:', contactId);
+    console.log('Items count:', items.length);
+    console.log('Full payload:', JSON.stringify(estimatePayload, null, 2));
+    console.log('API URL:', HOLDED_API_URL);
+    console.log('API Key (first 10):', apiKey.substring(0, 10) + '...');
+    console.log('=========================');
 
     // Send to Holded
     const holdedResponse = await fetch(HOLDED_API_URL, {
