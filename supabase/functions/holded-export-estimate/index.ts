@@ -84,11 +84,20 @@ Deno.serve(async (req) => {
 
     // Build complete payload with all quote data using data already in database
     const items = quoteItems.map((item: any) => {
+      console.log('🔍 Processing item:', {
+        id: item.id,
+        product_name: item.product_name,
+        prompts: item.prompts,
+        outputs: item.outputs,
+        item_additionals: item.item_additionals
+      });
+      
       let description = '';
       
       // Add prompts to description (prompts already contain the user's selections)
       if (item.prompts && typeof item.prompts === 'object') {
         const promptEntries = Object.entries(item.prompts);
+        console.log('📝 Prompt entries:', promptEntries);
         if (promptEntries.length > 0) {
           const promptsText = promptEntries
             .map(([key, value]) => `${value}`)
@@ -101,6 +110,7 @@ Deno.serve(async (req) => {
       
       // Add outputs to description
       if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
+        console.log('📊 Outputs found:', item.outputs.length);
         const outputsText = item.outputs
           .filter((out: any) => {
             const name = String(out.name || '').toLowerCase();
@@ -117,6 +127,7 @@ Deno.serve(async (req) => {
       
       // Add item additionals to description
       if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
+        console.log('🔧 Item additionals found:', item.item_additionals.length);
         const additionalsText = item.item_additionals
           .map((add: any) => `${add.name}: ${add.type === 'percentage' ? add.value + '%' : add.value + '€'}`)
           .join('\n');
@@ -124,6 +135,8 @@ Deno.serve(async (req) => {
           description += (description ? '\n\nAjustes:\n' : 'Ajustes:\n') + additionalsText;
         }
       }
+      
+      console.log('📄 Final description:', description);
       
       return {
         name: item.product_name || item.name || 'Producto',
