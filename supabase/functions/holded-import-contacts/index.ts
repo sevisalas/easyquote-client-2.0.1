@@ -181,7 +181,6 @@ serve(async (req) => {
     }
 
     // Get the API key - decode from bytea
-    let apiKey: string;
     const tokenData = accessData.access_token_encrypted;
     
     if (!tokenData) {
@@ -192,17 +191,35 @@ serve(async (req) => {
       );
     }
 
-    // Decode from bytea to string
+    // Decode from bytea to string - handle both string and Uint8Array
+    let apiKey: string;
     if (typeof tokenData === 'string') {
+      // Already a string, use as-is
       apiKey = tokenData;
-    } else {
-      // It's a Uint8Array from bytea column
-      const decoder = new TextDecoder();
+    } else if (tokenData instanceof Uint8Array) {
+      // It's a Uint8Array, decode it
+      const decoder = new TextDecoder('utf-8');
       apiKey = decoder.decode(tokenData);
+    } else {
+      // Try to convert to Uint8Array first
+      try {
+        const bytes = new Uint8Array(tokenData);
+        const decoder = new TextDecoder('utf-8');
+        apiKey = decoder.decode(bytes);
+      } catch (e) {
+        console.error('Failed to decode API key:', e);
+        return new Response(
+          JSON.stringify({ error: 'Failed to decode API key' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
+    // Trim any whitespace or null bytes
+    apiKey = apiKey.trim().replace(/\0/g, '');
+    
     console.log('API key decoded, length:', apiKey.length);
-    console.log('API key preview:', apiKey.substring(0, 10) + '...' + apiKey.substring(apiKey.length - 5));
+    console.log('API key first 8 chars:', apiKey.substring(0, 8));
 
     // Validate API key before starting background task
     console.log('Validating Holded API key...');
