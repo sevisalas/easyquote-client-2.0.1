@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
     const estimatePayload = {
       contactId: quote.customer.holded_id,
       applyContactDefaults: true,
-      desc: quote.quote_number || `Presupuesto ${new Date().toISOString().split('T')[0]}`,
+      desc: `Presupuesto de EasyQuote numero ${quote.quote_number}`,
       date: new Date().toISOString().split('T')[0],
       items: items,
       contactName: quote.customer.name,
