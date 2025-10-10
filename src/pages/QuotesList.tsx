@@ -10,12 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, X, Search } from "lucide-react";
+import { CalendarIcon, X, Search, Send } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { CustomerName } from "@/components/quotes/CustomerName";
+import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 
 const statusOptions = ["draft", "sent", "approved", "rejected"] as const;
 const statusLabel: Record<string, string> = {
@@ -48,6 +49,8 @@ const fetchCustomers = async () => {
 
 const QuotesList = () => {
   const navigate = useNavigate();
+  const { isHoldedActive } = useHoldedIntegration();
+  const [exportingQuoteId, setExportingQuoteId] = useState<string | null>(null);
   
   // Filter states
   const [customerFilter, setCustomerFilter] = useState("");
@@ -125,6 +128,33 @@ const QuotesList = () => {
     if (s === "rejected") return "destructive" as const;
     if (s === "sent") return "secondary" as const;
     return "outline" as const; // draft
+  };
+
+  const handleExportToHolded = async (quoteId: string) => {
+    setExportingQuoteId(quoteId);
+    try {
+      const { data, error } = await supabase.functions.invoke('holded-export-estimate', {
+        body: { quoteId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Exportado a Holded",
+        description: `Presupuesto exportado como ${data.estimateNumber || 'estimate'}`,
+      });
+      
+      refetch();
+    } catch (error: any) {
+      console.error('Error exporting to Holded:', error);
+      toast({
+        title: "Error al exportar",
+        description: error.message || "No se pudo exportar el presupuesto a Holded",
+        variant: "destructive",
+      });
+    } finally {
+      setExportingQuoteId(null);
+    }
   };
 
   return (
@@ -317,6 +347,18 @@ const QuotesList = () => {
                         <Button size="sm" variant="default" className="h-7 px-2 text-xs" onClick={() => navigate(`/presupuestos/nuevo?from=${q.id}`)}>
                           Duplicar
                         </Button>
+                        {isHoldedActive && (
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="h-7 px-2 text-xs" 
+                            onClick={() => handleExportToHolded(q.id)}
+                            disabled={exportingQuoteId === q.id}
+                          >
+                            <Send className="w-3 h-3 mr-1" />
+                            {exportingQuoteId === q.id ? 'Enviando...' : 'Holded'}
+                          </Button>
+                        )}
                         {q.status === 'draft' && (
                           <Button 
                             size="sm" 

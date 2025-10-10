@@ -47,3 +47,6 @@ verify_jwt = true
 
 [functions.holded-zapier-webhook]
 verify_jwt = false
+
+[functions.holded-export-estimate]
+verify_jwt = true
