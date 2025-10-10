@@ -180,9 +180,14 @@ serve(async (req) => {
       );
     }
 
-    // Decrypt the access token from bytes
-    const decoder = new TextDecoder();
-    const apiKey = decoder.decode(accessData.access_token_encrypted);
+    // Get the API key - handle both string and bytea formats
+    let apiKey: string;
+    if (typeof accessData.access_token_encrypted === 'string') {
+      apiKey = accessData.access_token_encrypted;
+    } else {
+      const decoder = new TextDecoder();
+      apiKey = decoder.decode(accessData.access_token_encrypted);
+    }
 
     // Start background import task
     console.log('Starting background import task for organization:', organizationId);
