@@ -81,14 +81,38 @@ Deno.serve(async (req) => {
     console.log('Using Holded API key');
 
     // Build complete payload with all quote data
-    const items = quoteItems.map((item: any) => ({
-      name: item.product_name || item.name || 'Producto',
-      desc: item.description || '',
-      units: item.quantity || 1,
-      price: parseFloat(item.price) || 0,
-      tax: 21, // IVA estándar España
-      discount: parseFloat(item.discount_percentage) || 0
-    }));
+    const items = quoteItems.map((item: any) => {
+      let description = item.description || '';
+      
+      // Add prompts to description
+      if (item.prompts && typeof item.prompts === 'object') {
+        const promptsText = Object.entries(item.prompts)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join('\n');
+        if (promptsText) {
+          description += (description ? '\n\n' : '') + 'Prompts:\n' + promptsText;
+        }
+      }
+      
+      // Add item additionals to description
+      if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
+        const additionalsText = item.item_additionals
+          .map((add: any) => `${add.name}: ${add.type === 'percentage' ? add.value + '%' : add.value + '€'}`)
+          .join('\n');
+        if (additionalsText) {
+          description += (description ? '\n\n' : '') + 'Ajustes:\n' + additionalsText;
+        }
+      }
+      
+      return {
+        name: item.product_name || item.name || 'Producto',
+        desc: description,
+        units: item.quantity || 1,
+        price: parseFloat(item.price) || 0,
+        tax: 21, // IVA estándar España
+        discount: parseFloat(item.discount_percentage) || 0
+      };
+    });
 
     const estimatePayload = {
       docType: 'estimate',
