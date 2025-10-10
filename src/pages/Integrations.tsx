@@ -120,15 +120,17 @@ export default function Integrations() {
 
       if (error) throw error;
 
+      // Show success message with details
+      const imported = data?.imported || 0;
+      const total = data?.total || 0;
+      
       toast({
-        title: "Importación iniciada",
-        description: data?.message || "Los contactos se están importando en segundo plano. Esto puede tardar unos momentos.",
+        title: "Importación completada",
+        description: `${imported} contactos importados/actualizados de ${total} totales`,
       });
 
-      // Reload contacts count after a delay to allow background task to complete
-      setTimeout(() => {
-        loadContactsCount();
-      }, 5000);
+      // Reload contacts count
+      loadContactsCount();
     } catch (error: any) {
       console.error('Error importing Holded contacts:', error);
       

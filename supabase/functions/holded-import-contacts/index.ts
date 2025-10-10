@@ -163,27 +163,12 @@ serve(async (req) => {
       );
     }
 
-    // Get Holded integration and API key from database
-    const { data: integrationData, error: integrationError } = await supabase
-      .from('integrations')
-      .select('id')
-      .eq('name', 'Holded')
-      .maybeSingle();
-
-    if (integrationError || !integrationData) {
-      console.error('Error finding Holded integration:', integrationError);
-      return new Response(
-        JSON.stringify({ error: 'Holded integration not found' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     // Get organization integration access
     const { data: accessData, error: accessError } = await supabase
       .from('organization_integration_access')
       .select('access_token_encrypted, is_active')
       .eq('organization_id', organizationId)
-      .eq('integration_id', integrationData.id)
+      .eq('integration_id', integration.id)
       .maybeSingle();
 
     if (accessError || !accessData || !accessData.is_active) {
@@ -240,18 +225,90 @@ serve(async (req) => {
 
     console.log('API key validated successfully');
 
-    // Start background import task
-    console.log('Starting background import task for organization:', organizationId);
-    EdgeRuntime.waitUntil(
-      importContactsBackground(organizationId, apiKey, supabaseUrl, supabaseKey)
-    );
+    // Import contacts directly
+    console.log('Starting Holded contacts import...');
+    let allContacts: any[] = [];
+    let page = 1;
+    const limit = 500;
+    let hasMore = true;
 
-    // Return immediate response
+    while (hasMore) {
+      const response = await fetch(
+        `${HOLDED_API_BASE}/invoicing/v1/contacts?page=${page}&limit=${limit}`,
+        {
+          headers: {
+            'accept': 'application/json',
+            'key': apiKey,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        console.error('Holded API error:', response.status, await response.text());
+        break;
+      }
+
+      const contacts = await response.json();
+      
+      if (!contacts || contacts.length === 0) {
+        hasMore = false;
+      } else {
+        allContacts = allContacts.concat(contacts);
+        console.log(`Fetched page ${page}: ${contacts.length} contacts (total: ${allContacts.length})`);
+        
+        if (contacts.length < limit) {
+          hasMore = false;
+        } else {
+          page++;
+        }
+      }
+    }
+
+    console.log(`Total contacts fetched: ${allContacts.length}`);
+
+    // Transform and insert contacts in batches
+    const contactsToInsert = allContacts.map((contact: any) => ({
+      holded_id: contact.id,
+      name: contact.name || 'Sin nombre',
+      email: contact.email || null,
+      phone: contact.phone || null,
+      mobile: contact.mobile || null,
+      organization_id: organizationId,
+    }));
+
+    let imported = 0;
+    let errors = 0;
+
+    for (let i = 0; i < contactsToInsert.length; i += 100) {
+      const batch = contactsToInsert.slice(i, i + 100);
+      
+      const { data, error } = await supabase
+        .from('holded_contacts')
+        .upsert(batch, { 
+          onConflict: 'holded_id,organization_id',
+          ignoreDuplicates: false 
+        })
+        .select();
+
+      if (error) {
+        console.error(`Error inserting batch ${i / 100 + 1}:`, error);
+        errors += batch.length;
+      } else {
+        imported += data?.length || 0;
+        console.log(`Batch ${i / 100 + 1} inserted: ${data?.length} contacts`);
+      }
+    }
+
+    console.log(`Import complete - ${imported} contacts imported/updated, ${errors} errors`);
+
+    // Return success response with details
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Importación iniciada. Los contactos se están importando en segundo plano.',
-        status: 'processing'
+        imported: imported,
+        errors: errors,
+        total: allContacts.length,
+        message: `${imported} contactos importados/actualizados`
       }),
       { 
         status: 200,
