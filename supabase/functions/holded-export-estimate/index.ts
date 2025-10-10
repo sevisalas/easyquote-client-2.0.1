@@ -82,29 +82,32 @@ Deno.serve(async (req) => {
 
     // Get EasyQuote token for enriching product details
     const { data: credentials } = await supabase
-      .from('easyquote_credentials')
-      .select('api_username_encrypted, api_password_encrypted')
-      .eq('user_id', user.id)
-      .single();
+      .rpc('get_user_credentials', { p_user_id: user.id });
 
     let easyquoteToken = null;
-    if (credentials?.api_username_encrypted && credentials?.api_password_encrypted) {
-      try {
-        const username = new TextDecoder().decode(credentials.api_username_encrypted);
-        const password = new TextDecoder().decode(credentials.api_password_encrypted);
-        
-        const authResponse = await fetch('https://api.easyquote.cloud/api/v1/auth', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
-        });
-        
-        if (authResponse.ok) {
-          const authData = await authResponse.json();
-          easyquoteToken = authData.token;
+    if (credentials && credentials.length > 0) {
+      const cred = credentials[0];
+      if (cred.api_username && cred.api_password) {
+        try {
+          const authResponse = await fetch('https://api.easyquote.cloud/api/v1/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              username: cred.api_username, 
+              password: cred.api_password 
+            })
+          });
+          
+          if (authResponse.ok) {
+            const authData = await authResponse.json();
+            easyquoteToken = authData.token;
+            console.log('✅ EasyQuote token obtained successfully');
+          } else {
+            console.error('Failed to authenticate with EasyQuote:', authResponse.status);
+          }
+        } catch (err) {
+          console.error('Failed to get EasyQuote token:', err);
         }
-      } catch (err) {
-        console.error('Failed to get EasyQuote token:', err);
       }
     }
 
