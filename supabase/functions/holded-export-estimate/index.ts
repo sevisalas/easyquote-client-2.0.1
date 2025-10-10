@@ -82,8 +82,7 @@ Deno.serve(async (req) => {
 
     // Build complete payload with all quote data
     const items = quoteItems.map((item: any) => {
-      // Start with item description or product name
-      let description = item.product_name || item.name || '';
+      let description = '';
       
       // Add prompts to description
       if (item.prompts && typeof item.prompts === 'object') {
@@ -93,7 +92,7 @@ Deno.serve(async (req) => {
             .map(([key, value]) => `${value}`)
             .join('\n');
           if (promptsText) {
-            description += (description ? '\n\n' : '') + promptsText;
+            description = promptsText;
           }
         }
       }
@@ -109,8 +108,8 @@ Deno.serve(async (req) => {
       }
       
       return {
-        name: '', // Dejamos el name vacío
-        desc: description, // Todo va en la descripción
+        name: item.product_name || item.name || 'Producto',
+        desc: description,
         units: item.quantity || 1,
         price: parseFloat(item.price) || 0,
         tax: 21, // IVA estándar España
