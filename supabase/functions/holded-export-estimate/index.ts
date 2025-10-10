@@ -76,92 +76,16 @@ Deno.serve(async (req) => {
     const apiKey = '88610992d47b9783e7703c488a8c01cf';
     console.log('Using Holded API key');
 
-    // Build items array
-    const items: any[] = [];
-    
-    (quoteItems || []).forEach((item: any) => {
-      // Build description with prompts and item additionals
-      let desc = '';
-      
-      // Add prompts (label and value)
-      if (item.prompts && typeof item.prompts === 'object') {
-        Object.entries(item.prompts).forEach(([key, value]) => {
-          desc += `${key}: ${value}\n`;
-        });
-      }
-      
-      // Add item additionals (not quote additionals)
-      if (item.item_additionals && Array.isArray(item.item_additionals)) {
-        item.item_additionals.forEach((additional: any) => {
-          desc += `${additional.name}: ${additional.value}\n`;
-        });
-      }
-      
-      desc = desc.trim();
-      
-      // Get Price output
-      let priceOutput = 0;
-      if (item.outputs && Array.isArray(item.outputs)) {
-        const priceObj = item.outputs.find((out: any) => out.type === 'Price' || out.name === 'PRECIO');
-        if (priceObj && priceObj.value) {
-          priceOutput = parseFloat(String(priceObj.value).replace(',', '.'));
-        }
-      }
-      
-      // If multi exists, create one item per quantity row
-      if (item.multi && item.multi.rows && Array.isArray(item.multi.rows)) {
-        item.multi.rows.forEach((row: any, index: number) => {
-          const itemData: any = {
-            name: item.description || item.product_name || 'Artículo',
-            desc: desc,
-            units: row.qty || 1,
-            subtotal: parseFloat(String(row.totalStr || row.unit || 0).replace(',', '.')),
-            taxes: ['s_iva_21']
-          };
-          
-          if (item.discount_percentage && item.discount_percentage > 0) {
-            itemData.discount = parseFloat(item.discount_percentage);
-          }
-          
-          items.push(itemData);
-        });
-      } else {
-        // Single item without multi
-        const itemData: any = {
-          name: item.description || item.product_name || 'Artículo',
-          desc: desc,
-          units: item.quantity || 1,
-          subtotal: priceOutput || parseFloat(item.price) || 0,
-          taxes: ['s_iva_21']
-        };
-        
-        if (item.discount_percentage && item.discount_percentage > 0) {
-          itemData.discount = parseFloat(item.discount_percentage);
-        }
-        
-        items.push(itemData);
-      }
-    });
-
-    // Build estimate payload
-    const estimatePayload: any = {
+    // Build minimal estimate payload - only header
+    const estimatePayload = {
       desc: `Presupuesto EasyQuote ${quote.quote_number}`,
       date: new Date().toISOString().split('T')[0],
-      items: items
+      items: []
     };
-
-    // Add contactId only if exists
-    if (contactId) {
-      estimatePayload.contactId = contactId;
-      estimatePayload.applyContactDefaults = true;
-    }
 
     console.log('=== HOLDED EXPORT DEBUG ===');
     console.log('Quote ID:', quoteId);
     console.log('Quote Number:', quote.quote_number);
-    console.log('Customer ID:', quote.customer_id);
-    console.log('Contact ID:', contactId);
-    console.log('Items count:', items.length);
     console.log('Full payload:', JSON.stringify(estimatePayload, null, 2));
     console.log('API URL:', HOLDED_API_URL);
     console.log('API Key (first 10):', apiKey.substring(0, 10) + '...');
