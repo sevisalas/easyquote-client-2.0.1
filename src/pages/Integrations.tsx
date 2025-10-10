@@ -8,8 +8,9 @@ import { useIntegrationAccess } from "@/hooks/useIntegrationAccess";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Download, Trash2 } from "lucide-react";
+import { Download, Trash2, Info } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Integrations() {
   const { hasIntegrationAccess, loading } = useIntegrationAccess();
@@ -312,6 +313,14 @@ export default function Integrations() {
                       </p>
                     )}
                   </div>
+
+                  <Alert className="mb-4">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      La importación puede tardar aproximadamente 1 minuto dependiendo de la cantidad de contactos. 
+                      El proceso se ejecuta en segundo plano.
+                    </AlertDescription>
+                  </Alert>
 
                   <div className="flex gap-2">
                     <Button 
