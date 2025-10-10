@@ -202,6 +202,7 @@ serve(async (req) => {
     }
 
     console.log('API key decoded, length:', apiKey.length);
+    console.log('API key preview:', apiKey.substring(0, 10) + '...' + apiKey.substring(apiKey.length - 5));
 
     // Validate API key before starting background task
     console.log('Validating Holded API key...');
