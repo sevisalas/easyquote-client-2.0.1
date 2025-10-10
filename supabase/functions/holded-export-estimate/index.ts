@@ -84,12 +84,12 @@ Deno.serve(async (req) => {
     const items = quoteItems.map((item: any) => {
       let description = '';
       
-      // Add prompts to description
+      // Add prompts to description with label: value format
       if (item.prompts && typeof item.prompts === 'object') {
         const promptEntries = Object.entries(item.prompts);
         if (promptEntries.length > 0) {
           const promptsText = promptEntries
-            .map(([key, value]) => `${value}`)
+            .map(([key, value]) => `${key}: ${value}`)
             .join('\n');
           if (promptsText) {
             description = promptsText;
