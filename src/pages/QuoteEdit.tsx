@@ -15,6 +15,7 @@ import { Trash2, Plus, Edit } from "lucide-react";
 import { format } from "date-fns";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 import QuoteItem from "@/components/quotes/QuoteItem";
+import { CustomerSelector } from "@/components/quotes/CustomerSelector";
 
 interface QuoteItem {
   id: string;
@@ -76,15 +77,16 @@ const fetchQuote = async (id: string): Promise<Quote> => {
   return data as any;
 };
 
-const fetchCustomers = async () => {
-  const { data, error } = await supabase
-    .from('customers')
-    .select('id, name')
-    .order('name');
-
-  if (error) throw error;
-  return data;
-};
+// No longer needed - CustomerSelector handles fetching both local and Holded customers
+// const fetchCustomers = async () => {
+//   const { data, error } = await supabase
+//     .from('customers')
+//     .select('id, name')
+//     .order('name');
+//
+//   if (error) throw error;
+//   return data;
+// };
 
 const statusOptions = [
   { value: 'draft', label: 'Borrador' },
@@ -117,10 +119,7 @@ export default function QuoteEdit() {
     enabled: !!id,
   });
 
-  const { data: customers = [] } = useQuery({
-    queryKey: ['customers'],
-    queryFn: fetchCustomers,
-  });
+  // Customers are now handled by CustomerSelector component
 
   useEffect(() => {
     if (quote) {
@@ -470,22 +469,12 @@ export default function QuoteEdit() {
         <CardContent className="space-y-2 pt-3">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <div className="space-y-1.5">
-              <Label htmlFor="customer" className="text-xs">cliente</Label>
-              <Select
+              <CustomerSelector
                 value={formData.customer_id || ''}
                 onValueChange={(value) => handleInputChange('customer_id', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                label="cliente"
+                placeholder="Seleccionar cliente..."
+              />
             </div>
 
             <div className="space-y-1.5">
