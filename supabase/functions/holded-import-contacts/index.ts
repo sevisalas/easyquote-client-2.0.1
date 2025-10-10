@@ -251,9 +251,18 @@ serve(async (req) => {
     
     console.log('✓ API key final:', apiKey);
     console.log('✓ Length:', apiKey.length);
+    console.log('✓ Cada carácter (código ASCII):', Array.from(apiKey).map(c => c.charCodeAt(0)).join(', '));
 
     // Validate API key before starting background task
-    console.log('Validating Holded API key...');
+    console.log('========================================');
+    console.log('PETICIÓN DE VALIDACIÓN A HOLDED:');
+    console.log('URL:', `${HOLDED_API_BASE}/invoicing/v1/contacts?page=1&limit=1`);
+    console.log('Method: GET');
+    console.log('Headers:');
+    console.log('  - accept: application/json');
+    console.log('  - key:', apiKey);
+    console.log('========================================');
+    
     const testResponse = await fetch(
       `${HOLDED_API_BASE}/invoicing/v1/contacts?page=1&limit=1`,
       {
@@ -263,6 +272,9 @@ serve(async (req) => {
         },
       }
     );
+    
+    console.log('Response status:', testResponse.status);
+    console.log('Response headers:', JSON.stringify(Object.fromEntries(testResponse.headers.entries())));
 
     if (!testResponse.ok) {
       const errorText = await testResponse.text();
