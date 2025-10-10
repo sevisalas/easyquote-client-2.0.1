@@ -212,6 +212,7 @@ export default function QuoteEdit() {
           valid_until: data.valid_until,
           subtotal: calculateSubtotal(),
           final_price: calculateTotal(), // Usar calculateTotal() que incluye ajustes
+          selections: null, // Limpiar selections al guardar
           updated_at: new Date().toISOString(),
         })
         .eq('id', id);
