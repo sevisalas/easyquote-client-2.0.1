@@ -114,12 +114,49 @@ const QuotesList = () => {
 
   const handleStatusChange = async (id: string, next: string) => {
     try {
-      const { error } = await supabase.from("quotes").update({ status: next }).eq("id", id);
-      if (error) throw error;
-      toast({ title: "Estado actualizado" });
+      // Si se está cambiando a "enviado" y Holded está activo, exportar primero
+      if (next === "sent" && isHoldedActive) {
+        setExportingQuoteId(id);
+        
+        // Exportar a Holded
+        const { data: holdedData, error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
+          body: { quoteId: id }
+        });
+
+        if (holdedError) {
+          toast({ 
+            title: "Error al exportar a Holded", 
+            description: holdedError.message || "No se pudo exportar el presupuesto",
+            variant: "destructive" 
+          });
+          setExportingQuoteId(null);
+          return;
+        }
+
+        // Si la exportación fue exitosa, actualizar el estado
+        const { error: statusError } = await supabase
+          .from("quotes")
+          .update({ status: next })
+          .eq("id", id);
+        
+        if (statusError) throw statusError;
+
+        toast({ 
+          title: "Presupuesto enviado", 
+          description: `Exportado a Holded como ${holdedData?.estimateNumber || 'presupuesto'}` 
+        });
+        setExportingQuoteId(null);
+      } else {
+        // Si no es "enviado" o Holded no está activo, solo actualizar el estado
+        const { error } = await supabase.from("quotes").update({ status: next }).eq("id", id);
+        if (error) throw error;
+        toast({ title: "Estado actualizado" });
+      }
+      
       refetch();
     } catch (e: any) {
       toast({ title: "No se pudo actualizar el estado", description: e?.message || "Inténtalo de nuevo", variant: "destructive" });
+      setExportingQuoteId(null);
     }
   };
 
