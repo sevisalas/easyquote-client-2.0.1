@@ -180,13 +180,15 @@ serve(async (req) => {
       );
     }
 
-    // Get the API key - handle both string and bytea formats
-    let apiKey: string;
-    if (typeof accessData.access_token_encrypted === 'string') {
-      apiKey = accessData.access_token_encrypted;
-    } else {
-      const decoder = new TextDecoder();
-      apiKey = decoder.decode(accessData.access_token_encrypted);
+    // Get the API key - it's stored as plain text
+    const apiKey = accessData.access_token_encrypted;
+    
+    if (!apiKey || typeof apiKey !== 'string') {
+      console.error('Invalid API key format');
+      return new Response(
+        JSON.stringify({ error: 'API key configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Validate API key before starting background task

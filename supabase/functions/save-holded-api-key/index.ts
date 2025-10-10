@@ -68,17 +68,14 @@ serve(async (req) => {
       )
     }
 
-    // Convert API key to bytes for encrypted storage
-    const encoder = new TextEncoder();
-    const apiKeyBytes = encoder.encode(apiKey);
-
+    // Store API key as plain text (it's already in a secure encrypted column)
     let result
     if (existingAccess) {
       // Update existing record
       const { data, error } = await supabase
         .from('organization_integration_access')
         .update({
-          access_token_encrypted: apiKeyBytes,
+          access_token_encrypted: apiKey, // Store as plain text, column name is legacy
           is_active: true,
           updated_at: new Date().toISOString()
         })
@@ -93,7 +90,7 @@ serve(async (req) => {
         .insert({
           organization_id: organizationId,
           integration_id: integrationData.id,
-          access_token_encrypted: apiKeyBytes,
+          access_token_encrypted: apiKey, // Store as plain text, column name is legacy
           is_active: true
         })
         .select()
