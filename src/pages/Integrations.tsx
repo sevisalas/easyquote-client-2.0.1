@@ -131,9 +131,20 @@ export default function Integrations() {
       }, 5000);
     } catch (error: any) {
       console.error('Error importing Holded contacts:', error);
+      
+      // Try to get more details from the error
+      let errorMessage = "No se pudieron importar los contactos de Holded";
+      
+      if (error?.context?.body) {
+        // Edge function returned an error with details
+        errorMessage = error.context.body.error || errorMessage;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
-        title: "Error",
-        description: error.message || "No se pudieron importar los contactos de Holded",
+        title: "Error de Holded",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
