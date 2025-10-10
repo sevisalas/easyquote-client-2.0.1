@@ -123,9 +123,51 @@ Deno.serve(async (req) => {
 
     // Build items array
     const items = (quoteItems || []).map((item: any) => {
+      // Build description with all article data
+      let fullDesc = '';
+      
+      // Add product name
+      if (item.product_name) {
+        fullDesc += `Producto: ${item.product_name}\n`;
+      }
+      
+      // Add prompts
+      if (item.prompts && typeof item.prompts === 'object') {
+        fullDesc += '\nOpciones seleccionadas:\n';
+        Object.entries(item.prompts).forEach(([key, value]) => {
+          fullDesc += `- ${value}\n`;
+        });
+      }
+      
+      // Add outputs
+      if (item.outputs && Array.isArray(item.outputs)) {
+        fullDesc += '\nDetalles:\n';
+        item.outputs.forEach((output: any) => {
+          if (output.name && output.value) {
+            fullDesc += `- ${output.name}: ${output.value}\n`;
+          }
+        });
+      }
+      
+      // Add item additionals
+      if (item.item_additionals && Array.isArray(item.item_additionals)) {
+        fullDesc += '\nAdicionales:\n';
+        item.item_additionals.forEach((additional: any) => {
+          fullDesc += `- ${additional.name}: ${additional.value}\n`;
+        });
+      }
+      
+      // Add multi data if exists
+      if (item.multi && item.multi.rows) {
+        fullDesc += '\nCantidades:\n';
+        item.multi.rows.forEach((row: any) => {
+          fullDesc += `- ${row.qty} uds: ${row.totalStr}€\n`;
+        });
+      }
+
       const itemData: any = {
-        name: item.product_name || item.name || 'Product',
-        desc: item.description || '',
+        name: item.description || item.product_name || 'Artículo',
+        desc: fullDesc.trim(),
         units: item.quantity || 1,
         subtotal: parseFloat(item.price) || 0,
         taxes: ['s_iva_21'] // Default IVA 21%
@@ -150,17 +192,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Build estimate payload
+    // Build estimate payload - only contactId, no customer data
     const estimatePayload = {
       contactId: customer.holded_id,
       applyContactDefaults: true,
-      desc: `Presupuesto de EasyQuote numero ${quote.quote_number}`,
+      desc: `Presupuesto EasyQuote ${quote.quote_number}`,
       date: new Date().toISOString().split('T')[0],
-      items: items,
-      contactName: customer.name,
-      contactAddress: customer.address || '',
-      contactEmail: customer.email || '',
-      contactPhone: customer.phone || ''
+      items: items
     };
 
     console.log('Sending estimate to Holded:', JSON.stringify(estimatePayload, null, 2));
