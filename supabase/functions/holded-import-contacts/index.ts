@@ -179,24 +179,30 @@ serve(async (req) => {
       );
     }
 
-    // Decrypt API key - convert bytea to string
-    console.log('Raw access_token_encrypted type:', typeof accessData.access_token_encrypted);
-    console.log('Raw access_token_encrypted value:', accessData.access_token_encrypted);
+    // Decrypt API key - handle Supabase's bytea format
+    console.log('Raw access_token_encrypted:', JSON.stringify(accessData.access_token_encrypted));
     
     let apiKey: string;
-    if (accessData.access_token_encrypted instanceof Uint8Array) {
+    const encrypted = accessData.access_token_encrypted;
+    
+    // Supabase returns bytea as {data: [...], type: "Buffer"}
+    if (encrypted && typeof encrypted === 'object' && 'data' in encrypted && Array.isArray(encrypted.data)) {
       const decoder = new TextDecoder();
-      apiKey = decoder.decode(accessData.access_token_encrypted).trim();
-      console.log('Decoded from Uint8Array, API key length:', apiKey.length);
-    } else if (typeof accessData.access_token_encrypted === 'string') {
-      // If it comes as a string, use it directly
-      apiKey = accessData.access_token_encrypted.trim();
-      console.log('Using string directly, API key length:', apiKey.length);
+      apiKey = decoder.decode(new Uint8Array(encrypted.data)).trim();
+      console.log('Decoded from Supabase Buffer object');
+    } else if (encrypted instanceof Uint8Array) {
+      const decoder = new TextDecoder();
+      apiKey = decoder.decode(encrypted).trim();
+      console.log('Decoded from Uint8Array');
+    } else if (typeof encrypted === 'string') {
+      apiKey = encrypted.trim();
+      console.log('Using string directly');
     } else {
-      // If it's a Buffer or array-like object, convert it
-      const decoder = new TextDecoder();
-      apiKey = decoder.decode(new Uint8Array(accessData.access_token_encrypted)).trim();
-      console.log('Converted to Uint8Array first, API key length:', apiKey.length);
+      console.error('Unknown encrypted data format:', typeof encrypted);
+      return new Response(
+        JSON.stringify({ error: 'Formato de API key no válido' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
     
     // Validate the API key is not empty
@@ -208,10 +214,9 @@ serve(async (req) => {
       );
     }
     
-    console.log('API key length after trim:', apiKey.length);
-    console.log('API key first 10 chars:', apiKey.substring(0, 10));
-    console.log('API key last 5 chars:', apiKey.substring(apiKey.length - 5));
-    console.log('Sending API key to Holded with header "key"');
+    console.log('✓ API key decoded successfully, length:', apiKey.length);
+    console.log('✓ First 10 chars:', apiKey.substring(0, 10));
+    console.log('✓ Last 5 chars:', apiKey.substring(apiKey.length - 5));
 
     // Validate API key before starting background task
     console.log('Validating Holded API key...');
