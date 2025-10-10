@@ -50,6 +50,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Local state per item
   const [productId, setProductId] = useState<string>("");
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
+  const [promptLabels, setPromptLabels] = useState<Record<string, string>>({});
   const [debouncedPromptValues, setDebouncedPromptValues] = useState<Record<string, any>>({});
   const [forceRecalculate, setForceRecalculate] = useState<boolean>(false);
   const [isExpanded, setIsExpanded] = useState<boolean>(shouldExpand || false);
@@ -81,7 +82,26 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     initializedRef.current = true;
     try {
       setProductId(initialData.productId || "");
-      setPromptValues(initialData.prompts || {});
+      
+      // Handle prompts in both formats: new {id: {label, value}} and old {id: value}
+      const normalizedPrompts: Record<string, any> = {};
+      if (initialData.prompts && typeof initialData.prompts === 'object') {
+        Object.entries(initialData.prompts).forEach(([key, value]) => {
+          if (value && typeof value === 'object' && 'value' in value) {
+            // New format: extract just the value
+            normalizedPrompts[key] = value.value;
+            // Store the label if available
+            if ('label' in value) {
+              setPromptLabels(prev => ({ ...prev, [key]: value.label }));
+            }
+          } else {
+            // Old format: use value directly
+            normalizedPrompts[key] = value;
+          }
+        });
+      }
+      setPromptValues(normalizedPrompts);
+      
       setItemDescription(initialData.itemDescription || "");
       // Convertir formato antiguo a nuevo si es necesario
       const additionals = initialData.itemAdditionals;
@@ -366,6 +386,21 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   });
 
   // Numeric prompts detection
+  // Extract prompt labels from pricing data
+  useEffect(() => {
+    if (pricing) {
+      const p: any = pricing as any;
+      const arr: any[] = Array.isArray(p?.prompts) ? p.prompts : [];
+      const labels: Record<string, string> = {};
+      arr.forEach((prompt: any) => {
+        const id = String(prompt.id || prompt.key || prompt.code);
+        const label = prompt.promptText ?? prompt.label ?? prompt.title ?? prompt.promptName ?? prompt.displayName ?? prompt.name ?? id;
+        labels[id] = label;
+      });
+      setPromptLabels(labels);
+    }
+  }, [pricing]);
+
   const numericPrompts = useMemo(() => {
     const p: any = pricing as any;
     const arr: any[] = Array.isArray(p?.prompts) ? p.prompts : [];
@@ -462,17 +497,29 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     return basePrice + additionalsTotal;
   }, [priceOutput, itemAdditionals, multiEnabled, multiRows]);
 
+  // Build enriched prompts object with labels
+  const enrichedPrompts = useMemo(() => {
+    const enriched: Record<string, any> = {};
+    Object.entries(promptValues).forEach(([id, value]) => {
+      enriched[id] = {
+        label: promptLabels[id] || id,
+        value: value
+      };
+    });
+    return enriched;
+  }, [promptValues, promptLabels]);
+
   useEffect(() => {
     onChange?.(id, {
       productId,
-      prompts: promptValues,
+      prompts: enrichedPrompts,
       outputs,
       price: finalPrice,
       multi: multiEnabled ? { qtyPrompt, qtyInputs, rows: multiRows } : null,
       itemDescription,
       itemAdditionals,
     });
-  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, itemAdditionals]);
+  }, [id, onChange, productId, enrichedPrompts, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, itemAdditionals]);
 
   const handlePromptChange = (id: string, value: any) => setPromptValues((prev) => ({ ...prev, [id]: value }));
 

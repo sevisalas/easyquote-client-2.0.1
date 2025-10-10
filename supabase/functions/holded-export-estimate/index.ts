@@ -94,7 +94,14 @@ Deno.serve(async (req) => {
         console.log('📝 Prompt entries:', promptEntries);
         if (promptEntries.length > 0) {
           description = promptEntries
-            .map(([key, value]) => `${key}: ${value}`)
+            .map(([key, value]: [string, any]) => {
+              // Check if value is an object with label and value properties
+              if (value && typeof value === 'object' && 'label' in value && 'value' in value) {
+                return `${value.label}: ${value.value}`;
+              }
+              // Fallback to key: value format for old data
+              return `${key}: ${value}`;
+            })
             .join('\n');
         }
       }
