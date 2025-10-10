@@ -40,7 +40,8 @@ const fetchLocalCustomers = async (): Promise<LocalCustomer[]> => {
   const { data, error } = await supabase
     .from("customers")
     .select("id, name, email, phone")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(50000);
   
   if (error) {
     console.error('❌ Error fetching local customers:', error);
@@ -84,7 +85,8 @@ const fetchHoldedCustomers = async (): Promise<HoldedCustomer[]> => {
       .from("holded_contacts")
       .select("id, holded_id, name, email, phone")
       .eq("organization_id", org.id)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(50000);
     
     console.log('🔍 Holded contacts query result:', { count: data?.length, error });
     
