@@ -47,26 +47,23 @@ Deno.serve(async (req) => {
       throw new Error('Quote not found');
     }
 
-    // Get customer separately
-    let customer = null;
-    if (quote.customer_id) {
-      const { data: customerData, error: customerError } = await supabase
-        .from('customers')
-        .select('id, name, email, phone, address, holded_id')
-        .eq('id', quote.customer_id)
-        .single();
-
-      if (!customerError && customerData) {
-        customer = customerData;
-      }
+    // Get Holded contact directly (no local customers allowed)
+    if (!quote.customer_id) {
+      throw new Error('Quote does not have a customer assigned');
     }
 
-    if (!customer) {
-      throw new Error('Customer not found for this quote');
+    const { data: holdedContact, error: contactError } = await supabase
+      .from('holded_contacts')
+      .select('holded_id')
+      .eq('id', quote.customer_id)
+      .single();
+
+    if (contactError || !holdedContact) {
+      throw new Error('Holded contact not found for this quote. Only Holded contacts can be exported.');
     }
 
-    if (!customer.holded_id) {
-      throw new Error('Customer does not have a Holded contact ID. Please sync the customer with Holded first.');
+    if (!holdedContact.holded_id) {
+      throw new Error('Holded contact does not have a valid Holded ID');
     }
 
     // Get quote items separately
@@ -190,7 +187,7 @@ Deno.serve(async (req) => {
 
     // Build estimate payload - only contactId, no customer data
     const estimatePayload = {
-      contactId: customer.holded_id,
+      contactId: holdedContact.holded_id,
       applyContactDefaults: true,
       desc: `Presupuesto EasyQuote ${quote.quote_number}`,
       date: new Date().toISOString().split('T')[0],
