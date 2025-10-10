@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -157,21 +157,31 @@ export const CustomerSelector = ({
     }
   }, [error]);
 
-  // Filtrar clientes basado en la búsqueda
-  const filteredCustomers = customers?.filter(customer => {
-    if (!searchValue) return true;
-    const search = searchValue.toLowerCase();
-    const name = customer.name?.toLowerCase() || "";
-    const email = customer.email?.toLowerCase() || "";
-    const phone = customer.phone?.toLowerCase() || "";
+  // Filtrar clientes basado en la búsqueda con useMemo para mejor performance
+  const filteredCustomers = useMemo(() => {
+    if (!customers) return [];
     
-    return name.includes(search) || email.includes(search) || phone.includes(search);
-  }) || [];
+    if (!searchValue) return customers;
+    
+    const search = searchValue.toLowerCase();
+    return customers.filter(customer => {
+      const name = customer.name?.toLowerCase() || "";
+      const email = customer.email?.toLowerCase() || "";
+      const phone = customer.phone?.toLowerCase() || "";
+      
+      return name.includes(search) || email.includes(search) || phone.includes(search);
+    });
+  }, [customers, searchValue]);
 
   // Limitar a 1000 resultados
-  const paginatedCustomers = filteredCustomers.slice(0, 1000);
+  const paginatedCustomers = useMemo(() => {
+    return filteredCustomers.slice(0, 1000);
+  }, [filteredCustomers]);
 
-  console.log(`🔍 Búsqueda "${searchValue}": ${filteredCustomers.length} resultados (mostrando ${paginatedCustomers.length})`);
+  // Log para debugging
+  useEffect(() => {
+    console.log(`🔍 Búsqueda "${searchValue}": ${filteredCustomers.length} resultados (mostrando ${paginatedCustomers.length})`);
+  }, [searchValue, filteredCustomers.length, paginatedCustomers.length]);
 
   // Encontrar el cliente seleccionado
   const selectedCustomer = customers?.find(customer => customer.id === value);
