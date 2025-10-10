@@ -19,6 +19,7 @@ import QuoteItem from "@/components/quotes/QuoteItem";
 interface QuoteItem {
   id: string;
   name?: string;
+  product_api: string;
   product_name: string;
   description?: string;
   price: number;
@@ -44,6 +45,7 @@ interface Quote {
   id: string;
   quote_number: string;
   customer_id?: string;
+  product_api?: string;
   product_name?: string;
   title?: string;
   description?: string;
@@ -163,15 +165,16 @@ export default function QuoteEdit() {
       if (quote.items && quote.items.length > 0) {
         const dbItems = quote.items.map((item: any) => ({
           id: item.id,
-          product_name: item.product_name,
-          description: item.description,
+          product_api: item.product_api || '',
+          product_name: item.product_name || '',
+          description: item.description || '',
           price: item.price || 0,
           // QuoteItem compatibility
           productId: item.product_id || '',
           prompts: typeof item.prompts === 'object' ? item.prompts : {},
           outputs: Array.isArray(item.outputs) ? item.outputs : [],
           multi: (item.multi && typeof item.multi === 'object' && (item.multi.qtyInputs || item.multi.qtyPrompt)) ? item.multi : undefined,
-          itemDescription: item.description || item.product_name,
+          itemDescription: item.product_name || '',
           itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
         }));
         allItems.push(...dbItems);
@@ -181,8 +184,9 @@ export default function QuoteEdit() {
       if (allItems.length === 0 && quote.selections && Array.isArray(quote.selections)) {
         const jsonItems = quote.selections.map((selection: any, index: number) => ({
           id: `json-${index}`,
-          product_name: selection.itemDescription || quote.product_name || 'Producto',
-          description: selection.itemDescription || '',
+          product_api: quote.product_api || '',
+          product_name: selection.itemDescription || '',
+          description: '',
           price: selection.price || 0,
           isFromSelections: true,
           // QuoteItem compatibility
@@ -190,7 +194,7 @@ export default function QuoteEdit() {
           prompts: selection.prompts || {},
           outputs: selection.outputs || [],
           multi: selection.multi,
-          itemDescription: selection.itemDescription || quote.product_name || 'Producto',
+          itemDescription: selection.itemDescription || '',
           itemAdditionals: selection.itemAdditionals || [],
         }));
         allItems.push(...jsonItems);
@@ -229,7 +233,8 @@ export default function QuoteEdit() {
       if (items.length > 0) {
         const itemsToInsert = items.map((item, index) => ({
           quote_id: id,
-          product_name: item.product_name,
+          product_api: item.product_api || '',
+          product_name: item.product_name || '',
           description: item.description || '',
           price: item.price || 0,
           position: index,
@@ -341,8 +346,9 @@ export default function QuoteEdit() {
       (item.id === itemId || index.toString() === itemId.toString()) 
         ? {
             ...item,
+            product_api: item.product_api,
             product_name: snapshot.itemDescription || item.product_name,
-            description: snapshot.itemDescription || item.description,
+            description: item.description,
             price: snapshot.price || 0,
             // Update QuoteItem fields
             productId: snapshot.productId,
@@ -366,6 +372,7 @@ export default function QuoteEdit() {
     const newItemId = `temp-${Date.now()}`;
     const newItem: QuoteItem = {
       id: newItemId,
+      product_api: '',
       product_name: 'Nuevo artículo',
       description: '',
       price: 0,
@@ -612,44 +619,54 @@ export default function QuoteEdit() {
                        </div>
                      </>
                    ) : (
-                     // Compressed mode - show summary
-                     <div className="flex justify-between items-center">
-                       <div className="flex-1 min-w-0">
-                         <div className="flex items-center gap-4">
-                            <div className="min-w-0 flex-1">
-                              <p className="text-foreground text-sm truncate">
-                                {item.product_name}
-                              </p>
-                              {item.itemDescription && item.itemDescription !== item.product_name && (
-                                <p className="text-xs text-muted-foreground truncate">{item.itemDescription}</p>
-                              )}
+                      // Compressed mode - show summary
+                      <div className="flex justify-between items-center gap-3">
+                        <div className="flex-1 min-w-0 space-y-0.5">
+                          <div className="grid grid-cols-2 gap-2">
+                            {item.product_api && (
+                              <div>
+                                <p className="text-xs text-muted-foreground">Producto API</p>
+                                <p className="text-sm font-medium truncate">{item.product_api}</p>
+                              </div>
+                            )}
+                            <div>
+                              <p className="text-xs text-muted-foreground">Nombre de producto</p>
+                              <p className="text-sm font-medium truncate">{item.product_name || '-'}</p>
                             </div>
-                           <div className="text-sm font-medium text-secondary text-right shrink-0">
-                             {fmtEUR(item.price || 0)}
-                           </div>
-                         </div>
+                          </div>
+                          {item.description && (
+                            <div className="pt-0.5">
+                              <p className="text-xs text-muted-foreground">Descripción</p>
+                              <p className="text-sm truncate">{item.description}</p>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <div className="text-sm font-medium text-secondary text-right">
+                            {fmtEUR(item.price || 0)}
+                          </div>
+                       <div className="flex items-center gap-2">
+                         <Button
+                           onClick={() => handleItemEdit(itemId)}
+                           size="sm"
+                           variant="outline"
+                           className="gap-1"
+                         >
+                           <Edit className="h-3 w-3" />
+                           Editar
+                         </Button>
+                         <Button
+                           onClick={() => handleItemRemove(item.id || index)}
+                           size="sm"
+                           variant="outline"
+                           className="gap-1 text-destructive hover:bg-destructive/10"
+                         >
+                           <Trash2 className="h-3 w-3" />
+                           Eliminar
+                         </Button>
                        </div>
-                      <div className="flex items-center gap-2 ml-4 shrink-0">
-                        <Button
-                          onClick={() => handleItemEdit(itemId)}
-                          size="sm"
-                          variant="outline"
-                          className="gap-1"
-                        >
-                          <Edit className="h-3 w-3" />
-                          Editar
-                        </Button>
-                        <Button
-                          onClick={() => handleItemRemove(item.id || index)}
-                          size="sm"
-                          variant="outline"
-                          className="gap-1 text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                          Eliminar
-                        </Button>
-                      </div>
-                    </div>
+                        </div>
+                     </div>
                   )}
                 </div>
               );

@@ -112,7 +112,7 @@ export default function QuoteNew() {
             outputs: item.outputs || [],
             price: item.price,
             multi: item.multi,
-            itemDescription: item.itemDescription || "",
+            itemDescription: item.productName || "",
             itemAdditionals: item.itemAdditionals || [],
             needsRecalculation: true, // Flag to trigger recalculation
           };
@@ -240,7 +240,7 @@ export default function QuoteNew() {
         terms_conditions: "", // TODO: Add terms and conditions
         selections: itemsArray,
         quote_additionals: quoteAdditionals,
-        product_name: itemsArray.length > 0 ? itemsArray[0].itemDescription || "Productos varios" : "Sin productos",
+        product_api: itemsArray.length > 0 ? itemsArray[0].itemDescription || "Productos varios" : "Sin productos",
       };
 
       const { data, error } = await supabase
