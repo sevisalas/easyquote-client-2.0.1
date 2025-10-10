@@ -168,7 +168,10 @@ export const CustomerSelector = ({
     return name.includes(search) || email.includes(search) || phone.includes(search);
   }) || [];
 
-  console.log(`🔍 Búsqueda "${searchValue}": ${filteredCustomers.length} resultados encontrados`);
+  // Limitar a 1000 resultados
+  const paginatedCustomers = filteredCustomers.slice(0, 1000);
+
+  console.log(`🔍 Búsqueda "${searchValue}": ${filteredCustomers.length} resultados (mostrando ${paginatedCustomers.length})`);
 
   // Encontrar el cliente seleccionado
   const selectedCustomer = customers?.find(customer => customer.id === value);
@@ -228,23 +231,24 @@ export const CustomerSelector = ({
                 {searchValue && (
                   <div className="px-3 py-2 text-xs text-muted-foreground border-b">
                     {filteredCustomers.length} resultado{filteredCustomers.length !== 1 ? 's' : ''} encontrado{filteredCustomers.length !== 1 ? 's' : ''}
+                    {filteredCustomers.length > 1000 && ` (mostrando primeros 1000)`}
                   </div>
                 )}
                 
                 <ScrollArea className="h-[400px]">
-                  {filteredCustomers.length === 0 && searchValue ? (
+                  {paginatedCustomers.length === 0 && searchValue ? (
                     <div className="p-4 text-sm text-muted-foreground text-center">
                       No se encontraron clientes.
                     </div>
                   ) : (
                     <div className="p-2">
                       {/* Clientes locales */}
-                      {filteredCustomers.filter(c => c.source === 'local').length > 0 && (
+                      {paginatedCustomers.filter(c => c.source === 'local').length > 0 && (
                         <div className="mb-4">
                           <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
                             Clientes Locales
                           </div>
-                          {filteredCustomers.filter(c => c.source === 'local').map((customer) => (
+                          {paginatedCustomers.filter(c => c.source === 'local').map((customer) => (
                             <button
                               key={customer.id}
                               onClick={() => {
@@ -276,12 +280,12 @@ export const CustomerSelector = ({
                       )}
 
                       {/* Clientes de Holded */}
-                      {filteredCustomers.filter(c => c.source === 'holded').length > 0 && (
+                      {paginatedCustomers.filter(c => c.source === 'holded').length > 0 && (
                         <div>
                           <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
                             Contactos de Holded
                           </div>
-                          {filteredCustomers.filter(c => c.source === 'holded').map((customer) => (
+                          {paginatedCustomers.filter(c => c.source === 'holded').map((customer) => (
                             <button
                               key={customer.id}
                               onClick={() => {
