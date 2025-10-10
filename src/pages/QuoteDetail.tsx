@@ -373,7 +373,6 @@ export default function QuoteDetail() {
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex-1 space-y-0.5">
                         <div>
-                          <p className="text-xs text-muted-foreground">Nombre de producto</p>
                           <p className="text-sm font-medium">{item.product_name || '-'}</p>
                         </div>
                         {item.description && (
