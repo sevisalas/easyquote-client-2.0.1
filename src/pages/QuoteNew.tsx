@@ -72,7 +72,7 @@ export default function QuoteNew() {
   }, [items]);
 
   // Check if user has EasyQuote token
-  const hasToken = Boolean(localStorage.getItem("easyquote_token"));
+  const hasToken = Boolean(sessionStorage.getItem("easyquote_token"));
 
   // Load quote for duplication
   const { data: duplicateQuote } = useQuery({

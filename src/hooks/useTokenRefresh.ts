@@ -13,7 +13,7 @@ export const useTokenRefresh = () => {
       
       if (status === 401 && code === 'EASYQUOTE_UNAUTHORIZED') {
         // Token de EasyQuote expirado - limpiar y salir
-        localStorage.removeItem('easyquote_token');
+        sessionStorage.removeItem('easyquote_token');
         
         toast({
           title: "Sesión expirada",

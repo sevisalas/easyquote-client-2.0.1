@@ -12,7 +12,7 @@ import { ArrowLeft, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const fetchProducts = async () => {
-  const token = localStorage.getItem("easyquote_token");
+  const token = sessionStorage.getItem("easyquote_token");
   if (!token) throw new Error("No hay token de EasyQuote disponible. Por favor, inicia sesión nuevamente.");
   
   const { data, error } = await supabase.functions.invoke("easyquote-products", {
@@ -57,7 +57,7 @@ export default function ProductTestPage() {
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["easyquote-products"],
     queryFn: fetchProducts,
-    enabled: !!localStorage.getItem("easyquote_token")
+    enabled: !!sessionStorage.getItem("easyquote_token")
   });
 
   // Fetch product detail when productId changes
@@ -68,7 +68,7 @@ export default function ProductTestPage() {
         return;
       }
       
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) return;
 
       try {
@@ -107,11 +107,11 @@ export default function ProductTestPage() {
   // Fetch pricing data when prompts change OR when productDetail loads (initial load)
   const { data: pricing, isLoading: pricingLoading, refetch: refetchPricing } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues],
-    enabled: !!localStorage.getItem("easyquote_token") && !!productId,
+    enabled: !!sessionStorage.getItem("easyquote_token") && !!productId,
     refetchOnWindowFocus: false,
     retry: 1,
     queryFn: async () => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
       
       console.log("Making pricing call with inputs:", debouncedPromptValues);

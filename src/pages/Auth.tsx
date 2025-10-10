@@ -60,7 +60,7 @@ const Auth = () => {
             if (fxError) {
               console.error("easyquote-auth error", fxError);
             } else if ((data as any)?.token) {
-              localStorage.setItem("easyquote_token", (data as any).token);
+              sessionStorage.setItem("easyquote_token", (data as any).token);
               console.log("Token de EasyQuote obtenido correctamente");
               
               // Disparar evento para notificar que el token fue actualizado

@@ -114,12 +114,12 @@ export default function ProductManagement() {
   const [selectedProduct, setSelectedProduct] = useState<EasyQuoteProduct | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
-  const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
+  const [hasToken, setHasToken] = useState<boolean>(!!sessionStorage.getItem("easyquote_token"));
   
   // Escuchar cambios en el token de EasyQuote
   useEffect(() => {
     const checkToken = () => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       setHasToken(!!token);
     };
 
@@ -183,7 +183,7 @@ export default function ProductManagement() {
   const { data: promptTypes = [] } = useQuery({
     queryKey: ["prompt-types"],
     queryFn: async () => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
       const response = await fetch("https://api.easyquote.cloud/api/v1/products/prompts/types", {
@@ -198,7 +198,7 @@ export default function ProductManagement() {
   const { data: outputTypes = [] } = useQuery({
     queryKey: ["output-types"],
     queryFn: async () => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
       const response = await fetch("https://api.easyquote.cloud/api/v1/products/outputs/types", {
@@ -217,7 +217,7 @@ export default function ProductManagement() {
       if (!selectedProduct?.id) return [];
       
       console.log("Fetching prompts for product:", selectedProduct.id);
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
       const response = await fetch(`https://api.easyquote.cloud/api/v1/products/prompts/list/${selectedProduct.id}`, {
@@ -238,7 +238,7 @@ export default function ProductManagement() {
       if (!selectedProduct?.id) return [];
       
       console.log("Fetching outputs for product:", selectedProduct.id);
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
       const response = await fetch(`https://api.easyquote.cloud/api/v1/products/outputs/list/${selectedProduct.id}`, {
@@ -256,7 +256,7 @@ export default function ProductManagement() {
   // Mutations para prompts y outputs
   const createPromptMutation = useMutation({
     mutationFn: async (newPrompt: Omit<ProductPrompt, 'id'>) => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
       const response = await fetch("https://api.easyquote.cloud/api/v1/products/prompts", {
@@ -292,7 +292,7 @@ export default function ProductManagement() {
 
   const createOutputMutation = useMutation({
     mutationFn: async (newOutput: Omit<ProductOutput, 'id'>) => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
       const response = await fetch("https://api.easyquote.cloud/api/v1/products/outputs", {
@@ -328,7 +328,7 @@ export default function ProductManagement() {
 
   const deletePromptMutation = useMutation({
     mutationFn: async (promptId: string) => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
       const response = await fetch(`https://api.easyquote.cloud/api/v1/products/prompts/${promptId}`, {
@@ -349,7 +349,7 @@ export default function ProductManagement() {
 
   const deleteOutputMutation = useMutation({
     mutationFn: async (outputId: string) => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
       const response = await fetch(`https://api.easyquote.cloud/api/v1/products/outputs/${outputId}`, {
@@ -370,7 +370,7 @@ export default function ProductManagement() {
 
   const updatePromptMutation = useMutation({
     mutationFn: async (updatedPrompt: ProductPrompt) => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
       const response = await fetch("https://api.easyquote.cloud/api/v1/products/prompts", {
@@ -394,7 +394,7 @@ export default function ProductManagement() {
 
   const updateOutputMutation = useMutation({
     mutationFn: async (updatedOutput: ProductOutput) => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
       const response = await fetch("https://api.easyquote.cloud/api/v1/products/outputs", {
@@ -421,7 +421,7 @@ export default function ProductManagement() {
   const { data: products = [], isLoading, error, refetch } = useQuery({
     queryKey: ["easyquote-products", includeInactive],
     queryFn: async () => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) {
         throw new Error("No hay token de EasyQuote disponible. Por favor, inicia sesión nuevamente.");
       }
@@ -536,7 +536,7 @@ export default function ProductManagement() {
   // Mutation para actualizar producto
   const updateProductMutation = useMutation({
     mutationFn: async (updatedProduct: EasyQuoteProduct) => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) {
         throw new Error("No hay token de EasyQuote disponible");
       }

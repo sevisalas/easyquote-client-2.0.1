@@ -58,7 +58,7 @@ export default function ExcelFiles() {
   
   // Get the subscriber ID from the EasyQuote token
   const getSubscriberIdFromToken = () => {
-    const token = localStorage.getItem("easyquote_token");
+    const token = sessionStorage.getItem("easyquote_token");
     if (!token) return null;
     
     try {
@@ -72,12 +72,12 @@ export default function ExcelFiles() {
   };
 
   const subscriberId = getSubscriberIdFromToken();
-  const [hasToken, setHasToken] = useState<boolean>(!!localStorage.getItem("easyquote_token"));
+  const [hasToken, setHasToken] = useState<boolean>(!!sessionStorage.getItem("easyquote_token"));
   
   // Escuchar cambios en el token de EasyQuote
   useEffect(() => {
     const checkToken = () => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       setHasToken(!!token);
     };
 
@@ -121,7 +121,7 @@ export default function ExcelFiles() {
   const { data: files = [], isLoading, error, refetch } = useQuery({
     queryKey: ["easyquote-excel-files"],
     queryFn: async () => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) {
         throw new Error("No hay token de EasyQuote disponible");
       }
@@ -217,7 +217,7 @@ export default function ExcelFiles() {
     mutationFn: async (file: File) => {
       if (!file) throw new Error("No file selected");
       
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) {
         throw new Error("No hay token de EasyQuote disponible");
       }
@@ -275,7 +275,7 @@ export default function ExcelFiles() {
   // Delete file from EasyQuote API
   const deleteMutation = useMutation({
     mutationFn: async (fileId: string) => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) {
         throw new Error("No hay token de EasyQuote disponible");
       }
@@ -313,7 +313,7 @@ export default function ExcelFiles() {
   // Create new product with Excel file (existing file)
   const createProductMutation = useMutation({
     mutationFn: async (productData: { productName: string; excelFileId: string; currency: string }) => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
       const response = await fetch("https://api.easyquote.cloud/api/v1/products", {
@@ -361,7 +361,7 @@ export default function ExcelFiles() {
   // Create new product with new Excel file
   const createProductWithNewFileMutation = useMutation({
     mutationFn: async (data: { productName: string; file: File; currency: string }) => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
       // First upload the Excel file
@@ -445,7 +445,7 @@ export default function ExcelFiles() {
     mutationFn: async ({ fileId, file }: { fileId: string; file: File }) => {
       if (!file) throw new Error("No file selected");
       
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
       // Convert file to base64
@@ -612,7 +612,7 @@ export default function ExcelFiles() {
 
   // Fetch file details
   const fetchFileDetails = async (fileId: string) => {
-    const token = localStorage.getItem("easyquote_token");
+    const token = sessionStorage.getItem("easyquote_token");
     if (!token) return;
 
     try {
@@ -641,7 +641,7 @@ export default function ExcelFiles() {
   // Download file from EasyQuote API
   const downloadFile = async (fileId: string, fileName: string) => {
 
-    const token = localStorage.getItem("easyquote_token");
+    const token = sessionStorage.getItem("easyquote_token");
     if (!token) {
       toast({
         title: "Error",

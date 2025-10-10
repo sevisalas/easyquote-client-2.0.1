@@ -120,7 +120,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   }, [promptValues]);
 
   const fetchProducts = async (): Promise<any[]> => {
-    const token = localStorage.getItem("easyquote_token");
+    const token = sessionStorage.getItem("easyquote_token");
     if (!token) throw new Error("No hay token de EasyQuote disponible. Por favor, inicia sesión nuevamente.");
     
     const { data, error } = await invokeEasyQuoteFunction("easyquote-products", { token });
@@ -167,7 +167,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     refetchOnWindowFocus: false,
     staleTime: forceRecalculate ? 0 : 5000,
     queryFn: async () => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
       const norm: Record<string, any> = {};
       Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
@@ -320,7 +320,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     refetchOnWindowFocus: false,
     retry: 1,
     queryFn: async () => {
-      const token = localStorage.getItem("easyquote_token");
+      const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
       const norm: Record<string, any> = {};
       Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
