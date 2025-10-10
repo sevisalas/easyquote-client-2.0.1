@@ -534,6 +534,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               <Label>Selecciona producto</Label>
               <Select onValueChange={(value) => {
                 setProductId(value);
+                // Establecer automáticamente el itemDescription con el nombre del producto
+                const selectedProduct = products?.find((p: any) => String(p.id) === String(value));
+                if (selectedProduct) {
+                  setItemDescription(getProductLabel(selectedProduct));
+                }
               }} value={productId} disabled={!hasToken}>
                 <SelectTrigger ref={selectRef}>
                   <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
