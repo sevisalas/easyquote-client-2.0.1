@@ -357,15 +357,7 @@ export default function QuoteEdit() {
 
   const handleItemChange = (itemId: string | number, snapshot: any) => {
     setItems(prev => {
-      // Remove old multi-quantity duplicates for this item
-      let filteredItems = prev.filter(item => {
-        const itemIdStr = item.id.toString();
-        // Keep if it's not a duplicate of the current item
-        return !(itemIdStr.startsWith(`${itemId}-q`) && itemIdStr !== itemId.toString());
-      });
-      
-      // Update the main item
-      const updatedItems = filteredItems.map((item, index) => 
+      return prev.map((item, index) => 
         (item.id === itemId || index.toString() === itemId.toString()) 
           ? {
               ...item,
@@ -382,77 +374,12 @@ export default function QuoteEdit() {
             }
           : item
       );
-      
-      // If multi is enabled and has additional quantities, create duplicate items
-      if (snapshot.multi && Array.isArray(snapshot.multi.rows) && snapshot.multi.rows.length > 1) {
-        const qtyPromptId = snapshot.multi.qtyPrompt;
-        const baseIndex = updatedItems.findIndex(item => item.id === itemId || item.id.toString() === itemId.toString());
-        
-        // Skip Q1 (index 0) as it's the main item
-        snapshot.multi.rows.slice(1).forEach((row: any, index: number) => {
-          const qIndex = index + 2; // Q2, Q3, Q4...
-          const duplicateId = `${itemId}-q${qIndex}`;
-          
-          // Clone prompts and update the quantity prompt
-          const duplicatePrompts = { ...snapshot.prompts };
-          if (qtyPromptId && row.qty) {
-            // Get the label from the original prompt
-            const originalPrompt = snapshot.prompts[qtyPromptId];
-            const label = originalPrompt && typeof originalPrompt === 'object' && 'label' in originalPrompt 
-              ? originalPrompt.label 
-              : 'CANTIDAD';
-            
-            duplicatePrompts[qtyPromptId] = {
-              label,
-              value: String(row.qty)
-            };
-          }
-          
-          // Find the price output from the row
-          const priceOut = (row.outs || []).find((o: any) => 
-            String(o?.type || '').toLowerCase() === 'price' ||
-            String(o?.name || '').toLowerCase().includes('precio') ||
-            String(o?.name || '').toLowerCase().includes('price')
-          );
-          
-          const priceValue = priceOut?.value;
-          const price = typeof priceValue === "number" 
-            ? priceValue 
-            : parseFloat(String(priceValue || 0).replace(/\./g, "").replace(",", ".")) || 0;
-          
-          // Create duplicate item
-          const duplicateItem: QuoteItem = {
-            id: duplicateId,
-            product_name: `${snapshot.itemDescription || ''} (Q${qIndex})`,
-            description: '',
-            price,
-            productId: snapshot.productId,
-            prompts: duplicatePrompts,
-            outputs: row.outs || snapshot.outputs,
-            multi: null, // Disable multi for duplicates
-            itemDescription: `${snapshot.itemDescription || ''} (Q${qIndex})`,
-            itemAdditionals: snapshot.itemAdditionals || [],
-          };
-          
-          // Insert after the main item
-          updatedItems.splice(baseIndex + qIndex - 1, 0, duplicateItem);
-        });
-      }
-      
-      return updatedItems;
     });
   };
 
   const handleItemRemove = (itemId: string | number) => {
     setItems(prev => prev.filter((item, index) => {
-      const itemIdStr = item.id.toString();
-      const targetIdStr = itemId.toString();
-      
-      // Remove the main item and all its duplicates (q2, q3, etc.)
-      const isMainItem = item.id === itemId || index.toString() === targetIdStr;
-      const isDuplicate = itemIdStr.startsWith(`${targetIdStr}-q`);
-      
-      return !(isMainItem || isDuplicate);
+      return item.id !== itemId && index.toString() !== itemId.toString();
     }));
   };
 
@@ -712,17 +639,22 @@ export default function QuoteEdit() {
                        </div>
                      </>
                    ) : (
-                       // Compressed mode - show summary
-                       <div className="flex justify-between items-center gap-3">
-                         <div className="flex-1 min-w-0 space-y-0.5">
-                           <p className="text-sm font-medium truncate">{item.product_name || '-'}</p>
-                           {item.description && (
-                             <div className="pt-0.5">
-                               <p className="text-xs text-muted-foreground">Descripción</p>
-                               <p className="text-sm truncate">{item.description}</p>
-                             </div>
-                           )}
-                         </div>
+                        // Compressed mode - show summary
+                        <div className="flex justify-between items-center gap-3">
+                          <div className="flex-1 min-w-0 space-y-0.5">
+                            <p className="text-sm font-medium truncate">
+                              {item.product_name || '-'}
+                              {item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1 && (
+                                <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
+                              )}
+                            </p>
+                            {item.description && (
+                              <div className="pt-0.5">
+                                <p className="text-xs text-muted-foreground">Descripción</p>
+                                <p className="text-sm truncate">{item.description}</p>
+                              </div>
+                            )}
+                          </div>
                          <div className="flex items-center gap-3 shrink-0">
                            <div className="text-sm font-medium text-secondary text-right">
                              {fmtEUR(item.price || 0)}

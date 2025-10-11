@@ -208,87 +208,16 @@ export default function QuoteNew() {
   };
 
   const handleItemChange = (id: string | number, snapshot: ItemSnapshot) => {
-    setItems(prev => {
-      const next = { ...prev };
-      
-      // Update the main item
-      next[id] = snapshot;
-      
-      // Remove old multi-quantity duplicates for this item
-      Object.keys(next).forEach(key => {
-        if (key.toString().startsWith(`${id}-q`) && key !== id) {
-          delete next[key];
-        }
-      });
-      
-      // If multi is enabled and has additional quantities, create duplicate items
-      if (snapshot.multi && Array.isArray(snapshot.multi.rows) && snapshot.multi.rows.length > 1) {
-        const qtyPromptId = snapshot.multi.qtyPrompt;
-        
-        // Skip Q1 (index 0) as it's the main item
-        snapshot.multi.rows.slice(1).forEach((row: any, index: number) => {
-          const qIndex = index + 2; // Q2, Q3, Q4...
-          const duplicateId = `${id}-q${qIndex}`;
-          
-          // Clone prompts and update the quantity prompt
-          const duplicatePrompts = { ...snapshot.prompts };
-          if (qtyPromptId && row.qty) {
-            // Get the label from the original prompt
-            const originalPrompt = snapshot.prompts[qtyPromptId];
-            const label = originalPrompt && typeof originalPrompt === 'object' && 'label' in originalPrompt 
-              ? originalPrompt.label 
-              : 'CANTIDAD';
-            
-            duplicatePrompts[qtyPromptId] = {
-              label,
-              value: String(row.qty)
-            };
-          }
-          
-          // Find the price output from the row
-          const priceOut = (row.outs || []).find((o: any) => 
-            String(o?.type || '').toLowerCase() === 'price' ||
-            String(o?.name || '').toLowerCase().includes('precio') ||
-            String(o?.name || '').toLowerCase().includes('price')
-          );
-          
-          const priceValue = priceOut?.value;
-          const price = typeof priceValue === "number" 
-            ? priceValue 
-            : parseFloat(String(priceValue || 0).replace(/\./g, "").replace(",", ".")) || 0;
-          
-          // Create duplicate item
-          next[duplicateId] = {
-            productId: snapshot.productId,
-            prompts: duplicatePrompts,
-            outputs: row.outs || snapshot.outputs,
-            price,
-            multi: null, // Disable multi for duplicates
-            itemDescription: `${snapshot.itemDescription || ''} (Q${qIndex})`,
-            itemAdditionals: snapshot.itemAdditionals || [],
-          };
-        });
-      }
-      
-      return next;
-    });
+    setItems(prev => ({
+      ...prev,
+      [id]: snapshot
+    }));
   };
 
   const handleItemRemove = (id: string | number) => {
     setItems(prev => {
       const next = { ...prev };
-      const idStr = id.toString();
-      
-      // Remove the main item
       delete next[id];
-      
-      // Remove all duplicates (q2, q3, etc.)
-      Object.keys(next).forEach(key => {
-        if (key.toString().startsWith(`${idStr}-q`)) {
-          delete next[key];
-        }
-      });
-      
       return next;
     });
   };

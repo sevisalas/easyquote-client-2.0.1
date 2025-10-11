@@ -387,11 +387,16 @@ export default function QuoteDetail() {
               <div className="space-y-2">
                 {allItems.map((item: any, index: number) => (
                   <div key={`item-${index}`} className="bg-card border border-border rounded-md p-2 border-r-2 border-r-primary hover:shadow transition-all duration-200">
-                    <div className="flex justify-between items-start gap-3">
-                      <div className="flex-1 space-y-0.5">
-                        <div>
-                          <p className="text-sm font-medium">{item.product_name || '-'}</p>
-                        </div>
+                     <div className="flex justify-between items-start gap-3">
+                       <div className="flex-1 space-y-0.5">
+                         <div>
+                           <p className="text-sm font-medium">
+                             {item.product_name || '-'}
+                             {item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1 && (
+                               <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
+                             )}
+                           </p>
+                         </div>
                         {item.description && (
                           <div className="pt-1">
                             <p className="text-xs text-muted-foreground">Descripción</p>
