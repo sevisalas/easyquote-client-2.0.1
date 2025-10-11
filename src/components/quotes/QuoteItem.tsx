@@ -482,6 +482,75 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     });
   }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, itemAdditionals]);
 
+  // Extract all prompts from product with their defaults
+  const extractAllPrompts = (product: any): Record<string, { label: string; value: any }> => {
+    const candidates = [
+      product?.prompts,
+      product?.inputs,
+      product?.fields,
+      product?.parameters,
+      product?.config?.prompts,
+      product?.schema?.prompts,
+      product?.pricing?.prompts,
+      product?.pricing?.inputs,
+      product?.form?.fields,
+      product?.form?.prompts,
+      product?.options,
+      product?.choices,
+      product?.data?.prompts,
+      product?.request?.fields,
+    ];
+    const raw: any[] = (candidates.find((r) => Array.isArray(r)) as any[]) || [];
+    
+    const result: Record<string, { label: string; value: any }> = {};
+    
+    raw.forEach((f: any, idx: number) => {
+      const id = String(f.id ?? f.key ?? f.code ?? f.slug ?? f.name ?? `field_${idx}`);
+      const label = f.promptText ?? f.label ?? f.title ?? f.promptName ?? f.displayName ?? f.text ?? f.caption ?? f.name ?? id;
+      
+      // Get default value
+      const options = f.valueOptions ?? f.options ?? f.choices ?? f.values ?? f.items ?? f.optionsList ?? [];
+      const defaultFromIndex = (Number.isFinite(Number(f.defaultIndex)) && options[Number(f.defaultIndex)]) 
+        ? options[Number(f.defaultIndex)].value 
+        : undefined;
+      let defaultVal = f.currentValue ?? f.default ?? f.defaultValue ?? f.initial ?? f.value ?? f.defaultOption?.value ?? defaultFromIndex;
+      
+      // Normalize color values
+      const rawType = String(f.promptType ?? f.type ?? f.inputType ?? f.kind ?? f.uiType ?? "text").toLowerCase();
+      if ((rawType.includes("color")) && typeof defaultVal === "string" && /^[0-9a-f]{6}$/i.test(defaultVal)) {
+        defaultVal = `#${defaultVal.toUpperCase()}`;
+      }
+      
+      // Only add if there's a default value
+      if (defaultVal !== undefined && defaultVal !== null && defaultVal !== '') {
+        result[id] = { label, value: defaultVal };
+      }
+    });
+    
+    return result;
+  };
+
+  // Initialize all prompts when pricing data loads
+  useEffect(() => {
+    if (pricing && productId) {
+      const allPrompts = extractAllPrompts(pricing);
+      
+      // Merge with existing prompts (preserve user changes)
+      setPromptValues((prev) => {
+        const merged = { ...allPrompts };
+        
+        // Keep user-modified values
+        Object.entries(prev).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            merged[key] = value;
+          }
+        });
+        
+        return merged;
+      });
+    }
+  }, [pricing, productId]);
+
   const handlePromptChange = (id: string, value: any, label: string) => {
     setPromptValues((prev) => ({ 
       ...prev, 
