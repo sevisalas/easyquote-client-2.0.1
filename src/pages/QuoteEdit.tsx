@@ -114,7 +114,6 @@ export default function QuoteEdit() {
   const [items, setItems] = useState<QuoteItem[]>([]);
   const [quoteAdditionals, setQuoteAdditionals] = useState<SelectedQuoteAdditional[]>([]);
   const [editingItems, setEditingItems] = useState<Set<string>>(new Set());
-  const [hideHoldedTotals, setHideHoldedTotals] = useState(false);
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ['quote', id],
@@ -157,9 +156,6 @@ export default function QuoteEdit() {
       
       setQuoteAdditionals(loadedAdditionals);
       console.log('Final loaded additionals:', loadedAdditionals);
-      
-      // Load hideHoldedTotals
-      setHideHoldedTotals((quote as any).hide_holded_totals || false);
       
       // Load existing items from both sources: database items and JSON selections
       const allItems: QuoteItem[] = [];
@@ -210,13 +206,6 @@ export default function QuoteEdit() {
     item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1
   );
 
-  // Auto-enable hideHoldedTotals when multi quantities are detected
-  useEffect(() => {
-    if (hasMultiQuantities && !hideHoldedTotals) {
-      setHideHoldedTotals(true);
-    }
-  }, [hasMultiQuantities]);
-
   const updateQuoteMutation = useMutation({
     mutationFn: async (data: Partial<Quote>) => {
       const { error } = await supabase
@@ -231,7 +220,6 @@ export default function QuoteEdit() {
           subtotal: calculateSubtotal(),
           final_price: calculateTotal(), // Usar calculateTotal() que incluye ajustes
           selections: null, // Limpiar selections al guardar
-          hide_holded_totals: hideHoldedTotals,
           updated_at: new Date().toISOString(),
         })
         .eq('id', id);
@@ -564,19 +552,11 @@ export default function QuoteEdit() {
             </div>
           </div>
 
-          {isHoldedActive && (
-            <div className="flex items-center space-x-2 pt-2">
-              <Checkbox 
-                id="hide-holded-totals" 
-                checked={hideHoldedTotals}
-                onCheckedChange={(checked) => setHideHoldedTotals(checked === true)}
-              />
-              <Label 
-                htmlFor="hide-holded-totals" 
-                className="text-sm font-normal cursor-pointer"
-              >
-                ¿Ocultar totales en Holded?
-              </Label>
+          {isHoldedActive && hasMultiQuantities && (
+            <div className="pt-2">
+              <p className="text-sm text-muted-foreground">
+                (Este presupuesto tiene múltiples cantidades, cada cantidad se exportará como un artículo separado en Holded)
+              </p>
             </div>
           )}
         </CardContent>

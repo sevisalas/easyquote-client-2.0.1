@@ -71,6 +71,11 @@ export default function QuoteDetail() {
     enabled: !!id,
   });
 
+  // Check if quote has multi-quantities
+  const hasMultiQuantities = quote?.items?.some((item: any) => 
+    item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1
+  ) || false;
+
   const duplicateQuoteMutation = useMutation({
     mutationFn: async (quoteId: string) => {
       const { data: session } = await supabase.auth.getSession();
@@ -133,7 +138,6 @@ export default function QuoteDetail() {
           subtotal: originalQuote.subtotal,
           final_price: originalQuote.final_price,
           selections: originalQuote.selections,
-          hide_holded_totals: originalQuote.hide_holded_totals || false,
         })
         .select()
         .single();
@@ -342,16 +346,11 @@ export default function QuoteDetail() {
             </div>
           )}
 
-          {isHoldedActive && (
-            <div className="flex items-center space-x-2 pt-2">
-              <Checkbox 
-                id="hide-holded-totals-view" 
-                checked={(quote as any).hide_holded_totals || false}
-                disabled
-              />
-              <label className="text-sm font-normal text-muted-foreground">
-                ¿Ocultar totales en Holded?
-              </label>
+          {isHoldedActive && hasMultiQuantities && (
+            <div className="pt-2">
+              <p className="text-sm text-muted-foreground">
+                (Este presupuesto tiene múltiples cantidades, cada cantidad se exportará como un artículo separado en Holded)
+              </p>
             </div>
           )}
         </CardContent>
