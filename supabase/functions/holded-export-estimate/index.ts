@@ -213,8 +213,8 @@ Deno.serve(async (req) => {
             name: `${item.product_name || 'Producto'} (${qtyLabel})`,
             desc: description,
             units: row.qty || 1,
-            price: price,
-            tax: 21
+            subtotal: price,
+            taxes: ["s_iva_21"]
           };
           
           // Only add discount if it's greater than 0
@@ -338,8 +338,8 @@ Deno.serve(async (req) => {
           name: item.product_name || 'Producto',
           desc: description,
           units: item.quantity || 1,
-          price: price,
-          tax: 21
+          subtotal: price,
+          taxes: ["s_iva_21"]
         };
         
         // Only add discount if it's greater than 0
@@ -371,8 +371,8 @@ Deno.serve(async (req) => {
               ? `Multiplicador x${value}`
               : 'Ajuste sobre el presupuesto',
             units: 1,
-            price: price,
-            tax: 21
+            subtotal: price,
+            taxes: ["s_iva_21"]
           };
           
           items.push(itemData);
