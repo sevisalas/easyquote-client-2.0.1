@@ -179,7 +179,7 @@ Deno.serve(async (req) => {
               const isDiscount = additional.is_discount || false;
               
               if (isDiscount) {
-                // Calculate discount amount but don't apply to price yet
+                // Calculate discount amount
                 switch (additional.type) {
                   case 'net_amount':
                     discountAmount += Math.abs(value);
@@ -217,7 +217,7 @@ Deno.serve(async (req) => {
             taxes: ["s_iva_21"]
           };
           
-          // Only add discount if it's greater than 0
+          // Add discount field if there's a discount
           if (discountAmount > 0) {
             itemData.discount = discountAmount;
           }
@@ -304,7 +304,7 @@ Deno.serve(async (req) => {
             const isDiscount = additional.is_discount || false;
             
             if (isDiscount) {
-              // Calculate discount amount but don't apply to price yet
+              // Calculate discount amount
               switch (additional.type) {
                 case 'net_amount':
                   discountAmount += Math.abs(value);
@@ -342,7 +342,7 @@ Deno.serve(async (req) => {
           taxes: ["s_iva_21"]
         };
         
-        // Only add discount if it's greater than 0
+        // Add discount field if there's a discount
         if (discountAmount > 0) {
           itemData.discount = discountAmount;
         } else if (item.discount_percentage && parseFloat(item.discount_percentage) > 0) {
@@ -353,7 +353,10 @@ Deno.serve(async (req) => {
       }
     });
 
-    // Add quote additionals (ajustes sobre el presupuesto) as separate items or as distributed discounts
+    // Calculate global discount from quote additionals
+    let globalDiscount = 0;
+    
+    // Add quote additionals (ajustes sobre el presupuesto)
     if (quoteAdditionals && Array.isArray(quoteAdditionals) && quoteAdditionals.length > 0) {
       quoteAdditionals.forEach((additional: any) => {
         const value = additional.value || 0;
@@ -384,31 +387,21 @@ Deno.serve(async (req) => {
           
           items.push(itemData);
         } else {
-          // Distribute discount across all items proportionally
-          if (items.length > 0) {
-            const subtotal = items.reduce((sum, item) => sum + (item.subtotal * item.units), 0);
-            let totalDiscountToDistribute = 0;
-            
-            // Calculate total discount amount
-            if (additional.type === 'percentage') {
-              totalDiscountToDistribute = (subtotal * Math.abs(value)) / 100;
-            } else {
-              totalDiscountToDistribute = Math.abs(value);
-            }
-            
-            // Distribute proportionally
-            items.forEach((item) => {
-              const itemTotal = item.subtotal * item.units;
-              const proportion = itemTotal / subtotal;
-              const itemDiscount = Math.round((totalDiscountToDistribute * proportion) * 100) / 100;
-              item.discount = Math.round(((item.discount || 0) + itemDiscount) * 100) / 100;
-            });
+          // Calculate global discount
+          const subtotal = items.reduce((sum, item) => sum + (item.subtotal * item.units), 0);
+          
+          if (additional.type === 'percentage') {
+            globalDiscount += (subtotal * Math.abs(value)) / 100;
+          } else {
+            globalDiscount += Math.abs(value);
           }
         }
       });
     }
+    
+    globalDiscount = Math.round(globalDiscount * 100) / 100;
 
-    const estimatePayload = {
+    const estimatePayload: any = {
       docType: 'estimate',
       date: Math.floor(new Date(quote.created_at).getTime() / 1000), // Unix timestamp
       contactId: contactId,
@@ -417,6 +410,11 @@ Deno.serve(async (req) => {
       applyContactDefaults: false,
       items: items
     };
+    
+    // Add global discount if exists
+    if (globalDiscount > 0) {
+      estimatePayload.discount = globalDiscount;
+    }
 
     console.log('=== HOLDED EXPORT DEBUG ===');
     console.log('Quote ID:', quoteId);
