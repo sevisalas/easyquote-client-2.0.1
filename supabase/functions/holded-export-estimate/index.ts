@@ -95,6 +95,7 @@ Deno.serve(async (req) => {
 
     // Build complete payload with all quote data
     const items: any[] = [];
+    const appliedDiscounts: string[] = [];
     
     quoteItems.forEach((item: any) => {
       console.log('🔍 Processing item - ALL FIELDS:', JSON.stringify(item, null, 2));
@@ -180,6 +181,10 @@ Deno.serve(async (req) => {
               const isDiscount = additional.is_discount === true || value < 0;
               
               if (isDiscount) {
+                // Add to applied discounts list
+                if (additional.name && !appliedDiscounts.includes(additional.name)) {
+                  appliedDiscounts.push(additional.name);
+                }
                 // Calculate discount amount
                 switch (additional.type) {
                   case 'net_amount':
@@ -306,6 +311,10 @@ Deno.serve(async (req) => {
             const isDiscount = additional.is_discount === true || value < 0;
             
             if (isDiscount) {
+              // Add to applied discounts list
+              if (additional.name && !appliedDiscounts.includes(additional.name)) {
+                appliedDiscounts.push(additional.name);
+              }
               // Calculate discount amount
               switch (additional.type) {
                 case 'net_amount':
@@ -390,6 +399,10 @@ Deno.serve(async (req) => {
           
           items.push(itemData);
         } else {
+          // Add to applied discounts list
+          if (additional.name && !appliedDiscounts.includes(additional.name)) {
+            appliedDiscounts.push(additional.name);
+          }
           // Calculate global discount
           const subtotal = items.reduce((sum, item) => sum + (item.subtotal * item.units), 0);
           
@@ -403,6 +416,17 @@ Deno.serve(async (req) => {
     }
     
     globalDiscount = Math.round(globalDiscount * 100) / 100;
+
+    // Add informative discount summary item if there are any discounts
+    if (appliedDiscounts.length > 0) {
+      items.push({
+        name: `DESCUENTOS APLICADOS: ${appliedDiscounts.join(', ')}`,
+        desc: '',
+        units: 1,
+        subtotal: 0,
+        taxes: []
+      });
+    }
 
     const estimatePayload: any = {
       docType: 'estimate',
