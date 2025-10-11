@@ -93,14 +93,25 @@ Deno.serve(async (req) => {
         const promptEntries = Object.entries(item.prompts);
         console.log('📝 Prompt entries:', promptEntries);
         if (promptEntries.length > 0) {
+          // Get prompt metadata from outputs to find labels
+          const promptLabels: Record<string, string> = {};
+          if (item.outputs && Array.isArray(item.outputs)) {
+            const promptsOutput = item.outputs.find((out: any) => out.type === 'Prompts');
+            if (promptsOutput && promptsOutput.value && typeof promptsOutput.value === 'object') {
+              Object.entries(promptsOutput.value).forEach(([key, val]: [string, any]) => {
+                if (val && typeof val === 'object' && val.label) {
+                  promptLabels[key] = val.label;
+                }
+              });
+            }
+          }
+          
           description = promptEntries
             .map(([key, value]: [string, any]) => {
-              // Check if value is an object with label and value properties
-              if (value && typeof value === 'object' && 'label' in value && 'value' in value) {
-                return `${value.label}: ${value.value}`;
-              }
-              // Fallback to key: value format for old data
-              return `${key}: ${value}`;
+              const label = promptLabels[key] || key;
+              // Convert value to string, handling objects
+              const valueStr = typeof value === 'object' ? JSON.stringify(value) : String(value);
+              return `${label}: ${valueStr}`;
             })
             .join('\n');
         }
