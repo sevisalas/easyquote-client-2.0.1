@@ -209,14 +209,20 @@ Deno.serve(async (req) => {
           price = Math.round(price * 100) / 100;
           discountAmount = Math.round(discountAmount * 100) / 100;
           
-          items.push({
+          const itemData: any = {
             name: `${item.product_name || 'Producto'} (${qtyLabel})`,
             desc: description,
-            units: 1,
+            units: row.qty || 1,
             price: price,
-            tax: 21,
-            discount: discountAmount
-          });
+            tax: 21
+          };
+          
+          // Only add discount if it's greater than 0
+          if (discountAmount > 0) {
+            itemData.discount = discountAmount;
+          }
+          
+          items.push(itemData);
         });
       } else {
         // Single item without multi quantities
@@ -328,14 +334,22 @@ Deno.serve(async (req) => {
         price = Math.round(price * 100) / 100;
         discountAmount = Math.round(discountAmount * 100) / 100;
         
-        items.push({
+        const itemData: any = {
           name: item.product_name || 'Producto',
           desc: description,
           units: item.quantity || 1,
           price: price,
-          tax: 21,
-          discount: discountAmount > 0 ? discountAmount : (parseFloat(item.discount_percentage) || 0)
-        });
+          tax: 21
+        };
+        
+        // Only add discount if it's greater than 0
+        if (discountAmount > 0) {
+          itemData.discount = discountAmount;
+        } else if (item.discount_percentage && parseFloat(item.discount_percentage) > 0) {
+          itemData.discount = parseFloat(item.discount_percentage);
+        }
+        
+        items.push(itemData);
       }
     });
 
@@ -349,7 +363,7 @@ Deno.serve(async (req) => {
           // Add as separate item (normal additional)
           const price = Math.round(parseFloat(String(value)) * 100) / 100;
           
-          items.push({
+          const itemData: any = {
             name: additional.name || 'Ajuste',
             desc: additional.type === 'percentage' 
               ? `Ajuste ${value}%` 
@@ -358,9 +372,10 @@ Deno.serve(async (req) => {
               : 'Ajuste sobre el presupuesto',
             units: 1,
             price: price,
-            tax: 21,
-            discount: 0
-          });
+            tax: 21
+          };
+          
+          items.push(itemData);
         } else {
           // Distribute discount across all items proportionally
           if (items.length > 0) {
