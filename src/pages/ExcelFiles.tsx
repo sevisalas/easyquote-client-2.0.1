@@ -454,10 +454,26 @@ export default function ExcelFiles() {
   // Update Excel file
   const updateExcelMutation = useMutation({
     mutationFn: async ({ fileId, file }: { fileId: string; file: File }) => {
-      if (!file) throw new Error("No file selected");
+      if (!file) throw new Error("No se ha seleccionado ningún archivo");
+      
+      // Validate file type
+      const validTypes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel'
+      ];
+      
+      if (!validTypes.includes(file.type)) {
+        throw new Error(`Tipo de archivo no válido: ${file.type}. Selecciona un archivo Excel (.xlsx o .xls)`);
+      }
+      
+      console.log('📄 Archivo seleccionado:', {
+        name: file.name,
+        type: file.type,
+        size: file.size
+      });
       
       const token = sessionStorage.getItem("easyquote_token");
-      if (!token) throw new Error("No token available");
+      if (!token) throw new Error("No hay token de autenticación");
 
       // Convert file to base64
       const base64 = await new Promise<string>((resolve, reject) => {
