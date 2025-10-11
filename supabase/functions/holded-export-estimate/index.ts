@@ -212,7 +212,7 @@ Deno.serve(async (req) => {
           const itemData: any = {
             name: `${item.product_name || 'Producto'} (${qtyLabel})`,
             desc: description,
-            units: row.qty || 1,
+            units: 1,
             subtotal: price,
             taxes: ["s_iva_21"]
           };
@@ -337,7 +337,7 @@ Deno.serve(async (req) => {
         const itemData: any = {
           name: item.product_name || 'Producto',
           desc: description,
-          units: item.quantity || 1,
+          units: 1,
           subtotal: price,
           taxes: ["s_iva_21"]
         };
