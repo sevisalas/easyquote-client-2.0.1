@@ -542,17 +542,21 @@ export default function QuoteNew() {
           </div>
 
           <div className="flex items-center space-x-2 pt-2">
-            <Checkbox 
-              id="hide-holded-totals" 
-              checked={hideHoldedTotals}
-              onCheckedChange={(checked) => setHideHoldedTotals(checked === true)}
-            />
-            <Label 
-              htmlFor="hide-holded-totals" 
-              className="text-sm font-normal cursor-pointer"
-            >
-              ¿Ocultar totales en Holded?
-            </Label>
+            {isHoldedActive && (
+              <Checkbox 
+                id="hide-holded-totals" 
+                checked={hideHoldedTotals}
+                onCheckedChange={(checked) => setHideHoldedTotals(checked === true)}
+              />
+            )}
+            {isHoldedActive && (
+              <Label 
+                htmlFor="hide-holded-totals" 
+                className="text-sm font-normal cursor-pointer"
+              >
+                ¿Ocultar totales en Holded?
+              </Label>
+            )}
           </div>
 
         </CardContent>

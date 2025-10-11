@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import { CustomerName } from "@/components/quotes/CustomerName";
+import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 
 const fetchQuote = async (id: string) => {
   const { data, error } = await supabase
@@ -62,6 +63,7 @@ export default function QuoteDetail() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
+  const { isHoldedActive } = useHoldedIntegration();
 
   const { data: quote, isLoading, error } = useQuery({
     queryKey: ['quote', id],
@@ -340,16 +342,18 @@ export default function QuoteDetail() {
             </div>
           )}
 
-          <div className="flex items-center space-x-2 pt-2">
-            <Checkbox 
-              id="hide-holded-totals-view" 
-              checked={(quote as any).hide_holded_totals || false}
-              disabled
-            />
-            <label className="text-sm font-normal text-muted-foreground">
-              ¿Ocultar totales en Holded?
-            </label>
-          </div>
+          {isHoldedActive && (
+            <div className="flex items-center space-x-2 pt-2">
+              <Checkbox 
+                id="hide-holded-totals-view" 
+                checked={(quote as any).hide_holded_totals || false}
+                disabled
+              />
+              <label className="text-sm font-normal text-muted-foreground">
+                ¿Ocultar totales en Holded?
+              </label>
+            </div>
+          )}
         </CardContent>
       </Card>
 

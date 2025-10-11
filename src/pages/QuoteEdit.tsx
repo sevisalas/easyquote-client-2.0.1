@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 import QuoteItem from "@/components/quotes/QuoteItem";
 import { CustomerSelector } from "@/components/quotes/CustomerSelector";
+import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 
 interface QuoteItem {
   id: string;
@@ -107,6 +108,7 @@ export default function QuoteEdit() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
+  const { isHoldedActive } = useHoldedIntegration();
 
   const [formData, setFormData] = useState<Partial<Quote>>({});
   const [items, setItems] = useState<QuoteItem[]>([]);
@@ -635,19 +637,21 @@ export default function QuoteEdit() {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 pt-2">
-            <Checkbox 
-              id="hide-holded-totals" 
-              checked={hideHoldedTotals}
-              onCheckedChange={(checked) => setHideHoldedTotals(checked === true)}
-            />
-            <Label 
-              htmlFor="hide-holded-totals" 
-              className="text-sm font-normal cursor-pointer"
-            >
-              ¿Ocultar totales en Holded?
-            </Label>
-          </div>
+          {isHoldedActive && (
+            <div className="flex items-center space-x-2 pt-2">
+              <Checkbox 
+                id="hide-holded-totals" 
+                checked={hideHoldedTotals}
+                onCheckedChange={(checked) => setHideHoldedTotals(checked === true)}
+              />
+              <Label 
+                htmlFor="hide-holded-totals" 
+                className="text-sm font-normal cursor-pointer"
+              >
+                ¿Ocultar totales en Holded?
+              </Label>
+            </div>
+          )}
         </CardContent>
       </Card>
 
