@@ -96,14 +96,16 @@ Deno.serve(async (req) => {
     // Build complete payload with all quote data
     const items: any[] = [];
     const appliedDiscounts: string[] = [];
+    let hasMultiQuantities = false;
     
     quoteItems.forEach((item: any) => {
       console.log('🔍 Processing item - ALL FIELDS:', JSON.stringify(item, null, 2));
       
       // Check if item has multiple quantities
-      const hasMultiQuantities = item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1;
+      const itemHasMultiQuantities = item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1;
       
-      if (hasMultiQuantities) {
+      if (itemHasMultiQuantities) {
+        hasMultiQuantities = true;
         // Create one item per quantity row
         item.multi.rows.forEach((row: any, index: number) => {
           const qtyLabel = `Q${index + 1}`;
@@ -437,6 +439,11 @@ Deno.serve(async (req) => {
       applyContactDefaults: false,
       items: items
     };
+    
+    // Add shipping hidden if any item has multi quantities
+    if (hasMultiQuantities) {
+      estimatePayload.shipping = 'hidden';
+    }
     
     // Add global discount if exists
     if (globalDiscount > 0) {
