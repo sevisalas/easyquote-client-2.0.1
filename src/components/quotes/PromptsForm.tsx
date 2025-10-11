@@ -194,11 +194,18 @@ export default function PromptsForm({
 }: {
   product: any;
   values: Record<string, any>;
-  onChange: (id: string, value: any) => void;
+  onChange: (id: string, value: any, label: string) => void;
 }) {
   const prompts = useMemo(() => extractPrompts(product), [product]);
   const defaultsMap = useMemo(() => Object.fromEntries(prompts.map((p) => [p.id, p.default])), [prompts]);
-  const effectiveValues = useMemo(() => ({ ...defaultsMap, ...values }), [defaultsMap, values]);
+  const effectiveValues = useMemo(() => {
+    // Extract values from the stored format (could be {label, value} or just value)
+    const extractedValues: Record<string, any> = {};
+    Object.entries(values).forEach(([key, val]) => {
+      extractedValues[key] = (val && typeof val === 'object' && 'value' in val) ? val.value : val;
+    });
+    return { ...defaultsMap, ...extractedValues };
+  }, [defaultsMap, values]);
   const visiblePrompts = useMemo(() => prompts.filter((p) => isVisiblePrompt(p, effectiveValues)), [prompts, effectiveValues]);
 
   if (!product) return null;
@@ -225,7 +232,7 @@ export default function PromptsForm({
               min={p.min}
               max={p.max}
               value={effectiveValues[p.id] ?? ""}
-              onChange={(e) => onChange(p.id, e.target.value)}
+              onChange={(e) => onChange(p.id, e.target.value, p.label)}
             />
           )}
 
@@ -235,13 +242,17 @@ export default function PromptsForm({
               id={p.id}
               type="text"
               value={effectiveValues[p.id] ?? ""}
-              onChange={(e) => onChange(p.id, e.target.value)}
+              onChange={(e) => onChange(p.id, e.target.value, p.label)}
             />
           )}
 
           {/* Select (dropdown) */}
           {p.type === "select" && (
-            <Select value={(effectiveValues[p.id] ?? undefined) as any} onValueChange={(v) => onChange(p.id, v)}>
+            <Select value={(effectiveValues[p.id] ?? undefined) as any} onValueChange={(v) => {
+              const selectedOption = p.options?.find(opt => opt.value === v);
+              const displayValue = selectedOption?.label ?? v;
+              onChange(p.id, displayValue, p.label);
+            }}>
               <SelectTrigger id={p.id}>
                 <SelectValue placeholder="Selecciona una opción" />
               </SelectTrigger>
@@ -264,7 +275,7 @@ export default function PromptsForm({
                   <button
                     key={o.value}
                     type="button"
-                    onClick={() => onChange(p.id, o.value)}
+                    onClick={() => onChange(p.id, o.label ?? o.value, p.label)}
                     className={`relative overflow-hidden rounded-md border transition-shadow focus:outline-none focus:ring-2 focus:ring-primary w-30 h-30 ${selected ? "ring-2 ring-primary" : "hover:shadow"}`}
                     aria-pressed={selected}
                     aria-label={o.label ?? o.value}
@@ -297,7 +308,7 @@ export default function PromptsForm({
                   <button
                     key={o.value}
                     type="button"
-                    onClick={() => onChange(p.id, o.value)}
+                    onClick={() => onChange(p.id, o.label ?? o.value, p.label)}
                     className={`h-9 w-9 rounded-md border shadow-sm transition focus:outline-none focus:ring-2 focus:ring-primary ${selected ? "ring-2 ring-primary" : "hover:brightness-105"}`}
                     aria-label={`Color ${o.label ?? o.value}`}
                     title={o.label ?? o.value}

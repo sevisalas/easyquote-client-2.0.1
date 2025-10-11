@@ -171,9 +171,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
       const norm: Record<string, any> = {};
       Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
-        if (v === "" || v === undefined || v === null) return;
-        if (typeof v === "string") {
-          const trimmed = v.trim();
+        // Extract actual value if it's stored as {label, value}
+        const actualValue = (v && typeof v === 'object' && 'value' in v) ? v.value : v;
+        
+        if (actualValue === "" || actualValue === undefined || actualValue === null) return;
+        if (typeof actualValue === "string") {
+          const trimmed = actualValue.trim();
           const isHex = /^#[0-9a-f]{6}$/i.test(trimmed);
           if (isHex) {
             norm[k] = trimmed.slice(1).toUpperCase();
@@ -186,7 +189,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           }
           norm[k] = trimmed;
         } else {
-          norm[k] = v;
+          norm[k] = actualValue;
         }
       });
 
@@ -324,9 +327,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
       const norm: Record<string, any> = {};
       Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
-        if (v === "" || v === undefined || v === null) return;
-        if (typeof v === "string") {
-          const trimmed = v.trim();
+        // Extract actual value if it's stored as {label, value}
+        const actualValue = (v && typeof v === 'object' && 'value' in v) ? v.value : v;
+        
+        if (actualValue === "" || actualValue === undefined || actualValue === null) return;
+        if (typeof actualValue === "string") {
+          const trimmed = actualValue.trim();
           const isHex = /^#[0-9a-f]{6}$/i.test(trimmed);
           if (isHex) {
             norm[k] = trimmed.slice(1).toUpperCase();
@@ -339,7 +345,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           }
           norm[k] = trimmed;
         } else {
-          norm[k] = v;
+          norm[k] = actualValue;
         }
       });
 
@@ -390,7 +396,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     if (!qtyPrompt) return;
     
     // Get current value from promptValues or from pricing defaults
-    let current = (promptValues as any)[qtyPrompt];
+    let currentRaw = (promptValues as any)[qtyPrompt];
+    // Extract actual value if it's stored as {label, value}
+    let current = (currentRaw && typeof currentRaw === 'object' && 'value' in currentRaw) ? currentRaw.value : currentRaw;
     
     // If not in promptValues, try to get it from pricing prompts defaults
     if ((current === undefined || current === null || String(current).trim() === "") && pricing) {
@@ -474,7 +482,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     });
   }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, itemAdditionals]);
 
-  const handlePromptChange = (id: string, value: any) => setPromptValues((prev) => ({ ...prev, [id]: value }));
+  const handlePromptChange = (id: string, value: any, label: string) => {
+    setPromptValues((prev) => ({ 
+      ...prev, 
+      [id]: { label, value } 
+    }));
+  };
 
   const selectedProductInfo = products?.find((p: any) => String(p.id) === String(productId));
   const productName = selectedProductInfo ? getProductLabel(selectedProductInfo) : "";

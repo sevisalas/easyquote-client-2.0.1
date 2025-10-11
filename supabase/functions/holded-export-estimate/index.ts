@@ -93,24 +93,26 @@ Deno.serve(async (req) => {
         const promptEntries = Object.entries(item.prompts);
         console.log('📝 Prompt entries:', promptEntries);
         if (promptEntries.length > 0) {
-          // Get prompt metadata from outputs to find labels
-          const promptLabels: Record<string, string> = {};
-          if (item.outputs && Array.isArray(item.outputs)) {
-            const promptsOutput = item.outputs.find((out: any) => out.type === 'Prompts');
-            if (promptsOutput && promptsOutput.value && typeof promptsOutput.value === 'object') {
-              Object.entries(promptsOutput.value).forEach(([key, val]: [string, any]) => {
-                if (val && typeof val === 'object' && val.label) {
-                  promptLabels[key] = val.label;
-                }
-              });
-            }
-          }
-          
           description = promptEntries
-            .map(([key, value]: [string, any]) => {
+            .map(([key, promptData]: [string, any]) => {
+              // Handle both new format {label, value} and old format (just value)
+              if (promptData && typeof promptData === 'object' && 'label' in promptData && 'value' in promptData) {
+                return `${promptData.label}: ${promptData.value}`;
+              }
+              // Fallback to old format - try to get label from outputs
+              const promptLabels: Record<string, string> = {};
+              if (item.outputs && Array.isArray(item.outputs)) {
+                const promptsOutput = item.outputs.find((out: any) => out.type === 'Prompts');
+                if (promptsOutput && promptsOutput.value && typeof promptsOutput.value === 'object') {
+                  Object.entries(promptsOutput.value).forEach(([k, val]: [string, any]) => {
+                    if (val && typeof val === 'object' && val.label) {
+                      promptLabels[k] = val.label;
+                    }
+                  });
+                }
+              }
               const label = promptLabels[key] || key;
-              // Convert value to string, handling objects
-              const valueStr = typeof value === 'object' ? JSON.stringify(value) : String(value);
+              const valueStr = typeof promptData === 'object' ? JSON.stringify(promptData) : String(promptData);
               return `${label}: ${valueStr}`;
             })
             .join('\n');
