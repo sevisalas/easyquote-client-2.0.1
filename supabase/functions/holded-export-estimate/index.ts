@@ -171,6 +171,24 @@ Deno.serve(async (req) => {
             ? priceValue 
             : parseFloat(String(priceValue || 0).replace(/\./g, "").replace(",", ".")) || 0;
           
+          // Apply item additionals to the price
+          if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
+            item.item_additionals.forEach((additional: any) => {
+              const value = additional.value || 0;
+              switch (additional.type) {
+                case 'net_amount':
+                  price += value;
+                  break;
+                case 'percentage':
+                  price += (price * value) / 100;
+                  break;
+                case 'quantity_multiplier':
+                  price *= value;
+                  break;
+              }
+            });
+          }
+          
           // Round to 2 decimals for Holded compatibility
           price = Math.round(price * 100) / 100;
           
@@ -234,8 +252,47 @@ Deno.serve(async (req) => {
           }
         }
         
+        // Get price from outputs or fallback to item.price
+        let price = 0;
+        if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
+          const priceOut = item.outputs.find((o: any) => 
+            String(o?.type || '').toLowerCase() === 'price' ||
+            String(o?.name || '').toLowerCase().includes('precio') ||
+            String(o?.name || '').toLowerCase().includes('price')
+          );
+          
+          if (priceOut) {
+            const priceValue = priceOut.value;
+            price = typeof priceValue === "number" 
+              ? priceValue 
+              : parseFloat(String(priceValue || 0).replace(/\./g, "").replace(",", ".")) || 0;
+          } else {
+            price = parseFloat(item.price) || 0;
+          }
+        } else {
+          price = parseFloat(item.price) || 0;
+        }
+        
+        // Apply item additionals to the price
+        if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
+          item.item_additionals.forEach((additional: any) => {
+            const value = additional.value || 0;
+            switch (additional.type) {
+              case 'net_amount':
+                price += value;
+                break;
+              case 'percentage':
+                price += (price * value) / 100;
+                break;
+              case 'quantity_multiplier':
+                price *= value;
+                break;
+            }
+          });
+        }
+        
         // Round price to 2 decimals for Holded compatibility
-        const price = Math.round((parseFloat(item.price) || 0) * 100) / 100;
+        price = Math.round(price * 100) / 100;
         
         items.push({
           name: item.product_name || 'Producto',
