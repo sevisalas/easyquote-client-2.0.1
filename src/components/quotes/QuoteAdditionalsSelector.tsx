@@ -13,6 +13,7 @@ interface Additional {
   description: string | null
   type: "net_amount" | "quantity_multiplier" | "percentage"
   default_value: number
+  is_discount: boolean
 }
 
 interface SelectedQuoteAdditional {
@@ -21,6 +22,7 @@ interface SelectedQuoteAdditional {
   type: "net_amount" | "quantity_multiplier" | "percentage" | "custom"
   value: number
   isCustom?: boolean
+  is_discount?: boolean
 }
 
 interface QuoteAdditionalsSelectorProps {
@@ -61,7 +63,8 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
       id: additional.id,
       name: additional.name,
       type: additional.type,
-      value: additional.default_value
+      value: additional.default_value,
+      is_discount: additional.is_discount || false
     }
 
     onChange([...selectedAdditionals, newSelected])
@@ -113,6 +116,11 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
                   {additional.isCustom && (
                     <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
                       Personalizado
+                    </span>
+                  )}
+                  {additional.is_discount && (
+                    <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
+                      Descuento
                     </span>
                   )}
                 </span>

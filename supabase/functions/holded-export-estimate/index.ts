@@ -171,26 +171,43 @@ Deno.serve(async (req) => {
             ? priceValue 
             : parseFloat(String(priceValue || 0).replace(/\./g, "").replace(",", ".")) || 0;
           
-          // Apply item additionals to the price
+          // Apply item additionals to the price and calculate discounts
+          let discountAmount = 0;
           if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
             item.item_additionals.forEach((additional: any) => {
               const value = additional.value || 0;
-              switch (additional.type) {
-                case 'net_amount':
-                  price += value;
-                  break;
-                case 'percentage':
-                  price += (price * value) / 100;
-                  break;
-                case 'quantity_multiplier':
-                  price *= value;
-                  break;
+              const isDiscount = additional.is_discount || false;
+              
+              if (isDiscount) {
+                // Calculate discount amount but don't apply to price yet
+                switch (additional.type) {
+                  case 'net_amount':
+                    discountAmount += Math.abs(value);
+                    break;
+                  case 'percentage':
+                    discountAmount += Math.abs((price * value) / 100);
+                    break;
+                }
+              } else {
+                // Apply non-discount adjustments to price
+                switch (additional.type) {
+                  case 'net_amount':
+                    price += value;
+                    break;
+                  case 'percentage':
+                    price += (price * value) / 100;
+                    break;
+                  case 'quantity_multiplier':
+                    price *= value;
+                    break;
+                }
               }
             });
           }
           
           // Round to 2 decimals for Holded compatibility
           price = Math.round(price * 100) / 100;
+          discountAmount = Math.round(discountAmount * 100) / 100;
           
           items.push({
             name: `${item.product_name || 'Producto'} (${qtyLabel})`,
@@ -198,7 +215,7 @@ Deno.serve(async (req) => {
             units: 1,
             price: price,
             tax: 21,
-            discount: 0
+            discount: discountAmount
           });
         });
       } else {
@@ -273,26 +290,43 @@ Deno.serve(async (req) => {
           price = parseFloat(item.price) || 0;
         }
         
-        // Apply item additionals to the price
+        // Apply item additionals to the price and calculate discounts
+        let discountAmount = 0;
         if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
           item.item_additionals.forEach((additional: any) => {
             const value = additional.value || 0;
-            switch (additional.type) {
-              case 'net_amount':
-                price += value;
-                break;
-              case 'percentage':
-                price += (price * value) / 100;
-                break;
-              case 'quantity_multiplier':
-                price *= value;
-                break;
+            const isDiscount = additional.is_discount || false;
+            
+            if (isDiscount) {
+              // Calculate discount amount but don't apply to price yet
+              switch (additional.type) {
+                case 'net_amount':
+                  discountAmount += Math.abs(value);
+                  break;
+                case 'percentage':
+                  discountAmount += Math.abs((price * value) / 100);
+                  break;
+              }
+            } else {
+              // Apply non-discount adjustments to price
+              switch (additional.type) {
+                case 'net_amount':
+                  price += value;
+                  break;
+                case 'percentage':
+                  price += (price * value) / 100;
+                  break;
+                case 'quantity_multiplier':
+                  price *= value;
+                  break;
+              }
             }
           });
         }
         
         // Round price to 2 decimals for Holded compatibility
         price = Math.round(price * 100) / 100;
+        discountAmount = Math.round(discountAmount * 100) / 100;
         
         items.push({
           name: item.product_name || 'Producto',
@@ -300,29 +334,55 @@ Deno.serve(async (req) => {
           units: item.quantity || 1,
           price: price,
           tax: 21,
-          discount: parseFloat(item.discount_percentage) || 0
+          discount: discountAmount > 0 ? discountAmount : (parseFloat(item.discount_percentage) || 0)
         });
       }
     });
 
-    // Add quote additionals (ajustes sobre el presupuesto) as separate items at the end
+    // Add quote additionals (ajustes sobre el presupuesto) as separate items or as distributed discounts
     if (quoteAdditionals && Array.isArray(quoteAdditionals) && quoteAdditionals.length > 0) {
       quoteAdditionals.forEach((additional: any) => {
         const value = additional.value || 0;
-        const price = Math.round(parseFloat(String(value)) * 100) / 100;
+        const isDiscount = additional.is_discount || false;
         
-        items.push({
-          name: additional.name || 'Ajuste',
-          desc: additional.type === 'percentage' 
-            ? `Ajuste ${value}%` 
-            : additional.type === 'multiplier'
-            ? `Multiplicador x${value}`
-            : 'Ajuste sobre el presupuesto',
-          units: 1,
-          price: price,
-          tax: 21,
-          discount: 0
-        });
+        if (!isDiscount) {
+          // Add as separate item (normal additional)
+          const price = Math.round(parseFloat(String(value)) * 100) / 100;
+          
+          items.push({
+            name: additional.name || 'Ajuste',
+            desc: additional.type === 'percentage' 
+              ? `Ajuste ${value}%` 
+              : additional.type === 'multiplier'
+              ? `Multiplicador x${value}`
+              : 'Ajuste sobre el presupuesto',
+            units: 1,
+            price: price,
+            tax: 21,
+            discount: 0
+          });
+        } else {
+          // Distribute discount across all items proportionally
+          if (items.length > 0) {
+            const subtotal = items.reduce((sum, item) => sum + (item.price * item.units), 0);
+            let totalDiscountToDistribute = 0;
+            
+            // Calculate total discount amount
+            if (additional.type === 'percentage') {
+              totalDiscountToDistribute = (subtotal * Math.abs(value)) / 100;
+            } else {
+              totalDiscountToDistribute = Math.abs(value);
+            }
+            
+            // Distribute proportionally
+            items.forEach((item) => {
+              const itemTotal = item.price * item.units;
+              const proportion = itemTotal / subtotal;
+              const itemDiscount = Math.round((totalDiscountToDistribute * proportion) * 100) / 100;
+              item.discount = Math.round(((item.discount || 0) + itemDiscount) * 100) / 100;
+            });
+          }
+        }
       });
     }
 

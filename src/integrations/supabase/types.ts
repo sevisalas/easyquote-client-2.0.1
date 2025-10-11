@@ -22,6 +22,7 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean
+          is_discount: boolean
           name: string
           price: number
           type: string | null
@@ -35,6 +36,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_discount?: boolean
           name: string
           price?: number
           type?: string | null
@@ -48,6 +50,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_discount?: boolean
           name?: string
           price?: number
           type?: string | null
@@ -733,6 +736,7 @@ export type Database = {
           additional_id: string | null
           created_at: string
           id: string
+          is_discount: boolean
           name: string
           quote_id: string
           type: string
@@ -743,6 +747,7 @@ export type Database = {
           additional_id?: string | null
           created_at?: string
           id?: string
+          is_discount?: boolean
           name: string
           quote_id: string
           type?: string
@@ -753,6 +758,7 @@ export type Database = {
           additional_id?: string | null
           created_at?: string
           id?: string
+          is_discount?: boolean
           name?: string
           quote_id?: string
           type?: string

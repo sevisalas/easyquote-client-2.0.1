@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
 import { Plus, Edit, Trash2 } from "lucide-react"
 
@@ -18,6 +19,7 @@ interface Additional {
   assignment_type: "article" | "quote"
   type: "net_amount" | "quantity_multiplier" | "percentage"
   default_value: number
+  is_discount: boolean
   created_at: string
   updated_at: string
 }
@@ -28,6 +30,7 @@ interface AdditionalForm {
   assignment_type: "article" | "quote"
   type: "net_amount" | "quantity_multiplier" | "percentage"
   default_value: number
+  is_discount: boolean
 }
 
 const fetchAdditionals = async (): Promise<Additional[]> => {
@@ -52,7 +55,8 @@ export default function Additionals() {
     description: "",
     assignment_type: "article",
     type: "net_amount",
-    default_value: 0
+    default_value: 0,
+    is_discount: false
   })
 
   const { toast } = useToast()
@@ -142,7 +146,8 @@ export default function Additionals() {
       description: "",
       assignment_type: "article",
       type: "net_amount",
-      default_value: 0
+      default_value: 0,
+      is_discount: false
     })
   }
 
@@ -163,7 +168,8 @@ export default function Additionals() {
       description: additional.description || "",
       assignment_type: additional.assignment_type,
       type: additional.type,
-      default_value: additional.default_value
+      default_value: additional.default_value,
+      is_discount: additional.is_discount || false
     })
     setIsDialogOpen(true)
   }
@@ -284,6 +290,20 @@ export default function Additionals() {
                   onChange={(e) => setForm({ ...form, default_value: parseFloat(e.target.value) || 0 })}
                 />
               </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_discount"
+                  checked={form.is_discount}
+                  onCheckedChange={(checked) => setForm({ ...form, is_discount: checked as boolean })}
+                />
+                <Label 
+                  htmlFor="is_discount" 
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  ¿Considerar este ajuste como "Descuento" en Holded?
+                </Label>
+              </div>
             </form>
             
             <DialogFooter>
@@ -343,31 +363,38 @@ export default function Additionals() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <p className="font-medium">Asignar a:</p>
-                    <p>{additional.assignment_type === "article" ? "Artículo" : "Presupuesto"}</p>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="font-medium">Asignar a:</p>
+                      <p>{additional.assignment_type === "article" ? "Artículo" : "Presupuesto"}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium">Tipo:</p>
+                       <p>
+                         {additional.type === "net_amount" 
+                           ? "Importe Neto" 
+                           : additional.type === "quantity_multiplier" 
+                           ? "Importe Unitario"
+                           : "Porcentaje del Subtotal"
+                         }
+                       </p>
+                    </div>
+                    <div>
+                      <p className="font-medium">Valor por defecto:</p>
+                      <p>
+                        {additional.type === "percentage" 
+                          ? `${additional.default_value}%` 
+                          : `€${additional.default_value.toFixed(2)}`
+                        }
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">Tipo:</p>
-                     <p>
-                       {additional.type === "net_amount" 
-                         ? "Importe Neto" 
-                         : additional.type === "quantity_multiplier" 
-                         ? "Importe Unitario"
-                         : "Porcentaje del Subtotal"
-                       }
-                     </p>
-                  </div>
-                  <div>
-                    <p className="font-medium">Valor por defecto:</p>
-                    <p>
-                      {additional.type === "percentage" 
-                        ? `${additional.default_value}%` 
-                        : `€${additional.default_value.toFixed(2)}`
-                      }
-                    </p>
-                  </div>
+                  {additional.is_discount && (
+                    <div className="flex items-center gap-2 text-sm text-primary">
+                      <span className="font-medium">✓ Marcado como descuento para Holded</span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

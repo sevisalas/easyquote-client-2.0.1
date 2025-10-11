@@ -14,6 +14,7 @@ interface Additional {
   description: string | null
   type: "net_amount" | "quantity_multiplier"
   default_value: number
+  is_discount: boolean
 }
 
 interface SelectedAdditional {
@@ -22,6 +23,7 @@ interface SelectedAdditional {
   type: "net_amount" | "quantity_multiplier" | "custom"
   value: number
   isCustom?: boolean
+  is_discount?: boolean
 }
 
 interface AdditionalsSelectorProps {
@@ -52,7 +54,8 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
         name: item.name,
         description: item.description,
         type: (item.type as "net_amount" | "quantity_multiplier") || "net_amount",
-        default_value: item.default_value || 0
+        default_value: item.default_value || 0,
+        is_discount: item.is_discount || false
       }))
     }
   })
@@ -70,7 +73,8 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
       id: additional.id,
       name: additional.name,
       type: additional.type,
-      value: newAdditionalValue
+      value: newAdditionalValue,
+      is_discount: additional.is_discount || false
     }
 
     onChange([...selectedAdditionals, newSelected])
@@ -118,7 +122,14 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
           {selectedAdditionals.map((additional) => (
             <div key={additional.id} className="flex items-center gap-2 p-2 border rounded-lg">
               <div className="flex-1">
-                <div className="text-sm font-medium">{additional.name}</div>
+                <div className="text-sm font-medium">
+                  {additional.name}
+                  {additional.is_discount && (
+                    <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
+                      Descuento
+                    </span>
+                  )}
+                </div>
                 <div className="text-xs text-muted-foreground">
                   {additional.type === "net_amount" ? "Importe neto" : "Precio unidad"}
                 </div>
