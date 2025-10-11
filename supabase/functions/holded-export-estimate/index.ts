@@ -82,71 +82,123 @@ Deno.serve(async (req) => {
     const apiKey = '88610992d47b9783e7703c488a8c01cf';
     console.log('Using Holded API key');
 
-    // Build complete payload with all quote data using data already in database
-    const items = quoteItems.map((item: any) => {
+    // Build complete payload with all quote data
+    const items: any[] = [];
+    
+    quoteItems.forEach((item: any) => {
       console.log('🔍 Processing item - ALL FIELDS:', JSON.stringify(item, null, 2));
       
-      let description = '';
+      // Check if item has multiple quantities
+      const hasMultiQuantities = item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1;
       
-      // Build description from prompts in the format "LABEL: value"
-      if (item.prompts && typeof item.prompts === 'object') {
-        const promptEntries = Object.entries(item.prompts);
-        console.log('📝 Prompt entries:', promptEntries);
-        if (promptEntries.length > 0) {
-          description = promptEntries
-            .map(([key, promptData]: [string, any]) => {
-              // Handle both new format {label, value} and old format (just value)
-              if (promptData && typeof promptData === 'object' && 'label' in promptData && 'value' in promptData) {
-                return `${promptData.label}: ${promptData.value}`;
-              }
-              // Fallback to old format - try to get label from outputs
-              const promptLabels: Record<string, string> = {};
-              if (item.outputs && Array.isArray(item.outputs)) {
-                const promptsOutput = item.outputs.find((out: any) => out.type === 'Prompts');
-                if (promptsOutput && promptsOutput.value && typeof promptsOutput.value === 'object') {
-                  Object.entries(promptsOutput.value).forEach(([k, val]: [string, any]) => {
-                    if (val && typeof val === 'object' && val.label) {
-                      promptLabels[k] = val.label;
+      if (hasMultiQuantities) {
+        // Create one item per quantity row
+        item.multi.rows.forEach((row: any, index: number) => {
+          const qtyLabel = `Q${index + 1}`;
+          let description = '';
+          
+          // Build description from prompts
+          if (item.prompts && typeof item.prompts === 'object') {
+            const promptEntries = Object.entries(item.prompts);
+            if (promptEntries.length > 0) {
+              description = promptEntries
+                .map(([key, promptData]: [string, any]) => {
+                  if (promptData && typeof promptData === 'object' && 'label' in promptData && 'value' in promptData) {
+                    // For the quantity prompt, use the value from this specific row
+                    if (key === item.multi.qtyPrompt && row.qty) {
+                      return `${promptData.label}: ${row.qty}`;
                     }
-                  });
-                }
-              }
-              const label = promptLabels[key] || key;
-              const valueStr = typeof promptData === 'object' ? JSON.stringify(promptData) : String(promptData);
-              return `${label}: ${valueStr}`;
-            })
-            .join('\n');
-        }
-      }
-      
-      // Add outputs to description (excluding price fields)
-      if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
-        console.log('📊 Outputs found:', item.outputs.length);
-        const outputsText = item.outputs
-          .filter((out: any) => {
-            const name = String(out.name || '').toLowerCase();
-            const type = String(out.type || '').toLowerCase();
-            return !type.includes('price') && !name.includes('precio') && !name.includes('price');
-          })
-          .map((out: any) => `${out.name}: ${out.value}`)
-          .join('\n');
+                    return `${promptData.label}: ${promptData.value}`;
+                  }
+                  return '';
+                })
+                .filter(Boolean)
+                .join('\n');
+            }
+          }
+          
+          // Add outputs from the specific row (excluding price fields)
+          if (row.outs && Array.isArray(row.outs) && row.outs.length > 0) {
+            const outputsText = row.outs
+              .filter((out: any) => {
+                const name = String(out.name || '').toLowerCase();
+                const type = String(out.type || '').toLowerCase();
+                return !type.includes('price') && !name.includes('precio') && !name.includes('price');
+              })
+              .map((out: any) => `${out.name}: ${out.value}`)
+              .join('\n');
+            
+            if (outputsText) {
+              description += (description ? '\n' : '') + outputsText;
+            }
+          }
+          
+          // Get price from this specific row
+          const priceOut = (row.outs || []).find((o: any) => 
+            String(o?.type || '').toLowerCase() === 'price' ||
+            String(o?.name || '').toLowerCase().includes('precio') ||
+            String(o?.name || '').toLowerCase().includes('price')
+          );
+          
+          const priceValue = priceOut?.value;
+          const price = typeof priceValue === "number" 
+            ? priceValue 
+            : parseFloat(String(priceValue || 0).replace(/\./g, "").replace(",", ".")) || 0;
+          
+          items.push({
+            name: `${item.product_name || 'Producto'} (${qtyLabel})`,
+            desc: description,
+            units: 1,
+            price: price,
+            tax: 21,
+            discount: 0
+          });
+        });
+      } else {
+        // Single item without multi quantities
+        let description = '';
         
-        if (outputsText) {
-          description += (description ? '\n' : '') + outputsText;
+        // Build description from prompts
+        if (item.prompts && typeof item.prompts === 'object') {
+          const promptEntries = Object.entries(item.prompts);
+          if (promptEntries.length > 0) {
+            description = promptEntries
+              .map(([key, promptData]: [string, any]) => {
+                if (promptData && typeof promptData === 'object' && 'label' in promptData && 'value' in promptData) {
+                  return `${promptData.label}: ${promptData.value}`;
+                }
+                return '';
+              })
+              .filter(Boolean)
+              .join('\n');
+          }
         }
+        
+        // Add outputs to description (excluding price fields)
+        if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
+          const outputsText = item.outputs
+            .filter((out: any) => {
+              const name = String(out.name || '').toLowerCase();
+              const type = String(out.type || '').toLowerCase();
+              return !type.includes('price') && !name.includes('precio') && !name.includes('price');
+            })
+            .map((out: any) => `${out.name}: ${out.value}`)
+            .join('\n');
+          
+          if (outputsText) {
+            description += (description ? '\n' : '') + outputsText;
+          }
+        }
+        
+        items.push({
+          name: item.product_name || 'Producto',
+          desc: description,
+          units: item.quantity || 1,
+          price: parseFloat(item.price) || 0,
+          tax: 21,
+          discount: parseFloat(item.discount_percentage) || 0
+        });
       }
-      
-      console.log('📄 Final description for Holded desc:', description);
-      console.log('📝 Item description field for Holded name:', item.description);
-      
-      return {
-        name: item.description || item.product_name || 'Producto',
-        desc: description,
-        units: item.quantity || 1,
-        price: parseFloat(item.price) || 0,
-        tax: 21,
-        discount: parseFloat(item.discount_percentage) || 0
-      };
     });
 
     const estimatePayload = {
