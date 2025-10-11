@@ -466,7 +466,7 @@ export default function ExcelFiles() {
         throw new Error(`Tipo de archivo no válido: ${file.type}. Selecciona un archivo Excel (.xlsx o .xls)`);
       }
       
-      console.log('📄 Archivo seleccionado:', {
+      console.log('📄 Archivo seleccionado para actualización:', {
         name: file.name,
         type: file.type,
         size: file.size
@@ -475,7 +475,7 @@ export default function ExcelFiles() {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No hay token de autenticación");
 
-      // Convert file to base64
+      // Convert file to base64 (same as original EasyQuote code)
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -488,16 +488,16 @@ export default function ExcelFiles() {
         reader.onerror = reject;
       });
 
+      // Payload structure matches original code: { fileName, file }
       const payload = {
         fileName: file.name,
         file: base64
       };
 
-      console.log('📤 UPDATE PAYLOAD:', {
+      console.log('📤 Actualizando archivo:', {
         fileId,
         fileName: file.name,
-        fileLength: base64.length,
-        filePreview: base64.substring(0, 100) + '...'
+        base64Length: base64.length
       });
 
       const response = await fetch(`https://api.easyquote.cloud/api/v1/excelfiles/${fileId}`, {
@@ -510,10 +510,9 @@ export default function ExcelFiles() {
       });
 
       if (!response.ok) {
-        let errorMessage = "Error desconocido al actualizar el archivo";
+        let errorMessage = "Error al actualizar el archivo";
         try {
           const errorData = await response.json();
-          // Extract meaningful error message from EasyQuote API response
           if (errorData?.[""]?.errors?.[0]?.errorMessage) {
             errorMessage = errorData[""].errors[0].errorMessage;
           } else if (typeof errorData === 'string') {
@@ -525,29 +524,29 @@ export default function ExcelFiles() {
         throw new Error(errorMessage);
       }
       
-      const result = await response.json();
-      return { oldFileId: fileId, newFileId: result.id, fileName: file.name };
+      console.log('✅ Archivo actualizado correctamente');
+      
+      // Note: In the original EasyQuote code, the ID doesn't change on update
+      // Only the fileName is updated in the local list
+      return { fileId, fileName: file.name };
     },
     onSuccess: async (data) => {
+      // Update the filename in Supabase metadata
       const { data: { user } } = await supabase.auth.getUser();
-      if (user && data.oldFileId !== data.newFileId) {
-        // Update the file_id in Supabase to reflect the new ID from EasyQuote
+      if (user) {
         await supabase
           .from("excel_files")
           .update({ 
-            file_id: data.newFileId,
             original_filename: data.fileName,
             filename: data.fileName 
           })
-          .eq("file_id", data.oldFileId)
+          .eq("file_id", data.fileId)
           .eq("user_id", user.id);
       }
 
       toast({
         title: "Archivo Excel actualizado",
-        description: data.oldFileId !== data.newFileId 
-          ? "El archivo se actualizó y se generó un nuevo ID. Las URLs se han actualizado automáticamente."
-          : "El archivo Excel se ha actualizado correctamente.",
+        description: "El archivo se ha actualizado correctamente.",
       });
       setIsUpdateExcelDialogOpen(false);
       setSelectedFileForUpdate(null);
@@ -555,6 +554,7 @@ export default function ExcelFiles() {
       queryClient.invalidateQueries({ queryKey: ["excel-files-meta"] });
     },
     onError: (error) => {
+      console.error('❌ Error al actualizar:', error);
       toast({
         title: "Error al actualizar archivo",
         description: error.message,
