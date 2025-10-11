@@ -689,7 +689,7 @@ export default function ExcelFiles() {
     }
   };
 
-  // Download file from EasyQuote API via edge function
+  // Download file from EasyQuote API (with CORS fallback)
   const downloadFile = async (fileId: string, fileName: string) => {
     const token = sessionStorage.getItem("easyquote_token");
     if (!token) {
@@ -711,14 +711,55 @@ export default function ExcelFiles() {
     }
 
     try {
-      console.log('📥 Descargando:', { fileId, fileName, subscriberId });
+      const downloadUrl = `https://sheets.easyquote.cloud/${subscriberId}/${fileId}/${fileName}`;
+      console.log('📥 Descargando desde:', downloadUrl);
 
+      // Try direct download first (works when in same domain/no CORS)
+      try {
+        const response = await fetch(downloadUrl, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const blob = await response.blob();
+          
+          if (blob.size === 0) {
+            throw new Error("El archivo está vacío");
+          }
+
+          console.log('✅ Descarga directa exitosa, tamaño:', blob.size);
+
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(link);
+          }, 100);
+
+          toast({
+            title: "Archivo descargado",
+            description: `${fileName} descargado correctamente`,
+          });
+          return;
+        }
+      } catch (directError) {
+        console.log('⚠️ Descarga directa falló (posiblemente CORS), usando proxy...');
+      }
+
+      // Fallback: use edge function as proxy for CORS
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error("No hay sesión activa");
       }
 
-      // Call edge function - it returns the file as ArrayBuffer
       const response = await fetch(
         `https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/easyquote-master-files`,
         {
@@ -743,16 +784,14 @@ export default function ExcelFiles() {
         throw new Error(`Error ${response.status}`);
       }
 
-      // Get as ArrayBuffer (binary data)
       const arrayBuffer = await response.arrayBuffer();
 
       if (arrayBuffer.byteLength === 0) {
         throw new Error("El archivo está vacío");
       }
 
-      console.log('✅ Descargado, tamaño:', arrayBuffer.byteLength);
+      console.log('✅ Descarga via proxy exitosa, tamaño:', arrayBuffer.byteLength);
 
-      // Create blob from ArrayBuffer
       const blob = new Blob([arrayBuffer], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
