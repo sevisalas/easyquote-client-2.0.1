@@ -689,7 +689,7 @@ export default function ExcelFiles() {
     }
   };
 
-  // Download file from EasyQuote API
+  // Download file from EasyQuote API using edge function as proxy
   const downloadFile = async (fileId: string, fileName: string) => {
     const token = sessionStorage.getItem("easyquote_token");
     if (!token) {
@@ -711,62 +711,51 @@ export default function ExcelFiles() {
     }
 
     try {
-      // Use the correct EasyQuote download URL
-      const downloadUrl = `https://sheets.easyquote.cloud/${subscriberId}/${fileId}/${encodeURIComponent(fileName)}`;
-      
-      console.log('📥 Descargando archivo desde:', downloadUrl);
+      console.log('📥 Descargando archivo:', { fileId, fileName, subscriberId });
 
-      const response = await fetch(downloadUrl, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/octet-stream,*/*"
+      // Use edge function as proxy to avoid CORS issues
+      const { data, error } = await supabase.functions.invoke('easyquote-master-files', {
+        body: {
+          token,
+          subscriberId,
+          fileId,
+          fileName
         }
       });
 
-      if (response.ok) {
-        const blob = await response.blob();
-        
-        // Check if we actually got a file
-        if (blob.size === 0) {
-          throw new Error("El archivo está vacío");
-        }
-
-        console.log('✅ Archivo descargado correctamente, tamaño:', blob.size);
-
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        
-        // Cleanup
-        setTimeout(() => {
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(link);
-        }, 100);
-        
-        toast({
-          title: "Archivo descargado",
-          description: `El archivo ${fileName} se ha descargado correctamente.`,
-        });
-      } else {
-        const errorText = await response.text();
-        console.error("❌ Error en descarga:", response.status, errorText);
-        
-        toast({
-          title: "Error al descargar",
-          description: `Error ${response.status}: No se pudo descargar el archivo.`,
-          variant: "destructive",
-        });
+      if (error) {
+        console.error("❌ Error:", error);
+        throw error;
       }
+
+      // Convert response to blob
+      const blob = new Blob([data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+
+      console.log('✅ Descargado, tamaño:', blob.size);
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(link);
+      }, 100);
+
+      toast({
+        title: "Archivo descargado",
+        description: `${fileName} descargado correctamente`,
+      });
     } catch (error) {
       console.error("❌ Error de descarga:", error);
       toast({
         title: "Error de descarga",
-        description: "No se pudo descargar el archivo. Verifique su conexión e intente nuevamente.",
+        description: "No se pudo descargar el archivo",
         variant: "destructive",
       });
     }
