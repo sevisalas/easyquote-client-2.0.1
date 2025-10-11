@@ -713,25 +713,42 @@ export default function ExcelFiles() {
     try {
       console.log('📥 Descargando archivo:', { fileId, fileName, subscriberId });
 
-      // Use edge function as proxy to avoid CORS issues
-      const { data, error } = await supabase.functions.invoke('easyquote-master-files', {
-        body: {
-          token,
-          subscriberId,
-          fileId,
-          fileName
-        }
-      });
-
-      if (error) {
-        console.error("❌ Error:", error);
-        throw error;
+      // Get supabase session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("No hay sesión activa");
       }
 
-      // Convert response to blob
-      const blob = new Blob([data], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      });
+      // Call edge function to get the file
+      const response = await fetch(
+        `https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/easyquote-master-files`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            token,
+            subscriberId,
+            fileId,
+            fileName
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      // Get the file as blob
+      const blob = await response.blob();
+
+      if (blob.size === 0) {
+        throw new Error("El archivo está vacío");
+      }
 
       console.log('✅ Descargado, tamaño:', blob.size);
 
@@ -755,7 +772,7 @@ export default function ExcelFiles() {
       console.error("❌ Error de descarga:", error);
       toast({
         title: "Error de descarga",
-        description: "No se pudo descargar el archivo",
+        description: error instanceof Error ? error.message : "No se pudo descargar el archivo",
         variant: "destructive",
       });
     }
