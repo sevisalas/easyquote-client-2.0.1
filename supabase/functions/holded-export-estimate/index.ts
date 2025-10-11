@@ -414,6 +414,7 @@ Deno.serve(async (req) => {
       contactId: contactId,
       desc: quote.description || quote.title || '',
       notes: quote.notes || '',
+      applyContactDefaults: false,
       items: items
     };
 
