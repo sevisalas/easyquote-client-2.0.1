@@ -360,8 +360,15 @@ Deno.serve(async (req) => {
         const isDiscount = additional.is_discount || false;
         
         if (!isDiscount) {
-          // Add as separate item (normal additional)
-          const price = Math.round(parseFloat(String(value)) * 100) / 100;
+          // Calculate price based on type
+          let price = 0;
+          if (additional.type === 'percentage') {
+            // For percentage type, calculate the percentage of the current subtotal
+            const subtotal = items.reduce((sum, item) => sum + (item.subtotal * item.units), 0);
+            price = Math.round((subtotal * value / 100) * 100) / 100;
+          } else {
+            price = Math.round(parseFloat(String(value)) * 100) / 100;
+          }
           
           const itemData: any = {
             name: additional.name || 'Ajuste',
