@@ -243,7 +243,7 @@ export default function ExcelFiles() {
         },
         body: JSON.stringify({
           fileName: file.name,
-          fileContent: base64
+          file: base64
         })
       });
 
@@ -474,14 +474,14 @@ export default function ExcelFiles() {
 
       const payload = {
         fileName: file.name,
-        fileContent: base64
+        file: base64
       };
 
       console.log('📤 UPDATE PAYLOAD:', {
         fileId,
         fileName: file.name,
-        fileContentLength: base64.length,
-        fileContentPreview: base64.substring(0, 100) + '...'
+        fileLength: base64.length,
+        filePreview: base64.substring(0, 100) + '...'
       });
 
       const response = await fetch(`https://api.easyquote.cloud/api/v1/excelfiles/${fileId}`, {
