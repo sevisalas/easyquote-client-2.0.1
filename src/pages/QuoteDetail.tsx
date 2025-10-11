@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Edit, Download, Copy } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -130,6 +131,7 @@ export default function QuoteDetail() {
           subtotal: originalQuote.subtotal,
           final_price: originalQuote.final_price,
           selections: originalQuote.selections,
+          hide_holded_totals: originalQuote.hide_holded_totals || false,
         })
         .select()
         .single();
@@ -337,6 +339,17 @@ export default function QuoteDetail() {
               )}
             </div>
           )}
+
+          <div className="flex items-center space-x-2 pt-2">
+            <Checkbox 
+              id="hide-holded-totals-view" 
+              checked={(quote as any).hide_holded_totals || false}
+              disabled
+            />
+            <label className="text-sm font-normal text-muted-foreground">
+              ¿Ocultar totales en Holded?
+            </label>
+          </div>
         </CardContent>
       </Card>
 
