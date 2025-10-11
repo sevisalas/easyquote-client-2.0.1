@@ -689,7 +689,7 @@ export default function ExcelFiles() {
     }
   };
 
-  // Download file from EasyQuote API using edge function as proxy
+  // Download file from EasyQuote API
   const downloadFile = async (fileId: string, fileName: string) => {
     const token = sessionStorage.getItem("easyquote_token");
     if (!token) {
@@ -711,31 +711,16 @@ export default function ExcelFiles() {
     }
 
     try {
-      console.log('📥 Descargando archivo:', { fileId, fileName, subscriberId });
+      const downloadUrl = `https://sheets.easyquote.cloud/${subscriberId}/${fileId}/${fileName}`;
+      
+      console.log('📥 Descargando desde:', downloadUrl);
 
-      // Get supabase session token
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error("No hay sesión activa");
-      }
-
-      // Call edge function to get the file
-      const response = await fetch(
-        `https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/easyquote-master-files`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`
-          },
-          body: JSON.stringify({
-            token,
-            subscriberId,
-            fileId,
-            fileName
-          })
+      const response = await fetch(downloadUrl, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`
         }
-      );
+      });
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -743,7 +728,6 @@ export default function ExcelFiles() {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
 
-      // Get the file as blob
       const blob = await response.blob();
 
       if (blob.size === 0) {
