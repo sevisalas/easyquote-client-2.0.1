@@ -155,7 +155,8 @@ Deno.serve(async (req) => {
       contactId: contactId,
       desc: quote.description || quote.title || '',
       notes: quote.notes || '',
-      items: items
+      items: items,
+      ...(quote.hide_holded_totals && { shipping: 'hidden' })
     };
 
     console.log('=== HOLDED EXPORT DEBUG ===');

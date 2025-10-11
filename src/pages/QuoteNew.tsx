@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarDays, Plus, Trash2, Save, ArrowLeft, Download } from "lucide-react";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -52,6 +53,7 @@ export default function QuoteNew() {
   const [quoteAdditionals, setQuoteAdditionals] = useState<SelectedAdditional[]>([]);
   const [loading, setSaving] = useState(false);
   const [isImportingContacts, setIsImportingContacts] = useState(false);
+  const [hideHoldedTotals, setHideHoldedTotals] = useState(false);
 
   // Holded integration
   const { isHoldedActive } = useHoldedIntegration();
@@ -70,6 +72,20 @@ export default function QuoteNew() {
     if (itemsArray.length === 0) return true; // No items means we can add
     return itemsArray.every(item => item.productId && item.price && item.price > 0);
   }, [items]);
+
+  // Check if any item has multiple quantities enabled
+  const hasMultiQuantities = useMemo(() => {
+    return Object.values(items).some(item => 
+      item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1
+    );
+  }, [items]);
+
+  // Auto-enable hideHoldedTotals when multi quantities are detected
+  useEffect(() => {
+    if (hasMultiQuantities && !hideHoldedTotals) {
+      setHideHoldedTotals(true);
+    }
+  }, [hasMultiQuantities]);
 
   // Check if user has EasyQuote token
   const hasToken = Boolean(sessionStorage.getItem("easyquote_token"));
@@ -104,6 +120,9 @@ export default function QuoteNew() {
       const additionals = Array.isArray(duplicateQuote.quote_additionals) ? duplicateQuote.quote_additionals : [];
       setQuoteAdditionals(additionals as SelectedAdditional[]);
     }
+
+    // Load hideHoldedTotals
+    setHideHoldedTotals(duplicateQuote.hide_holded_totals || false);
 
     // Load product selections
     if (duplicateQuote.selections) {
@@ -363,6 +382,7 @@ export default function QuoteNew() {
         terms_conditions: "",
         selections: itemsArray,
         quote_additionals: quoteAdditionals,
+        hide_holded_totals: hideHoldedTotals,
       };
 
       const { data: quote, error } = await supabase
@@ -519,6 +539,20 @@ export default function QuoteNew() {
                 rows={2}
               />
             </div>
+          </div>
+
+          <div className="flex items-center space-x-2 pt-2">
+            <Checkbox 
+              id="hide-holded-totals" 
+              checked={hideHoldedTotals}
+              onCheckedChange={(checked) => setHideHoldedTotals(checked === true)}
+            />
+            <Label 
+              htmlFor="hide-holded-totals" 
+              className="text-sm font-normal cursor-pointer"
+            >
+              ¿Ocultar totales en Holded?
+            </Label>
           </div>
 
         </CardContent>

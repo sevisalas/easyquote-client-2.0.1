@@ -848,6 +848,7 @@ export type Database = {
           description: string | null
           discount_amount: number
           final_price: number
+          hide_holded_totals: boolean
           holded_estimate_id: string | null
           holded_estimate_number: string | null
           id: string
@@ -871,6 +872,7 @@ export type Database = {
           description?: string | null
           discount_amount?: number
           final_price?: number
+          hide_holded_totals?: boolean
           holded_estimate_id?: string | null
           holded_estimate_number?: string | null
           id?: string
@@ -894,6 +896,7 @@ export type Database = {
           description?: string | null
           discount_amount?: number
           final_price?: number
+          hide_holded_totals?: boolean
           holded_estimate_id?: string | null
           holded_estimate_number?: string | null
           id?: string
