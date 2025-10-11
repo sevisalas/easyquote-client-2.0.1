@@ -301,7 +301,7 @@ export default function Additionals() {
                   htmlFor="is_discount" 
                   className="text-sm font-normal cursor-pointer"
                 >
-                  ¿Considerar este ajuste como "Descuento" en Holded?
+                  ¿Considerar este ajuste como "Descuento"?
                 </Label>
               </div>
             </form>
@@ -392,7 +392,7 @@ export default function Additionals() {
                   </div>
                   {additional.is_discount && (
                     <div className="flex items-center gap-2 text-sm text-primary">
-                      <span className="font-medium">✓ Marcado como descuento para Holded</span>
+                      <span className="font-medium">✓ Marcado como descuento</span>
                     </div>
                   )}
                 </div>
