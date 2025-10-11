@@ -412,7 +412,6 @@ Deno.serve(async (req) => {
       docType: 'estimate',
       date: Math.floor(new Date(quote.created_at).getTime() / 1000), // Unix timestamp
       contactId: contactId,
-      desc: quote.description || quote.title || '',
       notes: quote.notes || '',
       items: items
     };
