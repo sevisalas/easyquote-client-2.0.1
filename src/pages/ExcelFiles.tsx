@@ -248,8 +248,19 @@ export default function ExcelFiles() {
       });
 
       if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Error al subir archivo: ${errorData}`);
+        let errorMessage = "Error desconocido al subir el archivo";
+        try {
+          const errorData = await response.json();
+          // Extract meaningful error message from EasyQuote API response
+          if (errorData?.[""]?.errors?.[0]?.errorMessage) {
+            errorMessage = errorData[""].errors[0].errorMessage;
+          } else if (typeof errorData === 'string') {
+            errorMessage = errorData;
+          }
+        } catch {
+          errorMessage = `Error ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       return response.json();
@@ -474,8 +485,19 @@ export default function ExcelFiles() {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error updating Excel file: ${errorText}`);
+        let errorMessage = "Error desconocido al actualizar el archivo";
+        try {
+          const errorData = await response.json();
+          // Extract meaningful error message from EasyQuote API response
+          if (errorData?.[""]?.errors?.[0]?.errorMessage) {
+            errorMessage = errorData[""].errors[0].errorMessage;
+          } else if (typeof errorData === 'string') {
+            errorMessage = errorData;
+          }
+        } catch {
+          errorMessage = `Error ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
       
       const result = await response.json();
