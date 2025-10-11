@@ -687,7 +687,6 @@ export default function ExcelFiles() {
 
   // Download file from EasyQuote API
   const downloadFile = async (fileId: string, fileName: string) => {
-
     const token = sessionStorage.getItem("easyquote_token");
     if (!token) {
       toast({
@@ -698,25 +697,28 @@ export default function ExcelFiles() {
       return;
     }
 
+    if (!subscriberId) {
+      toast({
+        title: "Error",
+        description: "No se pudo obtener el ID del suscriptor",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      // Try the direct download endpoint first
-      let response = await fetch(`https://api.easyquote.cloud/api/v1/excelfiles/${fileId}/download`, {
+      // Use the correct EasyQuote download URL
+      const downloadUrl = `https://sheets.easyquote.cloud/${subscriberId}/${fileId}/${encodeURIComponent(fileName)}`;
+      
+      console.log('📥 Descargando archivo desde:', downloadUrl);
+
+      const response = await fetch(downloadUrl, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
+          "Accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/octet-stream,*/*"
         }
       });
-
-      // If 404, try alternative endpoint
-      if (response.status === 404) {
-        response = await fetch(`https://api.easyquote.cloud/api/v1/excelfiles/${fileId}`, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          }
-        });
-      }
 
       if (response.ok) {
         const blob = await response.blob();
@@ -725,6 +727,8 @@ export default function ExcelFiles() {
         if (blob.size === 0) {
           throw new Error("El archivo está vacío");
         }
+
+        console.log('✅ Archivo descargado correctamente, tamaño:', blob.size);
 
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -746,16 +750,16 @@ export default function ExcelFiles() {
         });
       } else {
         const errorText = await response.text();
-        console.error("Download error:", response.status, errorText);
+        console.error("❌ Error en descarga:", response.status, errorText);
         
         toast({
           title: "Error al descargar",
-          description: `Error ${response.status}: El servicio de descarga no está disponible en este momento.`,
+          description: `Error ${response.status}: No se pudo descargar el archivo.`,
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error("Download error:", error);
+      console.error("❌ Error de descarga:", error);
       toast({
         title: "Error de descarga",
         description: "No se pudo descargar el archivo. Verifique su conexión e intente nuevamente.",
