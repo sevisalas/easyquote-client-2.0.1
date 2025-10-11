@@ -379,7 +379,7 @@ Deno.serve(async (req) => {
         } else {
           // Distribute discount across all items proportionally
           if (items.length > 0) {
-            const subtotal = items.reduce((sum, item) => sum + (item.price * item.units), 0);
+            const subtotal = items.reduce((sum, item) => sum + (item.subtotal * item.units), 0);
             let totalDiscountToDistribute = 0;
             
             // Calculate total discount amount
@@ -391,7 +391,7 @@ Deno.serve(async (req) => {
             
             // Distribute proportionally
             items.forEach((item) => {
-              const itemTotal = item.price * item.units;
+              const itemTotal = item.subtotal * item.units;
               const proportion = itemTotal / subtotal;
               const itemDiscount = Math.round((totalDiscountToDistribute * proportion) * 100) / 100;
               item.discount = Math.round(((item.discount || 0) + itemDiscount) * 100) / 100;
