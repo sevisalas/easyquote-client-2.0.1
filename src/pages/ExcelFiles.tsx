@@ -689,7 +689,7 @@ export default function ExcelFiles() {
     }
   };
 
-  // Download file from EasyQuote API
+  // Download file from EasyQuote API via edge function
   const downloadFile = async (fileId: string, fileName: string) => {
     const token = sessionStorage.getItem("easyquote_token");
     if (!token) {
@@ -711,30 +711,51 @@ export default function ExcelFiles() {
     }
 
     try {
-      const downloadUrl = `https://sheets.easyquote.cloud/${subscriberId}/${fileId}/${fileName}`;
-      
-      console.log('📥 Descargando desde:', downloadUrl);
+      console.log('📥 Descargando:', { fileId, fileName, subscriberId });
 
-      const response = await fetch(downloadUrl, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("No hay sesión activa");
+      }
+
+      // Call edge function - it returns the file as ArrayBuffer
+      const response = await fetch(
+        `https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/easyquote-master-files`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhyand2dmVteGZ6bWVvZ2FwdHp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3NTcwNTAsImV4cCI6MjA3MzMzMzA1MH0.A55mKrk9fwRXiK_en0eEh-0wK9tefWjKuLMAqxbufnE'
+          },
+          body: JSON.stringify({
+            token,
+            subscriberId,
+            fileId,
+            fileName
+          })
         }
-      });
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Error response:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        console.error('❌ Error response:', errorText);
+        throw new Error(`Error ${response.status}`);
       }
 
-      const blob = await response.blob();
+      // Get as ArrayBuffer (binary data)
+      const arrayBuffer = await response.arrayBuffer();
 
-      if (blob.size === 0) {
+      if (arrayBuffer.byteLength === 0) {
         throw new Error("El archivo está vacío");
       }
 
-      console.log('✅ Descargado, tamaño:', blob.size);
+      console.log('✅ Descargado, tamaño:', arrayBuffer.byteLength);
+
+      // Create blob from ArrayBuffer
+      const blob = new Blob([arrayBuffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
 
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -756,7 +777,7 @@ export default function ExcelFiles() {
       console.error("❌ Error de descarga:", error);
       toast({
         title: "Error de descarga",
-        description: error instanceof Error ? error.message : "No se pudo descargar el archivo",
+        description: error instanceof Error ? error.message : "No se pudo descargar",
         variant: "destructive",
       });
     }
