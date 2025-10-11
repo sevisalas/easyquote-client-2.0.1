@@ -58,7 +58,18 @@ Deno.serve(async (req) => {
       throw new Error('Failed to fetch quote items');
     }
 
+    // Get quote additionals (ajustes sobre el presupuesto)
+    const { data: quoteAdditionals, error: additionalsError } = await supabase
+      .from('quote_additionals')
+      .select('*')
+      .eq('quote_id', quoteId);
+
+    if (additionalsError) {
+      console.error('Error fetching quote additionals:', additionalsError);
+    }
+
     console.log('📦 Quote items fetched:', JSON.stringify(quoteItems, null, 2));
+    console.log('📦 Quote additionals fetched:', JSON.stringify(quoteAdditionals, null, 2));
 
     // Get Holded contact if customer_id exists
     let contactId = null;
@@ -133,6 +144,21 @@ Deno.serve(async (req) => {
             }
           }
           
+          // Add item additionals (ajustes sobre el artículo) at the end
+          if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
+            const additionalsText = item.item_additionals
+              .map((additional: any) => {
+                const value = additional.value || 0;
+                const formattedValue = typeof value === 'number' ? value.toFixed(2) : value;
+                return `${additional.name}: ${formattedValue}€`;
+              })
+              .join('\n');
+            
+            if (additionalsText) {
+              description += (description ? '\n' : '') + additionalsText;
+            }
+          }
+          
           // Get price from this specific row
           const priceOut = (row.outs || []).find((o: any) => 
             String(o?.type || '').toLowerCase() === 'price' ||
@@ -193,6 +219,21 @@ Deno.serve(async (req) => {
           }
         }
         
+        // Add item additionals (ajustes sobre el artículo) at the end
+        if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
+          const additionalsText = item.item_additionals
+            .map((additional: any) => {
+              const value = additional.value || 0;
+              const formattedValue = typeof value === 'number' ? value.toFixed(2) : value;
+              return `${additional.name}: ${formattedValue}€`;
+            })
+            .join('\n');
+          
+          if (additionalsText) {
+            description += (description ? '\n' : '') + additionalsText;
+          }
+        }
+        
         // Round price to 2 decimals for Holded compatibility
         const price = Math.round((parseFloat(item.price) || 0) * 100) / 100;
         
@@ -206,6 +247,27 @@ Deno.serve(async (req) => {
         });
       }
     });
+
+    // Add quote additionals (ajustes sobre el presupuesto) as separate items at the end
+    if (quoteAdditionals && Array.isArray(quoteAdditionals) && quoteAdditionals.length > 0) {
+      quoteAdditionals.forEach((additional: any) => {
+        const value = additional.value || 0;
+        const price = Math.round(parseFloat(String(value)) * 100) / 100;
+        
+        items.push({
+          name: additional.name || 'Ajuste',
+          desc: additional.type === 'percentage' 
+            ? `Ajuste ${value}%` 
+            : additional.type === 'multiplier'
+            ? `Multiplicador x${value}`
+            : 'Ajuste sobre el presupuesto',
+          units: 1,
+          price: price,
+          tax: 21,
+          discount: 0
+        });
+      });
+    }
 
     const estimatePayload = {
       docType: 'estimate',
