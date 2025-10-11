@@ -176,7 +176,8 @@ Deno.serve(async (req) => {
           if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
             item.item_additionals.forEach((additional: any) => {
               const value = additional.value || 0;
-              const isDiscount = additional.is_discount || false;
+              // Detect discount: either explicitly marked or has negative value
+              const isDiscount = additional.is_discount === true || value < 0;
               
               if (isDiscount) {
                 // Calculate discount amount
@@ -301,7 +302,8 @@ Deno.serve(async (req) => {
         if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
           item.item_additionals.forEach((additional: any) => {
             const value = additional.value || 0;
-            const isDiscount = additional.is_discount || false;
+            // Detect discount: either explicitly marked or has negative value
+            const isDiscount = additional.is_discount === true || value < 0;
             
             if (isDiscount) {
               // Calculate discount amount
@@ -360,7 +362,8 @@ Deno.serve(async (req) => {
     if (quoteAdditionals && Array.isArray(quoteAdditionals) && quoteAdditionals.length > 0) {
       quoteAdditionals.forEach((additional: any) => {
         const value = additional.value || 0;
-        const isDiscount = additional.is_discount || false;
+        // Detect discount: either explicitly marked or has negative value
+        const isDiscount = additional.is_discount === true || value < 0;
         
         if (!isDiscount) {
           // Calculate price based on type
