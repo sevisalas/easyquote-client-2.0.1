@@ -141,9 +141,12 @@ Deno.serve(async (req) => {
           );
           
           const priceValue = priceOut?.value;
-          const price = typeof priceValue === "number" 
+          let price = typeof priceValue === "number" 
             ? priceValue 
             : parseFloat(String(priceValue || 0).replace(/\./g, "").replace(",", ".")) || 0;
+          
+          // Round to 2 decimals for Holded compatibility
+          price = Math.round(price * 100) / 100;
           
           items.push({
             name: `${item.product_name || 'Producto'} (${qtyLabel})`,
@@ -190,11 +193,14 @@ Deno.serve(async (req) => {
           }
         }
         
+        // Round price to 2 decimals for Holded compatibility
+        const price = Math.round((parseFloat(item.price) || 0) * 100) / 100;
+        
         items.push({
           name: item.product_name || 'Producto',
           desc: description,
           units: item.quantity || 1,
-          price: parseFloat(item.price) || 0,
+          price: price,
           tax: 21,
           discount: parseFloat(item.discount_percentage) || 0
         });
@@ -207,8 +213,7 @@ Deno.serve(async (req) => {
       contactId: contactId,
       desc: quote.description || quote.title || '',
       notes: quote.notes || '',
-      items: items,
-      ...(quote.hide_holded_totals && { shipping: 'hidden' })
+      items: items
     };
 
     console.log('=== HOLDED EXPORT DEBUG ===');
