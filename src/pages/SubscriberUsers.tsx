@@ -224,26 +224,17 @@ const UsuariosSuscriptor = () => {
 
   const cargarCredenciales = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('easyquote_credentials')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc('get_user_credentials', { 
+        p_user_id: userId 
+      });
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error loading credentials:', error);
-      } else if (data) {
-        // Decrypt the existing credentials to display them
-        const { data: decryptedUsername } = await supabase.rpc('decrypt_credential', { 
-          encrypted_data: data.api_username_encrypted 
-        });
-        const { data: decryptedPassword } = await supabase.rpc('decrypt_credential', { 
-          encrypted_data: data.api_password_encrypted 
-        });
-        
-        setApiUsername(decryptedUsername || '');
-        setApiPassword(decryptedPassword || '');
-        setCredentialId(data.id);
+      } else if (data && data.length > 0) {
+        const credentials = data[0];
+        setApiUsername(credentials.api_username || '');
+        setApiPassword(credentials.api_password || '');
+        setCredentialId(credentials.id);
         setHasCredentials(true);
       }
     } catch (error) {
