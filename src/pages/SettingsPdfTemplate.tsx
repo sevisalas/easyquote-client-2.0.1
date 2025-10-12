@@ -136,15 +136,16 @@ export default function SettingsPdfTemplate() {
                   selectedTemplate === template.id
                     ? 'ring-4 ring-primary scale-105'
                     : 'ring-2 ring-border hover:ring-primary/50'
-                } rounded-lg overflow-hidden`}
+                } rounded-lg overflow-hidden bg-card`}
               >
-                <div className="w-48 bg-card">
-                  <div className="aspect-[210/297] bg-muted flex items-center justify-center">
-                    <img 
-                      src={template.thumbnail} 
-                      alt={template.name}
-                      className="w-full h-full object-cover"
-                    />
+                <div className="w-64">
+                  <div className="aspect-[210/297] bg-muted overflow-hidden">
+                    <div className="scale-[0.22] origin-top-left w-[210mm] h-[297mm]">
+                      <QuoteTemplate 
+                        data={previewData} 
+                        templateNumber={template.id} 
+                      />
+                    </div>
                   </div>
                   <div className="p-3">
                     <p className="font-semibold text-sm mb-1">{template.name}</p>
