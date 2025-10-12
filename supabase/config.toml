@@ -50,3 +50,9 @@ verify_jwt = false
 
 [functions.holded-export-estimate]
 verify_jwt = true
+
+[functions.get-organization-users]
+verify_jwt = true
+
+[functions.easyquote-images]
+verify_jwt = true

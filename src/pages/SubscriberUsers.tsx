@@ -91,11 +91,11 @@ const UsuariosSuscriptor = () => {
 
       setSuscriptor(datosSuscriptor);
 
-      // Obtener usuarios miembros del suscriptor 
-      const { data: usuariosData, error: errorUsuarios } = await supabase
-        .from('organization_members')
-        .select('user_id, role')
-        .eq('organization_id', id);
+      // Obtener usuarios miembros con sus emails usando el edge function
+      const { data: usersResponse, error: errorUsuarios } = await supabase.functions.invoke(
+        'get-organization-users',
+        { body: { organizationId: id } }
+      );
 
       if (errorUsuarios) {
         console.error('Error al obtener usuarios:', errorUsuarios);
@@ -104,13 +104,11 @@ const UsuariosSuscriptor = () => {
       const usuariosFormateados: Usuario[] = [];
 
       // Agregar usuarios miembros (los que pueden acceder a la app)
-      if (usuariosData && usuariosData.length > 0) {
-        // Aquí deberíamos obtener los emails pero desde el cliente no podemos
-        // Por ahora mostramos solo los IDs
-        for (const usuario of usuariosData) {
+      if (usersResponse?.users && usersResponse.users.length > 0) {
+        for (const usuario of usersResponse.users) {
           usuariosFormateados.push({
-            id: usuario.user_id,
-            email: `Usuario ${usuario.user_id.substring(0,8)}...`,
+            id: usuario.id,
+            email: usuario.email || 'Sin email',
             rol: usuario.role === 'admin' ? 'Administrador' : 'Usuario',
             isPrincipal: false
           });
