@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
+import { usePdfAccess } from "@/hooks/usePdfAccess";
 
 interface Item {
   title: string;
@@ -52,6 +53,7 @@ export function AppSidebar() {
     loading
   } = useSubscription();
   const { isHoldedActive } = useHoldedIntegration();
+  const { hasPdfAccess, loading: pdfAccessLoading } = usePdfAccess();
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -267,14 +269,17 @@ export function AppSidebar() {
                            </NavLink>
                          </SidebarMenuSubButton>
                        </SidebarMenuSubItem>
-                       <SidebarMenuSubItem>
-                         <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/plantilla-pdf"} className="h-6 px-2">
-                           <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
-                             <FileText className="mr-2 h-4 w-4" />
-                             {!isCollapsed && <span>Plantilla PDF</span>}
-                           </NavLink>
-                         </SidebarMenuSubButton>
-                       </SidebarMenuSubItem>
+                        {/* Plantilla PDF - Solo si tienen acceso a generación de PDFs */}
+                        {hasPdfAccess && (
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/plantilla-pdf"} className="h-6 px-2">
+                              <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
+                                <FileText className="mr-2 h-4 w-4" />
+                                {!isCollapsed && <span>Plantilla PDF</span>}
+                              </NavLink>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        )}
                         {/* Integraciones - Solo admins */}
                         {(isSuperAdmin || isOrgAdmin) && (
                           <>
