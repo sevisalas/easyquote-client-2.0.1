@@ -7,10 +7,14 @@ import { toast } from "@/hooks/use-toast";
 import { fetchAvailableTemplates, TemplateInfo } from "@/utils/templateRegistry";
 import QuoteTemplate from "@/components/QuoteTemplate";
 import { Badge } from "@/components/ui/badge";
+import { usePdfAccess } from "@/hooks/usePdfAccess";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const STORAGE_KEY = "pdf_template_config";
 
 export default function SettingsPdfTemplate() {
+  const { hasPdfAccess, loading: pdfAccessLoading } = usePdfAccess();
   const [companyName, setCompanyName] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [brandColor, setBrandColor] = useState("#0ea5e9");
@@ -100,6 +104,38 @@ export default function SettingsPdfTemplate() {
       }
     ]
   };
+
+  if (pdfAccessLoading) {
+    return (
+      <main className="p-6">
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Cargando...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!hasPdfAccess) {
+    return (
+      <main className="p-6 space-y-6">
+        <header className="sr-only">
+          <h1>Configuración de plantilla PDF</h1>
+          <link rel="canonical" href={`${window.location.origin}/configuracion/plantilla-pdf`} />
+          <meta name="description" content="Personaliza el logo, color y pie del PDF de presupuestos." />
+        </header>
+
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Acceso Restringido</AlertTitle>
+          <AlertDescription>
+            Tu organización no tiene habilitada la generación de PDFs. 
+            Esta funcionalidad está configurada para usar el CRM/ERP integrado en su lugar.
+            Contacta con tu administrador si necesitas acceso a esta función.
+          </AlertDescription>
+        </Alert>
+      </main>
+    );
+  }
 
   return (
     <main className="p-6 space-y-6">
