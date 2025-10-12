@@ -79,10 +79,12 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       }
 
       // Check if user has superadmin role
-      const { data: roles } = await supabase
+      const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id);
+      
+      console.log('User roles query - Data:', roles, 'Error:', rolesError, 'User ID:', user.id);
       
       const isSuperAdminUser = roles?.some(r => r.role === 'superadmin') || false;
       console.log('Is superadmin?', isSuperAdminUser, 'Roles:', roles);
