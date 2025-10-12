@@ -138,7 +138,7 @@ export default function SettingsPdfTemplate() {
   }
 
   return (
-    <main className="p-6 space-y-6">
+    <main className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-[100vw] overflow-x-hidden">
       <header className="sr-only">
         <h1>Configuración de plantilla PDF</h1>
         <link rel="canonical" href={`${window.location.origin}/configuracion/plantilla-pdf`} />
@@ -150,7 +150,7 @@ export default function SettingsPdfTemplate() {
         <CardHeader>
           <CardTitle>Datos de la Empresa</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
+        <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>Nombre de empresa</Label>
             <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Mi Empresa S.L." />
@@ -159,11 +159,11 @@ export default function SettingsPdfTemplate() {
             <Label>Color de marca</Label>
             <Input type="color" value={brandColor} onChange={(e) => setBrandColor(e.target.value)} />
           </div>
-          <div className="space-y-2 md:col-span-2">
+          <div className="space-y-2 sm:col-span-2">
             <Label>Logo (URL)</Label>
             <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://.../logo.png" />
           </div>
-          <div className="space-y-2 md:col-span-2">
+          <div className="space-y-2 sm:col-span-2">
             <Label>Texto de pie</Label>
             <Input value={footerText} onChange={(e) => setFooterText(e.target.value)} placeholder="Condiciones, contacto, etc." />
           </div>
@@ -179,7 +179,7 @@ export default function SettingsPdfTemplate() {
           {isLoading ? (
             <p className="text-muted-foreground">Cargando plantillas...</p>
           ) : (
-            <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
+            <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0">
               {templates.map((template) => (
                 <button
                   key={template.id}
@@ -190,7 +190,7 @@ export default function SettingsPdfTemplate() {
                       : 'ring-2 ring-border hover:ring-primary/50'
                   } rounded-lg overflow-hidden`}
                 >
-                  <div className="w-48 bg-card">
+                  <div className="w-40 sm:w-48 bg-card">
                     <div className="aspect-[210/297] bg-muted flex items-center justify-center">
                       <img 
                         src={template.thumbnail} 
@@ -198,7 +198,7 @@ export default function SettingsPdfTemplate() {
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <div className="p-3">
+                    <div className="p-2 sm:p-3">
                       <div className="flex items-center gap-2 mb-1">
                         <p className="font-semibold text-sm">{template.name}</p>
                         {template.isCustom && (
@@ -228,9 +228,9 @@ export default function SettingsPdfTemplate() {
         <CardHeader>
           <CardTitle>Vista Previa</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="bg-muted/30 p-8 rounded-lg overflow-auto">
-            <div className="mx-auto shadow-2xl max-w-[210mm] scale-75 origin-top">
+        <CardContent className="p-2 sm:p-4 md:p-6">
+          <div className="bg-muted/30 p-2 sm:p-4 md:p-8 rounded-lg overflow-x-auto">
+            <div className="mx-auto shadow-2xl w-full max-w-[210mm] scale-50 sm:scale-60 md:scale-75 origin-top">
               <QuoteTemplate 
                 data={previewData} 
                 templateNumber={selectedTemplate} 
