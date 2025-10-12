@@ -35,7 +35,6 @@ import ProductCategories from "./pages/ProductCategories";
 import PresupuestosDashboard from "./pages/PresupuestosDashboard";
 import ProductTestPage from "./pages/ProductTestPage";
 import ImageManagement from "./pages/ImageManagement";
-import TemplateGallery from "./pages/TemplateGallery";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 const queryClient = new QueryClient();
 
@@ -295,14 +294,6 @@ const App = () => (
                 <AppLayout>
                   <ImageManagement />
                 </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/presupuestos/:id/templates"
-            element={
-              <ProtectedRoute>
-                <TemplateGallery />
               </ProtectedRoute>
             }
           />

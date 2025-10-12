@@ -6,12 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Edit, Download, Copy, FileText } from "lucide-react";
+import { Edit, Download, Copy } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import { CustomerName } from "@/components/quotes/CustomerName";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
+import { generateQuotePDF } from "@/utils/pdfGenerator";
+import { useState } from "react";
 
 const fetchQuote = async (id: string) => {
   const { data, error } = await supabase
@@ -64,6 +66,7 @@ export default function QuoteDetail() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { isHoldedActive } = useHoldedIntegration();
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   const { data: quote, isLoading, error } = useQuery({
     queryKey: ['quote', id],
@@ -75,6 +78,23 @@ export default function QuoteDetail() {
   const hasMultiQuantities = quote?.items?.some((item: any) => 
     item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1
   ) || false;
+
+  const handleGeneratePDF = async () => {
+    if (!quote?.id) return;
+    
+    setIsGeneratingPDF(true);
+    try {
+      await generateQuotePDF(quote.id, {
+        filename: `presupuesto-${quote.quote_number || 'draft'}.pdf`
+      });
+      toast.success('PDF generado correctamente');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Error al generar el PDF');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
 
   const duplicateQuoteMutation = useMutation({
     mutationFn: async (quoteId: string) => {
@@ -286,13 +306,14 @@ export default function QuoteDetail() {
                 )}
               </Button>
               <Button 
-                onClick={() => navigate(`/presupuestos/${quote.id}/templates`, { state: { quoteId: quote.id } })}
+                onClick={handleGeneratePDF}
                 size="sm" 
                 variant="outline"
                 className="gap-2"
+                disabled={isGeneratingPDF}
               >
-                <FileText className="h-4 w-4" />
-                Ver Plantillas PDF
+                <Download className="h-4 w-4" />
+                {isGeneratingPDF ? 'Generando...' : 'Descargar PDF'}
               </Button>
               <Button onClick={() => navigate('/presupuestos')} size="sm" variant="outline">
                 Volver

@@ -4,6 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import { templates } from "@/utils/templateRegistry";
+import QuoteTemplate from "@/components/QuoteTemplate";
 
 const STORAGE_KEY = "pdf_template_config";
 
@@ -12,6 +14,7 @@ export default function SettingsPdfTemplate() {
   const [logoUrl, setLogoUrl] = useState("");
   const [brandColor, setBrandColor] = useState("#0ea5e9");
   const [footerText, setFooterText] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState(1);
 
   useEffect(() => {
     document.title = "Configuración | Plantilla PDF";
@@ -21,22 +24,68 @@ export default function SettingsPdfTemplate() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const { companyName, logoUrl, brandColor, footerText } = JSON.parse(raw);
-        setCompanyName(companyName || "");
-        setLogoUrl(logoUrl || "");
-        setBrandColor(brandColor || "#0ea5e9");
-        setFooterText(footerText || "");
+        const config = JSON.parse(raw);
+        setCompanyName(config.companyName || "");
+        setLogoUrl(config.logoUrl || "");
+        setBrandColor(config.brandColor || "#0ea5e9");
+        setFooterText(config.footerText || "");
+        setSelectedTemplate(config.selectedTemplate || 1);
       }
     } catch {}
   }, []);
 
   const handleSave = () => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ companyName, logoUrl, brandColor, footerText }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ 
+        companyName, 
+        logoUrl, 
+        brandColor, 
+        footerText,
+        selectedTemplate 
+      }));
       toast({ title: "Plantilla guardada", description: "Tus cambios se han guardado en este navegador." });
     } catch (e: any) {
       toast({ title: "No se pudo guardar", description: e?.message || "Inténtalo de nuevo", variant: "destructive" });
     }
+  };
+
+  // Datos de ejemplo para el preview
+  const previewData = {
+    config: {
+      companyName: companyName || "Mi Empresa",
+      logoUrl: logoUrl,
+      brandColor: brandColor,
+      footerText: footerText
+    },
+    quote: {
+      quote_number: "01-01-2024-00001",
+      created_at: new Date().toISOString(),
+      title: "Propuesta Comercial",
+      description: "Descripción del presupuesto de ejemplo",
+      notes: "Notas y condiciones del presupuesto",
+      subtotal: 1000,
+      tax_amount: 210,
+      discount_amount: 0,
+      final_price: 1210
+    },
+    customer: {
+      name: "Cliente Ejemplo S.L.",
+      email: "cliente@ejemplo.com",
+      phone: "+34 123 456 789",
+      address: "Calle Ejemplo 123, Madrid"
+    },
+    items: [
+      {
+        name: "Producto 1",
+        description: "Descripción del producto 1",
+        price: 500
+      },
+      {
+        name: "Producto 2",
+        description: "Descripción del producto 2",
+        price: 500
+      }
+    ]
   };
 
   return (
@@ -47,9 +96,10 @@ export default function SettingsPdfTemplate() {
         <meta name="description" content="Personaliza el logo, color y pie del PDF de presupuestos." />
       </header>
 
+      {/* Configuración de datos */}
       <Card>
         <CardHeader>
-          <CardTitle>Plantilla de PDF</CardTitle>
+          <CardTitle>Datos de la Empresa</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
@@ -68,11 +118,69 @@ export default function SettingsPdfTemplate() {
             <Label>Texto de pie</Label>
             <Input value={footerText} onChange={(e) => setFooterText(e.target.value)} placeholder="Condiciones, contacto, etc." />
           </div>
-          <div className="md:col-span-2 flex justify-end">
-            <Button onClick={handleSave}>Guardar</Button>
+        </CardContent>
+      </Card>
+
+      {/* Selección de plantilla */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Selecciona tu Plantilla</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
+            {templates.map((template) => (
+              <button
+                key={template.id}
+                onClick={() => setSelectedTemplate(template.id)}
+                className={`flex-shrink-0 snap-start transition-all ${
+                  selectedTemplate === template.id
+                    ? 'ring-4 ring-primary scale-105'
+                    : 'ring-2 ring-border hover:ring-primary/50'
+                } rounded-lg overflow-hidden`}
+              >
+                <div className="w-48 bg-card">
+                  <div className="aspect-[210/297] bg-muted flex items-center justify-center">
+                    <img 
+                      src={template.thumbnail} 
+                      alt={template.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="p-3">
+                    <p className="font-semibold text-sm mb-1">{template.name}</p>
+                    <p className="text-xs text-muted-foreground mb-2">{template.description}</p>
+                    <div className="text-xs font-medium text-center py-1 rounded bg-muted">
+                      {selectedTemplate === template.id ? '✓ Seleccionada' : 'Seleccionar'}
+                    </div>
+                  </div>
+                </div>
+              </button>
+            ))}
           </div>
         </CardContent>
       </Card>
+
+      {/* Vista previa */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Vista Previa</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-muted/30 p-8 rounded-lg overflow-auto">
+            <div className="mx-auto shadow-2xl max-w-[210mm] scale-75 origin-top">
+              <QuoteTemplate 
+                data={previewData} 
+                templateNumber={selectedTemplate} 
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Botón guardar */}
+      <div className="flex justify-end">
+        <Button onClick={handleSave} size="lg">Guardar Configuración</Button>
+      </div>
     </main>
   );
 }
