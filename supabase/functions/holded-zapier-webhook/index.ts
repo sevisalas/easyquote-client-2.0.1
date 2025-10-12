@@ -8,26 +8,99 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
-    console.log('Zapier webhook received:', body);
+    // Verify webhook signature if secret is configured
+    const webhookSecret = Deno.env.get('ZAPIER_WEBHOOK_SECRET');
+    if (webhookSecret) {
+      const signature = req.headers.get('x-zapier-signature');
+      const body = await req.text();
+      
+      if (!signature) {
+        console.error('Missing webhook signature');
+        return new Response(
+          JSON.stringify({ error: 'Missing webhook signature' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
-    // Extract contact data from Zapier webhook
-    // Adjust these fields based on what Zapier sends
+      // Verify signature using HMAC SHA-256
+      const encoder = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(webhookSecret),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+      
+      const expectedSignature = await crypto.subtle.sign(
+        'HMAC',
+        key,
+        encoder.encode(body)
+      );
+      
+      const expectedSignatureHex = Array.from(new Uint8Array(expectedSignature))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      
+      if (signature !== expectedSignatureHex) {
+        console.error('Invalid webhook signature');
+        return new Response(
+          JSON.stringify({ error: 'Invalid webhook signature' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Parse the already-read body
+      var bodyData = JSON.parse(body);
+    } else {
+      // No secret configured, just parse body
+      console.warn('ZAPIER_WEBHOOK_SECRET not configured - webhook signature verification disabled');
+      var bodyData = await req.json();
+    }
+
+    console.log('Zapier webhook received:', bodyData);
+
+    // Validate required fields
     const { 
       id: holdedId, 
       name, 
       email, 
       phone, 
       mobile,
-      organizationId // This should be passed from Zapier
-    } = body;
+      organizationId
+    } = bodyData;
 
     if (!holdedId || !organizationId) {
       return new Response(
         JSON.stringify({ 
           error: 'Missing required fields: id and organizationId',
-          received: body 
+          received: bodyData 
         }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate organizationId is a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(organizationId)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid organizationId format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate name length
+    if (!name || name.trim().length === 0 || name.length > 255) {
+      return new Response(
+        JSON.stringify({ error: 'Name must be between 1 and 255 characters' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate email if provided
+    if (email && (typeof email !== 'string' || email.length > 255)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid email format or length' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -56,10 +129,10 @@ serve(async (req) => {
       .from('holded_contacts')
       .upsert({
         holded_id: holdedId,
-        name: name || 'Sin nombre',
-        email: email || null,
-        phone: phone || null,
-        mobile: mobile || null,
+        name: name.trim(),
+        email: email?.trim() || null,
+        phone: phone?.trim() || null,
+        mobile: mobile?.trim() || null,
         organization_id: organizationId,
       }, {
         onConflict: 'holded_id,organization_id',

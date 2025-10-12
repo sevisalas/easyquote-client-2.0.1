@@ -1,7 +1,7 @@
 project_id = "xrjwvvemxfzmeogaptzz"
 
 [functions.create-user]
-verify_jwt = false
+verify_jwt = true
 
 [functions.easyquote-auth]
 verify_jwt = false
@@ -28,10 +28,10 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.test-easyquote-connectivity]
-verify_jwt = false
+verify_jwt = true
 
 [functions.update-user-password]
-verify_jwt = false
+verify_jwt = true
 
 [functions.test-product-info]
 verify_jwt = true

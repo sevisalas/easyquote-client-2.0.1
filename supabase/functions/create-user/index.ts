@@ -41,8 +41,13 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Check if user is superadmin or organization admin
-    const isSuperAdmin = user.email === 'vdp@tradsis.net';
+    // Check if user has superadmin role
+    const { data: roles } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id);
+    
+    const isSuperAdmin = roles?.some(r => r.role === 'superadmin') || false;
     let isOrgAdmin = false;
 
     if (!isSuperAdmin) {

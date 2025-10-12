@@ -45,10 +45,16 @@ serve(async (req) => {
       )
     }
 
-    // Check if user is superadmin (same check as create-user function)
-    const isSuperAdmin = user.email === 'vdp@tradsis.net'
+    // Check if user has superadmin role
+    const { data: roles } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id);
+    
+    const isSuperAdmin = roles?.some(r => r.role === 'superadmin') || false;
     
     if (!isSuperAdmin) {
+      console.error('update-user-password: unauthorized access attempt by user:', user.id);
       return new Response(
         JSON.stringify({ error: 'Only superadmin can update user passwords' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

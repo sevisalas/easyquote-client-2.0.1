@@ -78,9 +78,14 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         return;
       }
 
-      // Verificar si es superadmin
-      const isSuperAdminUser = user.email === 'vdp@tradsis.net';
-      console.log('Is superadmin?', isSuperAdminUser, 'Email:', user.email);
+      // Check if user has superadmin role
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+      
+      const isSuperAdminUser = roles?.some(r => r.role === 'superadmin') || false;
+      console.log('Is superadmin?', isSuperAdminUser, 'Roles:', roles);
       setIsSuperAdmin(isSuperAdminUser);
 
       // Get user's organization (as API user) - solo si no es superadmin
