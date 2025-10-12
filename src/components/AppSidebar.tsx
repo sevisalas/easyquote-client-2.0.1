@@ -48,9 +48,12 @@ export function AppSidebar() {
     canAccessPresupuestos,
     canAccessExcel,
     canAccessProductos,
-    canAccessCategorias
+    canAccessCategorias,
+    loading
   } = useSubscription();
   const { isHoldedActive } = useHoldedIntegration();
+
+  console.log('AppSidebar - isSuperAdmin:', isSuperAdmin, 'loading:', loading);
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
