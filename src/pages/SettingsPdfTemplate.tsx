@@ -138,7 +138,7 @@ export default function SettingsPdfTemplate() {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6 w-full">
+    <div className="space-y-4 md:space-y-6 max-w-full">
       <header className="sr-only">
         <h1>Configuración de plantilla PDF</h1>
         <link rel="canonical" href={`${window.location.origin}/configuracion/plantilla-pdf`} />
@@ -179,7 +179,7 @@ export default function SettingsPdfTemplate() {
           {isLoading ? (
             <p className="text-muted-foreground">Cargando plantillas...</p>
           ) : (
-            <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0">
+            <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
               {templates.map((template) => (
                 <button
                   key={template.id}
@@ -228,16 +228,15 @@ export default function SettingsPdfTemplate() {
         <CardHeader>
           <CardTitle>Vista Previa</CardTitle>
         </CardHeader>
-        <CardContent className="p-0 overflow-hidden">
+        <CardContent className="p-0">
           <div className="bg-muted/30 p-4 overflow-x-auto">
-            <div className="inline-block min-w-full">
+            <div className="flex justify-center">
               <div 
-                className="shadow-2xl bg-white mx-auto"
+                className="shadow-2xl bg-white origin-top"
                 style={{
                   width: '210mm',
                   transform: 'scale(0.35)',
-                  transformOrigin: 'top center',
-                  marginBottom: '-65%'
+                  marginBottom: 'calc(-65% + 2rem)'
                 }}
               >
                 <QuoteTemplate 

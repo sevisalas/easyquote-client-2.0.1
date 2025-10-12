@@ -12,7 +12,10 @@ function MainContent({ children }: PropsWithChildren) {
   return (
     <div className="flex-1 flex flex-col min-h-screen overflow-x-hidden">
       <main 
-        className="flex-1 p-4 transition-all duration-300 ease-in-out overflow-x-hidden"
+        className={cn(
+          "flex-1 p-4 transition-all duration-300 ease-in-out overflow-x-hidden",
+          isCollapsed ? "ml-14" : "ml-56"
+        )}
       >
         {children}
       </main>
