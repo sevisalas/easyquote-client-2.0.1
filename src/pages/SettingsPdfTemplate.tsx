@@ -4,8 +4,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { templates } from "@/utils/templateRegistry";
+import { fetchAvailableTemplates, TemplateInfo } from "@/utils/templateRegistry";
 import QuoteTemplate from "@/components/QuoteTemplate";
+import { Badge } from "@/components/ui/badge";
 
 const STORAGE_KEY = "pdf_template_config";
 
@@ -15,9 +16,21 @@ export default function SettingsPdfTemplate() {
   const [brandColor, setBrandColor] = useState("#0ea5e9");
   const [footerText, setFooterText] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState(1);
+  const [templates, setTemplates] = useState<TemplateInfo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     document.title = "Configuración | Plantilla PDF";
+    
+    // Load templates from database
+    const loadTemplates = async () => {
+      setIsLoading(true);
+      const availableTemplates = await fetchAvailableTemplates();
+      setTemplates(availableTemplates);
+      setIsLoading(false);
+    };
+    
+    loadTemplates();
   }, []);
 
   useEffect(() => {
@@ -127,36 +140,50 @@ export default function SettingsPdfTemplate() {
           <CardTitle>Selecciona tu Plantilla</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
-            {templates.map((template) => (
-              <button
-                key={template.id}
-                onClick={() => setSelectedTemplate(template.id)}
-                className={`flex-shrink-0 snap-start transition-all ${
-                  selectedTemplate === template.id
-                    ? 'ring-4 ring-primary scale-105'
-                    : 'ring-2 ring-border hover:ring-primary/50'
-                } rounded-lg overflow-hidden`}
-              >
-                <div className="w-48 bg-card">
-                  <div className="aspect-[210/297] bg-muted flex items-center justify-center">
-                    <img 
-                      src={template.thumbnail} 
-                      alt={template.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="p-3">
-                    <p className="font-semibold text-sm mb-1">{template.name}</p>
-                    <p className="text-xs text-muted-foreground mb-2">{template.description}</p>
-                    <div className="text-xs font-medium text-center py-1 rounded bg-muted">
-                      {selectedTemplate === template.id ? '✓ Seleccionada' : 'Seleccionar'}
+          {isLoading ? (
+            <p className="text-muted-foreground">Cargando plantillas...</p>
+          ) : (
+            <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
+              {templates.map((template) => (
+                <button
+                  key={template.id}
+                  onClick={() => setSelectedTemplate(template.id)}
+                  className={`flex-shrink-0 snap-start transition-all ${
+                    selectedTemplate === template.id
+                      ? 'ring-4 ring-primary scale-105'
+                      : 'ring-2 ring-border hover:ring-primary/50'
+                  } rounded-lg overflow-hidden`}
+                >
+                  <div className="w-48 bg-card">
+                    <div className="aspect-[210/297] bg-muted flex items-center justify-center">
+                      <img 
+                        src={template.thumbnail} 
+                        alt={template.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-semibold text-sm">{template.name}</p>
+                        {template.isCustom && (
+                          <Badge variant="secondary" className="text-xs">Personalizada</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">{template.description}</p>
+                      {template.price && template.price > 0 && (
+                        <p className="text-xs font-medium text-primary mb-2">
+                          {template.price}€
+                        </p>
+                      )}
+                      <div className="text-xs font-medium text-center py-1 rounded bg-muted">
+                        {selectedTemplate === template.id ? '✓ Seleccionada' : 'Seleccionar'}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </button>
-            ))}
-          </div>
+                </button>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -170,40 +170,57 @@ export const generateQuotePDF = async (
       })
     );
 
-    // Wait for render
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Wait for render and images to load
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Capture as canvas
+    // Capture as canvas with better quality
     const canvas = await html2canvas(container.firstChild as HTMLElement, {
       scale: quality,
       useCORS: true,
       logging: false,
-      backgroundColor: '#ffffff'
+      backgroundColor: '#ffffff',
+      windowWidth: 794, // A4 width in pixels at 96 DPI
+      windowHeight: 1123 // A4 height in pixels at 96 DPI
     });
 
     // Clean up
     root.unmount();
     document.body.removeChild(container);
 
-    // Create PDF
-    const imgWidth = 210;
-    const pageHeight = 297;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    
+    // Create PDF with proper dimensions
     const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
     
-    let heightLeft = imgHeight;
-    let position = 0;
+    // Calculate scaling to fit content
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    
+    // Scale to fit page width
+    const ratio = pdfWidth / imgWidth;
+    const scaledHeight = imgHeight * ratio;
+    
+    // If content fits in one page
+    if (scaledHeight <= pdfHeight) {
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, scaledHeight);
+    } else {
+      // Content spans multiple pages
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      let heightLeft = scaledHeight;
+      let position = 0;
 
-    const imgData = canvas.toDataURL('image/jpeg', 1.0);
-    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+      // First page
+      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, scaledHeight);
+      heightLeft -= pdfHeight;
 
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      // Add subsequent pages if needed
+      while (heightLeft > 0) {
+        position = heightLeft - scaledHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, scaledHeight);
+        heightLeft -= pdfHeight;
+      }
     }
 
     pdf.save(filename);
