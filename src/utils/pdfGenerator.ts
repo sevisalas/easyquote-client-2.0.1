@@ -42,17 +42,30 @@ export const generateQuotePDF = async (
 
   try {
     // Fetch quote data
-    const { data: quote, error } = await supabase
+    const { data: quote, error: quoteError } = await supabase
       .from('quotes')
       .select(`
         *,
-        items:quote_items(*),
-        customer:customers(*)
+        items:quote_items(*)
       `)
       .eq('id', quoteId)
       .single();
 
-    if (error) throw error;
+    if (quoteError) throw quoteError;
+
+    // Fetch customer data separately if exists
+    let customer = null;
+    if (quote.customer_id) {
+      const { data: customerData, error: customerError } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('id', quote.customer_id)
+        .maybeSingle();
+      
+      if (!customerError) {
+        customer = customerData;
+      }
+    }
 
     // Get template configuration
     const config = getTemplateConfig();
@@ -130,7 +143,7 @@ export const generateQuotePDF = async (
         final_price: quote.final_price || 0,
         valid_until: quote.valid_until
       },
-      customer: quote.customer || {
+      customer: customer || {
         name: 'Cliente',
         email: '',
         phone: '',
