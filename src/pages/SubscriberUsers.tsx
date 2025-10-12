@@ -103,30 +103,23 @@ const UsuariosSuscriptor = () => {
 
       const usuariosFormateados: Usuario[] = [];
 
-      // Solo agregar el usuario principal si realmente existe y no es el superadmin actual
-      if (datosSuscriptor.api_user_id) {
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        // Si el superadmin no es el api_user_id de esta organización, mostrar el verdadero propietario
-        if (!isSuperAdmin || (isSuperAdmin && user?.id === datosSuscriptor.api_user_id)) {
-          usuariosFormateados.push({
-            id: datosSuscriptor.api_user_id,
-            email: 'Administrador Principal de la API',
-            rol: 'API Administrator', 
-            isPrincipal: true
-          });
+      // Agregar usuarios miembros con sus emails reales
+      if (usuariosData && usuariosData.length > 0) {
+        for (const usuario of usuariosData) {
+          // Obtener el email del usuario desde auth
+          const { data: { user: userData }, error: userError } = await supabase.auth.admin.getUserById(usuario.user_id);
+          
+          if (!userError && userData) {
+            usuariosFormateados.push({
+              id: usuario.user_id,
+              email: userData.email || `Usuario ${usuario.user_id.substring(0,8)}`,
+              rol: usuario.role === 'admin' ? 'Administrador' : 'Usuario',
+              isPrincipal: false
+            });
+          }
         }
       }
 
-      // Agregar usuarios miembros adicionales
-      const usuariosMiembros = (usuariosData || []).map((usuario) => ({
-        id: usuario.user_id,
-        email: `Usuario ${usuario.user_id.substring(0,8)}`,
-        rol: usuario.role === 'admin' ? 'Administrador' : 'Usuario',
-        isPrincipal: false
-      }));
-
-      usuariosFormateados.push(...usuariosMiembros);
       setUsuarios(usuariosFormateados);
       
       // Si es superadmin, cargar credenciales API
@@ -156,41 +149,39 @@ const UsuariosSuscriptor = () => {
     }
 
     try {
-      // Registrar el usuario
-      const { data: datosAuth, error: errorAuth } = await supabase.auth.signUp({
-        email: emailNuevoUsuario,
-        password: Math.random().toString(36).slice(-8),
+      const password = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+      
+      // Usar el edge function para crear el usuario
+      const { data, error } = await supabase.functions.invoke("create-user", {
+        body: {
+          email: emailNuevoUsuario,
+          password: password,
+          role: rolNuevoUsuario,
+          organizationId: id,
+          isNewMember: true
+        }
       });
 
-      if (errorAuth) throw errorAuth;
+      if (error) throw error;
 
-      if (datosAuth.user) {
-        // Agregar usuario al suscriptor
-        const { error: errorMiembro } = await supabase
-          .from('organization_members')
-          .insert({
-            organization_id: id,
-            user_id: datosAuth.user.id,
-            role: rolNuevoUsuario,
-          });
-
-        if (errorMiembro) throw errorMiembro;
-
-        toast({
-          title: "Éxito",
-          description: "Usuario invitado exitosamente. Recibirá un email de confirmación.",
-        });
-
-        setEmailNuevoUsuario("");
-        setRolNuevoUsuario("user");
-        setMostrarFormulario(false);
-        obtenerDatos();
+      if (data?.error) {
+        throw new Error(data.error);
       }
+
+      toast({
+        title: "Éxito",
+        description: "Usuario creado exitosamente. Recibirá un email de confirmación.",
+      });
+
+      setEmailNuevoUsuario("");
+      setRolNuevoUsuario("user");
+      setMostrarFormulario(false);
+      obtenerDatos();
     } catch (error: any) {
-      console.error('Error al invitar usuario:', error);
+      console.error('Error al crear usuario:', error);
       toast({
         title: "Error",
-        description: error.message || "No se pudo invitar al usuario",
+        description: error.message || "No se pudo crear el usuario",
         variant: "destructive",
       });
     }

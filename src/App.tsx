@@ -17,7 +17,6 @@ import QuotesList from "./pages/QuotesList";
 import SettingsPdfTemplate from "./pages/SettingsPdfTemplate";
 import Additionals from "./pages/Additionals";
 import QuoteDetail from "./pages/QuoteDetail";
-import GestionUsuarios from "./pages/UserManagement";
 import EditarSuscriptor from "./pages/SubscriberEdit";
 import UsuariosSuscriptor from "./pages/SubscriberUsers";
 import GestionPlanes from "./pages/PlansManagement";
@@ -163,7 +162,7 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <AppLayout>
-                  <GestionUsuarios />
+                  <UsuariosSuscriptor />
                 </AppLayout>
               </ProtectedRoute>
             }
