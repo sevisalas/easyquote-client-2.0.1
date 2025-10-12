@@ -197,7 +197,7 @@ export default function SettingsPdfTemplate() {
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground mb-2">{template.description}</p>
-                      {template.price && template.price > 0 && (
+                      {template.price !== undefined && template.price > 0 && (
                         <p className="text-xs font-medium text-primary mb-2">
                           {template.price}€
                         </p>
