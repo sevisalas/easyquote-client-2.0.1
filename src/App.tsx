@@ -36,16 +36,10 @@ import PresupuestosDashboard from "./pages/PresupuestosDashboard";
 import ProductTestPage from "./pages/ProductTestPage";
 import ImageManagement from "./pages/ImageManagement";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
-import ErrorBoundary from "./components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
-console.log('App.tsx is being loaded');
-
-const App = () => {
-  console.log('App component is rendering');
-  return (
-  <ErrorBoundary>
+const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -311,8 +305,6 @@ const App = () => {
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-  </ErrorBoundary>
-  );
-};
+);
 
 export default App;
