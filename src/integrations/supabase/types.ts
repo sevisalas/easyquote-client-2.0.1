@@ -411,6 +411,7 @@ export type Database = {
           access_token_encrypted: string | null
           created_at: string
           expires_at: string | null
+          generate_pdfs: boolean
           id: string
           integration_id: string
           is_active: boolean
@@ -422,6 +423,7 @@ export type Database = {
           access_token_encrypted?: string | null
           created_at?: string
           expires_at?: string | null
+          generate_pdfs?: boolean
           id?: string
           integration_id: string
           is_active?: boolean
@@ -433,6 +435,7 @@ export type Database = {
           access_token_encrypted?: string | null
           created_at?: string
           expires_at?: string | null
+          generate_pdfs?: boolean
           id?: string
           integration_id?: string
           is_active?: boolean

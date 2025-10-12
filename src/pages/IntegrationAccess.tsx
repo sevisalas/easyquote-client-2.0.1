@@ -4,7 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { Settings, Plus, Trash2 } from "lucide-react";
+import { Settings, Plus, Trash2, FileText } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +37,7 @@ interface IntegrationAccess {
   integration_type: string;
   granted_by: string;
   created_at: string;
+  generate_pdfs: boolean;
   organization?: Organization;
 }
 
@@ -158,6 +161,31 @@ const IntegrationAccess = () => {
     }
   };
 
+  const toggleGeneratePdfs = async (accessId: string, currentValue: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('organization_integration_access')
+        .update({ generate_pdfs: !currentValue })
+        .eq('id', accessId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: `Configuración actualizada: ${!currentValue ? 'Se generarán PDFs' : 'Se usará el CRM/ERP integrado'}`,
+      });
+
+      loadData();
+    } catch (error) {
+      console.error('Error updating generate_pdfs:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la configuración",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!isSuperAdmin) {
     return (
       <div className="container mx-auto py-8">
@@ -264,9 +292,9 @@ const IntegrationAccess = () => {
               {integrationAccesses.map((access) => (
                 <div 
                   key={access.id} 
-                  className="flex items-center justify-between p-4 border rounded-lg"
+                  className="flex items-center justify-between p-4 border rounded-lg gap-4"
                 >
-                  <div className="space-y-1">
+                  <div className="flex-1 space-y-1">
                     <div className="font-medium">
                       {access.organization?.name || 'Organización desconocida'}
                     </div>
@@ -277,7 +305,23 @@ const IntegrationAccess = () => {
                       Concedido: {new Date(access.created_at).toLocaleDateString()}
                     </div>
                   </div>
-                  <AlertDialog>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 border-l pl-4">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <Label htmlFor={`generate-pdf-${access.id}`} className="text-sm cursor-pointer">
+                          {access.generate_pdfs ? 'Genera PDFs' : 'Usa CRM/ERP'}
+                        </Label>
+                      </div>
+                      <Switch
+                        id={`generate-pdf-${access.id}`}
+                        checked={access.generate_pdfs}
+                        onCheckedChange={() => toggleGeneratePdfs(access.id, access.generate_pdfs)}
+                      />
+                    </div>
+                    
+                    <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" size="sm">
                         <Trash2 className="h-4 w-4" />
@@ -299,6 +343,7 @@ const IntegrationAccess = () => {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                  </div>
                 </div>
               ))}
             </div>
