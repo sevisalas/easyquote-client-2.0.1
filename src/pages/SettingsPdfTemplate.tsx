@@ -107,17 +107,17 @@ export default function SettingsPdfTemplate() {
 
   if (pdfAccessLoading) {
     return (
-      <main className="p-6">
+      <div className="w-full">
         <div className="text-center py-8">
           <p className="text-muted-foreground">Cargando...</p>
         </div>
-      </main>
+      </div>
     );
   }
 
   if (!hasPdfAccess) {
     return (
-      <main className="p-6 space-y-6">
+      <div className="space-y-4 md:space-y-6 w-full">
         <header className="sr-only">
           <h1>Configuración de plantilla PDF</h1>
           <link rel="canonical" href={`${window.location.origin}/configuracion/plantilla-pdf`} />
@@ -133,12 +133,12 @@ export default function SettingsPdfTemplate() {
             Contacta con tu administrador si necesitas acceso a esta función.
           </AlertDescription>
         </Alert>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-[100vw] overflow-x-hidden">
+    <div className="space-y-4 md:space-y-6 w-full">
       <header className="sr-only">
         <h1>Configuración de plantilla PDF</h1>
         <link rel="canonical" href={`${window.location.origin}/configuracion/plantilla-pdf`} />
@@ -244,6 +244,6 @@ export default function SettingsPdfTemplate() {
       <div className="flex justify-end">
         <Button onClick={handleSave} size="lg">Guardar Configuración</Button>
       </div>
-    </main>
+    </div>
   );
 }
