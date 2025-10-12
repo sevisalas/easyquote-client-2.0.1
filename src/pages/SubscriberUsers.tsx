@@ -91,7 +91,7 @@ const UsuariosSuscriptor = () => {
 
       setSuscriptor(datosSuscriptor);
 
-      // Obtener usuarios miembros adicionales del suscriptor 
+      // Obtener usuarios miembros del suscriptor 
       const { data: usuariosData, error: errorUsuarios } = await supabase
         .from('organization_members')
         .select('user_id, role')
@@ -103,20 +103,17 @@ const UsuariosSuscriptor = () => {
 
       const usuariosFormateados: Usuario[] = [];
 
-      // Agregar usuarios miembros con sus emails reales
+      // Agregar usuarios miembros (los que pueden acceder a la app)
       if (usuariosData && usuariosData.length > 0) {
+        // Aquí deberíamos obtener los emails pero desde el cliente no podemos
+        // Por ahora mostramos solo los IDs
         for (const usuario of usuariosData) {
-          // Obtener el email del usuario desde auth
-          const { data: { user: userData }, error: userError } = await supabase.auth.admin.getUserById(usuario.user_id);
-          
-          if (!userError && userData) {
-            usuariosFormateados.push({
-              id: usuario.user_id,
-              email: userData.email || `Usuario ${usuario.user_id.substring(0,8)}`,
-              rol: usuario.role === 'admin' ? 'Administrador' : 'Usuario',
-              isPrincipal: false
-            });
-          }
+          usuariosFormateados.push({
+            id: usuario.user_id,
+            email: `Usuario ${usuario.user_id.substring(0,8)}...`,
+            rol: usuario.role === 'admin' ? 'Administrador' : 'Usuario',
+            isPrincipal: false
+          });
         }
       }
 
@@ -392,14 +389,36 @@ const UsuariosSuscriptor = () => {
         </Button>
       </div>
 
-      {/* Formulario invitar usuario */}
+      {/* Mensaje si no hay usuarios */}
+      {usuarios.length === 0 && !mostrarFormulario && (
+        <Card>
+          <CardContent className="py-8 text-center">
+            <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">No hay usuarios todavía</h3>
+            <p className="text-muted-foreground mb-4">
+              Crea el primer usuario administrador para que pueda acceder a la aplicación
+            </p>
+            <Button onClick={() => setMostrarFormulario(true)} className="flex items-center gap-2 mx-auto">
+              <Plus className="h-4 w-4" />
+              Crear primer usuario
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Formulario crear usuario */}
       {mostrarFormulario && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5" />
-              Invitar nuevo usuario
+              Crear nuevo usuario
             </CardTitle>
+            <CardDescription>
+              {usuarios.length === 0 
+                ? "Este será el primer usuario administrador que podrá acceder a la aplicación"
+                : "Agregar un nuevo usuario a la organización"}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -421,8 +440,8 @@ const UsuariosSuscriptor = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="user">Usuario</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
+                    <SelectItem value="user">Usuario</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -433,7 +452,7 @@ const UsuariosSuscriptor = () => {
                 onClick={invitarUsuario}
                 disabled={!emailNuevoUsuario}
               >
-                Invitar usuario
+                Crear usuario
               </Button>
               <Button variant="outline" onClick={() => setMostrarFormulario(false)}>
                 Cancelar
