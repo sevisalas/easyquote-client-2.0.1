@@ -228,15 +228,21 @@ export default function SettingsPdfTemplate() {
         <CardHeader>
           <CardTitle>Vista Previa</CardTitle>
         </CardHeader>
-        <CardContent className="p-2 sm:p-4 md:p-6">
-          <div className="bg-muted/30 rounded-lg overflow-auto">
-            <div className="p-4 min-w-0">
-              <div className="mx-auto shadow-2xl max-w-[595px] w-full scale-[0.4] sm:scale-50 md:scale-[0.6] lg:scale-75 origin-top">
-                <QuoteTemplate 
-                  data={previewData} 
-                  templateNumber={selectedTemplate} 
-                />
-              </div>
+        <CardContent className="overflow-hidden">
+          <div className="bg-muted/30 rounded-lg p-4 overflow-auto max-w-full">
+            <div 
+              style={{
+                width: '210mm',
+                maxWidth: '100%',
+                transformOrigin: 'top left',
+                transform: 'scale(0.35)',
+              }}
+              className="shadow-2xl mx-auto sm:scale-50 md:scale-[0.6] lg:scale-75"
+            >
+              <QuoteTemplate 
+                data={previewData} 
+                templateNumber={selectedTemplate} 
+              />
             </div>
           </div>
         </CardContent>
