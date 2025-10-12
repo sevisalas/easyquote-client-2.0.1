@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Edit, Download, Copy } from "lucide-react";
+import { Edit, Download, Copy, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -284,6 +284,15 @@ export default function QuoteDetail() {
                     {duplicateQuoteMutation.isPending ? 'Duplicando...' : 'Duplicar como nuevo'}
                   </>
                 )}
+              </Button>
+              <Button 
+                onClick={() => navigate(`/presupuestos/${quote.id}/templates`, { state: { quoteId: quote.id } })}
+                size="sm" 
+                variant="outline"
+                className="gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                Ver Plantillas PDF
               </Button>
               <Button onClick={() => navigate('/presupuestos')} size="sm" variant="outline">
                 Volver
