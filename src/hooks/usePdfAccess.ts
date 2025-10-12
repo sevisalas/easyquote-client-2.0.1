@@ -29,7 +29,7 @@ export const usePdfAccess = () => {
         return;
       }
 
-      // Check if the organization has PDF generation enabled
+      // Check if the organization has an active integration
       const { data, error } = await supabase
         .from('organization_integration_access')
         .select('generate_pdfs, is_active')
@@ -39,15 +39,20 @@ export const usePdfAccess = () => {
         .single();
 
       if (error) {
-        console.error('Error checking PDF access:', error);
-        setHasPdfAccess(false);
+        // If no integration exists (PGRST116), allow PDF access by default
+        if (error.code === 'PGRST116') {
+          setHasPdfAccess(true);
+        } else {
+          console.error('Error checking PDF access:', error);
+          setHasPdfAccess(true); // Default to true on errors
+        }
       } else {
-        // Access only if generate_pdfs is true
+        // If integration exists and is active, check generate_pdfs flag
         setHasPdfAccess(data?.generate_pdfs === true);
       }
     } catch (error) {
       console.error('Error in checkPdfAccess:', error);
-      setHasPdfAccess(false);
+      setHasPdfAccess(true); // Default to true on errors
     } finally {
       setLoading(false);
     }
