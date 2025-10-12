@@ -537,6 +537,45 @@ export type Database = {
         }
         Relationships: []
       }
+      pdf_configurations: {
+        Row: {
+          brand_color: string | null
+          company_name: string | null
+          created_at: string
+          footer_text: string | null
+          id: string
+          logo_url: string | null
+          organization_id: string | null
+          selected_template: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand_color?: string | null
+          company_name?: string | null
+          created_at?: string
+          footer_text?: string | null
+          id?: string
+          logo_url?: string | null
+          organization_id?: string | null
+          selected_template?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand_color?: string | null
+          company_name?: string | null
+          created_at?: string
+          footer_text?: string | null
+          id?: string
+          logo_url?: string | null
+          organization_id?: string | null
+          selected_template?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pdf_templates: {
         Row: {
           created_at: string

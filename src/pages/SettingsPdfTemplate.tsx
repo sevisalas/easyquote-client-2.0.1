@@ -3,18 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
 import { fetchAvailableTemplates, TemplateInfo } from "@/utils/templateRegistry";
 import QuoteTemplate from "@/components/QuoteTemplate";
 import { Badge } from "@/components/ui/badge";
 import { usePdfAccess } from "@/hooks/usePdfAccess";
+import { usePdfConfiguration } from "@/hooks/usePdfConfiguration";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-const STORAGE_KEY = "pdf_template_config";
-
 export default function SettingsPdfTemplate() {
   const { hasPdfAccess, loading: pdfAccessLoading } = usePdfAccess();
+  const { configuration, isLoading: configLoading, saveConfiguration, isSaving } = usePdfConfiguration();
   const [companyName, setCompanyName] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [brandColor, setBrandColor] = useState("#0ea5e9");
@@ -38,32 +37,24 @@ export default function SettingsPdfTemplate() {
   }, []);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const config = JSON.parse(raw);
-        setCompanyName(config.companyName || "");
-        setLogoUrl(config.logoUrl || "");
-        setBrandColor(config.brandColor || "#0ea5e9");
-        setFooterText(config.footerText || "");
-        setSelectedTemplate(config.selectedTemplate || 1);
-      }
-    } catch {}
-  }, []);
+    // Load configuration from Supabase
+    if (configuration) {
+      setCompanyName(configuration.company_name || "");
+      setLogoUrl(configuration.logo_url || "");
+      setBrandColor(configuration.brand_color || "#0ea5e9");
+      setFooterText(configuration.footer_text || "");
+      setSelectedTemplate(configuration.selected_template || 1);
+    }
+  }, [configuration]);
 
   const handleSave = () => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ 
-        companyName, 
-        logoUrl, 
-        brandColor, 
-        footerText,
-        selectedTemplate 
-      }));
-      toast({ title: "Plantilla guardada", description: "Tus cambios se han guardado en este navegador." });
-    } catch (e: any) {
-      toast({ title: "No se pudo guardar", description: e?.message || "Inténtalo de nuevo", variant: "destructive" });
-    }
+    saveConfiguration({
+      company_name: companyName,
+      logo_url: logoUrl,
+      brand_color: brandColor,
+      footer_text: footerText,
+      selected_template: selectedTemplate,
+    });
   };
 
   // Datos de ejemplo para el preview
@@ -105,11 +96,11 @@ export default function SettingsPdfTemplate() {
     ]
   };
 
-  if (pdfAccessLoading) {
+  if (pdfAccessLoading || configLoading) {
     return (
       <div className="w-full">
         <div className="text-center py-8">
-          <p className="text-muted-foreground">Cargando...</p>
+          <p className="text-muted-foreground">Cargando configuración...</p>
         </div>
       </div>
     );
@@ -251,7 +242,9 @@ export default function SettingsPdfTemplate() {
 
       {/* Botón guardar */}
       <div className="flex justify-end">
-        <Button onClick={handleSave} size="lg">Guardar Configuración</Button>
+        <Button onClick={handleSave} size="lg" disabled={isSaving}>
+          {isSaving ? 'Guardando...' : 'Guardar Configuración'}
+        </Button>
       </div>
     </div>
   );

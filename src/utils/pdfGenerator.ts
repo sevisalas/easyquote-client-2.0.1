@@ -4,23 +4,33 @@ import { supabase } from '@/integrations/supabase/client';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 
-const STORAGE_KEY = 'pdf_template_config';
-
 export interface PDFGeneratorOptions {
   filename?: string;
   quality?: number;
 }
 
-// Get saved template configuration
-const getTemplateConfig = () => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      return JSON.parse(raw);
+// Get saved template configuration from Supabase
+const getTemplateConfig = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (user) {
+    const { data, error } = await supabase
+      .from('pdf_configurations')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    
+    if (!error && data) {
+      return {
+        selectedTemplate: data.selected_template || 1,
+        companyName: data.company_name || '',
+        logoUrl: data.logo_url || '',
+        brandColor: data.brand_color || '#0ea5e9',
+        footerText: data.footer_text || ''
+      };
     }
-  } catch (error) {
-    console.error('Error loading template config:', error);
   }
+  
   return {
     selectedTemplate: 1,
     companyName: '',
@@ -68,7 +78,7 @@ export const generateQuotePDF = async (
     }
 
     // Get template configuration
-    const config = getTemplateConfig();
+    const config = await getTemplateConfig();
 
     // Format items with descriptions
     const formattedItems = (quote.items || []).map((item: any) => {
