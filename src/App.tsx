@@ -19,6 +19,7 @@ import Additionals from "./pages/Additionals";
 import QuoteDetail from "./pages/QuoteDetail";
 import EditarSuscriptor from "./pages/SubscriberEdit";
 import UsuariosSuscriptor from "./pages/SubscriberUsers";
+import SubscribersList from "./pages/SubscribersList";
 import GestionPlanes from "./pages/PlansManagement";
 import Integrations from "./pages/Integrations";
 import IntegrationAccess from "./pages/IntegrationAccess";
@@ -162,7 +163,7 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <AppLayout>
-                  <UsuariosSuscriptor />
+                  <SubscribersList />
                 </AppLayout>
               </ProtectedRoute>
             }
