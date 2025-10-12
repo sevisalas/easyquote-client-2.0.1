@@ -10,12 +10,9 @@ function MainContent({ children }: PropsWithChildren) {
   const isCollapsed = state === "collapsed";
   
   return (
-    <div className="flex-1 flex flex-col min-h-screen w-full overflow-x-hidden">
+    <div className="flex-1 flex flex-col min-h-screen overflow-x-hidden">
       <main 
-        className={cn(
-          "flex-1 p-4 transition-all duration-300 ease-in-out w-full max-w-full",
-          isCollapsed ? "ml-14" : "ml-56"
-        )}
+        className="flex-1 p-4 transition-all duration-300 ease-in-out overflow-x-hidden"
       >
         {children}
       </main>
