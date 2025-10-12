@@ -53,8 +53,6 @@ export function AppSidebar() {
   } = useSubscription();
   const { isHoldedActive } = useHoldedIntegration();
 
-  console.log('AppSidebar - isSuperAdmin:', isSuperAdmin, 'loading:', loading);
-
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -149,6 +147,15 @@ export function AppSidebar() {
                        <NavLink to="/integraciones-acceso" end className={getNavCls}>
                          <Plug className="mr-2 h-4 w-4" />
                          {!isCollapsed && <span>Integraciones</span>}
+                       </NavLink>
+                     </SidebarMenuButton>
+                  </SidebarMenuItem>
+
+                  <SidebarMenuItem>
+                     <SidebarMenuButton asChild isActive={currentPath === "/subscriber-users"} className="h-7 px-2">
+                       <NavLink to="/subscriber-users" end className={getNavCls}>
+                         <Users className="mr-2 h-4 w-4" />
+                         {!isCollapsed && <span>Gestión Usuarios</span>}
                        </NavLink>
                      </SidebarMenuButton>
                   </SidebarMenuItem>
