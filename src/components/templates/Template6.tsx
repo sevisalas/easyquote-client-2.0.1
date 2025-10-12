@@ -25,7 +25,7 @@ export default function Template6({ data }: Template6Props) {
         <div className="flex justify-between items-start border-b border-white/20 pb-6">
           <div>
             {config.logoUrl && (
-              <img src={config.logoUrl} alt="Logo" className="h-16 mb-3 brightness-0 invert" />
+              <img src={config.logoUrl} alt="Logo" className="h-16 mb-3" />
             )}
             <h1 className="text-2xl font-serif font-bold tracking-wide">{config.companyName || 'Mi Empresa'}</h1>
           </div>

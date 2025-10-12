@@ -34,7 +34,7 @@ export default function Template5({ data }: Template5Props) {
           <div className="flex justify-between items-start">
             <div>
               {config.logoUrl && (
-                <img src={config.logoUrl} alt="Logo" className="h-14 mb-3 brightness-0 invert" />
+                <img src={config.logoUrl} alt="Logo" className="h-14 mb-3" />
               )}
               <h1 className="text-3xl font-bold mb-1">{config.companyName || 'Mi Empresa'}</h1>
             </div>
