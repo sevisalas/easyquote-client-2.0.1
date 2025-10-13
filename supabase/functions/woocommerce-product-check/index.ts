@@ -142,6 +142,8 @@ serve(async (req: Request): Promise<Response> => {
             }
           } else {
             console.log(`Product ${productId}: HTTP ${response.status}`);
+            const errorText = await response.text();
+            console.log(`Product ${productId} error body:`, errorText.substring(0, 200));
           }
           
           return {
