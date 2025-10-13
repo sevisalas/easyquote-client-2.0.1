@@ -1017,10 +1017,128 @@ export default function ProductManagement() {
       {/* Products Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Productos</CardTitle>
-          <CardDescription>
-            Lista de productos obtenidos del API de EasyQuote
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Productos</CardTitle>
+              <CardDescription>
+                Lista de productos obtenidos del API de EasyQuote
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                try {
+                  // Get WooCommerce configuration
+                  const { data: integrationData } = await supabase
+                    .from("integrations")
+                    .select("id")
+                    .eq("name", "WooCommerce")
+                    .single();
+
+                  if (!integrationData) {
+                    toast({
+                      title: "Error",
+                      description: "Integración de WooCommerce no encontrada",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+
+                  const { data: { user } } = await supabase.auth.getUser();
+                  if (!user) return;
+
+                  const { data: org } = await supabase
+                    .from("organizations")
+                    .select("id")
+                    .eq("api_user_id", user.id)
+                    .single();
+
+                  if (!org) return;
+
+                  const { data: accessData } = await supabase
+                    .from("organization_integration_access")
+                    .select("configuration")
+                    .eq("organization_id", org.id)
+                    .eq("integration_id", integrationData.id)
+                    .eq("is_active", true)
+                    .single();
+
+                  if (!accessData?.configuration) {
+                    toast({
+                      title: "Error",
+                      description: "Configuración de WooCommerce no encontrada",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+
+                  const config = accessData.configuration as { endpoint?: string };
+                  if (!config.endpoint) return;
+
+                  const endpointTemplate = config.endpoint.replace('GET ', '');
+                  
+                  toast({
+                    title: "Generando informe",
+                    description: "Consultando productos en WooCommerce...",
+                  });
+
+                  // Fetch all products
+                  const csvData: string[] = ["Product ID,Product Name,WooCommerce Products,Count"];
+                  
+                  for (const product of filteredProducts) {
+                    try {
+                      const url = endpointTemplate.replace('{calculator_id}', product.id);
+                      const response = await fetch(url, {
+                        method: "GET",
+                        headers: { "Accept": "application/json" },
+                      });
+
+                      if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.products && data.products.length > 0) {
+                          const wooProductNames = data.products.map((p: any) => p.name).join('; ');
+                          csvData.push(`"${product.id}","${product.productName}","${wooProductNames}",${data.count}`);
+                        } else {
+                          csvData.push(`"${product.id}","${product.productName}","",0`);
+                        }
+                      } else {
+                        csvData.push(`"${product.id}","${product.productName}","Error",0`);
+                      }
+                    } catch (err) {
+                      csvData.push(`"${product.id}","${product.productName}","Error",0`);
+                    }
+                  }
+
+                  // Create and download CSV
+                  const csvContent = csvData.join('\n');
+                  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                  const link = document.createElement('a');
+                  const url = URL.createObjectURL(blob);
+                  link.setAttribute('href', url);
+                  link.setAttribute('download', `woocommerce-products-${new Date().toISOString().split('T')[0]}.csv`);
+                  link.style.visibility = 'hidden';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+
+                  toast({
+                    title: "Descarga completada",
+                    description: "El archivo CSV se ha descargado correctamente",
+                  });
+                } catch (error) {
+                  console.error(error);
+                  toast({
+                    title: "Error",
+                    description: "Error al generar el informe",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              📥 Descargar informe WooCommerce
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="p-3 lg:p-6">
           {isLoading ? (
