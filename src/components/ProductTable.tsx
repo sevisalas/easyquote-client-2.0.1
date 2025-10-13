@@ -2,8 +2,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Edit, TestTube } from "lucide-react";
+import { Edit, TestTube, ShoppingCart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useWooCommerceLink } from "@/hooks/useWooCommerceLink";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface EasyQuoteProduct {
   id: string;
@@ -35,6 +37,8 @@ interface ProductTableProps {
 
 export function ProductTable({ products, getProductMapping, onEditProduct }: ProductTableProps) {
   const navigate = useNavigate();
+  const productIds = products.map(p => p.id);
+  const { data: wooLinks, isLoading: wooLoading } = useWooCommerceLink(productIds);
 
   return (
     <>
@@ -48,6 +52,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                 <TableHead className="w-[120px]">Excel</TableHead>
                 <TableHead className="w-[100px]">Estado</TableHead>
                 <TableHead className="w-[180px]">Categoría</TableHead>
+                <TableHead className="w-[80px]">WooCommerce</TableHead>
                 <TableHead className="w-[140px]">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -106,6 +111,26 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                         </Badge>
                       );
                     })()}
+                  </TableCell>
+                  <TableCell className="py-2">
+                    {wooLoading ? (
+                      <Skeleton className="h-5 w-5 rounded" />
+                    ) : (
+                      (() => {
+                        const linkStatus = wooLinks?.[product.id];
+                        if (linkStatus?.isLinked && linkStatus.count > 0) {
+                          return (
+                            <div className="flex items-center gap-1" title={`${linkStatus.count} producto(s) en WooCommerce`}>
+                              <ShoppingCart className="h-4 w-4 text-green-600" />
+                              <span className="text-xs text-green-600 font-medium">{linkStatus.count}</span>
+                            </div>
+                          );
+                        }
+                        return (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        );
+                      })()
+                    )}
                   </TableCell>
                   <TableCell className="py-2">
                     <div className="flex gap-1">
@@ -192,6 +217,30 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                     </Badge>
                   );
                 })()}
+              </div>
+
+              <div className="text-sm">
+                <span className="text-muted-foreground">WooCommerce: </span>
+                {wooLoading ? (
+                  <Skeleton className="inline-block h-4 w-16" />
+                ) : (
+                  (() => {
+                    const linkStatus = wooLinks?.[product.id];
+                    if (linkStatus?.isLinked && linkStatus.count > 0) {
+                      return (
+                        <div className="inline-flex items-center gap-1">
+                          <ShoppingCart className="h-4 w-4 text-green-600" />
+                          <span className="text-xs text-green-600 font-medium">
+                            {linkStatus.count} producto(s) vinculado(s)
+                          </span>
+                        </div>
+                      );
+                    }
+                    return (
+                      <span className="text-xs text-muted-foreground">No vinculado</span>
+                    );
+                  })()
+                )}
               </div>
 
               <div className="flex gap-2 pt-2">
