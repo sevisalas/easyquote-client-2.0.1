@@ -172,22 +172,46 @@ export default function Integrations() {
 
       if (!integrationData) throw new Error('WooCommerce integration not found');
 
-      const { error } = await supabase
+      // Check if integration access exists
+      const { data: existingAccess } = await supabase
         .from('organization_integration_access')
-        .update({
-          configuration: { endpoint: wooEndpoint.trim() }
-        })
+        .select('id')
         .eq('organization_id', currentOrganization.id)
-        .eq('integration_id', integrationData.id);
+        .eq('integration_id', integrationData.id)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (existingAccess) {
+        // Update existing
+        const { error } = await supabase
+          .from('organization_integration_access')
+          .update({
+            configuration: { endpoint: wooEndpoint.trim() }
+          })
+          .eq('organization_id', currentOrganization.id)
+          .eq('integration_id', integrationData.id);
+
+        if (error) throw error;
+      } else {
+        // Create new with endpoint
+        const { error } = await supabase
+          .from('organization_integration_access')
+          .insert({
+            organization_id: currentOrganization.id,
+            integration_id: integrationData.id,
+            is_active: true,
+            configuration: { endpoint: wooEndpoint.trim() }
+          });
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Éxito",
-        description: "Endpoint guardado correctamente",
+        description: "Endpoint guardado e integración activada",
       });
       
       setEditingWooEndpoint(false);
+      refreshWoo();
     } catch (error) {
       console.error('Error saving WooCommerce endpoint:', error);
       toast({
@@ -210,6 +234,15 @@ export default function Integrations() {
       return;
     }
 
+    if (enabled) {
+      toast({
+        title: "Configura el endpoint",
+        description: "Primero debes configurar el endpoint de WooCommerce",
+      });
+      setEditingWooEndpoint(true);
+      return;
+    }
+
     setTogglingWoo(true);
     try {
       // Get WooCommerce integration ID
@@ -221,41 +254,21 @@ export default function Integrations() {
 
       if (integrationError) throw integrationError;
 
-      if (enabled) {
-        // Enable integration
-        const { error: insertError } = await supabase
-          .from('organization_integration_access')
-          .insert({
-            organization_id: currentOrganization.id,
-            integration_id: integrationData.id,
-            is_active: true,
-            configuration: {}
-          });
+      // Disable integration
+      const { error: deleteError } = await supabase
+        .from('organization_integration_access')
+        .delete()
+        .eq('organization_id', currentOrganization.id)
+        .eq('integration_id', integrationData.id);
 
-        if (insertError) throw insertError;
+      if (deleteError) throw deleteError;
 
-        toast({
-          title: "Éxito",
-          description: "Integración de WooCommerce activada. Configura el endpoint para comenzar.",
-        });
-      } else {
-        // Disable integration
-        const { error: deleteError } = await supabase
-          .from('organization_integration_access')
-          .delete()
-          .eq('organization_id', currentOrganization.id)
-          .eq('integration_id', integrationData.id);
-
-        if (deleteError) throw deleteError;
-
-        toast({
-          title: "Éxito",
-          description: "Integración de WooCommerce desactivada",
-        });
-        
-        setWooEndpoint("");
-      }
-
+      toast({
+        title: "Éxito",
+        description: "Integración de WooCommerce desactivada",
+      });
+      
+      setWooEndpoint("");
       refreshWoo();
     } catch (error) {
       console.error('Error toggling WooCommerce integration:', error);
