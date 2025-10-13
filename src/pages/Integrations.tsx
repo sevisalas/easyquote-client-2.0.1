@@ -459,9 +459,6 @@ export default function Integrations() {
                         value={wooEndpoint}
                         onChange={(e) => setWooEndpoint(e.target.value)}
                       />
-                      <p className="text-xs text-muted-foreground">
-                        Usa {"{calculator_id}"} como placeholder para el ID del calculador
-                      </p>
                       <div className="flex gap-2">
                         <Button 
                           onClick={handleSaveWooEndpoint}
