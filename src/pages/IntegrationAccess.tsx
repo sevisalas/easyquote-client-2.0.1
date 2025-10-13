@@ -309,11 +309,6 @@ const IntegrationAccess = () => {
                         </span>
                       )}
                     </div>
-                    {access.integration?.description && (
-                      <div className="text-xs text-muted-foreground italic">
-                        {access.integration.description}
-                      </div>
-                    )}
                     <div className="text-xs text-muted-foreground">
                       Concedido: {new Date(access.created_at).toLocaleDateString()}
                     </div>
