@@ -123,7 +123,10 @@ serve(async (req: Request): Promise<Response> => {
 
           if (response.ok) {
             const data = await response.json();
-            if (data.products && data.products.length > 0) {
+            console.log(`Product ${productId}: success=${data.success}, count=${data.count}, hasProducts=${!!data.products}`);
+            
+            if (data.success && data.products && data.products.length > 0) {
+              console.log(`✅ Product ${productId} is linked with ${data.products.length} WooCommerce products`);
               return {
                 productId,
                 data: {
@@ -133,6 +136,8 @@ serve(async (req: Request): Promise<Response> => {
                 }
               };
             }
+          } else {
+            console.log(`Product ${productId}: HTTP ${response.status}`);
           }
           
           return {
@@ -161,6 +166,9 @@ serve(async (req: Request): Promise<Response> => {
         linkedProducts[productId] = data;
       });
     }
+
+    const linkedCount = Object.values(linkedProducts).filter((p: any) => p.isLinked).length;
+    console.log(`✅ Finished processing ${productIds.length} products. ${linkedCount} are linked to WooCommerce`);
 
     return new Response(JSON.stringify({ linkedProducts }), {
       status: 200,
