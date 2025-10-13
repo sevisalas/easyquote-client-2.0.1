@@ -2,11 +2,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Edit, TestTube, ShoppingCart } from "lucide-react";
+import { Edit, TestTube, ShoppingCart, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useWooCommerceLink } from "@/hooks/useWooCommerceLink";
 import { useWooCommerceIntegration } from "@/hooks/useWooCommerceIntegration";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface EasyQuoteProduct {
   id: string;
@@ -125,10 +126,39 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                           const linkStatus = wooLinks?.[product.id];
                           if (linkStatus?.isLinked && linkStatus.count > 0) {
                             return (
-                              <div className="flex items-center gap-1" title={`${linkStatus.count} producto(s) en WooCommerce`}>
-                                <ShoppingCart className="h-4 w-4 text-green-600" />
-                                <span className="text-xs text-green-600 font-medium">{linkStatus.count}</span>
-                              </div>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button className="flex items-center gap-1 hover:opacity-80 transition-opacity">
+                                    <ShoppingCart className="h-4 w-4 text-green-600" />
+                                    <span className="text-xs text-green-600 font-medium">{linkStatus.count}</span>
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80">
+                                  <div className="space-y-2">
+                                    <h4 className="font-medium text-sm">Productos en WooCommerce</h4>
+                                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                                      {linkStatus.wooProducts.map((wooProduct: any) => (
+                                        <div key={wooProduct.id} className="p-2 border rounded-md space-y-1">
+                                          <div className="flex items-start justify-between gap-2">
+                                            <span className="text-sm font-medium line-clamp-2">{wooProduct.name}</span>
+                                            {wooProduct.calculator_disabled && (
+                                              <Badge variant="secondary" className="text-xs flex-shrink-0">Deshabilitado</Badge>
+                                            )}
+                                          </div>
+                                          <a 
+                                            href={wooProduct.permalink} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="text-xs text-primary hover:underline flex items-center gap-1"
+                                          >
+                                            Ver producto <ExternalLink className="h-3 w-3" />
+                                          </a>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
                             );
                           }
                           return (
@@ -235,12 +265,41 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                       const linkStatus = wooLinks?.[product.id];
                       if (linkStatus?.isLinked && linkStatus.count > 0) {
                         return (
-                          <div className="inline-flex items-center gap-1">
-                            <ShoppingCart className="h-4 w-4 text-green-600" />
-                            <span className="text-xs text-green-600 font-medium">
-                              {linkStatus.count} producto(s) vinculado(s)
-                            </span>
-                          </div>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button className="inline-flex items-center gap-1 hover:opacity-80 transition-opacity">
+                                <ShoppingCart className="h-4 w-4 text-green-600" />
+                                <span className="text-xs text-green-600 font-medium">
+                                  {linkStatus.count} producto(s)
+                                </span>
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80">
+                              <div className="space-y-2">
+                                <h4 className="font-medium text-sm">Productos en WooCommerce</h4>
+                                <div className="space-y-2 max-h-64 overflow-y-auto">
+                                  {linkStatus.wooProducts.map((wooProduct: any) => (
+                                    <div key={wooProduct.id} className="p-2 border rounded-md space-y-1">
+                                      <div className="flex items-start justify-between gap-2">
+                                        <span className="text-sm font-medium line-clamp-2">{wooProduct.name}</span>
+                                        {wooProduct.calculator_disabled && (
+                                          <Badge variant="secondary" className="text-xs flex-shrink-0">Deshabilitado</Badge>
+                                        )}
+                                      </div>
+                                      <a 
+                                        href={wooProduct.permalink} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="text-xs text-primary hover:underline flex items-center gap-1"
+                                      >
+                                        Ver producto <ExternalLink className="h-3 w-3" />
+                                      </a>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
                         );
                       }
                       return (
