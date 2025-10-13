@@ -52,6 +52,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[250px]">Producto</TableHead>
+                <TableHead className="w-[180px]">ID</TableHead>
                 <TableHead className="w-[200px]">Excel</TableHead>
                 <TableHead className="w-[100px]">Estado</TableHead>
                 <TableHead className="w-[180px]">Categoría</TableHead>
@@ -76,6 +77,17 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                         </div>
                       )}
                     </div>
+                  </TableCell>
+                  <TableCell className="py-2">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(product.id);
+                      }}
+                      className="font-mono text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer truncate max-w-[160px] block"
+                      title="Click para copiar"
+                    >
+                      {product.id}
+                    </button>
                   </TableCell>
                   <TableCell className="py-2">
                     <span className="font-mono text-xs text-muted-foreground">
