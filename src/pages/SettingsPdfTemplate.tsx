@@ -172,18 +172,18 @@ export default function SettingsPdfTemplate() {
             {isLoading ? (
               <p className="text-muted-foreground">Cargando plantillas...</p>
             ) : (
-              <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
                 {templates.map((template) => (
                   <button
                     key={template.id}
                     onClick={() => setSelectedTemplate(template.id)}
-                    className={`flex-shrink-0 snap-start transition-all ${
+                    className={`transition-all ${
                       selectedTemplate === template.id
                         ? 'ring-4 ring-primary scale-105'
                         : 'ring-2 ring-border hover:ring-primary/50'
                     } rounded-lg overflow-hidden`}
                   >
-                    <div className="w-40 sm:w-48 bg-card">
+                    <div className="bg-card">
                       <div className="aspect-[210/297] bg-muted flex items-center justify-center">
                         <img 
                           src={template.thumbnail} 
@@ -191,16 +191,16 @@ export default function SettingsPdfTemplate() {
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <div className="p-2 sm:p-3">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-semibold text-sm">{template.name}</p>
+                      <div className="p-2">
+                        <div className="flex items-center gap-1 mb-1">
+                          <p className="font-semibold text-xs truncate">{template.name}</p>
                           {template.isCustom && (
-                            <Badge variant="secondary" className="text-xs">Personalizada</Badge>
+                            <Badge variant="secondary" className="text-xs">Custom</Badge>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground mb-2">{template.description}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mb-1">{template.description}</p>
                         {template.price !== undefined && template.price > 0 && (
-                          <p className="text-xs font-medium text-primary mb-2">
+                          <p className="text-xs font-medium text-primary mb-1">
                             {template.price}€
                           </p>
                         )}
@@ -217,19 +217,19 @@ export default function SettingsPdfTemplate() {
         </Card>
 
         {/* Vista previa - 1/3 */}
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden h-fit">
           <CardHeader>
             <CardTitle>Vista Previa</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="bg-muted/30 p-4 overflow-x-auto">
+            <div className="bg-muted/30 p-3 overflow-x-auto">
               <div className="flex justify-center">
                 <div 
                   className="shadow-2xl bg-white origin-top"
                   style={{
                     width: '210mm',
-                    transform: 'scale(0.35)',
-                    marginBottom: 'calc(-65% + 2rem)'
+                    transform: 'scale(0.3)',
+                    marginBottom: 'calc(-70% + 1rem)'
                   }}
                 >
                   <QuoteTemplate 
