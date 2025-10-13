@@ -53,7 +53,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[300px]">Producto</TableHead>
-                <TableHead className="w-[150px]">Excel</TableHead>
+                <TableHead className="w-[180px]">Excel</TableHead>
                 <TableHead className="w-[90px]">Estado</TableHead>
                 <TableHead className="w-[150px]">Categoría</TableHead>
                 {isWooCommerceActive && <TableHead className="w-[80px]">Woo</TableHead>}
@@ -85,8 +85,8 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="py-2 max-w-[150px]">
-                    <span className="font-mono text-xs text-muted-foreground truncate block">
+                  <TableCell className="py-3 max-w-[180px]">
+                    <span className="font-mono text-xs text-muted-foreground break-words block">
                       {product.excelfileId ? (
                         product.productName
                           ?.toLowerCase()
