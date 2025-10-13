@@ -41,7 +41,7 @@ interface ProductTableProps {
 export function ProductTable({ products, getProductMapping, onEditProduct }: ProductTableProps) {
   const navigate = useNavigate();
   const { isWooCommerceActive } = useWooCommerceIntegration();
-  const productIds = products.map(p => p.id);
+  const productIds = products.map((p) => p.id);
   const { data: wooLinks, isLoading: wooLoading } = useWooCommerceLink(isWooCommerceActive ? productIds : []);
 
   return (
@@ -52,13 +52,11 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[280px]">Producto</TableHead>
-                <TableHead className="w-[150px]">Excel</TableHead>
+                <TableHead className="w-[300px]">Producto</TableHead>
+                <TableHead className="w-[120px]">Excel</TableHead>
                 <TableHead className="w-[90px]">Estado</TableHead>
                 <TableHead className="w-[150px]">Categoría</TableHead>
-                {isWooCommerceActive && (
-                  <TableHead className="w-[80px]">Woo</TableHead>
-                )}
+                {isWooCommerceActive && <TableHead className="w-[80px]">Woo</TableHead>}
                 <TableHead className="w-[140px]">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -82,10 +80,9 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                       </button>
                       {product.description && (
                         <div className="text-sm text-muted-foreground truncate">
-                          {product.description.length > 40 
+                          {product.description.length > 40
                             ? product.description.substring(0, 40) + "..."
-                            : product.description
-                          }
+                            : product.description}
                         </div>
                       )}
                     </div>
@@ -93,7 +90,10 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                   <TableCell className="py-2 max-w-[150px]">
                     <span className="font-mono text-xs text-muted-foreground truncate block">
                       {product.excelfileId ? (
-                        product.productName?.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') + '.xlsx'
+                        product.productName
+                          ?.toLowerCase()
+                          .replace(/\s+/g, "_")
+                          .replace(/[^a-z0-9_]/g, "") + ".xlsx"
                       ) : (
                         <span className="text-muted-foreground italic">Sin archivo</span>
                       )}
@@ -110,7 +110,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                       if (mapping?.product_categories) {
                         return (
                           <div className="flex items-center space-x-2">
-                            <div 
+                            <div
                               className="w-3 h-3 rounded-full flex-shrink-0"
                               style={{ backgroundColor: mapping.product_categories.color }}
                             />
@@ -163,14 +163,18 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                                         {linkStatus.wooProducts.map((wooProduct: any) => (
                                           <div key={wooProduct.id} className="p-2 border rounded-md space-y-1">
                                             <div className="flex items-start justify-between gap-2">
-                                              <span className="text-sm font-medium line-clamp-2">{wooProduct.name}</span>
+                                              <span className="text-sm font-medium line-clamp-2">
+                                                {wooProduct.name}
+                                              </span>
                                               {wooProduct.calculator_disabled && (
-                                                <Badge variant="secondary" className="text-xs flex-shrink-0">Deshabilitado</Badge>
+                                                <Badge variant="secondary" className="text-xs flex-shrink-0">
+                                                  Deshabilitado
+                                                </Badge>
                                               )}
                                             </div>
-                                            <a 
-                                              href={wooProduct.permalink} 
-                                              target="_blank" 
+                                            <a
+                                              href={wooProduct.permalink}
+                                              target="_blank"
                                               rel="noopener noreferrer"
                                               className="text-xs text-primary hover:underline flex items-center gap-1"
                                             >
@@ -185,9 +189,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                               </Popover>
                             );
                           }
-                          return (
-                            <span className="text-xs text-muted-foreground">-</span>
-                          );
+                          return <span className="text-xs text-muted-foreground">-</span>;
                         })()
                       )}
                     </TableCell>
@@ -242,9 +244,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                     {product.productName}
                   </button>
                   {product.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                      {product.description}
-                    </p>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{product.description}</p>
                   )}
                 </div>
                 <Badge variant={product.isActive ? "default" : "secondary"} className="ml-2 text-xs">
@@ -256,7 +256,10 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                 <span className="text-muted-foreground">Excel: </span>
                 <span className="font-mono text-xs">
                   {product.excelfileId ? (
-                    product.productName?.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') + '.xlsx'
+                    product.productName
+                      ?.toLowerCase()
+                      .replace(/\s+/g, "_")
+                      .replace(/[^a-z0-9_]/g, "") + ".xlsx"
                   ) : (
                     <span className="text-muted-foreground italic">Sin archivo</span>
                   )}
@@ -270,7 +273,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                   if (mapping?.product_categories) {
                     return (
                       <div className="inline-flex items-center space-x-2">
-                        <div 
+                        <div
                           className="w-3 h-3 rounded-full"
                           style={{ backgroundColor: mapping.product_categories.color }}
                         />
@@ -329,12 +332,14 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                                         <div className="flex items-start justify-between gap-2">
                                           <span className="text-sm font-medium line-clamp-2">{wooProduct.name}</span>
                                           {wooProduct.calculator_disabled && (
-                                            <Badge variant="secondary" className="text-xs flex-shrink-0">Deshabilitado</Badge>
+                                            <Badge variant="secondary" className="text-xs flex-shrink-0">
+                                              Deshabilitado
+                                            </Badge>
                                           )}
                                         </div>
-                                        <a 
-                                          href={wooProduct.permalink} 
-                                          target="_blank" 
+                                        <a
+                                          href={wooProduct.permalink}
+                                          target="_blank"
                                           rel="noopener noreferrer"
                                           className="text-xs text-primary hover:underline flex items-center gap-1"
                                         >
@@ -349,21 +354,14 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                           </Popover>
                         );
                       }
-                      return (
-                        <span className="text-xs text-muted-foreground">No vinculado</span>
-                      );
+                      return <span className="text-xs text-muted-foreground">No vinculado</span>;
                     })()
                   )}
                 </div>
               )}
 
               <div className="flex gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onEditProduct(product)}
-                  className="flex-1 text-xs"
-                >
+                <Button variant="outline" size="sm" onClick={() => onEditProduct(product)} className="flex-1 text-xs">
                   <Edit className="h-3 w-3 mr-2" />
                   Editar
                 </Button>
