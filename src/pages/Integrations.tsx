@@ -412,12 +412,7 @@ export default function Integrations() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="woo-toggle">Habilitar integración</Label>
-                <p className="text-sm text-muted-foreground">
-                  Activa esta integración para ver qué productos están vinculados a WooCommerce
-                </p>
-              </div>
+              <Label htmlFor="woo-toggle">Habilitar integración</Label>
               <Switch
                 id="woo-toggle"
                 checked={isWooCommerceActive}
