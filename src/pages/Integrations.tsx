@@ -2,19 +2,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useIntegrationAccess } from "@/hooks/useIntegrationAccess";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
+import { useWooCommerceIntegration } from "@/hooks/useWooCommerceIntegration";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Download, Trash2, Info } from "lucide-react";
+import { Download, Trash2, Info, ShoppingCart } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Integrations() {
   const { hasIntegrationAccess, loading } = useIntegrationAccess();
-  const { isHoldedActive, loading: holdedLoading } = useHoldedIntegration();
+  const { isHoldedActive, loading: holdedLoading, refreshIntegration: refreshHolded } = useHoldedIntegration();
+  const { isWooCommerceActive, loading: wooLoading, refreshIntegration: refreshWoo } = useWooCommerceIntegration();
   const { organization, membership } = useSubscription();
   const [apiKey, setApiKey] = useState("");
   const [saving, setSaving] = useState(false);
@@ -22,6 +25,7 @@ export default function Integrations() {
   const [isImporting, setIsImporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [contactsCount, setContactsCount] = useState<number | null>(null);
+  const [togglingWoo, setTogglingWoo] = useState(false);
   const { toast } = useToast();
 
   const currentOrganization = organization || membership?.organization;
@@ -100,6 +104,72 @@ export default function Integrations() {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleToggleWooCommerce = async (enabled: boolean) => {
+    if (!currentOrganization?.id) {
+      toast({
+        title: "Error",
+        description: "No se encontró la organización",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setTogglingWoo(true);
+    try {
+      // Get WooCommerce integration ID
+      const { data: integrationData, error: integrationError } = await supabase
+        .from('integrations')
+        .select('id')
+        .eq('name', 'WooCommerce')
+        .single();
+
+      if (integrationError) throw integrationError;
+
+      if (enabled) {
+        // Enable integration
+        const { error: insertError } = await supabase
+          .from('organization_integration_access')
+          .insert({
+            organization_id: currentOrganization.id,
+            integration_id: integrationData.id,
+            is_active: true
+          });
+
+        if (insertError) throw insertError;
+
+        toast({
+          title: "Éxito",
+          description: "Integración de WooCommerce activada",
+        });
+      } else {
+        // Disable integration
+        const { error: deleteError } = await supabase
+          .from('organization_integration_access')
+          .delete()
+          .eq('organization_id', currentOrganization.id)
+          .eq('integration_id', integrationData.id);
+
+        if (deleteError) throw deleteError;
+
+        toast({
+          title: "Éxito",
+          description: "Integración de WooCommerce desactivada",
+        });
+      }
+
+      refreshWoo();
+    } catch (error) {
+      console.error('Error toggling WooCommerce integration:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo cambiar el estado de la integración",
+        variant: "destructive",
+      });
+    } finally {
+      setTogglingWoo(false);
     }
   };
 
@@ -221,9 +291,68 @@ export default function Integrations() {
 
   return (
     <div className="container mx-auto py-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Integración Holded</h1>
+      <div className="max-w-4xl mx-auto space-y-6">
+        <h1 className="text-2xl font-bold mb-6">Integraciones</h1>
         
+        {/* WooCommerce Integration Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5" />
+                <span>WooCommerce</span>
+              </div>
+              <span className={`text-sm px-2 py-1 rounded ${
+                isWooCommerceActive 
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' 
+                  : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
+              }`}>
+                {isWooCommerceActive ? 'Activa' : 'Inactiva'}
+              </span>
+            </CardTitle>
+            <CardDescription>
+              Conecta con tu tienda WooCommerce para sincronizar productos
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="woo-toggle">Habilitar integración</Label>
+                <p className="text-sm text-muted-foreground">
+                  Activa esta integración para ver qué productos están vinculados a WooCommerce
+                </p>
+              </div>
+              <Switch
+                id="woo-toggle"
+                checked={isWooCommerceActive}
+                onCheckedChange={handleToggleWooCommerce}
+                disabled={togglingWoo}
+              />
+            </div>
+
+            {isWooCommerceActive && (
+              <>
+                <Separator className="my-4" />
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    Para vincular productos de EasyQuote con WooCommerce, asegúrate de haber configurado 
+                    el meta field <code className="bg-muted px-1 py-0.5 rounded">easyquote_product_id</code> en 
+                    tus productos de WooCommerce con el ID del producto de EasyQuote.
+                  </AlertDescription>
+                </Alert>
+                <div className="bg-muted p-3 rounded-lg">
+                  <p className="text-xs font-medium mb-2">Endpoint de la API</p>
+                  <code className="text-xs bg-background px-2 py-1 rounded block overflow-x-auto">
+                    https://reprotel.online/wp-json/easyquote/v1/products-by-calculator/{"{calculator_id}"}
+                  </code>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Holded Integration Card */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
