@@ -224,7 +224,7 @@ export default function Integrations() {
     }
   };
 
-  const handleToggleWooCommerce = async (enabled: boolean) => {
+  const handleToggleWooCommerce = async () => {
     if (!currentOrganization?.id) {
       toast({
         title: "Error",
@@ -234,18 +234,11 @@ export default function Integrations() {
       return;
     }
 
-    if (enabled) {
-      toast({
-        title: "Configura el endpoint",
-        description: "Primero debes configurar el endpoint de WooCommerce",
-      });
-      setEditingWooEndpoint(true);
-      return;
-    }
+    const confirmed = window.confirm('¿Estás seguro de que quieres eliminar la integración de WooCommerce?');
+    if (!confirmed) return;
 
     setTogglingWoo(true);
     try {
-      // Get WooCommerce integration ID
       const { data: integrationData, error: integrationError } = await supabase
         .from('integrations')
         .select('id')
@@ -254,7 +247,6 @@ export default function Integrations() {
 
       if (integrationError) throw integrationError;
 
-      // Disable integration
       const { error: deleteError } = await supabase
         .from('organization_integration_access')
         .delete()
@@ -265,16 +257,17 @@ export default function Integrations() {
 
       toast({
         title: "Éxito",
-        description: "Integración de WooCommerce desactivada",
+        description: "Integración de WooCommerce eliminada",
       });
       
       setWooEndpoint("");
+      setEditingWooEndpoint(false);
       refreshWoo();
     } catch (error) {
-      console.error('Error toggling WooCommerce integration:', error);
+      console.error('Error deleting WooCommerce integration:', error);
       toast({
         title: "Error",
-        description: "No se pudo cambiar el estado de la integración",
+        description: "No se pudo eliminar la integración",
         variant: "destructive",
       });
     } finally {
@@ -424,81 +417,75 @@ export default function Integrations() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="woo-toggle">Habilitar integración</Label>
-              <Switch
-                id="woo-toggle"
-                checked={isWooCommerceActive}
-                onCheckedChange={handleToggleWooCommerce}
-                disabled={togglingWoo}
-              />
-            </div>
+            <Separator className="my-4" />
+            
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold mb-2">Configuración del Endpoint</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Configura la URL del endpoint de tu tienda WooCommerce para sincronizar productos.
+                </p>
+              </div>
 
-            {isWooCommerceActive && (
-              <>
-                <Separator className="my-4" />
-                
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold mb-2">Configuración del Endpoint</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Configura la URL del endpoint de tu tienda WooCommerce para sincronizar productos.
-                    </p>
+              {!editingWooEndpoint && wooEndpoint ? (
+                <div className="bg-muted p-3 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-medium">Endpoint configurado</p>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      onClick={() => setEditingWooEndpoint(true)}
+                    >
+                      Editar
+                    </Button>
                   </div>
-
-                  {!editingWooEndpoint && wooEndpoint ? (
-                    <div className="bg-muted p-3 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-medium">Endpoint configurado</p>
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          onClick={() => setEditingWooEndpoint(true)}
-                        >
-                          Editar
-                        </Button>
-                      </div>
-                      <code className="text-xs bg-background px-2 py-1 rounded block overflow-x-auto">
-                        {wooEndpoint}
-                      </code>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Label htmlFor="woo-endpoint">URL del Endpoint</Label>
-                      <Input
-                        id="woo-endpoint"
-                        type="url"
-                        placeholder="https://tutienda.com/wp-json/easyquote/v1/products-by-calculator/{calculator_id}"
-                        value={wooEndpoint}
-                        onChange={(e) => setWooEndpoint(e.target.value)}
-                      />
-                      <div className="flex gap-2">
-                        <Button 
-                          onClick={handleSaveWooEndpoint}
-                          disabled={savingWooEndpoint}
-                          className="flex-1"
-                        >
-                          {savingWooEndpoint ? "Guardando..." : "Guardar Endpoint"}
-                        </Button>
-                        {editingWooEndpoint && (
-                          <Button 
-                            variant="outline"
-                            onClick={() => {
-                              setEditingWooEndpoint(false);
-                              loadWooCommerceEndpoint();
-                            }}
-                            disabled={savingWooEndpoint}
-                          >
-                            Cancelar
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
+                  <code className="text-xs bg-background px-2 py-1 rounded block overflow-x-auto">
+                    {wooEndpoint}
+                  </code>
                 </div>
-              </>
-            )}
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="woo-endpoint">URL del Endpoint</Label>
+                  <Input
+                    id="woo-endpoint"
+                    type="url"
+                    placeholder="https://tutienda.com/wp-json/easyquote/v1/products-by-calculator/{calculator_id}"
+                    value={wooEndpoint}
+                    onChange={(e) => setWooEndpoint(e.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleSaveWooEndpoint}
+                      disabled={savingWooEndpoint}
+                      className="flex-1"
+                    >
+                      {savingWooEndpoint ? "Guardando..." : "Guardar Endpoint"}
+                    </Button>
+                    {editingWooEndpoint && wooEndpoint && (
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setEditingWooEndpoint(false);
+                          loadWooCommerceEndpoint();
+                        }}
+                        disabled={savingWooEndpoint}
+                      >
+                        Cancelar
+                      </Button>
+                    )}
+                    {wooEndpoint && (
+                      <Button 
+                        variant="destructive"
+                        onClick={handleToggleWooCommerce}
+                        disabled={togglingWoo}
+                      >
+                        {togglingWoo ? "Eliminando..." : "Eliminar"}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
