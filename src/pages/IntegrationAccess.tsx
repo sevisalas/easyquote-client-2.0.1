@@ -315,24 +315,26 @@ const IntegrationAccess = () => {
                   </div>
 
                   <div className="flex items-center gap-4">
-                    <div className="flex flex-col items-start gap-2 border-l pl-4">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <Label htmlFor={`generate-pdf-${access.id}`} className="text-sm font-medium cursor-pointer">
-                          Generación de PDFs
-                        </Label>
-                        <Switch
-                          id={`generate-pdf-${access.id}`}
-                          checked={access.generate_pdfs}
-                          onCheckedChange={() => toggleGeneratePdfs(access.id, access.generate_pdfs)}
-                        />
+                    {access.integration?.integration_type === 'ERP/CRM' && (
+                      <div className="flex flex-col items-start gap-2 border-l pl-4">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <Label htmlFor={`generate-pdf-${access.id}`} className="text-sm font-medium cursor-pointer">
+                            Generación de PDFs
+                          </Label>
+                          <Switch
+                            id={`generate-pdf-${access.id}`}
+                            checked={access.generate_pdfs}
+                            onCheckedChange={() => toggleGeneratePdfs(access.id, access.generate_pdfs)}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground max-w-xs">
+                          {access.generate_pdfs
+                            ? "Los PDFs se generan localmente en la aplicación"
+                            : "Los presupuestos se exportan al CRM/ERP integrado (sin generar PDF local)"}
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground max-w-xs">
-                        {access.generate_pdfs
-                          ? "Los PDFs se generan localmente en la aplicación"
-                          : "Los presupuestos se exportan al CRM/ERP integrado (sin generar PDF local)"}
-                      </p>
-                    </div>
+                    )}
 
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
