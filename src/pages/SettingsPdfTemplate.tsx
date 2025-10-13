@@ -228,8 +228,8 @@ export default function SettingsPdfTemplate() {
                   className="shadow-2xl bg-white origin-top"
                   style={{
                     width: '210mm',
-                    transform: 'scale(0.42)',
-                    marginBottom: 'calc(-58% + 1rem)'
+                    transform: 'scale(0.5)',
+                    marginBottom: 'calc(-50% + 1rem)'
                   }}
                 >
                   <QuoteTemplate 
