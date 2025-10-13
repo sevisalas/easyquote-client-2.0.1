@@ -63,7 +63,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
             <TableBody>
               {products.map((product) => (
                 <TableRow key={product.id}>
-                  <TableCell className="py-2 max-w-[280px]">
+                  <TableCell className="py-3 max-w-[280px]">
                     <div className="w-full">
                       <button
                         onClick={() => {
@@ -73,16 +73,14 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                             description: `ID: ${product.id}`,
                           });
                         }}
-                        className="font-medium text-left hover:text-primary transition-colors w-full truncate block"
+                        className="font-medium text-left hover:text-primary transition-colors w-full break-words block"
                         title="Click para copiar ID"
                       >
                         {product.productName}
                       </button>
                       {product.description && (
-                        <div className="text-sm text-muted-foreground truncate">
-                          {product.description.length > 40
-                            ? product.description.substring(0, 40) + "..."
-                            : product.description}
+                        <div className="text-sm text-muted-foreground line-clamp-2">
+                          {product.description}
                         </div>
                       )}
                     </div>
