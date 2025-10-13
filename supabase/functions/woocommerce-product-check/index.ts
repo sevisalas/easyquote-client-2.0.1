@@ -96,52 +96,70 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Check each product ID against WooCommerce
+    // Check each product ID against WooCommerce in parallel
     const linkedProducts: Record<string, any> = {};
     
-    for (const productId of productIds) {
-      try {
-        const url = endpointTemplate.replace('{calculator_id}', productId);
-        console.log(`Checking WooCommerce for product: ${productId} at ${url}`);
-        
-        const response = await fetch(url, {
-          method: "GET",
-          headers: {
-            "Accept": "application/json",
-          },
-        });
+    // Process products in batches of 20 to avoid overwhelming the server
+    const batchSize = 20;
+    const batches = [];
+    
+    for (let i = 0; i < productIds.length; i += batchSize) {
+      batches.push(productIds.slice(i, i + batchSize));
+    }
+    
+    console.log(`Processing ${productIds.length} products in ${batches.length} batches of ${batchSize}`);
+    
+    for (const batch of batches) {
+      const promises = batch.map(async (productId: string) => {
+        try {
+          const url = endpointTemplate.replace('{calculator_id}', productId);
+          
+          const response = await fetch(url, {
+            method: "GET",
+            headers: {
+              "Accept": "application/json",
+            },
+          });
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.products && data.products.length > 0) {
-            linkedProducts[productId] = {
-              isLinked: true,
-              wooProducts: data.products,
-              count: data.count
-            };
-          } else {
-            linkedProducts[productId] = {
+          if (response.ok) {
+            const data = await response.json();
+            if (data.products && data.products.length > 0) {
+              return {
+                productId,
+                data: {
+                  isLinked: true,
+                  wooProducts: data.products,
+                  count: data.count || data.products.length
+                }
+              };
+            }
+          }
+          
+          return {
+            productId,
+            data: {
               isLinked: false,
               wooProducts: [],
               count: 0
-            };
-          }
-        } else {
-          console.warn(`Failed to check product ${productId}:`, response.status);
-          linkedProducts[productId] = {
-            isLinked: false,
-            wooProducts: [],
-            count: 0
+            }
+          };
+        } catch (err) {
+          console.error(`Error checking product ${productId}:`, err);
+          return {
+            productId,
+            data: {
+              isLinked: false,
+              wooProducts: [],
+              count: 0
+            }
           };
         }
-      } catch (err) {
-        console.error(`Error checking product ${productId}:`, err);
-        linkedProducts[productId] = {
-          isLinked: false,
-          wooProducts: [],
-          count: 0
-        };
-      }
+      });
+      
+      const results = await Promise.all(promises);
+      results.forEach(({ productId, data }) => {
+        linkedProducts[productId] = data;
+      });
     }
 
     return new Response(JSON.stringify({ linkedProducts }), {
