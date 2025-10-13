@@ -25,6 +25,13 @@ interface Organization {
   name: string;
 }
 
+interface Integration {
+  id: string;
+  name: string;
+  integration_type: string | null;
+  description: string | null;
+}
+
 interface IntegrationAccess {
   id: string;
   organization_id: string;
@@ -33,6 +40,7 @@ interface IntegrationAccess {
   created_at: string;
   generate_pdfs: boolean;
   organization?: Organization;
+  integration?: Integration;
 }
 
 const AVAILABLE_INTEGRATIONS = [
@@ -70,16 +78,17 @@ const IntegrationAccess = () => {
       // Load integration accesses with integration details
       const { data: accessData, error: accessError } = await supabase
         .from("organization_integration_access")
-        .select("*, integration_id")
+        .select("*, integrations(id, name, integration_type, description)")
         .order("created_at", { ascending: false });
 
       if (accessError) throw accessError;
 
-      // Manually map organization data
+      // Manually map organization and integration data
       const accessesWithOrgs = (accessData || []).map((access: any) => ({
         ...access,
         granted_by: access.user_id || null,
         organization: orgsData?.find((org) => org.id === access.organization_id),
+        integration: access.integrations,
       }));
 
       setIntegrationAccesses(accessesWithOrgs as any);
@@ -293,8 +302,18 @@ const IntegrationAccess = () => {
                     <div className="font-medium">{access.organization?.name || "Organización desconocida"}</div>
                     <div className="text-sm text-muted-foreground">
                       Integración:{" "}
-                      {AVAILABLE_INTEGRATIONS.find((i) => i.value === access.integration_id)?.label || "Desconocida"}
+                      {access.integration?.name || AVAILABLE_INTEGRATIONS.find((i) => i.value === access.integration_id)?.label || "Desconocida"}
+                      {access.integration?.integration_type && (
+                        <span className="ml-2 text-xs px-2 py-0.5 bg-primary/10 text-primary rounded">
+                          {access.integration.integration_type}
+                        </span>
+                      )}
                     </div>
+                    {access.integration?.description && (
+                      <div className="text-xs text-muted-foreground italic">
+                        {access.integration.description}
+                      </div>
+                    )}
                     <div className="text-xs text-muted-foreground">
                       Concedido: {new Date(access.created_at).toLocaleDateString()}
                     </div>
