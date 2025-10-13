@@ -52,7 +52,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[550px]">Producto</TableHead>
+                <TableHead className="min-w-[500px] max-w-[600px]">Producto</TableHead>
                 <TableHead className="w-[80px]">Excel</TableHead>
                 <TableHead className="w-[90px]">Estado</TableHead>
                 <TableHead className="w-[160px]">Categoría</TableHead>
@@ -65,8 +65,8 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
             <TableBody>
               {products.map((product) => (
                 <TableRow key={product.id}>
-                  <TableCell className="py-2">
-                    <div>
+                  <TableCell className="py-2 min-w-[500px] max-w-[600px]">
+                    <div className="w-full">
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(product.id);
@@ -75,13 +75,13 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                             description: `ID: ${product.id}`,
                           });
                         }}
-                        className="font-medium text-left hover:text-primary transition-colors"
+                        className="font-medium text-left hover:text-primary transition-colors w-full text-left"
                         title="Click para copiar ID"
                       >
                         {product.productName}
                       </button>
                       {product.description && (
-                        <div className="text-sm text-muted-foreground truncate max-w-[200px]">
+                        <div className="text-sm text-muted-foreground truncate max-w-[450px]">
                           {product.description.length > 50 
                             ? product.description.substring(0, 50) + "..."
                             : product.description
