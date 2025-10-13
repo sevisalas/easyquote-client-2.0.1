@@ -18,13 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Organization {
   id: string;
@@ -42,18 +36,18 @@ interface IntegrationAccess {
 }
 
 const AVAILABLE_INTEGRATIONS = [
-  { value: '057530ab-4982-40c1-bc92-b2a4ff7af8a8', label: 'Holded' },
-  { value: 'fbf56a7f-8508-45a7-bb5e-e9f616dc1ecb', label: 'WooCommerce' },
+  { value: "057530ab-4982-40c1-bc92-b2a4ff7af8a8", label: "Holded" },
+  { value: "fbf56a7f-8508-45a7-bb5e-e9f616dc1ecb", label: "WooCommerce" },
 ];
 
 const IntegrationAccess = () => {
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [integrationAccesses, setIntegrationAccesses] = useState<IntegrationAccess[]>([]);
-  const [selectedOrg, setSelectedOrg] = useState('');
-  const [selectedIntegration, setSelectedIntegration] = useState('');
+  const [selectedOrg, setSelectedOrg] = useState("");
+  const [selectedIntegration, setSelectedIntegration] = useState("");
   const [granting, setGranting] = useState(false);
-  
+
   const { toast } = useToast();
   const { isSuperAdmin } = useSubscription();
 
@@ -66,18 +60,18 @@ const IntegrationAccess = () => {
     try {
       // Load organizations
       const { data: orgsData, error: orgsError } = await supabase
-        .from('organizations')
-        .select('id, name')
-        .order('name');
+        .from("organizations")
+        .select("id, name")
+        .order("name");
 
       if (orgsError) throw orgsError;
       setOrganizations(orgsData || []);
 
       // Load integration accesses with integration details
       const { data: accessData, error: accessError } = await supabase
-        .from('organization_integration_access')
-        .select('*, integration_id')
-        .order('created_at', { ascending: false });
+        .from("organization_integration_access")
+        .select("*, integration_id")
+        .order("created_at", { ascending: false });
 
       if (accessError) throw accessError;
 
@@ -85,12 +79,12 @@ const IntegrationAccess = () => {
       const accessesWithOrgs = (accessData || []).map((access: any) => ({
         ...access,
         granted_by: access.user_id || null,
-        organization: orgsData?.find(org => org.id === access.organization_id)
+        organization: orgsData?.find((org) => org.id === access.organization_id),
       }));
 
       setIntegrationAccesses(accessesWithOrgs as any);
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error("Error loading data:", error);
       toast({
         title: "Error",
         description: "No se pudieron cargar los datos",
@@ -103,37 +97,14 @@ const IntegrationAccess = () => {
 
   const grantAccess = async () => {
     if (!selectedOrg || !selectedIntegration) return;
-    
+
     setGranting(true);
     try {
-      // Check if access already exists
-      const { data: existingAccess, error: checkError } = await supabase
-        .from('organization_integration_access')
-        .select('id')
-        .eq('organization_id', selectedOrg)
-        .eq('integration_id', selectedIntegration)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error('Error checking existing access:', checkError);
-      }
-
-      if (existingAccess) {
-        toast({
-          title: "Acceso ya existe",
-          description: "Esta organización ya tiene acceso a esta integración",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { error } = await supabase
-        .from('organization_integration_access')
-        .insert({
-          organization_id: selectedOrg,
-          integration_id: selectedIntegration,
-          is_active: true
-        });
+      const { error } = await supabase.from("organization_integration_access").insert({
+        organization_id: selectedOrg,
+        integration_id: selectedIntegration, // Use integration_id instead of integration_type
+        is_active: true,
+      });
 
       if (error) throw error;
 
@@ -142,11 +113,11 @@ const IntegrationAccess = () => {
         description: "Acceso a integración concedido correctamente",
       });
 
-      setSelectedOrg('');
-      setSelectedIntegration('');
+      setSelectedOrg("");
+      setSelectedIntegration("");
       loadData();
     } catch (error) {
-      console.error('Error granting access:', error);
+      console.error("Error granting access:", error);
       toast({
         title: "Error",
         description: "No se pudo conceder el acceso",
@@ -159,10 +130,7 @@ const IntegrationAccess = () => {
 
   const revokeAccess = async (accessId: string) => {
     try {
-      const { error } = await supabase
-        .from('organization_integration_access')
-        .delete()
-        .eq('id', accessId);
+      const { error } = await supabase.from("organization_integration_access").delete().eq("id", accessId);
 
       if (error) throw error;
 
@@ -173,7 +141,7 @@ const IntegrationAccess = () => {
 
       loadData();
     } catch (error) {
-      console.error('Error revoking access:', error);
+      console.error("Error revoking access:", error);
       toast({
         title: "Error",
         description: "No se pudo revocar el acceso",
@@ -185,20 +153,20 @@ const IntegrationAccess = () => {
   const toggleGeneratePdfs = async (accessId: string, currentValue: boolean) => {
     try {
       const { error } = await supabase
-        .from('organization_integration_access')
+        .from("organization_integration_access")
         .update({ generate_pdfs: !currentValue })
-        .eq('id', accessId);
+        .eq("id", accessId);
 
       if (error) throw error;
 
       toast({
         title: "Éxito",
-        description: `Configuración actualizada: ${!currentValue ? 'Se generarán PDFs' : 'Se usará el CRM/ERP integrado'}`,
+        description: `Configuración actualizada: ${!currentValue ? "Se generarán PDFs" : "Se usará el CRM/ERP integrado"}`,
       });
 
       loadData();
     } catch (error) {
-      console.error('Error updating generate_pdfs:', error);
+      console.error("Error updating generate_pdfs:", error);
       toast({
         title: "Error",
         description: "No se pudo actualizar la configuración",
@@ -211,7 +179,7 @@ const IntegrationAccess = () => {
     return (
       <div className="container mx-auto py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-destructive mb-4">Acceso Denegado</h1>
+          <h1 className="text-2xl font-bold text-destructive mb-4">Acceso denegado</h1>
           <p className="text-muted-foreground">No tienes permisos para acceder a esta sección.</p>
         </div>
       </div>
@@ -233,10 +201,8 @@ const IntegrationAccess = () => {
       <div className="flex items-center gap-3 mb-8">
         <Settings className="h-8 w-8 text-primary" />
         <div>
-          <h1 className="text-3xl font-bold">Gestión de Acceso a Integraciones</h1>
-          <p className="text-muted-foreground">
-            Administra qué organizaciones tienen acceso a cada integración
-          </p>
+          <h1 className="text-3xl font-bold">Gestión de acceso a integraciones</h1>
+          <p className="text-muted-foreground">Administra qué organizaciones tienen acceso a cada integración</p>
         </div>
       </div>
 
@@ -245,11 +211,9 @@ const IntegrationAccess = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5" />
-            Conceder Acceso
+            Conceder acceso
           </CardTitle>
-          <CardDescription>
-            Otorga acceso a una integración específica para una organización
-          </CardDescription>
+          <CardDescription>Otorga acceso a una integración específica para una organización</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -285,11 +249,8 @@ const IntegrationAccess = () => {
             </div>
           </div>
           <div className="flex justify-end">
-            <Button 
-              onClick={grantAccess}
-              disabled={!selectedOrg || !selectedIntegration || granting}
-            >
-              {granting ? 'Concediendo...' : 'Conceder Acceso'}
+            <Button onClick={grantAccess} disabled={!selectedOrg || !selectedIntegration || granting}>
+              {granting ? "Concediendo..." : "Conceder Acceso"}
             </Button>
           </div>
         </CardContent>
@@ -298,10 +259,8 @@ const IntegrationAccess = () => {
       {/* Current Accesses */}
       <Card>
         <CardHeader>
-          <CardTitle>Accesos Actuales</CardTitle>
-          <CardDescription>
-            Lista de todos los accesos a integraciones concedidos
-          </CardDescription>
+          <CardTitle>Accesos actuales</CardTitle>
+          <CardDescription>Lista de todos los accesos a integraciones concedidos</CardDescription>
         </CardHeader>
         <CardContent>
           {integrationAccesses.length === 0 ? (
@@ -311,64 +270,57 @@ const IntegrationAccess = () => {
           ) : (
             <div className="space-y-2">
               {integrationAccesses.map((access) => (
-                <div 
-                  key={access.id} 
-                  className="flex items-center justify-between p-4 border rounded-lg gap-4"
-                >
+                <div key={access.id} className="flex items-center justify-between p-4 border rounded-lg gap-4">
                   <div className="flex-1 space-y-1">
-                    <div className="font-medium">
-                      {access.organization?.name || 'Organización desconocida'}
-                    </div>
+                    <div className="font-medium">{access.organization?.name || "Organización desconocida"}</div>
                     <div className="text-sm text-muted-foreground">
-                      Integración: {AVAILABLE_INTEGRATIONS.find(i => i.value === access.integration_id)?.label || 'Desconocida'}
+                      Integración:{" "}
+                      {AVAILABLE_INTEGRATIONS.find((i) => i.value === access.integration_id)?.label || "Desconocida"}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       Concedido: {new Date(access.created_at).toLocaleDateString()}
                     </div>
                   </div>
-                  
-                    <div className="flex items-center gap-4">
-                      <div className="flex flex-col items-start gap-2 border-l pl-4">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <Label htmlFor={`generate-pdf-${access.id}`} className="text-sm font-medium cursor-pointer">
-                            Generación de PDFs
-                          </Label>
-                          <Switch
-                            id={`generate-pdf-${access.id}`}
-                            checked={access.generate_pdfs}
-                            onCheckedChange={() => toggleGeneratePdfs(access.id, access.generate_pdfs)}
-                          />
-                        </div>
-                        <p className="text-xs text-muted-foreground max-w-xs">
-                          {access.generate_pdfs 
-                            ? 'Los PDFs se generan localmente en la aplicación' 
-                            : 'Los presupuestos se exportan al CRM/ERP integrado (sin generar PDF local)'}
-                        </p>
+
+                  <div className="flex items-center gap-4">
+                    <div className="flex flex-col items-start gap-2 border-l pl-4">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <Label htmlFor={`generate-pdf-${access.id}`} className="text-sm font-medium cursor-pointer">
+                          Generación de PDFs
+                        </Label>
+                        <Switch
+                          id={`generate-pdf-${access.id}`}
+                          checked={access.generate_pdfs}
+                          onCheckedChange={() => toggleGeneratePdfs(access.id, access.generate_pdfs)}
+                        />
                       </div>
-                    
+                      <p className="text-xs text-muted-foreground max-w-xs">
+                        {access.generate_pdfs
+                          ? "Los PDFs se generan localmente en la aplicación"
+                          : "Los presupuestos se exportan al CRM/ERP integrado (sin generar PDF local)"}
+                      </p>
+                    </div>
+
                     <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Esta acción revocará el acceso de la organización a esta integración.
-                          No se podrá deshacer.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => revokeAccess(access.id)}>
-                          Revocar Acceso
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta acción revocará el acceso de la organización a esta integración. No se podrá deshacer.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => revokeAccess(access.id)}>Revocar Acceso</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}
