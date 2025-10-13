@@ -53,7 +53,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[300px]">Producto</TableHead>
-                <TableHead className="w-[120px]">Excel</TableHead>
+                <TableHead className="w-[150px]">Excel</TableHead>
                 <TableHead className="w-[90px]">Estado</TableHead>
                 <TableHead className="w-[150px]">Categoría</TableHead>
                 {isWooCommerceActive && <TableHead className="w-[80px]">Woo</TableHead>}
