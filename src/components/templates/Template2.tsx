@@ -47,7 +47,7 @@ export default function Template2({ data }: Template2Props) {
         {/* Customer Info - Modern Card */}
         <section className="mb-6">
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-lg border-l-4" style={{ borderLeftColor: primaryColor }}>
-            <h3 className="text-xs font-semibold mb-3 uppercase tracking-wide" style={{ color: primaryColor }}>
+            <h3 className="text-xs font-semibold mb-3 uppercase tracking-wide text-gray-700">
               Facturar a
             </h3>
             <p className="font-bold text-lg mb-1">{customer.name || 'Cliente'}</p>
@@ -60,14 +60,14 @@ export default function Template2({ data }: Template2Props) {
         {/* Quote Info */}
         {(quote.title || quote.description) && (
           <section className="mb-6">
-            {quote.title && <h3 className="font-bold text-xl mb-2" style={{ color: primaryColor }}>{quote.title}</h3>}
+            {quote.title && <h3 className="font-bold text-xl mb-2 text-gray-900">{quote.title}</h3>}
             {quote.description && <p className="text-sm text-gray-700 leading-relaxed">{quote.description}</p>}
           </section>
         )}
 
         {/* Items - Modern List */}
         <section className="mb-6">
-          <h3 className="text-xs font-semibold mb-4 uppercase tracking-wide" style={{ color: primaryColor }}>
+          <h3 className="text-xs font-semibold mb-4 uppercase tracking-wide text-gray-700">
             Detalle de Servicios
           </h3>
           <div className="space-y-3">
@@ -81,7 +81,7 @@ export default function Template2({ data }: Template2Props) {
                     )}
                   </div>
                   <div className="text-right ml-4">
-                    <p className="font-bold text-lg" style={{ color: primaryColor }}>{fmtEUR(item.price || 0)}</p>
+                    <p className="font-bold text-lg text-gray-900">{fmtEUR(item.price || 0)}</p>
                   </div>
                 </div>
               </div>
@@ -110,7 +110,7 @@ export default function Template2({ data }: Template2Props) {
             )}
             <div className="flex justify-between pt-3 border-t-2 border-gray-300">
               <span className="font-bold text-xl">TOTAL:</span>
-              <span className="font-bold text-2xl" style={{ color: primaryColor }}>{fmtEUR(quote.final_price || 0)}</span>
+              <span className="font-bold text-2xl text-gray-900">{fmtEUR(quote.final_price || 0)}</span>
             </div>
           </div>
         </section>
@@ -118,8 +118,8 @@ export default function Template2({ data }: Template2Props) {
         {/* Notes */}
         {quote.notes && (
           <section className="mb-6">
-            <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded">
-              <h3 className="text-xs font-semibold mb-2 uppercase tracking-wide text-amber-700">
+            <div className="bg-gray-50 border-l-4 border-gray-400 p-4 rounded">
+              <h3 className="text-xs font-semibold mb-2 uppercase tracking-wide text-gray-700">
                 Notas Importantes
               </h3>
               <p className="text-sm text-gray-700 whitespace-pre-wrap">{quote.notes}</p>
