@@ -162,9 +162,9 @@ export default function SettingsPdfTemplate() {
       </Card>
 
       {/* Selección de plantilla y Vista previa */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        {/* Selección de plantilla - 2/3 */}
-        <Card className="lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        {/* Selección de plantilla - 1/2 */}
+        <Card>
           <CardHeader>
             <CardTitle>Selecciona tu Plantilla</CardTitle>
           </CardHeader>
