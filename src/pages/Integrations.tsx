@@ -261,7 +261,7 @@ export default function Integrations() {
     }
   };
 
-  if (loading || holdedLoading) {
+  if (loading || holdedLoading || wooLoading) {
     return (
       <div className="container mx-auto py-8">
         <Card>
