@@ -8,6 +8,7 @@ import { useWooCommerceLink } from "@/hooks/useWooCommerceLink";
 import { useWooCommerceIntegration } from "@/hooks/useWooCommerceIntegration";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { toast } from "@/hooks/use-toast";
 
 interface EasyQuoteProduct {
   id: string;
@@ -66,7 +67,19 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                 <TableRow key={product.id}>
                   <TableCell className="py-2">
                     <div>
-                      <div className="font-medium">{product.productName}</div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(product.id);
+                          toast({
+                            title: "ID copiado",
+                            description: `ID: ${product.id}`,
+                          });
+                        }}
+                        className="font-medium text-left hover:text-primary transition-colors"
+                        title="Click para copiar ID"
+                      >
+                        {product.productName}
+                      </button>
                       {product.description && (
                         <div className="text-sm text-muted-foreground truncate max-w-[200px]">
                           {product.description.length > 50 
@@ -215,7 +228,19 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
             <div className="space-y-3">
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium truncate">{product.productName}</h3>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(product.id);
+                      toast({
+                        title: "ID copiado",
+                        description: `ID: ${product.id}`,
+                      });
+                    }}
+                    className="font-medium truncate text-left hover:text-primary transition-colors w-full"
+                    title="Click para copiar ID"
+                  >
+                    {product.productName}
+                  </button>
                   {product.description && (
                     <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
                       {product.description}
