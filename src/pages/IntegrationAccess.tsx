@@ -106,11 +106,32 @@ const IntegrationAccess = () => {
     
     setGranting(true);
     try {
+      // Check if access already exists
+      const { data: existingAccess, error: checkError } = await supabase
+        .from('organization_integration_access')
+        .select('id')
+        .eq('organization_id', selectedOrg)
+        .eq('integration_id', selectedIntegration)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking existing access:', checkError);
+      }
+
+      if (existingAccess) {
+        toast({
+          title: "Acceso ya existe",
+          description: "Esta organización ya tiene acceso a esta integración",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('organization_integration_access')
         .insert({
           organization_id: selectedOrg,
-          integration_id: selectedIntegration, // Use integration_id instead of integration_type
+          integration_id: selectedIntegration,
           is_active: true
         });
 
