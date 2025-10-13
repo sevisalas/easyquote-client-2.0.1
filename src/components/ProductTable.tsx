@@ -52,10 +52,10 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[450px]">Producto</TableHead>
-                <TableHead className="w-[100px]">Excel</TableHead>
-                <TableHead className="w-[100px]">Estado</TableHead>
-                <TableHead className="w-[180px]">Categoría</TableHead>
+                <TableHead className="w-[550px]">Producto</TableHead>
+                <TableHead className="w-[80px]">Excel</TableHead>
+                <TableHead className="w-[90px]">Estado</TableHead>
+                <TableHead className="w-[160px]">Categoría</TableHead>
                 {isWooCommerceActive && (
                   <TableHead className="w-[80px]">Woo</TableHead>
                 )}
