@@ -85,8 +85,6 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const endpointTemplate = accessData.configuration.endpoint.replace('GET ', '');
-    const consumerKey = accessData.configuration.consumer_key;
-    const consumerSecret = accessData.configuration.consumer_secret;
 
     const { productIds } = await req.json();
     console.log("woocommerce-product-check: Checking products", { productIds });
@@ -114,15 +112,7 @@ serve(async (req: Request): Promise<Response> => {
     for (const batch of batches) {
       const promises = batch.map(async (productId: string) => {
         try {
-          let url = endpointTemplate.replace('{calculator_id}', productId);
-          
-          // Add authentication params to URL
-          if (consumerKey && consumerSecret) {
-            const urlObj = new URL(url);
-            urlObj.searchParams.set('consumer_key', consumerKey);
-            urlObj.searchParams.set('consumer_secret', consumerSecret);
-            url = urlObj.toString();
-          }
+          const url = endpointTemplate.replace('{calculator_id}', productId);
           
           const response = await fetch(url, {
             method: "GET",
