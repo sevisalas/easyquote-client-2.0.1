@@ -409,6 +409,7 @@ export type Database = {
       organization_integration_access: {
         Row: {
           access_token_encrypted: string | null
+          configuration: Json | null
           created_at: string
           expires_at: string | null
           generate_pdfs: boolean
@@ -421,6 +422,7 @@ export type Database = {
         }
         Insert: {
           access_token_encrypted?: string | null
+          configuration?: Json | null
           created_at?: string
           expires_at?: string | null
           generate_pdfs?: boolean
@@ -433,6 +435,7 @@ export type Database = {
         }
         Update: {
           access_token_encrypted?: string | null
+          configuration?: Json | null
           created_at?: string
           expires_at?: string | null
           generate_pdfs?: boolean

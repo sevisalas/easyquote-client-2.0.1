@@ -26,6 +26,9 @@ export default function Integrations() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [contactsCount, setContactsCount] = useState<number | null>(null);
   const [togglingWoo, setTogglingWoo] = useState(false);
+  const [wooEndpoint, setWooEndpoint] = useState("");
+  const [editingWooEndpoint, setEditingWooEndpoint] = useState(false);
+  const [savingWooEndpoint, setSavingWooEndpoint] = useState(false);
   const { toast } = useToast();
 
   const currentOrganization = organization || membership?.organization;
@@ -36,6 +39,40 @@ export default function Integrations() {
       loadContactsCount();
     }
   }, [isHoldedActive, currentOrganization]);
+
+  useEffect(() => {
+    if (isWooCommerceActive) {
+      loadWooCommerceEndpoint();
+    }
+  }, [isWooCommerceActive, currentOrganization]);
+
+  const loadWooCommerceEndpoint = async () => {
+    if (!currentOrganization?.id) return;
+    
+    try {
+      const { data: integrationData } = await supabase
+        .from('integrations')
+        .select('id')
+        .eq('name', 'WooCommerce')
+        .single();
+
+      if (!integrationData) return;
+
+      const { data: accessData } = await supabase
+        .from('organization_integration_access')
+        .select('configuration')
+        .eq('organization_id', currentOrganization.id)
+        .eq('integration_id', integrationData.id)
+        .single();
+
+      const config = accessData?.configuration as { endpoint?: string } | null;
+      if (config?.endpoint) {
+        setWooEndpoint(config.endpoint);
+      }
+    } catch (error) {
+      console.error('Error loading WooCommerce endpoint:', error);
+    }
+  };
 
   const loadContactsCount = async () => {
     if (!currentOrganization?.id) return;
@@ -107,6 +144,63 @@ export default function Integrations() {
     }
   };
 
+  const handleSaveWooEndpoint = async () => {
+    if (!wooEndpoint.trim()) {
+      toast({
+        title: "Error",
+        description: "Por favor ingresa el endpoint de WooCommerce",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!currentOrganization?.id) {
+      toast({
+        title: "Error",
+        description: "No se encontró la organización",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSavingWooEndpoint(true);
+    try {
+      const { data: integrationData } = await supabase
+        .from('integrations')
+        .select('id')
+        .eq('name', 'WooCommerce')
+        .single();
+
+      if (!integrationData) throw new Error('WooCommerce integration not found');
+
+      const { error } = await supabase
+        .from('organization_integration_access')
+        .update({
+          configuration: { endpoint: wooEndpoint.trim() }
+        })
+        .eq('organization_id', currentOrganization.id)
+        .eq('integration_id', integrationData.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Endpoint guardado correctamente",
+      });
+      
+      setEditingWooEndpoint(false);
+    } catch (error) {
+      console.error('Error saving WooCommerce endpoint:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el endpoint",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingWooEndpoint(false);
+    }
+  };
+
   const handleToggleWooCommerce = async (enabled: boolean) => {
     if (!currentOrganization?.id) {
       toast({
@@ -135,14 +229,15 @@ export default function Integrations() {
           .insert({
             organization_id: currentOrganization.id,
             integration_id: integrationData.id,
-            is_active: true
+            is_active: true,
+            configuration: {}
           });
 
         if (insertError) throw insertError;
 
         toast({
           title: "Éxito",
-          description: "Integración de WooCommerce activada",
+          description: "Integración de WooCommerce activada. Configura el endpoint para comenzar.",
         });
       } else {
         // Disable integration
@@ -158,6 +253,8 @@ export default function Integrations() {
           title: "Éxito",
           description: "Integración de WooCommerce desactivada",
         });
+        
+        setWooEndpoint("");
       }
 
       refreshWoo();
@@ -333,19 +430,76 @@ export default function Integrations() {
             {isWooCommerceActive && (
               <>
                 <Separator className="my-4" />
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>
-                    Para vincular productos de EasyQuote con WooCommerce, asegúrate de haber configurado 
-                    el meta field <code className="bg-muted px-1 py-0.5 rounded">easyquote_product_id</code> en 
-                    tus productos de WooCommerce con el ID del producto de EasyQuote.
-                  </AlertDescription>
-                </Alert>
-                <div className="bg-muted p-3 rounded-lg">
-                  <p className="text-xs font-medium mb-2">Endpoint de la API</p>
-                  <code className="text-xs bg-background px-2 py-1 rounded block overflow-x-auto">
-                    https://reprotel.online/wp-json/easyquote/v1/products-by-calculator/{"{calculator_id}"}
-                  </code>
+                
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold mb-2">Configuración del Endpoint</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Configura la URL del endpoint de tu tienda WooCommerce para sincronizar productos.
+                    </p>
+                  </div>
+
+                  {!editingWooEndpoint && wooEndpoint ? (
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-medium">Endpoint configurado</p>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => setEditingWooEndpoint(true)}
+                        >
+                          Editar
+                        </Button>
+                      </div>
+                      <code className="text-xs bg-background px-2 py-1 rounded block overflow-x-auto">
+                        {wooEndpoint}
+                      </code>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label htmlFor="woo-endpoint">URL del Endpoint</Label>
+                      <Input
+                        id="woo-endpoint"
+                        type="url"
+                        placeholder="https://tutienda.com/wp-json/easyquote/v1/products-by-calculator/{calculator_id}"
+                        value={wooEndpoint}
+                        onChange={(e) => setWooEndpoint(e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Usa {"{calculator_id}"} como placeholder para el ID del calculador
+                      </p>
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={handleSaveWooEndpoint}
+                          disabled={savingWooEndpoint}
+                          className="flex-1"
+                        >
+                          {savingWooEndpoint ? "Guardando..." : "Guardar Endpoint"}
+                        </Button>
+                        {editingWooEndpoint && (
+                          <Button 
+                            variant="outline"
+                            onClick={() => {
+                              setEditingWooEndpoint(false);
+                              loadWooCommerceEndpoint();
+                            }}
+                            disabled={savingWooEndpoint}
+                          >
+                            Cancelar
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      Para vincular productos de EasyQuote con WooCommerce, asegúrate de haber configurado 
+                      el meta field <code className="bg-muted px-1 py-0.5 rounded">easyquote_product_id</code> en 
+                      tus productos de WooCommerce con el ID del producto de EasyQuote.
+                    </AlertDescription>
+                  </Alert>
                 </div>
               </>
             )}
