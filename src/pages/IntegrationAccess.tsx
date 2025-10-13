@@ -34,7 +34,7 @@ interface Organization {
 interface IntegrationAccess {
   id: string;
   organization_id: string;
-  integration_type: string;
+  integration_id: string;
   granted_by: string;
   created_at: string;
   generate_pdfs: boolean;
@@ -73,10 +73,10 @@ const IntegrationAccess = () => {
       if (orgsError) throw orgsError;
       setOrganizations(orgsData || []);
 
-      // Load integration accesses
+      // Load integration accesses with integration details
       const { data: accessData, error: accessError } = await supabase
         .from('organization_integration_access')
-        .select('*')
+        .select('*, integration_id')
         .order('created_at', { ascending: false });
 
       if (accessError) throw accessError;
@@ -84,7 +84,6 @@ const IntegrationAccess = () => {
       // Manually map organization data
       const accessesWithOrgs = (accessData || []).map((access: any) => ({
         ...access,
-        integration_type: 'holded', // Default type since we only have one integration for now
         granted_by: access.user_id || null,
         organization: orgsData?.find(org => org.id === access.organization_id)
       }));
@@ -300,7 +299,7 @@ const IntegrationAccess = () => {
                       {access.organization?.name || 'Organización desconocida'}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Integración: {AVAILABLE_INTEGRATIONS.find(i => i.value === access.integration_type)?.label || access.integration_type}
+                      Integración: {AVAILABLE_INTEGRATIONS.find(i => i.value === access.integration_id)?.label || 'Desconocida'}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       Concedido: {new Date(access.created_at).toLocaleDateString()}
