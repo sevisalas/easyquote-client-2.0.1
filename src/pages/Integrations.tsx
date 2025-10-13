@@ -10,9 +10,8 @@ import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { useWooCommerceIntegration } from "@/hooks/useWooCommerceIntegration";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Download, Trash2, Info, ShoppingCart } from "lucide-react";
+import { Download, Trash2, ShoppingCart } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Integrations() {
   const { hasIntegrationAccess, loading } = useIntegrationAccess();
@@ -492,14 +491,6 @@ export default function Integrations() {
                     </div>
                   )}
 
-                  <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      Para vincular productos de EasyQuote con WooCommerce, asegúrate de haber configurado 
-                      el meta field <code className="bg-muted px-1 py-0.5 rounded">easyquote_product_id</code> en 
-                      tus productos de WooCommerce con el ID del producto de EasyQuote.
-                    </AlertDescription>
-                  </Alert>
                 </div>
               </>
             )}
@@ -586,24 +577,12 @@ export default function Integrations() {
                 <div className="space-y-4">
                   <div>
                     <h3 className="font-semibold mb-2">Contactos de Holded</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Importa todos los contactos desde Holded para poder buscarlos por nombre en los presupuestos.
-                      Los contactos se guardan en una tabla separada y se actualizan con cada importación.
-                    </p>
                     {contactsCount !== null && (
                       <p className="text-sm mb-4">
                         <span className="font-medium">Contactos importados:</span> {contactsCount}
                       </p>
                     )}
                   </div>
-
-                  <Alert className="mb-4">
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      La importación puede tardar aproximadamente 1 minuto dependiendo de la cantidad de contactos. 
-                      El proceso se ejecuta en segundo plano.
-                    </AlertDescription>
-                  </Alert>
 
                   <div className="flex gap-2">
                     <Button 
@@ -627,14 +606,10 @@ export default function Integrations() {
                   </div>
 
                   <div className="bg-muted p-3 rounded-lg">
-                    <p className="text-xs font-medium mb-2">Webhook de Zapier (para nuevos contactos)</p>
+                    <p className="text-xs font-medium mb-2">Webhook de Zapier</p>
                     <code className="text-xs bg-background px-2 py-1 rounded block overflow-x-auto">
                       https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/holded-zapier-webhook
                     </code>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Configura este webhook en Zapier para que los nuevos contactos se agreguen automáticamente.
-                      Debe enviar: id, name, email, phone, mobile, organizationId
-                    </p>
                   </div>
                 </div>
               </>
