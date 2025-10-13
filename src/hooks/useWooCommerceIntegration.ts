@@ -36,7 +36,7 @@ export const useWooCommerceIntegration = () => {
       // Then check if the organization has access to WooCommerce integration
       const { data: accessData, error: accessError } = await supabase
         .from('organization_integration_access')
-        .select('id, is_active')
+        .select('id, is_active, configuration')
         .eq('organization_id', currentOrganization.id)
         .eq('integration_id', integrationData.id)
         .maybeSingle();
@@ -55,8 +55,10 @@ export const useWooCommerceIntegration = () => {
         return;
       }
 
-      // Check if access is active
-      setIsWooCommerceActive(accessData.is_active);
+      // Check if access is active AND has endpoint configured
+      const config = accessData.configuration as { endpoint?: string } | null;
+      const hasEndpoint = config?.endpoint && config.endpoint.trim() !== '';
+      setIsWooCommerceActive(accessData.is_active && hasEndpoint);
     } catch (error) {
       console.error('Error checking WooCommerce integration:', error);
       setIsWooCommerceActive(false);
