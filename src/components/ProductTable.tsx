@@ -134,29 +134,40 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                                   </button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-80">
-                                  <div className="space-y-2">
-                                    <h4 className="font-medium text-sm">Productos en WooCommerce</h4>
-                                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                                      {linkStatus.wooProducts.map((wooProduct: any) => (
-                                        <div key={wooProduct.id} className="p-2 border rounded-md space-y-1">
-                                          <div className="flex items-start justify-between gap-2">
-                                            <span className="text-sm font-medium line-clamp-2">{wooProduct.name}</span>
-                                            {wooProduct.calculator_disabled && (
-                                              <Badge variant="secondary" className="text-xs flex-shrink-0">Deshabilitado</Badge>
-                                            )}
-                                          </div>
-                                          <a 
-                                            href={wooProduct.permalink} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="text-xs text-primary hover:underline flex items-center gap-1"
-                                          >
-                                            Ver producto <ExternalLink className="h-3 w-3" />
-                                          </a>
-                                        </div>
-                                      ))}
+                                  {wooLoading ? (
+                                    <div className="space-y-2">
+                                      <Skeleton className="h-4 w-48" />
+                                      <Skeleton className="h-20 w-full" />
                                     </div>
-                                  </div>
+                                  ) : linkStatus.wooProducts.length === 0 ? (
+                                    <div className="text-sm text-muted-foreground">
+                                      No se encontraron productos vinculados
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-2">
+                                      <h4 className="font-medium text-sm">Productos en WooCommerce</h4>
+                                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                                        {linkStatus.wooProducts.map((wooProduct: any) => (
+                                          <div key={wooProduct.id} className="p-2 border rounded-md space-y-1">
+                                            <div className="flex items-start justify-between gap-2">
+                                              <span className="text-sm font-medium line-clamp-2">{wooProduct.name}</span>
+                                              {wooProduct.calculator_disabled && (
+                                                <Badge variant="secondary" className="text-xs flex-shrink-0">Deshabilitado</Badge>
+                                              )}
+                                            </div>
+                                            <a 
+                                              href={wooProduct.permalink} 
+                                              target="_blank" 
+                                              rel="noopener noreferrer"
+                                              className="text-xs text-primary hover:underline flex items-center gap-1"
+                                            >
+                                              Ver producto <ExternalLink className="h-3 w-3" />
+                                            </a>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </PopoverContent>
                               </Popover>
                             );
@@ -275,29 +286,40 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                               </button>
                             </PopoverTrigger>
                             <PopoverContent className="w-80">
-                              <div className="space-y-2">
-                                <h4 className="font-medium text-sm">Productos en WooCommerce</h4>
-                                <div className="space-y-2 max-h-64 overflow-y-auto">
-                                  {linkStatus.wooProducts.map((wooProduct: any) => (
-                                    <div key={wooProduct.id} className="p-2 border rounded-md space-y-1">
-                                      <div className="flex items-start justify-between gap-2">
-                                        <span className="text-sm font-medium line-clamp-2">{wooProduct.name}</span>
-                                        {wooProduct.calculator_disabled && (
-                                          <Badge variant="secondary" className="text-xs flex-shrink-0">Deshabilitado</Badge>
-                                        )}
-                                      </div>
-                                      <a 
-                                        href={wooProduct.permalink} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="text-xs text-primary hover:underline flex items-center gap-1"
-                                      >
-                                        Ver producto <ExternalLink className="h-3 w-3" />
-                                      </a>
-                                    </div>
-                                  ))}
+                              {wooLoading ? (
+                                <div className="space-y-2">
+                                  <Skeleton className="h-4 w-48" />
+                                  <Skeleton className="h-20 w-full" />
                                 </div>
-                              </div>
+                              ) : linkStatus.wooProducts.length === 0 ? (
+                                <div className="text-sm text-muted-foreground">
+                                  No se encontraron productos vinculados
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  <h4 className="font-medium text-sm">Productos en WooCommerce</h4>
+                                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                                    {linkStatus.wooProducts.map((wooProduct: any) => (
+                                      <div key={wooProduct.id} className="p-2 border rounded-md space-y-1">
+                                        <div className="flex items-start justify-between gap-2">
+                                          <span className="text-sm font-medium line-clamp-2">{wooProduct.name}</span>
+                                          {wooProduct.calculator_disabled && (
+                                            <Badge variant="secondary" className="text-xs flex-shrink-0">Deshabilitado</Badge>
+                                          )}
+                                        </div>
+                                        <a 
+                                          href={wooProduct.permalink} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="text-xs text-primary hover:underline flex items-center gap-1"
+                                        >
+                                          Ver producto <ExternalLink className="h-3 w-3" />
+                                        </a>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </PopoverContent>
                           </Popover>
                         );
