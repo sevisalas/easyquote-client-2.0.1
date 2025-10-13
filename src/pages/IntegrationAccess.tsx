@@ -43,6 +43,7 @@ interface IntegrationAccess {
 
 const AVAILABLE_INTEGRATIONS = [
   { value: '057530ab-4982-40c1-bc92-b2a4ff7af8a8', label: 'Holded' },
+  { value: 'fbf56a7f-8508-45a7-bb5e-e9f616dc1ecb', label: 'WooCommerce' },
 ];
 
 const IntegrationAccess = () => {
