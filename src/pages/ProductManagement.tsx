@@ -1091,7 +1091,17 @@ export default function ProductManagement() {
                       const url = endpointTemplate.replace('{calculator_id}', product.id);
                       const response = await fetch(url, {
                         method: "GET",
-                        headers: { "Accept": "application/json" },
+                        headers: { 
+                          "Accept": "application/json",
+                          "Accept-Language": "es-ES,es;q=0.9",
+                          "Cache-Control": "no-cache",
+                          "Pragma": "no-cache",
+                          "Sec-Fetch-Dest": "empty",
+                          "Sec-Fetch-Mode": "cors",
+                          "Sec-Fetch-Site": "cross-site",
+                        },
+                        credentials: 'omit',
+                        mode: 'cors',
                       });
 
                       if (response.ok) {
