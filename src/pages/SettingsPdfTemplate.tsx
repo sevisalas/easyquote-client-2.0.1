@@ -161,84 +161,87 @@ export default function SettingsPdfTemplate() {
         </CardContent>
       </Card>
 
-      {/* Selección de plantilla */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Selecciona tu Plantilla</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <p className="text-muted-foreground">Cargando plantillas...</p>
-          ) : (
-            <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
-              {templates.map((template) => (
-                <button
-                  key={template.id}
-                  onClick={() => setSelectedTemplate(template.id)}
-                  className={`flex-shrink-0 snap-start transition-all ${
-                    selectedTemplate === template.id
-                      ? 'ring-4 ring-primary scale-105'
-                      : 'ring-2 ring-border hover:ring-primary/50'
-                  } rounded-lg overflow-hidden`}
-                >
-                  <div className="w-40 sm:w-48 bg-card">
-                    <div className="aspect-[210/297] bg-muted flex items-center justify-center">
-                      <img 
-                        src={template.thumbnail} 
-                        alt={template.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-2 sm:p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="font-semibold text-sm">{template.name}</p>
-                        {template.isCustom && (
-                          <Badge variant="secondary" className="text-xs">Personalizada</Badge>
+      {/* Selección de plantilla y Vista previa */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        {/* Selección de plantilla - 2/3 */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Selecciona tu Plantilla</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <p className="text-muted-foreground">Cargando plantillas...</p>
+            ) : (
+              <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
+                {templates.map((template) => (
+                  <button
+                    key={template.id}
+                    onClick={() => setSelectedTemplate(template.id)}
+                    className={`flex-shrink-0 snap-start transition-all ${
+                      selectedTemplate === template.id
+                        ? 'ring-4 ring-primary scale-105'
+                        : 'ring-2 ring-border hover:ring-primary/50'
+                    } rounded-lg overflow-hidden`}
+                  >
+                    <div className="w-40 sm:w-48 bg-card">
+                      <div className="aspect-[210/297] bg-muted flex items-center justify-center">
+                        <img 
+                          src={template.thumbnail} 
+                          alt={template.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="p-2 sm:p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-semibold text-sm">{template.name}</p>
+                          {template.isCustom && (
+                            <Badge variant="secondary" className="text-xs">Personalizada</Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-2">{template.description}</p>
+                        {template.price !== undefined && template.price > 0 && (
+                          <p className="text-xs font-medium text-primary mb-2">
+                            {template.price}€
+                          </p>
                         )}
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-2">{template.description}</p>
-                      {template.price !== undefined && template.price > 0 && (
-                        <p className="text-xs font-medium text-primary mb-2">
-                          {template.price}€
-                        </p>
-                      )}
-                      <div className="text-xs font-medium text-center py-1 rounded bg-muted">
-                        {selectedTemplate === template.id ? '✓ Seleccionada' : 'Seleccionar'}
+                        <div className="text-xs font-medium text-center py-1 rounded bg-muted">
+                          {selectedTemplate === template.id ? '✓ Seleccionada' : 'Seleccionar'}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </button>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Vista previa */}
-      <Card className="overflow-hidden">
-        <CardHeader>
-          <CardTitle>Vista Previa</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="bg-muted/30 p-4 overflow-x-auto">
-            <div className="flex justify-center">
-              <div 
-                className="shadow-2xl bg-white origin-top"
-                style={{
-                  width: '210mm',
-                  transform: 'scale(0.35)',
-                  marginBottom: 'calc(-65% + 2rem)'
-                }}
-              >
-                <QuoteTemplate 
-                  data={previewData} 
-                  templateNumber={selectedTemplate} 
-                />
+        {/* Vista previa - 1/3 */}
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <CardTitle>Vista Previa</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="bg-muted/30 p-4 overflow-x-auto">
+              <div className="flex justify-center">
+                <div 
+                  className="shadow-2xl bg-white origin-top"
+                  style={{
+                    width: '210mm',
+                    transform: 'scale(0.35)',
+                    marginBottom: 'calc(-65% + 2rem)'
+                  }}
+                >
+                  <QuoteTemplate 
+                    data={previewData} 
+                    templateNumber={selectedTemplate} 
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Botón guardar */}
       <div className="flex justify-end">
