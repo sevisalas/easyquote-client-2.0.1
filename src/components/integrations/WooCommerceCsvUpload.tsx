@@ -12,6 +12,7 @@ interface CsvRow {
   ID: string;
   Nombre: string;
   "Calculator ID": string;
+  Permalink: string;
 }
 
 export const WooCommerceCsvUpload = () => {
@@ -41,18 +42,19 @@ export const WooCommerceCsvUpload = () => {
           v.trim().replace(/^"/, '').replace(/"$/, '')
         ) || [];
         
-        if (values.length >= 3) {
+        if (values.length >= 4) {
           products.push({
             ID: values[0],
             Nombre: values[1],
-            "Calculator ID": values[2]
+            "Calculator ID": values[2],
+            Permalink: values[3]
           });
         }
       }
 
       console.log(`Parsed ${products.length} products from CSV`);
 
-      // Get WooCommerce configuration
+      // Get organization
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuario no autenticado");
 
@@ -64,67 +66,28 @@ export const WooCommerceCsvUpload = () => {
 
       if (!org) throw new Error("Organización no encontrada");
 
-      // Get WooCommerce integration details
-      const { data: integration } = await supabase
-        .from("integrations")
-        .select("id")
-        .eq("name", "WooCommerce")
-        .single();
-
-      if (!integration) throw new Error("Integración WooCommerce no encontrada");
-
-      const { data: access } = await supabase
-        .from("organization_integration_access")
-        .select("configuration")
-        .eq("organization_id", org.id)
-        .eq("integration_id", integration.id)
-        .single();
-
-      const config = access?.configuration as { endpoint?: string } | null;
-      if (!config?.endpoint) {
-        throw new Error("Endpoint de WooCommerce no configurado");
-      }
-
-      // Extract base URL from endpoint
-      const baseUrl = config.endpoint.split('/wp-json')[0];
-
-      // Fetch product details from WooCommerce for all unique IDs
-      const uniqueIds = [...new Set(products.map(p => p.ID))];
-      const wooProductsMap = new Map();
-
-      for (const id of uniqueIds) {
-        try {
-          const response = await fetch(`${baseUrl}/wp-json/wc/v3/products/${id}`);
-          if (response.ok) {
-            const wooProduct = await response.json();
-            wooProductsMap.set(id, {
-              id: wooProduct.id,
-              name: wooProduct.name,
-              slug: wooProduct.slug,
-              permalink: wooProduct.permalink,
-              calculator_id: wooProduct.meta_data?.find((m: any) => m.key === 'calculator_id')?.value || '',
-              calculator_disabled: wooProduct.meta_data?.find((m: any) => m.key === 'calculator_disabled')?.value === 'yes'
-            });
-          }
-        } catch (error) {
-          console.error(`Error fetching WooCommerce product ${id}:`, error);
-        }
-      }
-
-      // Group by calculator_id using enriched data
-      const groupedProducts: Record<string, { id: string; name: string; slug: string; permalink: string; calculator_id: string; calculator_disabled: boolean }[]> = {};
+      // Group by calculator_id directly from CSV data
+      const groupedProducts: Record<string, { id: number; name: string; slug: string; permalink: string; calculator_id: string; calculator_disabled: boolean }[]> = {};
+      
       products.forEach(p => {
         const calcId = p["Calculator ID"];
-        if (!calcId) return;
-        
-        const wooProduct = wooProductsMap.get(p.ID);
-        if (!wooProduct) return;
+        if (!calcId || !p.Permalink) return;
         
         if (!groupedProducts[calcId]) {
           groupedProducts[calcId] = [];
         }
         
-        groupedProducts[calcId].push(wooProduct);
+        // Extract slug from permalink (last part of URL before trailing slash)
+        const slug = p.Permalink.replace(/\/$/, '').split('/').pop() || '';
+        
+        groupedProducts[calcId].push({
+          id: parseInt(p.ID),
+          name: p.Nombre,
+          slug: slug,
+          permalink: p.Permalink,
+          calculator_id: calcId,
+          calculator_disabled: false
+        });
       });
 
       // Delete existing links for this organization
@@ -184,7 +147,7 @@ export const WooCommerceCsvUpload = () => {
           Importar productos desde CSV
         </Label>
         <p className="text-xs text-muted-foreground mt-1">
-          Sube un archivo CSV con las columnas: ID, Nombre, Calculator ID
+          Sube un archivo CSV con las columnas: ID, Nombre, Calculator ID, Permalink
         </p>
       </div>
       <div className="flex items-center gap-2">
