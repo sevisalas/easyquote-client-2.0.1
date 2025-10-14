@@ -40,9 +40,16 @@ interface ProductTableProps {
 
 export function ProductTable({ products, getProductMapping, onEditProduct }: ProductTableProps) {
   const navigate = useNavigate();
-  const { isWooCommerceActive } = useWooCommerceIntegration();
+  const { isWooCommerceActive, loading: wooIntegrationLoading } = useWooCommerceIntegration();
   const productIds = products.map((p) => p.id);
   const { data: wooLinks, isLoading: wooLoading } = useWooCommerceLink(isWooCommerceActive ? productIds : []);
+
+  console.log("ProductTable Debug:", { 
+    isWooCommerceActive, 
+    wooIntegrationLoading,
+    productCount: products.length,
+    wooLinksCount: Object.keys(wooLinks || {}).length 
+  });
 
   return (
     <>

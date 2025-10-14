@@ -10,6 +10,7 @@ export const useWooCommerceIntegration = () => {
     queryKey: ['woocommerce-integration', currentOrganization?.id],
     queryFn: async () => {
       if (!currentOrganization?.id) {
+        console.log("WooCommerce Integration: No organization ID");
         return false;
       }
 
@@ -21,7 +22,10 @@ export const useWooCommerceIntegration = () => {
           .eq('name', 'WooCommerce')
           .maybeSingle();
 
+        console.log("WooCommerce Integration Check:", { integrationData, integrationError });
+
         if (integrationError || !integrationData) {
+          console.log("WooCommerce Integration: No integration found");
           return false;
         }
 
@@ -33,6 +37,8 @@ export const useWooCommerceIntegration = () => {
           .eq('integration_id', integrationData.id)
           .maybeSingle();
 
+        console.log("WooCommerce Access Check:", { accessData, accessError });
+
         if (accessError && accessError.code !== 'PGRST116') {
           console.error('Error checking WooCommerce integration access:', accessError);
           return false;
@@ -40,6 +46,7 @@ export const useWooCommerceIntegration = () => {
 
         // If no access record exists, integration is not available
         if (!accessData) {
+          console.log("WooCommerce Integration: No access record");
           return false;
         }
 
@@ -51,12 +58,21 @@ export const useWooCommerceIntegration = () => {
           .eq('is_active', true)
           .maybeSingle();
 
+        console.log("WooCommerce API Key Check:", { apiKeyData, apiKeyError });
+
         if (apiKeyError && apiKeyError.code !== 'PGRST116') {
           console.error('Error checking API key:', apiKeyError);
         }
 
         // Integration is active only if access is active AND API key exists
-        return accessData.is_active && !!apiKeyData;
+        const isActive = accessData.is_active && !!apiKeyData;
+        console.log("WooCommerce Integration Final Status:", { 
+          accessIsActive: accessData.is_active, 
+          hasApiKey: !!apiKeyData,
+          finalStatus: isActive 
+        });
+        
+        return isActive;
       } catch (error) {
         console.error('Error checking WooCommerce integration:', error);
         return false;
