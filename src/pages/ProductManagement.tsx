@@ -1086,26 +1086,26 @@ export default function ProductManagement() {
                   // Fetch all products
                   const csvData: string[] = ["Product ID,Product Name,WooCommerce Products,Count"];
                   
+                  let processedCount = 0;
                   for (const product of filteredProducts) {
                     try {
                       const url = endpointTemplate.replace('{calculator_id}', product.id);
+                      console.log(`Fetching: ${url}`);
+                      
                       const response = await fetch(url, {
                         method: "GET",
                         headers: { 
                           "Accept": "application/json",
-                          "Accept-Language": "es-ES,es;q=0.9",
-                          "Cache-Control": "no-cache",
-                          "Pragma": "no-cache",
-                          "Sec-Fetch-Dest": "empty",
-                          "Sec-Fetch-Mode": "cors",
-                          "Sec-Fetch-Site": "cross-site",
                         },
-                        credentials: 'omit',
                         mode: 'cors',
                       });
 
+                      console.log(`Response for ${product.productName}:`, response.status, response.statusText);
+
                       if (response.ok) {
                         const data = await response.json();
+                        console.log(`Data for ${product.productName}:`, data);
+                        
                         if (data.success && data.products && data.products.length > 0) {
                           const wooProductNames = data.products.map((p: any) => p.name).join('; ');
                           csvData.push(`"${product.id}","${product.productName}","${wooProductNames}",${data.count}`);
@@ -1113,10 +1113,19 @@ export default function ProductManagement() {
                           csvData.push(`"${product.id}","${product.productName}","",0`);
                         }
                       } else {
-                        csvData.push(`"${product.id}","${product.productName}","Error",0`);
+                        console.error(`HTTP Error ${response.status} for ${product.productName}`);
+                        csvData.push(`"${product.id}","${product.productName}","HTTP ${response.status}",0`);
                       }
                     } catch (err) {
-                      csvData.push(`"${product.id}","${product.productName}","Error",0`);
+                      console.error(`Fetch error for ${product.productName}:`, err);
+                      csvData.push(`"${product.id}","${product.productName}","Fetch Error",0`);
+                    }
+                    
+                    processedCount++;
+                    if (processedCount % 10 === 0) {
+                      console.log(`Processed ${processedCount}/${filteredProducts.length} products`);
+                      // Small delay every 10 products
+                      await new Promise(resolve => setTimeout(resolve, 500));
                     }
                   }
 
