@@ -12,6 +12,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Download, Trash2, ShoppingCart } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { WooCommerceCsvUpload } from "@/components/integrations/WooCommerceCsvUpload";
 
 export default function Integrations() {
   const { hasIntegrationAccess, loading } = useIntegrationAccess();
@@ -456,6 +457,10 @@ export default function Integrations() {
                     📋 Copiar API Key
                   </Button>
                 </div>
+
+                <Separator className="my-4" />
+
+                <WooCommerceCsvUpload />
               </div>
             ) : (
               <Button 
