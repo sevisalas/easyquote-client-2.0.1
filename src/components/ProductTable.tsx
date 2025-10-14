@@ -44,11 +44,11 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
   const productIds = products.map((p) => p.id);
   const { data: wooLinks, isLoading: wooLoading } = useWooCommerceLink(isWooCommerceActive ? productIds : []);
 
-  console.log("ProductTable Debug:", { 
-    isWooCommerceActive, 
+  console.log("ProductTable Debug:", {
+    isWooCommerceActive,
     wooIntegrationLoading,
     productCount: products.length,
-    wooLinksCount: Object.keys(wooLinks || {}).length 
+    wooLinksCount: Object.keys(wooLinks || {}).length,
   });
 
   return (
@@ -60,7 +60,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[300px]">Producto</TableHead>
-                <TableHead className="w-[180px]">Excel</TableHead>
+                <TableHead className="w-[220px]">Excel</TableHead>
                 <TableHead className="w-[90px]">Estado</TableHead>
                 <TableHead className="w-[150px]">Categoría</TableHead>
                 {isWooCommerceActive && <TableHead className="w-[80px]">Woo</TableHead>}
@@ -70,7 +70,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
             <TableBody>
               {products.map((product) => (
                 <TableRow key={product.id}>
-                  <TableCell className="py-3 max-w-[280px]">
+                  <TableCell className="py-3 max-w-[300px]">
                     <div className="w-full">
                       <button
                         onClick={() => {
@@ -86,13 +86,11 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                         {product.productName}
                       </button>
                       {product.description && (
-                        <div className="text-sm text-muted-foreground line-clamp-2">
-                          {product.description}
-                        </div>
+                        <div className="text-sm text-muted-foreground line-clamp-2">{product.description}</div>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="py-3 max-w-[180px]">
+                  <TableCell className="py-3 max-w-[220px]">
                     <span className="font-mono text-xs text-muted-foreground break-words block">
                       {product.excelfileId ? (
                         product.productName
