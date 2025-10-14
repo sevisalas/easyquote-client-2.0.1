@@ -449,7 +449,8 @@ Deno.serve(async (req) => {
       desc: quote.description || quote.title || '',
       notes: quote.notes || '',
       applyContactDefaults: false,
-      items: items
+      items: items,
+      paymentMethod: '5ad06f6a2e1d93408570743e'
     };
     
     // Add shipping hidden if any item has multi quantities
