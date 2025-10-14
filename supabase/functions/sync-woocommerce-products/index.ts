@@ -21,83 +21,87 @@ serve(async (req: Request): Promise<Response> => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { organizationId, products } = await req.json();
-    console.log("sync-woocommerce-products: Syncing products", { organizationId, productCount: products?.length });
-    
-    if (!organizationId || !Array.isArray(products)) {
-      return new Response(JSON.stringify({ 
-        error: "Missing required fields: organizationId and products array" 
-      }), {
+    const body = await req.json();
+    const { api_key, products } = body;
+
+    console.log("sync-woocommerce-products: Received sync request", { 
+      productCount: products?.length,
+      hasApiKey: !!api_key 
+    });
+
+    if (!api_key) {
+      return new Response(JSON.stringify({ error: "Missing api_key" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Verify organization exists
-    const { data: org, error: orgError } = await supabase
-      .from("organizations")
-      .select("id")
-      .eq("id", organizationId)
-      .single();
-
-    if (orgError || !org) {
-      console.error("Organization not found:", orgError);
-      return new Response(JSON.stringify({ error: "Organization not found" }), {
-        status: 404,
+    if (!Array.isArray(products)) {
+      return new Response(JSON.stringify({ error: "Products must be an array" }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Upsert each product link
-    const upsertPromises = products.map(async (product: any) => {
-      const { 
-        easyquote_product_id, 
-        easyquote_product_name,
-        woo_products = [],
-        is_linked = false,
-        product_count = 0
-      } = product;
+    // Find organization by API key
+    const { data: credential, error: credError } = await supabase
+      .from("organization_api_credentials")
+      .select("organization_id")
+      .eq("api_key", api_key)
+      .eq("is_active", true)
+      .single();
 
-      if (!easyquote_product_id || !easyquote_product_name) {
-        console.warn("Skipping product with missing data:", product);
-        return null;
-      }
+    if (credError || !credential) {
+      console.error("Invalid API key:", credError);
+      return new Response(JSON.stringify({ error: "Invalid API key" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-      return supabase
-        .from("woocommerce_product_links")
-        .upsert({
-          organization_id: organizationId,
-          easyquote_product_id,
-          easyquote_product_name,
-          woo_products,
-          is_linked,
-          product_count,
-          last_synced_at: new Date().toISOString(),
-        }, {
-          onConflict: "organization_id,easyquote_product_id"
-        });
-    });
+    const organizationId = credential.organization_id;
+    console.log("sync-woocommerce-products: Found organization", { organizationId });
 
-    const results = await Promise.all(upsertPromises);
-    const errors = results.filter(r => r && r.error);
+    // Update usage count
+    await supabase
+      .from("organization_api_credentials")
+      .update({ 
+        last_used_at: new Date().toISOString()
+      })
+      .eq("api_key", api_key);
 
-    if (errors.length > 0) {
-      console.error("Some products failed to sync:", errors);
-      return new Response(JSON.stringify({ 
-        error: "Some products failed to sync",
-        details: errors 
-      }), {
+    // Upsert products
+    const productsToUpsert = products.map(product => ({
+      organization_id: organizationId,
+      easyquote_product_id: product.calculator_id,
+      easyquote_product_name: product.product_name || product.calculator_id,
+      woo_products: product.woo_products || [],
+      is_linked: (product.woo_products?.length || 0) > 0,
+      product_count: product.woo_products?.length || 0,
+      last_synced_at: new Date().toISOString(),
+    }));
+
+    const { error: upsertError } = await supabase
+      .from("woocommerce_product_links")
+      .upsert(productsToUpsert, {
+        onConflict: "organization_id,easyquote_product_id",
+        ignoreDuplicates: false,
+      });
+
+    if (upsertError) {
+      console.error("Error upserting products:", upsertError);
+      return new Response(JSON.stringify({ error: "Failed to sync products", details: upsertError.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log(`✅ Successfully synced ${products.length} products for organization ${organizationId}`);
+    console.log(`✅ Successfully synced ${productsToUpsert.length} products for organization ${organizationId}`);
 
     return new Response(JSON.stringify({ 
       success: true,
-      synced: products.length,
-      message: `Successfully synced ${products.length} products`
+      synced: productsToUpsert.length,
+      message: `Successfully synced ${productsToUpsert.length} products`
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

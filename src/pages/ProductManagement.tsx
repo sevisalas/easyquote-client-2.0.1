@@ -1034,17 +1034,43 @@ export default function ProductManagement() {
                     description: "Consultando productos en WooCommerce...",
                   });
 
-                  // Use edge function as proxy
+                  // Get current user's organization
+                  const { data: { user } } = await supabase.auth.getUser();
+                  if (!user) {
+                    throw new Error("Usuario no autenticado");
+                  }
+
+                  const { data: org } = await supabase
+                    .from("organizations")
+                    .select("id")
+                    .eq("api_user_id", user.id)
+                    .single();
+
+                  if (!org) {
+                    throw new Error("Organización no encontrada");
+                  }
+
+                  // Read product links directly from database
                   const productIds = filteredProducts.map(p => p.id);
-                  const { data, error } = await supabase.functions.invoke('woocommerce-product-check', {
-                    body: { productIds }
-                  });
+                  const { data: productLinks, error } = await supabase
+                    .from("woocommerce_product_links")
+                    .select("*")
+                    .eq("organization_id", org.id)
+                    .in("easyquote_product_id", productIds);
 
                   if (error) {
                     throw new Error(error.message);
                   }
 
-                  const linkedProducts = data.linkedProducts || {};
+                  // Build linkedProducts object from database records
+                  const linkedProducts: Record<string, any> = {};
+                  productLinks?.forEach(link => {
+                    linkedProducts[link.easyquote_product_id] = {
+                      isLinked: link.is_linked,
+                      wooProducts: link.woo_products || [],
+                      count: link.product_count
+                    };
+                  });
 
                   // Create CSV
                   const csvData: string[] = ["Product ID,Product Name,WooCommerce Products,Count"];
