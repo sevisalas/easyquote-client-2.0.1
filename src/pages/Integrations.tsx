@@ -456,44 +456,6 @@ export default function Integrations() {
                     📋 Copiar API Key
                   </Button>
                 </div>
-
-                <Separator className="my-4" />
-
-                <div className="bg-muted p-4 rounded-lg space-y-3">
-                  <div>
-                    <p className="text-xs font-medium mb-2">Endpoint de sincronización</p>
-                    <code className="text-xs bg-background px-2 py-1 rounded block overflow-x-auto">
-                      https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/sync-woocommerce-products
-                    </code>
-                  </div>
-
-                  <div>
-                    <p className="text-xs font-medium mb-2">Formato del body (JSON)</p>
-                    <code className="text-xs bg-background px-2 py-1 rounded block overflow-x-auto whitespace-pre">
-{`{
-  "api_key": "${organizationApiKey}",
-  "woo_products": [
-    {
-      "id": 123,
-      "name": "Producto",
-      "calculator_id": "id_calculadora",
-      ...
-    }
-  ]
-}`}
-                    </code>
-                  </div>
-
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <p className="font-medium">Configuración en WooCommerce:</p>
-                    <ol className="list-decimal list-inside space-y-1">
-                      <li>Instala el plugin que envía productos al endpoint</li>
-                      <li>Configura el endpoint URL arriba</li>
-                      <li>El plugin debe enviar el api_key en el body de la petición POST</li>
-                      <li>Incluye todos los productos con su calculator_id correspondiente</li>
-                    </ol>
-                  </div>
-                </div>
               </div>
             ) : (
               <Button 
