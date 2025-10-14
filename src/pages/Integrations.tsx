@@ -25,9 +25,6 @@ export default function Integrations() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [contactsCount, setContactsCount] = useState<number | null>(null);
   const [togglingWoo, setTogglingWoo] = useState(false);
-  const [wooEndpoint, setWooEndpoint] = useState("");
-  const [editingWooEndpoint, setEditingWooEndpoint] = useState(false);
-  const [savingWooEndpoint, setSavingWooEndpoint] = useState(false);
   const [organizationApiKey, setOrganizationApiKey] = useState<string | null>(null);
   const [loadingApiKey, setLoadingApiKey] = useState(true);
   const [generatingApiKey, setGeneratingApiKey] = useState(false);
@@ -43,11 +40,6 @@ export default function Integrations() {
     }
   }, [isHoldedActive, currentOrganization]);
 
-  useEffect(() => {
-    if (isWooCommerceActive) {
-      loadWooCommerceEndpoint();
-    }
-  }, [isWooCommerceActive, currentOrganization]);
 
   useEffect(() => {
     if (currentOrganization?.id) {
@@ -129,33 +121,6 @@ export default function Integrations() {
     }
   };
 
-  const loadWooCommerceEndpoint = async () => {
-    if (!currentOrganization?.id) return;
-    
-    try {
-      const { data: integrationData } = await supabase
-        .from('integrations')
-        .select('id')
-        .eq('name', 'WooCommerce')
-        .single();
-
-      if (!integrationData) return;
-
-      const { data: accessData } = await supabase
-        .from('organization_integration_access')
-        .select('configuration')
-        .eq('organization_id', currentOrganization.id)
-        .eq('integration_id', integrationData.id)
-        .single();
-
-      const config = accessData?.configuration as { endpoint?: string } | null;
-      if (config?.endpoint) {
-        setWooEndpoint(config.endpoint);
-      }
-    } catch (error) {
-      console.error('Error loading WooCommerce endpoint:', error);
-    }
-  };
 
   const loadContactsCount = async () => {
     if (!currentOrganization?.id) return;
@@ -227,16 +192,7 @@ export default function Integrations() {
     }
   };
 
-  const handleSaveWooEndpoint = async () => {
-    if (!wooEndpoint.trim()) {
-      toast({
-        title: "Error",
-        description: "Por favor ingresa el endpoint de WooCommerce",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleToggleWooCommerce = async (enabled: boolean) => {
     if (!currentOrganization?.id) {
       toast({
         title: "Error",
@@ -245,81 +201,6 @@ export default function Integrations() {
       });
       return;
     }
-
-    setSavingWooEndpoint(true);
-    try {
-      const { data: integrationData } = await supabase
-        .from('integrations')
-        .select('id')
-        .eq('name', 'WooCommerce')
-        .single();
-
-      if (!integrationData) throw new Error('WooCommerce integration not found');
-
-      // Check if integration access exists
-      const { data: existingAccess } = await supabase
-        .from('organization_integration_access')
-        .select('id')
-        .eq('organization_id', currentOrganization.id)
-        .eq('integration_id', integrationData.id)
-        .maybeSingle();
-
-      if (existingAccess) {
-        // Update existing
-        const { error } = await supabase
-          .from('organization_integration_access')
-          .update({
-            configuration: { endpoint: wooEndpoint.trim() }
-          })
-          .eq('organization_id', currentOrganization.id)
-          .eq('integration_id', integrationData.id);
-
-        if (error) throw error;
-      } else {
-        // Create new with endpoint
-        const { error } = await supabase
-          .from('organization_integration_access')
-          .insert({
-            organization_id: currentOrganization.id,
-            integration_id: integrationData.id,
-            is_active: true,
-            configuration: { endpoint: wooEndpoint.trim() }
-          });
-
-        if (error) throw error;
-      }
-
-      toast({
-        title: "Éxito",
-        description: "Endpoint guardado e integración activada",
-      });
-      
-      setEditingWooEndpoint(false);
-      refreshWoo();
-    } catch (error) {
-      console.error('Error saving WooCommerce endpoint:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo guardar el endpoint",
-        variant: "destructive",
-      });
-    } finally {
-      setSavingWooEndpoint(false);
-    }
-  };
-
-  const handleToggleWooCommerce = async () => {
-    if (!currentOrganization?.id) {
-      toast({
-        title: "Error",
-        description: "No se encontró la organización",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const confirmed = window.confirm('¿Estás seguro de que quieres eliminar la integración de WooCommerce?');
-    if (!confirmed) return;
 
     setTogglingWoo(true);
     try {
@@ -331,33 +212,70 @@ export default function Integrations() {
 
       if (integrationError) throw integrationError;
 
-      const { error: deleteError } = await supabase
-        .from('organization_integration_access')
-        .delete()
-        .eq('organization_id', currentOrganization.id)
-        .eq('integration_id', integrationData.id);
+      if (enabled) {
+        // Activate integration
+        const { data: existingAccess } = await supabase
+          .from('organization_integration_access')
+          .select('id')
+          .eq('organization_id', currentOrganization.id)
+          .eq('integration_id', integrationData.id)
+          .maybeSingle();
 
-      if (deleteError) throw deleteError;
+        if (existingAccess) {
+          // Update to active
+          const { error } = await supabase
+            .from('organization_integration_access')
+            .update({ is_active: true })
+            .eq('organization_id', currentOrganization.id)
+            .eq('integration_id', integrationData.id);
 
-      toast({
-        title: "Éxito",
-        description: "Integración de WooCommerce eliminada",
-      });
+          if (error) throw error;
+        } else {
+          // Create new
+          const { error } = await supabase
+            .from('organization_integration_access')
+            .insert({
+              organization_id: currentOrganization.id,
+              integration_id: integrationData.id,
+              is_active: true
+            });
+
+          if (error) throw error;
+        }
+
+        toast({
+          title: "Integración activada",
+          description: "WooCommerce ha sido activado correctamente",
+        });
+      } else {
+        // Deactivate integration
+        const { error } = await supabase
+          .from('organization_integration_access')
+          .update({ is_active: false })
+          .eq('organization_id', currentOrganization.id)
+          .eq('integration_id', integrationData.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Integración desactivada",
+          description: "WooCommerce ha sido desactivado",
+        });
+      }
       
-      setWooEndpoint("");
-      setEditingWooEndpoint(false);
       refreshWoo();
     } catch (error) {
-      console.error('Error deleting WooCommerce integration:', error);
+      console.error('Error toggling WooCommerce:', error);
       toast({
         title: "Error",
-        description: "No se pudo eliminar la integración",
+        description: "No se pudo cambiar el estado de la integración",
         variant: "destructive",
       });
     } finally {
       setTogglingWoo(false);
     }
   };
+
 
   const handleImportContacts = async () => {
     if (!currentOrganization?.id) {
@@ -483,9 +401,9 @@ export default function Integrations() {
         {/* API Key Card */}
         <Card>
           <CardHeader>
-            <CardTitle>API Key de EasyQuote</CardTitle>
+            <CardTitle>API Key para WooCommerce</CardTitle>
             <CardDescription>
-              Genera una API Key para permitir que WordPress sincronice productos con EasyQuote
+              Genera una API Key para sincronizar productos desde WordPress
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -536,7 +454,7 @@ export default function Integrations() {
             ) : (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  No tienes una API Key generada. Genera una para permitir la sincronización desde WordPress.
+                  Genera una API Key para sincronizar productos desde WordPress.
                 </p>
                 <Button 
                   onClick={handleGenerateApiKey}
@@ -558,88 +476,22 @@ export default function Integrations() {
                 <ShoppingCart className="h-5 w-5" />
                 <span>WooCommerce</span>
               </div>
-              <span className={`text-sm px-2 py-1 rounded ${
-                isWooCommerceActive 
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' 
-                  : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
-              }`}>
-                {isWooCommerceActive ? 'Activa' : 'Inactiva'}
-              </span>
+              <Switch
+                checked={isWooCommerceActive}
+                onCheckedChange={handleToggleWooCommerce}
+                disabled={togglingWoo}
+              />
             </CardTitle>
             <CardDescription>
-              Conecta con tu tienda WooCommerce para sincronizar productos
+              Activa la sincronización de productos con WooCommerce
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Separator className="my-4" />
-            
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold mb-2">Configuración del Endpoint</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Configura la URL del endpoint de tu tienda WooCommerce para sincronizar productos.
-                </p>
-              </div>
-
-              {!editingWooEndpoint && wooEndpoint ? (
-                <div className="bg-muted p-3 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-medium">Endpoint configurado</p>
-                    <Button 
-                      size="sm" 
-                      variant="ghost"
-                      onClick={() => setEditingWooEndpoint(true)}
-                    >
-                      Editar
-                    </Button>
-                  </div>
-                  <code className="text-xs bg-background px-2 py-1 rounded block overflow-x-auto">
-                    {wooEndpoint}
-                  </code>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Label htmlFor="woo-endpoint">URL del Endpoint</Label>
-                  <Input
-                    id="woo-endpoint"
-                    type="url"
-                    placeholder="https://tutienda.com/wp-json/easyquote/v1/products-by-calculator/{calculator_id}"
-                    value={wooEndpoint}
-                    onChange={(e) => setWooEndpoint(e.target.value)}
-                  />
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={handleSaveWooEndpoint}
-                      disabled={savingWooEndpoint}
-                      className="flex-1"
-                    >
-                      {savingWooEndpoint ? "Guardando..." : "Guardar Endpoint"}
-                    </Button>
-                    {editingWooEndpoint && wooEndpoint && (
-                      <Button 
-                        variant="outline"
-                        onClick={() => {
-                          setEditingWooEndpoint(false);
-                          loadWooCommerceEndpoint();
-                        }}
-                        disabled={savingWooEndpoint}
-                      >
-                        Cancelar
-                      </Button>
-                    )}
-                    {wooEndpoint && (
-                      <Button 
-                        variant="destructive"
-                        onClick={handleToggleWooCommerce}
-                        disabled={togglingWoo}
-                      >
-                        {togglingWoo ? "Eliminando..." : "Eliminar"}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              {isWooCommerceActive 
+                ? '✓ La integración está activa. Los productos se sincronizarán automáticamente desde WordPress.' 
+                : 'Activa el switch para habilitar la integración con WooCommerce.'}
+            </p>
           </CardContent>
         </Card>
 
