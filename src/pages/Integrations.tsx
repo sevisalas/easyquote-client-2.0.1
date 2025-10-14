@@ -463,18 +463,13 @@ export default function Integrations() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Genera una API Key para sincronizar productos desde WordPress.
-                </p>
-                <Button 
-                  onClick={handleGenerateApiKey}
-                  disabled={generatingApiKey}
-                  className="w-full"
-                >
-                  {generatingApiKey ? "Generando..." : "🔑 Generar API Key"}
-                </Button>
-              </div>
+              <Button 
+                onClick={handleGenerateApiKey}
+                disabled={generatingApiKey}
+                className="w-full"
+              >
+                {generatingApiKey ? "Generando..." : "🔑 Generar API Key"}
+              </Button>
             )}
           </CardContent>
         </Card>
@@ -500,8 +495,10 @@ export default function Integrations() {
           <CardContent>
             <p className="text-sm text-muted-foreground">
               {isWooCommerceActive 
-                ? '✓ La integración está activa. Los productos se sincronizarán automáticamente desde WordPress.' 
-                : 'Activa el switch para habilitar la integración con WooCommerce.'}
+                ? '✓ Integración activa. Configura el plugin de WordPress con tu API Key para sincronizar productos.' 
+                : organizationApiKey 
+                  ? 'Activa el switch para habilitar la integración con WooCommerce.' 
+                  : 'Genera primero una API Key antes de activar la integración.'}
             </p>
           </CardContent>
         </Card>
