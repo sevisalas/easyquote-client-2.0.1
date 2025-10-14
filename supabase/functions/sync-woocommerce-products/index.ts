@@ -43,23 +43,17 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Find organization by API key
-    const { data: credential, error: credError } = await supabase
-      .from("organization_api_credentials")
-      .select("organization_id")
-      .eq("api_key", api_key)
-      .eq("is_active", true)
-      .single();
+    // Validate API key and get organization ID using RPC function
+    const { data: organizationId, error: credError } = await supabase
+      .rpc("validate_api_key", { p_api_key: api_key });
 
-    if (credError || !credential) {
+    if (credError || !organizationId) {
       console.error("Invalid API key:", credError);
       return new Response(JSON.stringify({ error: "Invalid API key" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    const organizationId = credential.organization_id;
     console.log("sync-woocommerce-products: Found organization", { organizationId });
 
     // Update usage count
@@ -68,7 +62,8 @@ serve(async (req: Request): Promise<Response> => {
       .update({ 
         last_used_at: new Date().toISOString()
       })
-      .eq("api_key", api_key);
+      .eq("organization_id", organizationId)
+      .eq("is_active", true);
 
     // First, clear all existing links for this organization
     const { error: deleteError } = await supabase

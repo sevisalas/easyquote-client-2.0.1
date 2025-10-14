@@ -1195,6 +1195,10 @@ export type Database = {
         Args: { p_password: string; p_user_id: string; p_username: string }
         Returns: string
       }
+      validate_api_key: {
+        Args: { p_api_key: string }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "superadmin" | "admin" | "user"
