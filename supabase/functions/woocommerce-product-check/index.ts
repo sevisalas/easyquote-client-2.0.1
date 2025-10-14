@@ -114,15 +114,23 @@ serve(async (req: Request): Promise<Response> => {
         try {
           const url = endpointTemplate.replace('{calculator_id}', productId);
           
+          const urlObj = new URL(url);
+          const origin = `${urlObj.protocol}//${urlObj.host}`;
+          
           const response = await fetch(url, {
             method: "GET",
             headers: {
               "Accept": "application/json",
               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
               "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+              "Accept-Encoding": "gzip, deflate, br",
               "Cache-Control": "no-cache",
               "Pragma": "no-cache",
+              "Referer": origin,
+              "Origin": origin,
+              "Connection": "keep-alive",
             },
+            redirect: "follow",
           });
 
           if (response.ok) {
