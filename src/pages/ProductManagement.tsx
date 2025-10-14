@@ -29,8 +29,7 @@ import {
   Trash2,
   Save,
   TestTube,
-  Layers,
-  Download
+  Layers
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -802,74 +801,6 @@ export default function ProductManagement() {
     deleteOutputMutation.mutate(outputId);
   };
 
-  // Download WooCommerce report
-  const downloadWooCommerceReport = async () => {
-    try {
-      const { data: organization } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('api_user_id', (await supabase.auth.getUser()).data.user?.id)
-        .single();
-
-      if (!organization) {
-        toast({
-          title: "Error",
-          description: "No se encontró la organización",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { data: wooLinks, error } = await supabase
-        .from('woocommerce_product_links')
-        .select('*')
-        .eq('organization_id', organization.id);
-
-      if (error) throw error;
-
-      if (!wooLinks || wooLinks.length === 0) {
-        toast({
-          title: "Sin datos",
-          description: "No hay productos vinculados con WooCommerce",
-        });
-        return;
-      }
-
-      // Crear CSV
-      const csvHeader = 'Producto EasyQuote,ID EasyQuote,Productos WooCommerce,Cantidad,Última sincronización,Estado\n';
-      const csvRows = wooLinks.map(link => {
-        const wooProducts = Array.isArray(link.woo_products) 
-          ? link.woo_products.map((p: any) => `${p.name} (ID: ${p.id})`).join('; ')
-          : '';
-        return `"${link.easyquote_product_name}","${link.easyquote_product_id}","${wooProducts}",${link.product_count},"${new Date(link.last_synced_at).toLocaleString()}","${link.is_linked ? 'Vinculado' : 'No vinculado'}"`;
-      }).join('\n');
-
-      const csvContent = csvHeader + csvRows;
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      
-      link.setAttribute('href', url);
-      link.setAttribute('download', `informe-woocommerce-${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      toast({
-        title: "Descarga exitosa",
-        description: "El informe se ha descargado correctamente",
-      });
-    } catch (error) {
-      console.error('Error downloading WooCommerce report:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo descargar el informe",
-        variant: "destructive",
-      });
-    }
-  };
-
   // ALL CONDITIONAL LOGIC AND EARLY RETURNS MUST COME AFTER ALL HOOKS
   // Check permissions
   if (!isSuperAdmin && !isOrgAdmin) {
@@ -939,16 +870,6 @@ export default function ProductManagement() {
           </p>
         </div>
         <div className="flex-shrink-0 flex gap-2">
-          <Button 
-            onClick={downloadWooCommerceReport}
-            variant="outline"
-            className="flex items-center gap-2 w-full sm:w-auto"
-            size="sm"
-          >
-            <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">Informe WooCommerce</span>
-            <span className="sm:hidden">WooCommerce</span>
-          </Button>
           <Button 
             onClick={() => navigate("/admin/productos/nuevo")}
             className="flex items-center gap-2 w-full sm:w-auto"
