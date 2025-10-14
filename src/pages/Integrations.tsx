@@ -28,6 +28,10 @@ export default function Integrations() {
   const [wooEndpoint, setWooEndpoint] = useState("");
   const [editingWooEndpoint, setEditingWooEndpoint] = useState(false);
   const [savingWooEndpoint, setSavingWooEndpoint] = useState(false);
+  const [organizationApiKey, setOrganizationApiKey] = useState<string | null>(null);
+  const [loadingApiKey, setLoadingApiKey] = useState(true);
+  const [generatingApiKey, setGeneratingApiKey] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
   const { toast } = useToast();
 
   const currentOrganization = organization || membership?.organization;
@@ -44,6 +48,86 @@ export default function Integrations() {
       loadWooCommerceEndpoint();
     }
   }, [isWooCommerceActive, currentOrganization]);
+
+  useEffect(() => {
+    if (currentOrganization?.id) {
+      loadOrganizationApiKey();
+    }
+  }, [currentOrganization]);
+
+  const loadOrganizationApiKey = async () => {
+    if (!currentOrganization?.id) return;
+    
+    setLoadingApiKey(true);
+    try {
+      const { data, error } = await supabase.rpc(
+        'get_organization_api_credentials',
+        { p_organization_id: currentOrganization.id }
+      );
+
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setOrganizationApiKey(data[0].api_key);
+      }
+    } catch (error) {
+      console.error('Error loading API key:', error);
+    } finally {
+      setLoadingApiKey(false);
+    }
+  };
+
+  const handleGenerateApiKey = async () => {
+    if (!currentOrganization?.id) return;
+    
+    setGeneratingApiKey(true);
+    try {
+      // Generate API key and secret using database functions
+      const { data: keyData, error: keyError } = await supabase.rpc('generate_api_key');
+      const { data: secretData, error: secretError } = await supabase.rpc('generate_api_secret');
+      
+      if (keyError || secretError) throw keyError || secretError;
+
+      // Create credential using the database function
+      const { data: credentialData, error: credError } = await supabase.rpc(
+        'create_organization_api_credential',
+        {
+          p_organization_id: currentOrganization.id,
+          p_api_key: keyData,
+          p_api_secret: secretData
+        }
+      );
+
+      if (credError) throw credError;
+
+      setOrganizationApiKey(keyData);
+      setShowApiKey(true);
+
+      toast({
+        title: "API Key generada",
+        description: "Tu API Key ha sido generada correctamente",
+      });
+    } catch (error) {
+      console.error('Error generating API key:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo generar la API Key",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingApiKey(false);
+    }
+  };
+
+  const copyApiKey = () => {
+    if (organizationApiKey) {
+      navigator.clipboard.writeText(organizationApiKey);
+      toast({
+        title: "Copiado",
+        description: "API Key copiada al portapapeles",
+      });
+    }
+  };
 
   const loadWooCommerceEndpoint = async () => {
     if (!currentOrganization?.id) return;
@@ -396,6 +480,76 @@ export default function Integrations() {
       <div className="max-w-4xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold mb-6">Integraciones</h1>
         
+        {/* API Key Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>API Key de EasyQuote</CardTitle>
+            <CardDescription>
+              Genera una API Key para permitir que WordPress sincronice productos con EasyQuote
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {loadingApiKey ? (
+              <p className="text-sm text-muted-foreground">Cargando...</p>
+            ) : organizationApiKey ? (
+              <div className="space-y-4">
+                <div className="bg-muted p-4 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-medium">API Key</p>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      onClick={() => setShowApiKey(!showApiKey)}
+                    >
+                      {showApiKey ? 'Ocultar' : 'Mostrar'}
+                    </Button>
+                  </div>
+                  <code className="text-xs bg-background px-2 py-1 rounded block overflow-x-auto">
+                    {showApiKey ? organizationApiKey : '••••••••••••••••••••••••••••'}
+                  </code>
+                  <Button 
+                    size="sm"
+                    variant="outline" 
+                    className="mt-2 w-full"
+                    onClick={copyApiKey}
+                  >
+                    📋 Copiar API Key
+                  </Button>
+                </div>
+                
+                <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+                  <p className="text-sm font-medium mb-2">📚 Documentación</p>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Esta API Key permite a WordPress sincronizar automáticamente los productos vinculados de WooCommerce con EasyQuote.
+                  </p>
+                  <div className="space-y-2 text-xs">
+                    <p className="font-medium">Endpoint de sincronización:</p>
+                    <code className="block bg-background px-2 py-1 rounded overflow-x-auto">
+                      POST https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/sync-woocommerce-products
+                    </code>
+                    <p className="mt-2 text-muted-foreground">
+                      Ver el archivo <code>WOOCOMMERCE_SYNC.md</code> en el repositorio para más detalles.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  No tienes una API Key generada. Genera una para permitir la sincronización desde WordPress.
+                </p>
+                <Button 
+                  onClick={handleGenerateApiKey}
+                  disabled={generatingApiKey}
+                  className="w-full"
+                >
+                  {generatingApiKey ? "Generando..." : "🔑 Generar API Key"}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* WooCommerce Integration Card */}
         <Card>
           <CardHeader>

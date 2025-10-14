@@ -22,10 +22,10 @@ serve(async (req: Request): Promise<Response> => {
     );
 
     const body = await req.json();
-    const { api_key, products } = body;
+    const { api_key, woo_products } = body;
 
     console.log("sync-woocommerce-products: Received sync request", { 
-      productCount: products?.length,
+      wooProductCount: woo_products?.length,
       hasApiKey: !!api_key 
     });
 
@@ -36,8 +36,8 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    if (!Array.isArray(products)) {
-      return new Response(JSON.stringify({ error: "Products must be an array" }), {
+    if (!Array.isArray(woo_products)) {
+      return new Response(JSON.stringify({ error: "woo_products must be an array" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -70,38 +70,60 @@ serve(async (req: Request): Promise<Response> => {
       })
       .eq("api_key", api_key);
 
-    // Upsert products
-    const productsToUpsert = products.map(product => ({
+    // First, clear all existing links for this organization
+    const { error: deleteError } = await supabase
+      .from("woocommerce_product_links")
+      .delete()
+      .eq("organization_id", organizationId);
+
+    if (deleteError) {
+      console.error("Error clearing old links:", deleteError);
+    }
+
+    // Group WooCommerce products by calculator_id
+    const productsByCalculator: Record<string, any[]> = {};
+    for (const wooProduct of woo_products) {
+      const calculatorId = wooProduct.calculator_id;
+      if (!calculatorId) continue;
+      
+      if (!productsByCalculator[calculatorId]) {
+        productsByCalculator[calculatorId] = [];
+      }
+      productsByCalculator[calculatorId].push(wooProduct);
+    }
+
+    // Create records for each calculator_id with its linked WooCommerce products
+    const productsToInsert = Object.entries(productsByCalculator).map(([calculatorId, wooProds]) => ({
       organization_id: organizationId,
-      easyquote_product_id: product.calculator_id,
-      easyquote_product_name: product.product_name || product.calculator_id,
-      woo_products: product.woo_products || [],
-      is_linked: (product.woo_products?.length || 0) > 0,
-      product_count: product.woo_products?.length || 0,
+      easyquote_product_id: calculatorId,
+      easyquote_product_name: calculatorId, // Will be updated when frontend fetches EasyQuote products
+      woo_products: wooProds,
+      is_linked: true,
+      product_count: wooProds.length,
       last_synced_at: new Date().toISOString(),
     }));
 
-    const { error: upsertError } = await supabase
-      .from("woocommerce_product_links")
-      .upsert(productsToUpsert, {
-        onConflict: "organization_id,easyquote_product_id",
-        ignoreDuplicates: false,
-      });
+    if (productsToInsert.length > 0) {
+      const { error: insertError } = await supabase
+        .from("woocommerce_product_links")
+        .insert(productsToInsert);
 
-    if (upsertError) {
-      console.error("Error upserting products:", upsertError);
-      return new Response(JSON.stringify({ error: "Failed to sync products", details: upsertError.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      if (insertError) {
+        console.error("Error inserting products:", insertError);
+        return new Response(JSON.stringify({ error: "Failed to sync products", details: insertError.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
-    console.log(`✅ Successfully synced ${productsToUpsert.length} products for organization ${organizationId}`);
+    console.log(`✅ Successfully synced ${productsToInsert.length} linked calculators (${woo_products.length} WooCommerce products) for organization ${organizationId}`);
 
     return new Response(JSON.stringify({ 
       success: true,
-      synced: productsToUpsert.length,
-      message: `Successfully synced ${productsToUpsert.length} products`
+      synced_calculators: productsToInsert.length,
+      synced_woo_products: woo_products.length,
+      message: `Successfully synced ${productsToInsert.length} linked calculators with ${woo_products.length} WooCommerce products`
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
