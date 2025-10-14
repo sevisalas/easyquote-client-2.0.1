@@ -456,7 +456,6 @@ Deno.serve(async (req) => {
       contactId: contactId,
       desc: quote.description || 'Pruebas de EasyQuote',
       notes: quote.notes || '',
-      applyContactDefaults: false,
       items: items,
       paymentMethodId: '5ad06f6a2e1d93408570743e'
     };
