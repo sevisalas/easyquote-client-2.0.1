@@ -391,11 +391,17 @@ Deno.serve(async (req) => {
         if (!isDiscount) {
           // Calculate price based on type
           let price = 0;
+          const subtotal = items.reduce((sum, item) => sum + (item.subtotal * item.units), 0);
+          
           if (additional.type === 'percentage') {
             // For percentage type, calculate the percentage of the current subtotal
-            const subtotal = items.reduce((sum, item) => sum + (item.subtotal * item.units), 0);
             price = Math.round((subtotal * value / 100) * 100) / 100;
+          } else if (additional.type === 'quantity_multiplier' || additional.type === 'multiplier') {
+            // For multiplier type, calculate the additional amount
+            // If multiplier is 1.5, the additional amount is 0.5 * subtotal
+            price = Math.round((subtotal * (value - 1)) * 100) / 100;
           } else {
+            // For net_amount or default, use the value directly
             price = Math.round(parseFloat(String(value)) * 100) / 100;
           }
           
@@ -403,7 +409,7 @@ Deno.serve(async (req) => {
             name: additional.name || 'Ajuste',
             desc: additional.type === 'percentage' 
               ? `Ajuste ${value}%` 
-              : additional.type === 'multiplier'
+              : (additional.type === 'quantity_multiplier' || additional.type === 'multiplier')
               ? `Multiplicador x${value}`
               : 'Ajuste sobre el presupuesto',
             units: 1,
