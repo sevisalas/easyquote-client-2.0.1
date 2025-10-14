@@ -452,7 +452,7 @@ Deno.serve(async (req) => {
       docType: 'estimate',
       date: Math.floor(new Date(quote.created_at).getTime() / 1000), // Unix timestamp
       contactId: contactId,
-      desc: quote.description || quote.title || '',
+      desc: quote.description || 'Pruebas de EasyQuote',
       notes: quote.notes || '',
       applyContactDefaults: false,
       items: items,
