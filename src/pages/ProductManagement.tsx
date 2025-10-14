@@ -1029,107 +1029,37 @@ export default function ProductManagement() {
               size="sm"
               onClick={async () => {
                 try {
-                  // Get WooCommerce configuration
-                  const { data: integrationData } = await supabase
-                    .from("integrations")
-                    .select("id")
-                    .eq("name", "WooCommerce")
-                    .single();
-
-                  if (!integrationData) {
-                    toast({
-                      title: "Error",
-                      description: "Integración de WooCommerce no encontrada",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-
-                  const { data: { user } } = await supabase.auth.getUser();
-                  if (!user) return;
-
-                  const { data: org } = await supabase
-                    .from("organizations")
-                    .select("id")
-                    .eq("api_user_id", user.id)
-                    .single();
-
-                  if (!org) return;
-
-                  const { data: accessData } = await supabase
-                    .from("organization_integration_access")
-                    .select("configuration")
-                    .eq("organization_id", org.id)
-                    .eq("integration_id", integrationData.id)
-                    .eq("is_active", true)
-                    .single();
-
-                  if (!accessData?.configuration) {
-                    toast({
-                      title: "Error",
-                      description: "Configuración de WooCommerce no encontrada",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-
-                  const config = accessData.configuration as { endpoint?: string };
-                  if (!config.endpoint) return;
-
-                  const endpointTemplate = config.endpoint.replace('GET ', '');
-                  
                   toast({
                     title: "Generando informe",
                     description: "Consultando productos en WooCommerce...",
                   });
 
-                  // Fetch all products
+                  // Use edge function as proxy
+                  const productIds = filteredProducts.map(p => p.id);
+                  const { data, error } = await supabase.functions.invoke('woocommerce-product-check', {
+                    body: { productIds }
+                  });
+
+                  if (error) {
+                    throw new Error(error.message);
+                  }
+
+                  const linkedProducts = data.linkedProducts || {};
+
+                  // Create CSV
                   const csvData: string[] = ["Product ID,Product Name,WooCommerce Products,Count"];
                   
-                  let processedCount = 0;
                   for (const product of filteredProducts) {
-                    try {
-                      const url = endpointTemplate.replace('{calculator_id}', product.id);
-                      console.log(`Fetching: ${url}`);
-                      
-                      const response = await fetch(url, {
-                        method: "GET",
-                        headers: { 
-                          "Accept": "application/json",
-                        },
-                        mode: 'cors',
-                      });
-
-                      console.log(`Response for ${product.productName}:`, response.status, response.statusText);
-
-                      if (response.ok) {
-                        const data = await response.json();
-                        console.log(`Data for ${product.productName}:`, data);
-                        
-                        if (data.success && data.products && data.products.length > 0) {
-                          const wooProductNames = data.products.map((p: any) => p.name).join('; ');
-                          csvData.push(`"${product.id}","${product.productName}","${wooProductNames}",${data.count}`);
-                        } else {
-                          csvData.push(`"${product.id}","${product.productName}","",0`);
-                        }
-                      } else {
-                        console.error(`HTTP Error ${response.status} for ${product.productName}`);
-                        csvData.push(`"${product.id}","${product.productName}","HTTP ${response.status}",0`);
-                      }
-                    } catch (err) {
-                      console.error(`Fetch error for ${product.productName}:`, err);
-                      csvData.push(`"${product.id}","${product.productName}","Fetch Error",0`);
-                    }
-                    
-                    processedCount++;
-                    if (processedCount % 10 === 0) {
-                      console.log(`Processed ${processedCount}/${filteredProducts.length} products`);
-                      // Small delay every 10 products
-                      await new Promise(resolve => setTimeout(resolve, 500));
+                    const linkStatus = linkedProducts[product.id];
+                    if (linkStatus?.isLinked && linkStatus.count > 0) {
+                      const wooProductNames = linkStatus.wooProducts.map((p: any) => p.name).join('; ');
+                      csvData.push(`"${product.id}","${product.productName}","${wooProductNames}",${linkStatus.count}`);
+                    } else {
+                      csvData.push(`"${product.id}","${product.productName}","",0`);
                     }
                   }
 
-                  // Create and download CSV
+                  // Download CSV
                   const csvContent = csvData.join('\n');
                   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                   const link = document.createElement('a');
@@ -1149,7 +1079,7 @@ export default function ProductManagement() {
                   console.error(error);
                   toast({
                     title: "Error",
-                    description: "Error al generar el informe",
+                    description: error instanceof Error ? error.message : "Error al generar el informe",
                     variant: "destructive",
                   });
                 }
