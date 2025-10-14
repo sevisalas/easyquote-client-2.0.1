@@ -461,28 +461,19 @@ export default function Integrations() {
         {/* WooCommerce Integration Card */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5" />
-                <span>WooCommerce</span>
-              </div>
-              <Switch
-                checked={isWooCommerceActive}
-                onCheckedChange={handleToggleWooCommerce}
-                disabled={togglingWoo}
-              />
+            <CardTitle className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5" />
+              <span>WooCommerce</span>
             </CardTitle>
             <CardDescription>
-              Activa la sincronización de productos con WooCommerce
+              Sincronización de productos con WooCommerce
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              {isWooCommerceActive 
+              {organizationApiKey 
                 ? '✓ Integración activa. Configura el plugin de WordPress con tu API Key para sincronizar productos.' 
-                : organizationApiKey 
-                  ? 'Activa el switch para habilitar la integración con WooCommerce.' 
-                  : 'Genera primero una API Key antes de activar la integración.'}
+                : 'Genera una API Key para activar la integración con WooCommerce.'}
             </p>
           </CardContent>
         </Card>
