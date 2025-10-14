@@ -502,11 +502,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     ];
     const raw: any[] = (candidates.find((r) => Array.isArray(r)) as any[]) || [];
     
-    const result: Record<string, { label: string; value: any }> = {};
+    const result: Record<string, { label: string; value: any; order: number }> = {};
     
     raw.forEach((f: any, idx: number) => {
       const id = String(f.id ?? f.key ?? f.code ?? f.slug ?? f.name ?? `field_${idx}`);
       const label = f.promptText ?? f.label ?? f.title ?? f.promptName ?? f.displayName ?? f.text ?? f.caption ?? f.name ?? id;
+      const order = Number.isFinite(Number(f.order)) ? Number(f.order) : idx;
       
       // Get default value
       const options = f.valueOptions ?? f.options ?? f.choices ?? f.values ?? f.items ?? f.optionsList ?? [];
@@ -523,7 +524,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       
       // Only add if there's a default value
       if (defaultVal !== undefined && defaultVal !== null && defaultVal !== '') {
-        result[id] = { label, value: defaultVal };
+        result[id] = { label, value: defaultVal, order };
       }
     });
     
@@ -552,10 +553,18 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   }, [pricing, productId]);
 
   const handlePromptChange = (id: string, value: any, label: string) => {
-    setPromptValues((prev) => ({ 
-      ...prev, 
-      [id]: { label, value } 
-    }));
+    setPromptValues((prev) => {
+      // Preserve the order field if it exists
+      const existingOrder = prev[id]?.order;
+      return {
+        ...prev, 
+        [id]: { 
+          label, 
+          value,
+          ...(existingOrder !== undefined && { order: existingOrder })
+        } 
+      };
+    });
   };
 
   const selectedProductInfo = products?.find((p: any) => String(p.id) === String(productId));
