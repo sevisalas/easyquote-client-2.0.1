@@ -1,186 +1,215 @@
-# WooCommerce Product Sync - Documentación
+# WooCommerce Product Sync Documentation
 
-## Resumen
+## Overview
+This document describes the integration between the WordPress WooCommerce plugin and the EasyQuote product catalog system.
 
-Esta funcionalidad permite sincronizar automáticamente los productos vinculados de WooCommerce con EasyQuote.
+## Authentication
+You need to generate an API Key from your EasyQuote organization settings. This API key must be included in all requests to authenticate with the system.
 
-## Endpoint de Sincronización
+### How to Get Your API Key
+1. Log in to EasyQuote
+2. Go to Settings → Integrations
+3. Generate an API Key for WooCommerce
+4. Copy the generated key
 
+## Endpoint
 **URL:** `https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/sync-woocommerce-products`
 
-**Método:** `POST`
+**Method:** `POST`
 
 **Headers:**
 ```
 Content-Type: application/json
+Authorization: Bearer YOUR_API_KEY_HERE
 ```
 
-**Body:**
+## Request Format
+
+The WordPress plugin should send an array of WooCommerce products that have a `calculator_id` assigned.
+
+### Request Body Structure
 ```json
 {
-  "api_key": "YOUR_ORGANIZATION_API_KEY",
-  "woo_products": [
+  "products": [
     {
-      "id": 17839,
-      "name": "Acreditacion Personalizada",
-      "slug": "acreditacion-personalizada",
-      "permalink": "https://m50.es/producto/acreditacion-personalizada/",
-      "image": "https://m50.es/wp-content/uploads/2024/04/Acreditacion-Personalizada.jpg",
-      "calculator_id": "12da815a-1d42-48fb-860f-621a4c23fe3a",
-      "calculator_disabled": ""
+      "id": 123,
+      "name": "Product Name",
+      "calculator_id": "cab31314-bf2f-4a4b-b38b-b3b0938b71c0"
     },
     {
-      "id": 17840,
-      "name": "Otro Producto",
-      "slug": "otro-producto",
-      "permalink": "https://m50.es/producto/otro-producto/",
-      "calculator_id": "255443e6-34ab-45a5-8045-ba609c58cfbc"
+      "id": 456,
+      "name": "Another Product",
+      "calculator_id": "another-calculator-id"
     }
   ]
 }
 ```
 
-**Importante:** Cada producto de WooCommerce DEBE incluir el campo `calculator_id` que es el ID del producto de EasyQuote al que está vinculado.
+### Field Descriptions
+- **id** (integer, required): The WooCommerce product ID
+- **name** (string, required): The WooCommerce product name
+- **calculator_id** (string, required): The associated EasyQuote calculator/product ID
 
-## Formato de Respuesta
+**Important:** Each WooCommerce product MUST include the `calculator_id` field which is the ID of the EasyQuote product it links to.
 
-### Éxito
+## Response Format
+
+### Success Response
 ```json
 {
   "success": true,
-  "synced_calculators": 45,
-  "synced_woo_products": 132,
-  "message": "Successfully synced 45 linked calculators with 132 WooCommerce products"
+  "synced": 5,
+  "message": "Successfully synced 5 products"
 }
 ```
 
-### Error
+### Error Response
 ```json
 {
-  "error": "Invalid API key"
+  "error": "Error message description",
+  "details": "Additional error details if available"
 }
 ```
 
-## Obtener API Key
+Common errors:
+- **401 Unauthorized**: Invalid or missing API key
+- **400 Bad Request**: Invalid request format or missing required fields
+- **500 Internal Server Error**: Server-side processing error
 
-1. El usuario debe ir a la configuración de su organización en EasyQuote
-2. Generar una API Key en la sección de credenciales
-3. Usar esa API Key en las llamadas al endpoint
+## WordPress Plugin Implementation
 
-## Implementación en WordPress Plugin
+The plugin should:
 
-El plugin de WordPress debe:
+1. **Query WooCommerce products** that have the `calculator_id` meta field set
+2. **Filter products** to only include those with valid calculator_id values
+3. **Format the data** according to the request structure above
+4. **Send the request** with proper authentication headers
+5. **Handle the response** and display appropriate messages to the admin
 
-1. **Obtener TODOS los productos de WooCommerce que tengan el campo personalizado `calculator_id`**
-2. **Enviar todos esos productos en un solo POST al endpoint de sync**
-
-### Ejemplo de implementación PHP:
-
+### Example PHP Implementation
 ```php
-<?php
 function sync_woocommerce_products_to_easyquote() {
-    $api_key = get_option('easyquote_api_key');
+    $api_key = get_option('easyquote_api_key'); // Store API key in WordPress options
     
-    // Obtener TODOS los productos de WooCommerce que tengan calculator_id
-    $args = [
-        'post_type' => 'product',
-        'posts_per_page' => -1,
-        'meta_query' => [
-            [
-                'key' => 'calculator_id', // o el meta_key que uses para el ID de EasyQuote
-                'compare' => 'EXISTS'
-            ]
-        ]
-    ];
-    
-    $products = get_posts($args);
-    $woo_products = [];
-    
-    foreach ($products as $product) {
-        $product_obj = wc_get_product($product->ID);
-        $calculator_id = get_post_meta($product->ID, 'calculator_id', true);
-        
-        if (empty($calculator_id)) {
-            continue;
-        }
-        
-        $woo_products[] = [
-            'id' => $product->ID,
-            'name' => $product_obj->get_name(),
-            'slug' => $product_obj->get_slug(),
-            'permalink' => get_permalink($product->ID),
-            'image' => wp_get_attachment_url($product_obj->get_image_id()),
-            'calculator_id' => $calculator_id,
-            'calculator_disabled' => get_post_meta($product->ID, 'calculator_disabled', true) ?: ''
-        ];
+    if (empty($api_key)) {
+        return array('error' => 'API key not configured');
     }
     
-    // Enviar a EasyQuote
-    $response = wp_remote_post('https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/sync-woocommerce-products', [
-        'headers' => [
+    // Get all products with calculator_id
+    $args = array(
+        'post_type' => 'product',
+        'posts_per_page' => -1,
+        'meta_query' => array(
+            array(
+                'key' => 'calculator_id',
+                'compare' => 'EXISTS'
+            )
+        )
+    );
+    
+    $products = get_posts($args);
+    $products_data = array();
+    
+    foreach ($products as $product) {
+        $calculator_id = get_post_meta($product->ID, 'calculator_id', true);
+        
+        if (!empty($calculator_id)) {
+            $products_data[] = array(
+                'id' => $product->ID,
+                'name' => $product->post_title,
+                'calculator_id' => $calculator_id
+            );
+        }
+    }
+    
+    // Send to API
+    $response = wp_remote_post('https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/sync-woocommerce-products', array(
+        'headers' => array(
             'Content-Type' => 'application/json',
-        ],
-        'body' => json_encode([
-            'api_key' => $api_key,
-            'woo_products' => $woo_products
-        ]),
+            'Authorization' => 'Bearer ' . $api_key
+        ),
+        'body' => json_encode(array('products' => $products_data)),
         'timeout' => 30
-    ]);
+    ));
     
     if (is_wp_error($response)) {
         error_log('EasyQuote sync error: ' . $response->get_error_message());
-        return false;
+        return array('error' => $response->get_error_message());
     }
     
     $body = json_decode(wp_remote_retrieve_body($response), true);
     
     if (isset($body['success']) && $body['success']) {
-        error_log("EasyQuote sync success: {$body['synced_calculators']} calculators, {$body['synced_woo_products']} products");
-        return true;
+        error_log("EasyQuote sync success: {$body['synced']} products synced");
     }
     
-    return false;
+    return $body;
 }
 
-// Llamar esta función cuando se necesite sincronizar
-// Por ejemplo, después de guardar un producto o mediante un cron job
+// Trigger sync after saving a product
 add_action('save_post_product', 'sync_woocommerce_products_to_easyquote');
 
-// O mediante un cron job cada hora
+// Or use a cron job for periodic sync
 add_action('easyquote_hourly_sync', 'sync_woocommerce_products_to_easyquote');
 ```
 
-## Notas Importantes
+## System Behavior
 
-- La sincronización se hace por organización usando la API Key
-- WordPress envía SOLO los productos de WooCommerce que tienen un `calculator_id`
-- El campo `calculator_id` en cada producto de WooCommerce es el ID del producto de EasyQuote
-- Cada sincronización REEMPLAZA todos los vínculos anteriores (no es incremental)
-- EasyQuote cruza estos vínculos con todos sus productos para mostrar el estado completo
+Once the WordPress plugin sends the product data:
 
-## Flujo Completo
+1. The system validates the API key and identifies the organization
+2. It clears all previous product links for that organization
+3. It processes each product in the array
+4. It groups WooCommerce products by their `calculator_id`
+5. It creates or updates the product mappings in the database
+6. It returns a summary of the sync operation
+
+**Important:** 
+- The plugin only needs to send products that have a `calculator_id` assigned
+- Each sync REPLACES all previous links (it's not incremental)
+- The EasyQuote system handles all the backend processing, validation, and storage automatically
+
+## Complete Flow
 
 1. **WordPress Plugin:**
-   - Obtiene TODOS los productos de WooCommerce que tengan el campo `calculator_id`
-   - Envía esos productos en un array al endpoint de sync
-   - Cada producto de WooCommerce incluye su `calculator_id` que lo vincula con EasyQuote
+   - Gets ALL WooCommerce products that have the `calculator_id` field
+   - Sends those products in an array to the sync endpoint
+   - Each WooCommerce product includes its `calculator_id` that links it to EasyQuote
 
 2. **EasyQuote Backend:**
-   - Valida la API Key
-   - Identifica la organización
-   - Limpia todos los vínculos anteriores de esa organización
-   - Agrupa los productos de WooCommerce por `calculator_id`
-   - Guarda los nuevos vínculos en la tabla `woocommerce_product_links`
+   - Validates the API Key
+   - Identifies the organization
+   - Clears all previous links for that organization
+   - Groups WooCommerce products by `calculator_id`
+   - Saves the new links in the `woocommerce_product_links` table
 
 3. **EasyQuote Frontend:**
-   - Consulta todos los productos de EasyQuote
-   - Lee los vínculos desde la tabla `woocommerce_product_links`
-   - Cruza ambas fuentes para mostrar qué productos están vinculados
-   - Genera reportes CSV con los datos sincronizados
+   - Queries all EasyQuote products
+   - Reads the links from the `woocommerce_product_links` table
+   - Cross-references both sources to show which products are linked
+   - Generates CSV reports with the synchronized data
 
-## Ventajas de este Enfoque
+## Advantages of This Approach
 
-- **Sin problemas de CORS:** WordPress hace un POST directo, no hay llamadas desde el navegador
-- **Sin bloqueos de firewall:** WordPress hace la petición desde su servidor, no desde Supabase
-- **Datos siempre actualizados:** WordPress controla cuándo sincronizar
-- **Escalable:** No importa cuántos productos haya, se envía todo de una vez
+- **No CORS issues:** WordPress makes a direct POST, no browser calls
+- **No firewall blocks:** WordPress makes the request from its server, not from Supabase
+- **Always up-to-date data:** WordPress controls when to sync
+- **Scalable:** No matter how many products, everything is sent at once
+
+## Testing
+
+To test the integration:
+
+1. Configure the API key in the WordPress plugin
+2. Ensure at least one WooCommerce product has a `calculator_id` meta field
+3. Trigger the sync from the WordPress admin panel
+4. Check the response for success/error messages
+5. Verify the products appear in the EasyQuote system under Product Management
+
+## Support
+
+For issues or questions about the integration:
+- Check the WordPress plugin logs
+- Verify the API key is correct
+- Ensure the `calculator_id` values match actual EasyQuote product IDs
+- Contact the development team if problems persist
