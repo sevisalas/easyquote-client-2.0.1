@@ -55,10 +55,20 @@ export const useWooCommerceIntegration = () => {
         return;
       }
 
-      // Check if access is active AND has endpoint configured
-      const config = accessData.configuration as { endpoint?: string } | null;
-      const hasEndpoint = config?.endpoint && config.endpoint.trim() !== '';
-      setIsWooCommerceActive(accessData.is_active && hasEndpoint);
+      // Check if organization has an API key
+      const { data: apiKeyData, error: apiKeyError } = await supabase
+        .from('organization_api_credentials')
+        .select('id')
+        .eq('organization_id', currentOrganization.id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (apiKeyError && apiKeyError.code !== 'PGRST116') {
+        console.error('Error checking API key:', apiKeyError);
+      }
+
+      // Integration is active only if access is active AND API key exists
+      setIsWooCommerceActive(accessData.is_active && !!apiKeyData);
     } catch (error) {
       console.error('Error checking WooCommerce integration:', error);
       setIsWooCommerceActive(false);
