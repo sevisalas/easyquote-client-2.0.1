@@ -52,20 +52,79 @@ export const WooCommerceCsvUpload = () => {
 
       console.log(`Parsed ${products.length} products from CSV`);
 
-      // Group by calculator_id
-      const groupedProducts: Record<string, { id: string; name: string }[]> = {};
+      // Get WooCommerce configuration
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuario no autenticado");
+
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("api_user_id", user.id)
+        .single();
+
+      if (!org) throw new Error("Organización no encontrada");
+
+      // Get WooCommerce integration details
+      const { data: integration } = await supabase
+        .from("integrations")
+        .select("id")
+        .eq("name", "WooCommerce")
+        .single();
+
+      if (!integration) throw new Error("Integración WooCommerce no encontrada");
+
+      const { data: access } = await supabase
+        .from("organization_integration_access")
+        .select("configuration")
+        .eq("organization_id", org.id)
+        .eq("integration_id", integration.id)
+        .single();
+
+      const config = access?.configuration as { endpoint?: string } | null;
+      if (!config?.endpoint) {
+        throw new Error("Endpoint de WooCommerce no configurado");
+      }
+
+      // Extract base URL from endpoint
+      const baseUrl = config.endpoint.split('/wp-json')[0];
+
+      // Fetch product details from WooCommerce for all unique IDs
+      const uniqueIds = [...new Set(products.map(p => p.ID))];
+      const wooProductsMap = new Map();
+
+      for (const id of uniqueIds) {
+        try {
+          const response = await fetch(`${baseUrl}/wp-json/wc/v3/products/${id}`);
+          if (response.ok) {
+            const wooProduct = await response.json();
+            wooProductsMap.set(id, {
+              id: wooProduct.id,
+              name: wooProduct.name,
+              slug: wooProduct.slug,
+              permalink: wooProduct.permalink,
+              calculator_id: wooProduct.meta_data?.find((m: any) => m.key === 'calculator_id')?.value || '',
+              calculator_disabled: wooProduct.meta_data?.find((m: any) => m.key === 'calculator_disabled')?.value === 'yes'
+            });
+          }
+        } catch (error) {
+          console.error(`Error fetching WooCommerce product ${id}:`, error);
+        }
+      }
+
+      // Group by calculator_id using enriched data
+      const groupedProducts: Record<string, { id: string; name: string; slug: string; permalink: string; calculator_id: string; calculator_disabled: boolean }[]> = {};
       products.forEach(p => {
         const calcId = p["Calculator ID"];
         if (!calcId) return;
+        
+        const wooProduct = wooProductsMap.get(p.ID);
+        if (!wooProduct) return;
         
         if (!groupedProducts[calcId]) {
           groupedProducts[calcId] = [];
         }
         
-        groupedProducts[calcId].push({
-          id: p.ID,
-          name: p.Nombre
-        });
+        groupedProducts[calcId].push(wooProduct);
       });
 
       // Delete existing links for this organization
