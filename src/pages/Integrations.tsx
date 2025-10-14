@@ -445,22 +445,6 @@ export default function Integrations() {
                     📋 Copiar API Key
                   </Button>
                 </div>
-                
-                <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
-                  <p className="text-sm font-medium mb-2">📚 Documentación</p>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Esta API Key permite a WordPress sincronizar automáticamente los productos vinculados de WooCommerce con EasyQuote.
-                  </p>
-                  <div className="space-y-2 text-xs">
-                    <p className="font-medium">Endpoint de sincronización:</p>
-                    <code className="block bg-background px-2 py-1 rounded overflow-x-auto">
-                      POST https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/sync-woocommerce-products
-                    </code>
-                    <p className="mt-2 text-muted-foreground">
-                      Ver el archivo <code>WOOCOMMERCE_SYNC.md</code> en el repositorio para más detalles.
-                    </p>
-                  </div>
-                </div>
               </div>
             ) : (
               <Button 
