@@ -461,21 +461,22 @@ export default function Integrations() {
         {/* WooCommerce Integration Card */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5" />
+            <CardTitle className="flex items-center justify-between">
               <span>WooCommerce</span>
+              <span className={`text-sm px-2 py-1 rounded ${
+                organizationApiKey 
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' 
+                  : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+              }`}>
+                {organizationApiKey ? 'Activa' : 'Inactiva'}
+              </span>
             </CardTitle>
             <CardDescription>
-              Sincronización de productos con WooCommerce
+              {organizationApiKey 
+                ? 'Tu integración con WooCommerce está activa y funcionando' 
+                : 'Genera una API Key para conectar con WooCommerce'}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              {organizationApiKey 
-                ? '✓ Integración activa. Configura el plugin de WordPress con tu API Key para sincronizar productos.' 
-                : 'Genera una API Key para activar la integración con WooCommerce.'}
-            </p>
-          </CardContent>
         </Card>
 
         {/* Holded Integration Card */}
