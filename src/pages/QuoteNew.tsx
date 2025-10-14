@@ -332,10 +332,40 @@ export default function QuoteNew() {
 
       if (itemsError) throw itemsError;
 
-      toast({ 
-        title: "Presupuesto guardado", 
-        description: `Presupuesto ${quoteNumber} ${status === 'draft' ? 'guardado como borrador' : 'enviado'} correctamente` 
-      });
+      // Si el estado es "sent" y Holded está activo, exportar a Holded automáticamente
+      if (status === 'sent' && isHoldedActive) {
+        try {
+          const { error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
+            body: { quoteId: quote.id }
+          });
+
+          if (holdedError) {
+            console.error('Error exporting to Holded:', holdedError);
+            toast({
+              title: "Advertencia",
+              description: "El presupuesto se guardó pero hubo un error al exportar a Holded",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Presupuesto guardado y exportado",
+              description: `Presupuesto ${quoteNumber} enviado y exportado a Holded correctamente`
+            });
+          }
+        } catch (holdedError: any) {
+          console.error('Error exporting to Holded:', holdedError);
+          toast({
+            title: "Advertencia",
+            description: "El presupuesto se guardó pero hubo un error al exportar a Holded",
+            variant: "destructive"
+          });
+        }
+      } else {
+        toast({ 
+          title: "Presupuesto guardado", 
+          description: `Presupuesto ${quoteNumber} ${status === 'draft' ? 'guardado como borrador' : 'enviado'} correctamente` 
+        });
+      }
       
       navigate(`/presupuestos/${quote.id}`);
     } catch (error: any) {
