@@ -202,28 +202,18 @@ export default function Integrations() {
       return;
     }
 
+    // Validar que existe API Key antes de activar
+    if (enabled && !organizationApiKey) {
+      toast({
+        title: "API Key requerida",
+        description: "Debes generar una API Key antes de activar la integración",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setTogglingWoo(true);
     try {
-      // Si está activando y no tiene API Key, generarla automáticamente
-      if (enabled && !organizationApiKey) {
-        const { data: keyData, error: keyError } = await supabase.rpc('generate_api_key');
-        const { data: secretData, error: secretError } = await supabase.rpc('generate_api_secret');
-        
-        if (keyError || secretError) throw keyError || secretError;
-
-        const { error: credError } = await supabase.rpc(
-          'create_organization_api_credential',
-          {
-            p_organization_id: currentOrganization.id,
-            p_api_key: keyData,
-            p_api_secret: secretData
-          }
-        );
-
-        if (credError) throw credError;
-        setOrganizationApiKey(keyData);
-        setShowApiKey(true);
-      }
 
       const { data: integrationData, error: integrationError } = await supabase
         .from('integrations')
@@ -266,7 +256,7 @@ export default function Integrations() {
 
         toast({
           title: "Integración activada",
-          description: "WooCommerce activado con API Key generada automáticamente",
+          description: "WooCommerce ha sido activado correctamente",
         });
       } else {
         // Deactivate integration
