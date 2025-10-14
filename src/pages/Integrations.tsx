@@ -409,12 +409,23 @@ export default function Integrations() {
       <div className="max-w-4xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold mb-6">Integraciones</h1>
         
-        {/* API Key Card */}
+        {/* WooCommerce Integration Card */}
         <Card>
           <CardHeader>
-            <CardTitle>API Key para WooCommerce</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <span>WooCommerce</span>
+              <span className={`text-sm px-2 py-1 rounded ${
+                organizationApiKey 
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' 
+                  : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+              }`}>
+                {organizationApiKey ? 'Activa' : 'Inactiva'}
+              </span>
+            </CardTitle>
             <CardDescription>
-              Genera una API Key para sincronizar productos desde WordPress
+              {organizationApiKey 
+                ? 'Tu integración con WooCommerce está activa y funcionando' 
+                : 'Genera una API Key para conectar con WooCommerce'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -456,27 +467,6 @@ export default function Integrations() {
               </Button>
             )}
           </CardContent>
-        </Card>
-
-        {/* WooCommerce Integration Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>WooCommerce</span>
-              <span className={`text-sm px-2 py-1 rounded ${
-                organizationApiKey 
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' 
-                  : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
-              }`}>
-                {organizationApiKey ? 'Activa' : 'Inactiva'}
-              </span>
-            </CardTitle>
-            <CardDescription>
-              {organizationApiKey 
-                ? 'Tu integración con WooCommerce está activa y funcionando' 
-                : 'Genera una API Key para conectar con WooCommerce'}
-            </CardDescription>
-          </CardHeader>
         </Card>
 
         {/* Holded Integration Card */}
