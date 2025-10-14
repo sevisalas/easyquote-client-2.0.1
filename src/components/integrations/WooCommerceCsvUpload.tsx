@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload } from "lucide-react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface CsvRow {
   ID: string;
@@ -18,6 +19,7 @@ export const WooCommerceCsvUpload = () => {
   const { toast } = useToast();
   const { organization, membership } = useSubscription();
   const currentOrganization = organization || membership?.organization;
+  const queryClient = useQueryClient();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -97,6 +99,10 @@ export const WooCommerceCsvUpload = () => {
         title: "CSV importado correctamente",
         description: `Se han vinculado ${records.length} calculadoras con ${products.length} productos de WooCommerce`,
       });
+
+      // Invalidate queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['woocommerce-links'] });
+      queryClient.invalidateQueries({ queryKey: ['woocommerce-integration'] });
 
       // Reset input
       event.target.value = '';
