@@ -56,7 +56,8 @@ export const useWooCommerceIntegration = () => {
           .select('id')
           .eq('organization_id', currentOrganization.id)
           .eq('is_active', true)
-          .maybeSingle();
+          .limit(1)
+          .single();
 
         console.log("WooCommerce API Key Check:", { apiKeyData, apiKeyError });
 
