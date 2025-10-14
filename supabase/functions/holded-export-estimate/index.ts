@@ -116,13 +116,14 @@ Deno.serve(async (req) => {
             const promptEntries = Object.entries(item.prompts);
             if (promptEntries.length > 0) {
               description = promptEntries
-                // Sort by order field (numeric)
-                .sort(([, a]: [string, any], [, b]: [string, any]) => {
-                  const orderA = (a && typeof a === 'object' && 'order' in a) ? (a.order || 0) : 0;
-                  const orderB = (b && typeof b === 'object' && 'order' in b) ? (b.order || 0) : 0;
-                  return orderA - orderB;
-                })
-                .map(([key, promptData]: [string, any]) => {
+                // Sort by order field (numeric) - extract order from each prompt
+                .map(([key, promptData]: [string, any]) => ({
+                  key,
+                  promptData,
+                  order: (promptData && typeof promptData === 'object' && 'order' in promptData) ? (promptData.order || 0) : 999
+                }))
+                .sort((a, b) => a.order - b.order)
+                .map(({ key, promptData }) => {
                   if (promptData && typeof promptData === 'object' && 'label' in promptData && 'value' in promptData) {
                     // For the quantity prompt, use the value from this specific row
                     if (key === item.multi.qtyPrompt && row.qty) {
@@ -247,13 +248,14 @@ Deno.serve(async (req) => {
           const promptEntries = Object.entries(item.prompts);
           if (promptEntries.length > 0) {
             description = promptEntries
-              // Sort by order field (numeric)
-              .sort(([, a]: [string, any], [, b]: [string, any]) => {
-                const orderA = (a && typeof a === 'object' && 'order' in a) ? (a.order || 0) : 0;
-                const orderB = (b && typeof b === 'object' && 'order' in b) ? (b.order || 0) : 0;
-                return orderA - orderB;
-              })
-              .map(([key, promptData]: [string, any]) => {
+              // Sort by order field (numeric) - extract order from each prompt
+              .map(([key, promptData]: [string, any]) => ({
+                key,
+                promptData,
+                order: (promptData && typeof promptData === 'object' && 'order' in promptData) ? (promptData.order || 0) : 999
+              }))
+              .sort((a, b) => a.order - b.order)
+              .map(({ promptData }) => {
                 if (promptData && typeof promptData === 'object' && 'label' in promptData && 'value' in promptData) {
                   return `${promptData.label}: ${promptData.value}`;
                 }
