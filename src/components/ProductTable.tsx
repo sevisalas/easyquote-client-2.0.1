@@ -59,7 +59,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[300px]">Producto</TableHead>
+                <TableHead className="w-[330px]">Producto</TableHead>
                 <TableHead className="w-[220px]">Excel</TableHead>
                 <TableHead className="w-[90px]">Estado</TableHead>
                 <TableHead className="w-[150px]">Categoría</TableHead>
@@ -70,7 +70,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
             <TableBody>
               {products.map((product) => (
                 <TableRow key={product.id}>
-                  <TableCell className="py-3 max-w-[300px]">
+                  <TableCell className="py-3 max-w-[330px]">
                     <div className="w-full">
                       <button
                         onClick={() => {
