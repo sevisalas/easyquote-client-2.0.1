@@ -24,17 +24,7 @@ export const useWooCommerceLink = (productIds: string[]) => {
         return {};
       }
 
-      // Get WooCommerce configuration
-      const { data: integrationData } = await supabase
-        .from("integrations")
-        .select("id")
-        .eq("name", "WooCommerce")
-        .single();
-
-      if (!integrationData) {
-        return {};
-      }
-
+      // Get current user's organization
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         return {};
@@ -50,84 +40,38 @@ export const useWooCommerceLink = (productIds: string[]) => {
         return {};
       }
 
-      const { data: accessData } = await supabase
-        .from("organization_integration_access")
-        .select("configuration")
+      // Fetch product links from the database
+      const { data: productLinks, error } = await supabase
+        .from("woocommerce_product_links")
+        .select("*")
         .eq("organization_id", org.id)
-        .eq("integration_id", integrationData.id)
-        .eq("is_active", true)
-        .single();
+        .in("easyquote_product_id", productIds);
 
-      if (!accessData?.configuration) {
+      if (error) {
+        console.error("Error fetching product links:", error);
         return {};
       }
 
-      const config = accessData.configuration as { endpoint?: string };
-      if (!config.endpoint) {
-        return {};
-      }
-
-      const endpointTemplate = config.endpoint.replace('GET ', '');
-      
-      // Fetch products directly from the frontend
+      // Build the result object
       const linkedProducts: Record<string, WooLinkStatus> = {};
       
-      const batchSize = 10;
-      for (let i = 0; i < productIds.length; i += batchSize) {
-        const batch = productIds.slice(i, i + batchSize);
+      productIds.forEach(productId => {
+        const link = productLinks?.find(l => l.easyquote_product_id === productId);
         
-        const promises = batch.map(async (productId: string) => {
-          try {
-            const url = endpointTemplate.replace('{calculator_id}', productId);
-            
-            const response = await fetch(url, {
-              method: "GET",
-              headers: {
-                "Accept": "application/json",
-              },
-            });
-
-            if (response.ok) {
-              const data = await response.json();
-              
-              if (data.success && data.products && data.products.length > 0) {
-                return {
-                  productId,
-                  data: {
-                    isLinked: true,
-                    wooProducts: data.products,
-                    count: data.count || data.products.length
-                  }
-                };
-              }
-            }
-            
-            return {
-              productId,
-              data: {
-                isLinked: false,
-                wooProducts: [],
-                count: 0
-              }
-            };
-          } catch (err) {
-            console.error(`Error checking product ${productId}:`, err);
-            return {
-              productId,
-              data: {
-                isLinked: false,
-                wooProducts: [],
-                count: 0
-              }
-            };
-          }
-        });
-        
-        const results = await Promise.all(promises);
-        results.forEach(({ productId, data }) => {
-          linkedProducts[productId] = data;
-        });
-      }
+        if (link) {
+          linkedProducts[productId] = {
+            isLinked: link.is_linked,
+            wooProducts: (link.woo_products as unknown as WooProduct[]) || [],
+            count: link.product_count
+          };
+        } else {
+          linkedProducts[productId] = {
+            isLinked: false,
+            wooProducts: [],
+            count: 0
+          };
+        }
+      });
 
       return linkedProducts;
     },

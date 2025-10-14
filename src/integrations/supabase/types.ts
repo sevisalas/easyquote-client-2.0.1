@@ -1041,6 +1041,53 @@ export type Database = {
         }
         Relationships: []
       }
+      woocommerce_product_links: {
+        Row: {
+          created_at: string
+          easyquote_product_id: string
+          easyquote_product_name: string
+          id: string
+          is_linked: boolean
+          last_synced_at: string
+          organization_id: string
+          product_count: number
+          updated_at: string
+          woo_products: Json
+        }
+        Insert: {
+          created_at?: string
+          easyquote_product_id: string
+          easyquote_product_name: string
+          id?: string
+          is_linked?: boolean
+          last_synced_at?: string
+          organization_id: string
+          product_count?: number
+          updated_at?: string
+          woo_products?: Json
+        }
+        Update: {
+          created_at?: string
+          easyquote_product_id?: string
+          easyquote_product_name?: string
+          id?: string
+          is_linked?: boolean
+          last_synced_at?: string
+          organization_id?: string
+          product_count?: number
+          updated_at?: string
+          woo_products?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "woocommerce_product_links_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
