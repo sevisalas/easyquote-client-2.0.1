@@ -541,16 +541,30 @@ export default function ProductManagement() {
         throw new Error("No hay token de EasyQuote disponible");
       }
 
+      // Preparar el payload con los campos que el API acepta
+      const payload = {
+        id: updatedProduct.id,
+        productName: updatedProduct.productName,
+        isActive: updatedProduct.isActive,
+        description: updatedProduct.description || "",
+        category: updatedProduct.category || "",
+        excelfileId: updatedProduct.excelfileId
+      };
+
+      console.log("Updating product with payload:", payload);
+
       const response = await fetch("https://api.easyquote.cloud/api/v1/products", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify(updatedProduct)
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
         throw new Error("Error al actualizar el producto");
       }
 
