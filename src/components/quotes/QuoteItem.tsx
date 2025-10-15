@@ -147,6 +147,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     enabled: hasToken,
   });
 
+  // Sincronizar itemDescription con productName cuando está vacío
+  useEffect(() => {
+    if (productId && !itemDescription && products) {
+      const selectedProduct = products.find((p: any) => String(p.id) === String(productId));
+      if (selectedProduct) {
+        setItemDescription(getProductLabel(selectedProduct));
+      }
+    }
+  }, [productId, products, itemDescription]);
+
   const { data: additionals } = useQuery({
     queryKey: ["additionals"],
     queryFn: async () => {
