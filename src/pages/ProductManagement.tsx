@@ -1113,22 +1113,16 @@ export default function ProductManagement() {
                       })}
                     />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <div>
-                      <Label>Estado</Label>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <Switch
-                          checked={selectedProduct.isActive}
-                          onCheckedChange={(checked) => setSelectedProduct({
-                            ...selectedProduct,
-                            isActive: checked
-                          })}
-                        />
-                        <span className="text-sm">
-                          {selectedProduct.isActive ? "Activo" : "Inactivo"}
-                        </span>
-                      </div>
-                    </div>
+                  <div>
+                    <Label htmlFor="description">Descripción</Label>
+                    <Textarea
+                      id="description"
+                      value={selectedProduct.description || ""}
+                      onChange={(e) => setSelectedProduct({
+                        ...selectedProduct,
+                        description: e.target.value
+                      })}
+                    />
                   </div>
                 </div>
 
@@ -1139,7 +1133,6 @@ export default function ProductManagement() {
                       value={selectedCategoryId || "none"}
                       onValueChange={(value) => {
                         setSelectedCategoryId(value === "none" ? "" : value);
-                        // Reset subcategory when category changes
                         setSelectedSubcategoryId("");
                       }}
                     >
@@ -1190,18 +1183,6 @@ export default function ProductManagement() {
                   )}
                 </div>
                 
-                <div>
-                  <Label htmlFor="description">Descripción</Label>
-                  <Textarea
-                    id="description"
-                    value={selectedProduct.description || ""}
-                    onChange={(e) => setSelectedProduct({
-                      ...selectedProduct,
-                      description: e.target.value
-                    })}
-                  />
-                </div>
-
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="isActive"
