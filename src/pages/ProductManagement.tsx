@@ -535,7 +535,7 @@ export default function ProductManagement() {
 
   // Mutation para actualizar producto
   const updateProductMutation = useMutation({
-    mutationFn: async (updatedProduct: EasyQuoteProduct) => {
+    mutationFn: async ({ product, action }: { product: EasyQuoteProduct; action?: 'delete' | 'update' }) => {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) {
         throw new Error("No hay token de EasyQuote disponible");
@@ -543,19 +543,19 @@ export default function ProductManagement() {
 
       // Preparar el payload con los campos que el API acepta
       const payload = {
-        id: updatedProduct.id,
-        productName: updatedProduct.productName,
-        isActive: updatedProduct.isActive,
-        description: updatedProduct.description || "",
-        category: updatedProduct.category || "",
-        excelfileId: updatedProduct.excelfileId
+        id: product.id,
+        productName: product.productName,
+        isActive: product.isActive,
+        description: product.description || "",
+        category: product.category || "",
+        excelfileId: product.excelfileId
       };
 
-      console.log("Updating product with payload:", payload);
+      console.log("Updating product with payload:", payload, "action:", action);
 
       // Usar edge function para actualizar el producto
       const { data, error } = await supabase.functions.invoke("easyquote-update-product", {
-        body: { token, product: payload }
+        body: { token, product: payload, action }
       });
 
       if (error) {
@@ -590,7 +590,7 @@ export default function ProductManagement() {
   const handleSaveProduct = () => {
     if (selectedProduct) {
       // Actualizar producto en EasyQuote
-      updateProductMutation.mutate(selectedProduct);
+      updateProductMutation.mutate({ product: selectedProduct, action: 'update' });
       
       // Actualizar categoría en Supabase
       if (selectedCategoryId || selectedSubcategoryId) {
@@ -1116,10 +1116,18 @@ export default function ProductManagement() {
                       <div className="flex items-center space-x-2 mt-1">
                         <Switch
                           checked={selectedProduct.isActive}
-                          onCheckedChange={(checked) => setSelectedProduct({
-                            ...selectedProduct,
-                            isActive: checked
-                          })}
+                          onCheckedChange={(checked) => {
+                            const updatedProduct = {
+                              ...selectedProduct,
+                              isActive: checked
+                            };
+                            setSelectedProduct(updatedProduct);
+                            // Si se desactiva, usar DELETE
+                            updateProductMutation.mutate({ 
+                              product: updatedProduct, 
+                              action: checked ? 'update' : 'delete' 
+                            });
+                          }}
                         />
                         <span className="text-sm">
                           {selectedProduct.isActive ? "Activo" : "Inactivo"}

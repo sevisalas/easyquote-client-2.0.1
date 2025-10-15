@@ -19,11 +19,12 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const { token, product } = await req.json();
+    const { token, product, action } = await req.json();
     console.log("easyquote-update-product: Request received", { 
       productId: product?.id, 
       productName: product?.productName,
-      isActive: product?.isActive 
+      isActive: product?.isActive,
+      action
     });
 
     if (!token || !product || !product.id) {
@@ -33,7 +34,69 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Usar PUT para actualizar el producto
+    // Si action es 'delete', usar DELETE para desactivar
+    if (action === 'delete') {
+      const url = `https://api.easyquote.cloud/api/v1/products/${product.id}`;
+      
+      console.log("easyquote-update-product: Sending DELETE request", { url });
+
+      const res = await fetch(url, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+
+      const text = await res.text();
+      let data: any;
+      
+      try {
+        data = text ? JSON.parse(text) : { success: true };
+      } catch (e) {
+        console.error("easyquote-update-product: JSON parse error", e, text);
+        if (res.ok) {
+          data = { success: true };
+        } else {
+          return new Response(JSON.stringify({ error: "Invalid response from EasyQuote" }), {
+            status: 502,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+
+      if (!res.ok) {
+        console.error("easyquote-update-product: DELETE failed", res.status, data);
+        
+        if (res.status === 401) {
+          return new Response(JSON.stringify({ 
+            error: "Tu sesión de EasyQuote ha expirado. Por favor, vuelve a conectarte.", 
+            code: "EASYQUOTE_UNAUTHORIZED",
+            status: 401 
+          }), {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        
+        return new Response(JSON.stringify({ 
+          error: data?.message || "Failed to delete product",
+          details: data 
+        }), {
+          status: res.status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      console.log("easyquote-update-product: DELETE Success");
+      
+      return new Response(JSON.stringify({ success: true, data }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Si no es delete, usar PUT para actualizar
     const url = `https://api.easyquote.cloud/api/v1/products`;
     
     console.log("easyquote-update-product: Sending PUT request", { 
