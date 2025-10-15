@@ -493,7 +493,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, itemAdditionals]);
 
   // Extract all prompts from product with their defaults
-  const extractAllPrompts = (product: any): Record<string, { label: string; value: any }> => {
+  const extractAllPrompts = (product: any): Record<string, { label: string; value: any; order: number }> => {
     const candidates = [
       product?.prompts,
       product?.inputs,
@@ -532,10 +532,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         defaultVal = `#${defaultVal.toUpperCase()}`;
       }
       
-      // Only add if there's a default value
-      if (defaultVal !== undefined && defaultVal !== null && defaultVal !== '') {
-        result[id] = { label, value: defaultVal, order };
-      }
+      // Always add with order, even if no default value (to preserve order for all prompts)
+      result[id] = { label, value: defaultVal ?? '', order };
     });
     
     return result;
@@ -564,14 +562,24 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   const handlePromptChange = (id: string, value: any, label: string) => {
     setPromptValues((prev) => {
-      // Preserve the order field if it exists
-      const existingOrder = prev[id]?.order;
+      // Preserve the order field if it exists, or find it from product definition
+      let order = prev[id]?.order;
+      
+      // If no order exists, try to get it from the product pricing prompts
+      if (order === undefined && pricing) {
+        const prompts = (pricing as any)?.prompts || [];
+        const promptDef = prompts.find((p: any) => String(p.id) === String(id));
+        if (promptDef) {
+          order = Number.isFinite(Number(promptDef.order)) ? Number(promptDef.order) : prompts.indexOf(promptDef);
+        }
+      }
+      
       return {
         ...prev, 
         [id]: { 
           label, 
           value,
-          ...(existingOrder !== undefined && { order: existingOrder })
+          order: order !== undefined ? order : 999
         } 
       };
     });
@@ -579,6 +587,45 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   const selectedProductInfo = products?.find((p: any) => String(p.id) === String(productId));
   const productName = selectedProductInfo ? getProductLabel(selectedProductInfo) : "";
+
+  // Build enhanced description with additionals info
+  const enhancedDescription = useMemo(() => {
+    let desc = itemDescription || productName;
+    
+    // Add additionals info to description
+    if (itemAdditionals && itemAdditionals.length > 0) {
+      const additionalsText = itemAdditionals.map((additional) => {
+        const value = additional.value;
+        if (additional.type === 'net_amount') {
+          return `${additional.name}: ${formatEUR(value)}`;
+        } else if (additional.type === 'quantity_multiplier') {
+          return `${additional.name}: ×${value}`;
+        } else if (additional.type === 'percentage') {
+          return `${additional.name}: ${value}%`;
+        }
+        return `${additional.name}: ${value}`;
+      }).join(', ');
+      
+      if (additionalsText) {
+        desc = `${desc} (${additionalsText})`;
+      }
+    }
+    
+    return desc;
+  }, [itemDescription, productName, itemAdditionals]);
+
+  // Sync enhanced description with parent
+  useEffect(() => {
+    onChange?.(id, {
+      productId,
+      prompts: promptValues,
+      outputs,
+      price: finalPrice,
+      multi: multiEnabled ? { qtyPrompt, qtyInputs, rows: multiRows } : null,
+      itemDescription: enhancedDescription,
+      itemAdditionals,
+    });
+  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, enhancedDescription, itemAdditionals]);
 
   const isComplete = productId && priceOutput && finalPrice > 0;
 
