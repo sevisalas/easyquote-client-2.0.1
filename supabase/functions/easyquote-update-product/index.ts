@@ -33,16 +33,16 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Usar PATCH para actualizar el producto
+    // Usar PUT para actualizar el producto
     const url = `https://api.easyquote.cloud/api/v1/products`;
     
-    console.log("easyquote-update-product: Sending PATCH request", { 
+    console.log("easyquote-update-product: Sending PUT request", { 
       url, 
       payload: product 
     });
 
     const res = await fetch(url, {
-      method: "PATCH",
+      method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/json",
