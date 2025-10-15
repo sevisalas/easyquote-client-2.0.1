@@ -203,60 +203,21 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         }
       });
 
-      const baseUrl = `https://api.easyquote.cloud/api/v1/pricing/${productId}`;
-
-      try {
-        if (Object.keys(norm).length > 0) {
-          const res = await fetch(baseUrl, {
-            method: "PATCH",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(Object.entries(norm).map(([id, value]) => ({ id, value }))),
-          });
-          if (!res.ok) {
-            if (res.status === 401) {
-              const { notifyUnauthorized } = await import('@/hooks/useTokenRefresh');
-              notifyUnauthorized(401, 'easyquote.cloud/pricing');
-            }
-            throw new Error(`EasyQuote PATCH ${res.status}`);
-          }
-          const json = await res.json();
-          return json;
-        } else {
-          const res = await fetch(baseUrl, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          });
-          if (!res.ok) {
-            if (res.status === 401) {
-              const { notifyUnauthorized } = await import('@/hooks/useTokenRefresh');
-              notifyUnauthorized(401, 'easyquote.cloud/pricing');
-            }
-            throw new Error(`EasyQuote GET ${res.status}`);
-          }
-          const json = await res.json();
-          return json;
+      // Usar solo la edge function para evitar errores con IDs incorrectos
+      const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
+        token,
+        productId,
+        inputs: Object.entries(norm).map(([id, value]) => ({ id, value }))
+      });
+      
+      if (error) {
+        if (error.status === 401 || error.code === 'EASYQUOTE_UNAUTHORIZED') {
+          const { notifyUnauthorized } = await import('@/hooks/useTokenRefresh');
+          notifyUnauthorized(401, 'EASYQUOTE_UNAUTHORIZED');
         }
-      } catch (e: any) {
-        // Si ya se notificó el error 401 arriba, no hacer llamada de respaldo
-        if (e.message?.includes('EasyQuote') && e.message?.includes('401')) {
-          throw e;
-        }
-        
-        const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
-          token,
-          productId,
-          inputs: Object.entries(norm).map(([id, value]) => ({ id, value }))
-        });
-        
-        if (error) throw error;
-        return data;
+        throw error;
       }
+      return data;
     },
   });
 
@@ -517,7 +478,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     raw.forEach((f: any, idx: number) => {
       const id = String(f.id ?? f.key ?? f.code ?? f.slug ?? f.name ?? `field_${idx}`);
       const label = f.promptText ?? f.label ?? f.title ?? f.promptName ?? f.displayName ?? f.text ?? f.caption ?? f.name ?? id;
-      const order = Number.isFinite(Number(f.order)) ? Number(f.order) : idx;
+      // Usar promptSequence de EasyQuote API como orden principal
+      const order = Number.isFinite(Number(f.promptSequence)) ? Number(f.promptSequence) : (Number.isFinite(Number(f.order)) ? Number(f.order) : idx);
       
       // Get default value
       const options = f.valueOptions ?? f.options ?? f.choices ?? f.values ?? f.items ?? f.optionsList ?? [];
@@ -565,12 +527,15 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       // Preserve the order field if it exists, or find it from product definition
       let order = prev[id]?.order;
       
-      // If no order exists, try to get it from the product pricing prompts
+      // If no order exists, try to get it from the product pricing prompts using promptSequence
       if (order === undefined && pricing) {
         const prompts = (pricing as any)?.prompts || [];
         const promptDef = prompts.find((p: any) => String(p.id) === String(id));
         if (promptDef) {
-          order = Number.isFinite(Number(promptDef.order)) ? Number(promptDef.order) : prompts.indexOf(promptDef);
+          // Usar promptSequence de EasyQuote API
+          order = Number.isFinite(Number(promptDef.promptSequence)) 
+            ? Number(promptDef.promptSequence) 
+            : (Number.isFinite(Number(promptDef.order)) ? Number(promptDef.order) : prompts.indexOf(promptDef));
         }
       }
       
