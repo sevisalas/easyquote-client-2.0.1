@@ -458,6 +458,27 @@ export default function ProductManagement() {
     }
   });
 
+  // Fetch ALL products for stats (siempre incluye inactivos)
+  const { data: allProductsForStats = [] } = useQuery({
+    queryKey: ["easyquote-products-stats"],
+    queryFn: async () => {
+      const token = sessionStorage.getItem("easyquote_token");
+      if (!token) return [];
+
+      const { data, error } = await supabase.functions.invoke("easyquote-products", {
+        body: { 
+          token,
+          includeInactive: true 
+        }
+      });
+
+      if (error || !data) return [];
+      return data as EasyQuoteProduct[];
+    },
+    enabled: hasToken,
+    retry: false
+  });
+
   // Filtrar productos localmente
   const filteredProducts = products.filter(product => {
     const matchesSearch = !searchTerm || 
@@ -503,9 +524,9 @@ export default function ProductManagement() {
     (categoryFilter === "all" || sub.category_id === categoryFilter)
   );
 
-  // Estadísticas
-  const activeProducts = products.filter(p => p.isActive);
-  const inactiveProducts = products.filter(p => !p.isActive);
+  // Estadísticas - usar allProductsForStats para contar siempre todos
+  const activeProducts = allProductsForStats.filter(p => p.isActive);
+  const inactiveProducts = allProductsForStats.filter(p => !p.isActive);
 
   const handleEditProduct = (product: EasyQuoteProduct) => {
     setSelectedProduct({ ...product });
@@ -1000,7 +1021,7 @@ export default function ProductManagement() {
             <CardTitle className="text-xs lg:text-sm font-medium">Total Productos</CardTitle>
           </CardHeader>
           <CardContent className="text-center pt-2">
-            <div className="text-lg lg:text-2xl font-bold">{products.length}</div>
+            <div className="text-lg lg:text-2xl font-bold">{allProductsForStats.length}</div>
           </CardContent>
         </Card>
         <Card>
