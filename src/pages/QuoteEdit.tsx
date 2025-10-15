@@ -234,18 +234,31 @@ export default function QuoteEdit() {
 
       // Insert all current items
       if (items.length > 0) {
-        const itemsToInsert = items.map((item, index) => ({
-          quote_id: id,
-          product_name: item.product_name || '',
-          description: item.description || '',
-          price: item.price || 0,
-          position: index,
-          product_id: item.productId || null,
-          prompts: item.prompts || {},
-          outputs: item.outputs || [],
-          multi: item.multi || null,
-          item_additionals: item.itemAdditionals || [],
-        }));
+        const itemsToInsert = items.map((item, index) => {
+          // Convert prompts object to sorted array
+          const promptsArray = Object.entries(item.prompts || {})
+            .map(([id, promptData]: [string, any]) => ({
+              id,
+              label: promptData.label,
+              value: promptData.value,
+              order: promptData.order ?? 999
+            }))
+            .sort((a, b) => a.order - b.order)
+            .map(({ id, label, value }) => ({ id, label, value })); // Remove order field
+
+          return {
+            quote_id: id,
+            product_name: item.product_name || '',
+            description: item.description || '',
+            price: item.price || 0,
+            position: index,
+            product_id: item.productId || null,
+            prompts: promptsArray,
+            outputs: item.outputs || [],
+            multi: item.multi || null,
+            item_additionals: item.itemAdditionals || [],
+          };
+        });
 
         const { error: itemsError } = await supabase
           .from('quote_items')

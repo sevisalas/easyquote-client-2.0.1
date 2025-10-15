@@ -311,20 +311,33 @@ export default function QuoteNew() {
       if (error) throw error;
 
       // Create quote_items records with prompts and outputs
-      const quoteItemsData = itemsArray.map((item, index) => ({
-        quote_id: quote.id,
-        product_id: item.productId,
-        product_name: item.itemDescription || "",
-        description: item.itemDescription || "",
-        prompts: item.prompts || {},
-        outputs: item.outputs || [],
-        multi: item.multi || null,
-        price: item.price || 0,
-        quantity: 1,
-        discount_percentage: 0,
-        position: index,
-        item_additionals: item.itemAdditionals || []
-      }));
+      const quoteItemsData = itemsArray.map((item, index) => {
+        // Convert prompts object to sorted array
+        const promptsArray = Object.entries(item.prompts || {})
+          .map(([id, promptData]: [string, any]) => ({
+            id,
+            label: promptData.label,
+            value: promptData.value,
+            order: promptData.order ?? 999
+          }))
+          .sort((a, b) => a.order - b.order)
+          .map(({ id, label, value }) => ({ id, label, value })); // Remove order field
+
+        return {
+          quote_id: quote.id,
+          product_id: item.productId,
+          product_name: item.itemDescription || "",
+          description: item.itemDescription || "",
+          prompts: promptsArray,
+          outputs: item.outputs || [],
+          multi: item.multi || null,
+          price: item.price || 0,
+          quantity: 1,
+          discount_percentage: 0,
+          position: index,
+          item_additionals: item.itemAdditionals || []
+        };
+      });
 
       const { error: itemsError } = await supabase
         .from("quote_items")
