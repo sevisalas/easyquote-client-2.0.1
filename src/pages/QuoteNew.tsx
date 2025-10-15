@@ -312,7 +312,7 @@ export default function QuoteNew() {
 
       // Create quote_items records with prompts and outputs
       const quoteItemsData = itemsArray.map((item, index) => {
-        // Convert prompts object to sorted array
+        // Convert prompts object to sorted array and keep order field
         const promptsArray = Object.entries(item.prompts || {})
           .map(([id, promptData]: [string, any]) => ({
             id,
@@ -320,8 +320,7 @@ export default function QuoteNew() {
             value: promptData.value,
             order: promptData.order ?? 999
           }))
-          .sort((a, b) => a.order - b.order)
-          .map(({ id, label, value }) => ({ id, label, value })); // Remove order field
+          .sort((a, b) => a.order - b.order);
 
         return {
           quote_id: quote.id,

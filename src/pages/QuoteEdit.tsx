@@ -235,7 +235,7 @@ export default function QuoteEdit() {
       // Insert all current items
       if (items.length > 0) {
         const itemsToInsert = items.map((item, index) => {
-          // Convert prompts object to sorted array
+          // Convert prompts object to sorted array and keep order field
           const promptsArray = Object.entries(item.prompts || {})
             .map(([id, promptData]: [string, any]) => ({
               id,
@@ -243,8 +243,7 @@ export default function QuoteEdit() {
               value: promptData.value,
               order: promptData.order ?? 999
             }))
-            .sort((a, b) => a.order - b.order)
-            .map(({ id, label, value }) => ({ id, label, value })); // Remove order field
+            .sort((a, b) => a.order - b.order);
 
           return {
             quote_id: id,
