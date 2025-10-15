@@ -587,7 +587,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       {/* Collapsed view - simple line with action buttons */}
       {isComplete && !isExpanded ? (
         <div className="flex items-center justify-between py-1 hover:bg-muted/30 transition-colors rounded">
-          <span className="text-base font-medium text-muted-foreground">{itemDescription}</span>
+          <span className="text-base font-medium text-muted-foreground">
+            {itemDescription}
+            {multiEnabled && <span className="text-sm text-muted-foreground/70 ml-2">(cantidad múltiple activada)</span>}
+          </span>
           <div className="flex items-center gap-4">
             <span className="text-xl font-bold">{formatEUR(finalPrice)}</span>
             <div className="flex items-center gap-2">
