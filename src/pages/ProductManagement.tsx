@@ -1015,7 +1015,7 @@ export default function ProductManagement() {
       </Card>
 
       {/* Products Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-4">
         <Card>
           <CardHeader className="pb-2 text-center">
             <CardTitle className="text-xs lg:text-sm font-medium">Total Productos</CardTitle>
@@ -1038,14 +1038,6 @@ export default function ProductManagement() {
           </CardHeader>
           <CardContent className="text-center pt-2">
             <div className="text-lg lg:text-2xl font-bold text-red-600">{inactiveProducts.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2 text-center">
-            <CardTitle className="text-xs lg:text-sm font-medium">Categorías locales</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center pt-2">
-            <div className="text-lg lg:text-2xl font-bold">{availableCategories.length}</div>
           </CardContent>
         </Card>
       </div>
