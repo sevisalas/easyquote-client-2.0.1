@@ -187,8 +187,8 @@ export const CustomerSelector = ({
   const selectedCustomer = customers?.find(customer => customer.id === value);
 
   return (
-    <>
-      {label && <Label htmlFor="customer-selector" className="text-xs">{label}</Label>}
+    <div className="space-y-2">
+      {label && <Label htmlFor="customer-selector">{label}</Label>}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -196,7 +196,7 @@ export const CustomerSelector = ({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="justify-between min-h-[40px]"
+            className="justify-between min-h-[40px] w-full"
           >
             {selectedCustomer ? (
               <div className="flex items-center gap-2 truncate">
@@ -333,6 +333,6 @@ export const CustomerSelector = ({
           </div>
         </PopoverContent>
       </Popover>
-    </>
+    </div>
   );
 };
