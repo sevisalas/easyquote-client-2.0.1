@@ -1116,14 +1116,10 @@ export default function ProductManagement() {
                       <div className="flex items-center space-x-2 mt-1">
                         <Switch
                           checked={selectedProduct.isActive}
-                          onCheckedChange={(checked) => {
-                            const updatedProduct = {
-                              ...selectedProduct,
-                              isActive: checked
-                            };
-                            setSelectedProduct(updatedProduct);
-                            updateProductMutation.mutate(updatedProduct);
-                          }}
+                          onCheckedChange={(checked) => setSelectedProduct({
+                            ...selectedProduct,
+                            isActive: checked
+                          })}
                         />
                         <span className="text-sm">
                           {selectedProduct.isActive ? "Activo" : "Inactivo"}
@@ -1207,14 +1203,10 @@ export default function ProductManagement() {
                   <Switch
                     id="isActive"
                     checked={selectedProduct.isActive}
-                    onCheckedChange={(checked) => {
-                      const updatedProduct = {
-                        ...selectedProduct,
-                        isActive: checked
-                      };
-                      setSelectedProduct(updatedProduct);
-                      updateProductMutation.mutate(updatedProduct);
-                    }}
+                    onCheckedChange={(checked) => setSelectedProduct({
+                      ...selectedProduct,
+                      isActive: checked
+                    })}
                   />
                   <Label htmlFor="isActive">Producto activo</Label>
                 </div>
