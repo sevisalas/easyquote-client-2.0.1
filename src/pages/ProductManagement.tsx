@@ -535,13 +535,12 @@ export default function ProductManagement() {
 
   // Mutation para actualizar producto
   const updateProductMutation = useMutation({
-    mutationFn: async ({ product, action }: { product: EasyQuoteProduct; action?: 'delete' | 'update' }) => {
+    mutationFn: async ({ product, action, closeDialog = true }: { product: EasyQuoteProduct; action?: 'delete' | 'update'; closeDialog?: boolean }) => {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) {
         throw new Error("No hay token de EasyQuote disponible");
       }
 
-      // Preparar el payload con los campos que el API acepta
       const payload = {
         id: product.id,
         productName: product.productName,
@@ -553,7 +552,6 @@ export default function ProductManagement() {
 
       console.log("Updating product with payload:", payload, "action:", action);
 
-      // Usar edge function para actualizar el producto
       const { data, error } = await supabase.functions.invoke("easyquote-update-product", {
         body: { token, product: payload, action }
       });
@@ -567,16 +565,18 @@ export default function ProductManagement() {
         throw new Error(data?.error || "Error al actualizar el producto");
       }
 
-      return data;
+      return { data, closeDialog };
     },
-    onSuccess: () => {
+    onSuccess: ({ closeDialog }) => {
       toast({
         title: "Producto actualizado",
         description: "El producto se ha actualizado correctamente.",
       });
       queryClient.invalidateQueries({ queryKey: ["easyquote-products"] });
-      setIsEditDialogOpen(false);
-      setSelectedProduct(null);
+      if (closeDialog) {
+        setIsEditDialogOpen(false);
+        setSelectedProduct(null);
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -1122,10 +1122,10 @@ export default function ProductManagement() {
                               isActive: checked
                             };
                             setSelectedProduct(updatedProduct);
-                            // Si se desactiva, usar DELETE
                             updateProductMutation.mutate({ 
                               product: updatedProduct, 
-                              action: checked ? 'update' : 'delete' 
+                              action: checked ? 'update' : 'delete',
+                              closeDialog: false
                             });
                           }}
                         />
