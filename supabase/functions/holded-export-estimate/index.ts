@@ -409,11 +409,13 @@ Deno.serve(async (req) => {
           
           const itemData: any = {
             name: additional.name || 'Ajuste',
-            desc: additional.type === 'percentage' 
-              ? `Ajuste ${value}%` 
-              : (additional.type === 'quantity_multiplier' || additional.type === 'multiplier')
-              ? `Multiplicador x${value}`
-              : 'Ajuste sobre el presupuesto',
+            desc: additional.description || (
+              additional.type === 'percentage' 
+                ? `Ajuste ${value}%` 
+                : (additional.type === 'quantity_multiplier' || additional.type === 'multiplier')
+                ? `Multiplicador x${value}`
+                : 'Ajuste sobre el presupuesto'
+            ),
             units: 1,
             subtotal: price,
             taxes: ["s_iva_21"]
