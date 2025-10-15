@@ -459,14 +459,12 @@ export default function QuoteNew() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <CustomerSelector
-                value={customerId}
-                onValueChange={setCustomerId}
-                label="Cliente *"
-                placeholder="Seleccionar cliente..."
-              />
-            </div>
+            <CustomerSelector
+              value={customerId}
+              onValueChange={setCustomerId}
+              label="Cliente *"
+              placeholder="Seleccionar cliente..."
+            />
             
             <div className="space-y-2">
               <Label htmlFor="valid-until">Válido hasta</Label>
