@@ -553,23 +553,21 @@ export default function ProductManagement() {
 
       console.log("Updating product with payload:", payload);
 
-      const response = await fetch("https://api.easyquote.cloud/api/v1/products", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
+      // Usar edge function para actualizar el producto
+      const { data, error } = await supabase.functions.invoke("easyquote-update-product", {
+        body: { token, product: payload }
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error response:", errorText);
-        throw new Error("Error al actualizar el producto");
+      if (error) {
+        console.error("Error response:", error);
+        throw new Error(error.message || "Error al actualizar el producto");
       }
 
-      // Return success without trying to parse JSON since PUT often returns empty response
-      return { success: true };
+      if (!data?.success) {
+        throw new Error(data?.error || "Error al actualizar el producto");
+      }
+
+      return data;
     },
     onSuccess: () => {
       toast({
