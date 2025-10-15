@@ -589,8 +589,11 @@ export default function ProductManagement() {
 
   const handleSaveProduct = () => {
     if (selectedProduct) {
+      // Determinar acción: delete si está inactivo, update si está activo
+      const action = selectedProduct.isActive ? 'update' : 'delete';
+      
       // Actualizar producto en EasyQuote
-      updateProductMutation.mutate({ product: selectedProduct, action: 'update' });
+      updateProductMutation.mutate({ product: selectedProduct, action });
       
       // Actualizar categoría en Supabase
       if (selectedCategoryId || selectedSubcategoryId) {
@@ -1116,18 +1119,10 @@ export default function ProductManagement() {
                       <div className="flex items-center space-x-2 mt-1">
                         <Switch
                           checked={selectedProduct.isActive}
-                          onCheckedChange={(checked) => {
-                            const updatedProduct = {
-                              ...selectedProduct,
-                              isActive: checked
-                            };
-                            setSelectedProduct(updatedProduct);
-                            updateProductMutation.mutate({ 
-                              product: updatedProduct, 
-                              action: checked ? 'update' : 'delete',
-                              closeDialog: false
-                            });
-                          }}
+                          onCheckedChange={(checked) => setSelectedProduct({
+                            ...selectedProduct,
+                            isActive: checked
+                          })}
                         />
                         <span className="text-sm">
                           {selectedProduct.isActive ? "Activo" : "Inactivo"}
