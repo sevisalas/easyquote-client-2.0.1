@@ -109,13 +109,8 @@ export default function Template6({ data }: Template6Props) {
                   <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                     <td className="p-4 border-b border-slate-100">
                       <p className="font-serif font-semibold text-slate-800 mb-1">
-                        {item.name || item.product_name || 'Producto'}
+                        {item.description || item.name || item.product_name || 'Producto'}
                       </p>
-                      {item.description && (
-                        <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap mt-2">
-                          {item.description}
-                        </p>
-                      )}
                     </td>
                     <td className="p-4 border-b border-slate-100 text-right">
                       <p className="font-semibold text-slate-800">{fmtEUR(item.price || 0)}</p>

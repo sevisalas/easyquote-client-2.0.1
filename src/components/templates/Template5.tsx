@@ -97,11 +97,8 @@ export default function Template5({ data }: Template5Props) {
                             style={{ backgroundColor: brandColor }}>
                         {index + 1}
                       </span>
-                      <p className="font-bold text-base">{item.name || item.product_name || 'Producto'}</p>
+                      <p className="font-bold text-base">{item.description || item.name || item.product_name || 'Producto'}</p>
                     </div>
-                    {item.description && (
-                      <p className="text-xs text-gray-600 ml-10 whitespace-pre-wrap">{item.description}</p>
-                    )}
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-xl" style={{ color: brandColor }}>{fmtEUR(item.price || 0)}</p>

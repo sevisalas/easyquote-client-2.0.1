@@ -73,10 +73,7 @@ export default function Template1({ data }: Template1Props) {
             {items.map((item: any, index: number) => (
               <tr key={index} className="border-b border-gray-200">
                 <td className="p-2">
-                  <p className="font-medium text-sm">{item.name || item.product_name || 'Producto'}</p>
-                  {item.description && (
-                    <p className="text-xs text-gray-600 mt-1 whitespace-pre-wrap">{item.description}</p>
-                  )}
+                  <p className="font-medium text-sm">{item.description || item.name || item.product_name || 'Producto'}</p>
                 </td>
                 <td className="p-2 text-right font-medium">{fmtEUR(item.price || 0)}</td>
               </tr>

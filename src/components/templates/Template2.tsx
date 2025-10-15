@@ -75,10 +75,7 @@ export default function Template2({ data }: Template2Props) {
               <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <p className="font-semibold mb-1">{item.name || item.product_name || 'Producto'}</p>
-                    {item.description && (
-                      <p className="text-xs text-gray-600 whitespace-pre-wrap">{item.description}</p>
-                    )}
+                    <p className="font-semibold mb-1">{item.description || item.name || item.product_name || 'Producto'}</p>
                   </div>
                   <div className="text-right ml-4">
                     <p className="font-bold text-lg text-gray-900">{fmtEUR(item.price || 0)}</p>

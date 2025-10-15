@@ -70,10 +70,7 @@ export default function Template3({ data }: Template3Props) {
           {items.map((item: any, index: number) => (
             <div key={index} className="grid grid-cols-12 py-4 border-b border-gray-100">
               <div className="col-span-9">
-                <p className="font-medium mb-1">{item.name || item.product_name || 'Producto'}</p>
-                {item.description && (
-                  <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">{item.description}</p>
-                )}
+                <p className="font-medium mb-1">{item.description || item.name || item.product_name || 'Producto'}</p>
               </div>
               <div className="col-span-3 text-right">
                 <p className="font-medium">{fmtEUR(item.price || 0)}</p>

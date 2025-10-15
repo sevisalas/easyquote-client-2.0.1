@@ -106,10 +106,7 @@ export default function Template4({ data }: Template4Props) {
               {items.map((item: any, index: number) => (
                 <tr key={index} className="border-b border-gray-100">
                   <td className="py-4">
-                    <p className="font-semibold mb-1">{item.name || item.product_name || 'Producto'}</p>
-                    {item.description && (
-                      <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">{item.description}</p>
-                    )}
+                    <p className="font-semibold mb-1">{item.description || item.name || item.product_name || 'Producto'}</p>
                   </td>
                   <td className="py-4 text-right font-semibold">{fmtEUR(item.price || 0)}</td>
                 </tr>
