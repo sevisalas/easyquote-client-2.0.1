@@ -162,38 +162,72 @@ export default function QuoteEdit() {
       
       // Load from database (quote_items table) 
       if (quote.items && quote.items.length > 0) {
-        const dbItems = quote.items.map((item: any) => ({
-          id: item.id,
-          product_name: item.product_name || '',
-          description: item.description || '',
-          price: item.price || 0,
-          // QuoteItem compatibility
-          productId: item.product_id || '',
-          prompts: typeof item.prompts === 'object' ? item.prompts : {},
-          outputs: Array.isArray(item.outputs) ? item.outputs : [],
-          multi: (item.multi && typeof item.multi === 'object' && (item.multi.qtyInputs || item.multi.qtyPrompt)) ? item.multi : undefined,
-          itemDescription: item.product_name || '',
-          itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
-        }));
+        const dbItems = quote.items.map((item: any) => {
+          // Convert prompts from array format (DB) to object format (QuoteItem expects)
+          let promptsObj: Record<string, any> = {};
+          if (Array.isArray(item.prompts)) {
+            // Convert array [{id, label, value, order}] to object {id: {label, value, order}}
+            item.prompts.forEach((prompt: any) => {
+              promptsObj[prompt.id] = {
+                label: prompt.label,
+                value: prompt.value,
+                order: prompt.order
+              };
+            });
+          } else if (typeof item.prompts === 'object' && item.prompts !== null) {
+            // Already in object format
+            promptsObj = item.prompts;
+          }
+          
+          return {
+            id: item.id,
+            product_name: item.product_name || '',
+            description: item.description || '',
+            price: item.price || 0,
+            // QuoteItem compatibility
+            productId: item.product_id || '',
+            prompts: promptsObj,
+            outputs: Array.isArray(item.outputs) ? item.outputs : [],
+            multi: (item.multi && typeof item.multi === 'object' && (item.multi.qtyInputs || item.multi.qtyPrompt)) ? item.multi : undefined,
+            itemDescription: item.product_name || '',
+            itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
+          };
+        });
         allItems.push(...dbItems);
       }
       
       // Load from JSON selections (if no database items)
       if (allItems.length === 0 && quote.selections && Array.isArray(quote.selections)) {
-        const jsonItems = quote.selections.map((selection: any, index: number) => ({
-          id: `json-${index}`,
-          product_name: selection.itemDescription || '',
-          description: '',
-          price: selection.price || 0,
-          isFromSelections: true,
-          // QuoteItem compatibility
-          productId: selection.productId || '',
-          prompts: selection.prompts || {},
-          outputs: selection.outputs || [],
-          multi: selection.multi,
-          itemDescription: selection.itemDescription || '',
-          itemAdditionals: selection.itemAdditionals || [],
-        }));
+        const jsonItems = quote.selections.map((selection: any, index: number) => {
+          // Ensure prompts are in object format
+          let promptsObj: Record<string, any> = {};
+          if (Array.isArray(selection.prompts)) {
+            selection.prompts.forEach((prompt: any) => {
+              promptsObj[prompt.id] = {
+                label: prompt.label,
+                value: prompt.value,
+                order: prompt.order
+              };
+            });
+          } else if (typeof selection.prompts === 'object' && selection.prompts !== null) {
+            promptsObj = selection.prompts;
+          }
+          
+          return {
+            id: `json-${index}`,
+            product_name: selection.itemDescription || '',
+            description: '',
+            price: selection.price || 0,
+            isFromSelections: true,
+            // QuoteItem compatibility
+            productId: selection.productId || '',
+            prompts: promptsObj,
+            outputs: selection.outputs || [],
+            multi: selection.multi,
+            itemDescription: selection.itemDescription || '',
+            itemAdditionals: selection.itemAdditionals || [],
+          };
+        });
         allItems.push(...jsonItems);
       }
       
