@@ -289,7 +289,7 @@ export default function QuoteNew() {
         customer_id: customerId,
         quote_number: quoteNumber,
         title: title || `Presupuesto ${quoteNumber}`,
-        description: description || "",
+        description: description || itemsArray[0]?.itemDescription || "",
         status,
         subtotal: totals.subtotal,
         tax_amount: totals.taxAmount,
