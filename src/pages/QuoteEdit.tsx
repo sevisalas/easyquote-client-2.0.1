@@ -665,7 +665,7 @@ export default function QuoteEdit() {
                        </div>
                      </>
                    ) : (
-                        // Compressed mode - show summary
+                         // Compressed mode - show summary
                         <div className="flex justify-between items-center gap-3">
                           <div className="flex-1 min-w-0 space-y-0.5">
                             <p className="text-sm font-medium truncate">
@@ -674,12 +674,6 @@ export default function QuoteEdit() {
                                 <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
                               )}
                             </p>
-                            {item.description && (
-                              <div className="pt-0.5">
-                                <p className="text-xs text-muted-foreground">Descripción</p>
-                                <p className="text-sm truncate">{item.description}</p>
-                              </div>
-                            )}
                           </div>
                          <div className="flex items-center gap-3 shrink-0">
                            <div className="text-sm font-medium text-secondary text-right">
