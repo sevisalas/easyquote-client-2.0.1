@@ -667,9 +667,9 @@ export default function QuoteEdit() {
                    ) : (
                          // Compressed mode - show summary
                         <div className="flex justify-between items-center gap-3">
-                          <div className="flex-1 min-w-0 space-y-0.5">
+                          <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">
-                              {item.product_name || '-'}
+                              {item.description || item.product_name || '-'}
                               {item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1 && (
                                 <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
                               )}
