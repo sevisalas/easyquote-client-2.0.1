@@ -8,55 +8,58 @@ serve(async (req) => {
   }
 
   try {
-    // Verify webhook signature if secret is configured
+    // Verify webhook secret is configured - fail closed for security
     const webhookSecret = Deno.env.get('ZAPIER_WEBHOOK_SECRET');
-    if (webhookSecret) {
-      const signature = req.headers.get('x-zapier-signature');
-      const body = await req.text();
-      
-      if (!signature) {
-        console.error('Missing webhook signature');
-        return new Response(
-          JSON.stringify({ error: 'Missing webhook signature' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Verify signature using HMAC SHA-256
-      const encoder = new TextEncoder();
-      const key = await crypto.subtle.importKey(
-        'raw',
-        encoder.encode(webhookSecret),
-        { name: 'HMAC', hash: 'SHA-256' },
-        false,
-        ['sign']
+    if (!webhookSecret) {
+      console.error('ZAPIER_WEBHOOK_SECRET not configured - rejecting request for security');
+      return new Response(
+        JSON.stringify({ error: 'Webhook authentication not configured' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
-      
-      const expectedSignature = await crypto.subtle.sign(
-        'HMAC',
-        key,
-        encoder.encode(body)
-      );
-      
-      const expectedSignatureHex = Array.from(new Uint8Array(expectedSignature))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
-      
-      if (signature !== expectedSignatureHex) {
-        console.error('Invalid webhook signature');
-        return new Response(
-          JSON.stringify({ error: 'Invalid webhook signature' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Parse the already-read body
-      var bodyData = JSON.parse(body);
-    } else {
-      // No secret configured, just parse body
-      console.warn('ZAPIER_WEBHOOK_SECRET not configured - webhook signature verification disabled');
-      var bodyData = await req.json();
     }
+
+    // Verify webhook signature using HMAC SHA-256
+    const signature = req.headers.get('x-zapier-signature');
+    const body = await req.text();
+    
+    if (!signature) {
+      console.error('Missing webhook signature');
+      return new Response(
+        JSON.stringify({ error: 'Missing webhook signature' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify signature
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(webhookSecret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const expectedSignature = await crypto.subtle.sign(
+      'HMAC',
+      key,
+      encoder.encode(body)
+    );
+    
+    const expectedSignatureHex = Array.from(new Uint8Array(expectedSignature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    if (signature !== expectedSignatureHex) {
+      console.error('Invalid webhook signature');
+      return new Response(
+        JSON.stringify({ error: 'Invalid webhook signature' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Parse the already-read body
+    const bodyData = JSON.parse(body);
 
     console.log('Zapier webhook received:', bodyData);
 
