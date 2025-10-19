@@ -112,7 +112,7 @@ const Index = () => {
   };
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
+    <div className="w-full min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
         <div className="mb-12">
@@ -131,7 +131,7 @@ const Index = () => {
             />
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-                Bienvenido, <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">{userName}</span>
+                Bienvenido, <span className="text-primary font-bold">{userName}</span>
               </h1>
               <p className="text-muted-foreground mt-1">Gestiona tus presupuestos de forma profesional</p>
             </div>
@@ -141,7 +141,7 @@ const Index = () => {
           <Button
             size="lg"
             onClick={() => navigate('/presupuestos/nuevo')}
-            className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-primary-foreground px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all"
           >
             <Plus className="w-5 h-5 mr-2" />
             Crear Nuevo Presupuesto
