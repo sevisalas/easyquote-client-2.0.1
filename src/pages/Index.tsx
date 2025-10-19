@@ -39,41 +39,6 @@ const Index = () => {
     getUser();
   }, []);
 
-  // Obtener últimos presupuestos
-  const { data: recentQuotes = [] } = useQuery({
-    queryKey: ["recent-quotes", userId],
-    queryFn: async () => {
-      if (!userId) return [];
-      const { data, error } = await supabase
-        .from('quotes')
-        .select('id, quote_number, customer_id, final_price, status, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!userId,
-  });
-
-  // Obtener clientes para mostrar nombres
-  const { data: customers = [] } = useQuery({
-    queryKey: ["customers"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('customers')
-        .select('id, name');
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  const getCustomerName = (customerId?: string | null) => {
-    if (!customerId) return "Sin cliente";
-    const customer = customers.find((c: any) => c.id === customerId);
-    return customer?.name || "—";
-  };
 
   // Obtener estadísticas rápidas
   const { data: stats } = useQuery({
@@ -100,16 +65,6 @@ const Index = () => {
   if (isSuperAdmin) {
     return <SuperAdminDashboard />;
   }
-
-  const getStatusBadge = (status: string) => {
-    const badges = {
-      draft: { label: 'Borrador', className: 'bg-muted text-muted-foreground' },
-      sent: { label: 'Enviado', className: 'bg-blue-500/10 text-blue-500' },
-      approved: { label: 'Aprobado', className: 'bg-green-500/10 text-green-500' },
-      rejected: { label: 'Rechazado', className: 'bg-red-500/10 text-red-500' },
-    };
-    return badges[status as keyof typeof badges] || badges.draft;
-  };
 
   return (
     <div className="w-full min-h-screen bg-background">
@@ -192,66 +147,6 @@ const Index = () => {
             </CardContent>
           </Card>
         </div>
-
-        {/* Recent Quotes Section */}
-        <Card className="mb-12">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-foreground">Presupuestos Recientes</h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/presupuestos')}
-                className="text-primary hover:text-primary/90"
-              >
-                Ver todos
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-
-            {recentQuotes.length === 0 ? (
-              <div className="text-center py-12">
-                <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                <p className="text-muted-foreground mb-4">No tienes presupuestos todavía</p>
-                <Button onClick={() => navigate('/presupuestos/nuevo')} variant="outline">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Crear tu primer presupuesto
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {recentQuotes.map((quote) => {
-                  const badge = getStatusBadge(quote.status);
-                  return (
-                    <div
-                      key={quote.id}
-                      onClick={() => navigate(`/presupuestos/${quote.id}`)}
-                      className="flex items-center justify-between p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/50 cursor-pointer transition-all group"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-1">
-                          <span className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                            #{quote.quote_number}
-                          </span>
-                          <span className={`text-xs px-2 py-1 rounded-full ${badge.className}`}>
-                            {badge.label}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{getCustomerName(quote.customer_id)}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-foreground">${quote.final_price?.toFixed(2) || '0.00'}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(quote.created_at).toLocaleDateString('es-ES')}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         {/* Quick Actions */}
         <div className="grid md:grid-cols-2 gap-6">
