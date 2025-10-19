@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,8 +16,8 @@ const fetchProducts = async () => {
   const token = sessionStorage.getItem("easyquote_token");
   if (!token) throw new Error("No hay token de EasyQuote disponible. Por favor, inicia sesión nuevamente.");
   
-  const { data, error } = await supabase.functions.invoke("easyquote-products", {
-    body: { token },
+  const { data, error } = await invokeEasyQuoteFunction("easyquote-products", {
+    token
   });
   
   if (error) throw error;
@@ -72,11 +73,9 @@ export default function ProductTestPage() {
       if (!token) return;
 
       try {
-        const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
-          body: { 
-            token, 
-            productId: productId 
-          },
+        const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
+          token, 
+          productId: productId 
         });
         
         if (error) throw error;
@@ -140,8 +139,10 @@ export default function ProductTestPage() {
       
       console.log("Sending inputs to API:", inputsArray);
 
-      const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
-        body: { token, productId, inputs: inputsArray },
+      const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
+        token, 
+        productId, 
+        inputs: inputsArray
       });
       if (error) throw error;
       

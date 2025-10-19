@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -428,11 +429,9 @@ export default function ProductManagement() {
 
       console.log("ProductManagement: Fetching products", { includeInactive });
 
-      const { data, error } = await supabase.functions.invoke("easyquote-products", {
-        body: { 
-          token,
-          includeInactive 
-        }
+      const { data, error } = await invokeEasyQuoteFunction("easyquote-products", {
+        token,
+        includeInactive 
       });
 
       if (error) {
@@ -465,11 +464,9 @@ export default function ProductManagement() {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) return [];
 
-      const { data, error } = await supabase.functions.invoke("easyquote-products", {
-        body: { 
-          token,
-          includeInactive: true 
-        }
+      const { data, error } = await invokeEasyQuoteFunction("easyquote-products", {
+        token,
+        includeInactive: true 
       });
 
       if (error || !data) return [];
@@ -573,8 +570,10 @@ export default function ProductManagement() {
 
       console.log("Updating product with payload:", payload, "action:", action);
 
-      const { data, error } = await supabase.functions.invoke("easyquote-update-product", {
-        body: { token, product: payload, action }
+      const { data, error } = await invokeEasyQuoteFunction("easyquote-update-product", {
+        token, 
+        product: payload, 
+        action
       });
 
       if (error) {
