@@ -84,7 +84,7 @@ const Index = () => {
               }}
             />
             <div className="text-right">
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+              <h1 className="text-xl md:text-2xl font-bold text-foreground">
                 Hola, <span className="text-primary font-bold">{userName}</span>
               </h1>
               <p className="text-muted-foreground mt-1">Gestiona tus presupuestos de forma profesional</p>
