@@ -17,13 +17,15 @@ const Index = () => {
 
   // Obtener estadísticas rápidas
   const { data: stats } = useQuery({
-    queryKey: ["quick-stats", userId],
+    queryKey: ["quick-stats"],
     queryFn: async () => {
-      if (!userId) return { total: 0, draft: 0, sent: 0, approved: 0, rejected: 0 };
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { total: 0, draft: 0, sent: 0, approved: 0, rejected: 0 };
+      
       const { data, error } = await supabase
         .from('quotes')
         .select('status')
-        .eq('user_id', userId);
+        .eq('user_id', user.id);
       
       if (error) throw error;
       
@@ -35,7 +37,6 @@ const Index = () => {
         rejected: data?.filter(q => q.status === 'rejected').length ?? 0,
       };
     },
-    enabled: !!userId,
   });
 
   useEffect(() => {
