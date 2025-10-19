@@ -19,22 +19,21 @@ const Index = () => {
   const { data: stats } = useQuery({
     queryKey: ["quick-stats"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return { total: 0, draft: 0, sent: 0, approved: 0, rejected: 0 };
-      
-      const { data, error } = await supabase
-        .from('quotes')
-        .select('status')
-        .eq('user_id', user.id);
-      
+
+      const { data, error } = await supabase.from("quotes").select("status").eq("user_id", user.id);
+
       if (error) throw error;
-      
+
       return {
         total: data?.length ?? 0,
-        draft: data?.filter(q => q.status === 'draft').length ?? 0,
-        sent: data?.filter(q => q.status === 'sent').length ?? 0,
-        approved: data?.filter(q => q.status === 'approved').length ?? 0,
-        rejected: data?.filter(q => q.status === 'rejected').length ?? 0,
+        draft: data?.filter((q) => q.status === "draft").length ?? 0,
+        sent: data?.filter((q) => q.status === "sent").length ?? 0,
+        approved: data?.filter((q) => q.status === "approved").length ?? 0,
+        rejected: data?.filter((q) => q.status === "rejected").length ?? 0,
       };
     },
   });
@@ -43,27 +42,23 @@ const Index = () => {
     document.title = "Inicio | EasyQuote";
 
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('first_name')
-          .eq('id', user.id)
-          .single();
-        
+        const { data: profile } = await supabase.from("profiles").select("first_name").eq("id", user.id).single();
+
         if (profile?.first_name) {
           setUserName(profile.first_name);
         } else {
-          setUserName(user.email?.split('@')[0] || 'Usuario');
+          setUserName(user.email?.split("@")[0] || "Usuario");
         }
       }
     };
 
     getUser();
   }, []);
-
-
 
   // Si es superadmin, mostrar el dashboard específico de superadmin
   if (isSuperAdmin) {
@@ -83,14 +78,14 @@ const Index = () => {
               onError={(e) => {
                 const img = e.currentTarget;
                 if (!img.dataset.fallbackApplied) {
-                  img.src = '/lovable-uploads/logo_transparente.png';
-                  img.dataset.fallbackApplied = 'true';
+                  img.src = "/lovable-uploads/logo_transparente.png";
+                  img.dataset.fallbackApplied = "true";
                 }
               }}
             />
             <div className="text-right">
               <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-                Bienvenido, <span className="text-primary font-bold">{userName}</span>
+                Hola, <span className="text-primary font-bold">{userName}</span>
               </h1>
               <p className="text-muted-foreground mt-1">Gestiona tus presupuestos de forma profesional</p>
             </div>
@@ -100,11 +95,11 @@ const Index = () => {
           <div className="flex justify-center">
             <Button
               size="lg"
-              onClick={() => navigate('/presupuestos/nuevo')}
+              onClick={() => navigate("/presupuestos/nuevo")}
               className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all"
             >
               <Plus className="w-5 h-5 mr-2" />
-              Crear Nuevo Presupuesto
+              Crear nuevo presupuesto
             </Button>
           </div>
         </div>
@@ -184,7 +179,10 @@ const Index = () => {
 
         {/* Quick Actions */}
         <div className="grid md:grid-cols-2 gap-6">
-          <Card className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer" onClick={() => navigate('/presupuestos')}>
+          <Card
+            className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer"
+            onClick={() => navigate("/presupuestos")}
+          >
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -193,13 +191,14 @@ const Index = () => {
                 <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
               </div>
               <h3 className="text-lg font-semibold mb-2 text-foreground">Gestionar Presupuestos</h3>
-              <p className="text-sm text-muted-foreground">
-                Ver, editar y administrar todos tus presupuestos
-              </p>
+              <p className="text-sm text-muted-foreground">Ver, editar y administrar todos tus presupuestos</p>
             </CardContent>
           </Card>
 
-          <Card className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer" onClick={() => navigate('/clientes')}>
+          <Card
+            className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer"
+            onClick={() => navigate("/clientes")}
+          >
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -208,9 +207,7 @@ const Index = () => {
                 <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
               </div>
               <h3 className="text-lg font-semibold mb-2 text-foreground">Gestionar Clientes</h3>
-              <p className="text-sm text-muted-foreground">
-                Administra tu cartera de clientes
-              </p>
+              <p className="text-sm text-muted-foreground">Administra tu cartera de clientes</p>
             </CardContent>
           </Card>
         </div>
@@ -220,4 +217,3 @@ const Index = () => {
 };
 
 export default Index;
-
