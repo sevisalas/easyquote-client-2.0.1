@@ -40,26 +40,6 @@ const Index = () => {
   }, []);
 
 
-  // Obtener estadísticas rápidas
-  const { data: stats } = useQuery({
-    queryKey: ["quick-stats", userId],
-    queryFn: async () => {
-      if (!userId) return { total: 0, pending: 0, approved: 0 };
-      const { data, error } = await supabase
-        .from('quotes')
-        .select('status')
-        .eq('user_id', userId);
-      
-      if (error) throw error;
-      
-      return {
-        total: data?.length ?? 0,
-        pending: data?.filter(q => q.status === 'draft' || q.status === 'sent').length ?? 0,
-        approved: data?.filter(q => q.status === 'approved').length ?? 0,
-      };
-    },
-    enabled: !!userId,
-  });
 
   // Si es superadmin, mostrar el dashboard específico de superadmin
   if (isSuperAdmin) {
@@ -101,51 +81,6 @@ const Index = () => {
             <Plus className="w-5 h-5 mr-2" />
             Crear Nuevo Presupuesto
           </Button>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <Card className="border-primary/20 hover:border-primary/40 transition-all">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Total Presupuestos</p>
-                  <p className="text-3xl font-bold text-foreground">{stats?.total ?? 0}</p>
-                </div>
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-blue-500/20 hover:border-blue-500/40 transition-all">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Pendientes</p>
-                  <p className="text-3xl font-bold text-foreground">{stats?.pending ?? 0}</p>
-                </div>
-                <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-blue-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-green-500/20 hover:border-green-500/40 transition-all">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Aprobados</p>
-                  <p className="text-3xl font-bold text-foreground">{stats?.approved ?? 0}</p>
-                </div>
-                <div className="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6 text-green-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Quick Actions */}
