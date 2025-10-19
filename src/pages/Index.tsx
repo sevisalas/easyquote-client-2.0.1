@@ -51,13 +51,7 @@ const Index = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
         <div className="mb-12">
-          <div className="flex items-center justify-end gap-4 mb-6">
-            <div className="text-right">
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-                Bienvenido, <span className="text-primary font-bold">{userName}</span>
-              </h1>
-              <p className="text-muted-foreground mt-1">Gestiona tus presupuestos de forma profesional</p>
-            </div>
+          <div className="flex items-center justify-between gap-4 mb-6">
             <img
               src="/lovable-uploads/logo_transparente-removebg-preview.png"
               alt="EasyQuote"
@@ -70,6 +64,12 @@ const Index = () => {
                 }
               }}
             />
+            <div className="text-right">
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+                Bienvenido, <span className="text-primary font-bold">{userName}</span>
+              </h1>
+              <p className="text-muted-foreground mt-1">Gestiona tus presupuestos de forma profesional</p>
+            </div>
           </div>
 
           {/* Acción Principal */}
