@@ -33,7 +33,6 @@ interface Item {
 
 const items: Item[] = [
   { title: "Inicio", url: "/", icon: Home },
-  { title: "Panel de control", url: "/dashboard", icon: LayoutDashboard },
 ];
 
 export function AppSidebar() {
