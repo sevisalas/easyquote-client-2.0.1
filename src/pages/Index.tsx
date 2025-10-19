@@ -19,7 +19,7 @@ const Index = () => {
   const { data: stats } = useQuery({
     queryKey: ["quick-stats", userId],
     queryFn: async () => {
-      if (!userId) return { total: 0, pending: 0, approved: 0 };
+      if (!userId) return { total: 0, draft: 0, sent: 0, approved: 0, rejected: 0 };
       const { data, error } = await supabase
         .from('quotes')
         .select('status')
@@ -29,8 +29,10 @@ const Index = () => {
       
       return {
         total: data?.length ?? 0,
-        pending: data?.filter(q => q.status === 'draft' || q.status === 'sent').length ?? 0,
+        draft: data?.filter(q => q.status === 'draft').length ?? 0,
+        sent: data?.filter(q => q.status === 'sent').length ?? 0,
         approved: data?.filter(q => q.status === 'approved').length ?? 0,
+        rejected: data?.filter(q => q.status === 'rejected').length ?? 0,
       };
     },
     enabled: !!userId,
@@ -107,12 +109,12 @@ const Index = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
           <Card className="border-primary/20 hover:border-primary/40 transition-all">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Total Presupuestos</p>
+                  <p className="text-sm text-muted-foreground mb-1">Total</p>
                   <p className="text-3xl font-bold text-foreground">{stats?.total ?? 0}</p>
                 </div>
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
@@ -122,12 +124,26 @@ const Index = () => {
             </CardContent>
           </Card>
 
+          <Card className="border-gray-500/20 hover:border-gray-500/40 transition-all">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Borrador</p>
+                  <p className="text-3xl font-bold text-foreground">{stats?.draft ?? 0}</p>
+                </div>
+                <div className="w-12 h-12 bg-gray-500/10 rounded-full flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-gray-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="border-blue-500/20 hover:border-blue-500/40 transition-all">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Pendientes</p>
-                  <p className="text-3xl font-bold text-foreground">{stats?.pending ?? 0}</p>
+                  <p className="text-sm text-muted-foreground mb-1">Enviado</p>
+                  <p className="text-3xl font-bold text-foreground">{stats?.sent ?? 0}</p>
                 </div>
                 <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center">
                   <Clock className="w-6 h-6 text-blue-500" />
@@ -140,11 +156,25 @@ const Index = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Aprobados</p>
+                  <p className="text-sm text-muted-foreground mb-1">Aprobado</p>
                   <p className="text-3xl font-bold text-foreground">{stats?.approved ?? 0}</p>
                 </div>
                 <div className="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center">
                   <CheckCircle2 className="w-6 h-6 text-green-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-red-500/20 hover:border-red-500/40 transition-all">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Rechazado</p>
+                  <p className="text-3xl font-bold text-foreground">{stats?.rejected ?? 0}</p>
+                </div>
+                <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-red-500" />
                 </div>
               </div>
             </CardContent>
