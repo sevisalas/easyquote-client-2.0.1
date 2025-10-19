@@ -55,7 +55,7 @@ const Index = () => {
             <img
               src="/lovable-uploads/logo_transparente-removebg-preview.png"
               alt="EasyQuote"
-              className="h-12 w-auto"
+              className="h-20 w-auto"
               onError={(e) => {
                 const img = e.currentTarget;
                 if (!img.dataset.fallbackApplied) {
