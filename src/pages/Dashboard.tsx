@@ -17,16 +17,24 @@ const Dashboard = () => {
       const { data: { user } } = await supabase.auth.getUser();
       const uid = user?.id || "";
       try {
-        const [{ count: total }, { count: pending }, { count: approved }, { count: rejected }] = await Promise.all([
-          supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('user_id', uid),
-          supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('user_id', uid).in('status', ['draft', 'sent']),
-          supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('user_id', uid).eq('status', 'approved'),
-          supabase.from('quotes').select('*', { count: 'exact', head: true }).eq('user_id', uid).eq('status', 'rejected'),
-        ]);
-        setTotalQuotes(total ?? 0);
-        setPendingCount(pending ?? 0);
-        setApprovedCount(approved ?? 0);
-        setRejectedCount(rejected ?? 0);
+        // Obtener todos los presupuestos del usuario
+        const { data: allQuotes, error } = await supabase
+          .from('quotes')
+          .select('status')
+          .eq('user_id', uid);
+        
+        if (error) throw error;
+        
+        // Contar manualmente
+        const total = allQuotes?.length ?? 0;
+        const pending = allQuotes?.filter(q => q.status === 'draft' || q.status === 'sent').length ?? 0;
+        const approved = allQuotes?.filter(q => q.status === 'approved').length ?? 0;
+        const rejected = allQuotes?.filter(q => q.status === 'rejected').length ?? 0;
+        
+        setTotalQuotes(total);
+        setPendingCount(pending);
+        setApprovedCount(approved);
+        setRejectedCount(rejected);
       } catch (_e) {
         setTotalQuotes(0);
         setPendingCount(0);
