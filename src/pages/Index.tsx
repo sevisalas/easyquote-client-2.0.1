@@ -73,14 +73,16 @@ const Index = () => {
           </div>
 
           {/* Acción Principal */}
-          <Button
-            size="lg"
-            onClick={() => navigate('/presupuestos/nuevo')}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Crear Nuevo Presupuesto
-          </Button>
+          <div className="flex justify-center">
+            <Button
+              size="lg"
+              onClick={() => navigate('/presupuestos/nuevo')}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Crear Nuevo Presupuesto
+            </Button>
+          </div>
         </div>
 
         {/* Quick Actions */}
