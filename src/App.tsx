@@ -26,6 +26,7 @@ import ExcelFiles from "./pages/ExcelFiles";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProductManagement from "./pages/ProductManagement";
 import ProductCategories from "./pages/ProductCategories";
+import ProductForm from "./pages/ProductForm";
 
 
 
@@ -233,6 +234,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <ProductManagement />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/productos/nuevo"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ProductForm />
                 </AppLayout>
               </ProtectedRoute>
             }
