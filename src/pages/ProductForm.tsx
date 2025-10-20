@@ -164,14 +164,14 @@ export default function ProductForm() {
             <div className="space-y-2">
               <Label htmlFor="excelfileId">Archivo Excel (Calculadora)</Label>
               <Select
-                value={formData.excelfileId}
-                onValueChange={(value) => handleChange("excelfileId", value)}
+                value={formData.excelfileId || "none"}
+                onValueChange={(value) => handleChange("excelfileId", value === "none" ? "" : value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona un archivo Excel..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin archivo Excel</SelectItem>
+                  <SelectItem value="none">Sin archivo Excel</SelectItem>
                   {excelFiles.map((file) => (
                     <SelectItem key={file.id} value={file.id}>
                       {file.fileName}
