@@ -46,12 +46,20 @@ export default function ProductForm() {
         throw new Error("No hay token de EasyQuote disponible");
       }
 
-      const { data, error } = await invokeEasyQuoteFunction("easyquote-master-files", {
-        token,
+      const response = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
       });
 
-      if (error) throw error;
-      return data as EasyQuoteExcelFile[];
+      if (!response.ok) {
+        throw new Error("Error al obtener archivos Excel de EasyQuote");
+      }
+
+      const data = await response.json();
+      return data.filter((file: EasyQuoteExcelFile) => file.isActive);
     },
   });
 
