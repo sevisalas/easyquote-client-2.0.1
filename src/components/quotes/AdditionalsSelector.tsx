@@ -115,12 +115,12 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
   )
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Selected Additionals */}
       {selectedAdditionals.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {selectedAdditionals.map((additional) => (
-            <div key={additional.id} className="flex items-center gap-2 p-2 border rounded-lg">
+            <div key={additional.id} className="flex items-center gap-2 p-1.5 border rounded">
               <div className="flex-1">
                 <div className="text-sm font-medium">
                   {additional.name}
@@ -160,7 +160,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
 
       {/* Add Predefined Additional */}
       {unselectedAdditionals.length > 0 && (
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <Select 
             value={newAdditionalId} 
             onValueChange={(value) => {
@@ -183,19 +183,19 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
             </SelectContent>
           </Select>
           {newAdditionalId && (
-            <div className="flex items-center gap-1 w-32">
+            <div className="flex items-center gap-1 w-24">
               <Input
                 type="number"
                 step="0.01"
                 value={newAdditionalValue}
                 onChange={(e) => setNewAdditionalValue(parseFloat(e.target.value) || 0)}
                 placeholder="Valor"
-                className="w-full"
+                className="w-full h-9"
               />
               <span className="text-sm text-muted-foreground">€</span>
             </div>
           )}
-          <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} size="sm">
+          <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} className="h-9 px-3">
             <Plus className="h-4 w-4 mr-1" />
             Añadir
           </Button>
@@ -203,15 +203,15 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
       )}
 
       {/* Add Custom Additional */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
         <Input
           value={customName}
           onChange={(e) => setCustomName(e.target.value)}
           placeholder="Concepto personalizado"
-          className="flex-1"
+          className="flex-1 h-9"
         />
         <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier") => setCustomType(value)}>
-          <SelectTrigger className="w-32">
+          <SelectTrigger className="w-28 h-9">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -219,21 +219,21 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
             <SelectItem value="quantity_multiplier">Precio ud.</SelectItem>
           </SelectContent>
         </Select>
-        <div className="flex items-center gap-1 w-32">
+        <div className="flex items-center gap-1 w-24">
           <Input
             type="number"
             step="0.01"
             value={customValue}
             onChange={(e) => setCustomValue(parseFloat(e.target.value) || 0)}
             placeholder="Valor"
-            className="w-full"
+            className="w-full h-9"
           />
           <span className="text-sm text-muted-foreground">€</span>
         </div>
         <Button 
           onClick={addCustomAdditional} 
           disabled={!customName.trim()}
-          size="sm"
+          className="h-9 px-3"
         >
           <Plus className="h-4 w-4 mr-1" />
           Añadir
