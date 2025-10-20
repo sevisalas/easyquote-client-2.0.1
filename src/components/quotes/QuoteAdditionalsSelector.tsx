@@ -56,11 +56,11 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
     const additional = availableAdditionals.find(a => a.id === newAdditionalId)
     if (!additional) return
 
-    // Check if already added
-    if (selectedAdditionals.some(sa => sa.id === additional.id)) return
+    // Generate unique ID to allow multiple instances of the same additional
+    const uniqueId = `${additional.id}_${Date.now()}`
 
     const newSelected: SelectedQuoteAdditional = {
-      id: additional.id,
+      id: uniqueId,
       name: additional.name,
       type: additional.type,
       value: additional.default_value,
@@ -97,11 +97,6 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
       sa.id === id ? { ...sa, value } : sa
     ))
   }
-
-  // Filter available additionals to exclude already selected ones
-  const unselectedAdditionals = availableAdditionals.filter(
-    additional => !selectedAdditionals.some(sa => sa.id === additional.id)
-  )
 
   return (
     <div className="space-y-4">
@@ -166,14 +161,14 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
       )}
 
       {/* Add Predefined Additional */}
-      {unselectedAdditionals.length > 0 && (
+      {availableAdditionals.length > 0 && (
         <div className="flex gap-2 items-center">
           <Select value={newAdditionalId} onValueChange={setNewAdditionalId}>
             <SelectTrigger className="w-80 h-9 justify-start">
               <SelectValue placeholder="Selecciona un ajuste..." />
             </SelectTrigger>
             <SelectContent>
-              {unselectedAdditionals.map((additional) => (
+              {availableAdditionals.map((additional) => (
                 <SelectItem key={additional.id} value={additional.id}>
                   {additional.name} ({
                     additional.type === "net_amount" 
