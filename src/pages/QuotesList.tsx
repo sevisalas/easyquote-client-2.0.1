@@ -153,7 +153,7 @@ const QuotesList = () => {
     return "outline" as const; // draft
   };
 
-  const handleDownloadHoldedPdf = async (holdedEstimateId: string, holdedEstimateNumber: string, customerName: string) => {
+  const handleDownloadHoldedPdf = async (holdedEstimateId: string, holdedEstimateNumber: string, customerId: string) => {
     try {
       toast({ title: "Descargando PDF..." });
       
@@ -173,12 +173,19 @@ const QuotesList = () => {
         throw new Error('Error al descargar el PDF');
       }
 
+      // Get customer name and sanitize it for filename
+      const customerName = getCustomerName(customerId);
+      const sanitizedCustomerName = customerName
+        .replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s]/g, '') // Remove special characters
+        .replace(/\s+/g, '_') // Replace spaces with underscores
+        .substring(0, 50); // Limit length
+
       // Get PDF as blob
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${holdedEstimateNumber}_${customerName}.pdf`;
+      a.download = `${holdedEstimateNumber}_${sanitizedCustomerName}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -379,7 +386,7 @@ const QuotesList = () => {
                             <span title="Descargar PDF de Holded">
                               <Download 
                                 className="h-4 w-4 cursor-pointer text-muted-foreground hover:text-foreground transition-colors" 
-                                onClick={() => handleDownloadHoldedPdf(q.holded_estimate_id, q.holded_estimate_number || q.quote_number, getCustomerName(q.customer_id))}
+                                onClick={() => handleDownloadHoldedPdf(q.holded_estimate_id, q.holded_estimate_number || q.quote_number, q.customer_id)}
                               />
                             </span>
                           )}
