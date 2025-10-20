@@ -240,21 +240,21 @@ const App = () => (
             }
           />
           <Route
-            path="/admin/productos/nuevo"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ProductForm />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/admin/productos/nuevo/configurar"
             element={
               <ProtectedRoute>
                 <AppLayout>
                   <ProductConfiguration />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/productos/nuevo"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ProductForm />
                 </AppLayout>
               </ProtectedRoute>
             }
