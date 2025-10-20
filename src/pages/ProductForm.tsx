@@ -31,9 +31,9 @@ export default function ProductForm() {
     productName: "",
     isActive: true,
     excelfileId: "",
-    currency: "USD"
+    currency: "USD",
   });
-  
+
   const [useNewFile, setUseNewFile] = useState(true);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
@@ -47,7 +47,7 @@ export default function ProductForm() {
       }
 
       const { data, error } = await invokeEasyQuoteFunction("easyquote-master-files", {
-        token
+        token,
       });
 
       if (error) throw error;
@@ -67,7 +67,7 @@ export default function ProductForm() {
         reader.readAsDataURL(data.file);
         reader.onload = () => {
           const result = reader.result as string;
-          const base64Data = result.split(',')[1];
+          const base64Data = result.split(",")[1];
           resolve(base64Data);
         };
         reader.onerror = reject;
@@ -76,13 +76,13 @@ export default function ProductForm() {
       const uploadResponse = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           fileName: data.file.name,
-          file: base64
-        })
+          file: base64,
+        }),
       });
 
       if (!uploadResponse.ok) {
@@ -97,21 +97,21 @@ export default function ProductForm() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           productName: data.productName,
           excelfileId: uploadResult,
           currency: data.currency,
-          isActive: true
-        })
+          isActive: true,
+        }),
       });
 
       if (!productResponse.ok) {
         const errorText = await productResponse.text();
         throw new Error(`Error al crear producto: ${errorText}`);
       }
-      
+
       return productResponse.json();
     },
     onSuccess: () => {
@@ -140,21 +140,21 @@ export default function ProductForm() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           productName: productData.productName,
           excelfileId: productData.excelFileId,
           currency: productData.currency,
-          isActive: true
-        })
+          isActive: true,
+        }),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Error al crear producto: ${errorText}`);
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -175,7 +175,7 @@ export default function ProductForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.productName.trim()) {
       toast({
         title: "Error",
@@ -195,11 +195,11 @@ export default function ProductForm() {
         });
         return;
       }
-      
+
       createProductWithNewFileMutation.mutate({
         productName: formData.productName,
         file: uploadedFile,
-        currency: formData.currency
+        currency: formData.currency,
       });
     } else {
       // Si se usa un archivo existente
@@ -211,48 +211,39 @@ export default function ProductForm() {
         });
         return;
       }
-      
+
       createProductMutation.mutate({
         productName: formData.productName,
         excelFileId: formData.excelfileId,
-        currency: formData.currency
+        currency: formData.currency,
       });
     }
   };
 
   const handleChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
     <div className="container mx-auto py-6 max-w-4xl">
       <div className="mb-6">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/admin/productos")}
-          className="mb-4"
-        >
+        <Button variant="ghost" onClick={() => navigate("/admin/productos")} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Volver a Productos
         </Button>
 
-        <h1 className="text-3xl font-bold">
-          {isEdit ? "Editar Producto" : "Crear Nuevo Producto"}
-        </h1>
+        <h1 className="text-3xl font-bold">{isEdit ? "Editar Producto" : "Crear Nuevo Producto"}</h1>
         <p className="text-muted-foreground mt-2">
-          {isEdit 
-            ? "Modifica la información del producto existente" 
-            : "Crea un nuevo producto en el catálogo de EasyQuote"
-          }
+          {isEdit
+            ? "Modifica la información del producto existente"
+            : "Crea un nuevo producto en el catálogo de EasyQuote"}
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Información del Producto</CardTitle>
-          <CardDescription>
-            Completa los datos del producto
-          </CardDescription>
+          <CardTitle>Información del producto</CardTitle>
+          <CardDescription>Completa los datos del producto</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -260,12 +251,7 @@ export default function ProductForm() {
             <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
               <div className="flex items-center justify-between">
                 <Label className="text-base font-semibold">Archivo Excel (Calculadora)</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setUseNewFile(!useNewFile)}
-                >
+                <Button type="button" variant="outline" size="sm" onClick={() => setUseNewFile(!useNewFile)}>
                   {useNewFile ? "Usar Excel Existente" : "Subir Nuevo Excel"}
                 </Button>
               </div>
@@ -280,9 +266,7 @@ export default function ProductForm() {
                     onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
                   />
                   {uploadedFile && (
-                    <p className="text-sm text-muted-foreground">
-                      Archivo seleccionado: {uploadedFile.name}
-                    </p>
+                    <p className="text-sm text-muted-foreground">Archivo seleccionado: {uploadedFile.name}</p>
                   )}
                 </div>
               ) : (
@@ -310,7 +294,7 @@ export default function ProductForm() {
 
             <div className="space-y-2">
               <Label htmlFor="productName">
-                Nombre del Producto <span className="text-destructive">*</span>
+                Nombre del producto <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="productName"
@@ -351,7 +335,7 @@ export default function ProductForm() {
                 type="submit"
                 disabled={createProductMutation.isPending || createProductWithNewFileMutation.isPending}
               >
-                {(createProductMutation.isPending || createProductWithNewFileMutation.isPending) ? (
+                {createProductMutation.isPending || createProductWithNewFileMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Creando...
@@ -359,7 +343,7 @@ export default function ProductForm() {
                 ) : (
                   <>
                     <Save className="h-4 w-4 mr-2" />
-                    Crear Producto
+                    Crear producto
                   </>
                 )}
               </Button>
