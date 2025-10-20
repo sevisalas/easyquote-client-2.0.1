@@ -171,7 +171,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
               }
             }}
           >
-            <SelectTrigger className="w-64">
+            <SelectTrigger className="w-64 h-9">
               <SelectValue placeholder="Selecciona un ajuste..." />
             </SelectTrigger>
             <SelectContent>
@@ -182,6 +182,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
               ))}
             </SelectContent>
           </Select>
+          <div className="w-28 h-9" />
           {newAdditionalId && (
             <div className="flex items-center gap-1 w-24">
               <Input
@@ -195,6 +196,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
               <span className="text-sm text-muted-foreground">€</span>
             </div>
           )}
+          {!newAdditionalId && <div className="w-24 h-9" />}
           <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} className="h-9 px-4 min-w-[90px]">
             <Plus className="h-4 w-4 mr-1" />
             Añadir
