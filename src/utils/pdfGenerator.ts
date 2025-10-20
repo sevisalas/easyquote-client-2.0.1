@@ -116,14 +116,10 @@ export const generateQuotePDF = async (
         }
       }
 
-      // Add item additionals
+      // Add item additionals (without price, just the name)
       if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
         const additionalsText = item.item_additionals
-          .map((additional: any) => {
-            const value = additional.value || 0;
-            const formattedValue = typeof value === 'number' ? value.toFixed(2) : value;
-            return `${additional.name}: ${formattedValue}€`;
-          })
+          .map((additional: any) => additional.name)
           .join('\n');
         
         if (additionalsText) {

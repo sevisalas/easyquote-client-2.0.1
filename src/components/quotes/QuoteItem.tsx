@@ -553,33 +553,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const selectedProductInfo = products?.find((p: any) => String(p.id) === String(productId));
   const productName = selectedProductInfo ? getProductLabel(selectedProductInfo) : "";
 
-  // Build enhanced description with additionals info
-  const enhancedDescription = useMemo(() => {
-    let desc = itemDescription || productName;
-    
-    // Add additionals info to description
-    if (itemAdditionals && itemAdditionals.length > 0) {
-      const additionalsText = itemAdditionals.map((additional) => {
-        const value = additional.value;
-        if (additional.type === 'net_amount') {
-          return `${additional.name}: ${formatEUR(value)}`;
-        } else if (additional.type === 'quantity_multiplier') {
-          return `${additional.name}: ×${value}`;
-        } else if (additional.type === 'percentage') {
-          return `${additional.name}: ${value}%`;
-        }
-        return `${additional.name}: ${value}`;
-      }).join(', ');
-      
-      if (additionalsText) {
-        desc = `${desc} (${additionalsText})`;
-      }
-    }
-    
-    return desc;
-  }, [itemDescription, productName, itemAdditionals]);
-
-  // Sync enhanced description with parent
+  // Sync with parent (without adding additionals to product name)
   useEffect(() => {
     onChange?.(id, {
       productId,
@@ -587,10 +561,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       outputs,
       price: finalPrice,
       multi: multiEnabled ? { qtyPrompt, qtyInputs, rows: multiRows } : null,
-      itemDescription: enhancedDescription,
+      itemDescription: itemDescription || productName,
       itemAdditionals,
     });
-  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, enhancedDescription, itemAdditionals]);
+  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, productName, itemAdditionals]);
 
   const isComplete = productId && priceOutput && finalPrice > 0;
 
