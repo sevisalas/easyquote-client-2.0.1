@@ -157,14 +157,24 @@ const QuotesList = () => {
     try {
       toast({ title: "Descargando PDF..." });
       
-      const { data, error } = await supabase.functions.invoke('holded-download-pdf', {
-        body: { holdedEstimateId }
-      });
+      const response = await fetch(
+        `https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/holded-download-pdf`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          },
+          body: JSON.stringify({ holdedEstimateId })
+        }
+      );
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Error al descargar el PDF');
+      }
 
-      // Create blob and download
-      const blob = new Blob([data], { type: 'application/pdf' });
+      // Get PDF as blob
+      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
