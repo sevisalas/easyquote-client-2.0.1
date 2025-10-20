@@ -1288,9 +1288,18 @@ export default function ExcelFiles() {
                             setSelectedFileForProducts(file);
                             setIsProductsDialogOpen(true);
                           }}
-                          title="Ver productos asociados"
+                          title={`Ver productos asociados (${file.products?.length || 0})`}
+                          className="relative"
                         >
                           <Package className="h-4 w-4" />
+                          {file.products && file.products.length > 0 && (
+                            <Badge 
+                              variant="default" 
+                              className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-xs"
+                            >
+                              {file.products.length}
+                            </Badge>
+                          )}
                         </Button>
                         <Button
                           variant="ghost"
