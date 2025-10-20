@@ -58,18 +58,11 @@ Deno.serve(async (req) => {
       throw new Error('Failed to fetch quote items');
     }
 
-    // Get quote additionals (ajustes sobre el presupuesto)
-    const { data: quoteAdditionals, error: additionalsError } = await supabase
-      .from('quote_additionals')
-      .select('*')
-      .eq('quote_id', quoteId);
-
-    if (additionalsError) {
-      console.error('Error fetching quote additionals:', additionalsError);
-    }
+    // Get quote additionals from the quote's JSON field (not from separate table)
+    const quoteAdditionals = quote.quote_additionals || [];
 
     console.log('📦 Quote items fetched:', JSON.stringify(quoteItems, null, 2));
-    console.log('📦 Quote additionals fetched:', JSON.stringify(quoteAdditionals, null, 2));
+    console.log('📦 Quote additionals from quote JSON:', JSON.stringify(quoteAdditionals, null, 2));
 
     // Get Holded contact if customer_id exists
     let contactId = null;
@@ -97,6 +90,7 @@ Deno.serve(async (req) => {
     const items: any[] = [];
     const appliedDiscounts: string[] = [];
     let hasMultiQuantities = false;
+    let globalQtyCounter = 0; // Counter for continuous Q1, Q2, Q3, Q4 numbering
     
     quoteItems.forEach((item: any) => {
       console.log('🔍 Processing item - ALL FIELDS:', JSON.stringify(item, null, 2));
@@ -108,7 +102,8 @@ Deno.serve(async (req) => {
         hasMultiQuantities = true;
         // Create one item per quantity row
         item.multi.rows.forEach((row: any, index: number) => {
-          const qtyLabel = `Q${index + 1}`;
+          globalQtyCounter++; // Increment global counter
+          const qtyLabel = `Q${globalQtyCounter}`; // Use global counter instead of local index
           let description = '';
           
           // Build description from prompts
