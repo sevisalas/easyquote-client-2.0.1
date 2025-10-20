@@ -33,6 +33,9 @@ export default function ProductForm() {
     excelfileId: "",
     currency: "USD"
   });
+  
+  const [useNewFile, setUseNewFile] = useState(true);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   // Fetch Excel files for dropdown
   const { data: excelFiles = [] } = useQuery({
@@ -148,6 +151,58 @@ export default function ProductForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Selección del modo de archivo Excel */}
+            <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-semibold">Archivo Excel (Calculadora)</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setUseNewFile(!useNewFile)}
+                >
+                  {useNewFile ? "Usar Excel Existente" : "Subir Nuevo Excel"}
+                </Button>
+              </div>
+
+              {useNewFile ? (
+                <div className="space-y-2">
+                  <Label htmlFor="uploadFile">Seleccionar archivo desde el ordenador</Label>
+                  <Input
+                    id="uploadFile"
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
+                  />
+                  {uploadedFile && (
+                    <p className="text-sm text-muted-foreground">
+                      Archivo seleccionado: {uploadedFile.name}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="excelfileId">Seleccionar archivo existente</Label>
+                  <Select
+                    value={formData.excelfileId || "none"}
+                    onValueChange={(value) => handleChange("excelfileId", value === "none" ? "" : value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un archivo Excel..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Selecciona un archivo...</SelectItem>
+                      {excelFiles.map((file) => (
+                        <SelectItem key={file.id} value={file.id}>
+                          {file.fileName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="productName">
                 Nombre del Producto <span className="text-destructive">*</span>
@@ -159,29 +214,6 @@ export default function ProductForm() {
                 placeholder="Ej: Tarjeta de Visita Premium"
                 required
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="excelfileId">Archivo Excel (Calculadora)</Label>
-              <Select
-                value={formData.excelfileId || "none"}
-                onValueChange={(value) => handleChange("excelfileId", value === "none" ? "" : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un archivo Excel..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin archivo Excel</SelectItem>
-                  {excelFiles.map((file) => (
-                    <SelectItem key={file.id} value={file.id}>
-                      {file.fileName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-sm text-muted-foreground">
-                Archivo de cálculo para el producto
-              </p>
             </div>
 
             <div className="flex items-center space-x-2">
