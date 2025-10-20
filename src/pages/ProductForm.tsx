@@ -49,9 +49,9 @@ export default function ProductForm() {
       const response = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
         method: "GET",
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
@@ -308,7 +308,7 @@ export default function ProductForm() {
                 id="productName"
                 value={formData.productName}
                 onChange={(e) => handleChange("productName", e.target.value)}
-                placeholder="Ej: Tarjeta de Visita Premium"
+                placeholder="Pon aquí le nombre del nuevo producto"
                 required
               />
             </div>
