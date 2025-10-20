@@ -249,16 +249,6 @@ const App = () => (
             }
           />
           <Route
-            path="/admin/productos/:id/editar"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ProductForm />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/admin/categorias"
             element={
               <ProtectedRoute>

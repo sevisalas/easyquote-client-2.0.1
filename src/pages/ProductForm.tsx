@@ -128,7 +128,7 @@ export default function ProductForm() {
         title: "Producto creado",
         description: "El producto se ha creado correctamente. Ahora puedes completar los detalles.",
       });
-      navigate(`/admin/productos/${data}/editar`);
+      navigate(`/admin/productos?editProduct=${data}`);
     },
     onError: (error: Error) => {
       toast({
@@ -171,7 +171,7 @@ export default function ProductForm() {
         title: "Producto creado",
         description: "El producto se ha creado correctamente. Ahora puedes completar los detalles.",
       });
-      navigate(`/admin/productos/${data}/editar`);
+      navigate(`/admin/productos?editProduct=${data}`);
     },
     onError: (error: Error) => {
       toast({
