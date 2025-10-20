@@ -99,6 +99,11 @@ export default function ProductForm() {
       }
 
       const uploadResult = await uploadResponse.json();
+      console.log('Upload result:', uploadResult);
+
+      // Extract the file ID from the upload result
+      const fileId = typeof uploadResult === 'string' ? uploadResult : uploadResult.id;
+      console.log('Using file ID:', fileId);
 
       // Then create the product with the uploaded file
       const productResponse = await fetch("https://api.easyquote.cloud/api/v1/products", {
@@ -109,7 +114,7 @@ export default function ProductForm() {
         },
         body: JSON.stringify({
           productName: data.productName,
-          excelfileId: uploadResult,
+          excelfileId: fileId,
           currency: data.currency,
           isActive: true,
         }),
