@@ -140,7 +140,7 @@ export default function ProductForm() {
 
   // Create product with existing Excel file
   const createProductMutation = useMutation({
-    mutationFn: async (productData: { productName: string; excelFileId: string; currency: string }) => {
+    mutationFn: async (productData: { productName: string; excelfileId: string; currency: string }) => {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No hay token de EasyQuote disponible");
 
@@ -152,7 +152,7 @@ export default function ProductForm() {
         },
         body: JSON.stringify({
           productName: productData.productName,
-          excelfileId: productData.excelFileId,
+          excelfileId: productData.excelfileId,
           currency: productData.currency,
           isActive: true,
         }),
@@ -222,7 +222,7 @@ export default function ProductForm() {
 
       createProductMutation.mutate({
         productName: formData.productName,
-        excelFileId: formData.excelfileId,
+        excelfileId: formData.excelfileId,
         currency: formData.currency,
       });
     }
