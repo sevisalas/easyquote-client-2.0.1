@@ -1107,14 +1107,14 @@ export default function ExcelFiles() {
 
       {/* Modal de productos asociados */}
       <Dialog open={isProductsDialogOpen} onOpenChange={setIsProductsDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-3xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>Productos asociados</DialogTitle>
             <DialogDescription>
               Productos que utilizan el archivo: {selectedFileForProducts?.fileName}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="max-h-[50vh] overflow-y-auto">
             {associatedProducts.length === 0 ? (
               <div className="text-center py-8">
                 <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -1126,19 +1126,12 @@ export default function ExcelFiles() {
               <div className="space-y-2">
                 {associatedProducts.map((product: any) => (
                   <Card key={product.id}>
-                    <CardContent className="pt-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <p className="font-medium">{product.productName}</p>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={product.isActive ? "default" : "secondary"}>
-                              {product.isActive ? "Activo" : "Inactivo"}
-                            </Badge>
-                            <span className="text-sm text-muted-foreground">
-                              ID: {product.id}
-                            </span>
-                          </div>
-                        </div>
+                    <CardContent className="py-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <p className="font-medium flex-1">{product.productName}</p>
+                        <Badge variant={product.isActive ? "default" : "secondary"}>
+                          {product.isActive ? "Activo" : "Inactivo"}
+                        </Badge>
                         <Button
                           variant="outline"
                           size="sm"
