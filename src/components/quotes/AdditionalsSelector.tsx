@@ -171,7 +171,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
               }
             }}
           >
-            <SelectTrigger className="w-64 h-9">
+            <SelectTrigger className="w-64 h-9 justify-start">
               <SelectValue placeholder="Selecciona un ajuste..." />
             </SelectTrigger>
             <SelectContent>
