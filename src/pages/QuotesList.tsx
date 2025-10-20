@@ -173,20 +173,25 @@ const QuotesList = () => {
         throw new Error('Error al descargar el PDF');
       }
 
-      // Get customer name and sanitize it for filename
-      const customerName = getCustomerName(customerId);
+      // Get customer name
+      const customer = customers.find((c: any) => c.id === customerId);
+      const customerName = customer?.name || 'Cliente';
+      
+      // Sanitize customer name for filename
       const sanitizedCustomerName = customerName
-        .replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s]/g, '') // Remove special characters
-        .replace(/\s+/g, ' ') // Normalize spaces
+        .replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s]/g, '')
+        .replace(/\s+/g, ' ')
         .trim()
-        .substring(0, 50); // Limit length
+        .toUpperCase()
+        .substring(0, 50);
 
       // Get PDF as blob
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `P_${holdedEstimateNumber} ${sanitizedCustomerName}.pdf`;
+      // holdedEstimateNumber already includes "P_" prefix
+      a.download = `${holdedEstimateNumber} ${sanitizedCustomerName}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
