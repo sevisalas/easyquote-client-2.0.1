@@ -37,7 +37,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
   const [customType, setCustomType] = useState<"net_amount" | "percentage">("net_amount")
 
   const { data: availableAdditionals = [] } = useQuery({
-    queryKey: ["additionals"],
+    queryKey: ["additionals", "quote"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("additionals")

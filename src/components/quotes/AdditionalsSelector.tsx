@@ -39,7 +39,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
   const [customType, setCustomType] = useState<"net_amount" | "quantity_multiplier">("net_amount")
 
   const { data: availableAdditionals = [] } = useQuery({
-    queryKey: ["additionals"],
+    queryKey: ["additionals", "article"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("additionals")
@@ -195,8 +195,8 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
               <span className="text-sm text-muted-foreground">€</span>
             </div>
           )}
-          <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} className="w-28">
-            <Plus className="h-4 w-4 mr-2" />
+          <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} size="sm">
+            <Plus className="h-4 w-4 mr-1" />
             Añadir
           </Button>
         </div>
@@ -233,9 +233,9 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
         <Button 
           onClick={addCustomAdditional} 
           disabled={!customName.trim()}
-          className="w-28"
+          size="sm"
         >
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="h-4 w-4 mr-1" />
           Añadir
         </Button>
       </div>
