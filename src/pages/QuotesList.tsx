@@ -366,15 +366,12 @@ const QuotesList = () => {
                         </TableCell>
                         <TableCell className="py-2">
                           {q.holded_estimate_id && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 px-2"
-                              onClick={() => handleDownloadHoldedPdf(q.holded_estimate_id, q.quote_number)}
-                              title="Descargar PDF de Holded"
-                            >
-                              <Download className="h-3 w-3" />
-                            </Button>
+                            <span title="Descargar PDF de Holded">
+                              <Download 
+                                className="h-4 w-4 cursor-pointer text-muted-foreground hover:text-foreground transition-colors" 
+                                onClick={() => handleDownloadHoldedPdf(q.holded_estimate_id, q.quote_number)}
+                              />
+                            </span>
                           )}
                         </TableCell>
                       </>
