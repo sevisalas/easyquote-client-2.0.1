@@ -173,12 +173,11 @@ const QuotesList = () => {
         throw new Error('Error al descargar el PDF');
       }
 
-      // Get customer name
-      const customer = customers.find((c: any) => c.id === customerId);
-      const customerName = customer?.name || 'Cliente';
+      // Get customer name using the same function used in the table
+      const rawCustomerName = getCustomerName(customerId);
       
       // Sanitize customer name for filename
-      const sanitizedCustomerName = customerName
+      const sanitizedCustomerName = rawCustomerName
         .replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s]/g, '')
         .replace(/\s+/g, ' ')
         .trim()
