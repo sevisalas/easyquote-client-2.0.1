@@ -104,8 +104,8 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
       {selectedAdditionals.length > 0 && (
         <div className="space-y-2">
           {selectedAdditionals.map((additional) => (
-            <div key={additional.id} className="flex items-center gap-3 p-2 bg-muted/30 rounded border">
-              <div className="flex-1">
+            <div key={additional.id} className="flex items-center gap-2 p-2 bg-muted/30 rounded border">
+              <div className="w-80">
                 <span className="text-sm font-medium">
                   {additional.name}
                   {additional.isCustom && (
@@ -127,19 +127,16 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
                     : "Porcentaje sobre subtotal"}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor={`quote-value-${additional.id}`} className="text-sm">
-                  Valor:
-                </Label>
+              <div className="w-32" />
+              <div className="flex items-center gap-1 w-24">
                 <Input
-                  id={`quote-value-${additional.id}`}
                   type="number"
                   step="0.01"
                   value={additional.value}
                   onChange={(e) => updateAdditionalValue(additional.id, parseFloat(e.target.value) || 0)}
-                  className="w-20"
+                  className="w-full h-9"
                 />
-                <span className="text-sm text-muted-foreground w-4">
+                <span className="text-sm text-muted-foreground">
                   {additional.type === "net_amount" 
                     ? "€" 
                     : additional.type === "quantity_multiplier" 
@@ -149,9 +146,9 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
               </div>
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
+                className="h-9 w-9"
                 onClick={() => removeAdditional(additional.id)}
-                className="p-1 h-8 w-8"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

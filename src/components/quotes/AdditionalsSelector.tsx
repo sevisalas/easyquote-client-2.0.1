@@ -116,7 +116,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
         <div className="space-y-1.5">
           {selectedAdditionals.map((additional) => (
             <div key={additional.id} className="flex items-center gap-2 p-1.5 border rounded">
-              <div className="flex-1">
+              <div className="w-64">
                 <div className="text-sm font-medium">
                   {additional.name}
                   {additional.is_discount && (
@@ -129,25 +129,27 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
                   {additional.type === "net_amount" ? "Importe neto" : "Precio unidad"}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="w-28" />
+              <div className="flex items-center gap-1 w-24">
                 <Input
                   type="number"
                   step="0.01"
                   value={additional.value}
                   onChange={(e) => updateAdditionalValue(additional.id, parseFloat(e.target.value) || 0)}
-                  className="w-24"
+                  className="w-full h-9"
                 />
                 <span className="text-sm text-muted-foreground">
                   {additional.type === "net_amount" ? "€" : "x"}
                 </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeAdditional(additional.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
               </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => removeAdditional(additional.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
           ))}
         </div>
