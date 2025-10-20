@@ -115,7 +115,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
       {selectedAdditionals.length > 0 && (
         <div className="space-y-1.5">
           {selectedAdditionals.map((additional) => (
-            <div key={additional.id} className="flex items-center gap-2 p-1.5 border rounded max-w-fit">
+            <div key={additional.id} className="flex items-center gap-2 p-1.5 border rounded">
               <div className="w-64">
                 <div className="text-sm font-medium">
                   {additional.name}
@@ -129,6 +129,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
                   {additional.type === "net_amount" ? "Importe neto" : "Precio unidad"}
                 </div>
               </div>
+              <div className="w-28" />
               <div className="flex items-center gap-1 w-24">
                 {additional.isCustom ? (
                   <Input
@@ -173,7 +174,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
               }
             }}
           >
-            <SelectTrigger className="flex-1 h-9 justify-start">
+            <SelectTrigger className="w-64 h-9 justify-start">
               <SelectValue placeholder="Selecciona un ajuste..." />
             </SelectTrigger>
             <SelectContent>
@@ -184,6 +185,26 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
               ))}
             </SelectContent>
           </Select>
+          <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier") => setCustomType(value)}>
+            <SelectTrigger className="w-28 h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="net_amount">Importe</SelectItem>
+              <SelectItem value="quantity_multiplier">Precio ud.</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex items-center gap-1 w-24">
+            <Input
+              type="number"
+              step="0.01"
+              value={newAdditionalValue}
+              onChange={(e) => setNewAdditionalValue(parseFloat(e.target.value) || 0)}
+              placeholder="Valor"
+              className="w-full h-9"
+            />
+            <span className="text-sm text-muted-foreground">€</span>
+          </div>
           <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} className="h-9 px-4 min-w-[90px]">
             <Plus className="h-4 w-4 mr-1" />
             Añadir

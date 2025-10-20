@@ -104,7 +104,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
       {selectedAdditionals.length > 0 && (
         <div className="space-y-2">
           {selectedAdditionals.map((additional) => (
-            <div key={additional.id} className="flex items-center gap-2 p-2 bg-muted/30 rounded border max-w-fit">
+            <div key={additional.id} className="flex items-center gap-2 p-2 bg-muted/30 rounded border">
               <div className="w-80">
                 <span className="text-sm font-medium">
                   {additional.name}
@@ -127,6 +127,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
                     : "Porcentaje sobre subtotal"}
                 </span>
               </div>
+              <div className="w-32" />
               <div className="flex items-center gap-1 w-24">
                 {additional.isCustom ? (
                   <Input
@@ -166,7 +167,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
       {availableAdditionals.length > 0 && (
         <div className="flex gap-2 items-center">
           <Select value={newAdditionalId} onValueChange={setNewAdditionalId}>
-            <SelectTrigger className="flex-1 h-9 justify-start">
+            <SelectTrigger className="w-80 h-9 justify-start">
               <SelectValue placeholder="Selecciona un ajuste..." />
             </SelectTrigger>
             <SelectContent>
@@ -183,6 +184,23 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
               ))}
             </SelectContent>
           </Select>
+          <Select value={customType} onValueChange={(value: "net_amount" | "percentage") => setCustomType(value)}>
+            <SelectTrigger className="w-32 h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="net_amount">Importe neto</SelectItem>
+              <SelectItem value="percentage">Porcentaje</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input
+            type="number"
+            step="0.01"
+            value={0}
+            placeholder="Valor"
+            className="w-24 h-9"
+            readOnly
+          />
           <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} className="h-9 px-4 min-w-[90px]">
             <Plus className="h-4 w-4 mr-1" />
             Añadir
