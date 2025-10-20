@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, X, Search } from "lucide-react";
+import { CalendarIcon, X, Search, Download } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,7 +35,7 @@ const fmtEUR = (n: any) => {
 const fetchQuotes = async () => {
   const { data, error } = await supabase
     .from("quotes")
-    .select("id, created_at, quote_number, customer_id, product_name, final_price, status, selections, description, holded_estimate_number")
+    .select("id, created_at, quote_number, customer_id, product_name, final_price, status, selections, description, holded_estimate_number, holded_estimate_id")
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data || [];
@@ -151,6 +151,38 @@ const QuotesList = () => {
     if (s === "rejected") return "destructive" as const;
     if (s === "sent") return "secondary" as const;
     return "outline" as const; // draft
+  };
+
+  const handleDownloadHoldedPdf = async (holdedEstimateId: string, quoteNumber: string) => {
+    try {
+      toast({ title: "Descargando PDF..." });
+      
+      const { data, error } = await supabase.functions.invoke('holded-download-pdf', {
+        body: { holdedEstimateId }
+      });
+
+      if (error) throw error;
+
+      // Create blob and download
+      const blob = new Blob([data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `presupuesto-${quoteNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({ title: "PDF descargado correctamente" });
+    } catch (e: any) {
+      console.error('Error downloading Holded PDF:', e);
+      toast({ 
+        title: "Error al descargar PDF", 
+        description: e?.message || "No se pudo descargar el PDF de Holded", 
+        variant: "destructive" 
+      });
+    }
   };
 
   return (
@@ -305,7 +337,12 @@ const QuotesList = () => {
                   <TableHead className="py-2">Cliente</TableHead>
                   <TableHead className="py-2">Descripción</TableHead>
                   <TableHead className="py-2 text-right">Total</TableHead>
-                  {isHoldedActive && <TableHead className="py-2">Nº Holded</TableHead>}
+                  {isHoldedActive && (
+                    <>
+                      <TableHead className="py-2">Nº Holded</TableHead>
+                      <TableHead className="py-2">PDF</TableHead>
+                    </>
+                  )}
                   <TableHead className="py-2">Estado</TableHead>
                   <TableHead className="py-2">Acciones</TableHead>
                 </TableRow>
@@ -319,13 +356,28 @@ const QuotesList = () => {
                     <TableCell className="py-2">{q.description || ""}</TableCell>
                     <TableCell className="py-2 text-right">{fmtEUR(q.final_price)}</TableCell>
                     {isHoldedActive && (
-                      <TableCell className="py-2">
-                        {q.holded_estimate_number ? (
-                          <span className="text-xs font-mono text-muted-foreground">{q.holded_estimate_number}</span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
+                      <>
+                        <TableCell className="py-2">
+                          {q.holded_estimate_number ? (
+                            <span className="text-xs font-mono text-muted-foreground">{q.holded_estimate_number}</span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-2">
+                          {q.holded_estimate_id && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2"
+                              onClick={() => handleDownloadHoldedPdf(q.holded_estimate_id, q.quote_number)}
+                              title="Descargar PDF de Holded"
+                            >
+                              <Download className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </>
                     )}
                     <TableCell className="py-2">
                       <DropdownMenu>
