@@ -229,10 +229,10 @@ export default function ProductForm() {
       <div className="mb-6">
         <Button variant="ghost" onClick={() => navigate("/admin/productos")} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Volver a Productos
+          Volver a productos
         </Button>
 
-        <h1 className="text-3xl font-bold">{isEdit ? "Editar Producto" : "Crear Nuevo Producto"}</h1>
+        <h1 className="text-3xl font-bold">{isEdit ? "Editar producto" : "Crear nuevo producto"}</h1>
         <p className="text-muted-foreground mt-2">
           {isEdit
             ? "Modifica la información del producto existente"
