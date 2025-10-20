@@ -107,24 +107,29 @@ Deno.serve(async (req) => {
           let description = '';
           
           // Build description from prompts
-          if (item.prompts && typeof item.prompts === 'object') {
-            const promptEntries = Object.entries(item.prompts);
-            if (promptEntries.length > 0) {
-              description = promptEntries
-                // Sort by order field (numeric) - extract order from each prompt
-                .map(([key, promptData]: [string, any]) => ({
-                  key,
-                  promptData,
-                  order: (promptData && typeof promptData === 'object' && 'order' in promptData) ? (promptData.order || 0) : 999
-                }))
-                .sort((a, b) => a.order - b.order)
-                .map(({ key, promptData }) => {
-                  if (promptData && typeof promptData === 'object' && 'label' in promptData && 'value' in promptData) {
+          if (item.prompts) {
+            let promptsArray: any[] = [];
+            
+            // Handle both array and object formats
+            if (Array.isArray(item.prompts)) {
+              promptsArray = item.prompts;
+            } else if (typeof item.prompts === 'object') {
+              promptsArray = Object.entries(item.prompts).map(([key, value]) => ({
+                id: key,
+                ...(typeof value === 'object' ? value : { value })
+              }));
+            }
+            
+            if (promptsArray.length > 0) {
+              description = promptsArray
+                .sort((a, b) => (a.order || 999) - (b.order || 999))
+                .map((prompt) => {
+                  if (prompt && 'label' in prompt && 'value' in prompt) {
                     // For the quantity prompt, use the value from this specific row
-                    if (key === item.multi.qtyPrompt && row.qty) {
-                      return `${promptData.label}: ${row.qty}`;
+                    if (prompt.id === item.multi.qtyPrompt && row.qty) {
+                      return `${prompt.label}: ${row.qty}`;
                     }
-                    return `${promptData.label}: ${promptData.value}`;
+                    return `${prompt.label}: ${prompt.value}`;
                   }
                   return '';
                 })
@@ -239,20 +244,25 @@ Deno.serve(async (req) => {
         let description = '';
         
         // Build description from prompts
-        if (item.prompts && typeof item.prompts === 'object') {
-          const promptEntries = Object.entries(item.prompts);
-          if (promptEntries.length > 0) {
-            description = promptEntries
-              // Sort by order field (numeric) - extract order from each prompt
-              .map(([key, promptData]: [string, any]) => ({
-                key,
-                promptData,
-                order: (promptData && typeof promptData === 'object' && 'order' in promptData) ? (promptData.order || 0) : 999
-              }))
-              .sort((a, b) => a.order - b.order)
-              .map(({ promptData }) => {
-                if (promptData && typeof promptData === 'object' && 'label' in promptData && 'value' in promptData) {
-                  return `${promptData.label}: ${promptData.value}`;
+        if (item.prompts) {
+          let promptsArray: any[] = [];
+          
+          // Handle both array and object formats
+          if (Array.isArray(item.prompts)) {
+            promptsArray = item.prompts;
+          } else if (typeof item.prompts === 'object') {
+            promptsArray = Object.entries(item.prompts).map(([key, value]) => ({
+              id: key,
+              ...(typeof value === 'object' ? value : { value })
+            }));
+          }
+          
+          if (promptsArray.length > 0) {
+            description = promptsArray
+              .sort((a, b) => (a.order || 999) - (b.order || 999))
+              .map((prompt) => {
+                if (prompt && 'label' in prompt && 'value' in prompt) {
+                  return `${prompt.label}: ${prompt.value}`;
                 }
                 return '';
               })
