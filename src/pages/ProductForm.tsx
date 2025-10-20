@@ -55,13 +55,86 @@ export default function ProductForm() {
     },
   });
 
-  // Create product mutation
-  const createProductMutation = useMutation({
-    mutationFn: async (productData: typeof formData) => {
+  // Upload Excel and create product with new file
+  const createProductWithNewFileMutation = useMutation({
+    mutationFn: async (data: { productName: string; file: File; currency: string }) => {
       const token = sessionStorage.getItem("easyquote_token");
-      if (!token) {
-        throw new Error("No hay token de EasyQuote disponible");
+      if (!token) throw new Error("No hay token de EasyQuote disponible");
+
+      // First upload the Excel file
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(data.file);
+        reader.onload = () => {
+          const result = reader.result as string;
+          const base64Data = result.split(',')[1];
+          resolve(base64Data);
+        };
+        reader.onerror = reject;
+      });
+
+      const uploadResponse = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          fileName: data.file.name,
+          file: base64
+        })
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.text();
+        throw new Error(`Error al subir archivo: ${errorData}`);
       }
+
+      const uploadResult = await uploadResponse.json();
+
+      // Then create the product with the uploaded file
+      const productResponse = await fetch("https://api.easyquote.cloud/api/v1/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productName: data.productName,
+          excelfileId: uploadResult,
+          currency: data.currency,
+          isActive: true
+        })
+      });
+
+      if (!productResponse.ok) {
+        const errorText = await productResponse.text();
+        throw new Error(`Error al crear producto: ${errorText}`);
+      }
+      
+      return productResponse.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Producto creado",
+        description: "El producto se ha creado correctamente.",
+      });
+      navigate("/admin/productos");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create product with existing Excel file
+  const createProductMutation = useMutation({
+    mutationFn: async (productData: { productName: string; excelFileId: string; currency: string }) => {
+      const token = sessionStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No hay token de EasyQuote disponible");
 
       const response = await fetch("https://api.easyquote.cloud/api/v1/products", {
         method: "POST",
@@ -71,18 +144,18 @@ export default function ProductForm() {
         },
         body: JSON.stringify({
           productName: productData.productName,
+          excelfileId: productData.excelFileId,
           currency: productData.currency,
-          isActive: productData.isActive,
-          excelfileId: productData.excelfileId || null
+          isActive: true
         })
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Error al crear el producto");
+        const errorText = await response.text();
+        throw new Error(`Error al crear producto: ${errorText}`);
       }
-
-      return await response.json();
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -112,7 +185,39 @@ export default function ProductForm() {
       return;
     }
 
-    createProductMutation.mutate(formData);
+    // Si se va a subir un nuevo archivo
+    if (useNewFile) {
+      if (!uploadedFile) {
+        toast({
+          title: "Error",
+          description: "Debes seleccionar un archivo Excel",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      createProductWithNewFileMutation.mutate({
+        productName: formData.productName,
+        file: uploadedFile,
+        currency: formData.currency
+      });
+    } else {
+      // Si se usa un archivo existente
+      if (!formData.excelfileId) {
+        toast({
+          title: "Error",
+          description: "Debes seleccionar un archivo Excel existente",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      createProductMutation.mutate({
+        productName: formData.productName,
+        excelFileId: formData.excelfileId,
+        currency: formData.currency
+      });
+    }
   };
 
   const handleChange = (field: string, value: any) => {
@@ -238,15 +343,15 @@ export default function ProductForm() {
                 type="button"
                 variant="outline"
                 onClick={() => navigate("/admin/productos")}
-                disabled={createProductMutation.isPending}
+                disabled={createProductMutation.isPending || createProductWithNewFileMutation.isPending}
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                disabled={createProductMutation.isPending}
+                disabled={createProductMutation.isPending || createProductWithNewFileMutation.isPending}
               >
-                {createProductMutation.isPending ? (
+                {(createProductMutation.isPending || createProductWithNewFileMutation.isPending) ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Creando...
