@@ -182,21 +182,26 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
               ))}
             </SelectContent>
           </Select>
-          <div className="w-28 h-9" />
-          {newAdditionalId && (
-            <div className="flex items-center gap-1 w-24">
-              <Input
-                type="number"
-                step="0.01"
-                value={newAdditionalValue}
-                onChange={(e) => setNewAdditionalValue(parseFloat(e.target.value) || 0)}
-                placeholder="Valor"
-                className="w-full h-9"
-              />
-              <span className="text-sm text-muted-foreground">€</span>
-            </div>
-          )}
-          {!newAdditionalId && <div className="w-24 h-9" />}
+          <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier") => setCustomType(value)}>
+            <SelectTrigger className="w-28 h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="net_amount">Importe</SelectItem>
+              <SelectItem value="quantity_multiplier">Precio ud.</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex items-center gap-1 w-24">
+            <Input
+              type="number"
+              step="0.01"
+              value={newAdditionalValue}
+              onChange={(e) => setNewAdditionalValue(parseFloat(e.target.value) || 0)}
+              placeholder="Valor"
+              className="w-full h-9"
+            />
+            <span className="text-sm text-muted-foreground">€</span>
+          </div>
           <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} className="h-9 px-4 min-w-[90px]">
             <Plus className="h-4 w-4 mr-1" />
             Añadir

@@ -167,79 +167,82 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
 
       {/* Add Predefined Additional */}
       {unselectedAdditionals.length > 0 && (
-        <div className="space-y-3">
-          <h4 className="font-medium">Añadir ajuste predefinido</h4>
-          <div className="flex gap-2">
-            <Select value={newAdditionalId} onValueChange={setNewAdditionalId}>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Selecciona un ajuste..." />
-              </SelectTrigger>
-              <SelectContent>
-                {unselectedAdditionals.map((additional) => (
-                  <SelectItem key={additional.id} value={additional.id}>
-                    {additional.name} ({
-                      additional.type === "net_amount" 
-                        ? "Importe" 
-                        : additional.type === "quantity_multiplier" 
-                        ? "Multiplicador" 
-                        : "Porcentaje"
-                    })
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} className="gap-2 min-w-[100px]">
-              <Plus className="h-4 w-4" />
-              Añadir
-            </Button>
-          </div>
+        <div className="flex gap-2 items-center">
+          <Select value={newAdditionalId} onValueChange={setNewAdditionalId}>
+            <SelectTrigger className="w-80 h-9 justify-start">
+              <SelectValue placeholder="Selecciona un ajuste..." />
+            </SelectTrigger>
+            <SelectContent>
+              {unselectedAdditionals.map((additional) => (
+                <SelectItem key={additional.id} value={additional.id}>
+                  {additional.name} ({
+                    additional.type === "net_amount" 
+                      ? "Importe" 
+                      : additional.type === "quantity_multiplier" 
+                      ? "Multiplicador" 
+                      : "Porcentaje"
+                  })
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={customType} onValueChange={(value: "net_amount" | "percentage") => setCustomType(value)}>
+            <SelectTrigger className="w-32 h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="net_amount">Importe neto</SelectItem>
+              <SelectItem value="percentage">Porcentaje</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input
+            type="number"
+            step="0.01"
+            value={0}
+            placeholder="Valor"
+            className="w-24 h-9"
+            readOnly
+          />
+          <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} className="h-9 px-4 min-w-[90px]">
+            <Plus className="h-4 w-4 mr-1" />
+            Añadir
+          </Button>
         </div>
       )}
 
       {/* Add Custom Additional */}
-      <div className="space-y-3">
-        <h4 className="font-medium">Añadir ajuste personalizado</h4>
-        <div className="flex gap-2 items-end">
-          <div className="flex-1">
-            <Label htmlFor="quote-custom-name" className="text-sm">Concepto</Label>
-            <Input
-              id="quote-custom-name"
-              value={customName}
-              onChange={(e) => setCustomName(e.target.value)}
-              placeholder="Ej: Descuento especial"
-            />
-          </div>
-          <div className="w-40">
-            <Label htmlFor="quote-custom-type" className="text-sm">Tipo</Label>
-            <Select value={customType} onValueChange={(value: "net_amount" | "percentage") => setCustomType(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="net_amount">Importe neto</SelectItem>
-                <SelectItem value="percentage">Porcentaje</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="w-24">
-            <Label htmlFor="quote-custom-value" className="text-sm">Valor</Label>
-            <Input
-              id="quote-custom-value"
-              type="number"
-              step="0.01"
-              value={customValue}
-              onChange={(e) => setCustomValue(parseFloat(e.target.value) || 0)}
-            />
-          </div>
-          <Button 
-            onClick={addCustomAdditional} 
-            disabled={!customName.trim()}
-            className="gap-2 min-w-[100px]"
-          >
-            <Plus className="h-4 w-4" />
-            Añadir
-          </Button>
-        </div>
+      <div className="flex gap-2 items-center">
+        <Input
+          value={customName}
+          onChange={(e) => setCustomName(e.target.value)}
+          placeholder="Concepto personalizado"
+          className="w-80 h-9"
+        />
+        <Select value={customType} onValueChange={(value: "net_amount" | "percentage") => setCustomType(value)}>
+          <SelectTrigger className="w-32 h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="net_amount">Importe neto</SelectItem>
+            <SelectItem value="percentage">Porcentaje</SelectItem>
+          </SelectContent>
+        </Select>
+        <Input
+          type="number"
+          step="0.01"
+          value={customValue}
+          onChange={(e) => setCustomValue(parseFloat(e.target.value) || 0)}
+          placeholder="Valor"
+          className="w-24 h-9"
+        />
+        <Button 
+          onClick={addCustomAdditional} 
+          disabled={!customName.trim()}
+          className="h-9 px-4 min-w-[90px]"
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          Añadir
+        </Button>
       </div>
     </div>
   )
