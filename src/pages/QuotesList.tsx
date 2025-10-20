@@ -173,24 +173,12 @@ const QuotesList = () => {
         throw new Error('Error al descargar el PDF');
       }
 
-      // Get customer name using the same function used in the table
-      const rawCustomerName = getCustomerName(customerId);
-      
-      // Sanitize customer name for filename
-      const sanitizedCustomerName = rawCustomerName
-        .replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .toUpperCase()
-        .substring(0, 50);
-
       // Get PDF as blob
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      // holdedEstimateNumber already includes "P_" prefix
-      a.download = `${holdedEstimateNumber} ${sanitizedCustomerName}.pdf`;
+      a.download = `${holdedEstimateNumber}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
