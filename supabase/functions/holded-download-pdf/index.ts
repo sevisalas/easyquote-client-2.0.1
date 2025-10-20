@@ -14,7 +14,11 @@ Deno.serve(async (req) => {
 
     // Use API key directly
     const apiKey = '88610992d47b9783e7703c488a8c01cf';
-    console.log('Downloading PDF from Holded for estimate:', holdedEstimateId);
+    console.log('=== HOLDED PDF DOWNLOAD DEBUG ===');
+    console.log('Holded Estimate ID:', holdedEstimateId);
+    console.log('API Key (first 10):', apiKey.substring(0, 10) + '...');
+    console.log('Full URL:', `https://api.holded.com/api/invoicing/v1/documents/estimate/${holdedEstimateId}/pdf`);
+    console.log('================================');
 
     // Download PDF from Holded
     const holdedResponse = await fetch(
@@ -22,7 +26,7 @@ Deno.serve(async (req) => {
       {
         method: 'GET',
         headers: {
-          'accept': 'application/json',
+          'accept': 'application/pdf',
           'key': apiKey
         }
       }
