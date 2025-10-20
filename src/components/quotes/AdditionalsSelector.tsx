@@ -115,7 +115,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
       {selectedAdditionals.length > 0 && (
         <div className="space-y-1.5">
           {selectedAdditionals.map((additional) => (
-            <div key={additional.id} className="flex items-center gap-2 p-1.5 border rounded">
+            <div key={additional.id} className="flex items-center gap-2 p-1.5 border rounded max-w-fit">
               <div className="w-64">
                 <div className="text-sm font-medium">
                   {additional.name}
@@ -129,7 +129,6 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
                   {additional.type === "net_amount" ? "Importe neto" : "Precio unidad"}
                 </div>
               </div>
-              <div className="w-28" />
               <div className="flex items-center gap-1 w-24">
                 {additional.isCustom ? (
                   <Input

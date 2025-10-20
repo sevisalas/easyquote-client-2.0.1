@@ -104,7 +104,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
       {selectedAdditionals.length > 0 && (
         <div className="space-y-2">
           {selectedAdditionals.map((additional) => (
-            <div key={additional.id} className="flex items-center gap-2 p-2 bg-muted/30 rounded border">
+            <div key={additional.id} className="flex items-center gap-2 p-2 bg-muted/30 rounded border max-w-fit">
               <div className="w-80">
                 <span className="text-sm font-medium">
                   {additional.name}
@@ -127,7 +127,6 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
                     : "Porcentaje sobre subtotal"}
                 </span>
               </div>
-              <div className="w-32" />
               <div className="flex items-center gap-1 w-24">
                 {additional.isCustom ? (
                   <Input
