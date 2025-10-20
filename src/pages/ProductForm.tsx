@@ -29,10 +29,9 @@ export default function ProductForm() {
 
   const [formData, setFormData] = useState({
     productName: "",
-    description: "",
-    category: "",
     isActive: true,
-    excelfileId: ""
+    excelfileId: "",
+    currency: "USD"
   });
 
   // Fetch Excel files for dropdown
@@ -69,8 +68,7 @@ export default function ProductForm() {
         },
         body: JSON.stringify({
           productName: productData.productName,
-          description: productData.description || "",
-          category: productData.category || "",
+          currency: productData.currency,
           isActive: productData.isActive,
           excelfileId: productData.excelfileId || null
         })
@@ -160,27 +158,6 @@ export default function ProductForm() {
                 onChange={(e) => handleChange("productName", e.target.value)}
                 placeholder="Ej: Tarjeta de Visita Premium"
                 required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Descripción</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => handleChange("description", e.target.value)}
-                placeholder="Describe las características del producto..."
-                rows={4}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category">Categoría</Label>
-              <Input
-                id="category"
-                value={formData.category}
-                onChange={(e) => handleChange("category", e.target.value)}
-                placeholder="Ej: Impresión, Diseño Gráfico"
               />
             </div>
 
