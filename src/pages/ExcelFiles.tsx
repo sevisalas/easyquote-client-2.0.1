@@ -21,6 +21,7 @@ import { es } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { EasyQuoteConnectivityTest } from "@/components/diagnostics/EasyQuoteConnectivityTest";
+import { invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 
 interface EasyQuoteExcelFile {
   id: string;
@@ -101,6 +102,29 @@ export default function ExcelFiles() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
+
+  // Fetch all products from EasyQuote to check associations
+  const { data: allProducts = [] } = useQuery({
+    queryKey: ["easyquote-products-for-excel"],
+    queryFn: async () => {
+      const token = sessionStorage.getItem("easyquote_token");
+      if (!token) return [];
+
+      const { data, error } = await invokeEasyQuoteFunction("easyquote-products", {
+        token,
+        includeInactive: true
+      });
+
+      if (error || !data) return [];
+      return Array.isArray(data) ? data : (data?.items || data?.data || []);
+    },
+    enabled: hasToken,
+  });
+
+  // Get products associated with the selected file
+  const associatedProducts = selectedFileForProducts
+    ? allProducts.filter((product: any) => product.excelFileID === selectedFileForProducts.id)
+    : [];
 
   // Fetch Excel file metadata from Supabase
   const { data: excelFilesMeta } = useQuery({
@@ -1091,7 +1115,7 @@ export default function ExcelFiles() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {!selectedFileForProducts?.products || selectedFileForProducts.products.length === 0 ? (
+            {associatedProducts.length === 0 ? (
               <div className="text-center py-8">
                 <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-muted-foreground">
@@ -1100,8 +1124,8 @@ export default function ExcelFiles() {
               </div>
             ) : (
               <div className="space-y-2">
-                {selectedFileForProducts.products.map((product: any, index: number) => (
-                  <Card key={index}>
+                {associatedProducts.map((product: any) => (
+                  <Card key={product.id}>
                     <CardContent className="pt-4">
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
@@ -1288,18 +1312,21 @@ export default function ExcelFiles() {
                             setSelectedFileForProducts(file);
                             setIsProductsDialogOpen(true);
                           }}
-                          title={`Ver productos asociados (${file.products?.length || 0})`}
+                          title="Ver productos asociados"
                           className="relative"
                         >
                           <Package className="h-4 w-4" />
-                          {file.products && file.products.length > 0 && (
-                            <Badge 
-                              variant="default" 
-                              className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-xs"
-                            >
-                              {file.products.length}
-                            </Badge>
-                          )}
+                          {(() => {
+                            const count = allProducts.filter((p: any) => p.excelFileID === file.id).length;
+                            return count > 0 && (
+                              <Badge 
+                                variant="default" 
+                                className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-xs"
+                              >
+                                {count}
+                              </Badge>
+                            );
+                          })()}
                         </Button>
                         <Button
                           variant="ghost"
