@@ -122,12 +122,12 @@ export default function ProductForm() {
 
       return productResponse.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Producto creado",
-        description: "El producto se ha creado correctamente.",
+        description: "El producto se ha creado correctamente. Ahora puedes completar los detalles.",
       });
-      navigate("/admin/productos");
+      navigate(`/admin/productos/${data}/editar`);
     },
     onError: (error: Error) => {
       toast({
@@ -165,12 +165,12 @@ export default function ProductForm() {
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Producto creado",
-        description: "El producto se ha creado correctamente.",
+        description: "El producto se ha creado correctamente. Ahora puedes completar los detalles.",
       });
-      navigate("/admin/productos");
+      navigate(`/admin/productos/${data}/editar`);
     },
     onError: (error: Error) => {
       toast({
