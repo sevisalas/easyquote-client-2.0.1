@@ -123,7 +123,7 @@ export default function ExcelFiles() {
 
   // Get products associated with the selected file
   const associatedProducts = selectedFileForProducts
-    ? allProducts.filter((product: any) => product.excelFileID === selectedFileForProducts.id)
+    ? allProducts.filter((product: any) => product.excelfileId === selectedFileForProducts.id)
     : [];
 
   // Fetch Excel file metadata from Supabase
@@ -1317,7 +1317,7 @@ export default function ExcelFiles() {
                         >
                           <Package className="h-4 w-4" />
                           {(() => {
-                            const count = allProducts.filter((p: any) => p.excelFileID === file.id).length;
+                            const count = allProducts.filter((p: any) => p.excelfileId === file.id).length;
                             return count > 0 && (
                               <Badge 
                                 variant="default" 
