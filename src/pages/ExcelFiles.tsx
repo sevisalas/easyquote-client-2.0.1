@@ -123,7 +123,10 @@ export default function ExcelFiles() {
 
   // Get products associated with the selected file
   const associatedProducts = selectedFileForProducts
-    ? allProducts.filter((product: any) => product.excelfileId === selectedFileForProducts.id)
+    ? allProducts.filter((product: any) => 
+        product.excelfileId === selectedFileForProducts.id && 
+        (includeInactive || product.isActive)
+      )
     : [];
 
   // Fetch Excel file metadata from Supabase
@@ -1310,11 +1313,14 @@ export default function ExcelFiles() {
                         >
                           <Package className="h-4 w-4" />
                           {(() => {
-                            const count = allProducts.filter((p: any) => p.excelfileId === file.id).length;
+                            const count = allProducts.filter((p: any) => 
+                              p.excelfileId === file.id && 
+                              (includeInactive || p.isActive)
+                            ).length;
                             return count > 0 && (
                               <Badge 
                                 variant="default" 
-                                className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-xs"
+                                className="absolute -top-1 -right-1 h-5 min-w-[20px] px-1 flex items-center justify-center text-xs rounded-full"
                               >
                                 {count}
                               </Badge>
