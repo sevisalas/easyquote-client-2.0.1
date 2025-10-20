@@ -131,13 +131,19 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
               </div>
               <div className="w-28" />
               <div className="flex items-center gap-1 w-24">
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={additional.value}
-                  onChange={(e) => updateAdditionalValue(additional.id, parseFloat(e.target.value) || 0)}
-                  className="w-full h-9"
-                />
+                {additional.isCustom ? (
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={additional.value}
+                    onChange={(e) => updateAdditionalValue(additional.id, parseFloat(e.target.value) || 0)}
+                    className="w-full h-9"
+                  />
+                ) : (
+                  <div className="w-full h-9 flex items-center justify-end px-3 border rounded bg-muted/50">
+                    <span className="font-medium">{additional.value}</span>
+                  </div>
+                )}
                 <span className="text-sm text-muted-foreground">
                   {additional.type === "net_amount" ? "€" : "x"}
                 </span>
