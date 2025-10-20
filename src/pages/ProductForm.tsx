@@ -98,8 +98,17 @@ export default function ProductForm() {
         throw new Error(`Error al subir archivo: ${errorData}`);
       }
 
-      const uploadResult = await uploadResponse.json();
-      const fileId = typeof uploadResult === 'string' ? uploadResult : uploadResult.id;
+      // La API puede devolver un string simple con el ID o un objeto JSON
+      const uploadResponseText = await uploadResponse.text();
+      let fileId: string;
+      
+      try {
+        const uploadResult = JSON.parse(uploadResponseText);
+        fileId = typeof uploadResult === 'string' ? uploadResult : uploadResult.id;
+      } catch {
+        // Si no es JSON válido, asumimos que es el ID directamente
+        fileId = uploadResponseText.replace(/['"]/g, '').trim();
+      }
 
       // Then create the product with the uploaded file
       const productResponse = await fetch("https://api.easyquote.cloud/api/v1/products", {
@@ -121,7 +130,12 @@ export default function ProductForm() {
         throw new Error(`Error al crear producto: ${errorText}`);
       }
 
-      return productResponse.json();
+      const productResponseText = await productResponse.text();
+      try {
+        return JSON.parse(productResponseText);
+      } catch {
+        return productResponseText.replace(/['"]/g, '').trim();
+      }
     },
     onSuccess: (data) => {
       toast({
@@ -164,7 +178,12 @@ export default function ProductForm() {
         throw new Error(`Error al crear producto: ${errorText}`);
       }
 
-      return response.json();
+      const responseText = await response.text();
+      try {
+        return JSON.parse(responseText);
+      } catch {
+        return responseText.replace(/['"]/g, '').trim();
+      }
     },
     onSuccess: (data) => {
       toast({
