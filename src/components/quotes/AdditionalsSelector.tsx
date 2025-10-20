@@ -208,7 +208,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
           value={customName}
           onChange={(e) => setCustomName(e.target.value)}
           placeholder="Concepto personalizado"
-          className="flex-1 h-9"
+          className="w-64 h-9"
         />
         <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier") => setCustomType(value)}>
           <SelectTrigger className="w-28 h-9">
