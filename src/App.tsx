@@ -27,6 +27,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ProductManagement from "./pages/ProductManagement";
 import ProductCategories from "./pages/ProductCategories";
 import ProductForm from "./pages/ProductForm";
+import ProductConfiguration from "./pages/ProductConfiguration";
 
 
 
@@ -244,6 +245,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <ProductForm />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/productos/nuevo/configurar"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ProductConfiguration />
                 </AppLayout>
               </ProtectedRoute>
             }
