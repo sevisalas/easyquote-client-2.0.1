@@ -12,11 +12,8 @@ Deno.serve(async (req) => {
       throw new Error('holdedEstimateId is required');
     }
 
-    const apiKey = Deno.env.get('HOLDED_API_KEY');
-    if (!apiKey) {
-      throw new Error('HOLDED_API_KEY not configured');
-    }
-
+    // Use API key directly
+    const apiKey = '88610992d47b9783e7703c488a8c01cf';
     console.log('Downloading PDF from Holded for estimate:', holdedEstimateId);
 
     // Download PDF from Holded
