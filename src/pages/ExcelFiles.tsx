@@ -48,6 +48,8 @@ export default function ExcelFiles() {
   const [isUpdateExcelDialogOpen, setIsUpdateExcelDialogOpen] = useState(false);
   const [selectedFileForUpdate, setSelectedFileForUpdate] = useState<File | null>(null);
   const [includeInactive, setIncludeInactive] = useState(false);
+  const [isProductsDialogOpen, setIsProductsDialogOpen] = useState(false);
+  const [selectedFileForProducts, setSelectedFileForProducts] = useState<EasyQuoteExcelFile | null>(null);
   const [newProductData, setNewProductData] = useState({
     productName: "",
     excelFileId: "",
@@ -1079,6 +1081,66 @@ export default function ExcelFiles() {
         </div>
       </div>
 
+      {/* Modal de productos asociados */}
+      <Dialog open={isProductsDialogOpen} onOpenChange={setIsProductsDialogOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Productos asociados</DialogTitle>
+            <DialogDescription>
+              Productos que utilizan el archivo: {selectedFileForProducts?.fileName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {!selectedFileForProducts?.products || selectedFileForProducts.products.length === 0 ? (
+              <div className="text-center py-8">
+                <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">
+                  No hay productos asociados a este archivo Excel
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {selectedFileForProducts.products.map((product: any, index: number) => (
+                  <Card key={index}>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <p className="font-medium">{product.productName}</p>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={product.isActive ? "default" : "secondary"}>
+                              {product.isActive ? "Activo" : "Inactivo"}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              ID: {product.id}
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            navigate(`/admin/productos?editProduct=${product.id}`);
+                            setIsProductsDialogOpen(false);
+                          }}
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsProductsDialogOpen(false)}>
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Separator />
 
       {/* Test de Conectividad - Solo para superadmin */}
@@ -1219,6 +1281,17 @@ export default function ExcelFiles() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedFileForProducts(file);
+                            setIsProductsDialogOpen(true);
+                          }}
+                          title="Ver productos asociados"
+                        >
+                          <Package className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
