@@ -9,6 +9,7 @@ import { useWooCommerceIntegration } from "@/hooks/useWooCommerceIntegration";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
 interface EasyQuoteProduct {
   id: string;
@@ -43,6 +44,36 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
   const { isWooCommerceActive, loading: wooIntegrationLoading } = useWooCommerceIntegration();
   const productIds = products.map((p) => p.id);
   const { data: wooLinks, isLoading: wooLoading } = useWooCommerceLink(isWooCommerceActive ? productIds : []);
+
+  // Obtener archivos Excel de EasyQuote
+  const { data: excelFiles = [] } = useQuery({
+    queryKey: ["easyquote-excel-files"],
+    queryFn: async () => {
+      const token = sessionStorage.getItem("easyquote_token");
+      if (!token) return [];
+
+      const response = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) return [];
+      return response.json();
+    },
+  });
+
+  // Crear un map de excelfileId -> fileName
+  const excelFileMap = excelFiles.reduce((acc: Record<string, string>, file: any) => {
+    acc[file.id] = file.fileName;
+    return acc;
+  }, {});
+
+  const getExcelFileName = (excelfileId?: string) => {
+    if (!excelfileId) return "Sin archivo";
+    return excelFileMap[excelfileId] || "Archivo no encontrado";
+  };
 
   console.log("ProductTable Debug:", {
     isWooCommerceActive,
@@ -92,14 +123,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                   </TableCell>
                   <TableCell className="py-3 max-w-[220px]">
                     <span className="font-mono text-xs text-muted-foreground break-words block">
-                      {product.excelfileId ? (
-                        product.productName
-                          ?.toLowerCase()
-                          .replace(/\s+/g, "_")
-                          .replace(/[^a-z0-9_]/g, "") + ".xlsx"
-                      ) : (
-                        <span className="text-muted-foreground italic">Sin archivo</span>
-                      )}
+                      {getExcelFileName(product.excelfileId)}
                     </span>
                   </TableCell>
                   <TableCell className="py-2">
@@ -258,14 +282,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
               <div className="text-sm">
                 <span className="text-muted-foreground">Excel: </span>
                 <span className="font-mono text-xs">
-                  {product.excelfileId ? (
-                    product.productName
-                      ?.toLowerCase()
-                      .replace(/\s+/g, "_")
-                      .replace(/[^a-z0-9_]/g, "") + ".xlsx"
-                  ) : (
-                    <span className="text-muted-foreground italic">Sin archivo</span>
-                  )}
+                  {getExcelFileName(product.excelfileId)}
                 </span>
               </div>
 
