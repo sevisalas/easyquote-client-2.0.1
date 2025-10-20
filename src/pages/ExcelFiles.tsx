@@ -1315,14 +1315,13 @@ export default function ExcelFiles() {
                           title="Ver productos asociados"
                           className="relative"
                         >
-                          <Package className="h-4 w-4 mr-2" />
-                          Ver productos asociados
+                          <Package className="h-4 w-4" />
                           {(() => {
                             const count = allProducts.filter((p: any) => p.excelfileId === file.id).length;
                             return count > 0 && (
                               <Badge 
                                 variant="default" 
-                                className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs"
+                                className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-xs"
                               >
                                 {count}
                               </Badge>
@@ -1333,9 +1332,9 @@ export default function ExcelFiles() {
                           variant="ghost"
                           size="sm"
                           onClick={() => downloadFile(file.id, file.fileName)}
+                          title="Descargar Excel"
                         >
-                          <Download className="h-4 w-4 mr-2" />
-                          Descargar Excel
+                          <Download className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -1344,18 +1343,18 @@ export default function ExcelFiles() {
                             setSelectedExcelFile(file);
                             setIsUpdateExcelDialogOpen(true);
                           }}
+                          title="Actualizar Excel"
                         >
-                          <Edit className="h-4 w-4 mr-2" />
-                          Actualizar Excel
+                          <Edit className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => deleteMutation.mutate(file.id)}
                           disabled={deleteMutation.isPending}
+                          title="Borrar Excel"
                         >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Borrar Excel
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
