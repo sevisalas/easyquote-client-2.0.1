@@ -177,7 +177,8 @@ const QuotesList = () => {
       const customerName = getCustomerName(customerId);
       const sanitizedCustomerName = customerName
         .replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s]/g, '') // Remove special characters
-        .replace(/\s+/g, '_') // Replace spaces with underscores
+        .replace(/\s+/g, ' ') // Normalize spaces
+        .trim()
         .substring(0, 50); // Limit length
 
       // Get PDF as blob
@@ -185,7 +186,7 @@ const QuotesList = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${holdedEstimateNumber}_${sanitizedCustomerName}.pdf`;
+      a.download = `P_${holdedEstimateNumber} ${sanitizedCustomerName}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
