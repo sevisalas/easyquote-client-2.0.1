@@ -63,40 +63,72 @@ export default function ProductForm() {
     },
   });
 
-  // Prepare product data with new file (without creating in API yet)
+  // Upload Excel and create product with new file
   const createProductWithNewFileMutation = useMutation({
     mutationFn: async (data: { productName: string; file: File; currency: string }) => {
-      // Just return the prepared data, don't create in API yet
-      return {
-        productName: data.productName,
-        file: data.file,
-        currency: data.currency,
-        useNewFile: true
-      };
+      const token = sessionStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No hay token de EasyQuote disponible");
+
+      // First upload the Excel file
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(data.file);
+        reader.onload = () => {
+          const result = reader.result as string;
+          const base64Data = result.split(",")[1];
+          resolve(base64Data);
+        };
+        reader.onerror = reject;
+      });
+
+      const uploadResponse = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fileName: data.file.name,
+          file: base64,
+        }),
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.text();
+        throw new Error(`Error al subir archivo: ${errorData}`);
+      }
+
+      const uploadResult = await uploadResponse.json();
+      const fileId = typeof uploadResult === 'string' ? uploadResult : uploadResult.id;
+
+      // Then create the product with the uploaded file
+      const productResponse = await fetch("https://api.easyquote.cloud/api/v1/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          productName: data.productName,
+          excelfileId: fileId,
+          currency: data.currency,
+          isActive: true,
+        }),
+      });
+
+      if (!productResponse.ok) {
+        const errorText = await productResponse.text();
+        throw new Error(`Error al crear producto: ${errorText}`);
+      }
+
+      return productResponse.json();
     },
     onSuccess: (data) => {
-      // Store the data temporarily in sessionStorage
-      sessionStorage.setItem('pending_product', JSON.stringify({
-        productName: data.productName,
-        fileName: data.file.name,
-        currency: data.currency,
-        useNewFile: true
-      }));
-      
-      // Store the file separately (can't stringify File object)
-      const reader = new FileReader();
-      reader.readAsDataURL(data.file);
-      reader.onload = () => {
-        sessionStorage.setItem('pending_product_file', reader.result as string);
-        
-        toast({
-          title: "Producto preparado",
-          description: "Ahora configura los prompts y outputs antes de crear el producto.",
-        });
-        
-        // Navigate to configuration page
-        navigate(`/admin/productos/nuevo/configurar`);
-      };
+      toast({
+        title: "Producto creado",
+        description: "El producto se ha creado correctamente. Ahora puedes completar los detalles.",
+      });
+      navigate(`/admin/productos/${data}/editar`);
     },
     onError: (error: Error) => {
       toast({
@@ -107,28 +139,39 @@ export default function ProductForm() {
     },
   });
 
-  // Prepare product data with existing file (without creating in API yet)
+  // Create product with existing Excel file
   const createProductMutation = useMutation({
     mutationFn: async (productData: { productName: string; excelfileId: string; currency: string }) => {
-      // Just return the prepared data, don't create in API yet
-      return productData;
+      const token = sessionStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No hay token de EasyQuote disponible");
+
+      const response = await fetch("https://api.easyquote.cloud/api/v1/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          productName: productData.productName,
+          excelfileId: productData.excelfileId,
+          currency: productData.currency,
+          isActive: true,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error al crear producto: ${errorText}`);
+      }
+
+      return response.json();
     },
     onSuccess: (data) => {
-      // Store the data temporarily in sessionStorage
-      sessionStorage.setItem('pending_product', JSON.stringify({
-        productName: data.productName,
-        excelfileId: data.excelfileId,
-        currency: data.currency,
-        useNewFile: false
-      }));
-      
       toast({
-        title: "Producto preparado",
-        description: "Ahora configura los prompts y outputs antes de crear el producto.",
+        title: "Producto creado",
+        description: "El producto se ha creado correctamente. Ahora puedes completar los detalles.",
       });
-      
-      // Navigate to configuration page
-      navigate(`/admin/productos/nuevo/configurar`);
+      navigate(`/admin/productos/${data}/editar`);
     },
     onError: (error: Error) => {
       toast({
