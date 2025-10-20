@@ -38,13 +38,26 @@ Deno.serve(async (req) => {
       throw new Error(`Holded API error: ${holdedResponse.status} - ${errorText}`);
     }
 
-    // Get the PDF as blob
-    const pdfBlob = await holdedResponse.blob();
+    // Parse JSON response
+    const responseJson = await holdedResponse.json();
+    console.log('Response status:', responseJson.status);
     
-    console.log('PDF downloaded successfully, size:', pdfBlob.size);
+    if (responseJson.status !== 1 || !responseJson.data) {
+      throw new Error('Invalid response from Holded API');
+    }
+
+    // Decode base64 PDF data
+    const pdfBase64 = responseJson.data;
+    const binaryString = atob(pdfBase64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    console.log('PDF decoded successfully, size:', bytes.length);
 
     // Return the PDF
-    return new Response(pdfBlob, {
+    return new Response(bytes, {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/pdf',
