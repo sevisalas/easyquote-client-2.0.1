@@ -27,23 +27,18 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Validate API key and get organization
-    const { data: credentials, error: credError } = await supabase
-      .from('organization_api_credentials')
-      .select('organization_id, is_active')
-      .eq('api_key', providedApiKey)
-      .eq('is_active', true)
-      .single();
+    // Validate API key using the database function
+    const { data: organizationId, error: validationError } = await supabase
+      .rpc('validate_api_key', { p_api_key: providedApiKey });
 
-    if (credError || !credentials) {
-      console.error('Invalid API key:', credError);
+    if (validationError || !organizationId) {
+      console.error('Invalid API key:', validationError);
       return new Response(
         JSON.stringify({ error: 'Invalid API key' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const organizationId = credentials.organization_id;
     console.log('Authenticated organization:', organizationId);
 
     // Parse request body
