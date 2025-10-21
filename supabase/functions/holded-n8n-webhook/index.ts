@@ -21,6 +21,7 @@ serve(async (req) => {
     }
 
     const providedApiKey = authHeader.replace('Bearer ', '');
+    console.log('Received API key (first 10 chars):', providedApiKey.substring(0, 10));
     
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -30,6 +31,8 @@ serve(async (req) => {
     // Validate API key using the database function
     const { data: organizationId, error: validationError } = await supabase
       .rpc('validate_api_key', { p_api_key: providedApiKey });
+
+    console.log('Validation result - orgId:', organizationId, 'error:', validationError);
 
     if (validationError || !organizationId) {
       console.error('Invalid API key:', validationError);
