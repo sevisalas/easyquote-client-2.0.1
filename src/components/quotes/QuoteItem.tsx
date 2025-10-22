@@ -710,9 +710,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 ) : (!pricingError && <p className="text-sm text-muted-foreground">Selecciona opciones para ver el resultado.</p>)}
 
                 {otherOutputs.length > 0 && (
-                  <>
-                    <Separator className="my-4" />
-                    <section className="space-y-2">
+                  <section className="space-y-2 mt-4">
                       {otherOutputs.map((o: any, idx: number) => (
                         <div key={idx} className="flex items-center justify-between text-sm px-1">
                           <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
@@ -720,7 +718,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                         </div>
                       ))}
                     </section>
-                  </>
                 )}
               </CardContent>
             </Card>
@@ -801,7 +798,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                       ))}
                     </div>
 
-                     <Separator className="my-2" />
                      {multiLoading ? (
                       <p className="text-sm text-muted-foreground">Calculando...</p>
                     ) : (Array.isArray(multiRows) && multiRows.length > 0 ? (
@@ -851,9 +847,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                                             <span className="font-semibold">{formatEUR(priceOut?.value)}</span>
                                           </div>
                                           {details.length > 0 && (
-                                            <>
-                                              <Separator className="my-2" />
-                                              <div className="space-y-1">
+                                              <div className="space-y-1 mt-2">
                                                 {details.map((o:any, i:number) => (
                                                   <div key={i} className="flex items-center justify-between text-sm">
                                                     <span className="text-muted-foreground">{o.name ?? 'Dato'}</span>
@@ -861,7 +855,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                                                   </div>
                                                 ))}
                                               </div>
-                                            </>
                                           )}
                                         </div>
                                       </TabsContent>
@@ -887,28 +880,24 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
       {/* Additionals Section */}
       {productId && isExpanded && (
-        <Accordion type="single" collapsible className="w-full">
-          <AccordionItem value="additionals">
-            <AccordionTrigger>
-              <div className="flex items-center gap-2">
-                <span>Ajustes del artículo</span>
-                {Array.isArray(itemAdditionals) && itemAdditionals.length > 0 && (
-                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                    {itemAdditionals.length} activos
-                  </span>
-                )}
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="pt-2">
-                <AdditionalsSelector 
-                  selectedAdditionals={Array.isArray(itemAdditionals) ? itemAdditionals : []}
-                  onChange={setItemAdditionals}
-                />
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+        <Card className="w-full mt-6">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-lg">Ajustes del artículo</CardTitle>
+              {Array.isArray(itemAdditionals) && itemAdditionals.length > 0 && (
+                <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                  {itemAdditionals.length} activos
+                </span>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <AdditionalsSelector 
+              selectedAdditionals={Array.isArray(itemAdditionals) ? itemAdditionals : []}
+              onChange={setItemAdditionals}
+            />
+          </CardContent>
+        </Card>
       )}
     </div>
   );
