@@ -10,7 +10,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Edit } from "lucide-react";
 import { format } from "date-fns";
@@ -710,9 +709,7 @@ export default function QuoteEdit() {
 
           {items.length > 0 && (
             <>
-              <Separator className="my-2" />
-
-              <div className="bg-muted/30 rounded-md p-3 border border-border space-y-1.5">
+              <div className="bg-muted/30 rounded-md p-3 border border-border space-y-1.5 mt-2">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-muted-foreground">Subtotal:</span>
                   <span className="text-sm font-medium">{fmtEUR(calculateSubtotal())}</span>
@@ -759,8 +756,7 @@ export default function QuoteEdit() {
                   </>
                 )}
 
-                <Separator className="my-1.5" />
-                <div className="flex justify-between items-center pt-1">
+                <div className="flex justify-between items-center pt-3">
                   <span className="text-base font-semibold text-foreground">Total del presupuesto:</span>
                   <span className="text-xl font-bold text-secondary">{fmtEUR(calculateTotal())}</span>
                 </div>
