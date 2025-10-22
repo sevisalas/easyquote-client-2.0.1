@@ -615,7 +615,7 @@ export default function QuoteEdit() {
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Artículos del presupuesto</CardTitle>
-            <Button onClick={addItem} size="sm" className="gap-2">
+            <Button onClick={addItem} size="sm" variant="secondary" className="gap-2">
               <Plus className="h-4 w-4" />
               Añadir artículo
             </Button>
