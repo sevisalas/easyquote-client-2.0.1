@@ -102,9 +102,9 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
     <div className="space-y-4">
       {/* Selected Additionals */}
       {selectedAdditionals.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-2 max-w-2xl">
           {selectedAdditionals.map((additional) => (
-            <div key={additional.id} className="flex items-center gap-3 p-2 bg-muted/30 rounded border max-w-2xl">
+            <div key={additional.id} className="flex items-center gap-3 p-2 bg-muted/30 rounded border">
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium">
                   {additional.name}
