@@ -36,11 +36,11 @@ interface QuoteItem {
 }
 
 interface SelectedQuoteAdditional {
-  id: string
-  name: string
-  type: "net_amount" | "quantity_multiplier" | "percentage" | "custom"
-  value: number
-  isCustom?: boolean
+  id: string;
+  name: string;
+  type: "net_amount" | "quantity_multiplier" | "percentage" | "custom";
+  value: number;
+  isCustom?: boolean;
 }
 
 interface Quote {
@@ -63,18 +63,20 @@ interface Quote {
 
 const fetchQuote = async (id: string): Promise<Quote> => {
   const { data, error } = await supabase
-    .from('quotes')
-    .select(`
+    .from("quotes")
+    .select(
+      `
       *,
       items:quote_items(*)
-    `)
-    .eq('id', id)
+    `,
+    )
+    .eq("id", id)
     .maybeSingle();
 
   if (error) throw error;
-  if (!data) throw new Error('Presupuesto no encontrado');
-  
-  console.log('Quote data loaded:', data); // Debug log
+  if (!data) throw new Error("Presupuesto no encontrado");
+
+  console.log("Quote data loaded:", data); // Debug log
   return data as any;
 };
 
@@ -90,17 +92,17 @@ const fetchQuote = async (id: string): Promise<Quote> => {
 // };
 
 const statusOptions = [
-  { value: 'draft', label: 'Borrador' },
-  { value: 'pending', label: 'Pendiente' },
-  { value: 'sent', label: 'Enviado' },
-  { value: 'approved', label: 'Aprobado' },
-  { value: 'rejected', label: 'Rechazado' }
+  { value: "draft", label: "Borrador" },
+  { value: "pending", label: "Pendiente" },
+  { value: "sent", label: "Enviado" },
+  { value: "approved", label: "Aprobado" },
+  { value: "rejected", label: "Rechazado" },
 ];
 
 const fmtEUR = (amount: number) => {
-  return new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency: 'EUR'
+  return new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: "EUR",
   }).format(amount);
 };
 
@@ -116,7 +118,7 @@ export default function QuoteEdit() {
   const [editingItems, setEditingItems] = useState<Set<string>>(new Set());
 
   const { data: quote, isLoading } = useQuery({
-    queryKey: ['quote', id],
+    queryKey: ["quote", id],
     queryFn: () => fetchQuote(id!),
     enabled: !!id,
   });
@@ -134,33 +136,33 @@ export default function QuoteEdit() {
         status: quote.status,
         valid_until: quote.valid_until,
       });
-      
+
       // Load quote additionals - the data is stored as JSON array in quotes.quote_additionals field
       const loadedAdditionals: SelectedQuoteAdditional[] = [];
-      
-      console.log('Raw quote_additionals data:', quote.quote_additionals);
-      console.log('Type of quote_additionals:', typeof quote.quote_additionals);
-      
+
+      console.log("Raw quote_additionals data:", quote.quote_additionals);
+      console.log("Type of quote_additionals:", typeof quote.quote_additionals);
+
       // Check if quote_additionals is a direct JSON array (most common case)
       if (Array.isArray(quote.quote_additionals)) {
         const jsonAdditionals = quote.quote_additionals.map((additional: any, index: number) => ({
           id: additional.id || `temp-${Date.now()}-${index}`,
           name: additional.name,
-          type: additional.type || 'net_amount',
+          type: additional.type || "net_amount",
           value: parseFloat(additional.value) || 0,
-          isCustom: !additional.id // If no predefined ID, it's custom
+          isCustom: !additional.id, // If no predefined ID, it's custom
         }));
         loadedAdditionals.push(...jsonAdditionals);
-        console.log('Loaded from JSON array:', jsonAdditionals);
+        console.log("Loaded from JSON array:", jsonAdditionals);
       }
-      
+
       setQuoteAdditionals(loadedAdditionals);
-      console.log('Final loaded additionals:', loadedAdditionals);
-      
+      console.log("Final loaded additionals:", loadedAdditionals);
+
       // Load existing items from both sources: database items and JSON selections
       const allItems: QuoteItem[] = [];
-      
-      // Load from database (quote_items table) 
+
+      // Load from database (quote_items table)
       if (quote.items && quote.items.length > 0) {
         const dbItems = quote.items.map((item: any) => {
           // Convert prompts from array format (DB) to object format (QuoteItem expects)
@@ -171,31 +173,34 @@ export default function QuoteEdit() {
               promptsObj[prompt.id] = {
                 label: prompt.label,
                 value: prompt.value,
-                order: prompt.order
+                order: prompt.order,
               };
             });
-          } else if (typeof item.prompts === 'object' && item.prompts !== null) {
+          } else if (typeof item.prompts === "object" && item.prompts !== null) {
             // Already in object format
             promptsObj = item.prompts;
           }
-          
+
           return {
             id: item.id,
-            product_name: item.product_name || '',
-            description: item.description || '',
+            product_name: item.product_name || "",
+            description: item.description || "",
             price: item.price || 0,
             // QuoteItem compatibility
-            productId: item.product_id || '',
+            productId: item.product_id || "",
             prompts: promptsObj,
             outputs: Array.isArray(item.outputs) ? item.outputs : [],
-            multi: (item.multi && typeof item.multi === 'object' && (item.multi.qtyInputs || item.multi.qtyPrompt)) ? item.multi : undefined,
-            itemDescription: item.product_name || '',
+            multi:
+              item.multi && typeof item.multi === "object" && (item.multi.qtyInputs || item.multi.qtyPrompt)
+                ? item.multi
+                : undefined,
+            itemDescription: item.product_name || "",
             itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
           };
         });
         allItems.push(...dbItems);
       }
-      
+
       // Load from JSON selections (if no database items)
       if (allItems.length === 0 && quote.selections && Array.isArray(quote.selections)) {
         const jsonItems = quote.selections.map((selection: any, index: number) => {
@@ -206,44 +211,44 @@ export default function QuoteEdit() {
               promptsObj[prompt.id] = {
                 label: prompt.label,
                 value: prompt.value,
-                order: prompt.order
+                order: prompt.order,
               };
             });
-          } else if (typeof selection.prompts === 'object' && selection.prompts !== null) {
+          } else if (typeof selection.prompts === "object" && selection.prompts !== null) {
             promptsObj = selection.prompts;
           }
-          
+
           return {
             id: `json-${index}`,
-            product_name: selection.itemDescription || '',
-            description: '',
+            product_name: selection.itemDescription || "",
+            description: "",
             price: selection.price || 0,
             isFromSelections: true,
             // QuoteItem compatibility
-            productId: selection.productId || '',
+            productId: selection.productId || "",
             prompts: promptsObj,
             outputs: selection.outputs || [],
             multi: selection.multi,
-            itemDescription: selection.itemDescription || '',
+            itemDescription: selection.itemDescription || "",
             itemAdditionals: selection.itemAdditionals || [],
           };
         });
         allItems.push(...jsonItems);
       }
-      
+
       setItems(allItems);
     }
   }, [quote]);
 
   // Check if any item has multiple quantities enabled
-  const hasMultiQuantities = items.some(item => 
-    item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1
+  const hasMultiQuantities = items.some(
+    (item) => item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1,
   );
 
   const updateQuoteMutation = useMutation({
     mutationFn: async (data: Partial<Quote>) => {
       const { error } = await supabase
-        .from('quotes')
+        .from("quotes")
         .update({
           customer_id: data.customer_id,
           title: data.title,
@@ -256,15 +261,12 @@ export default function QuoteEdit() {
           selections: null, // Limpiar selections al guardar
           updated_at: new Date().toISOString(),
         })
-        .eq('id', id);
+        .eq("id", id);
 
       if (error) throw error;
 
       // Delete existing items and insert new ones to simplify the update process
-      await supabase
-        .from('quote_items')
-        .delete()
-        .eq('quote_id', id);
+      await supabase.from("quote_items").delete().eq("quote_id", id);
 
       // Insert all current items
       if (items.length > 0) {
@@ -275,14 +277,14 @@ export default function QuoteEdit() {
               id,
               label: promptData.label,
               value: promptData.value,
-              order: promptData.order ?? 999
+              order: promptData.order ?? 999,
             }))
             .sort((a, b) => a.order - b.order);
 
           return {
             quote_id: id,
-            product_name: item.product_name || '',
-            description: item.description || '',
+            product_name: item.product_name || "",
+            description: item.description || "",
             price: item.price || 0,
             position: index,
             product_id: item.productId || null,
@@ -293,18 +295,13 @@ export default function QuoteEdit() {
           };
         });
 
-        const { error: itemsError } = await supabase
-          .from('quote_items')
-          .insert(itemsToInsert);
+        const { error: itemsError } = await supabase.from("quote_items").insert(itemsToInsert);
 
         if (itemsError) throw itemsError;
       }
 
       // Update quote additionals
-      await supabase
-        .from('quote_additionals')
-        .delete()
-        .eq('quote_id', id);
+      await supabase.from("quote_additionals").delete().eq("quote_id", id);
 
       if (quoteAdditionals.length > 0) {
         const additionalsToInsert = quoteAdditionals.map((additional) => ({
@@ -315,22 +312,20 @@ export default function QuoteEdit() {
           value: additional.value,
         }));
 
-        const { error: additionalsError } = await supabase
-          .from('quote_additionals')
-          .insert(additionalsToInsert);
+        const { error: additionalsError } = await supabase.from("quote_additionals").insert(additionalsToInsert);
 
         if (additionalsError) throw additionalsError;
       }
     },
     onSuccess: () => {
-      toast.success('Presupuesto actualizado correctamente');
-      queryClient.invalidateQueries({ queryKey: ['quote', id] });
-      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      toast.success("Presupuesto actualizado correctamente");
+      queryClient.invalidateQueries({ queryKey: ["quote", id] });
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
       navigate(`/presupuestos/${id}`);
     },
     onError: (error) => {
-      toast.error('Error al actualizar el presupuesto');
-      console.error('Error:', error);
+      toast.error("Error al actualizar el presupuesto");
+      console.error("Error:", error);
     },
   });
 
@@ -341,23 +336,23 @@ export default function QuoteEdit() {
   const calculateTotal = () => {
     const subtotal = calculateSubtotal();
     let total = subtotal;
-    
-    console.log('🔢 Calculando total - Subtotal:', subtotal);
-    console.log('🔢 Ajustes a aplicar:', quoteAdditionals);
-    
+
+    console.log("🔢 Calculando total - Subtotal:", subtotal);
+    console.log("🔢 Ajustes a aplicar:", quoteAdditionals);
+
     // Aplicar ajustes
-    quoteAdditionals.forEach(additional => {
+    quoteAdditionals.forEach((additional) => {
       switch (additional.type) {
-        case 'net_amount':
+        case "net_amount":
           console.log(`🔢 Aplicando net_amount: ${additional.value}`);
           total += additional.value;
           break;
-        case 'percentage':
+        case "percentage":
           const percentageAmount = (subtotal * additional.value) / 100;
           console.log(`🔢 Aplicando percentage: ${additional.value}% = ${percentageAmount}`);
           total += percentageAmount;
           break;
-        case 'quantity_multiplier':
+        case "quantity_multiplier":
           console.log(`🔢 Aplicando multiplier: ×${additional.value}`);
           total *= additional.value;
           break;
@@ -366,23 +361,23 @@ export default function QuoteEdit() {
           total += additional.value;
       }
     });
-    
-    console.log('🔢 Total final calculado:', total);
+
+    console.log("🔢 Total final calculado:", total);
     return total;
   };
 
   const handleInputChange = (field: keyof Quote, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleItemEdit = (itemId: string | number) => {
     const id = itemId.toString();
-    setEditingItems(prev => new Set([...prev, id]));
+    setEditingItems((prev) => new Set([...prev, id]));
   };
 
   const handleItemSaveEdit = (itemId: string | number) => {
     const id = itemId.toString();
-    setEditingItems(prev => {
+    setEditingItems((prev) => {
       const newSet = new Set(prev);
       newSet.delete(id);
       return newSet;
@@ -390,9 +385,9 @@ export default function QuoteEdit() {
   };
 
   const handleItemChange = (itemId: string | number, snapshot: any) => {
-    setItems(prev => {
-      return prev.map((item, index) => 
-        (item.id === itemId || index.toString() === itemId.toString()) 
+    setItems((prev) => {
+      return prev.map((item, index) =>
+        item.id === itemId || index.toString() === itemId.toString()
           ? {
               ...item,
               product_name: snapshot.itemDescription || item.product_name,
@@ -406,35 +401,37 @@ export default function QuoteEdit() {
               itemDescription: snapshot.itemDescription,
               itemAdditionals: snapshot.itemAdditionals,
             }
-          : item
+          : item,
       );
     });
   };
 
   const handleItemRemove = (itemId: string | number) => {
-    setItems(prev => prev.filter((item, index) => {
-      return item.id !== itemId && index.toString() !== itemId.toString();
-    }));
+    setItems((prev) =>
+      prev.filter((item, index) => {
+        return item.id !== itemId && index.toString() !== itemId.toString();
+      }),
+    );
   };
 
   const addItem = () => {
     const newItemId = `temp-${Date.now()}`;
     const newItem: QuoteItem = {
       id: newItemId,
-      product_name: 'Nuevo artículo',
-      description: '',
+      product_name: "Nuevo artículo",
+      description: "",
       price: 0,
       // QuoteItem compatibility
-      productId: '',
+      productId: "",
       prompts: {},
       outputs: [],
       multi: undefined,
-      itemDescription: 'Nuevo artículo',
+      itemDescription: "Nuevo artículo",
       itemAdditionals: [],
     };
-    setItems(prev => [...prev, newItem]);
+    setItems((prev) => [...prev, newItem]);
     // Abrir automáticamente en modo edición
-    setEditingItems(prev => new Set([...prev, newItemId]));
+    setEditingItems((prev) => new Set([...prev, newItemId]));
   };
 
   const handleSave = () => {
@@ -459,7 +456,7 @@ export default function QuoteEdit() {
         <Card>
           <CardContent className="p-4">
             <p className="text-destructive">Presupuesto no encontrado</p>
-            <Button onClick={() => navigate('/presupuestos')} className="mt-3">
+            <Button onClick={() => navigate("/presupuestos")} className="mt-3">
               Volver a presupuestos
             </Button>
           </CardContent>
@@ -469,8 +466,8 @@ export default function QuoteEdit() {
   }
 
   // Check if quote is editable
-  const isEditable = quote.status === 'draft' || quote.status === 'pending';
-  
+  const isEditable = quote.status === "draft" || quote.status === "pending";
+
   if (!isEditable) {
     return (
       <div className="container mx-auto py-2">
@@ -478,14 +475,15 @@ export default function QuoteEdit() {
           <CardContent className="p-4 space-y-3">
             <p className="text-destructive font-medium">Este presupuesto no se puede editar</p>
             <p className="text-sm text-muted-foreground">
-              Los presupuestos en estado "{statusOptions.find(opt => opt.value === quote.status)?.label || quote.status}" 
-              no pueden ser modificados. Si necesitas realizar cambios, puedes duplicarlo como una nueva versión.
+              Los presupuestos en estado "
+              {statusOptions.find((opt) => opt.value === quote.status)?.label || quote.status}" no pueden ser
+              modificados. Si necesitas realizar cambios, puedes duplicarlo como una nueva versión.
             </p>
             <div className="flex gap-2">
               <Button onClick={() => navigate(`/presupuestos/${id}`)} className="mt-2">
                 Ver presupuesto
               </Button>
-              <Button onClick={() => navigate('/presupuestos')} variant="outline" className="mt-2">
+              <Button onClick={() => navigate("/presupuestos")} variant="outline" className="mt-2">
                 Volver a lista
               </Button>
             </div>
@@ -505,12 +503,8 @@ export default function QuoteEdit() {
               <CardTitle className="text-lg">Presupuesto: {quote.quote_number}</CardTitle>
             </div>
             <div className="flex gap-2">
-              <Button
-                onClick={handleSave}
-                disabled={updateQuoteMutation.isPending}
-                size="sm"
-              >
-                {updateQuoteMutation.isPending ? 'Guardando...' : 'Guardar'}
+              <Button onClick={handleSave} disabled={updateQuoteMutation.isPending} size="sm">
+                {updateQuoteMutation.isPending ? "Guardando..." : "Guardar"}
               </Button>
               <Button onClick={() => navigate(`/presupuestos/${id}`)} size="sm" variant="outline">
                 Cancelar
@@ -526,19 +520,18 @@ export default function QuoteEdit() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <div className="space-y-1.5">
               <CustomerSelector
-                value={formData.customer_id || ''}
-                onValueChange={(value) => handleInputChange('customer_id', value)}
+                value={formData.customer_id || ""}
+                onValueChange={(value) => handleInputChange("customer_id", value)}
                 label="cliente"
                 placeholder="Seleccionar cliente..."
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="status" className="text-xs">estado</Label>
-              <Select
-                value={formData.status || 'draft'}
-                onValueChange={(value) => handleInputChange('status', value)}
-              >
+              <Label htmlFor="status" className="text-xs">
+                estado
+              </Label>
+              <Select value={formData.status || "draft"} onValueChange={(value) => handleInputChange("status", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar estado" />
                 </SelectTrigger>
@@ -553,44 +546,52 @@ export default function QuoteEdit() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="title" className="text-xs">título</Label>
+              <Label htmlFor="title" className="text-xs">
+                título
+              </Label>
               <Input
                 id="title"
-                value={formData.title || ''}
-                onChange={(e) => handleInputChange('title', e.target.value)}
+                value={formData.title || ""}
+                onChange={(e) => handleInputChange("title", e.target.value)}
                 placeholder="Título del presupuesto"
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="valid_until" className="text-xs">Válido hasta</Label>
+              <Label htmlFor="valid_until" className="text-xs">
+                Válido hasta
+              </Label>
               <Input
                 id="valid_until"
                 type="date"
-                value={formData.valid_until || ''}
-                onChange={(e) => handleInputChange('valid_until', e.target.value)}
+                value={formData.valid_until || ""}
+                onChange={(e) => handleInputChange("valid_until", e.target.value)}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div className="space-y-1.5">
-              <Label htmlFor="description" className="text-xs">Descripción</Label>
+              <Label htmlFor="description" className="text-xs">
+                Descripción
+              </Label>
               <Textarea
                 id="description"
-                value={formData.description || ''}
-                onChange={(e) => handleInputChange('description', e.target.value)}
+                value={formData.description || ""}
+                onChange={(e) => handleInputChange("description", e.target.value)}
                 placeholder="Descripción del presupuesto"
                 rows={2}
                 className="text-sm"
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="notes" className="text-xs">Notas</Label>
+              <Label htmlFor="notes" className="text-xs">
+                Notas
+              </Label>
               <Textarea
                 id="notes"
-                value={formData.notes || ''}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
+                value={formData.notes || ""}
+                onChange={(e) => handleInputChange("notes", e.target.value)}
                 placeholder="Notas adicionales"
                 rows={2}
                 className="text-sm"
@@ -601,7 +602,8 @@ export default function QuoteEdit() {
           {isHoldedActive && hasMultiQuantities && (
             <div className="pt-2">
               <p className="text-sm text-muted-foreground">
-                (Este presupuesto tiene múltiples cantidades, cada cantidad se exportará como un artículo separado en Holded)
+                (Este presupuesto tiene múltiples cantidades, cada cantidad se exportará como un artículo separado en
+                Holded)
               </p>
             </div>
           )}
@@ -612,7 +614,7 @@ export default function QuoteEdit() {
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Artículos del Presupuesto</CardTitle>
+            <CardTitle className="text-base">Artículos del presupuesto</CardTitle>
             <Button onClick={addItem} size="sm" className="gap-2">
               <Plus className="h-4 w-4" />
               Añadir artículo
@@ -624,83 +626,75 @@ export default function QuoteEdit() {
             {items.map((item, index) => {
               const itemId = (item.id || index).toString();
               const isEditing = editingItems.has(itemId);
-              
+
               return (
-                <div key={item.id || index} className="bg-card border border-border rounded-md p-2 border-r-2 border-r-secondary hover:shadow transition-all duration-200">
+                <div
+                  key={item.id || index}
+                  className="bg-card border border-border rounded-md p-2 border-r-2 border-r-secondary hover:shadow transition-all duration-200"
+                >
                   {isEditing ? (
-                     // Editing mode - show only QuoteItem component
-                     <>
-                       <QuoteItem
-                         hasToken={true}
-                         id={itemId}
-                         initialData={{
-                           productId: item.productId || '',
-                           prompts: item.prompts || {},
-                           outputs: item.outputs || [],
-                           price: item.price || 0,
-                           multi: item.multi, // No forzar valor por defecto
-                           itemDescription: item.itemDescription || item.product_name || '',
-                           itemAdditionals: item.itemAdditionals || [],
-                         }}
-                         onChange={handleItemChange}
-                         onRemove={handleItemRemove}
-                       />
-                       <div className="flex justify-end gap-2 mt-2 pt-2 border-t">
-                         <Button
-                           onClick={() => handleItemSaveEdit(itemId)}
-                           size="sm"
-                           variant="default"
-                         >
-                           Finalizar edición
-                         </Button>
-                         <Button
-                           onClick={() => handleItemRemove(item.id || index)}
-                           size="sm"
-                           variant="outline"
-                           className="text-destructive hover:bg-destructive/10"
-                         >
-                           <Trash2 className="h-3 w-3 mr-1" />
-                           Eliminar
-                         </Button>
-                       </div>
-                     </>
-                   ) : (
-                         // Compressed mode - show summary
-                        <div className="flex justify-between items-center gap-3">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {item.description || item.product_name || '-'}
-                              {item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1 && (
-                                <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
-                              )}
-                            </p>
-                          </div>
-                         <div className="flex items-center gap-3 shrink-0">
-                           <div className="text-sm font-medium text-secondary text-right">
-                             {fmtEUR(item.price || 0)}
-                           </div>
-                           <div className="flex items-center gap-2">
-                         <Button
-                           onClick={() => handleItemEdit(itemId)}
-                           size="sm"
-                           variant="outline"
-                           className="gap-1"
-                         >
-                           <Edit className="h-3 w-3" />
-                           Editar
-                         </Button>
-                         <Button
-                           onClick={() => handleItemRemove(item.id || index)}
-                           size="sm"
-                           variant="outline"
-                           className="gap-1 text-destructive hover:bg-destructive/10"
-                         >
-                           <Trash2 className="h-3 w-3" />
-                           Eliminar
-                         </Button>
-                       </div>
+                    // Editing mode - show only QuoteItem component
+                    <>
+                      <QuoteItem
+                        hasToken={true}
+                        id={itemId}
+                        initialData={{
+                          productId: item.productId || "",
+                          prompts: item.prompts || {},
+                          outputs: item.outputs || [],
+                          price: item.price || 0,
+                          multi: item.multi, // No forzar valor por defecto
+                          itemDescription: item.itemDescription || item.product_name || "",
+                          itemAdditionals: item.itemAdditionals || [],
+                        }}
+                        onChange={handleItemChange}
+                        onRemove={handleItemRemove}
+                      />
+                      <div className="flex justify-end gap-2 mt-2 pt-2 border-t">
+                        <Button onClick={() => handleItemSaveEdit(itemId)} size="sm" variant="default">
+                          Finalizar edición
+                        </Button>
+                        <Button
+                          onClick={() => handleItemRemove(item.id || index)}
+                          size="sm"
+                          variant="outline"
+                          className="text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Eliminar
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    // Compressed mode - show summary
+                    <div className="flex justify-between items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {item.description || item.product_name || "-"}
+                          {item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1 && (
+                            <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
+                          )}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <div className="text-sm font-medium text-secondary text-right">{fmtEUR(item.price || 0)}</div>
+                        <div className="flex items-center gap-2">
+                          <Button onClick={() => handleItemEdit(itemId)} size="sm" variant="outline" className="gap-1">
+                            <Edit className="h-3 w-3" />
+                            Editar
+                          </Button>
+                          <Button
+                            onClick={() => handleItemRemove(item.id || index)}
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Eliminar
+                          </Button>
                         </div>
-                     </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               );
@@ -717,44 +711,45 @@ export default function QuoteEdit() {
           {items.length > 0 && (
             <>
               <Separator className="my-2" />
-              
+
               <div className="bg-muted/30 rounded-md p-3 border border-border space-y-1.5">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-muted-foreground">Subtotal:</span>
                   <span className="text-sm font-medium">{fmtEUR(calculateSubtotal())}</span>
                 </div>
-                
+
                 {/* Mostrar ajustes aplicados */}
                 {quoteAdditionals.length > 0 && (
                   <>
                     {quoteAdditionals.map((additional, index) => {
                       let amount = 0;
-                      let displayText = '';
+                      let displayText = "";
                       const subtotal = calculateSubtotal();
-                      
+
                       switch (additional.type) {
-                        case 'percentage':
+                        case "percentage":
                           amount = (subtotal * additional.value) / 100;
                           displayText = `${additional.name} (${additional.value}%)`;
                           break;
-                        case 'net_amount':
+                        case "net_amount":
                           amount = additional.value;
                           displayText = additional.name;
                           break;
-                        case 'quantity_multiplier':
+                        case "quantity_multiplier":
                           displayText = `${additional.name} (×${additional.value})`;
                           break;
                         default:
                           amount = additional.value;
                           displayText = additional.name;
                       }
-                      
-                      if (additional.type !== 'quantity_multiplier') {
+
+                      if (additional.type !== "quantity_multiplier") {
                         return (
                           <div key={index} className="flex justify-between items-center">
                             <span className="text-xs text-muted-foreground">{displayText}:</span>
-                            <span className={`text-sm font-medium ${amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {amount >= 0 ? '+' : ''}{fmtEUR(amount)}
+                            <span className={`text-sm font-medium ${amount >= 0 ? "text-green-600" : "text-red-600"}`}>
+                              {amount >= 0 ? "+" : ""}
+                              {fmtEUR(amount)}
                             </span>
                           </div>
                         );
@@ -763,7 +758,7 @@ export default function QuoteEdit() {
                     })}
                   </>
                 )}
-                
+
                 <Separator className="my-1.5" />
                 <div className="flex justify-between items-center pt-1">
                   <span className="text-base font-semibold text-foreground">Total del presupuesto:</span>
@@ -781,10 +776,7 @@ export default function QuoteEdit() {
           <CardTitle className="text-base">Ajustes del presupuesto</CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <QuoteAdditionalsSelector
-            selectedAdditionals={quoteAdditionals}
-            onChange={setQuoteAdditionals}
-          />
+          <QuoteAdditionalsSelector selectedAdditionals={quoteAdditionals} onChange={setQuoteAdditionals} />
         </CardContent>
       </Card>
     </div>
