@@ -880,7 +880,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
       {/* Additionals Section */}
       {productId && isExpanded && (
-        <Card className="w-full mt-6">
+        <Card className="max-w-2xl mt-6">
           <CardHeader>
             <div className="flex items-center gap-2">
               <CardTitle className="text-lg">Ajustes del artículo</CardTitle>
