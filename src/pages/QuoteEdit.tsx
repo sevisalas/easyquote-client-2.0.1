@@ -649,7 +649,7 @@ export default function QuoteEdit() {
                         onChange={handleItemChange}
                         onRemove={handleItemRemove}
                       />
-                      <div className="flex justify-end gap-2 mt-2 pt-2 border-t">
+                      <div className="flex justify-end gap-2 mt-2">
                         <Button onClick={() => handleItemSaveEdit(itemId)} size="sm" variant="default">
                           Finalizar edición
                         </Button>
