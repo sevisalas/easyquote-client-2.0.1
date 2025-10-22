@@ -205,7 +205,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
             />
             <span className="text-sm text-muted-foreground">€</span>
           </div>
-          <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} className="h-9 px-4 min-w-[90px]">
+          <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} variant="secondary" className="h-9 px-4 min-w-[90px]">
             <Plus className="h-4 w-4 mr-1" />
             Añadir
           </Button>
@@ -243,6 +243,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
         <Button 
           onClick={addCustomAdditional} 
           disabled={!customName.trim()}
+          variant="secondary"
           className="h-9 px-4 min-w-[90px]"
         >
           <Plus className="h-4 w-4 mr-1" />
