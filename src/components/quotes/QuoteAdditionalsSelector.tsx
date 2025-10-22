@@ -183,7 +183,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
             </SelectContent>
           </Select>
           <Input type="number" step="0.01" value={0} placeholder="0" className="w-24 h-9" readOnly />
-          <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} className="h-9 px-4 shrink-0">
+          <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} variant="secondary" className="h-9 px-4 shrink-0">
             <Plus className="h-4 w-4 mr-1" />
             Añadir
           </Button>
@@ -215,7 +215,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
           placeholder="0"
           className="w-24 h-9"
         />
-        <Button onClick={addCustomAdditional} disabled={!customName.trim()} className="h-9 px-4 shrink-0">
+        <Button onClick={addCustomAdditional} disabled={!customName.trim()} variant="secondary" className="h-9 px-4 shrink-0">
           <Plus className="h-4 w-4 mr-1" />
           Añadir
         </Button>
