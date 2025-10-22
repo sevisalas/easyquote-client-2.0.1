@@ -1,40 +1,40 @@
-import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
-import { supabase } from "@/integrations/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Trash2, Plus } from "lucide-react"
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelexctValue } from "@/components/ui/select";
+import { Trash2, Plus } from "lucide-react";
 
 interface Additional {
-  id: string
-  name: string
-  description: string | null
-  type: "net_amount" | "quantity_multiplier" | "percentage"
-  default_value: number
-  is_discount: boolean
+  id: string;
+  name: string;
+  description: string | null;
+  type: "net_amount" | "quantity_multiplier" | "percentage";
+  default_value: number;
+  is_discount: boolean;
 }
 
 interface SelectedQuoteAdditional {
-  id: string
-  name: string
-  type: "net_amount" | "quantity_multiplier" | "percentage" | "custom"
-  value: number
-  isCustom?: boolean
-  is_discount?: boolean
+  id: string;
+  name: string;
+  type: "net_amount" | "quantity_multiplier" | "percentage" | "custom";
+  value: number;
+  isCustom?: boolean;
+  is_discount?: boolean;
 }
 
 interface QuoteAdditionalsSelectorProps {
-  selectedAdditionals: SelectedQuoteAdditional[]
-  onChange: (additionals: SelectedQuoteAdditional[]) => void
+  selectedAdditionals: SelectedQuoteAdditional[];
+  onChange: (additionals: SelectedQuoteAdditional[]) => void;
 }
 
 export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange }: QuoteAdditionalsSelectorProps) {
-  const [newAdditionalId, setNewAdditionalId] = useState<string>("")
-  const [customName, setCustomName] = useState("")
-  const [customValue, setCustomValue] = useState(0)
-  const [customType, setCustomType] = useState<"net_amount" | "percentage">("net_amount")
+  const [newAdditionalId, setNewAdditionalId] = useState<string>("");
+  const [customName, setCustomName] = useState("");
+  const [customValue, setCustomValue] = useState(0);
+  const [customType, setCustomType] = useState<"net_amount" | "percentage">("net_amount");
 
   const { data: availableAdditionals = [] } = useQuery({
     queryKey: ["additionals", "quote"],
@@ -43,60 +43,58 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
         .from("additionals")
         .select("*")
         .eq("assignment_type", "quote")
-        .order("name")
+        .order("name");
 
-      if (error) throw error
-      return data as Additional[]
-    }
-  })
+      if (error) throw error;
+      return data as Additional[];
+    },
+  });
 
   const addPredefinedAdditional = () => {
-    if (!newAdditionalId) return
+    if (!newAdditionalId) return;
 
-    const additional = availableAdditionals.find(a => a.id === newAdditionalId)
-    if (!additional) return
+    const additional = availableAdditionals.find((a) => a.id === newAdditionalId);
+    if (!additional) return;
 
     // Generate unique ID to allow multiple instances of the same additional
-    const uniqueId = `${additional.id}_${Date.now()}`
+    const uniqueId = `${additional.id}_${Date.now()}`;
 
     const newSelected: SelectedQuoteAdditional = {
       id: uniqueId,
       name: additional.name,
       type: additional.type,
       value: additional.default_value,
-      is_discount: additional.is_discount || false
-    }
+      is_discount: additional.is_discount || false,
+    };
 
-    onChange([...selectedAdditionals, newSelected])
-    setNewAdditionalId("")
-  }
+    onChange([...selectedAdditionals, newSelected]);
+    setNewAdditionalId("");
+  };
 
   const addCustomAdditional = () => {
-    if (!customName.trim()) return
+    if (!customName.trim()) return;
 
-    const customId = `custom_${Date.now()}`
+    const customId = `custom_${Date.now()}`;
     const newCustom: SelectedQuoteAdditional = {
       id: customId,
       name: customName.trim(),
       type: customType,
       value: customValue,
-      isCustom: true
-    }
+      isCustom: true,
+    };
 
-    onChange([...selectedAdditionals, newCustom])
-    setCustomName("")
-    setCustomValue(0)
-  }
+    onChange([...selectedAdditionals, newCustom]);
+    setCustomName("");
+    setCustomValue(0);
+  };
 
   const removeAdditional = (id: string) => {
-    onChange(selectedAdditionals.filter(sa => sa.id !== id))
-  }
+    onChange(selectedAdditionals.filter((sa) => sa.id !== id));
+  };
 
   const updateAdditionalValue = (id: string, value: number) => {
-    onChange(selectedAdditionals.map(sa => 
-      sa.id === id ? { ...sa, value } : sa
-    ))
-  }
+    onChange(selectedAdditionals.map((sa) => (sa.id === id ? { ...sa, value } : sa)));
+  };
 
   return (
     <div className="space-y-4">
@@ -109,22 +107,18 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
                 <div className="text-sm font-medium">
                   {additional.name}
                   {additional.isCustom && (
-                    <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
-                      Personalizado
-                    </span>
+                    <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">Personalizado</span>
                   )}
                   {additional.is_discount && (
-                    <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
-                      Descuento
-                    </span>
+                    <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">Descuento</span>
                   )}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {additional.type === "net_amount" 
-                    ? "Importe neto" 
-                    : additional.type === "quantity_multiplier" 
-                    ? "Por cantidad total" 
-                    : "Porcentaje sobre subtotal"}
+                  {additional.type === "net_amount"
+                    ? "Importe neto"
+                    : additional.type === "quantity_multiplier"
+                      ? "Por cantidad total"
+                      : "Porcentaje sobre subtotal"}
                 </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">
@@ -142,11 +136,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
                   </div>
                 )}
                 <span className="text-sm text-muted-foreground w-4">
-                  {additional.type === "net_amount" 
-                    ? "€" 
-                    : additional.type === "quantity_multiplier" 
-                    ? "x" 
-                    : "%"}
+                  {additional.type === "net_amount" ? "€" : additional.type === "quantity_multiplier" ? "x" : "%"}
                 </span>
               </div>
               <Button
@@ -172,13 +162,13 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
             <SelectContent>
               {availableAdditionals.map((additional) => (
                 <SelectItem key={additional.id} value={additional.id}>
-                  {additional.name} ({
-                    additional.type === "net_amount" 
-                      ? "Importe" 
-                      : additional.type === "quantity_multiplier" 
-                      ? "Multiplicador" 
-                      : "Porcentaje"
-                  })
+                  {additional.name} (
+                  {additional.type === "net_amount"
+                    ? "Importe"
+                    : additional.type === "quantity_multiplier"
+                      ? "Multiplicador"
+                      : "Porcentaje"}
+                  )
                 </SelectItem>
               ))}
             </SelectContent>
@@ -192,14 +182,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
               <SelectItem value="percentage">%</SelectItem>
             </SelectContent>
           </Select>
-          <Input
-            type="number"
-            step="0.01"
-            value={0}
-            placeholder="0"
-            className="w-24 h-9"
-            readOnly
-          />
+          <Input type="number" step="0.01" value={0} placeholder="0" className="w-24 h-9" readOnly />
           <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} className="h-9 px-4 shrink-0">
             <Plus className="h-4 w-4 mr-1" />
             Añadir
@@ -232,15 +215,11 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
           placeholder="0"
           className="w-24 h-9"
         />
-        <Button 
-          onClick={addCustomAdditional} 
-          disabled={!customName.trim()}
-          className="h-9 px-4 shrink-0"
-        >
+        <Button onClick={addCustomAdditional} disabled={!customName.trim()} className="h-9 px-4 shrink-0">
           <Plus className="h-4 w-4 mr-1" />
           Añadir
         </Button>
       </div>
     </div>
-  )
+  );
 }
