@@ -75,7 +75,8 @@ export default function ProductTestPage() {
       try {
         const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
           token, 
-          productId: productId 
+          productId: productId,
+          inputs: [] // Siempre enviar inputs, aunque sea vacío
         });
         
         if (error) throw error;
