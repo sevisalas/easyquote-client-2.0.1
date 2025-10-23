@@ -126,6 +126,11 @@ export default function QuoteEdit() {
   const [quoteAdditionals, setQuoteAdditionals] = useState<SelectedQuoteAdditional[]>([]);
   const [editingItems, setEditingItems] = useState<Set<string>>(new Set());
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [initialState, setInitialState] = useState<{
+    formData: Partial<Quote>;
+    items: QuoteItem[];
+    quoteAdditionals: SelectedQuoteAdditional[];
+  }>({ formData: {}, items: [], quoteAdditionals: [] });
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ["quote", id],
@@ -171,6 +176,16 @@ export default function QuoteEdit() {
 
       // Load existing items from both sources: database items and JSON selections
       const allItems: QuoteItem[] = [];
+      
+      const currentFormData = {
+        quote_number: quote.quote_number,
+        customer_id: quote.customer_id,
+        title: quote.title,
+        description: quote.description,
+        notes: quote.notes,
+        status: quote.status,
+        valid_until: quote.valid_until,
+      };
 
       // Load from database (quote_items table)
       if (quote.items && quote.items.length > 0) {
@@ -247,6 +262,13 @@ export default function QuoteEdit() {
       }
 
       setItems(allItems);
+      
+      // Guardar estado inicial después de cargar todo
+      setInitialState({
+        formData: currentFormData,
+        items: allItems,
+        quoteAdditionals: loadedAdditionals,
+      });
     }
   }, [quote]);
 
@@ -444,6 +466,27 @@ export default function QuoteEdit() {
     setEditingItems((prev) => new Set([...prev, newItemId]));
   };
 
+  const hasUnsavedChanges = () => {
+    // Comparar formData
+    const formChanged = JSON.stringify(formData) !== JSON.stringify(initialState.formData);
+    
+    // Comparar items
+    const itemsChanged = JSON.stringify(items) !== JSON.stringify(initialState.items);
+    
+    // Comparar additionals
+    const additionalsChanged = JSON.stringify(quoteAdditionals) !== JSON.stringify(initialState.quoteAdditionals);
+    
+    return formChanged || itemsChanged || additionalsChanged;
+  };
+
+  const handleCancel = () => {
+    if (hasUnsavedChanges()) {
+      setShowCancelDialog(true);
+    } else {
+      navigate(`/presupuestos/${id}`);
+    }
+  };
+
   const handleSave = () => {
     updateQuoteMutation.mutate(formData);
   };
@@ -516,7 +559,7 @@ export default function QuoteEdit() {
               <Button onClick={handleSave} disabled={updateQuoteMutation.isPending} size="sm">
                 {updateQuoteMutation.isPending ? "Guardando..." : "Guardar"}
               </Button>
-              <Button onClick={() => setShowCancelDialog(true)} size="sm" variant="outline">
+              <Button onClick={handleCancel} size="sm" variant="outline">
                 Cancelar
               </Button>
             </div>
