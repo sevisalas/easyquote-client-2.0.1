@@ -633,37 +633,22 @@ export default function QuoteEdit() {
                 >
                   {isEditing ? (
                     // Editing mode - show only QuoteItem component
-                    <>
-                      <QuoteItem
-                        hasToken={true}
-                        id={itemId}
-                        initialData={{
-                          productId: item.productId || "",
-                          prompts: item.prompts || {},
-                          outputs: item.outputs || [],
-                          price: item.price || 0,
-                          multi: item.multi, // No forzar valor por defecto
-                          itemDescription: item.itemDescription || item.product_name || "",
-                          itemAdditionals: item.itemAdditionals || [],
-                        }}
-                        onChange={handleItemChange}
-                        onRemove={handleItemRemove}
-                      />
-                      <div className="flex justify-end gap-2 mt-2">
-                        <Button onClick={() => handleItemSaveEdit(itemId)} size="sm" variant="default">
-                          Finalizar edición
-                        </Button>
-                        <Button
-                          onClick={() => handleItemRemove(item.id || index)}
-                          size="sm"
-                          variant="outline"
-                          className="text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Eliminar
-                        </Button>
-                      </div>
-                    </>
+                    <QuoteItem
+                      hasToken={true}
+                      id={itemId}
+                      initialData={{
+                        productId: item.productId || "",
+                        prompts: item.prompts || {},
+                        outputs: item.outputs || [],
+                        price: item.price || 0,
+                        multi: item.multi, // No forzar valor por defecto
+                        itemDescription: item.itemDescription || item.product_name || "",
+                        itemAdditionals: item.itemAdditionals || [],
+                      }}
+                      onChange={handleItemChange}
+                      onRemove={handleItemRemove}
+                      onFinishEdit={handleItemSaveEdit}
+                    />
                   ) : (
                     // Compressed mode - show summary
                     <div className="flex justify-between items-center gap-3">

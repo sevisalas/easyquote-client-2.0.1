@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
 import { ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 type ItemSnapshot = {
   productId: string;
@@ -35,6 +36,7 @@ interface QuoteItemProps {
   initialData?: ItemSnapshot;
   onChange?: (id: string | number, snapshot: ItemSnapshot) => void;
   onRemove?: (id: string | number) => void;
+  onFinishEdit?: (id: string | number) => void;
   shouldExpand?: boolean;
 }
 
@@ -46,7 +48,7 @@ interface Additional {
   default_value: number;
 }
 
-export default function QuoteItem({ hasToken, id, initialData, onChange, onRemove, shouldExpand }: QuoteItemProps) {
+export default function QuoteItem({ hasToken, id, initialData, onChange, onRemove, onFinishEdit, shouldExpand }: QuoteItemProps) {
   // Local state per item
   const [productId, setProductId] = useState<string>("");
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
@@ -72,6 +74,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Item additionals
   const [itemAdditionals, setItemAdditionals] = useState<any[]>([]);
+
+  // Track changes for unsaved confirmation
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const initialStateRef = useRef<string>("");
 
   // Inicialización desde datos previos (duplicar)
   const initializedRef = useRef(false);
@@ -113,6 +120,37 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       }
     } catch {}
   }, [initialData]);
+
+  // Capture initial state for change detection
+  useEffect(() => {
+    if (initialStateRef.current === "" && isExpanded) {
+      initialStateRef.current = JSON.stringify({
+        productId,
+        promptValues,
+        itemDescription,
+        itemAdditionals,
+        multiEnabled,
+        qtyPrompt,
+        qtyInputs
+      });
+    }
+  }, [isExpanded, productId, promptValues, itemDescription, itemAdditionals, multiEnabled, qtyPrompt, qtyInputs]);
+
+  // Detect changes
+  useEffect(() => {
+    if (initialStateRef.current && isExpanded) {
+      const currentState = JSON.stringify({
+        productId,
+        promptValues,
+        itemDescription,
+        itemAdditionals,
+        multiEnabled,
+        qtyPrompt,
+        qtyInputs
+      });
+      setHasUnsavedChanges(currentState !== initialStateRef.current);
+    }
+  }, [productId, promptValues, itemDescription, itemAdditionals, multiEnabled, qtyPrompt, qtyInputs, isExpanded]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedPromptValues(promptValues), 350);
@@ -569,6 +607,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const isComplete = productId && priceOutput && finalPrice > 0;
 
   return (
+    <>
     <div className={`border rounded-lg p-2 ${isExpanded ? 'border-r-4 border-r-primary' : 'border-r-4 border-r-secondary'}`}>
       {/* Collapsed view - simple line with action buttons */}
       {isComplete && !isExpanded ? (
@@ -605,8 +644,39 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         </div>
       ) : (
         <>
+          {/* Action buttons in top-right corner when editing */}
+          {isExpanded && onFinishEdit && (
+            <div className="flex flex-col gap-2 float-right ml-4 mb-2">
+              <Button 
+                onClick={() => {
+                  if (hasUnsavedChanges) {
+                    setShowExitConfirm(true);
+                  } else {
+                    onFinishEdit(id);
+                  }
+                }}
+                size="sm" 
+                variant="default"
+                className="whitespace-nowrap"
+              >
+                Finalizar edición
+              </Button>
+              {onRemove && (
+                <Button
+                  onClick={() => onRemove(id)}
+                  size="sm"
+                  variant="outline"
+                  className="text-destructive hover:bg-destructive/10 whitespace-nowrap"
+                >
+                  <Trash2 className="h-3 w-3 mr-1" />
+                  Eliminar
+                </Button>
+              )}
+            </div>
+          )}
+
           {/* Expanded view - show all fields */}
-          {isComplete && (
+          {isComplete && !onFinishEdit && (
             <div className="flex justify-end">
               <Button 
                 variant="ghost" 
@@ -900,5 +970,26 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         </Card>
       )}
     </div>
+
+    <AlertDialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Salir sin guardar los cambios?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Has realizado cambios en este artículo que no se han guardado. ¿Deseas finalizar la edición sin guardar?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={() => {
+            setShowExitConfirm(false);
+            onFinishEdit?.(id);
+          }}>
+            Salir sin guardar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
