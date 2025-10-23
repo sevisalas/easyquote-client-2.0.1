@@ -17,6 +17,16 @@ import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelect
 import QuoteItem from "@/components/quotes/QuoteItem";
 import { CustomerSelector } from "@/components/quotes/CustomerSelector";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface QuoteItem {
   id: string;
@@ -115,6 +125,7 @@ export default function QuoteEdit() {
   const [items, setItems] = useState<QuoteItem[]>([]);
   const [quoteAdditionals, setQuoteAdditionals] = useState<SelectedQuoteAdditional[]>([]);
   const [editingItems, setEditingItems] = useState<Set<string>>(new Set());
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ["quote", id],
@@ -505,7 +516,7 @@ export default function QuoteEdit() {
               <Button onClick={handleSave} disabled={updateQuoteMutation.isPending} size="sm">
                 {updateQuoteMutation.isPending ? "Guardando..." : "Guardar"}
               </Button>
-              <Button onClick={() => navigate(`/presupuestos/${id}`)} size="sm" variant="outline">
+              <Button onClick={() => setShowCancelDialog(true)} size="sm" variant="outline">
                 Cancelar
               </Button>
             </div>
@@ -760,6 +771,24 @@ export default function QuoteEdit() {
           <QuoteAdditionalsSelector selectedAdditionals={quoteAdditionals} onChange={setQuoteAdditionals} />
         </CardContent>
       </Card>
+
+      {/* Cancel Confirmation Dialog */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Salir sin guardar?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Los cambios que has realizado se perderán si no los guardas. ¿Estás seguro de que quieres salir sin guardar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate(`/presupuestos/${id}`)}>
+              Salir sin guardar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
