@@ -99,9 +99,16 @@ serve(async (req: Request): Promise<Response> => {
     // Si no es delete, usar PUT para actualizar
     const url = `https://api.easyquote.cloud/api/v1/products`;
     
+    // Forzar valores por defecto requeridos
+    const productPayload = {
+      ...product,
+      isPlaCompliant: true,
+      currency: product.currency || "EUR"
+    };
+    
     console.log("easyquote-update-product: Sending PUT request", { 
       url, 
-      payload: product 
+      payload: productPayload 
     });
 
     const res = await fetch(url, {
@@ -111,7 +118,7 @@ serve(async (req: Request): Promise<Response> => {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(product),
+      body: JSON.stringify(productPayload),
     });
 
     const text = await res.text();
