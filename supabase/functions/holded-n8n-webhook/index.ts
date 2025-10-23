@@ -48,14 +48,25 @@ serve(async (req) => {
     const bodyData = await req.json();
     console.log('Request data:', bodyData);
 
+    // Sanitize name: replace smart quotes with regular quotes
+    const sanitizeName = (name: string): string => {
+      if (!name) return name;
+      return name
+        .replace(/[""]/g, '"')  // Replace smart double quotes
+        .replace(/['']/g, "'")  // Replace smart single quotes
+        .trim();
+    };
+
     // Validate required fields
     const { 
       holded_id,
-      name,
+      name: rawName,
       email,
       phone,
       mobile
     } = bodyData;
+
+    const name = sanitizeName(rawName);
 
     if (!holded_id) {
       return new Response(
