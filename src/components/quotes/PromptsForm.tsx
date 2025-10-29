@@ -275,7 +275,7 @@ export default function PromptsForm({
                   <button
                     key={o.value}
                     type="button"
-                    onClick={() => onChange(p.id, o.label ?? o.value, p.label)}
+                    onClick={() => onChange(p.id, o.value, p.label)}
                     className={`relative overflow-hidden rounded-md border transition-shadow focus:outline-none focus:ring-2 focus:ring-primary w-30 h-30 ${selected ? "ring-2 ring-primary" : "hover:shadow"}`}
                     aria-pressed={selected}
                     aria-label={o.label ?? o.value}
@@ -308,7 +308,7 @@ export default function PromptsForm({
                   <button
                     key={o.value}
                     type="button"
-                    onClick={() => onChange(p.id, o.label ?? o.value, p.label)}
+                    onClick={() => onChange(p.id, o.value, p.label)}
                     className={`h-9 w-9 rounded-md border shadow-sm transition focus:outline-none focus:ring-2 focus:ring-primary ${selected ? "ring-2 ring-primary" : "hover:brightness-105"}`}
                     aria-label={`Color ${o.label ?? o.value}`}
                     title={o.label ?? o.value}
