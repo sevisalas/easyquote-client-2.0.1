@@ -354,9 +354,10 @@ export default function ProductTestPage() {
                   {imageOutputs.length > 0 && (
                     <div className="space-y-3 border-t pt-4">
                       {imageOutputs.map((output, index) => (
-                        <div key={index} className="space-y-2">
+                        <div key={`${output.value}-${index}`} className="space-y-2">
                           <div className="text-sm font-medium">{output.label || output.name}</div>
                           <img 
+                            key={output.value}
                             src={output.value} 
                             alt={output.label || output.name || `Imagen ${index + 1}`}
                             className="w-full max-w-md rounded border"

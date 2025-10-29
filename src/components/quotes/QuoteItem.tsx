@@ -746,7 +746,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               <section className={imageOutputs.length === 1 ? "flex justify-center" : "grid grid-cols-2 gap-3"}>
                 {imageOutputs.map((o: any, idx: number) => (
                   <img 
-                    key={idx} 
+                    key={`${o.value}-${idx}`}
                     src={String(o.value)} 
                     alt={`resultado imagen ${idx + 1}`} 
                     loading="lazy" 
