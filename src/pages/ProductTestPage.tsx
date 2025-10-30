@@ -17,13 +17,35 @@ const fetchProducts = async () => {
   if (!token) throw new Error("No hay token de EasyQuote disponible. Por favor, inicia sesión nuevamente.");
   
   const { data, error } = await invokeEasyQuoteFunction("easyquote-products", {
-    token
+    token,
+    includeInactive: true // Get all products to see plan compliance
   });
   
   if (error) throw error;
   
   const list = Array.isArray(data) ? data : (data?.items || data?.data || []);
   return list.filter((product: any) => product.isActive === true);
+};
+
+const fetchExcelFiles = async () => {
+  const token = sessionStorage.getItem("easyquote_token");
+  if (!token) return [];
+  
+  try {
+    const response = await fetch('https://api.easyquote.cloud/api/v1/excelfiles', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) return [];
+    const files = await response.json();
+    return Array.isArray(files) ? files : [];
+  } catch (error) {
+    console.error("Error fetching excel files:", error);
+    return [];
+  }
 };
 
 const getProductLabel = (p: any) =>
@@ -58,6 +80,13 @@ export default function ProductTestPage() {
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["easyquote-products"],
     queryFn: fetchProducts,
+    enabled: !!sessionStorage.getItem("easyquote_token")
+  });
+
+  // Fetch excel files to check plan compliance
+  const { data: excelFiles = [] } = useQuery({
+    queryKey: ["easyquote-excel-files"],
+    queryFn: fetchExcelFiles,
     enabled: !!sessionStorage.getItem("easyquote_token")
   });
 
@@ -212,6 +241,8 @@ export default function ProductTestPage() {
   }, [allOutputs]);
 
   const selectedProduct = products.find((p: any) => p.id === productId);
+  const selectedExcelFile = excelFiles.find((f: any) => f.id === selectedProduct?.excelfileId);
+  const isPlanCompliant = selectedExcelFile?.isPlanCompliant !== false;
 
   // Check permissions - AFTER all hooks are called
   if (!isSuperAdmin && !isOrgAdmin) {
@@ -291,6 +322,19 @@ export default function ProductTestPage() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Plan Compliance Warning */}
+                {selectedProduct && !isPlanCompliant && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Archivo no compatible con el plan</AlertTitle>
+                    <AlertDescription>
+                      El archivo Excel "{selectedExcelFile?.fileName}" no es compatible con tu plan de EasyQuote.
+                      Esto causa errores al obtener precios. Verifica en EasyQuote qué características del archivo
+                      exceden los límites de tu plan (filas, columnas, complejidad de fórmulas, etc.).
+                    </AlertDescription>
+                  </Alert>
+                )}
 
                 {/* Product Configuration */}
                 {productDetail && (
