@@ -102,7 +102,7 @@ serve(async (req: Request): Promise<Response> => {
     // Forzar valores por defecto requeridos
     const productPayload = {
       ...product,
-      isPlaCompliant: true,
+      isPlanCompliant: true,
       currency: product.currency || "EUR"
     };
     
