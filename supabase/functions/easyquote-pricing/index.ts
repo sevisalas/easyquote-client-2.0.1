@@ -130,7 +130,18 @@ serve(async (req: Request): Promise<Response> => {
         });
       }
       
-      return new Response(JSON.stringify({ error: data?.message || "Failed to fetch pricing" }), {
+      // Mensaje de error más descriptivo
+      const errorMessage = data?.message || data?.error || res.statusText || "Error desconocido";
+      const detailedError = res.status === 500 
+        ? `Error del servidor de EasyQuote al procesar el producto (${productId}): ${errorMessage}. Por favor, verifica la configuración del producto en EasyQuote.`
+        : `Error al obtener precio: ${errorMessage}`;
+      
+      return new Response(JSON.stringify({ 
+        error: detailedError,
+        status: res.status,
+        productId,
+        details: data
+      }), {
         status: res.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
