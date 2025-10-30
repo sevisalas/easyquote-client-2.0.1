@@ -521,10 +521,10 @@ export default function ExcelFiles() {
         reader.onerror = reject;
       });
 
-      // Payload structure matches original code: { fileName, file }
+      // Payload structure: { fileName, fileContent }
       const payload = {
         fileName: file.name,
-        file: base64
+        fileContent: base64
       };
 
       console.log('📤 Actualizando archivo:', {
