@@ -43,19 +43,20 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     if (inputsList.length > 0) {
-      try {
-        console.log("easyquote-pricing: using PATCH with inputs", { count: inputsList.length });
-        res = await fetch(baseUrl, {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(inputsList),
-        });
-      } catch (e) {
-        console.error("easyquote-pricing: PATCH attempt failed, will try POST", e);
+      console.log("easyquote-pricing: using PATCH with inputs", { count: inputsList.length });
+      res = await fetch(baseUrl, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(inputsList),
+      });
+
+      // Only fallback to other methods on client errors (4xx), not server errors (5xx)
+      if (!res.ok && res.status >= 400 && res.status < 500) {
+        console.log("easyquote-pricing: PATCH returned client error, trying POST", { status: res.status });
         try {
           res = await fetch(baseUrl, {
             method: "POST",
@@ -66,19 +67,27 @@ serve(async (req: Request): Promise<Response> => {
             },
             body: JSON.stringify(inputsList),
           });
+          
+          if (!res.ok && res.status >= 400 && res.status < 500) {
+            console.log("easyquote-pricing: POST returned client error, trying GET", { status: res.status });
+            const query = `?inputs=${encodeURIComponent(JSON.stringify(inputs))}`;
+            const url = `${baseUrl}${query}`;
+            res = await fetch(url, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: "application/json",
+              },
+            });
+          }
         } catch (e2) {
-          console.error("easyquote-pricing: POST attempt failed, will try GET", e2);
+          console.error("easyquote-pricing: POST attempt failed", e2);
         }
       }
-    }
-
-    if (!res || !res.ok) {
-      const query = inputs && typeof inputs === "object" && Object.keys(inputs).length > 0
-        ? `?inputs=${encodeURIComponent(JSON.stringify(inputs))}`
-        : "";
-      const url = `${baseUrl}${query}`;
-      console.log("easyquote-pricing: using GET", { url });
-      res = await fetch(url, {
+    } else {
+      // No inputs, use simple GET
+      console.log("easyquote-pricing: no inputs, using simple GET");
+      res = await fetch(baseUrl, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
