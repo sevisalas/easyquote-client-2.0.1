@@ -524,8 +524,7 @@ export default function ExcelFiles() {
       // Payload structure matches original code: { fileName, file }
       const payload = {
         fileName: file.name,
-        file: base64,
-        isPlanCompliant: true
+        file: base64
       };
 
       console.log('📤 Actualizando archivo:', {
