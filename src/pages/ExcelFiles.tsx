@@ -168,11 +168,7 @@ export default function ExcelFiles() {
       }
 
       const data = await response.json();
-      // Forzar isPlanCompliant a true para todos los archivos
-      return data.map((file: EasyQuoteExcelFile) => ({
-        ...file,
-        isPlanCompliant: true
-      }));
+      return data;
     },
     enabled: hasToken,
     retry: (failureCount, error: any) => {
