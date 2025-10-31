@@ -101,6 +101,19 @@ Deno.serve(async (req) => {
       throw new Error('No se encontró contactId de Holded para este cliente');
     }
 
+    // Get the sales account (cuenta_holded) from the quote creator
+    let salesChannelId = null;
+    const { data: memberData } = await supabase
+      .from('organization_members')
+      .select('cuenta_holded')
+      .eq('user_id', quote.user_id)
+      .maybeSingle();
+    
+    if (memberData?.cuenta_holded) {
+      salesChannelId = memberData.cuenta_holded;
+      console.log('Using sales account:', salesChannelId);
+    }
+
     // Use API key directly from environment
     const apiKey = '88610992d47b9783e7703c488a8c01cf';
     console.log('Using Holded API key');
@@ -485,6 +498,11 @@ Deno.serve(async (req) => {
       items: items,
       paymentMethodId: '5ad06f6a2e1d93408570743e'
     };
+    
+    // Add sales channel ID if available
+    if (salesChannelId) {
+      estimatePayload.salesChannelId = salesChannelId;
+    }
     
     // Add shipping hidden if any item has multi quantities
     if (hasMultiQuantities) {

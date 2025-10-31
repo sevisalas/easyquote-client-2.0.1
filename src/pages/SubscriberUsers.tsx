@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useHoldedSalesAccounts } from "@/hooks/useHoldedSalesAccounts";
 
 interface Usuario {
   id: string;
@@ -35,6 +36,7 @@ const UsuariosSuscriptor = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isSuperAdmin, organization, membership } = useSubscription();
+  const { data: salesAccounts = [] } = useHoldedSalesAccounts(id);
   const [loading, setLoading] = useState(true);
   const [suscriptor, setSuscriptor] = useState<Suscriptor | null>(null);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -773,8 +775,21 @@ const UsuariosSuscriptor = () => {
                       {usuario.display_name || usuario.email}
                     </div>
                     {usuario.cuenta_holded && (
-                      <div className="text-xs text-muted-foreground">
-                        Cuenta: {usuario.cuenta_holded}
+                      <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                        {(() => {
+                          const account = salesAccounts.find(acc => acc.holded_account_id === usuario.cuenta_holded);
+                          return account ? (
+                            <>
+                              <div 
+                                className="w-2 h-2 rounded-full" 
+                                style={{ backgroundColor: account.color || '#6486f6' }}
+                              />
+                              <span>{account.name}</span>
+                            </>
+                          ) : (
+                            <span>Cuenta: {usuario.cuenta_holded}</span>
+                          );
+                        })()}
                       </div>
                     )}
                   </TableCell>
@@ -925,19 +940,34 @@ const UsuariosSuscriptor = () => {
             
             {suscriptor?.subscription_plan && (
               <div className="space-y-2">
-                <Label htmlFor="cuenta-holded">Cuenta asociada (Holded)</Label>
-                <Input
-                  id="cuenta-holded"
-                  type="text"
+                <Label htmlFor="cuenta-holded">Cuenta de Ventas (Holded)</Label>
+                <Select
                   value={editCuentaHolded}
-                  onChange={(e) => setEditCuentaHolded(e.target.value)}
-                  placeholder="ID de cuenta en Holded"
+                  onValueChange={setEditCuentaHolded}
                   disabled={!isSuperAdmin && membership?.role !== 'admin'}
-                />
+                >
+                  <SelectTrigger id="cuenta-holded">
+                    <SelectValue placeholder="Seleccionar cuenta de ventas" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background">
+                    <SelectItem value="">Sin asignar</SelectItem>
+                    {salesAccounts.map((account) => (
+                      <SelectItem key={account.id} value={account.holded_account_id}>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: account.color || '#6486f6' }}
+                          />
+                          <span>{account.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <p className="text-sm text-muted-foreground">
                   {!isSuperAdmin && membership?.role !== 'admin' 
                     ? "Solo los administradores pueden editar este campo"
-                    : "Para clientes con integración de Holded"}
+                    : "Esta cuenta se usará al exportar presupuestos a Holded"}
                 </p>
               </div>
             )}
