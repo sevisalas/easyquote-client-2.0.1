@@ -34,7 +34,7 @@ const UsuariosSuscriptor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSuperAdmin, organization } = useSubscription();
+  const { isSuperAdmin, organization, membership } = useSubscription();
   const [loading, setLoading] = useState(true);
   const [suscriptor, setSuscriptor] = useState<Suscriptor | null>(null);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -60,12 +60,12 @@ const UsuariosSuscriptor = () => {
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   
-  // Estados para editar usuario
+  // Estados para edición de usuario
+  const [editingUser, setEditingUser] = useState<Usuario | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editDisplayName, setEditDisplayName] = useState("");
   const [editCuentaHolded, setEditCuentaHolded] = useState("");
-  const [savingUser, setSavingUser] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
     if (!isSuperAdmin && !organization) {
@@ -300,26 +300,26 @@ const UsuariosSuscriptor = () => {
     setNewPassword(password);
   };
 
-  const abrirEditarUsuario = (usuario: Usuario) => {
-    setEditingUserId(usuario.id);
+  const abrirEdicionUsuario = (usuario: Usuario) => {
+    setEditingUser(usuario);
     setEditDisplayName(usuario.display_name || '');
     setEditCuentaHolded(usuario.cuenta_holded || '');
     setShowEditDialog(true);
   };
 
-  const guardarUsuario = async () => {
-    if (!editingUserId) return;
+  const guardarEdicionUsuario = async () => {
+    if (!editingUser) return;
 
-    setSavingUser(true);
+    setSavingEdit(true);
 
     try {
       const { error } = await supabase
         .from('organization_members')
         .update({
-          display_name: editDisplayName || null,
-          cuenta_holded: editCuentaHolded || null
+          display_name: editDisplayName.trim() || null,
+          cuenta_holded: editCuentaHolded.trim() || null,
         })
-        .eq('user_id', editingUserId)
+        .eq('user_id', editingUser.id)
         .eq('organization_id', id);
 
       if (error) throw error;
@@ -330,7 +330,51 @@ const UsuariosSuscriptor = () => {
       });
 
       setShowEditDialog(false);
-      setEditingUserId(null);
+      setEditingUser(null);
+      obtenerDatos();
+    } catch (error: any) {
+      console.error('Error al actualizar usuario:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo actualizar el usuario",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const abrirEditarUsuario = (usuario: Usuario) => {
+    setEditingUser(usuario);
+    setEditDisplayName(usuario.display_name || '');
+    setEditCuentaHolded(usuario.cuenta_holded || '');
+    setShowEditDialog(true);
+  };
+
+  const guardarUsuario = async () => {
+    if (!editingUser) return;
+
+    setSavingEdit(true);
+
+    try {
+      const { error } = await supabase
+        .from('organization_members')
+        .update({
+          display_name: editDisplayName || null,
+          cuenta_holded: editCuentaHolded || null
+        })
+        .eq('user_id', editingUser.id)
+        .eq('organization_id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Usuario actualizado correctamente",
+      });
+
+      setShowEditDialog(false);
+      setEditingUser(null);
       setEditDisplayName("");
       setEditCuentaHolded("");
       obtenerDatos();
@@ -342,7 +386,7 @@ const UsuariosSuscriptor = () => {
         variant: "destructive",
       });
     } finally {
-      setSavingUser(false);
+      setSavingEdit(false);
     }
   };
 
@@ -888,9 +932,12 @@ const UsuariosSuscriptor = () => {
                   value={editCuentaHolded}
                   onChange={(e) => setEditCuentaHolded(e.target.value)}
                   placeholder="ID de cuenta en Holded"
+                  disabled={!isSuperAdmin && membership?.role !== 'admin'}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Para clientes con integración de Holded
+                  {!isSuperAdmin && membership?.role !== 'admin' 
+                    ? "Solo los administradores pueden editar este campo"
+                    : "Para clientes con integración de Holded"}
                 </p>
               </div>
             )}
@@ -900,7 +947,7 @@ const UsuariosSuscriptor = () => {
               variant="outline"
               onClick={() => {
                 setShowEditDialog(false);
-                setEditingUserId(null);
+                setEditingUser(null);
                 setEditDisplayName("");
                 setEditCuentaHolded("");
               }}
@@ -909,9 +956,9 @@ const UsuariosSuscriptor = () => {
             </Button>
             <Button 
               onClick={guardarUsuario}
-              disabled={savingUser}
+              disabled={savingEdit}
             >
-              {savingUser ? "Guardando..." : "Guardar"}
+              {savingEdit ? "Guardando..." : "Guardar"}
             </Button>
           </DialogFooter>
         </DialogContent>
