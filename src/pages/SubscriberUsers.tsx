@@ -48,6 +48,7 @@ const UsuariosSuscriptor = () => {
   const [hasCredentials, setHasCredentials] = useState(false);
   const [credentialId, setCredentialId] = useState<string | null>(null);
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
+  const [generatedUserEmail, setGeneratedUserEmail] = useState<string | null>(null);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
   useEffect(() => {
@@ -145,13 +146,25 @@ const UsuariosSuscriptor = () => {
       return;
     }
 
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailNuevoUsuario.trim())) {
+      toast({
+        title: "Error",
+        description: "Por favor ingrese un email válido",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const password = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+      const emailToCreate = emailNuevoUsuario.trim();
       
       // Usar el edge function para crear el usuario
       const { data, error } = await supabase.functions.invoke("create-user", {
         body: {
-          email: emailNuevoUsuario,
+          email: emailToCreate,
           password: password,
           role: rolNuevoUsuario,
           organizationId: id,
@@ -165,10 +178,12 @@ const UsuariosSuscriptor = () => {
         throw new Error(data.error);
       }
 
-      // Mostrar la contraseña generada
+      // Guardar credenciales para mostrar en el modal
       setGeneratedPassword(password);
+      setGeneratedUserEmail(emailToCreate);
       setShowPasswordDialog(true);
 
+      // Limpiar formulario
       setEmailNuevoUsuario("");
       setRolNuevoUsuario("user");
       setMostrarFormulario(false);
@@ -614,7 +629,7 @@ const UsuariosSuscriptor = () => {
           <div className="space-y-4">
             <div className="p-4 bg-muted rounded-lg">
               <Label className="text-sm text-muted-foreground">Email del usuario</Label>
-              <p className="font-mono text-lg font-semibold">{emailNuevoUsuario || "Email del usuario creado"}</p>
+              <p className="font-mono text-lg font-semibold">{generatedUserEmail}</p>
             </div>
             <div className="p-4 bg-muted rounded-lg">
               <Label className="text-sm text-muted-foreground">Contraseña temporal</Label>
@@ -627,7 +642,7 @@ const UsuariosSuscriptor = () => {
           <DialogFooter>
             <Button 
               onClick={() => {
-                navigator.clipboard.writeText(`Email: ${emailNuevoUsuario}\nContraseña: ${generatedPassword}`);
+                navigator.clipboard.writeText(`Email: ${generatedUserEmail}\nContraseña: ${generatedPassword}`);
                 toast({
                   title: "Copiado",
                   description: "Credenciales copiadas al portapapeles",
@@ -640,6 +655,7 @@ const UsuariosSuscriptor = () => {
             <Button onClick={() => {
               setShowPasswordDialog(false);
               setGeneratedPassword(null);
+              setGeneratedUserEmail(null);
             }}>
               Cerrar
             </Button>
