@@ -47,11 +47,18 @@ const Index = () => {
       } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
-        const { data: profile } = await supabase.from("profiles").select("first_name").eq("id", user.id).single();
+        
+        // Primero intentar obtener display_name de organization_members
+        const { data: member } = await supabase
+          .from("organization_members")
+          .select("display_name")
+          .eq("user_id", user.id)
+          .single();
 
-        if (profile?.first_name) {
-          setUserName(profile.first_name);
+        if (member?.display_name) {
+          setUserName(member.display_name);
         } else {
+          // Fallback a email si no hay display_name
           setUserName(user.email?.split("@")[0] || "Usuario");
         }
       }
