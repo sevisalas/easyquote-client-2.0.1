@@ -28,6 +28,7 @@ type ItemSnapshot = {
   needsRecalculation?: boolean;
   itemDescription?: string;
   itemAdditionals?: any[];
+  isFinalized?: boolean;
 };
 
 interface QuoteItemProps {
@@ -60,10 +61,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Auto-expand/collapse based on shouldExpand prop
   useEffect(() => {
-    console.log('🔄 shouldExpand changed', { shouldExpand, currentIsExpanded: isExpanded, id });
     if (shouldExpand !== undefined) {
       setIsExpanded(shouldExpand);
-      console.log('🔄 Setting isExpanded to', shouldExpand);
     }
   }, [shouldExpand, id]);
 
@@ -481,17 +480,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     return basePrice + additionalsTotal;
   }, [priceOutput, itemAdditionals, multiEnabled, multiRows]);
 
-  useEffect(() => {
-    onChange?.(id, {
-      productId,
-      prompts: promptValues,
-      outputs,
-      price: finalPrice,
-      multi: multiEnabled ? { qtyPrompt, qtyInputs, rows: multiRows } : null,
-      itemDescription,
-      itemAdditionals,
-    });
-  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, itemAdditionals]);
+  // This useEffect is now redundant - removed to prevent duplicate onChange calls
 
   // Extract all prompts from product with their defaults
   const extractAllPrompts = (product: any): Record<string, { label: string; value: any; order: number }> => {
@@ -603,8 +592,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       multi: multiEnabled ? { qtyPrompt, qtyInputs, rows: multiRows } : null,
       itemDescription: itemDescription || productName,
       itemAdditionals,
+      isFinalized: initialData?.isFinalized, // Preserve isFinalized state
     });
-  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, productName, itemAdditionals]);
+  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, productName, itemAdditionals, initialData?.isFinalized]);
 
   const isComplete = productId && priceOutput && finalPrice > 0;
 
@@ -651,11 +641,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             <div className="flex flex-col gap-2 float-right ml-4 mb-2">
               <Button 
                 onClick={() => {
-                  console.log('🎯 Finalizar producto clicked', { id, isComplete, hasOnFinishEdit: !!onFinishEdit });
                   if (onFinishEdit) {
                     onFinishEdit(id);
-                  } else {
-                    console.error('❌ onFinishEdit no está definido');
                   }
                 }}
                 size="sm" 

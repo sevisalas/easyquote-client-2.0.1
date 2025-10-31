@@ -238,16 +238,14 @@ export default function QuoteNew() {
   };
   
   const handleFinishItem = (itemId: string | number) => {
-    console.log('✅ handleFinishItem called', { itemId, currentItems: items });
     setItems(prev => {
       const updated = {
         ...prev,
         [itemId]: { ...prev[itemId], isFinalized: true }
       };
-      console.log('✅ Items updated', updated);
       return updated;
     });
-    setLastAddedItemId(null); // Reset last added
+    setLastAddedItemId(null);
   };
 
   const handleImportContacts = async () => {
@@ -562,7 +560,6 @@ export default function QuoteNew() {
               const isLastAdded = Number(id) === lastAddedItemId;
               const isComplete = item.productId && item.price && item.price > 0;
               const shouldExpand = !item.isFinalized || isLastAdded || Object.keys(items).length === 1;
-              console.log('🔍 Rendering item', { id, isFinalized: item.isFinalized, isLastAdded, itemsLength: Object.keys(items).length, shouldExpand });
               return (
                 <div key={id}>
                   <QuoteItem
