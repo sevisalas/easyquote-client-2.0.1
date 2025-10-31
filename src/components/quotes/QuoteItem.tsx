@@ -648,7 +648,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           {isExpanded && onFinishEdit && (
             <div className="flex flex-col gap-2 float-right ml-4 mb-2">
               <Button 
-                onClick={() => onFinishEdit(id)}
+                onClick={() => {
+                  console.log('🎯 Finalizar producto clicked', { id, isComplete, hasOnFinishEdit: !!onFinishEdit });
+                  if (onFinishEdit) {
+                    onFinishEdit(id);
+                  } else {
+                    console.error('❌ onFinishEdit no está definido');
+                  }
+                }}
                 size="sm" 
                 variant="default"
                 disabled={!isComplete}

@@ -238,10 +238,15 @@ export default function QuoteNew() {
   };
   
   const handleFinishItem = (itemId: string | number) => {
-    setItems(prev => ({
-      ...prev,
-      [itemId]: { ...prev[itemId], isFinalized: true }
-    }));
+    console.log('✅ handleFinishItem called', { itemId, currentItems: items });
+    setItems(prev => {
+      const updated = {
+        ...prev,
+        [itemId]: { ...prev[itemId], isFinalized: true }
+      };
+      console.log('✅ Items updated', updated);
+      return updated;
+    });
     setLastAddedItemId(null); // Reset last added
   };
 
