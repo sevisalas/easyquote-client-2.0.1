@@ -28,6 +28,7 @@ type ItemSnapshot = {
   itemDescription?: string;
   itemAdditionals?: any[];
   needsRecalculation?: boolean;
+  isFinalized?: boolean; // Track if item is finalized
 };
 
 type SelectedAdditional = {
@@ -65,11 +66,23 @@ export default function QuoteNew() {
   // Track the last added item to keep it expanded
   const [lastAddedItemId, setLastAddedItemId] = useState<number | null>(null);
 
-  // Check if all items are complete (have productId and valid price)
+  // Check if all items are complete and finalized
   const allItemsComplete = useMemo(() => {
     const itemsArray = Object.values(items);
     if (itemsArray.length === 0) return true; // No items means we can add
-    return itemsArray.every(item => item.productId && item.price && item.price > 0);
+    return itemsArray.every(item => 
+      item.productId && 
+      item.price && 
+      item.price > 0 && 
+      item.isFinalized === true
+    );
+  }, [items]);
+  
+  // Check if there's an item being edited (has productId but not finalized)
+  const hasItemBeingEdited = useMemo(() => {
+    return Object.values(items).some(item => 
+      item.productId && !item.isFinalized
+    );
   }, [items]);
 
   // Check if any item has multiple quantities enabled
@@ -219,8 +232,17 @@ export default function QuoteNew() {
       outputs: [],
       itemDescription: "",
       itemAdditionals: [],
+      isFinalized: false,
     }}));
     setLastAddedItemId(newId);
+  };
+  
+  const handleFinishItem = (itemId: string | number) => {
+    setItems(prev => ({
+      ...prev,
+      [itemId]: { ...prev[itemId], isFinalized: true }
+    }));
+    setLastAddedItemId(null); // Reset last added
   };
 
   const handleImportContacts = async () => {
@@ -516,7 +538,7 @@ export default function QuoteNew() {
         <CardHeader className="py-3 px-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Productos</CardTitle>
-            {(Object.keys(items).length === 0 || allItemsComplete) && (
+            {(Object.keys(items).length === 0 || allItemsComplete) && !hasItemBeingEdited && (
               <Button onClick={addNewItem} variant="secondary" size="sm">
                 <Plus className="w-4 h-4 mr-2" />
                 Agregar producto
@@ -534,7 +556,7 @@ export default function QuoteNew() {
             Object.entries(items).map(([id, item], index) => {
               const isLastAdded = Number(id) === lastAddedItemId;
               const isComplete = item.productId && item.price && item.price > 0;
-              const shouldExpand = isLastAdded || Object.keys(items).length === 1;
+              const shouldExpand = !item.isFinalized || isLastAdded || Object.keys(items).length === 1;
               return (
                 <div key={id}>
                   <QuoteItem
@@ -543,6 +565,7 @@ export default function QuoteNew() {
                     initialData={item}
                     onChange={handleItemChange}
                     onRemove={handleItemRemove}
+                    onFinishEdit={handleFinishItem}
                     shouldExpand={shouldExpand}
                   />
                 </div>

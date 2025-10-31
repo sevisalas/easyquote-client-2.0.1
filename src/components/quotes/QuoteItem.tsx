@@ -657,9 +657,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 }}
                 size="sm" 
                 variant="default"
-                className="whitespace-nowrap"
+                disabled={!isComplete}
+                className="whitespace-nowrap bg-primary hover:bg-primary/90"
               >
-                Finalizar edición
+                Finalizar producto
               </Button>
               {onRemove && (
                 <Button
