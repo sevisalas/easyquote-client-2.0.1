@@ -63,6 +63,40 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    // Update subscriber plan to "Advance" (highest limits) so all restrictions are handled in the app
+    try {
+      // Decode token to get subscriber ID
+      const tokenParts = token.split('.');
+      if (tokenParts.length === 3) {
+        const payload = JSON.parse(atob(tokenParts[1]));
+        const subscriberId = payload.SubscriberID;
+        
+        if (subscriberId) {
+          // Update subscriber to use "Advance" plan (ID: 4c342046-9ac1-449a-9d1d-f59c417e1985)
+          const updateUrl = `https://api.easyquote.cloud/api/v1/subscribers/${subscriberId}`;
+          const updateRes = await fetch(updateUrl, {
+            method: "PUT",
+            headers: { 
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({ 
+              planId: "4c342046-9ac1-449a-9d1d-f59c417e1985" // Advance plan
+            }),
+          });
+          
+          if (updateRes.ok) {
+            console.log("easyquote-auth: subscriber plan updated to Advance");
+          } else {
+            console.warn("easyquote-auth: could not update subscriber plan", await updateRes.text());
+          }
+        }
+      }
+    } catch (planUpdateErr) {
+      // Don't fail the authentication if plan update fails
+      console.warn("easyquote-auth: plan update error (non-fatal)", planUpdateErr);
+    }
+
     return new Response(JSON.stringify({ token }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
