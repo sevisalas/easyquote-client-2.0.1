@@ -349,7 +349,7 @@ const UsuariosSuscriptor = () => {
   const abrirEditarUsuario = (usuario: Usuario) => {
     setEditingUser(usuario);
     setEditDisplayName(usuario.display_name || '');
-    setEditCuentaHolded(usuario.cuenta_holded || '');
+    setEditCuentaHolded(usuario.cuenta_holded || 'none');
     setShowEditDialog(true);
   };
 
@@ -363,7 +363,7 @@ const UsuariosSuscriptor = () => {
         .from('organization_members')
         .update({
           display_name: editDisplayName || null,
-          cuenta_holded: editCuentaHolded || null
+          cuenta_holded: editCuentaHolded === 'none' ? null : (editCuentaHolded || null)
         })
         .eq('user_id', editingUser.id)
         .eq('organization_id', id);
@@ -950,7 +950,7 @@ const UsuariosSuscriptor = () => {
                     <SelectValue placeholder="Seleccionar cuenta de ventas" />
                   </SelectTrigger>
                   <SelectContent className="bg-background">
-                    <SelectItem value="">Sin asignar</SelectItem>
+                    <SelectItem value="none">Sin asignar</SelectItem>
                     {salesAccounts.map((account) => (
                       <SelectItem key={account.id} value={account.holded_account_id}>
                         <div className="flex items-center gap-2">
