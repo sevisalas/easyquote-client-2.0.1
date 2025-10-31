@@ -69,11 +69,25 @@ const fetchHoldedCustomers = async (): Promise<HoldedCustomer[]> => {
       return [];
     }
 
-    const { data: org, error: orgError } = await supabase
+    // Intentar obtener la organización como owner
+    let { data: org, error: orgError } = await supabase
       .from("organizations")
       .select("id")
       .eq("api_user_id", user.id)
-      .single();
+      .maybeSingle();
+
+    // Si no es owner, buscar como miembro
+    if (!org) {
+      const { data: membership } = await supabase
+        .from("organization_members")
+        .select("organization_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (membership) {
+        org = { id: membership.organization_id };
+      }
+    }
 
     console.log('🔍 Organization found:', org?.id, 'Error:', orgError);
 
