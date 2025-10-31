@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
       throw new Error('quoteId is required');
     }
 
-    // Get quote - allow organization members to export
+    // Get quote
     const { data: quote, error: quoteError } = await supabase
       .from('quotes')
       .select('*')
@@ -44,6 +44,26 @@ Deno.serve(async (req) => {
     if (quoteError || !quote) {
       console.error('Quote not found:', quoteError);
       throw new Error('Quote not found');
+    }
+
+    // Verify user has access to this quote (either owns it or is in the same organization)
+    if (quote.user_id !== user.id) {
+      // Check if both users are in the same organization
+      const { data: userOrg } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .single();
+
+      const { data: quoteOwnerOrg } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', quote.user_id)
+        .single();
+
+      if (!userOrg || !quoteOwnerOrg || userOrg.organization_id !== quoteOwnerOrg.organization_id) {
+        throw new Error('No tienes permiso para exportar este presupuesto');
+      }
     }
 
     // Get quote items separately
