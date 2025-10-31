@@ -72,7 +72,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   const refreshData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('Current user:', user);
+      console.log('🔐 Current user:', user?.id);
       if (!user) {
         setLoading(false);
         return;
@@ -84,10 +84,10 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         .select('role')
         .eq('user_id', user.id);
       
-      console.log('User roles query - Data:', roles, 'Error:', rolesError, 'User ID:', user.id);
+      console.log('👥 User roles:', roles, 'Error:', rolesError);
       
       const isSuperAdminUser = roles?.some(r => r.role === 'superadmin') || false;
-      console.log('Is superadmin?', isSuperAdminUser, 'Roles:', roles);
+      console.log('🔑 Is superadmin?', isSuperAdminUser);
       setIsSuperAdmin(isSuperAdminUser);
 
       // Get user's organization (as API user) - solo si no es superadmin
@@ -98,7 +98,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
           .eq('api_user_id', user.id)
           .maybeSingle();
 
-        // console.log('Organization data:', orgData, 'Error:', orgError);
+        console.log('🏢 Organization as owner:', orgData, 'Error:', orgError);
         setOrganization(orgData as Organization);
 
         // Get user's membership (as client user)
@@ -111,7 +111,8 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
           .eq('user_id', user.id)
           .maybeSingle();
 
-        // console.log('Member data:', memberData, 'Error:', memberError);
+        console.log('👤 Member data:', memberData, 'Error:', memberError);
+        console.log('📊 Member organization:', memberData?.organization);
         setMembership(memberData as OrganizationMember);
       } else {
         // Los superadmins no necesitan organization ni membership propios
@@ -120,7 +121,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       }
 
     } catch (error) {
-      console.error('Error fetching subscription data:', error);
+      console.error('❌ Error fetching subscription data:', error);
     } finally {
       setLoading(false);
     }
@@ -173,10 +174,11 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
     // Solo controlan organizaciones y configuraciones
     
     // Solo suscripciones Client pueden acceder a clientes
-    if (!isClientSubscription()) return false;
+    const hasAccess = isClientSubscription();
+    console.log('🔍 canAccessClientes:', hasAccess, 'isClient:', isClientSubscription(), 'org:', organization?.subscription_plan, 'member org:', membership?.organization?.subscription_plan);
     
     // En Client, tanto admin como usuario pueden acceder
-    return true;
+    return hasAccess;
   };
 
   const canAccessPresupuestos = () => {
@@ -184,10 +186,11 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
     // Solo controlan organizaciones y configuraciones
     
     // Solo suscripciones Client pueden acceder a presupuestos
-    if (!isClientSubscription()) return false;
+    const hasAccess = isClientSubscription();
+    console.log('🔍 canAccessPresupuestos:', hasAccess, 'isClient:', isClientSubscription(), 'org:', organization?.subscription_plan, 'member org:', membership?.organization?.subscription_plan);
     
     // En Client, tanto admin como usuario pueden acceder
-    return true;
+    return hasAccess;
   };
 
   const canAccessExcel = () => {

@@ -260,14 +260,17 @@ export function AppSidebar() {
                        </NavLink>
                      </SidebarMenuButton>
                      <SidebarMenuSub className="ml-2">
-                       <SidebarMenuSubItem>
-                         <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/ajustes"} className="h-6 px-2">
-                           <NavLink to="/configuracion/ajustes" end className={getNavCls}>
-                             <Plus className="mr-2 h-4 w-4" />
-                             {!isCollapsed && <span>Ajustes</span>}
-                           </NavLink>
-                         </SidebarMenuSubButton>
-                       </SidebarMenuSubItem>
+                       {/* Ajustes - Solo para admins */}
+                       {(isSuperAdmin || isOrgAdmin) && (
+                         <SidebarMenuSubItem>
+                           <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/ajustes"} className="h-6 px-2">
+                             <NavLink to="/configuracion/ajustes" end className={getNavCls}>
+                               <Plus className="mr-2 h-4 w-4" />
+                               {!isCollapsed && <span>Ajustes</span>}
+                             </NavLink>
+                           </SidebarMenuSubButton>
+                         </SidebarMenuSubItem>
+                       )}
                         {/* Plantilla PDF - Solo si tienen acceso a generación de PDFs */}
                         {hasPdfAccess && (
                           <SidebarMenuSubItem>
