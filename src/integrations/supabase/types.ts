@@ -239,7 +239,7 @@ export type Database = {
           id?: string
           mobile?: string | null
           name: string
-          organization_id: string
+          organization_id?: string
           phone?: string | null
           updated_at?: string
         }
@@ -1107,10 +1107,7 @@ export type Database = {
         }
         Returns: string
       }
-      decrypt_credential: {
-        Args: { encrypted_data: string }
-        Returns: string
-      }
+      decrypt_credential: { Args: { encrypted_data: string }; Returns: string }
       detect_suspicious_customer_access: {
         Args: { threshold?: number; time_window_minutes?: number }
         Returns: {
@@ -1120,18 +1117,9 @@ export type Database = {
           user_id: string
         }[]
       }
-      encrypt_credential: {
-        Args: { credential_text: string }
-        Returns: string
-      }
-      generate_api_key: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_api_secret: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      encrypt_credential: { Args: { credential_text: string }; Returns: string }
+      generate_api_key: { Args: never; Returns: string }
+      generate_api_secret: { Args: never; Returns: string }
       get_customer_audit_trail: {
         Args: { p_customer_id: string; p_limit?: number }
         Returns: {
@@ -1171,10 +1159,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_superadmin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_superadmin: { Args: never; Returns: boolean }
       search_customers: {
         Args: {
           page_limit?: number
@@ -1195,10 +1180,7 @@ export type Database = {
         Args: { p_password: string; p_user_id: string; p_username: string }
         Returns: string
       }
-      validate_api_key: {
-        Args: { p_api_key: string }
-        Returns: string
-      }
+      validate_api_key: { Args: { p_api_key: string }; Returns: string }
     }
     Enums: {
       app_role: "superadmin" | "admin" | "user"
