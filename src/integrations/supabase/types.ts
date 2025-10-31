@@ -1148,6 +1148,16 @@ export type Database = {
           usage_count: number
         }[]
       }
+      get_organization_easyquote_credentials: {
+        Args: { p_user_id: string }
+        Returns: {
+          api_password: string
+          api_username: string
+          created_at: string
+          id: string
+          updated_at: string
+        }[]
+      }
       get_user_credentials: {
         Args: { p_user_id: string }
         Returns: {

@@ -9,7 +9,8 @@ async function refreshEasyQuoteToken(): Promise<string | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    const { data: credentials, error: credError } = await supabase.rpc('get_user_credentials', {
+    // Usar credenciales de la organización (owner o propias)
+    const { data: credentials, error: credError } = await supabase.rpc('get_organization_easyquote_credentials', {
       p_user_id: user.id
     });
 

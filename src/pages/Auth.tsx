@@ -38,8 +38,8 @@ const Auth = () => {
           return;
         }
 
-        // Usar la función segura para obtener credenciales
-        const { data: credentials, error: credError } = await supabase.rpc('get_user_credentials', {
+        // Usar la función segura para obtener credenciales de la organización
+        const { data: credentials, error: credError } = await supabase.rpc('get_organization_easyquote_credentials', {
           p_user_id: session.session.user.id
         });
 
