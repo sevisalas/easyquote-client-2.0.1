@@ -101,7 +101,7 @@ export default function ExcelFiles() {
   
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { isSuperAdmin, isOrgAdmin, getRemainingExcelLimit } = useSubscription();
+  const { isSuperAdmin, isOrgAdmin } = useSubscription();
 
   // Fetch all products from EasyQuote to check associations
   const { data: allProducts = [] } = useQuery({
@@ -229,31 +229,10 @@ export default function ExcelFiles() {
     };
   });
 
-  // Calculate plan compliance for active files
-  const excelLimit = getRemainingExcelLimit();
-  const activeFiles = filesWithMeta
-    .filter(f => f.isActive)
-    .sort((a, b) => new Date(a.dateCreated).getTime() - new Date(b.dateCreated).getTime()); // Oldest first
-  
-  const filesWithCompliance = filesWithMeta.map(file => {
-    if (!file.isActive) {
-      // Inactive files are always compliant
-      return { ...file, isPlanCompliant: true };
-    }
-    
-    // Find the position of this file in the active files list (by creation date)
-    const position = activeFiles.findIndex(f => f.id === file.id);
-    
-    // Files within the limit are compliant
-    const isPlanCompliant = position < excelLimit;
-    
-    return { ...file, isPlanCompliant };
-  });
-
   // Filter files based on includeInactive setting
   const filteredFiles = includeInactive 
-    ? filesWithCompliance 
-    : filesWithCompliance.filter(file => file.isActive);
+    ? filesWithMeta 
+    : filesWithMeta.filter(file => file.isActive);
 
   // Auto-sync files when they are loaded
   useEffect(() => {
@@ -1185,7 +1164,7 @@ export default function ExcelFiles() {
       {isSuperAdmin && <EasyQuoteConnectivityTest />}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total archivos</CardTitle>
@@ -1206,46 +1185,17 @@ export default function ExcelFiles() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Límite del plan</CardTitle>
+            <CardTitle className="text-sm font-medium">Inactivos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {getRemainingExcelLimit()}
+            <div className="text-2xl font-bold text-orange-600">
+              {files.filter(f => !f.isActive).length}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {files.filter(f => f.isActive).length} / {getRemainingExcelLimit()} en uso
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">No conformes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">
-              {filesWithCompliance.filter(f => f.isActive && !f.isPlanCompliant).length}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Exceden límite del plan
-            </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Files Table */}
-      {/* Warning when exceeding plan limit */}
-      {filesWithCompliance.filter(f => f.isActive && !f.isPlanCompliant).length > 0 && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Límite del plan excedido</AlertTitle>
-          <AlertDescription>
-            Tienes {files.filter(f => f.isActive).length} archivos activos, pero tu plan solo incluye {getRemainingExcelLimit()}.
-            Los archivos más antiguos que exceden el límite están marcados como no conformes.
-            Desactiva algunos archivos o actualiza tu plan para cumplir con los requisitos.
-          </AlertDescription>
-        </Alert>
-      )}
-
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -1326,23 +1276,19 @@ export default function ExcelFiles() {
                       </Badge>
                     </TableCell>
                     <TableCell className="w-24">
-                      {file.isActive ? (
-                        <Badge variant={file.isPlanCompliant ? "default" : "destructive"} className="text-xs">
-                          {file.isPlanCompliant ? (
-                            <>
-                              <Check className="h-3 w-3 mr-1" />
-                              Sí
-                            </>
-                          ) : (
-                            <>
-                              <AlertCircle className="h-3 w-3 mr-1" />
-                              No
-                            </>
-                          )}
-                        </Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
+                      <Badge variant={file.isPlanCompliant ? "default" : "destructive"} className="text-xs">
+                        {file.isPlanCompliant ? (
+                          <>
+                            <Check className="h-3 w-3 mr-1" />
+                            Sí
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            No
+                          </>
+                        )}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       {formatDistanceToNow(new Date(file.dateModified), {
