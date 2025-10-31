@@ -559,7 +559,7 @@ export default function QuoteNew() {
             Object.entries(items).map(([id, item], index) => {
               const isLastAdded = Number(id) === lastAddedItemId;
               const isComplete = item.productId && item.price && item.price > 0;
-              const shouldExpand = !item.isFinalized || isLastAdded || Object.keys(items).length === 1;
+              const shouldExpand = !item.isFinalized;
               return (
                 <div key={id}>
                   <QuoteItem
