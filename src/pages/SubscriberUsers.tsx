@@ -172,10 +172,27 @@ const UsuariosSuscriptor = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error en la invocación:', error);
+        throw new Error(error.message || "Error al comunicarse con el servidor");
+      }
 
+      // Manejar errores específicos del edge function
       if (data?.error) {
+        // Mostrar mensaje específico para usuario existente
+        if (data.code === 'USER_EXISTS') {
+          toast({
+            title: "Usuario ya existe",
+            description: data.error,
+            variant: "destructive",
+          });
+          return;
+        }
         throw new Error(data.error);
+      }
+
+      if (!data?.success) {
+        throw new Error("No se pudo crear el usuario correctamente");
       }
 
       // Guardar credenciales para mostrar en el modal
@@ -190,11 +207,15 @@ const UsuariosSuscriptor = () => {
       obtenerDatos();
     } catch (error: any) {
       console.error('Error al crear usuario:', error);
-      toast({
-        title: "Error",
-        description: error.message || "No se pudo crear el usuario",
-        variant: "destructive",
-      });
+      
+      // Evitar mostrar toast duplicado si ya se mostró uno específico
+      if (error.message && !error.message.includes('ya existe')) {
+        toast({
+          title: "Error al crear usuario",
+          description: error.message || "No se pudo crear el usuario",
+          variant: "destructive",
+        });
+      }
     }
   };
 
