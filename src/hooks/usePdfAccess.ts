@@ -20,8 +20,17 @@ export const usePdfAccess = () => {
         return;
       }
 
+      // Only organization owners (admins) have PDF access, not regular members
+      const isOrgOwner = organization !== null;
+      
+      if (!isOrgOwner) {
+        setHasPdfAccess(false);
+        setLoading(false);
+        return;
+      }
+
       // Get the current user's organization ID
-      const orgId = organization?.id || membership?.organization_id;
+      const orgId = organization?.id;
       
       if (!orgId) {
         setHasPdfAccess(false);
