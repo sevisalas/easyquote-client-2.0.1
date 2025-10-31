@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
     // Get organization members ONLY
     const { data: members, error: membersError } = await supabaseClient
       .from('organization_members')
-      .select('user_id, role')
+      .select('user_id, role, display_name, cuenta_holded')
       .eq('organization_id', organizationId)
 
     if (membersError) {
@@ -61,6 +61,8 @@ Deno.serve(async (req) => {
           id: userData.user.id,
           email: userData.user.email,
           role: member.role,
+          display_name: member.display_name,
+          cuenta_holded: member.cuenta_holded,
           created_at: userData.user.created_at
         })
       }

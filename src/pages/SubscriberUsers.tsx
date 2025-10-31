@@ -18,6 +18,8 @@ interface Usuario {
   email: string;
   rol: string;
   isPrincipal?: boolean;
+  display_name?: string;
+  cuenta_holded?: string;
 }
 
 interface Suscriptor {
@@ -57,6 +59,13 @@ const UsuariosSuscriptor = () => {
   const [newPassword, setNewPassword] = useState("");
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  
+  // Estados para editar usuario
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editDisplayName, setEditDisplayName] = useState("");
+  const [editCuentaHolded, setEditCuentaHolded] = useState("");
+  const [savingUser, setSavingUser] = useState(false);
 
   useEffect(() => {
     if (!isSuperAdmin && !organization) {
@@ -122,7 +131,9 @@ const UsuariosSuscriptor = () => {
             id: usuario.id,
             email: usuario.email || 'Sin email',
             rol: usuario.role === 'admin' ? 'Administrador' : 'Usuario',
-            isPrincipal: false
+            isPrincipal: false,
+            display_name: usuario.display_name,
+            cuenta_holded: usuario.cuenta_holded
           });
         }
       }
@@ -287,6 +298,52 @@ const UsuariosSuscriptor = () => {
   const generarNuevaContraseña = () => {
     const password = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
     setNewPassword(password);
+  };
+
+  const abrirEditarUsuario = (usuario: Usuario) => {
+    setEditingUserId(usuario.id);
+    setEditDisplayName(usuario.display_name || '');
+    setEditCuentaHolded(usuario.cuenta_holded || '');
+    setShowEditDialog(true);
+  };
+
+  const guardarUsuario = async () => {
+    if (!editingUserId) return;
+
+    setSavingUser(true);
+
+    try {
+      const { error } = await supabase
+        .from('organization_members')
+        .update({
+          display_name: editDisplayName || null,
+          cuenta_holded: editCuentaHolded || null
+        })
+        .eq('user_id', editingUserId)
+        .eq('organization_id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Usuario actualizado correctamente",
+      });
+
+      setShowEditDialog(false);
+      setEditingUserId(null);
+      setEditDisplayName("");
+      setEditCuentaHolded("");
+      obtenerDatos();
+    } catch (error: any) {
+      console.error('Error al guardar usuario:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo guardar el usuario",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingUser(false);
+    }
   };
 
   const eliminarUsuario = async (usuarioId: string) => {
@@ -658,6 +715,7 @@ const UsuariosSuscriptor = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Usuario</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Rol</TableHead>
                 <TableHead>Acciones</TableHead>
@@ -666,7 +724,19 @@ const UsuariosSuscriptor = () => {
             <TableBody>
               {usuarios.map((usuario) => (
                 <TableRow key={usuario.id}>
-                  <TableCell>{usuario.email}</TableCell>
+                  <TableCell>
+                    <div className="font-medium">
+                      {usuario.display_name || usuario.email}
+                    </div>
+                    {usuario.cuenta_holded && (
+                      <div className="text-xs text-muted-foreground">
+                        Cuenta: {usuario.cuenta_holded}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {usuario.email}
+                  </TableCell>
                   <TableCell>
                     <Badge variant={
                       usuario.isPrincipal ? 'default' : 
@@ -680,6 +750,15 @@ const UsuariosSuscriptor = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
+                      {/* Botón editar */}
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => abrirEditarUsuario(usuario)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      
                       {/* Botón cambiar contraseña */}
                       <Button 
                         variant="outline" 
@@ -771,6 +850,68 @@ const UsuariosSuscriptor = () => {
               setGeneratedUserEmail(null);
             }}>
               Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para editar usuario */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar usuario</DialogTitle>
+            <DialogDescription>
+              Modificar información del usuario
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="display-name">Nombre de usuario</Label>
+              <Input
+                id="display-name"
+                type="text"
+                value={editDisplayName}
+                onChange={(e) => setEditDisplayName(e.target.value)}
+                placeholder="Nombre para mostrar"
+              />
+              <p className="text-sm text-muted-foreground">
+                Este será el nombre que se muestra en la aplicación
+              </p>
+            </div>
+            
+            {suscriptor?.subscription_plan && (
+              <div className="space-y-2">
+                <Label htmlFor="cuenta-holded">Cuenta asociada (Holded)</Label>
+                <Input
+                  id="cuenta-holded"
+                  type="text"
+                  value={editCuentaHolded}
+                  onChange={(e) => setEditCuentaHolded(e.target.value)}
+                  placeholder="ID de cuenta en Holded"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Para clientes con integración de Holded
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline"
+              onClick={() => {
+                setShowEditDialog(false);
+                setEditingUserId(null);
+                setEditDisplayName("");
+                setEditCuentaHolded("");
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={guardarUsuario}
+              disabled={savingUser}
+            >
+              {savingUser ? "Guardando..." : "Guardar"}
             </Button>
           </DialogFooter>
         </DialogContent>
