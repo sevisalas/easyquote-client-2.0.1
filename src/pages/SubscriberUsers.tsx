@@ -100,6 +100,8 @@ const UsuariosSuscriptor = () => {
         { body: { organizationId: id } }
       );
 
+      console.log('🔍 Respuesta usuarios:', usersResponse);
+
       if (errorUsuarios) {
         console.error('Error al obtener usuarios:', errorUsuarios);
       }
@@ -403,7 +405,8 @@ const UsuariosSuscriptor = () => {
         <div>
           <h1 className="text-3xl font-bold">Usuarios de {suscriptor.name}</h1>
           <p className="text-muted-foreground">
-            Gestionar usuarios del suscriptor • Plan: {suscriptor.subscription_plan}
+            Gestionar usuarios del suscriptor
+            {isSuperAdmin && ` • Plan: ${suscriptor.subscription_plan}`}
           </p>
         </div>
         <div className="ml-auto">
@@ -414,15 +417,18 @@ const UsuariosSuscriptor = () => {
         </div>
       </div>
 
-      <div className="flex gap-4">
-        <Button
-          variant="outline"
-          onClick={() => navigate(`/suscriptores/${suscriptor.id}/editar`)}
-        >
-          <Edit className="h-4 w-4 mr-2" />
-          Editar suscriptor
-        </Button>
-      </div>
+      {/* Botón de editar suscriptor - SOLO para superadmin */}
+      {isSuperAdmin && (
+        <div className="flex gap-4">
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/suscriptores/${suscriptor.id}/editar`)}
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Editar suscriptor
+          </Button>
+        </div>
+      )}
 
       {/* Mensaje si no hay usuarios */}
       {usuarios.length === 0 && !mostrarFormulario && (
@@ -600,7 +606,9 @@ const UsuariosSuscriptor = () => {
                     }>
                       {usuario.rol}
                     </Badge>
-                    {usuario.isPrincipal && <span className="ml-2 text-xs text-muted-foreground">(Principal)</span>}
+                    {isSuperAdmin && usuario.isPrincipal && (
+                      <span className="ml-2 text-xs text-muted-foreground">(Principal)</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     {usuario.isPrincipal ? (

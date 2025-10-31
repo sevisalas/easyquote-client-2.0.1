@@ -21,6 +21,8 @@ Deno.serve(async (req) => {
       )
     }
 
+    console.log('📋 Getting users for organization:', organizationId)
+
     // Get organization members
     const { data: members, error: membersError } = await supabaseClient
       .from('organization_members')
@@ -34,6 +36,8 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
+
+    console.log('👥 Found members:', members?.length || 0)
 
     // Get the organization owner (api_user_id)
     const { data: org, error: orgError } = await supabaseClient
@@ -50,6 +54,8 @@ Deno.serve(async (req) => {
       )
     }
 
+    console.log('🏢 Organization owner:', org?.api_user_id)
+
     // Collect all unique user IDs (members + owner)
     const userIds = new Set<string>()
     
@@ -62,11 +68,14 @@ Deno.serve(async (req) => {
     }
 
     if (userIds.size === 0) {
+      console.log('⚠️ No users found')
       return new Response(
         JSON.stringify({ users: [] }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
+
+    console.log('🔍 Total unique user IDs to fetch:', userIds.size)
 
     // Get user details from auth.users
     const users = []
@@ -92,6 +101,8 @@ Deno.serve(async (req) => {
         })
       }
     }
+
+    console.log('✅ Returning', users.length, 'users')
 
     return new Response(
       JSON.stringify({ users }),
