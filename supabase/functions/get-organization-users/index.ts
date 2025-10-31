@@ -35,7 +35,33 @@ Deno.serve(async (req) => {
       )
     }
 
-    if (!members || members.length === 0) {
+    // Get the organization owner (api_user_id)
+    const { data: org, error: orgError } = await supabaseClient
+      .from('organizations')
+      .select('api_user_id')
+      .eq('id', organizationId)
+      .single()
+
+    if (orgError) {
+      console.error('Error fetching organization:', orgError)
+      return new Response(
+        JSON.stringify({ error: orgError.message }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
+
+    // Collect all unique user IDs (members + owner)
+    const userIds = new Set<string>()
+    
+    if (members && members.length > 0) {
+      members.forEach(member => userIds.add(member.user_id))
+    }
+    
+    if (org?.api_user_id) {
+      userIds.add(org.api_user_id)
+    }
+
+    if (userIds.size === 0) {
       return new Response(
         JSON.stringify({ users: [] }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
@@ -44,22 +70,25 @@ Deno.serve(async (req) => {
 
     // Get user details from auth.users
     const users = []
-    for (const member of members) {
-      const { data: userData, error: userError } = await supabaseClient.auth.admin.getUserById(
-        member.user_id
-      )
+    for (const userId of userIds) {
+      const { data: userData, error: userError } = await supabaseClient.auth.admin.getUserById(userId)
 
       if (userError) {
-        console.error(`Error fetching user ${member.user_id}:`, userError)
+        console.error(`Error fetching user ${userId}:`, userError)
         continue
       }
 
       if (userData.user) {
+        // Find the role for this user
+        const memberData = members?.find(m => m.user_id === userId)
+        const isOwner = userId === org?.api_user_id
+        
         users.push({
           id: userData.user.id,
           email: userData.user.email,
-          role: member.role,
-          created_at: userData.user.created_at
+          role: isOwner ? 'owner' : (memberData?.role || 'user'),
+          created_at: userData.user.created_at,
+          is_owner: isOwner
         })
       }
     }

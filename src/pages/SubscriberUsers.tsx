@@ -106,14 +106,14 @@ const UsuariosSuscriptor = () => {
 
       const usuariosFormateados: Usuario[] = [];
 
-      // Agregar usuarios miembros (los que pueden acceder a la app)
+      // Agregar todos los usuarios (miembros + propietario)
       if (usersResponse?.users && usersResponse.users.length > 0) {
         for (const usuario of usersResponse.users) {
           usuariosFormateados.push({
             id: usuario.id,
             email: usuario.email || 'Sin email',
-            rol: usuario.role === 'admin' ? 'Administrador' : 'Usuario',
-            isPrincipal: false
+            rol: usuario.is_owner ? 'Propietario' : (usuario.role === 'admin' ? 'Administrador' : 'Usuario'),
+            isPrincipal: usuario.is_owner || false
           });
         }
       }
