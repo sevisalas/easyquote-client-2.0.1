@@ -520,7 +520,8 @@ export default function ExcelFiles() {
       // Payload structure matches original code: { fileName, file }
       const payload = {
         fileName: file.name,
-        file: base64
+        file: base64,
+        isPlanCompliant: true
       };
 
       console.log('📤 Actualizando archivo:', {
