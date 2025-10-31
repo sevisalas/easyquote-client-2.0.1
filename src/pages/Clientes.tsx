@@ -40,7 +40,10 @@ export default function Clientes() {
         query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
       }
 
+      console.log('🔍 Fetching customers with search term:', searchTerm);
       const { data, error, count } = await query;
+
+      console.log('📊 Customers result:', { data, error, count, searchTerm });
 
       if (error) throw error;
 
@@ -52,9 +55,10 @@ export default function Clientes() {
       const endIndex = startIndex + itemsPerPage;
       const paginatedClients = (data || []).slice(startIndex, endIndex);
 
+      console.log('📄 Paginated clients:', paginatedClients);
       setClientes(paginatedClients);
     } catch (error) {
-      console.error("Error al obtener clientes:", error);
+      console.error("❌ Error al obtener clientes:", error);
       toast({
         title: "Error",
         description: "No se pudieron cargar los clientes",

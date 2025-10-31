@@ -157,7 +157,7 @@ export function AppSidebar() {
               {/* Menú para usuarios normales */}
               {!isSuperAdmin && (
                 <>
-                  {items.map((item) => (
+                   {items.map((item) => (
                     <SidebarMenuItem key={item.title}>
                        <SidebarMenuButton asChild isActive={currentPath === item.url} className="h-7 px-2">
                          <NavLink to={item.url} end className={getNavCls}>
@@ -252,9 +252,11 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                   )}
 
+                   {/* Configuración - Solo si tiene acceso a algo */}
+                   {((isSuperAdmin || isOrgAdmin) || hasPdfAccess || canAccessExcel() || canAccessProductos() || canAccessCategorias()) && (
                    <SidebarMenuItem>
                      <SidebarMenuButton asChild isActive={currentPath.startsWith("/configuracion")} className="h-7 px-2">
-                       <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
+                       <NavLink to={hasPdfAccess ? "/configuracion/plantilla-pdf" : "/configuracion/ajustes"} end className={getNavCls}>
                          <Palette className="mr-2 h-4 w-4" />
                          {!isCollapsed && <span>Configuración</span>}
                        </NavLink>
@@ -343,8 +345,9 @@ export function AppSidebar() {
                            </SidebarMenuSubButton>
                          </SidebarMenuSubItem>
                        )}
-                     </SidebarMenuSub>
-                   </SidebarMenuItem>
+                      </SidebarMenuSub>
+                    </SidebarMenuItem>
+                   )}
                 </>
               )}
 
