@@ -648,13 +648,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           {isExpanded && onFinishEdit && (
             <div className="flex flex-col gap-2 float-right ml-4 mb-2">
               <Button 
-                onClick={() => {
-                  if (hasUnsavedChanges) {
-                    setShowExitConfirm(true);
-                  } else {
-                    onFinishEdit(id);
-                  }
-                }}
+                onClick={() => onFinishEdit(id)}
                 size="sm" 
                 variant="default"
                 disabled={!isComplete}
