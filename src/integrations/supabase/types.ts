@@ -1165,6 +1165,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_organization_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_superadmin: { Args: never; Returns: boolean }
       search_customers: {
         Args: {
