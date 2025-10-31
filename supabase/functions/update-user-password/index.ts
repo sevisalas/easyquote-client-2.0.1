@@ -1,62 +1,70 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4'
+import { corsHeaders } from '../_shared/cors.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-serve(async (req) => {
-  // Handle CORS preflight requests
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get the authorization header
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
+    const authorization = req.headers.get('Authorization')
+    if (!authorization) {
       return new Response(
         JSON.stringify({ error: 'No authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Verify the JWT token
-    const jwt = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(jwt)
-
-    if (userError || !user) {
+    const token = authorization.replace('Bearer ', '')
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
+    
+    if (authError || !user) {
       return new Response(
-        JSON.stringify({ error: 'Invalid token' }),
+        JSON.stringify({ error: 'Invalid token or user not found' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Check if user has superadmin role
+    // Check if user is superadmin or organization admin
     const { data: roles } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
     
-    const isSuperAdmin = roles?.some(r => r.role === 'superadmin') || false;
-    
+    const isSuperAdmin = roles?.some(r => r.role === 'superadmin') || false
+    let isOrgAdmin = false
+
     if (!isSuperAdmin) {
-      console.error('update-user-password: unauthorized access attempt by user:', user.id);
+      const { data: orgData } = await supabaseAdmin
+        .from('organizations')
+        .select('id')
+        .eq('api_user_id', user.id)
+        .maybeSingle()
+
+      if (orgData) {
+        isOrgAdmin = true
+      } else {
+        const { data: memberData } = await supabaseAdmin
+          .from('organization_members')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle()
+
+        if (memberData) {
+          isOrgAdmin = true
+        }
+      }
+    }
+
+    if (!isSuperAdmin && !isOrgAdmin) {
       return new Response(
-        JSON.stringify({ error: 'Only superadmin can update user passwords' }),
+        JSON.stringify({ error: 'Not authorized. Only superadmin or organization admins can change passwords.' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -65,52 +73,57 @@ serve(async (req) => {
 
     if (!email || !newPassword) {
       return new Response(
-        JSON.stringify({ error: 'Email and newPassword are required' }),
+        JSON.stringify({ error: 'Email and new password are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Find the user by email
-    const { data: users } = await supabaseAdmin.auth.admin.listUsers()
-    const targetUser = users.users.find(u => u.email === email)
+    if (newPassword.length < 6) {
+      return new Response(
+        JSON.stringify({ error: 'Password must be at least 6 characters' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
+    // Find user by email
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
+    const targetUser = existingUsers.users?.find(u => u.email === email)
+    
     if (!targetUser) {
       return new Response(
-        JSON.stringify({ error: `No se encontró usuario con email ${email}` }),
+        JSON.stringify({ error: `User with email ${email} not found` }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Update the user's password (bypass validation by using SQL directly)
-    const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
+    // Update password
+    const { data: updatedUser, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       targetUser.id,
-      { 
-        password: newPassword
-      }
+      { password: newPassword }
     )
 
-    if (error) {
-      console.error('Error updating user password:', error)
+    if (updateError) {
+      console.error('Error updating password:', updateError)
       return new Response(
-        JSON.stringify({ error: `Error updating password: ${error.message}` }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: updateError.message }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log(`Password updated successfully for user: ${email}`)
+    console.log('Password updated successfully for:', email)
+
     return new Response(
       JSON.stringify({ 
-        message: `Contraseña actualizada exitosamente para ${email}`,
-        user: data.user 
+        success: true,
+        message: 'Password updated successfully'
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
     console.error('Error in update-user-password function:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

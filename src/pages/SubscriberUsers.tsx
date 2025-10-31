@@ -50,6 +50,13 @@ const UsuariosSuscriptor = () => {
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
   const [generatedUserEmail, setGeneratedUserEmail] = useState<string | null>(null);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  
+  // Estados para cambio de contraseña
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserEmail, setSelectedUserEmail] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     if (!isSuperAdmin && !organization) {
@@ -108,15 +115,18 @@ const UsuariosSuscriptor = () => {
 
       const usuariosFormateados: Usuario[] = [];
 
-      // Agregar todos los usuarios (miembros + propietario)
+      // Solo mostrar usuarios miembros (NO el propietario)
       if (usersResponse?.users && usersResponse.users.length > 0) {
         for (const usuario of usersResponse.users) {
-          usuariosFormateados.push({
-            id: usuario.id,
-            email: usuario.email || 'Sin email',
-            rol: usuario.is_owner ? 'Propietario' : (usuario.role === 'admin' ? 'Administrador' : 'Usuario'),
-            isPrincipal: usuario.is_owner || false
-          });
+          // Filtrar al propietario - solo mostrar miembros
+          if (!usuario.is_owner) {
+            usuariosFormateados.push({
+              id: usuario.id,
+              email: usuario.email || 'Sin email',
+              rol: usuario.role === 'admin' ? 'Administrador' : 'Usuario',
+              isPrincipal: false
+            });
+          }
         }
       }
 
@@ -219,6 +229,67 @@ const UsuariosSuscriptor = () => {
         });
       }
     }
+  };
+
+  const cambiarContraseña = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "La contraseña debe tener al menos 6 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setChangingPassword(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error("No hay sesión activa");
+      }
+
+      const { data, error } = await supabase.functions.invoke("update-user-password", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: {
+          email: selectedUserEmail,
+          newPassword: newPassword,
+        }
+      });
+
+      if (error) throw error;
+      
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: "Éxito",
+        description: "Contraseña actualizada correctamente",
+      });
+
+      setShowChangePasswordDialog(false);
+      setNewPassword("");
+      setSelectedUserId(null);
+      setSelectedUserEmail(null);
+    } catch (error: any) {
+      console.error('Error al cambiar contraseña:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo cambiar la contraseña",
+        variant: "destructive",
+      });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const generarNuevaContraseña = () => {
+    const password = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+    setNewPassword(password);
   };
 
   const eliminarUsuario = async (usuarioId: string) => {
@@ -611,33 +682,49 @@ const UsuariosSuscriptor = () => {
                     )}
                   </TableCell>
                   <TableCell>
-                    {usuario.isPrincipal ? (
-                      <span className="text-sm text-muted-foreground">No se puede eliminar</span>
-                    ) : (
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Eliminar usuario</DialogTitle>
-                            <DialogDescription>
-                              ¿Estás seguro de que quieres eliminar a {usuario.email} de este suscriptor?
-                            </DialogDescription>
-                          </DialogHeader>
-                          <DialogFooter>
-                            <Button
-                              variant="destructive"
-                              onClick={() => eliminarUsuario(usuario.id)}
-                            >
-                              Eliminar
+                    <div className="flex gap-2">
+                      {/* Botón cambiar contraseña */}
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedUserId(usuario.id);
+                          setSelectedUserEmail(usuario.email);
+                          setShowChangePasswordDialog(true);
+                        }}
+                      >
+                        <Key className="h-4 w-4" />
+                      </Button>
+                      
+                      {/* Botón eliminar */}
+                      {usuario.isPrincipal ? (
+                        <span className="text-sm text-muted-foreground ml-2">No se puede eliminar</span>
+                      ) : (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Trash2 className="h-4 w-4" />
                             </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    )}
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Eliminar usuario</DialogTitle>
+                              <DialogDescription>
+                                ¿Estás seguro de que quieres eliminar a {usuario.email} de este suscriptor?
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <Button
+                                variant="destructive"
+                                onClick={() => eliminarUsuario(usuario.id)}
+                              >
+                                Eliminar
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -687,6 +774,61 @@ const UsuariosSuscriptor = () => {
               setGeneratedUserEmail(null);
             }}>
               Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para cambiar contraseña */}
+      <Dialog open={showChangePasswordDialog} onOpenChange={setShowChangePasswordDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cambiar contraseña</DialogTitle>
+            <DialogDescription>
+              Cambiar la contraseña para {selectedUserEmail}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Nueva contraseña</Label>
+              <div className="relative">
+                <Input
+                  id="new-password"
+                  type="text"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Ingresa la nueva contraseña"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Mínimo 6 caracteres
+              </p>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={generarNuevaContraseña}
+              className="w-full"
+            >
+              Generar contraseña aleatoria
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline"
+              onClick={() => {
+                setShowChangePasswordDialog(false);
+                setNewPassword("");
+                setSelectedUserId(null);
+                setSelectedUserEmail(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={cambiarContraseña}
+              disabled={changingPassword || !newPassword || newPassword.length < 6}
+            >
+              {changingPassword ? "Cambiando..." : "Cambiar contraseña"}
             </Button>
           </DialogFooter>
         </DialogContent>
