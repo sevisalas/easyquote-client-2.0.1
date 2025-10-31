@@ -60,10 +60,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Auto-expand/collapse based on shouldExpand prop
   useEffect(() => {
+    console.log('🔄 shouldExpand changed', { shouldExpand, currentIsExpanded: isExpanded, id });
     if (shouldExpand !== undefined) {
       setIsExpanded(shouldExpand);
+      console.log('🔄 Setting isExpanded to', shouldExpand);
     }
-  }, [shouldExpand]);
+  }, [shouldExpand, id]);
 
   // Multi-cantidades
   const [multiEnabled, setMultiEnabled] = useState<boolean>(false);

@@ -562,6 +562,7 @@ export default function QuoteNew() {
               const isLastAdded = Number(id) === lastAddedItemId;
               const isComplete = item.productId && item.price && item.price > 0;
               const shouldExpand = !item.isFinalized || isLastAdded || Object.keys(items).length === 1;
+              console.log('🔍 Rendering item', { id, isFinalized: item.isFinalized, isLastAdded, itemsLength: Object.keys(items).length, shouldExpand });
               return (
                 <div key={id}>
                   <QuoteItem
