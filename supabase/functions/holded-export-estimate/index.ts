@@ -34,12 +34,11 @@ Deno.serve(async (req) => {
       throw new Error('quoteId is required');
     }
 
-    // Get quote
+    // Get quote - allow organization members to export
     const { data: quote, error: quoteError } = await supabase
       .from('quotes')
       .select('*')
       .eq('id', quoteId)
-      .eq('user_id', user.id)
       .single();
 
     if (quoteError || !quote) {
