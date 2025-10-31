@@ -20,17 +20,19 @@ export const usePdfAccess = () => {
         return;
       }
 
-      // Only organization owners (admins) have PDF access, not regular members
+      // Solo los propietarios de organizaciones y admins tienen acceso a plantillas PDF
+      // Los usuarios normales (organization_members sin rol admin) NO tienen acceso
       const isOrgOwner = organization !== null;
+      const isOrgAdmin = membership?.role === 'admin';
       
-      if (!isOrgOwner) {
+      if (!isOrgOwner && !isOrgAdmin) {
         setHasPdfAccess(false);
         setLoading(false);
         return;
       }
 
       // Get the current user's organization ID
-      const orgId = organization?.id;
+      const orgId = organization?.id || membership?.organization_id;
       
       if (!orgId) {
         setHasPdfAccess(false);
@@ -45,23 +47,21 @@ export const usePdfAccess = () => {
         .eq('organization_id', orgId)
         .eq('is_active', true)
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        // If no integration exists (PGRST116), allow PDF access by default
-        if (error.code === 'PGRST116') {
-          setHasPdfAccess(true);
-        } else {
-          console.error('Error checking PDF access:', error);
-          setHasPdfAccess(true); // Default to true on errors
-        }
+        console.error('Error checking PDF access:', error);
+        setHasPdfAccess(false); // Default to false on errors for security
+      } else if (!data) {
+        // If no integration exists, allow PDF access for admins by default
+        setHasPdfAccess(true);
       } else {
         // If integration exists and is active, check generate_pdfs flag
         setHasPdfAccess(data?.generate_pdfs === true);
       }
     } catch (error) {
       console.error('Error in checkPdfAccess:', error);
-      setHasPdfAccess(true); // Default to true on errors
+      setHasPdfAccess(false); // Default to false on errors for security
     } finally {
       setLoading(false);
     }
