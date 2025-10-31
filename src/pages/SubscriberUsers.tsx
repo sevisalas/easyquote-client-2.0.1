@@ -115,18 +115,15 @@ const UsuariosSuscriptor = () => {
 
       const usuariosFormateados: Usuario[] = [];
 
-      // Solo mostrar usuarios miembros (NO el propietario)
+      // Mostrar TODOS los usuarios de organization_members
       if (usersResponse?.users && usersResponse.users.length > 0) {
         for (const usuario of usersResponse.users) {
-          // Filtrar al propietario - solo mostrar miembros
-          if (!usuario.is_owner) {
-            usuariosFormateados.push({
-              id: usuario.id,
-              email: usuario.email || 'Sin email',
-              rol: usuario.role === 'admin' ? 'Administrador' : 'Usuario',
-              isPrincipal: false
-            });
-          }
+          usuariosFormateados.push({
+            id: usuario.id,
+            email: usuario.email || 'Sin email',
+            rol: usuario.role === 'admin' ? 'Administrador' : 'Usuario',
+            isPrincipal: false
+          });
         }
       }
 

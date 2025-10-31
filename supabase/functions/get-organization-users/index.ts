@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
 
     console.log('📋 Getting users for organization:', organizationId)
 
-    // Get organization members
+    // Get organization members ONLY
     const { data: members, error: membersError } = await supabaseClient
       .from('organization_members')
       .select('user_id, role')
@@ -39,65 +39,29 @@ Deno.serve(async (req) => {
 
     console.log('👥 Found members:', members?.length || 0)
 
-    // Get the organization owner (api_user_id)
-    const { data: org, error: orgError } = await supabaseClient
-      .from('organizations')
-      .select('api_user_id')
-      .eq('id', organizationId)
-      .single()
-
-    if (orgError) {
-      console.error('Error fetching organization:', orgError)
-      return new Response(
-        JSON.stringify({ error: orgError.message }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      )
-    }
-
-    console.log('🏢 Organization owner:', org?.api_user_id)
-
-    // Collect all unique user IDs (members + owner)
-    const userIds = new Set<string>()
-    
-    if (members && members.length > 0) {
-      members.forEach(member => userIds.add(member.user_id))
-    }
-    
-    if (org?.api_user_id) {
-      userIds.add(org.api_user_id)
-    }
-
-    if (userIds.size === 0) {
-      console.log('⚠️ No users found')
+    if (!members || members.length === 0) {
       return new Response(
         JSON.stringify({ users: [] }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
 
-    console.log('🔍 Total unique user IDs to fetch:', userIds.size)
-
-    // Get user details from auth.users
+    // Get user details from auth.users for members only
     const users = []
-    for (const userId of userIds) {
-      const { data: userData, error: userError } = await supabaseClient.auth.admin.getUserById(userId)
+    for (const member of members) {
+      const { data: userData, error: userError } = await supabaseClient.auth.admin.getUserById(member.user_id)
 
       if (userError) {
-        console.error(`Error fetching user ${userId}:`, userError)
+        console.error(`Error fetching user ${member.user_id}:`, userError)
         continue
       }
 
       if (userData.user) {
-        // Find the role for this user
-        const memberData = members?.find(m => m.user_id === userId)
-        const isOwner = userId === org?.api_user_id
-        
         users.push({
           id: userData.user.id,
           email: userData.user.email,
-          role: isOwner ? 'owner' : (memberData?.role || 'user'),
-          created_at: userData.user.created_at,
-          is_owner: isOwner
+          role: member.role,
+          created_at: userData.user.created_at
         })
       }
     }
