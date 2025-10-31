@@ -264,6 +264,47 @@ export type Database = {
           },
         ]
       }
+      holded_sales_accounts: {
+        Row: {
+          account_num: number | null
+          color: string | null
+          created_at: string
+          holded_account_id: string
+          id: string
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          account_num?: number | null
+          color?: string | null
+          created_at?: string
+          holded_account_id: string
+          id?: string
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          account_num?: number | null
+          color?: string | null
+          created_at?: string
+          holded_account_id?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "holded_sales_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       images: {
         Row: {
           created_at: string
