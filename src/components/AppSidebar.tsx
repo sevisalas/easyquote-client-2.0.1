@@ -55,6 +55,9 @@ export function AppSidebar() {
   const { hasPdfAccess, loading: pdfAccessLoading } = usePdfAccess();
 
   const handleSignOut = async () => {
+    // Limpiar token de EasyQuote
+    sessionStorage.removeItem('easyquote_token');
+    
     const { error } = await supabase.auth.signOut();
     if (error) {
       toast({ title: "Error", description: "No se pudo cerrar sesión", variant: "destructive" });
