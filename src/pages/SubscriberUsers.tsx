@@ -47,6 +47,8 @@ const UsuariosSuscriptor = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [hasCredentials, setHasCredentials] = useState(false);
   const [credentialId, setCredentialId] = useState<string | null>(null);
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
   useEffect(() => {
     if (!isSuperAdmin && !organization) {
@@ -163,10 +165,9 @@ const UsuariosSuscriptor = () => {
         throw new Error(data.error);
       }
 
-      toast({
-        title: "Éxito",
-        description: "Usuario creado exitosamente. Recibirá un email de confirmación.",
-      });
+      // Mostrar la contraseña generada
+      setGeneratedPassword(password);
+      setShowPasswordDialog(true);
 
       setEmailNuevoUsuario("");
       setRolNuevoUsuario("user");
@@ -600,6 +601,51 @@ const UsuariosSuscriptor = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Modal para mostrar la contraseña generada */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Usuario creado exitosamente</DialogTitle>
+            <DialogDescription>
+              Guarda esta contraseña temporal y compártela con el usuario. No podrás verla nuevamente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <Label className="text-sm text-muted-foreground">Email del usuario</Label>
+              <p className="font-mono text-lg font-semibold">{emailNuevoUsuario || "Email del usuario creado"}</p>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <Label className="text-sm text-muted-foreground">Contraseña temporal</Label>
+              <p className="font-mono text-lg font-semibold break-all">{generatedPassword}</p>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              El usuario puede iniciar sesión con estas credenciales y cambiar su contraseña desde su perfil.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button 
+              onClick={() => {
+                navigator.clipboard.writeText(`Email: ${emailNuevoUsuario}\nContraseña: ${generatedPassword}`);
+                toast({
+                  title: "Copiado",
+                  description: "Credenciales copiadas al portapapeles",
+                });
+              }}
+              variant="outline"
+            >
+              Copiar credenciales
+            </Button>
+            <Button onClick={() => {
+              setShowPasswordDialog(false);
+              setGeneratedPassword(null);
+            }}>
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
