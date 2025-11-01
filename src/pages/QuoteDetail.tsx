@@ -128,28 +128,17 @@ export default function QuoteDetail() {
       console.log('Items originales:', originalQuote.items);
       console.log('Additionals originales:', originalQuote.quote_additionals);
 
-      // Generar nuevo número de presupuesto con formato DD-MM-YYYY-NNNNN
-      const today = new Date();
-      const datePrefix = format(today, 'dd-MM-yyyy');
+      // Generar nuevo número de presupuesto con formato YYYY-NNNN
+      const year = new Date().getFullYear();
       
-      // Obtener el último presupuesto del día
-      const { data: todayQuotes } = await supabase
+      // Obtener el último presupuesto del año
+      const { count } = await supabase
         .from('quotes')
-        .select('quote_number')
-        .like('quote_number', `${datePrefix}%`)
-        .order('quote_number', { ascending: false })
-        .limit(1);
+        .select('*', { count: 'exact', head: true })
+        .like('quote_number', `${year}-%`);
 
-      let dailyNumber = 1;
-      if (todayQuotes && todayQuotes.length > 0) {
-        const lastNumber = todayQuotes[0].quote_number;
-        const parts = lastNumber.split('-');
-        if (parts.length === 4) {
-          dailyNumber = parseInt(parts[3]) + 1;
-        }
-      }
-
-      const newNumber = `${datePrefix}-${String(dailyNumber).padStart(5, '0')}`;
+      const nextNumber = (count || 0) + 1;
+      const newNumber = `${year}-${String(nextNumber).padStart(4, '0')}`;
       console.log('Nuevo número de presupuesto:', newNumber);
 
       // Crear nuevo presupuesto
