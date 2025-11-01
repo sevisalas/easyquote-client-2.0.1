@@ -174,60 +174,70 @@ const SalesOrderDetail = () => {
           <CardDescription>{items.length} artículo{items.length !== 1 ? "s" : ""}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Producto</TableHead>
-                <TableHead className="text-center">Cantidad</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="py-4">
-                    <div className="space-y-2">
-                      <div className="font-medium text-base">{item.product_name}</div>
-                      {item.description && (
-                        <div className="text-sm">{item.description}</div>
-                      )}
-                      
-                      {item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0 && (
-                        <div className="space-y-1 mt-2">
-                          {item.outputs.map((output: any, idx: number) => (
-                            output.type === 'ProductImage' ? (
-                              <img 
-                                key={idx} 
-                                src={output.value} 
-                                alt={output.name}
-                                className="w-32 h-32 object-cover rounded border mt-1"
-                              />
-                            ) : (
-                              <div key={idx} className="text-sm">
-                                <span className="font-medium">{output.name}:</span> {output.value}
-                              </div>
-                            )
-                          ))}
-                        </div>
-                      )}
-                      
-                      {item.prompts && typeof item.prompts === 'object' && Object.keys(item.prompts).length > 0 && (
-                        <div className="mt-2 text-sm">
-                          {Object.values(item.prompts).map((value: any, idx: number) => (
-                            <div key={idx}>{value}</div>
-                          ))}
-                        </div>
-                      )}
+          {items.length > 0 ? (
+            <div className="space-y-3">
+              {items.map((item, index) => {
+                const itemOutputs = item.outputs && Array.isArray(item.outputs) ? item.outputs : [];
+                const itemPrompts = item.prompts && typeof item.prompts === 'object' ? item.prompts : {};
+                
+                return (
+                  <div key={item.id} className="border rounded-lg p-4 space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-base">{item.product_name}</h3>
+                        {item.description && (
+                          <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
+                        )}
+                      </div>
+                      <div className="text-right ml-4">
+                        <p className="text-lg font-semibold text-primary">{item.price.toFixed(2)} €</p>
+                      </div>
                     </div>
-                  </TableCell>
-                  <TableCell className="text-center align-top pt-4">{item.quantity}</TableCell>
-                  <TableCell className="text-right align-top pt-4 font-medium">
-                    {item.price.toFixed(2)} €
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+
+                    {/* Outputs */}
+                    {itemOutputs.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {itemOutputs.map((output: any, idx: number) => {
+                          if (output.type === 'ProductImage') {
+                            return (
+                              <div key={idx}>
+                                <img 
+                                  src={output.value} 
+                                  alt={output.name}
+                                  className="w-48 h-48 object-contain rounded border"
+                                />
+                              </div>
+                            );
+                          }
+                          return (
+                            <div key={idx} className="text-sm">
+                              <span className="font-medium">{output.name}:</span>{' '}
+                              <span>{output.value}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Prompts */}
+                    {Object.keys(itemPrompts).length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {Object.values(itemPrompts).map((value: any, idx: number) => (
+                          <div key={idx} className="text-sm">
+                            {value}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No hay artículos en este pedido
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
