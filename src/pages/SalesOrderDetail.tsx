@@ -185,38 +185,61 @@ const SalesOrderDetail = () => {
             <TableBody>
               {items.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell>
-                    <div className="space-y-2">
-                      <div className="font-medium">{item.product_name}</div>
+                  <TableCell className="py-6">
+                    <div className="space-y-3">
+                      <div className="font-bold text-base">{item.product_name}</div>
                       {item.description && (
                         <div className="text-sm text-muted-foreground">{item.description}</div>
                       )}
                       
-                      {item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0 && (
-                        <div className="mt-2 space-y-1">
-                          <div className="text-xs font-medium text-muted-foreground">Salidas:</div>
-                          {item.outputs.map((output: any, idx: number) => (
-                            <div key={idx} className="text-xs text-muted-foreground">
-                              <span className="font-medium">{output.name}:</span> {output.value}
-                            </div>
-                          ))}
+                      {/* Mostrar imágenes si existen */}
+                      {item.outputs && Array.isArray(item.outputs) && item.outputs.some((o: any) => o.type === 'ProductImage') && (
+                        <div className="flex gap-2 flex-wrap">
+                          {item.outputs
+                            .filter((o: any) => o.type === 'ProductImage')
+                            .map((output: any, idx: number) => (
+                              <img 
+                                key={idx} 
+                                src={output.value} 
+                                alt={output.name}
+                                className="w-24 h-24 object-cover rounded border"
+                              />
+                            ))}
                         </div>
                       )}
                       
+                      {/* Información de producción */}
+                      {item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0 && (
+                        <div className="bg-muted/50 p-3 rounded-lg space-y-2">
+                          <div className="font-semibold text-sm">Especificaciones de producción:</div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {item.outputs
+                              .filter((o: any) => o.type !== 'ProductImage' && o.type !== 'Price')
+                              .map((output: any, idx: number) => (
+                                <div key={idx} className="text-sm">
+                                  <span className="font-medium text-foreground">{output.name}:</span>{' '}
+                                  <span className="text-muted-foreground">{output.value}</span>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Configuración del cliente */}
                       {item.prompts && typeof item.prompts === 'object' && Object.keys(item.prompts).length > 0 && (
-                        <div className="mt-2 space-y-1">
-                          <div className="text-xs font-medium text-muted-foreground">Configuración:</div>
-                          {Object.entries(item.prompts).map(([key, value]: [string, any], idx: number) => (
-                            <div key={idx} className="text-xs text-muted-foreground">
-                              {value}
-                            </div>
-                          ))}
+                        <div className="border-l-2 border-primary pl-3 space-y-1">
+                          <div className="text-sm font-semibold">Configuración del cliente:</div>
+                          <div className="text-sm text-muted-foreground">
+                            {Object.entries(item.prompts).map(([key, value]: [string, any], idx: number) => (
+                              <div key={idx}>{value}</div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-center">{item.quantity}</TableCell>
-                  <TableCell className="text-right font-medium">
+                  <TableCell className="text-center align-top pt-6 font-medium text-base">{item.quantity}</TableCell>
+                  <TableCell className="text-right align-top pt-6 font-bold text-base">
                     {item.price.toFixed(2)} €
                   </TableCell>
                 </TableRow>
