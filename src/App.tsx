@@ -36,6 +36,7 @@ import PresupuestosDashboard from "./pages/PresupuestosDashboard";
 import ProductTestPage from "./pages/ProductTestPage";
 import ImageManagement from "./pages/ImageManagement";
 import SalesOrdersList from "./pages/SalesOrdersList";
+import SalesOrderDetail from "./pages/SalesOrderDetail";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 
 const queryClient = new QueryClient();
@@ -305,6 +306,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <SalesOrdersList />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pedidos/:id"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <SalesOrderDetail />
                 </AppLayout>
               </ProtectedRoute>
             }
