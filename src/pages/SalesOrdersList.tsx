@@ -30,7 +30,7 @@ const SalesOrdersList = () => {
 
   useEffect(() => {
     if (!canAccessProduccion()) {
-      navigate('/');
+      navigate("/");
       return;
     }
     loadOrders();
@@ -51,11 +51,9 @@ const SalesOrdersList = () => {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Package className="h-8 w-8" />
-            Pedidos / Órdenes de Venta
+            Pedidos
           </h1>
-          <p className="text-muted-foreground">
-            Gestionar pedidos generados desde presupuestos
-          </p>
+          <p className="text-muted-foreground">Gestionar pedidos generados desde presupuestos</p>
         </div>
       </div>
 
@@ -63,7 +61,7 @@ const SalesOrdersList = () => {
         <CardHeader>
           <CardTitle>Lista de Pedidos</CardTitle>
           <CardDescription>
-            {orders.length} pedido{orders.length !== 1 ? 's' : ''} registrado{orders.length !== 1 ? 's' : ''}
+            {orders.length} pedido{orders.length !== 1 ? "s" : ""} registrado{orders.length !== 1 ? "s" : ""}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -92,20 +90,12 @@ const SalesOrdersList = () => {
                     <TableRow key={order.id}>
                       <TableCell className="font-medium">{order.order_number}</TableCell>
                       <TableCell>
-                        <Badge variant={statusColors[order.status]}>
-                          {statusLabels[order.status]}
-                        </Badge>
+                        <Badge variant={statusColors[order.status]}>{statusLabels[order.status]}</Badge>
                       </TableCell>
-                      <TableCell>
-                        {new Date(order.order_date).toLocaleDateString()}
-                      </TableCell>
+                      <TableCell>{new Date(order.order_date).toLocaleDateString()}</TableCell>
                       <TableCell>{order.final_price.toFixed(2)} €</TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/pedidos/${order.id}`)}
-                        >
+                        <Button variant="outline" size="sm" onClick={() => navigate(`/pedidos/${order.id}`)}>
                           <Eye className="h-4 w-4 mr-2" />
                           Ver detalle
                         </Button>
