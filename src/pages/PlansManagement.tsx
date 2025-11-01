@@ -175,7 +175,7 @@ const GestionPlanes = () => {
                   Módulos disponibles
                 </Label>
                 <div className="space-y-2 mt-2">
-                  {['api', 'clientes', 'presupuestos', 'excel', 'productos', 'categorias', 'produccion'].map((module) => (
+                  {['API', 'Client', 'Production'].map((module) => (
                     <div key={module} className="flex items-center space-x-2">
                       <Checkbox
                         id={`${plan.id}-${module}`}
@@ -184,9 +184,9 @@ const GestionPlanes = () => {
                       />
                       <Label 
                         htmlFor={`${plan.id}-${module}`}
-                        className="text-sm font-normal capitalize"
+                        className="text-sm font-normal"
                       >
-                        {module === 'api' ? 'API' : module.charAt(0).toUpperCase() + module.slice(1)}
+                        {module}
                       </Label>
                     </div>
                   ))}
