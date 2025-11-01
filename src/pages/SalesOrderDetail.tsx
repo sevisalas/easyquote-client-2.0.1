@@ -93,7 +93,7 @@ const SalesOrderDetail = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              Información General
+              Información general
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -114,7 +114,7 @@ const SalesOrderDetail = () => {
             <div>
               <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                Fecha de Pedido
+                Fecha de pedido
               </label>
               <p className="text-base">{new Date(order.order_date).toLocaleDateString()}</p>
             </div>
@@ -122,7 +122,7 @@ const SalesOrderDetail = () => {
               <div>
                 <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  Fecha de Entrega
+                  Fecha de entrega
                 </label>
                 <p className="text-base">{new Date(order.delivery_date).toLocaleDateString()}</p>
               </div>
@@ -170,7 +170,7 @@ const SalesOrderDetail = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Artículos del Pedido</CardTitle>
+          <CardTitle>Artículos del pedido</CardTitle>
           <CardDescription>{items.length} artículo{items.length !== 1 ? "s" : ""}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -179,7 +179,7 @@ const SalesOrderDetail = () => {
               <TableRow>
                 <TableHead>Producto</TableHead>
                 <TableHead className="text-center">Cantidad</TableHead>
-                <TableHead className="text-right">Precio Unit.</TableHead>
+                <TableHead className="text-right">Precio unit.</TableHead>
                 <TableHead className="text-right">Total</TableHead>
               </TableRow>
             </TableHeader>
