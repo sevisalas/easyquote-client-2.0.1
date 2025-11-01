@@ -80,7 +80,6 @@ const EditarSuscriptor = () => {
       const updateData: any = {
         name: suscriptor.name,
         subscription_plan: suscriptor.subscription_plan,
-        holded_external_customers: suscriptor.holded_external_customers || false,
       };
       
       // Solo actualizar límites si es plan personalizado
@@ -193,21 +192,6 @@ const EditarSuscriptor = () => {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          {/* Holded External Customers */}
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="holded_external"
-              checked={suscriptor.holded_external_customers || false}
-              onCheckedChange={(checked) => setSuscriptor({ ...suscriptor, holded_external_customers: checked as boolean })}
-            />
-            <Label 
-              htmlFor="holded_external"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Holded Externo
-            </Label>
           </div>
 
           {/* Mostrar campos adicionales solo para plan personalizado */}
