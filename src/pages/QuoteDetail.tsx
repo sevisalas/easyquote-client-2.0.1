@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Edit, Download, Copy, CheckCircle } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Edit, Download, Copy, CheckCircle, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -73,6 +74,7 @@ export default function QuoteDetail() {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
+  const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
   const { approveQuote, loading: isApproving } = useQuoteApproval();
 
   const { data: quote, isLoading, error } = useQuery({
@@ -479,81 +481,149 @@ export default function QuoteDetail() {
                 {allItems.map((item: any, index: number) => {
                   const multi = item.multi as any;
                   const hasMultipleQuantities = multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1;
+                  const itemOutputs = item.outputs && Array.isArray(item.outputs) ? item.outputs : [];
+                  const itemPrompts = item.prompts && typeof item.prompts === 'object' ? item.prompts : {};
+                  const hasDetails = itemOutputs.length > 0 || Object.keys(itemPrompts).length > 0;
+                  const isExpanded = expandedItems.has(index);
                   
                   return (
-                    <div key={`item-${index}`} className={`bg-card border rounded-md p-2 border-r-2 hover:shadow transition-all duration-200 ${
-                      item.accepted ? 'border-r-green-500 bg-green-50/5' : 'border-r-primary'
-                    }`}>
-                      <div className="flex justify-between items-start gap-3">
-                        {isApprovable && !item.accepted && (
-                          <Checkbox 
-                            checked={selectedItems.has(item.id)}
-                            onCheckedChange={() => handleToggleItem(item.id)}
-                            className="mt-1"
-                          />
-                        )}
-                        <div className="flex-1 space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium">
-                              {item.description || item.product_name || '-'}
-                              {hasMultipleQuantities && (
-                                <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
-                              )}
-                            </p>
-                            {item.accepted && (
-                              <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
-                                Aprobado {item.accepted_quantity && `(${item.accepted_quantity})`}
-                              </Badge>
-                            )}
-                          </div>
-                          
-                          {/* Quantity selector for items with multiple quantities */}
-                          {hasMultipleQuantities && isApprovable && !item.accepted && selectedItems.has(item.id) && (
-                            <div className="mt-2 flex items-center gap-2">
-                              <label className="text-xs font-medium text-muted-foreground">Selecciona cantidad:</label>
-                              <Select
-                                value={itemQuantities[item.id]?.toString() || ''}
-                                onValueChange={(value) => {
-                                  setItemQuantities(prev => ({
-                                    ...prev,
-                                    [item.id]: parseInt(value)
-                                  }));
-                                }}
-                              >
-                                <SelectTrigger className="w-32 h-8">
-                                  <SelectValue placeholder="Cantidad" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {multi.rows && multi.rows.length > 0 ? (
-                                    multi.rows
-                                      .filter((row: any) => {
-                                        // Usar qty que es la propiedad real en los datos
-                                        const qty = row.qty || row.quantity;
-                                        return qty != null && qty !== '' && qty !== 0 && qty !== '0';
-                                      })
-                                      .map((row: any, idx: number) => {
-                                        const qty = row.qty || row.quantity;
-                                        return (
-                                          <SelectItem key={idx} value={String(qty)}>
-                                            {qty}
-                                          </SelectItem>
-                                        );
-                                      })
-                                  ) : (
-                                    <SelectItem value="no-quantities" disabled>
-                                      No hay cantidades disponibles
-                                    </SelectItem>
-                                  )}
-                                </SelectContent>
-                              </Select>
-                            </div>
+                    <Collapsible 
+                      key={`item-${index}`}
+                      open={isExpanded}
+                      onOpenChange={(open) => {
+                        setExpandedItems(prev => {
+                          const newSet = new Set(prev);
+                          if (open) {
+                            newSet.add(index);
+                          } else {
+                            newSet.delete(index);
+                          }
+                          return newSet;
+                        });
+                      }}
+                    >
+                      <div className={`bg-card border rounded-md p-2 border-r-2 hover:shadow transition-all duration-200 ${
+                        item.accepted ? 'border-r-green-500 bg-green-50/5' : 'border-r-primary'
+                      }`}>
+                        <div className="flex justify-between items-start gap-3">
+                          {isApprovable && !item.accepted && (
+                            <Checkbox 
+                              checked={selectedItems.has(item.id)}
+                              onCheckedChange={() => handleToggleItem(item.id)}
+                              className="mt-1"
+                            />
                           )}
-                        </div>
-                        <div className="text-right">
-                          <p className="text-base font-semibold text-primary">{fmtEUR(item.price || 0)}</p>
+                          <div className="flex-1 space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium">
+                                {item.description || item.product_name || '-'}
+                                {hasMultipleQuantities && (
+                                  <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
+                                )}
+                              </p>
+                              {item.accepted && (
+                                <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
+                                  Aprobado {item.accepted_quantity && `(${item.accepted_quantity})`}
+                                </Badge>
+                              )}
+                              {hasDetails && (
+                                <CollapsibleTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                    <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                  </Button>
+                                </CollapsibleTrigger>
+                              )}
+                            </div>
+                            
+                            {/* Quantity selector for items with multiple quantities */}
+                            {hasMultipleQuantities && isApprovable && !item.accepted && selectedItems.has(item.id) && (
+                              <div className="mt-2 flex items-center gap-2">
+                                <label className="text-xs font-medium text-muted-foreground">Selecciona cantidad:</label>
+                                <Select
+                                  value={itemQuantities[item.id]?.toString() || ''}
+                                  onValueChange={(value) => {
+                                    setItemQuantities(prev => ({
+                                      ...prev,
+                                      [item.id]: parseInt(value)
+                                    }));
+                                  }}
+                                >
+                                  <SelectTrigger className="w-32 h-8">
+                                    <SelectValue placeholder="Cantidad" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {multi.rows && multi.rows.length > 0 ? (
+                                      multi.rows
+                                        .filter((row: any) => {
+                                          // Usar qty que es la propiedad real en los datos
+                                          const qty = row.qty || row.quantity;
+                                          return qty != null && qty !== '' && qty !== 0 && qty !== '0';
+                                        })
+                                        .map((row: any, idx: number) => {
+                                          const qty = row.qty || row.quantity;
+                                          return (
+                                            <SelectItem key={idx} value={String(qty)}>
+                                              {qty}
+                                            </SelectItem>
+                                          );
+                                        })
+                                    ) : (
+                                      <SelectItem value="no-quantities" disabled>
+                                        No hay cantidades disponibles
+                                      </SelectItem>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+                            
+                            {/* Collapsible details */}
+                            <CollapsibleContent className="mt-3 space-y-2">
+                              {/* Outputs */}
+                              {itemOutputs.length > 0 && (
+                                <div className="space-y-2 pl-2 border-l-2 border-muted">
+                                  <p className="text-xs font-semibold text-muted-foreground uppercase">Detalles del producto</p>
+                                  {itemOutputs.map((output: any, idx: number) => {
+                                    if (output.type === 'ProductImage') {
+                                      return (
+                                        <div key={idx}>
+                                          <img 
+                                            src={output.value} 
+                                            alt={output.name}
+                                            className="w-48 h-48 object-contain rounded border"
+                                          />
+                                        </div>
+                                      );
+                                    }
+                                    return (
+                                      <div key={idx} className="text-sm">
+                                        <span className="font-medium text-muted-foreground">{output.name}:</span>{' '}
+                                        <span className="text-foreground">{output.value}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {/* Prompts */}
+                              {Object.keys(itemPrompts).length > 0 && (
+                                <div className="space-y-1 pl-2 border-l-2 border-muted">
+                                  <p className="text-xs font-semibold text-muted-foreground uppercase">Información adicional</p>
+                                  {Object.values(itemPrompts).map((value: any, idx: number) => (
+                                    <div key={idx} className="text-sm text-foreground">
+                                      {value}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </CollapsibleContent>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-base font-semibold text-primary">{fmtEUR(item.price || 0)}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </Collapsible>
                   );
                 })}
                 
