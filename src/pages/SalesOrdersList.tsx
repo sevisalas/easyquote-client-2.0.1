@@ -59,7 +59,7 @@ const SalesOrdersList = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Pedidos</CardTitle>
+          <CardTitle>Listado</CardTitle>
           <CardDescription>
             {orders.length} pedido{orders.length !== 1 ? "s" : ""} registrado{orders.length !== 1 ? "s" : ""}
           </CardDescription>
