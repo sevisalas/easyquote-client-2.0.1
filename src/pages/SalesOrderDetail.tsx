@@ -186,10 +186,32 @@ const SalesOrderDetail = () => {
               {items.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>
-                    <div>
+                    <div className="space-y-2">
                       <div className="font-medium">{item.product_name}</div>
                       {item.description && (
                         <div className="text-sm text-muted-foreground">{item.description}</div>
+                      )}
+                      
+                      {item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          <div className="text-xs font-medium text-muted-foreground">Salidas:</div>
+                          {item.outputs.map((output: any, idx: number) => (
+                            <div key={idx} className="text-xs text-muted-foreground">
+                              <span className="font-medium">{output.name}:</span> {output.value}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {item.prompts && typeof item.prompts === 'object' && Object.keys(item.prompts).length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          <div className="text-xs font-medium text-muted-foreground">Configuración:</div>
+                          {Object.entries(item.prompts).map(([key, value]: [string, any], idx: number) => (
+                            <div key={idx} className="text-xs text-muted-foreground">
+                              {value}
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </TableCell>
