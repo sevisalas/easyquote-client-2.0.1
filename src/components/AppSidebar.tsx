@@ -49,6 +49,7 @@ export function AppSidebar() {
     canAccessExcel,
     canAccessProductos,
     canAccessCategorias,
+    canAccessProduccion,
     loading
   } = useSubscription();
   const { isHoldedActive } = useHoldedIntegration();
@@ -251,11 +252,27 @@ export function AppSidebar() {
                              </NavLink>
                            </SidebarMenuSubButton>
                          </SidebarMenuSubItem>
-                       </SidebarMenuSub>
-                    </SidebarMenuItem>
-                  )}
+                        </SidebarMenuSub>
+                     </SidebarMenuItem>
+                   )}
 
-                   {/* Configuración - Solo si tiene acceso a algo */}
+                   {/* Pedidos - Solo para suscripciones con módulo Production (ERP) */}
+                   {canAccessProduccion() && (
+                     <SidebarMenuItem>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={currentPath.startsWith("/pedidos")}
+                          className="h-7 px-2"
+                        >
+                          <NavLink to="/pedidos" end className={getNavCls}>
+                            <Package className="mr-2 h-4 w-4" />
+                            {!isCollapsed && <span>Pedidos</span>}
+                          </NavLink>
+                        </SidebarMenuButton>
+                     </SidebarMenuItem>
+                   )}
+
+                    {/* Configuración - Solo si tiene acceso a algo */}
                    {((isSuperAdmin || isOrgAdmin) || hasPdfAccess || canAccessExcel() || canAccessProductos() || canAccessCategorias()) && (
                    <SidebarMenuItem>
                      <SidebarMenuButton asChild isActive={currentPath.startsWith("/configuracion")} className="h-7 px-2">
