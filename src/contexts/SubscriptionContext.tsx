@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 type SubscriptionPlan = 'api' | 'client' | 'erp' | 'custom' | 'api_base' | 'api_pro' | 'client_base' | 'client_pro';
-type OrganizationRole = 'superadmin' | 'admin' | 'user';
+type OrganizationRole = 'admin' | 'comercial' | 'operador' | 'user';
 
 interface Organization {
   id: string;

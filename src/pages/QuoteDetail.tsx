@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Edit, Download, Copy } from "lucide-react";
+import { Edit, Download, Copy, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -14,6 +14,8 @@ import { CustomerName } from "@/components/quotes/CustomerName";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { generateQuotePDF } from "@/utils/pdfGenerator";
 import { useState } from "react";
+import { useQuoteApproval } from "@/hooks/useQuoteApproval";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 const fetchQuote = async (id: string) => {
   const { data, error } = await supabase
@@ -66,7 +68,10 @@ export default function QuoteDetail() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { isHoldedActive } = useHoldedIntegration();
+  const { membership } = useSubscription();
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const { approveQuote, loading: isApproving } = useQuoteApproval();
 
   const { data: quote, isLoading, error } = useQuery({
     queryKey: ['quote', id],
@@ -236,12 +241,45 @@ export default function QuoteDetail() {
   });
 
   const isEditable = quote?.status === 'draft' || quote?.status === 'pending';
+  const canApprove = membership?.role === 'admin' || membership?.role === 'comercial';
+  const isApprovable = quote?.status !== 'approved' && canApprove;
 
   const handleEditOrDuplicate = () => {
     if (isEditable) {
       navigate(`/presupuestos/editar/${quote.id}`);
     } else {
       duplicateQuoteMutation.mutate(quote.id);
+    }
+  };
+
+  const handleToggleItem = (itemId: string) => {
+    setSelectedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleApprove = async () => {
+    if (!id) return;
+    
+    try {
+      await approveQuote({
+        quoteId: id,
+        selectedItemIds: selectedItems.size > 0 ? Array.from(selectedItems) : undefined,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['quote', id] });
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['sales_orders'] });
+      
+      setSelectedItems(new Set());
+    } catch (error) {
+      // Error already handled in hook
     }
   };
 
@@ -287,9 +325,22 @@ export default function QuoteDetail() {
               </CardDescription>
             </div>
             <div className="flex gap-2">
+              {isApprovable && (
+                <Button
+                  onClick={handleApprove}
+                  size="sm"
+                  className="gap-2"
+                  disabled={isApproving}
+                  variant="default"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  {isApproving ? 'Aprobando...' : selectedItems.size > 0 ? `Aprobar ${selectedItems.size} items` : 'Aprobar todo'}
+                </Button>
+              )}
               <Button
                 onClick={handleEditOrDuplicate}
                 size="sm"
+                variant="outline"
                 className="gap-2"
                 disabled={duplicateQuoteMutation.isPending}
               >
@@ -301,7 +352,7 @@ export default function QuoteDetail() {
                 ) : (
                   <>
                     <Copy className="h-4 w-4" />
-                    {duplicateQuoteMutation.isPending ? 'Duplicando...' : 'Duplicar como nuevo'}
+                    {duplicateQuoteMutation.isPending ? 'Duplicando...' : 'Duplicar'}
                   </>
                 )}
               </Button>
@@ -313,7 +364,7 @@ export default function QuoteDetail() {
                 disabled={isGeneratingPDF}
               >
                 <Download className="h-4 w-4" />
-                {isGeneratingPDF ? 'Generando...' : 'Descargar PDF'}
+                {isGeneratingPDF ? 'Generando...' : 'PDF'}
               </Button>
               <Button onClick={() => navigate('/presupuestos')} size="sm" variant="outline">
                 Volver
@@ -414,17 +465,38 @@ export default function QuoteDetail() {
             
             return allItems.length > 0 ? (
               <div className="space-y-2">
+                {isApprovable && (
+                  <div className="mb-3 p-2 bg-muted rounded-md text-sm text-muted-foreground">
+                    {selectedItems.size > 0 
+                      ? `${selectedItems.size} item(s) seleccionado(s) para aprobar`
+                      : 'Selecciona items individuales o aprueba todo el presupuesto'}
+                  </div>
+                )}
                 {allItems.map((item: any, index: number) => (
-                  <div key={`item-${index}`} className="bg-card border border-border rounded-md p-2 border-r-2 border-r-primary hover:shadow transition-all duration-200">
+                  <div key={`item-${index}`} className={`bg-card border rounded-md p-2 border-r-2 hover:shadow transition-all duration-200 ${
+                    item.accepted ? 'border-r-green-500 bg-green-50/5' : 'border-r-primary'
+                  }`}>
                      <div className="flex justify-between items-start gap-3">
+                     {isApprovable && !item.accepted && (
+                       <Checkbox 
+                         checked={selectedItems.has(item.id)}
+                         onCheckedChange={() => handleToggleItem(item.id)}
+                         className="mt-1"
+                       />
+                     )}
                      <div className="flex-1 space-y-0.5">
-                         <div>
+                         <div className="flex items-center gap-2">
                            <p className="text-sm font-medium">
                              {item.description || item.product_name || '-'}
                              {item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1 && (
                                <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
                              )}
                            </p>
+                           {item.accepted && (
+                             <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
+                               Aprobado
+                             </Badge>
+                           )}
                          </div>
                       </div>
                       <div className="text-right">

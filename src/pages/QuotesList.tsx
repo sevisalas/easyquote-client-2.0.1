@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
@@ -121,41 +120,6 @@ const QuotesList = () => {
   };
 
   const hasActiveFilters = customerFilter || statusFilter || quoteNumberFilter || dateFromFilter || dateToFilter;
-
-  const handleStatusChange = async (id: string, next: string) => {
-    try {
-      const { error } = await supabase.from("quotes").update({ status: next }).eq("id", id);
-      if (error) throw error;
-      toast({ title: "Estado actualizado" });
-      
-      // Si el nuevo estado es "sent" y Holded está activo, exportar automáticamente
-      if (next === "sent" && isHoldedActive) {
-        try {
-          const { data, error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
-            body: { quoteId: id }
-          });
-
-          if (holdedError) throw holdedError;
-
-          toast({
-            title: "Exportado a Holded",
-            description: `Presupuesto exportado como ${data?.estimateNumber || 'estimate'}`,
-          });
-        } catch (holdedErr: any) {
-          console.error('Error exporting to Holded:', holdedErr);
-          toast({
-            title: "Error al exportar a Holded",
-            description: holdedErr.message || "No se pudo exportar el presupuesto a Holded",
-            variant: "destructive",
-          });
-        }
-      }
-      
-      refetch();
-    } catch (e: any) {
-      toast({ title: "No se pudo actualizar el estado", description: e?.message || "Inténtalo de nuevo", variant: "destructive" });
-    }
-  };
 
   const getStatusVariant = (s: string) => {
     if (s === "approved") return "success" as const;
@@ -398,22 +362,9 @@ const QuotesList = () => {
                       </>
                     )}
                     <TableCell className="py-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="p-0 border-0 bg-transparent cursor-pointer">
-                            <Badge variant={getStatusVariant(q.status)} className="cursor-pointer hover:opacity-80">
-                              {statusLabel[q.status] || q.status}
-                            </Badge>
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="bg-background border shadow-lg z-50">
-                          {statusOptions.map((s) => (
-                            <DropdownMenuItem key={s} onClick={() => handleStatusChange(q.id, s)}>
-                              {statusLabel[s]}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Badge variant={getStatusVariant(q.status)}>
+                        {statusLabel[q.status] || q.status}
+                      </Badge>
                     </TableCell>
                     <TableCell className="py-2">
                       <div className="flex items-center gap-1">
