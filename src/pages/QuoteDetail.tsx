@@ -524,11 +524,13 @@ export default function QuoteDetail() {
                                   <SelectValue placeholder="Cantidad" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {multi.rows.map((row: any, idx: number) => (
-                                    <SelectItem key={idx} value={row.quantity?.toString() || ''}>
-                                      {row.quantity}
-                                    </SelectItem>
-                                  ))}
+                                  {multi.rows
+                                    .filter((row: any) => row.quantity != null && row.quantity !== '')
+                                    .map((row: any, idx: number) => (
+                                      <SelectItem key={idx} value={row.quantity.toString()}>
+                                        {row.quantity}
+                                      </SelectItem>
+                                    ))}
                                 </SelectContent>
                               </Select>
                             </div>
