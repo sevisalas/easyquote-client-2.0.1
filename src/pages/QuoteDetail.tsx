@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Edit, Download, Copy, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -71,6 +72,7 @@ export default function QuoteDetail() {
   const { membership } = useSubscription();
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
   const { approveQuote, loading: isApproving } = useQuoteApproval();
 
   const { data: quote, isLoading, error } = useQuery({
@@ -271,6 +273,7 @@ export default function QuoteDetail() {
       await approveQuote({
         quoteId: id,
         selectedItemIds: selectedItems.size > 0 ? Array.from(selectedItems) : undefined,
+        itemQuantities,
       });
       
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
@@ -278,6 +281,7 @@ export default function QuoteDetail() {
       queryClient.invalidateQueries({ queryKey: ['sales_orders'] });
       
       setSelectedItems(new Set());
+      setItemQuantities({});
     } catch (error) {
       // Error already handled in hook
     }
@@ -472,39 +476,71 @@ export default function QuoteDetail() {
                       : 'Selecciona items individuales o aprueba todo el presupuesto'}
                   </div>
                 )}
-                {allItems.map((item: any, index: number) => (
-                  <div key={`item-${index}`} className={`bg-card border rounded-md p-2 border-r-2 hover:shadow transition-all duration-200 ${
-                    item.accepted ? 'border-r-green-500 bg-green-50/5' : 'border-r-primary'
-                  }`}>
-                     <div className="flex justify-between items-start gap-3">
-                     {isApprovable && !item.accepted && (
-                       <Checkbox 
-                         checked={selectedItems.has(item.id)}
-                         onCheckedChange={() => handleToggleItem(item.id)}
-                         className="mt-1"
-                       />
-                     )}
-                     <div className="flex-1 space-y-0.5">
-                         <div className="flex items-center gap-2">
-                           <p className="text-sm font-medium">
-                             {item.description || item.product_name || '-'}
-                             {item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1 && (
-                               <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
-                             )}
-                           </p>
-                           {item.accepted && (
-                             <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
-                               Aprobado
-                             </Badge>
-                           )}
-                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-base font-semibold text-primary">{fmtEUR(item.price || 0)}</p>
+                {allItems.map((item: any, index: number) => {
+                  const multi = item.multi as any;
+                  const hasMultipleQuantities = multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1;
+                  
+                  return (
+                    <div key={`item-${index}`} className={`bg-card border rounded-md p-2 border-r-2 hover:shadow transition-all duration-200 ${
+                      item.accepted ? 'border-r-green-500 bg-green-50/5' : 'border-r-primary'
+                    }`}>
+                      <div className="flex justify-between items-start gap-3">
+                        {isApprovable && !item.accepted && (
+                          <Checkbox 
+                            checked={selectedItems.has(item.id)}
+                            onCheckedChange={() => handleToggleItem(item.id)}
+                            className="mt-1"
+                          />
+                        )}
+                        <div className="flex-1 space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium">
+                              {item.description || item.product_name || '-'}
+                              {hasMultipleQuantities && (
+                                <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
+                              )}
+                            </p>
+                            {item.accepted && (
+                              <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
+                                Aprobado {item.accepted_quantity && `(${item.accepted_quantity})`}
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          {/* Quantity selector for items with multiple quantities */}
+                          {hasMultipleQuantities && isApprovable && !item.accepted && selectedItems.has(item.id) && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <label className="text-xs font-medium text-muted-foreground">Selecciona cantidad:</label>
+                              <Select
+                                value={itemQuantities[item.id]?.toString() || ''}
+                                onValueChange={(value) => {
+                                  setItemQuantities(prev => ({
+                                    ...prev,
+                                    [item.id]: parseInt(value)
+                                  }));
+                                }}
+                              >
+                                <SelectTrigger className="w-32 h-8">
+                                  <SelectValue placeholder="Cantidad" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {multi.rows.map((row: any, idx: number) => (
+                                    <SelectItem key={idx} value={row.quantity?.toString() || ''}>
+                                      {row.quantity}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-base font-semibold text-primary">{fmtEUR(item.price || 0)}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 
                 <Separator className="my-2" />
                 

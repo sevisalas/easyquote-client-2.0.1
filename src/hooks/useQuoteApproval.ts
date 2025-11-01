@@ -6,6 +6,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 interface ApproveQuoteParams {
   quoteId: string;
   selectedItemIds?: string[]; // If empty, approve all
+  itemQuantities?: Record<string, number>; // itemId -> selected quantity
 }
 
 export const useQuoteApproval = () => {
@@ -13,7 +14,7 @@ export const useQuoteApproval = () => {
   const { membership } = useSubscription();
   const [loading, setLoading] = useState(false);
 
-  const approveQuote = async ({ quoteId, selectedItemIds }: ApproveQuoteParams) => {
+  const approveQuote = async ({ quoteId, selectedItemIds, itemQuantities }: ApproveQuoteParams) => {
     try {
       setLoading(true);
 
@@ -51,13 +52,14 @@ export const useQuoteApproval = () => {
         throw new Error('No hay items para aprobar');
       }
 
-      // Validate that items don't have multiple quantities in multi.rows
-      const itemsWithMultipleQuantities = itemsToApprove.filter((item: any) => {
-        return item.multi?.rows && Array.isArray(item.multi.rows) && item.multi.rows.length > 1;
-      });
-
-      if (itemsWithMultipleQuantities.length > 0) {
-        throw new Error('No se pueden aprobar items con múltiples cantidades. Por favor, edita el presupuesto primero.');
+      // Validate that items with multiple quantities have a selected quantity
+      for (const item of itemsToApprove) {
+        const multi = item.multi as any;
+        if (multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1) {
+          if (!itemQuantities || !itemQuantities[item.id]) {
+            throw new Error('Debes seleccionar una cantidad para cada item con múltiples opciones');
+          }
+        }
       }
 
       // Generate sales order number
@@ -109,18 +111,21 @@ export const useQuoteApproval = () => {
       if (orderError) throw orderError;
 
       // Create sales order items
-      const orderItems = itemsToApprove.map((item: any, index: number) => ({
-        sales_order_id: salesOrder.id,
-        product_id: item.product_id,
-        product_name: item.product_name,
-        description: item.description,
-        quantity: item.quantity || 1,
-        price: item.price,
-        outputs: item.outputs,
-        prompts: item.prompts,
-        multi: item.multi,
-        position: index,
-      }));
+      const orderItems = itemsToApprove.map((item: any, index: number) => {
+        const selectedQuantity = itemQuantities?.[item.id];
+        return {
+          sales_order_id: salesOrder.id,
+          product_id: item.product_id,
+          product_name: item.product_name,
+          description: item.description,
+          quantity: selectedQuantity || item.quantity || 1,
+          price: item.price,
+          outputs: item.outputs,
+          prompts: item.prompts,
+          multi: item.multi,
+          position: index,
+        };
+      });
 
       const { error: itemsError } = await supabase
         .from('sales_order_items')
@@ -128,11 +133,26 @@ export const useQuoteApproval = () => {
 
       if (itemsError) throw itemsError;
 
-      // Mark quote items as accepted
-      const { error: updateItemsError } = await supabase
-        .from('quote_items')
-        .update({ accepted: true })
-        .in('id', itemsToApprove.map((item: any) => item.id));
+      // Mark quote items as accepted with selected quantity
+      const itemUpdates = itemsToApprove.map((item: any) => ({
+        id: item.id,
+        accepted: true,
+        accepted_quantity: itemQuantities?.[item.id] || item.quantity || 1
+      }));
+
+      for (const update of itemUpdates) {
+        const { error: updateItemError } = await supabase
+          .from('quote_items')
+          .update({ 
+            accepted: update.accepted,
+            accepted_quantity: update.accepted_quantity 
+          })
+          .eq('id', update.id);
+        
+        if (updateItemError) throw updateItemError;
+      }
+
+      const updateItemsError = null; // For compatibility
 
       if (updateItemsError) throw updateItemsError;
 
