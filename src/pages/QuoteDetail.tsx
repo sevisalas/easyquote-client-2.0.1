@@ -492,10 +492,13 @@ export default function QuoteDetail() {
                             className="mt-1"
                           />
                         )}
-                        <div className="flex-1 space-y-1">
+                        <div className="flex-1 space-y-0.5">
                           <div className="flex items-center gap-2">
                             <p className="text-sm font-medium">
                               {item.description || item.product_name || '-'}
+                              {hasMultipleQuantities && (
+                                <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
+                              )}
                             </p>
                             {item.accepted && (
                               <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
@@ -504,17 +507,10 @@ export default function QuoteDetail() {
                             )}
                           </div>
                           
-                          {/* Show quantity info for items with multiple quantities */}
-                          {hasMultipleQuantities && (
-                            <div className="text-xs text-muted-foreground">
-                              Cantidades disponibles: {multi.rows.filter((r: any) => r.quantity).map((r: any) => r.quantity).join(', ')}
-                            </div>
-                          )}
-                          
-                          {/* Quantity selector when item is selected */}
+                          {/* Quantity selector for items with multiple quantities */}
                           {hasMultipleQuantities && isApprovable && !item.accepted && selectedItems.has(item.id) && (
                             <div className="mt-2 flex items-center gap-2">
-                              <label className="text-xs font-medium text-muted-foreground">Selecciona UNA cantidad:</label>
+                              <label className="text-xs font-medium text-muted-foreground">Selecciona cantidad:</label>
                               <Select
                                 value={itemQuantities[item.id]?.toString() || ''}
                                 onValueChange={(value) => {
