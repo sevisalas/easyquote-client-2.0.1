@@ -51,6 +51,15 @@ export const useQuoteApproval = () => {
         throw new Error('No hay items para aprobar');
       }
 
+      // Validate that items don't have multiple quantities in multi.rows
+      const itemsWithMultipleQuantities = itemsToApprove.filter((item: any) => {
+        return item.multi?.rows && Array.isArray(item.multi.rows) && item.multi.rows.length > 1;
+      });
+
+      if (itemsWithMultipleQuantities.length > 0) {
+        throw new Error('No se pueden aprobar items con múltiples cantidades. Por favor, edita el presupuesto primero.');
+      }
+
       // Generate sales order number
       const today = new Date();
       const datePrefix = today.toISOString().slice(0, 10).replace(/-/g, '');
