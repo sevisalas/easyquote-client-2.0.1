@@ -527,15 +527,18 @@ export default function QuoteDetail() {
                                   {multi.rows && multi.rows.length > 0 ? (
                                     multi.rows
                                       .filter((row: any) => {
-                                        // Permitir tanto números como strings no vacíos
-                                        const qty = row.quantity;
+                                        // Usar qty que es la propiedad real en los datos
+                                        const qty = row.qty || row.quantity;
                                         return qty != null && qty !== '' && qty !== 0 && qty !== '0';
                                       })
-                                      .map((row: any, idx: number) => (
-                                        <SelectItem key={idx} value={String(row.quantity)}>
-                                          {row.quantity}
-                                        </SelectItem>
-                                      ))
+                                      .map((row: any, idx: number) => {
+                                        const qty = row.qty || row.quantity;
+                                        return (
+                                          <SelectItem key={idx} value={String(qty)}>
+                                            {qty}
+                                          </SelectItem>
+                                        );
+                                      })
                                   ) : (
                                     <SelectItem value="no-quantities" disabled>
                                       No hay cantidades disponibles
