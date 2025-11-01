@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-type SubscriptionPlan = 'api_base' | 'api_pro' | 'client_base' | 'client_pro' | 'custom';
+type SubscriptionPlan = 'api' | 'client' | 'erp' | 'custom' | 'api_base' | 'api_pro' | 'client_base' | 'client_pro';
 type OrganizationRole = 'superadmin' | 'admin' | 'user';
 
 interface Organization {
@@ -38,11 +38,13 @@ interface SubscriptionContextType {
   hasAccessToModule: (module: string) => boolean;
   isAPISubscription: () => boolean;
   isClientSubscription: () => boolean;
+  isERPSubscription: () => boolean;
   canAccessClientes: () => boolean;
   canAccessPresupuestos: () => boolean;
   canAccessExcel: () => boolean;
   canAccessProductos: () => boolean;
   canAccessCategorias: () => boolean;
+  canAccessProduccion: () => boolean;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -160,12 +162,17 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   // Funciones para determinar el tipo de suscripción
   const isAPISubscription = () => {
     const org = organization || membership?.organization;
-    return org?.subscription_plan.includes('api') || false;
+    return org?.subscription_plan === 'api' || org?.subscription_plan.includes('api_') || false;
   };
 
   const isClientSubscription = () => {
     const org = organization || membership?.organization;
-    return org?.subscription_plan.includes('client') || false;
+    return org?.subscription_plan === 'client' || org?.subscription_plan.includes('client_') || false;
+  };
+
+  const isERPSubscription = () => {
+    const org = organization || membership?.organization;
+    return org?.subscription_plan === 'erp' || false;
   };
 
   // Funciones para acceso a módulos específicos
@@ -223,6 +230,13 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
     return false;
   };
 
+  const canAccessProduccion = () => {
+    if (isSuperAdmin) return true;
+    
+    // Solo plan ERP puede acceder a producción
+    return isERPSubscription();
+  };
+
   const hasAccessToModule = (module: string) => {
     switch (module) {
       case 'clientes':
@@ -235,6 +249,8 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         return canAccessProductos();
       case 'categorias':
         return canAccessCategorias();
+      case 'produccion':
+        return canAccessProduccion();
       default:
         return false;
     }
@@ -255,11 +271,13 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         hasAccessToModule,
         isAPISubscription,
         isClientSubscription,
+        isERPSubscription,
         canAccessClientes,
         canAccessPresupuestos,
         canAccessExcel,
         canAccessProductos,
         canAccessCategorias,
+        canAccessProduccion,
       }}
     >
       {children}

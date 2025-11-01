@@ -34,6 +34,7 @@ const GestionPlanes = () => {
       const { data, error } = await supabase
         .from('plan_configurations')
         .select('*')
+        .eq('is_active', true)
         .order('plan_id');
 
       if (error) throw error;
@@ -174,7 +175,7 @@ const GestionPlanes = () => {
                   Módulos disponibles
                 </Label>
                 <div className="space-y-2 mt-2">
-                  {['API', 'Client'].map((module) => (
+                  {['api', 'clientes', 'presupuestos', 'excel', 'productos', 'categorias', 'produccion'].map((module) => (
                     <div key={module} className="flex items-center space-x-2">
                       <Checkbox
                         id={`${plan.id}-${module}`}
@@ -183,9 +184,9 @@ const GestionPlanes = () => {
                       />
                       <Label 
                         htmlFor={`${plan.id}-${module}`}
-                        className="text-sm font-normal"
+                        className="text-sm font-normal capitalize"
                       >
-                        {module}
+                        {module === 'api' ? 'API' : module.charAt(0).toUpperCase() + module.slice(1)}
                       </Label>
                     </div>
                   ))}
