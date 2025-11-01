@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building, Users } from "lucide-react";
+import { Building, Users, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -125,14 +125,24 @@ const SubscribersList = () => {
                       {new Date(suscriptor.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/suscriptores/${suscriptor.id}/usuarios`)}
-                      >
-                        <Users className="h-4 w-4 mr-2" />
-                        Gestionar usuarios
-                      </Button>
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/suscriptores/${suscriptor.id}/editar`)}
+                        >
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Editar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/suscriptores/${suscriptor.id}/usuarios`)}
+                        >
+                          <Users className="h-4 w-4 mr-2" />
+                          Usuarios
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
