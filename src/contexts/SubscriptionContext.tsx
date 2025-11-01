@@ -140,9 +140,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   }, []);
 
   const hasClientAccess = () => {
-    return organization?.subscription_plan.includes('client') || 
-           membership?.organization?.subscription_plan.includes('client') ||
-           false;
+    return isClientSubscription() || isERPSubscription();
   };
 
   const getRemainingExcelLimit = () => {
@@ -159,82 +157,83 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
 
   const isOrgAdmin = organization !== null || membership?.role === 'admin' || isSuperAdmin;
 
-  // Funciones para determinar el tipo de suscripción
+  // Funciones para determinar el tipo de suscripción basadas en plan_id
   const isAPISubscription = () => {
     const org = organization || membership?.organization;
-    return org?.subscription_plan === 'api' || org?.subscription_plan.includes('api_') || false;
+    const plan = org?.subscription_plan;
+    return plan === 'api_base' || plan === 'api_pro';
   };
 
   const isClientSubscription = () => {
     const org = organization || membership?.organization;
-    return org?.subscription_plan === 'client' || org?.subscription_plan.includes('client_') || false;
+    const plan = org?.subscription_plan;
+    return plan === 'client_base' || plan === 'client_pro';
   };
 
   const isERPSubscription = () => {
     const org = organization || membership?.organization;
-    return org?.subscription_plan === 'erp' || false;
+    return org?.subscription_plan === 'erp';
   };
 
-  // Funciones para acceso a módulos específicos
+  // Helper para verificar si tiene módulo específico (para usar con plan_configurations)
+  const hasModule = (moduleName: string) => {
+    if (isSuperAdmin) return true;
+    
+    const org = organization || membership?.organization;
+    if (!org) return false;
+    
+    // Los módulos se verifican por el tipo de plan
+    // API Base/Pro: tienen módulo "API"
+    // Client Base/Pro: tienen módulos "API" + "Client"
+    // ERP: tiene módulos "API" + "Client" + "Production"
+    
+    if (moduleName === 'API') {
+      return isAPISubscription() || isClientSubscription() || isERPSubscription();
+    }
+    
+    if (moduleName === 'Client') {
+      return isClientSubscription() || isERPSubscription();
+    }
+    
+    if (moduleName === 'Production') {
+      return isERPSubscription();
+    }
+    
+    return false;
+  };
+
+  // Funciones para acceso a funcionalidades específicas basadas en módulos
   const canAccessClientes = () => {
-    // Los superusuarios NO tienen acceso automático a clientes
-    // Solo controlan organizaciones y configuraciones
-    
-    // Solo suscripciones Client pueden acceder a clientes
-    const hasAccess = isClientSubscription();
-    console.log('🔍 canAccessClientes:', hasAccess, 'isClient:', isClientSubscription(), 'org:', organization?.subscription_plan, 'member org:', membership?.organization?.subscription_plan);
-    
-    // En Client, tanto admin como usuario pueden acceder
-    return hasAccess;
+    // Requiere módulo Client
+    return hasModule('Client');
   };
 
   const canAccessPresupuestos = () => {
-    // Los superusuarios NO tienen acceso automático a presupuestos
-    // Solo controlan organizaciones y configuraciones
-    
-    // Solo suscripciones Client pueden acceder a presupuestos
-    const hasAccess = isClientSubscription();
-    console.log('🔍 canAccessPresupuestos:', hasAccess, 'isClient:', isClientSubscription(), 'org:', organization?.subscription_plan, 'member org:', membership?.organization?.subscription_plan);
-    
-    // En Client, tanto admin como usuario pueden acceder
-    return hasAccess;
+    // Requiere módulo Client
+    return hasModule('Client');
   };
 
   const canAccessExcel = () => {
+    // Requiere módulo API y ser admin de organización
     if (isSuperAdmin) return true;
-    
-    // Solo API subscriptions o Client admins pueden acceder a Excel
-    if (isAPISubscription()) return true;
-    if (isClientSubscription() && isOrgAdmin) return true;
-    
-    return false;
+    return hasModule('API') && isOrgAdmin;
   };
 
   const canAccessProductos = () => {
+    // Requiere módulo API y ser admin de organización
     if (isSuperAdmin) return true;
-    
-    // Solo API subscriptions o Client admins pueden acceder a productos
-    if (isAPISubscription()) return true;
-    if (isClientSubscription() && isOrgAdmin) return true;
-    
-    return false;
+    return hasModule('API') && isOrgAdmin;
   };
 
   const canAccessCategorias = () => {
+    // Requiere módulo API y ser admin de organización
     if (isSuperAdmin) return true;
-    
-    // Solo API subscriptions o Client admins pueden acceder a categorías
-    if (isAPISubscription()) return true;
-    if (isClientSubscription() && isOrgAdmin) return true;
-    
-    return false;
+    return hasModule('API') && isOrgAdmin;
   };
 
   const canAccessProduccion = () => {
-    if (isSuperAdmin) return true;
-    
-    // Solo plan ERP puede acceder a producción
-    return isERPSubscription();
+    // Requiere módulo Production (solo ERP)
+    return hasModule('Production');
   };
 
   const hasAccessToModule = (module: string) => {
