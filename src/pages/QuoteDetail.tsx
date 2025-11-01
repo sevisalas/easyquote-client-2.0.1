@@ -148,7 +148,7 @@ export default function QuoteDetail() {
           user_id: session.session.user.id,
           quote_number: newNumber,
           customer_id: originalQuote.customer_id,
-          title: originalQuote.title ? `${originalQuote.title} (copia)` : null,
+          title: originalQuote.title,
           description: originalQuote.description,
           notes: originalQuote.notes,
           status: 'draft',
