@@ -195,7 +195,7 @@ const SalesOrderDetail = () => {
                   </TableCell>
                   <TableCell className="text-center">{item.quantity}</TableCell>
                   <TableCell className="text-right font-medium">
-                    {(item.quantity * item.price).toFixed(2)} €
+                    {item.price.toFixed(2)} €
                   </TableCell>
                 </TableRow>
               ))}
