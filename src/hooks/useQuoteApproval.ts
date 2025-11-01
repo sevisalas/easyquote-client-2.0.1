@@ -85,7 +85,11 @@ export const useQuoteApproval = () => {
       const orderNumber = `SO-${datePrefix}-${String(dailyNumber).padStart(4, '0')}`;
 
       // Calculate totals for approved items
-      const subtotal = itemsToApprove.reduce((sum: number, item: any) => sum + (item.price || 0), 0);
+      const subtotal = itemsToApprove.reduce((sum: number, item: any) => {
+        const selectedQty = itemQuantities?.[item.id] || item.quantity || 1;
+        const unitPrice = (item.price || 0) / (item.quantity || 1);
+        return sum + (unitPrice * selectedQty);
+      }, 0);
       const taxAmount = 0; // You can calculate tax if needed
       const discountAmount = 0;
       const finalPrice = subtotal + taxAmount - discountAmount;
@@ -112,14 +116,15 @@ export const useQuoteApproval = () => {
 
       // Create sales order items
       const orderItems = itemsToApprove.map((item: any, index: number) => {
-        const selectedQuantity = itemQuantities?.[item.id];
+        const selectedQuantity = itemQuantities?.[item.id] || item.quantity || 1;
+        const unitPrice = (item.price || 0) / (item.quantity || 1);
         return {
           sales_order_id: salesOrder.id,
           product_id: item.product_id,
           product_name: item.product_name,
           description: item.description,
-          quantity: selectedQuantity || item.quantity || 1,
-          price: item.price,
+          quantity: selectedQuantity,
+          price: unitPrice,
           outputs: item.outputs,
           prompts: item.prompts,
           multi: item.multi,
