@@ -524,13 +524,23 @@ export default function QuoteDetail() {
                                   <SelectValue placeholder="Cantidad" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {multi.rows
-                                    .filter((row: any) => row.quantity != null && row.quantity !== '')
-                                    .map((row: any, idx: number) => (
-                                      <SelectItem key={idx} value={row.quantity.toString()}>
-                                        {row.quantity}
-                                      </SelectItem>
-                                    ))}
+                                  {multi.rows && multi.rows.length > 0 ? (
+                                    multi.rows
+                                      .filter((row: any) => {
+                                        // Permitir tanto números como strings no vacíos
+                                        const qty = row.quantity;
+                                        return qty != null && qty !== '' && qty !== 0 && qty !== '0';
+                                      })
+                                      .map((row: any, idx: number) => (
+                                        <SelectItem key={idx} value={String(row.quantity)}>
+                                          {row.quantity}
+                                        </SelectItem>
+                                      ))
+                                  ) : (
+                                    <SelectItem value="no-quantities" disabled>
+                                      No hay cantidades disponibles
+                                    </SelectItem>
+                                  )}
                                 </SelectContent>
                               </Select>
                             </div>
