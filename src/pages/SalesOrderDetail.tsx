@@ -179,7 +179,6 @@ const SalesOrderDetail = () => {
               <TableRow>
                 <TableHead>Producto</TableHead>
                 <TableHead className="text-center">Cantidad</TableHead>
-                <TableHead className="text-right">Precio unit.</TableHead>
                 <TableHead className="text-right">Total</TableHead>
               </TableRow>
             </TableHeader>
@@ -195,7 +194,6 @@ const SalesOrderDetail = () => {
                     </div>
                   </TableCell>
                   <TableCell className="text-center">{item.quantity}</TableCell>
-                  <TableCell className="text-right">{item.price.toFixed(2)} €</TableCell>
                   <TableCell className="text-right font-medium">
                     {(item.quantity * item.price).toFixed(2)} €
                   </TableCell>
