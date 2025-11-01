@@ -598,9 +598,9 @@ export default function QuoteDetail() {
                               {Object.keys(itemPrompts).length > 0 && (
                                 <div className="space-y-1 pl-2 border-l-2 border-muted">
                                   <p className="text-xs font-semibold text-muted-foreground uppercase">Información adicional</p>
-                                  {Object.values(itemPrompts).map((value: any, idx: number) => (
+                                  {Object.values(itemPrompts).map((promptData: any, idx: number) => (
                                     <div key={idx} className="text-sm text-foreground">
-                                      {value}
+                                      {typeof promptData === 'string' ? promptData : promptData.value}
                                     </div>
                                   ))}
                                 </div>

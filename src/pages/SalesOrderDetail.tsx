@@ -222,9 +222,9 @@ const SalesOrderDetail = () => {
                     {/* Prompts */}
                     {Object.keys(itemPrompts).length > 0 && (
                       <div className="mt-2 space-y-1">
-                        {Object.values(itemPrompts).map((value: any, idx: number) => (
+                        {Object.values(itemPrompts).map((promptData: any, idx: number) => (
                           <div key={idx} className="text-sm">
-                            {value}
+                            {typeof promptData === 'string' ? promptData : promptData.value}
                           </div>
                         ))}
                       </div>

@@ -802,7 +802,7 @@ export default function QuoteEdit() {
                                 .sort(([, a]: [string, any], [, b]: [string, any]) => (a.order ?? 999) - (b.order ?? 999))
                                 .map(([key, promptData]: [string, any], idx: number) => (
                                   <div key={idx} className="text-sm text-foreground">
-                                    {promptData.value}
+                                    {typeof promptData === 'string' ? promptData : promptData.value}
                                   </div>
                                 ))}
                             </div>
