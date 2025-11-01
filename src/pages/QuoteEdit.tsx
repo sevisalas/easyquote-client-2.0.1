@@ -5,13 +5,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, Edit } from "lucide-react";
+import { Trash2, Plus, Edit, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 import QuoteItem from "@/components/quotes/QuoteItem";
@@ -125,6 +126,7 @@ export default function QuoteEdit() {
   const [items, setItems] = useState<QuoteItem[]>([]);
   const [quoteAdditionals, setQuoteAdditionals] = useState<SelectedQuoteAdditional[]>([]);
   const [editingItems, setEditingItems] = useState<Set<string>>(new Set());
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [initialState, setInitialState] = useState<{
     formData: Partial<Quote>;
@@ -681,6 +683,12 @@ export default function QuoteEdit() {
             {items.map((item, index) => {
               const itemId = (item.id || index).toString();
               const isEditing = editingItems.has(itemId);
+              const isExpanded = expandedItems.has(itemId);
+              
+              // Check if item has details to show
+              const itemOutputs = item.outputs && Array.isArray(item.outputs) ? item.outputs : [];
+              const itemPrompts = item.prompts && typeof item.prompts === 'object' ? item.prompts : {};
+              const hasDetails = itemOutputs.length > 0 || Object.keys(itemPrompts).length > 0;
 
               return (
                 <div
@@ -706,35 +714,102 @@ export default function QuoteEdit() {
                       onFinishEdit={handleItemSaveEdit}
                     />
                   ) : (
-                    // Compressed mode - show summary
-                    <div className="flex justify-between items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {item.description || item.product_name || "-"}
-                          {item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1 && (
-                            <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
-                          )}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="text-sm font-medium text-secondary text-right">{fmtEUR(item.price || 0)}</div>
-                        <div className="flex items-center gap-2">
-                          <Button onClick={() => handleItemEdit(itemId)} size="sm" variant="outline" className="gap-1">
-                            <Edit className="h-3 w-3" />
-                            Editar
-                          </Button>
-                          <Button
-                            onClick={() => handleItemRemove(item.id || index)}
-                            size="sm"
-                            variant="outline"
-                            className="gap-1 text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                            Eliminar
-                          </Button>
+                    // View mode with collapsible details
+                    <Collapsible
+                      open={isExpanded}
+                      onOpenChange={(open) => {
+                        setExpandedItems(prev => {
+                          const newSet = new Set(prev);
+                          if (open) {
+                            newSet.add(itemId);
+                          } else {
+                            newSet.delete(itemId);
+                          }
+                          return newSet;
+                        });
+                      }}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center gap-3">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            {hasDetails && (
+                              <CollapsibleTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                  <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                </Button>
+                              </CollapsibleTrigger>
+                            )}
+                            <p className="text-sm font-medium truncate">
+                              {item.description || item.product_name || "-"}
+                              {item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1 && (
+                                <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
+                              )}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <div className="text-sm font-medium text-secondary text-right">{fmtEUR(item.price || 0)}</div>
+                            <div className="flex items-center gap-2">
+                              <Button onClick={() => handleItemEdit(itemId)} size="sm" variant="outline" className="gap-1">
+                                <Edit className="h-3 w-3" />
+                                Editar
+                              </Button>
+                              <Button
+                                onClick={() => handleItemRemove(item.id || index)}
+                                size="sm"
+                                variant="outline"
+                                className="gap-1 text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Eliminar
+                              </Button>
+                            </div>
+                          </div>
                         </div>
+
+                        {/* Collapsible details */}
+                        <CollapsibleContent className="space-y-2">
+                          {/* Outputs */}
+                          {itemOutputs.length > 0 && (
+                            <div className="pl-8 space-y-2 border-l-2 border-muted">
+                              <p className="text-xs font-semibold text-muted-foreground uppercase">Detalles del producto</p>
+                              {itemOutputs.map((output: any, idx: number) => {
+                                if (output.type === 'ProductImage') {
+                                  return (
+                                    <div key={idx}>
+                                      <img 
+                                        src={output.value} 
+                                        alt={output.name}
+                                        className="w-48 h-48 object-contain rounded border"
+                                      />
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <div key={idx} className="text-sm">
+                                    <span className="font-medium text-muted-foreground">{output.name}:</span>{' '}
+                                    <span className="text-foreground">{output.value}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* Prompts */}
+                          {Object.keys(itemPrompts).length > 0 && (
+                            <div className="pl-8 space-y-1 border-l-2 border-muted">
+                              <p className="text-xs font-semibold text-muted-foreground uppercase">Información adicional</p>
+                              {Object.entries(itemPrompts)
+                                .sort(([, a]: [string, any], [, b]: [string, any]) => (a.order ?? 999) - (b.order ?? 999))
+                                .map(([key, promptData]: [string, any], idx: number) => (
+                                  <div key={idx} className="text-sm text-foreground">
+                                    {promptData.value}
+                                  </div>
+                                ))}
+                            </div>
+                          )}
+                        </CollapsibleContent>
                       </div>
-                    </div>
+                    </Collapsible>
                   )}
                 </div>
               );
