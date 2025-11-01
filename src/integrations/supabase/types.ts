@@ -935,6 +935,8 @@ export type Database = {
       }
       quote_items: {
         Row: {
+          accepted: boolean | null
+          accepted_quantity: number | null
           created_at: string
           description: string | null
           discount_percentage: number | null
@@ -953,6 +955,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accepted?: boolean | null
+          accepted_quantity?: number | null
           created_at?: string
           description?: string | null
           discount_percentage?: number | null
@@ -971,6 +975,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accepted?: boolean | null
+          accepted_quantity?: number | null
           created_at?: string
           description?: string | null
           discount_percentage?: number | null
@@ -1072,6 +1078,137 @@ export type Database = {
           valid_until?: string | null
         }
         Relationships: []
+      }
+      sales_order_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          multi: Json | null
+          outputs: Json | null
+          position: number | null
+          price: number
+          product_id: string | null
+          product_name: string
+          prompts: Json | null
+          quantity: number
+          sales_order_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          multi?: Json | null
+          outputs?: Json | null
+          position?: number | null
+          price?: number
+          product_id?: string | null
+          product_name: string
+          prompts?: Json | null
+          quantity?: number
+          sales_order_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          multi?: Json | null
+          outputs?: Json | null
+          position?: number | null
+          price?: number
+          product_id?: string | null
+          product_name?: string
+          prompts?: Json | null
+          quantity?: number
+          sales_order_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_order_items_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_orders: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          delivery_date: string | null
+          discount_amount: number
+          final_price: number
+          holded_document_id: string | null
+          holded_document_number: string | null
+          id: string
+          notes: string | null
+          order_date: string
+          order_number: string
+          quote_id: string | null
+          status: string
+          subtotal: number
+          tax_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          delivery_date?: string | null
+          discount_amount?: number
+          final_price?: number
+          holded_document_id?: string | null
+          holded_document_number?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          order_number: string
+          quote_id?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          delivery_date?: string | null
+          discount_amount?: number
+          final_price?: number
+          holded_document_id?: string | null
+          holded_document_number?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          order_number?: string
+          quote_id?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_orders_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
