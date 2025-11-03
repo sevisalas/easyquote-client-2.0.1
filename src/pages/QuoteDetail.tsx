@@ -233,6 +233,26 @@ export default function QuoteDetail() {
     },
   });
 
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ quoteId, status }: { quoteId: string; status: string }) => {
+      const { error } = await supabase
+        .from('quotes')
+        .update({ status })
+        .eq('id', quoteId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Estado actualizado correctamente');
+      queryClient.invalidateQueries({ queryKey: ['quote', id] });
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+    },
+    onError: (error) => {
+      toast.error('Error al actualizar el estado');
+      console.error('Error:', error);
+    },
+  });
+
   const isEditable = quote?.status === 'draft' || quote?.status === 'pending';
   const canApprove = membership?.role === 'admin' || membership?.role === 'comercial';
   const isApprovable = quote?.status === 'sent' && canApprove;
@@ -410,9 +430,22 @@ export default function QuoteDetail() {
             <div>
               <label className="text-xs font-medium text-muted-foreground">estado</label>
               <div className="mt-0.5">
-                <Badge variant={getStatusVariant(quote.status)} className="text-xs">
-                  {statusLabel(quote.status)}
-                </Badge>
+                <Select 
+                  value={quote.status} 
+                  onValueChange={(value) => updateStatusMutation.mutate({ quoteId: quote.id, status: value })}
+                  disabled={updateStatusMutation.isPending}
+                >
+                  <SelectTrigger className="h-7 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Borrador</SelectItem>
+                    <SelectItem value="pending">Pendiente</SelectItem>
+                    <SelectItem value="sent">Enviado</SelectItem>
+                    <SelectItem value="approved">Aprobado</SelectItem>
+                    <SelectItem value="rejected">Rechazado</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div>
