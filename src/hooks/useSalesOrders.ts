@@ -170,6 +170,52 @@ export const useSalesOrders = () => {
     }
   };
 
+  const deleteSalesOrder = async (orderId: string) => {
+    try {
+      setLoading(true);
+      
+      // Delete items first
+      const { error: itemsError } = await supabase
+        .from('sales_order_items')
+        .delete()
+        .eq('sales_order_id', orderId);
+
+      if (itemsError) throw itemsError;
+
+      // Delete additionals
+      const { error: additionalsError } = await supabase
+        .from('sales_order_additionals')
+        .delete()
+        .eq('sales_order_id', orderId);
+
+      if (additionalsError) throw additionalsError;
+
+      // Delete the order
+      const { error } = await supabase
+        .from('sales_orders')
+        .delete()
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Pedido eliminado",
+        description: "El pedido se eliminó correctamente",
+      });
+      return true;
+    } catch (error: any) {
+      console.error('Error deleting sales order:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo eliminar el pedido",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     fetchSalesOrders,
@@ -177,5 +223,6 @@ export const useSalesOrders = () => {
     fetchSalesOrderItems,
     fetchSalesOrderAdditionals,
     updateSalesOrderStatus,
+    deleteSalesOrder,
   };
 };
