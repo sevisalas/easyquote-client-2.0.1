@@ -45,6 +45,12 @@ export default function Clientes() {
 
       const startIndex = (currentPage - 1) * itemsPerPage;
       
+      console.log('🔑 Fetching with auth context:', { 
+        organizationId: organization.id,
+        searchTerm,
+        page: currentPage 
+      });
+
       // Fetch Holded contacts with pagination
       let holdedQuery = supabase
         .from("holded_contacts")
@@ -59,18 +65,33 @@ export default function Clientes() {
 
       const { data: holdedData, error: holdedError, count: holdedCount } = await holdedQuery;
 
-      if (holdedError) {
-        console.error("Error fetching Holded contacts:", holdedError);
-        throw holdedError;
-      }
-
-      console.log('📊 Holded contacts fetched:', { 
-        count: holdedData?.length, 
-        total: holdedCount 
+      console.log('📊 Holded contacts query result:', { 
+        data: holdedData,
+        error: holdedError,
+        count: holdedCount 
       });
 
-      // Format Holded contacts
-      const clients: LocalClient[] = (holdedData || []).map(c => ({
+      if (holdedError) {
+        console.error("❌ Error fetching Holded contacts:", holdedError);
+      }
+
+      // Fetch local customers
+      const { data: customersData, error: customersError } = await supabase
+        .from("customers")
+        .select("*")
+        .order("name", { ascending: true });
+
+      console.log('📊 Local customers query result:', {
+        data: customersData,
+        error: customersError
+      });
+
+      if (customersError) {
+        console.error("❌ Error fetching local customers:", customersError);
+      }
+
+      // Combine and format all contacts
+      const holdedClients: LocalClient[] = (holdedData || []).map(c => ({
         id: c.id,
         name: c.name || '',
         email: c.email || '',
@@ -81,8 +102,22 @@ export default function Clientes() {
         source: 'holded' as const
       }));
 
+      const localClients: LocalClient[] = (customersData || []).map(c => ({
+        id: c.id,
+        name: c.name || '',
+        email: c.email || '',
+        phone: c.phone || '',
+        notes: c.notes || '',
+        integration_id: c.integration_id || '',
+        created_at: c.created_at,
+        source: 'local' as const
+      }));
+
+      const allClients = [...holdedClients, ...localClients];
+      console.log('✅ Total clients combined:', allClients.length);
+
       setTotalClients(holdedCount || 0);
-      setClientes(clients);
+      setClientes(allClients);
     } catch (error) {
       console.error("❌ Error al obtener clientes:", error);
       toast({
