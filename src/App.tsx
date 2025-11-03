@@ -38,8 +38,291 @@ import ImageManagement from "./pages/ImageManagement";
 import SalesOrdersList from "./pages/SalesOrdersList";
 import SalesOrderDetail from "./pages/SalesOrderDetail";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
+import { useSessionMonitor } from "./hooks/useSessionMonitor";
 
 const queryClient = new QueryClient();
+
+const AppContent = () => {
+  useSessionMonitor();
+  
+  return (
+    <Routes>
+      <Route path="/auth" element={<Auth />} />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Index />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/clientes"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Clientes />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/clientes/nuevo"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ClienteForm />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/clientes/:id/editar"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ClienteForm />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/presupuestos"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <QuotesList />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/presupuestos/nuevo"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <QuoteNew />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/presupuestos/:id"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <QuoteDetail />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/presupuestos/editar/:id"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <QuoteEdit />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/configuracion/ajustes"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Additionals />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/configuracion/plantilla-pdf"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SettingsPdfTemplate />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/usuarios"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SubscribersList />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/suscriptores/:id/usuarios"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <UsuariosSuscriptor />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/suscriptores/:id/editar"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <EditarSuscriptor />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/planes"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <GestionPlanes />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/configuracion/integraciones"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Integrations />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/integraciones-acceso"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <IntegrationAccess />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/configuracion/archivos-excel"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ExcelFiles />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <AdminDashboard />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/productos"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ProductManagement />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/productos/nuevo"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ProductForm />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/categorias"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ProductCategories />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <AdminDashboard />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/presupuestos"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <PresupuestosDashboard />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/productos/test"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ProductTestPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/configuracion/imagenes"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ImageManagement />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pedidos"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SalesOrdersList />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pedidos/:id"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SalesOrderDetail />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -48,282 +331,8 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-          <Route path="/auth" element={<Auth />} />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Index />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/clientes"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Clientes />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/clientes/nuevo"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ClienteForm />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/clientes/:id/editar"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ClienteForm />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/presupuestos"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <QuotesList />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/presupuestos/nuevo"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <QuoteNew />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/presupuestos/:id"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <QuoteDetail />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/presupuestos/editar/:id"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <QuoteEdit />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/configuracion/ajustes"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Additionals />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/configuracion/plantilla-pdf"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <SettingsPdfTemplate />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/usuarios"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <SubscribersList />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/suscriptores/:id/usuarios"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <UsuariosSuscriptor />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/suscriptores/:id/editar"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <EditarSuscriptor />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/planes"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <GestionPlanes />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/configuracion/integraciones"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Integrations />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/integraciones-acceso"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <IntegrationAccess />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/configuracion/archivos-excel"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ExcelFiles />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/dashboard"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <AdminDashboard />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/productos"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ProductManagement />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/productos/nuevo"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ProductForm />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/categorias"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ProductCategories />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute>
-              <AppLayout>
-                <AdminDashboard />
-              </AppLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-            path="/admin/presupuestos"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <PresupuestosDashboard />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/productos/test"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ProductTestPage />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/configuracion/imagenes"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ImageManagement />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/pedidos"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <SalesOrdersList />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/pedidos/:id"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <SalesOrderDetail />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
       </TooltipProvider>
     </SubscriptionProvider>
   </QueryClientProvider>
