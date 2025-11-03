@@ -235,7 +235,7 @@ export default function QuoteDetail() {
 
   const isEditable = quote?.status === 'draft' || quote?.status === 'pending';
   const canApprove = membership?.role === 'admin' || membership?.role === 'comercial';
-  const isApprovable = quote?.status !== 'approved' && canApprove;
+  const isApprovable = quote?.status === 'sent' && canApprove;
 
   const handleEditOrDuplicate = () => {
     if (isEditable) {
@@ -320,17 +320,42 @@ export default function QuoteDetail() {
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              {isApprovable && (
-                <Button
-                  onClick={handleApprove}
-                  size="sm"
-                  className="gap-2"
-                  disabled={isApproving}
-                  variant="default"
-                >
-                  <CheckCircle className="h-4 w-4" />
-                  {isApproving ? 'Aprobando...' : selectedItems.size > 0 ? `Aprobar ${selectedItems.size} items` : 'Aprobar todo'}
-                </Button>
+              {canApprove && (
+                <>
+                  {isApprovable ? (
+                    <Button
+                      onClick={handleApprove}
+                      size="sm"
+                      className="gap-2"
+                      disabled={isApproving}
+                      variant="default"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      {isApproving ? 'Aprobando...' : selectedItems.size > 0 ? `Aprobar ${selectedItems.size} items` : 'Aprobar todo'}
+                    </Button>
+                  ) : quote?.status === 'draft' ? (
+                    <Button
+                      size="sm"
+                      className="gap-2"
+                      disabled
+                      variant="outline"
+                      title="Para aprobar el presupuesto, primero debes cambiarlo a estado 'Enviado'"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Aprobar (primero enviar)
+                    </Button>
+                  ) : quote?.status === 'approved' ? (
+                    <Button
+                      size="sm"
+                      className="gap-2"
+                      disabled
+                      variant="outline"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Ya aprobado
+                    </Button>
+                  ) : null}
+                </>
               )}
               <Button
                 onClick={handleEditOrDuplicate}
