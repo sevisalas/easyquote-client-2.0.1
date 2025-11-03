@@ -257,7 +257,6 @@ export function AppSidebar() {
                    )}
 
                    {/* Pedidos - Solo para suscripciones con módulo Production (ERP) */}
-                   {/* TEMPORALMENTE DESACTIVADO
                    {canAccessProduccion() && (
                      <SidebarMenuItem>
                         <SidebarMenuButton
@@ -272,7 +271,6 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                      </SidebarMenuItem>
                    )}
-                   */}
 
                     {/* Configuración - Solo si tiene acceso a algo */}
                    {((isSuperAdmin || isOrgAdmin) || hasPdfAccess || canAccessExcel() || canAccessProductos() || canAccessCategorias()) && (
