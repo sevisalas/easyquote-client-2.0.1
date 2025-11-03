@@ -628,7 +628,7 @@ export default function QuoteDetail() {
                               {/* Outputs */}
                               {itemOutputs.length > 0 && (
                                 <div className="space-y-2 pl-2 border-l-2 border-muted">
-                                  <p className="text-xs font-semibold text-muted-foreground uppercase">Detalles del producto</p>
+                                  <p className="text-xs font-semibold text-muted-foreground uppercase">Resultados</p>
                                   {itemOutputs.map((output: any, idx: number) => {
                                     if (output.type === 'ProductImage') {
                                       return (
@@ -654,7 +654,7 @@ export default function QuoteDetail() {
                               {/* Prompts */}
                               {Object.keys(itemPrompts).length > 0 && (
                                 <div className="space-y-1 pl-2 border-l-2 border-muted">
-                                  <p className="text-xs font-semibold text-muted-foreground uppercase">Información adicional</p>
+                                  <p className="text-xs font-semibold text-muted-foreground uppercase">Detalles del producto</p>
                                   {Object.values(itemPrompts).map((promptData: any, idx: number) => {
                                     const value = typeof promptData === 'string' ? promptData : promptData.value;
                                     const label = typeof promptData === 'object' ? promptData.label : null;
