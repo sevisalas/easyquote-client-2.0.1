@@ -633,21 +633,23 @@ export default function QuoteDetail() {
                                     const value = typeof promptData === 'string' ? promptData : promptData.value;
                                     const label = typeof promptData === 'object' ? promptData.label : null;
                                     
-                                    // Filtrar datos técnicos que no son útiles para mostrar
+                                    // Filtrar solo URLs de imágenes y colores hexadecimales
                                     if (!value || 
                                         typeof value === 'object' || 
                                         (typeof value === 'string' && (
                                           value.startsWith('http') || 
-                                          value.startsWith('#') ||
-                                          value.trim() === ''
+                                          value.startsWith('#')
                                         ))) {
                                       return null;
                                     }
                                     
+                                    // Convertir a string si es número
+                                    const displayValue = typeof value === 'number' ? value.toString() : value;
+                                    
                                     return (
                                       <div key={idx} className="text-sm">
                                         {label && <span className="font-medium text-muted-foreground">{label}: </span>}
-                                        <span className="text-foreground">{value}</span>
+                                        <span className="text-foreground">{displayValue}</span>
                                       </div>
                                     );
                                   }).filter(Boolean)}
