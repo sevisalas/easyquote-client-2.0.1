@@ -22,7 +22,7 @@ interface LocalClient {
 
 export default function Clientes() {
   const navigate = useNavigate();
-  const { organization } = useSubscription();
+  const { organization, membership } = useSubscription();
   const [clientes, setClientes] = useState<LocalClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -35,7 +35,10 @@ export default function Clientes() {
     try {
       console.log('🔍 Fetching customers with search term:', searchTerm);
 
-      if (!organization?.id) {
+      // Get organization_id from either organization (owner) or membership (member)
+      const organizationId = organization?.id || membership?.organization?.id;
+
+      if (!organizationId) {
         console.log('⚠️ No organization found');
         setClientes([]);
         setTotalClients(0);
@@ -46,7 +49,7 @@ export default function Clientes() {
       const startIndex = (currentPage - 1) * itemsPerPage;
       
       console.log('🔑 Fetching with auth context:', { 
-        organizationId: organization.id,
+        organizationId,
         searchTerm,
         page: currentPage 
       });
@@ -55,7 +58,7 @@ export default function Clientes() {
       let holdedQuery = supabase
         .from("holded_contacts")
         .select("*", { count: "exact" })
-        .eq("organization_id", organization.id)
+        .eq("organization_id", organizationId)
         .order("name", { ascending: true })
         .range(startIndex, startIndex + itemsPerPage - 1);
 
@@ -132,20 +135,22 @@ export default function Clientes() {
 
   // Effect para cargar clientes cuando cambie la página u organización
   useEffect(() => {
-    if (organization?.id) {
+    const organizationId = organization?.id || membership?.organization?.id;
+    if (organizationId) {
       fetchClientes();
-    } else if (organization === null) {
+    } else if (organization === null && membership === null) {
       // Organization is explicitly null (not loading)
       setLoading(false);
       setClientes([]);
       setTotalClients(0);
     }
-  }, [currentPage, organization]);
+  }, [currentPage, organization, membership]);
 
   // Effect separado para búsqueda (resetear página)
   useEffect(() => {
-    if (!organization?.id) {
-      if (organization === null) {
+    const organizationId = organization?.id || membership?.organization?.id;
+    if (!organizationId) {
+      if (organization === null && membership === null) {
         setLoading(false);
         setClientes([]);
         setTotalClients(0);
@@ -158,7 +163,7 @@ export default function Clientes() {
     } else {
       fetchClientes();
     }
-  }, [searchTerm, organization]);
+  }, [searchTerm, organization, membership]);
 
   const deleteCliente = async (id: string) => {
     const confirmed = window.confirm("¿Estás seguro de que quieres eliminar este cliente?");
