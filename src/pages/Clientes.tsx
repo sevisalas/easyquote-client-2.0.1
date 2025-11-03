@@ -3,9 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 interface LocalClient {
   id: string;
@@ -15,10 +17,12 @@ interface LocalClient {
   notes: string;
   integration_id: string;
   created_at: string;
+  source: 'local' | 'holded';
 }
 
 export default function Clientes() {
   const navigate = useNavigate();
+  const { organization } = useSubscription();
   const [clientes, setClientes] = useState<LocalClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -29,31 +33,67 @@ export default function Clientes() {
   const fetchClientes = async () => {
     setLoading(true);
     try {
-      // Construir la query base
-      let query = supabase
-        .from("customers")
-        .select("*", { count: "exact" })
-        .order("created_at", { ascending: false });
+      console.log('🔍 Fetching customers with search term:', searchTerm);
 
-      // Aplicar filtro de búsqueda si existe
+      // Fetch local customers
+      let localQuery = supabase
+        .from("customers")
+        .select("*");
+
       if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+        localQuery = localQuery.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
       }
 
-      console.log('🔍 Fetching customers with search term:', searchTerm);
-      const { data, error, count } = await query;
+      const { data: localData, error: localError } = await localQuery;
+      if (localError) throw localError;
 
-      console.log('📊 Customers result:', { data, error, count, searchTerm });
+      // Fetch Holded customers if organization exists
+      let holdedData: any[] = [];
+      if (organization?.id) {
+        let holdedQuery = supabase
+          .from("holded_contacts")
+          .select("*")
+          .eq("organization_id", organization.id);
 
-      if (error) throw error;
+        if (searchTerm) {
+          holdedQuery = holdedQuery.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+        }
 
-      // Establecer total
-      setTotalClients(count || 0);
+        const { data, error: holdedError } = await holdedQuery;
+        if (holdedError) {
+          console.error("Error fetching Holded contacts:", holdedError);
+        } else {
+          holdedData = data || [];
+        }
+      }
 
-      // Aplicar paginación
+      // Combine and format both sources
+      const combinedClients: LocalClient[] = [
+        ...(localData || []).map(c => ({ ...c, source: 'local' as const })),
+        ...(holdedData || []).map(c => ({
+          id: c.id,
+          name: c.name || '',
+          email: c.email || '',
+          phone: c.phone || '',
+          notes: c.notes || '',
+          integration_id: '',
+          created_at: c.created_at,
+          source: 'holded' as const
+        }))
+      ];
+
+      // Sort by name
+      combinedClients.sort((a, b) => a.name.localeCompare(b.name));
+
+      console.log('📊 Combined clients:', { local: localData?.length, holded: holdedData.length, total: combinedClients.length });
+
+      // Set total
+      setTotalClients(combinedClients.length);
+
+      // Apply pagination
       const startIndex = (currentPage - 1) * itemsPerPage;
       const endIndex = startIndex + itemsPerPage;
-      const paginatedClients = (data || []).slice(startIndex, endIndex);
+      const paginatedClients = combinedClients.slice(startIndex, endIndex);
 
       console.log('📄 Paginated clients:', paginatedClients);
       setClientes(paginatedClients);
@@ -69,19 +109,23 @@ export default function Clientes() {
     }
   };
 
-  // Effect para cargar clientes cuando cambie la página
+  // Effect para cargar clientes cuando cambie la página u organización
   useEffect(() => {
-    fetchClientes();
-  }, [currentPage]);
+    if (organization) {
+      fetchClientes();
+    }
+  }, [currentPage, organization]);
 
   // Effect separado para búsqueda (resetear página)
   useEffect(() => {
+    if (!organization) return;
+    
     if (currentPage !== 1) {
       setCurrentPage(1);
     } else {
       fetchClientes();
     }
-  }, [searchTerm]);
+  }, [searchTerm, organization]);
 
   const deleteCliente = async (id: string) => {
     const confirmed = window.confirm("¿Estás seguro de que quieres eliminar este cliente?");
@@ -150,6 +194,7 @@ export default function Clientes() {
               <TableHead className="py-2">Nombre</TableHead>
               <TableHead className="py-2">Email</TableHead>
               <TableHead className="py-2">Teléfono</TableHead>
+              <TableHead className="py-2">Origen</TableHead>
               <TableHead className="py-2">Notas</TableHead>
               <TableHead className="py-2 text-right">Acciones</TableHead>
             </TableRow>
@@ -157,7 +202,7 @@ export default function Clientes() {
           <TableBody>
             {clientes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-6">
+                <TableCell colSpan={6} className="text-center py-6">
                   {searchTerm
                     ? "No se encontraron clientes que coincidan con la búsqueda."
                     : "No hay clientes registrados."}
@@ -165,19 +210,30 @@ export default function Clientes() {
               </TableRow>
             ) : (
               clientes.map((cliente) => (
-                <TableRow key={cliente.id}>
+                <TableRow key={`${cliente.source}-${cliente.id}`}>
                   <TableCell className="py-2 font-medium">{cliente.name || "Sin nombre"}</TableCell>
                   <TableCell className="py-2">{cliente.email}</TableCell>
                   <TableCell className="py-2">{cliente.phone}</TableCell>
+                  <TableCell className="py-2">
+                    <Badge variant={cliente.source === 'local' ? 'default' : 'secondary'}>
+                      {cliente.source === 'local' ? 'Local' : 'Holded'}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="py-2">{cliente.notes}</TableCell>
                   <TableCell className="py-2 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => navigate(`/clientes/${cliente.id}/editar`)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => deleteCliente(cliente.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {cliente.source === 'local' ? (
+                        <>
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/clientes/${cliente.id}/editar`)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => deleteCliente(cliente.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Solo lectura</span>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
