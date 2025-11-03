@@ -625,32 +625,6 @@ export default function QuoteDetail() {
                             
                             {/* Collapsible details */}
                             <CollapsibleContent className="mt-3 space-y-2">
-                              {/* Outputs */}
-                              {itemOutputs.length > 0 && (
-                                <div className="space-y-2 pl-2 border-l-2 border-muted">
-                                  <p className="text-xs font-semibold text-muted-foreground uppercase">Resultados</p>
-                                  {itemOutputs.map((output: any, idx: number) => {
-                                    if (output.type === 'ProductImage') {
-                                      return (
-                                        <div key={idx}>
-                                          <img 
-                                            src={output.value} 
-                                            alt={output.name}
-                                            className="w-48 h-48 object-contain rounded border"
-                                          />
-                                        </div>
-                                      );
-                                    }
-                                    return (
-                                      <div key={idx} className="text-sm">
-                                        <span className="font-medium text-muted-foreground">{output.name}:</span>{' '}
-                                        <span className="text-foreground">{output.value}</span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-
                               {/* Prompts */}
                               {Object.keys(itemPrompts).length > 0 && (
                                 <div className="space-y-1 pl-2 border-l-2 border-muted">
@@ -677,6 +651,32 @@ export default function QuoteDetail() {
                                       </div>
                                     );
                                   }).filter(Boolean)}
+                                </div>
+                              )}
+
+                              {/* Outputs */}
+                              {itemOutputs.length > 0 && (
+                                <div className="space-y-2 pl-2 border-l-2 border-muted">
+                                  <p className="text-xs font-semibold text-muted-foreground uppercase">Resultados</p>
+                                  {itemOutputs.map((output: any, idx: number) => {
+                                    if (output.type === 'ProductImage') {
+                                      return (
+                                        <div key={idx}>
+                                          <img 
+                                            src={output.value} 
+                                            alt={output.name}
+                                            className="w-48 h-48 object-contain rounded border"
+                                          />
+                                        </div>
+                                      );
+                                    }
+                                    return (
+                                      <div key={idx} className="text-sm">
+                                        <span className="font-medium text-muted-foreground">{output.name}:</span>{' '}
+                                        <span className="text-foreground">{output.value}</span>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </CollapsibleContent>
