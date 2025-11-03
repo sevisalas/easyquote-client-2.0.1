@@ -35,95 +35,54 @@ export default function Clientes() {
     try {
       console.log('🔍 Fetching customers with search term:', searchTerm);
 
+      if (!organization?.id) {
+        console.log('⚠️ No organization found');
+        setClientes([]);
+        setTotalClients(0);
+        setLoading(false);
+        return;
+      }
+
       const startIndex = (currentPage - 1) * itemsPerPage;
       
-      // Get counts first (for pagination)
-      let localCountQuery = supabase
-        .from("customers")
-        .select("*", { count: "exact", head: true });
-      
-      let holdedCountQuery = organization?.id 
-        ? supabase
-            .from("holded_contacts")
-            .select("*", { count: "exact", head: true })
-            .eq("organization_id", organization.id)
-        : null;
-
-      if (searchTerm) {
-        localCountQuery = localCountQuery.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
-        if (holdedCountQuery) {
-          holdedCountQuery = holdedCountQuery.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
-        }
-      }
-
-      const [localCountResult, holdedCountResult] = await Promise.all([
-        localCountQuery,
-        holdedCountQuery || Promise.resolve({ count: 0 })
-      ]);
-
-      const localCount = localCountResult.count || 0;
-      const holdedCount = holdedCountResult.count || 0;
-      const totalCount = localCount + holdedCount;
-      
-      setTotalClients(totalCount);
-
-      // Fetch paginated data from both sources
-      // Strategy: Try to get itemsPerPage records, prioritizing local first, then holded
-      const localQuery = supabase
-        .from("customers")
-        .select("*")
+      // Fetch Holded contacts with pagination
+      let holdedQuery = supabase
+        .from("holded_contacts")
+        .select("*", { count: "exact" })
+        .eq("organization_id", organization.id)
         .order("name", { ascending: true })
-        .range(Math.max(0, startIndex), startIndex + itemsPerPage - 1);
-
-      const holdedQuery = organization?.id
-        ? supabase
-            .from("holded_contacts")
-            .select("*")
-            .eq("organization_id", organization.id)
-            .order("name", { ascending: true })
-            .range(Math.max(0, startIndex - localCount), startIndex + itemsPerPage - localCount - 1)
-        : null;
+        .range(startIndex, startIndex + itemsPerPage - 1);
 
       if (searchTerm) {
-        localQuery.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
-        if (holdedQuery) {
-          holdedQuery.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
-        }
+        holdedQuery = holdedQuery.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
       }
 
-      const [localResult, holdedResult] = await Promise.all([
-        localQuery,
-        holdedQuery || Promise.resolve({ data: [], error: null })
-      ]);
+      const { data: holdedData, error: holdedError, count: holdedCount } = await holdedQuery;
 
-      if (localResult.error) throw localResult.error;
-      if (holdedResult.error) {
-        console.error("Error fetching Holded contacts:", holdedResult.error);
+      if (holdedError) {
+        console.error("Error fetching Holded contacts:", holdedError);
+        throw holdedError;
       }
 
-      // Combine and format both sources
-      const combinedClients: LocalClient[] = [
-        ...(localResult.data || []).map(c => ({ ...c, source: 'local' as const })),
-        ...(holdedResult.data || []).map(c => ({
-          id: c.id,
-          name: c.name || '',
-          email: c.email || '',
-          phone: c.phone || '',
-          notes: c.notes || '',
-          integration_id: '',
-          created_at: c.created_at,
-          source: 'holded' as const
-        }))
-      ];
-
-      console.log('📊 Fetched clients:', { 
-        local: localResult.data?.length, 
-        holded: holdedResult.data?.length, 
-        displayed: combinedClients.length,
-        total: totalCount 
+      console.log('📊 Holded contacts fetched:', { 
+        count: holdedData?.length, 
+        total: holdedCount 
       });
 
-      setClientes(combinedClients);
+      // Format Holded contacts
+      const clients: LocalClient[] = (holdedData || []).map(c => ({
+        id: c.id,
+        name: c.name || '',
+        email: c.email || '',
+        phone: c.phone || '',
+        notes: '',
+        integration_id: '',
+        created_at: c.created_at,
+        source: 'holded' as const
+      }));
+
+      setTotalClients(holdedCount || 0);
+      setClientes(clients);
     } catch (error) {
       console.error("❌ Error al obtener clientes:", error);
       toast({
