@@ -35,42 +35,76 @@ export default function Clientes() {
     try {
       console.log('🔍 Fetching customers with search term:', searchTerm);
 
-      // Fetch local customers
-      let localQuery = supabase
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      
+      // Get counts first (for pagination)
+      let localCountQuery = supabase
         .from("customers")
-        .select("*");
+        .select("*", { count: "exact", head: true });
+      
+      let holdedCountQuery = organization?.id 
+        ? supabase
+            .from("holded_contacts")
+            .select("*", { count: "exact", head: true })
+            .eq("organization_id", organization.id)
+        : null;
 
       if (searchTerm) {
-        localQuery = localQuery.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+        localCountQuery = localCountQuery.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+        if (holdedCountQuery) {
+          holdedCountQuery = holdedCountQuery.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+        }
       }
 
-      const { data: localData, error: localError } = await localQuery;
-      if (localError) throw localError;
+      const [localCountResult, holdedCountResult] = await Promise.all([
+        localCountQuery,
+        holdedCountQuery || Promise.resolve({ count: 0 })
+      ]);
 
-      // Fetch Holded customers if organization exists
-      let holdedData: any[] = [];
-      if (organization?.id) {
-        let holdedQuery = supabase
-          .from("holded_contacts")
-          .select("*")
-          .eq("organization_id", organization.id);
+      const localCount = localCountResult.count || 0;
+      const holdedCount = holdedCountResult.count || 0;
+      const totalCount = localCount + holdedCount;
+      
+      setTotalClients(totalCount);
 
-        if (searchTerm) {
-          holdedQuery = holdedQuery.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      // Fetch paginated data from both sources
+      // Strategy: Try to get itemsPerPage records, prioritizing local first, then holded
+      const localQuery = supabase
+        .from("customers")
+        .select("*")
+        .order("name", { ascending: true })
+        .range(Math.max(0, startIndex), startIndex + itemsPerPage - 1);
+
+      const holdedQuery = organization?.id
+        ? supabase
+            .from("holded_contacts")
+            .select("*")
+            .eq("organization_id", organization.id)
+            .order("name", { ascending: true })
+            .range(Math.max(0, startIndex - localCount), startIndex + itemsPerPage - localCount - 1)
+        : null;
+
+      if (searchTerm) {
+        localQuery.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+        if (holdedQuery) {
+          holdedQuery.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
         }
+      }
 
-        const { data, error: holdedError } = await holdedQuery;
-        if (holdedError) {
-          console.error("Error fetching Holded contacts:", holdedError);
-        } else {
-          holdedData = data || [];
-        }
+      const [localResult, holdedResult] = await Promise.all([
+        localQuery,
+        holdedQuery || Promise.resolve({ data: [], error: null })
+      ]);
+
+      if (localResult.error) throw localResult.error;
+      if (holdedResult.error) {
+        console.error("Error fetching Holded contacts:", holdedResult.error);
       }
 
       // Combine and format both sources
       const combinedClients: LocalClient[] = [
-        ...(localData || []).map(c => ({ ...c, source: 'local' as const })),
-        ...(holdedData || []).map(c => ({
+        ...(localResult.data || []).map(c => ({ ...c, source: 'local' as const })),
+        ...(holdedResult.data || []).map(c => ({
           id: c.id,
           name: c.name || '',
           email: c.email || '',
@@ -82,21 +116,14 @@ export default function Clientes() {
         }))
       ];
 
-      // Sort by name
-      combinedClients.sort((a, b) => a.name.localeCompare(b.name));
+      console.log('📊 Fetched clients:', { 
+        local: localResult.data?.length, 
+        holded: holdedResult.data?.length, 
+        displayed: combinedClients.length,
+        total: totalCount 
+      });
 
-      console.log('📊 Combined clients:', { local: localData?.length, holded: holdedData.length, total: combinedClients.length });
-
-      // Set total
-      setTotalClients(combinedClients.length);
-
-      // Apply pagination
-      const startIndex = (currentPage - 1) * itemsPerPage;
-      const endIndex = startIndex + itemsPerPage;
-      const paginatedClients = combinedClients.slice(startIndex, endIndex);
-
-      console.log('📄 Paginated clients:', paginatedClients);
-      setClientes(paginatedClients);
+      setClientes(combinedClients);
     } catch (error) {
       console.error("❌ Error al obtener clientes:", error);
       toast({
