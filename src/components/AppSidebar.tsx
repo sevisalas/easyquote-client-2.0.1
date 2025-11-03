@@ -56,16 +56,21 @@ export function AppSidebar() {
   const { hasPdfAccess, loading: pdfAccessLoading } = usePdfAccess();
 
   const handleSignOut = async () => {
-    // Limpiar token de EasyQuote
-    sessionStorage.removeItem('easyquote_token');
-    
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({ title: "Error", description: "No se pudo cerrar sesión", variant: "destructive" });
-      return;
+    try {
+      // Limpiar token de EasyQuote
+      sessionStorage.removeItem('easyquote_token');
+      
+      // Intentar cerrar sesión en Supabase (scope local para evitar errores si la sesión del servidor no existe)
+      await supabase.auth.signOut({ scope: 'local' });
+      
+      toast({ title: "Sesión cerrada" });
+      navigate("/auth");
+    } catch (error) {
+      // Incluso si hay error, limpiar sesión local y redirigir
+      console.error('Error al cerrar sesión:', error);
+      toast({ title: "Sesión cerrada" });
+      navigate("/auth");
     }
-    toast({ title: "Sesión cerrada" });
-    navigate("/auth");
   };
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive
