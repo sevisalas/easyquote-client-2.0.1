@@ -658,11 +658,10 @@ export default function QuoteDetail() {
                                     if (!value || typeof value === 'object') return false;
                                     const strValue = String(value).trim();
                                     
-                                    // Excluir URLs, códigos de color, números solos, vacíos
+                                    // Excluir solo URLs y códigos de color
                                     return strValue && 
                                            !strValue.startsWith('http') && 
                                            !strValue.startsWith('#') &&
-                                           !strValue.match(/^[\d.,]+$/) &&
                                            strValue.length > 0;
                                   });
                                 
@@ -707,11 +706,12 @@ export default function QuoteDetail() {
                                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                                           Opciones seleccionadas
                                         </p>
-                                        <div className="flex flex-wrap gap-2">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                           {filteredPrompts.map((prompt, idx: number) => (
-                                            <Badge key={idx} variant="secondary" className="text-xs">
-                                              {prompt.value}
-                                            </Badge>
+                                            <div key={idx} className="text-sm">
+                                              <span className="font-medium text-muted-foreground">{prompt.name}:</span>{' '}
+                                              <span className="text-foreground">{prompt.value}</span>
+                                            </div>
                                           ))}
                                         </div>
                                       </div>
