@@ -440,7 +440,6 @@ export default function QuoteDetail() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="draft">Borrador</SelectItem>
-                    <SelectItem value="pending">Pendiente</SelectItem>
                     <SelectItem value="sent">Enviado</SelectItem>
                     <SelectItem value="approved">Aprobado</SelectItem>
                     <SelectItem value="rejected">Rechazado</SelectItem>
