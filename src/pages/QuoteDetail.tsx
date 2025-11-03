@@ -624,60 +624,107 @@ export default function QuoteDetail() {
                             )}
                             
                             {/* Collapsible details */}
-                            <CollapsibleContent className="mt-3 space-y-2">
-                              {/* Outputs */}
-                              {itemOutputs.length > 0 && (
-                                <div className="space-y-2 pl-2 border-l-2 border-muted">
-                                  <p className="text-xs font-semibold text-muted-foreground uppercase">Detalles del producto</p>
-                                  {itemOutputs.map((output: any, idx: number) => {
-                                    if (output.type === 'ProductImage') {
-                                      return (
-                                        <div key={idx}>
-                                          <img 
-                                            src={output.value} 
-                                            alt={output.name}
-                                            className="w-48 h-48 object-contain rounded border"
-                                          />
-                                        </div>
-                                      );
-                                    }
-                                    return (
-                                      <div key={idx} className="text-sm">
-                                        <span className="font-medium text-muted-foreground">{output.name}:</span>{' '}
-                                        <span className="text-foreground">{output.value}</span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-
-                              {/* Prompts */}
-                              {Object.keys(itemPrompts).length > 0 && (
-                                <div className="space-y-1 pl-2 border-l-2 border-muted">
-                                  <p className="text-xs font-semibold text-muted-foreground uppercase">Información adicional</p>
-                                  {Object.values(itemPrompts).map((promptData: any, idx: number) => {
+                            <CollapsibleContent className="mt-3 space-y-3">
+                              {(() => {
+                                // Filtrar outputs: remover totales y campos técnicos
+                                const filteredOutputs = itemOutputs.filter((output: any) => {
+                                  if (output.type === 'ProductImage') return true;
+                                  
+                                  const name = output.name?.toLowerCase() || '';
+                                  const value = String(output.value || '').toLowerCase();
+                                  
+                                  // Excluir totales y campos técnicos
+                                  const excludePatterns = [
+                                    'total',
+                                    'price',
+                                    'iva',
+                                    'tax',
+                                    'subtotal'
+                                  ];
+                                  
+                                  return !excludePatterns.some(pattern => 
+                                    name.includes(pattern) || value.startsWith('$') || value.startsWith('€')
+                                  );
+                                });
+                                
+                                // Filtrar prompts: solo texto relevante
+                                const filteredPrompts = Object.entries(itemPrompts)
+                                  .map(([key, promptData]: [string, any]) => {
                                     const value = typeof promptData === 'string' ? promptData : promptData.value;
+                                    const name = typeof promptData === 'object' && promptData.name ? promptData.name : key;
+                                    return { name, value };
+                                  })
+                                  .filter(({ value }) => {
+                                    if (!value || typeof value === 'object') return false;
+                                    const strValue = String(value).trim();
                                     
-                                    // Filtrar datos técnicos que no son útiles para mostrar
-                                    if (!value || 
-                                        typeof value === 'object' || 
-                                        (typeof value === 'string' && (
-                                          value.startsWith('http') || 
-                                          value.startsWith('#') ||
-                                          value.match(/^\d+$/) ||
-                                          value.trim() === ''
-                                        ))) {
-                                      return null;
-                                    }
-                                    
-                                    return (
-                                      <div key={idx} className="text-sm text-foreground">
-                                        {value}
+                                    // Excluir URLs, códigos de color, números solos, vacíos
+                                    return strValue && 
+                                           !strValue.startsWith('http') && 
+                                           !strValue.startsWith('#') &&
+                                           !strValue.match(/^[\d.,]+$/) &&
+                                           strValue.length > 0;
+                                  });
+                                
+                                const hasOutputs = filteredOutputs.length > 0;
+                                const hasPrompts = filteredPrompts.length > 0;
+                                
+                                return (
+                                  <>
+                                    {/* Outputs */}
+                                    {hasOutputs && (
+                                      <div className="pl-3 border-l-2 border-primary/20 space-y-2">
+                                        <p className="text-xs font-semibold text-primary uppercase tracking-wide">
+                                          Especificaciones
+                                        </p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                          {filteredOutputs.map((output: any, idx: number) => {
+                                            if (output.type === 'ProductImage') {
+                                              return (
+                                                <div key={idx} className="col-span-full">
+                                                  <img 
+                                                    src={output.value} 
+                                                    alt={output.name}
+                                                    className="w-40 h-40 object-contain rounded-md border border-border"
+                                                  />
+                                                </div>
+                                              );
+                                            }
+                                            return (
+                                              <div key={idx} className="text-sm">
+                                                <span className="font-medium text-muted-foreground">{output.name}:</span>{' '}
+                                                <span className="text-foreground">{output.value}</span>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
                                       </div>
-                                    );
-                                  }).filter(Boolean)}
-                                </div>
-                              )}
+                                    )}
+
+                                    {/* Prompts */}
+                                    {hasPrompts && (
+                                      <div className="pl-3 border-l-2 border-muted space-y-2">
+                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                          Opciones seleccionadas
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                          {filteredPrompts.map((prompt, idx: number) => (
+                                            <Badge key={idx} variant="secondary" className="text-xs">
+                                              {prompt.value}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    
+                                    {!hasOutputs && !hasPrompts && (
+                                      <p className="text-xs text-muted-foreground italic pl-3">
+                                        No hay detalles adicionales para este artículo
+                                      </p>
+                                    )}
+                                  </>
+                                );
+                              })()}
                             </CollapsibleContent>
                           </div>
                           <div className="text-right">
