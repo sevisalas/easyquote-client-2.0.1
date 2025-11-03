@@ -11,6 +11,10 @@ export interface SalesOrder {
   status: 'pending' | 'in_production' | 'completed' | 'cancelled';
   order_date: string;
   delivery_date?: string;
+  title?: string;
+  description?: string;
+  terms_conditions?: string;
+  valid_until?: string;
   subtotal: number;
   tax_amount: number;
   discount_amount: number;
@@ -20,6 +24,16 @@ export interface SalesOrder {
   holded_document_number?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface SalesOrderAdditional {
+  id: string;
+  sales_order_id: string;
+  additional_id?: string;
+  name: string;
+  type: string;
+  value: number;
+  is_discount: boolean;
 }
 
 export interface SalesOrderItem {
@@ -108,6 +122,26 @@ export const useSalesOrders = () => {
     }
   };
 
+  const fetchSalesOrderAdditionals = async (orderId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('sales_order_additionals')
+        .select('*')
+        .eq('sales_order_id', orderId);
+
+      if (error) throw error;
+      return data as SalesOrderAdditional[];
+    } catch (error: any) {
+      console.error('Error fetching sales order additionals:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudieron cargar los ajustes del pedido",
+        variant: "destructive",
+      });
+      return [];
+    }
+  };
+
   const updateSalesOrderStatus = async (orderId: string, status: SalesOrder['status']) => {
     try {
       setLoading(true);
@@ -141,6 +175,7 @@ export const useSalesOrders = () => {
     fetchSalesOrders,
     fetchSalesOrderById,
     fetchSalesOrderItems,
+    fetchSalesOrderAdditionals,
     updateSalesOrderStatus,
   };
 };

@@ -62,37 +62,60 @@ export const useQuoteApproval = () => {
         }
       }
 
-      // Generate sales order number
-      const today = new Date();
-      const datePrefix = today.toISOString().slice(0, 10).replace(/-/g, '');
+      // Generate sales order number (format: SO-YYYY-NNNN)
+      const year = new Date().getFullYear();
       
-      const { data: todayOrders } = await supabase
+      const { data: yearOrders } = await supabase
         .from('sales_orders')
         .select('order_number')
-        .like('order_number', `SO-${datePrefix}%`)
+        .like('order_number', `SO-${year}-%`)
         .order('order_number', { ascending: false })
         .limit(1);
 
-      let dailyNumber = 1;
-      if (todayOrders && todayOrders.length > 0) {
-        const lastNumber = todayOrders[0].order_number;
+      let sequentialNumber = 1;
+      if (yearOrders && yearOrders.length > 0) {
+        const lastNumber = yearOrders[0].order_number;
         const parts = lastNumber.split('-');
         if (parts.length === 3) {
-          dailyNumber = parseInt(parts[2]) + 1;
+          sequentialNumber = parseInt(parts[2]) + 1;
         }
       }
 
-      const orderNumber = `SO-${datePrefix}-${String(dailyNumber).padStart(4, '0')}`;
+      const orderNumber = `SO-${year}-${String(sequentialNumber).padStart(4, '0')}`;
 
-      // Calculate totals for approved items
-      const subtotal = itemsToApprove.reduce((sum: number, item: any) => {
-        return sum + (item.price || 0);
-      }, 0);
-      const taxAmount = 0; // You can calculate tax if needed
-      const discountAmount = 0;
+      // Fetch quote additionals
+      const { data: quoteAdditionals } = await supabase
+        .from('quote_additionals')
+        .select('*')
+        .eq('quote_id', quoteId);
+
+      // Calculate totals - use EXACT quote totals, only recalculate item subtotal
+      let itemsSubtotal = 0;
+      for (const item of itemsToApprove) {
+        const multi = item.multi as any;
+        let itemPrice = item.price || 0;
+        let itemQuantity = item.quantity || 1;
+
+        // If multi with selected quantity, use that specific price
+        if (multi?.rows && Array.isArray(multi.rows) && itemQuantities?.[item.id]) {
+          const selectedQuantity = itemQuantities[item.id];
+          const selectedRow = multi.rows.find((row: any) => row.quantity === selectedQuantity);
+          if (selectedRow) {
+            itemPrice = selectedRow.price || 0;
+            itemQuantity = selectedQuantity;
+          }
+        }
+
+        itemsSubtotal += itemPrice;
+      }
+
+      // Use quote's original totals structure
+      const subtotal = itemsSubtotal;
+      const taxAmount = quote.tax_amount || 0;
+      const discountAmount = quote.discount_amount || 0;
       const finalPrice = subtotal + taxAmount - discountAmount;
 
-      // Create sales order
+      // Create sales order - EXACT COPY of quote
       const { data: salesOrder, error: orderError } = await supabase
         .from('sales_orders')
         .insert({
@@ -101,6 +124,10 @@ export const useQuoteApproval = () => {
           customer_id: quote.customer_id,
           user_id: quote.user_id,
           status: 'pending',
+          title: quote.title,
+          description: quote.description,
+          terms_conditions: quote.terms_conditions,
+          valid_until: quote.valid_until,
           subtotal,
           tax_amount: taxAmount,
           discount_amount: discountAmount,
@@ -112,18 +139,57 @@ export const useQuoteApproval = () => {
 
       if (orderError) throw orderError;
 
-      // Create sales order items
+      // Copy quote additionals to sales order additionals
+      if (quoteAdditionals && quoteAdditionals.length > 0) {
+        const orderAdditionals = quoteAdditionals.map((qa: any) => ({
+          sales_order_id: salesOrder.id,
+          additional_id: qa.additional_id,
+          name: qa.name,
+          type: qa.type,
+          value: qa.value,
+          is_discount: qa.is_discount,
+        }));
+
+        const { error: additionalsError } = await supabase
+          .from('sales_order_additionals')
+          .insert(orderAdditionals);
+
+        if (additionalsError) throw additionalsError;
+      }
+
+      // Create sales order items with selected quantities
       const orderItems = itemsToApprove.map((item: any, index: number) => {
+        const multi = item.multi as any;
+        let finalQuantity = item.quantity || 1;
+        let finalPrice = item.price || 0;
+        let finalMulti = item.multi;
+
+        // If multi with selected quantity, only keep that option
+        if (multi?.rows && Array.isArray(multi.rows) && itemQuantities?.[item.id]) {
+          const selectedQuantity = itemQuantities[item.id];
+          const selectedRow = multi.rows.find((row: any) => row.quantity === selectedQuantity);
+          
+          if (selectedRow) {
+            finalQuantity = selectedQuantity;
+            finalPrice = selectedRow.price || 0;
+            // Keep only the selected row in multi
+            finalMulti = {
+              ...multi,
+              rows: [selectedRow]
+            };
+          }
+        }
+
         return {
           sales_order_id: salesOrder.id,
           product_id: item.product_id,
           product_name: item.product_name,
           description: item.description,
-          quantity: item.quantity,
-          price: item.price,
+          quantity: finalQuantity,
+          price: finalPrice,
           outputs: item.outputs,
           prompts: item.prompts,
-          multi: item.multi,
+          multi: finalMulti,
           position: index,
         };
       });

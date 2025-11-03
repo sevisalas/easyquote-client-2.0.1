@@ -1079,6 +1079,57 @@ export type Database = {
         }
         Relationships: []
       }
+      sales_order_additionals: {
+        Row: {
+          additional_id: string | null
+          created_at: string
+          id: string
+          is_discount: boolean
+          name: string
+          sales_order_id: string
+          type: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          additional_id?: string | null
+          created_at?: string
+          id?: string
+          is_discount?: boolean
+          name: string
+          sales_order_id: string
+          type?: string
+          updated_at?: string
+          value?: number
+        }
+        Update: {
+          additional_id?: string | null
+          created_at?: string
+          id?: string
+          is_discount?: boolean
+          name?: string
+          sales_order_id?: string
+          type?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_order_additionals_additional_id_fkey"
+            columns: ["additional_id"]
+            isOneToOne: false
+            referencedRelation: "additionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_order_additionals_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales_order_items: {
         Row: {
           created_at: string
@@ -1140,6 +1191,7 @@ export type Database = {
           created_at: string
           customer_id: string | null
           delivery_date: string | null
+          description: string | null
           discount_amount: number
           final_price: number
           holded_document_id: string | null
@@ -1152,13 +1204,17 @@ export type Database = {
           status: string
           subtotal: number
           tax_amount: number
+          terms_conditions: string | null
+          title: string | null
           updated_at: string
           user_id: string
+          valid_until: string | null
         }
         Insert: {
           created_at?: string
           customer_id?: string | null
           delivery_date?: string | null
+          description?: string | null
           discount_amount?: number
           final_price?: number
           holded_document_id?: string | null
@@ -1171,13 +1227,17 @@ export type Database = {
           status?: string
           subtotal?: number
           tax_amount?: number
+          terms_conditions?: string | null
+          title?: string | null
           updated_at?: string
           user_id: string
+          valid_until?: string | null
         }
         Update: {
           created_at?: string
           customer_id?: string | null
           delivery_date?: string | null
+          description?: string | null
           discount_amount?: number
           final_price?: number
           holded_document_id?: string | null
@@ -1190,8 +1250,11 @@ export type Database = {
           status?: string
           subtotal?: number
           tax_amount?: number
+          terms_conditions?: string | null
+          title?: string | null
           updated_at?: string
           user_id?: string
+          valid_until?: string | null
         }
         Relationships: [
           {
