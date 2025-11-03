@@ -657,6 +657,7 @@ export default function QuoteDetail() {
                                   <p className="text-xs font-semibold text-muted-foreground uppercase">Información adicional</p>
                                   {Object.values(itemPrompts).map((promptData: any, idx: number) => {
                                     const value = typeof promptData === 'string' ? promptData : promptData.value;
+                                    const label = typeof promptData === 'object' ? promptData.label : null;
                                     
                                     // Filtrar datos técnicos que no son útiles para mostrar
                                     if (!value || 
@@ -664,15 +665,15 @@ export default function QuoteDetail() {
                                         (typeof value === 'string' && (
                                           value.startsWith('http') || 
                                           value.startsWith('#') ||
-                                          value.match(/^\d+$/) ||
                                           value.trim() === ''
                                         ))) {
                                       return null;
                                     }
                                     
                                     return (
-                                      <div key={idx} className="text-sm text-foreground">
-                                        {value}
+                                      <div key={idx} className="text-sm">
+                                        {label && <span className="font-medium text-muted-foreground">{label}: </span>}
+                                        <span className="text-foreground">{value}</span>
                                       </div>
                                     );
                                   }).filter(Boolean)}
