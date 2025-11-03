@@ -800,11 +800,28 @@ export default function QuoteEdit() {
                               <p className="text-xs font-semibold text-muted-foreground uppercase">Información adicional</p>
                               {Object.entries(itemPrompts)
                                 .sort(([, a]: [string, any], [, b]: [string, any]) => (a.order ?? 999) - (b.order ?? 999))
-                                .map(([key, promptData]: [string, any], idx: number) => (
-                                  <div key={idx} className="text-sm text-foreground">
-                                    {typeof promptData === 'string' ? promptData : promptData.value}
-                                  </div>
-                                ))}
+                                .map(([key, promptData]: [string, any], idx: number) => {
+                                  const value = typeof promptData === 'string' ? promptData : promptData.value;
+                                  
+                                  // Filtrar datos técnicos que no son útiles para mostrar
+                                  if (!value || 
+                                      typeof value === 'object' || 
+                                      (typeof value === 'string' && (
+                                        value.startsWith('http') || 
+                                        value.startsWith('#') ||
+                                        value.match(/^\d+$/) ||
+                                        value.trim() === ''
+                                      ))) {
+                                    return null;
+                                  }
+                                  
+                                  return (
+                                    <div key={idx} className="text-sm text-foreground">
+                                      {value}
+                                    </div>
+                                  );
+                                })
+                                .filter(Boolean)}
                             </div>
                           )}
                         </CollapsibleContent>

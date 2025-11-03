@@ -264,11 +264,27 @@ const SalesOrderDetail = () => {
                     {Object.keys(itemPrompts).length > 0 && (
                       <div className="space-y-1 pl-2 border-l-2 border-muted">
                         <p className="text-xs font-semibold text-muted-foreground uppercase">Información adicional</p>
-                        {Object.values(itemPrompts).map((promptData: any, idx: number) => (
-                          <div key={idx} className="text-sm text-foreground">
-                            {typeof promptData === 'string' ? promptData : promptData.value}
-                          </div>
-                        ))}
+                        {Object.values(itemPrompts).map((promptData: any, idx: number) => {
+                          const value = typeof promptData === 'string' ? promptData : promptData.value;
+                          
+                          // Filtrar datos técnicos que no son útiles para mostrar
+                          if (!value || 
+                              typeof value === 'object' || 
+                              (typeof value === 'string' && (
+                                value.startsWith('http') || 
+                                value.startsWith('#') ||
+                                value.match(/^\d+$/) ||
+                                value.trim() === ''
+                              ))) {
+                            return null;
+                          }
+                          
+                          return (
+                            <div key={idx} className="text-sm text-foreground">
+                              {value}
+                            </div>
+                          );
+                        }).filter(Boolean)}
                       </div>
                     )}
                   </div>
