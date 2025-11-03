@@ -97,14 +97,26 @@ export default function Clientes() {
 
   // Effect para cargar clientes cuando cambie la página u organización
   useEffect(() => {
-    if (organization) {
+    if (organization?.id) {
       fetchClientes();
+    } else if (organization === null) {
+      // Organization is explicitly null (not loading)
+      setLoading(false);
+      setClientes([]);
+      setTotalClients(0);
     }
   }, [currentPage, organization]);
 
   // Effect separado para búsqueda (resetear página)
   useEffect(() => {
-    if (!organization) return;
+    if (!organization?.id) {
+      if (organization === null) {
+        setLoading(false);
+        setClientes([]);
+        setTotalClients(0);
+      }
+      return;
+    }
     
     if (currentPage !== 1) {
       setCurrentPage(1);
