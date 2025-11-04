@@ -120,6 +120,7 @@ export const generateQuotePDF = async (
         name: item.product_name || item.name || 'Producto',
         prompts: promptsFormatted,
         price: item.price || 0,
+        quantity: item.quantity || 1,
         images: images
       };
     });

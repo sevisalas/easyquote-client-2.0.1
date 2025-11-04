@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import React from 'react';
 
 interface Template2Props {
   data: any;
@@ -85,47 +86,47 @@ export default function Template2({ data }: Template2Props) {
           </section>
         )}
 
-        {/* Items - Modern List */}
+        {/* Items Table - Estilo Holded */}
         <section className="mb-6">
-          <h3 className="text-xs font-semibold mb-4 uppercase tracking-wide text-gray-700">
-            Detalle de Servicios
-          </h3>
-          <div className="space-y-3">
-            {items.map((item: any, index: number) => (
-              <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
-                <div className="flex gap-3 items-start">
-                  {item.images && item.images.length > 0 && (
-                    <div className="flex flex-col gap-2 flex-shrink-0">
-                      {item.images.map((img: string, imgIdx: number) => (
-                        <img 
-                          key={imgIdx}
-                          src={img} 
-                          alt={`${item.name} ${imgIdx + 1}`}
-                          className="w-20 h-20 object-cover rounded border border-gray-300"
-                          crossOrigin="anonymous"
-                        />
-                      ))}
-                    </div>
+          <table className="w-full border-collapse border border-gray-300">
+            <thead>
+              <tr style={{ backgroundColor: primaryColor }} className="text-white">
+                <th className="text-left p-2 text-xs font-semibold">CONCEPTO</th>
+                <th className="text-right p-2 text-xs font-semibold w-24">PRECIO</th>
+                <th className="text-center p-2 text-xs font-semibold w-20">UNIDADES</th>
+                <th className="text-right p-2 text-xs font-semibold w-24">SUBTOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item: any, index: number) => (
+                <React.Fragment key={index}>
+                  {/* Fila principal */}
+                  <tr className="border-b border-gray-300">
+                    <td className="p-2">
+                      <p className="font-semibold text-sm">{item.name}</p>
+                    </td>
+                    <td className="p-2 text-right text-sm font-medium whitespace-nowrap">{fmtEUR(item.price || 0)}</td>
+                    <td className="p-2 text-center text-sm">{item.quantity || 1}</td>
+                    <td className="p-2 text-right text-sm font-semibold whitespace-nowrap">{fmtEUR((item.price || 0) * (item.quantity || 1))}</td>
+                  </tr>
+                  {/* Prompts debajo */}
+                  {item.prompts && item.prompts.length > 0 && (
+                    <tr className="border-b border-gray-300">
+                      <td colSpan={4} className="pl-6 pr-2 py-2">
+                        <div className="text-xs text-gray-700 space-y-1">
+                          {item.prompts.map((prompt: any, pIdx: number) => (
+                            <div key={pIdx}>
+                              <span className="font-medium uppercase">{prompt.label}:</span> {prompt.value}
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
                   )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold mb-2">{item.name}</p>
-                    {item.prompts && item.prompts.length > 0 && (
-                      <div className="text-xs text-gray-700 space-y-1">
-                        {item.prompts.map((prompt: any, pIdx: number) => (
-                          <div key={pIdx}>
-                            <span className="font-medium">{prompt.label}:</span> {prompt.value}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-right ml-4 flex-shrink-0">
-                    <p className="font-bold text-lg text-gray-900 whitespace-nowrap">{fmtEUR(item.price || 0)}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
         </section>
 
         {/* Totals - Modern Card */}

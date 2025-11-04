@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import React from 'react';
 
 interface Template6Props {
   data: any;

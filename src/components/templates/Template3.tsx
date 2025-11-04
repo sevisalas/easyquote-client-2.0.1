@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import React from 'react';
 
 interface Template3Props {
   data: any;
@@ -76,54 +77,45 @@ export default function Template3({ data }: Template3Props) {
         )}
       </section>
 
-      {/* Items - Minimalist Table */}
+      {/* Items Table - Estilo Holded */}
       <section className="mb-12">
-        <div className="border-t border-b border-gray-900">
-          <div className="grid grid-cols-12 py-3 border-b border-gray-200">
-            <div className="col-span-9">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Concepto</h3>
-            </div>
-            <div className="col-span-3 text-right">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Importe</h3>
-            </div>
-          </div>
-          {items.map((item: any, index: number) => (
-            <div key={index} className="grid grid-cols-12 py-4 border-b border-gray-100">
-              <div className="col-span-9">
-                <div className="flex gap-3 items-start">
-                  {item.images && item.images.length > 0 && (
-                    <div className="flex flex-col gap-2 flex-shrink-0">
-                      {item.images.map((img: string, imgIdx: number) => (
-                        <img 
-                          key={imgIdx}
-                          src={img} 
-                          alt={`${item.name} ${imgIdx + 1}`}
-                          className="w-20 h-20 object-cover rounded border border-gray-300"
-                          crossOrigin="anonymous"
-                        />
-                      ))}
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium mb-2">{item.name}</p>
-                    {item.prompts && item.prompts.length > 0 && (
+        <table className="w-full border-collapse border-t border-b border-gray-900">
+          <thead>
+            <tr className="border-b border-gray-200">
+              <th className="text-left py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">CONCEPTO</th>
+              <th className="text-right py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 w-24">PRECIO</th>
+              <th className="text-center py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 w-20">UNIDADES</th>
+              <th className="text-right py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 w-24">SUBTOTAL</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item: any, index: number) => (
+              <React.Fragment key={index}>
+                <tr className="border-b border-gray-100">
+                  <td className="py-3">
+                    <p className="font-medium">{item.name}</p>
+                  </td>
+                  <td className="py-3 text-right font-medium whitespace-nowrap">{fmtEUR(item.price || 0)}</td>
+                  <td className="py-3 text-center">{item.quantity || 1}</td>
+                  <td className="py-3 text-right font-medium whitespace-nowrap">{fmtEUR((item.price || 0) * (item.quantity || 1))}</td>
+                </tr>
+                {item.prompts && item.prompts.length > 0 && (
+                  <tr className="border-b border-gray-100">
+                    <td colSpan={4} className="pl-6 py-2">
                       <div className="text-xs text-gray-700 space-y-1">
                         {item.prompts.map((prompt: any, pIdx: number) => (
                           <div key={pIdx}>
-                            <span className="font-medium">{prompt.label}:</span> {prompt.value}
+                            <span className="font-medium uppercase">{prompt.label}:</span> {prompt.value}
                           </div>
                         ))}
                       </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="col-span-3 text-right">
-                <p className="font-medium whitespace-nowrap">{fmtEUR(item.price || 0)}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
       </section>
 
       {/* Totals - Minimalist */}
