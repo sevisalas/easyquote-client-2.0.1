@@ -82,49 +82,89 @@ export const generateQuotePDF = async (
 
     // Format items with descriptions
     const formattedItems = (quote.items || []).map((item: any) => {
+      // Extraer información relevante
+      const quantities: any[] = [];
+      const images: string[] = [];
+      const colorHex: string | null = null;
+      const otherDetails: string[] = [];
+      
+      // Procesar prompts
+      if (item.prompts && Array.isArray(item.prompts)) {
+        item.prompts.forEach((prompt: any) => {
+          const label = prompt.label || '';
+          const value = String(prompt.value || '');
+          
+          // Filtrar URLs de imágenes
+          if (value.startsWith('http') && (value.includes('.jpg') || value.includes('.png') || value.includes('.jpeg'))) {
+            // No mostrar URLs de imágenes en el PDF
+            return;
+          }
+          
+          // Filtrar códigos de color
+          if (value.startsWith('#')) {
+            // No mostrar códigos hex
+            return;
+          }
+          
+          // Agrupar cantidades (tallas, etc.)
+          if (label.toLowerCase().includes('men') || label.toLowerCase().includes('women') || 
+              label.toLowerCase().includes('small') || label.toLowerCase().includes('medium') ||
+              label.toLowerCase().includes('large') || label.toLowerCase().includes('xl')) {
+            const qty = parseInt(value);
+            if (qty > 0) {
+              quantities.push(`${label}: ${value}`);
+            }
+            return;
+          }
+          
+          // Solo agregar detalles relevantes (no cantidades 0, no URLs, no colores)
+          if (value !== '0' && value.trim() !== '') {
+            otherDetails.push(`${label}: ${value}`);
+          }
+        });
+      }
+      
+      // Procesar outputs (solo los relevantes para el cliente)
+      const relevantOutputs: string[] = [];
+      if (item.outputs && Array.isArray(item.outputs)) {
+        item.outputs.forEach((output: any) => {
+          const name = String(output.name || '').toLowerCase();
+          const type = String(output.type || '').toLowerCase();
+          
+          // Filtrar precios y totales (ya se muestran arriba)
+          if (type.includes('price') || name.includes('precio') || name.includes('price') || 
+              name.includes('total') || type.includes('tax')) {
+            return;
+          }
+          
+          // Filtrar imágenes de producto
+          if (type.includes('image') || String(output.value).startsWith('http')) {
+            return;
+          }
+          
+          // Agregar outputs descriptivos
+          if (output.value && String(output.value).trim() !== '') {
+            relevantOutputs.push(`${output.name}: ${output.value}`);
+          }
+        });
+      }
+      
+      // Construir descripción compacta
       let description = '';
       
-      // Build description from prompts
-      if (item.prompts && typeof item.prompts === 'object') {
-        const promptEntries = Object.entries(item.prompts);
-        if (promptEntries.length > 0) {
-          description = promptEntries
-            .map(([key, promptData]: [string, any]) => {
-              if (promptData && typeof promptData === 'object' && 'label' in promptData && 'value' in promptData) {
-                return `${promptData.label}: ${promptData.value}`;
-              }
-              return '';
-            })
-            .filter(Boolean)
-            .join('\n');
-        }
+      // Detalles del producto
+      if (otherDetails.length > 0) {
+        description += otherDetails.slice(0, 5).join(' • ');
       }
       
-      // Add outputs
-      if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
-        const outputsText = item.outputs
-          .filter((out: any) => {
-            const name = String(out.name || '').toLowerCase();
-            const type = String(out.type || '').toLowerCase();
-            return !type.includes('price') && !name.includes('precio') && !name.includes('price');
-          })
-          .map((out: any) => `${out.name}: ${out.value}`)
-          .join('\n');
-        
-        if (outputsText) {
-          description += (description ? '\n' : '') + outputsText;
-        }
+      // Cantidades/tallas (si existen)
+      if (quantities.length > 0) {
+        description += (description ? '\n' : '') + 'Tallas: ' + quantities.join(', ');
       }
-
-      // Add item additionals (without price, just the name)
-      if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
-        const additionalsText = item.item_additionals
-          .map((additional: any) => additional.name)
-          .join('\n');
-        
-        if (additionalsText) {
-          description += (description ? '\n' : '') + additionalsText;
-        }
+      
+      // Outputs relevantes
+      if (relevantOutputs.length > 0) {
+        description += (description ? '\n' : '') + relevantOutputs.join(' • ');
       }
 
       return {
