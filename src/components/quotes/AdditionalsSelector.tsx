@@ -33,7 +33,8 @@ interface AdditionalsSelectorProps {
 
 export default function AdditionalsSelector({ selectedAdditionals, onChange }: AdditionalsSelectorProps) {
   const [newAdditionalId, setNewAdditionalId] = useState<string>("")
-  const [newAdditionalValue, setNewAdditionalValue] = useState<number>(0)
+  const [predefinedType, setPredefinedType] = useState<"net_amount" | "quantity_multiplier">("net_amount")
+  const [predefinedValue, setPredefinedValue] = useState<number>(0)
   const [customName, setCustomName] = useState("")
   const [customValue, setCustomValue] = useState(0)
   const [customType, setCustomType] = useState<"net_amount" | "quantity_multiplier">("net_amount")
@@ -72,14 +73,24 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
     const newSelected: SelectedAdditional = {
       id: uniqueId,
       name: additional.name,
-      type: additional.type,
-      value: newAdditionalValue,
+      type: predefinedType,
+      value: predefinedValue,
       is_discount: additional.is_discount || false
     }
 
     onChange([...selectedAdditionals, newSelected])
     setNewAdditionalId("")
-    setNewAdditionalValue(0)
+    setPredefinedValue(0)
+  }
+
+  // Update predefined type and value when selection changes
+  const handlePredefinedSelection = (additionalId: string) => {
+    setNewAdditionalId(additionalId)
+    const additional = availableAdditionals.find((a) => a.id === additionalId)
+    if (additional) {
+      setPredefinedType(additional.type)
+      setPredefinedValue(additional.default_value)
+    }
   }
 
   const addCustomAdditional = () => {
@@ -164,20 +175,11 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
       {/* Add Predefined Additional */}
       {availableAdditionals.length > 0 && (
         <div className="flex gap-2 items-center">
-          <Select 
-            value={newAdditionalId} 
-            onValueChange={(value) => {
-              setNewAdditionalId(value)
-              const additional = availableAdditionals.find(a => a.id === value)
-              if (additional) {
-                setNewAdditionalValue(additional.default_value)
-              }
-            }}
-          >
+          <Select value={newAdditionalId} onValueChange={handlePredefinedSelection}>
             <SelectTrigger className="w-64 h-9 justify-start">
               <SelectValue placeholder="Selecciona un ajuste..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-50 bg-popover">
               {availableAdditionals.map((additional) => (
                 <SelectItem key={additional.id} value={additional.id}>
                   {additional.name} ({additional.type === "net_amount" ? "Importe" : "Precio ud."})
@@ -185,11 +187,15 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
               ))}
             </SelectContent>
           </Select>
-          <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier") => setCustomType(value)}>
+          <Select 
+            value={predefinedType} 
+            onValueChange={(value: "net_amount" | "quantity_multiplier") => setPredefinedType(value)}
+            disabled={true}
+          >
             <SelectTrigger className="w-28 h-9">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-50 bg-popover">
               <SelectItem value="net_amount">Importe</SelectItem>
               <SelectItem value="quantity_multiplier">Precio ud.</SelectItem>
             </SelectContent>
@@ -198,10 +204,11 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
             <Input
               type="number"
               step="0.01"
-              value={newAdditionalValue}
-              onChange={(e) => setNewAdditionalValue(parseFloat(e.target.value) || 0)}
+              value={predefinedValue}
+              onChange={(e) => setPredefinedValue(parseFloat(e.target.value) || 0)}
               placeholder="Valor"
               className="w-full h-9"
+              disabled={!newAdditionalId}
             />
             <span className="text-sm text-muted-foreground">€</span>
           </div>
