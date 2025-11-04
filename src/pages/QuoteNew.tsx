@@ -151,12 +151,36 @@ export default function QuoteNew() {
     }
   }, [duplicateQuote]);
 
-  // Generate quote number
+  // Generate quote number based on organization
   const generateQuoteNumber = async (): Promise<string> => {
     const year = new Date().getFullYear();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Usuario no autenticado");
+
+    // Get all organization members user_ids
+    const { data: orgMembers } = await supabase
+      .from("organization_members")
+      .select("user_id, organization_id")
+      .eq("user_id", user.id)
+      .single();
+
+    if (!orgMembers) {
+      throw new Error("Usuario no pertenece a ninguna organización");
+    }
+
+    // Get all user_ids from the same organization
+    const { data: allOrgMembers } = await supabase
+      .from("organization_members")
+      .select("user_id")
+      .eq("organization_id", orgMembers.organization_id);
+
+    const userIds = allOrgMembers?.map(m => m.user_id) || [];
+
+    // Count quotes from all organization members for this year
     const { count } = await supabase
       .from("quotes")
       .select("*", { count: "exact", head: true })
+      .in("user_id", userIds)
       .like("quote_number", `${year}-%`);
     
     const nextNumber = (count || 0) + 1;
