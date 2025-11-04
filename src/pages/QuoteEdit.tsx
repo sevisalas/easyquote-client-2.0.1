@@ -803,27 +803,55 @@ export default function QuoteEdit() {
                           {/* Prompts */}
                           {Object.keys(itemPrompts).length > 0 && (
                             <div className="pl-8 space-y-1 border-l-2 border-muted">
-                              <p className="text-xs font-semibold text-muted-foreground uppercase">Información adicional</p>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase">Opciones seleccionadas</p>
                               {Object.entries(itemPrompts)
                                 .sort(([, a]: [string, any], [, b]: [string, any]) => (a.order ?? 999) - (b.order ?? 999))
                                 .map(([key, promptData]: [string, any], idx: number) => {
+                                  const label = typeof promptData === 'object' ? promptData.label : key;
                                   const value = typeof promptData === 'string' ? promptData : promptData.value;
                                   
-                                  // Filtrar datos técnicos que no son útiles para mostrar
-                                  if (!value || 
-                                      typeof value === 'object' || 
-                                      (typeof value === 'string' && (
-                                        value.startsWith('http') || 
-                                        value.startsWith('#') ||
-                                        value.match(/^\d+$/) ||
-                                        value.trim() === ''
-                                      ))) {
+                                  // Skip empty values
+                                  if (!value || value === '' || typeof value === 'object') {
                                     return null;
                                   }
                                   
+                                  const valueStr = String(value);
+                                  
+                                  // Handle image URLs
+                                  if (valueStr.startsWith('http')) {
+                                    return (
+                                      <div key={idx} className="text-sm">
+                                        <span className="font-medium text-muted-foreground">{label}:</span>
+                                        <img 
+                                          src={valueStr} 
+                                          alt={label}
+                                          className="mt-1 w-32 h-32 object-contain rounded border"
+                                        />
+                                      </div>
+                                    );
+                                  }
+                                  
+                                  // Handle hex colors
+                                  if (valueStr.startsWith('#')) {
+                                    return (
+                                      <div key={idx} className="text-sm flex items-center gap-2">
+                                        <span className="font-medium text-muted-foreground">{label}:</span>
+                                        <div className="flex items-center gap-2">
+                                          <div 
+                                            className="w-6 h-6 rounded border shadow-sm"
+                                            style={{ backgroundColor: valueStr }}
+                                          />
+                                          <span className="text-foreground">{valueStr}</span>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                  
+                                  // Handle regular text values
                                   return (
-                                    <div key={idx} className="text-sm text-foreground">
-                                      {value}
+                                    <div key={idx} className="text-sm">
+                                      <span className="font-medium text-muted-foreground">{label}:</span>{' '}
+                                      <span className="text-foreground">{valueStr}</span>
                                     </div>
                                   );
                                 })
