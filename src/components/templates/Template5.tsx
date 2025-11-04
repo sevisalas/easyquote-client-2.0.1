@@ -108,38 +108,57 @@ export default function Template5({ data }: Template5Props) {
           </h3>
           <div className="space-y-3">
             {items.map((item: any, index: number) => (
-              <div key={index} className="bg-gradient-to-br from-white to-gray-50 p-5 rounded-lg shadow-sm border-l-4 hover:shadow-md transition-shadow" 
+              <div key={index} className="bg-gradient-to-br from-white to-gray-50 p-5 rounded-lg shadow-sm border-l-4" 
                    style={{ borderLeftColor: brandColor }}>
-                <div className="flex gap-3 items-start">
+                <div className="flex gap-4 items-start">
                   {item.images && item.images.length > 0 && (
                     <img 
                       src={item.images[0]} 
                       alt={item.name}
-                      className="w-16 h-16 object-cover rounded border border-gray-200"
+                      className="w-20 h-20 object-cover rounded border border-gray-300 flex-shrink-0"
+                      crossOrigin="anonymous"
                     />
                   )}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" 
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0" 
                             style={{ backgroundColor: brandColor }}>
                         {index + 1}
                       </span>
                       <p className="font-bold text-base">{item.name}</p>
                     </div>
                     {item.color && (
-                      <div className="flex items-center gap-2 mt-1 ml-10">
+                      <div className="flex items-center gap-2 mb-2 ml-11">
                         <div 
-                          className="w-4 h-4 rounded border border-gray-300" 
+                          className="w-4 h-4 rounded border border-gray-300 flex-shrink-0" 
                           style={{ backgroundColor: item.color }}
                         />
-                        <span className="text-xs text-gray-500">{item.color}</span>
+                        <span className="text-xs text-gray-600">Color: {item.color}</span>
                       </div>
                     )}
                     {item.description && (
-                      <p className="text-sm text-gray-600 mt-1 ml-10 whitespace-pre-line">{item.description}</p>
+                      <div className="text-sm text-gray-700 ml-11 space-y-1">
+                        {item.description.split('\n').map((line: string, i: number) => {
+                          if (!line.trim()) return null;
+                          if (line.includes('Tallas:')) {
+                            return <div key={i} className="mt-1 font-medium">{line}</div>;
+                          }
+                          const parts = line.split('•').map(p => p.trim()).filter(Boolean);
+                          if (parts.length > 1) {
+                            return (
+                              <div key={i} className="space-y-0.5">
+                                {parts.map((part, j) => (
+                                  <div key={j}>• {part}</div>
+                                ))}
+                              </div>
+                            );
+                          }
+                          return <div key={i}>{line}</div>;
+                        })}
+                      </div>
                     )}
                   </div>
-                  <div className="text-right ml-4">
+                  <div className="text-right ml-4 flex-shrink-0">
                     <p className="font-bold text-xl" style={{ color: brandColor }}>{fmtEUR(item.price || 0)}</p>
                   </div>
                 </div>

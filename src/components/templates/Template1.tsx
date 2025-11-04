@@ -92,33 +92,52 @@ export default function Template1({ data }: Template1Props) {
           <tbody>
             {items.map((item: any, index: number) => (
               <tr key={index} className="border-b border-gray-200">
-                <td className="p-2">
-                  <div className="flex gap-2 items-start">
+                <td className="p-3">
+                  <div className="flex gap-3 items-start">
                     {item.images && item.images.length > 0 && (
                       <img 
                         src={item.images[0]} 
                         alt={item.name}
-                        className="w-12 h-12 object-cover rounded border border-gray-200"
+                        className="w-16 h-16 object-cover rounded border border-gray-300 flex-shrink-0"
+                        crossOrigin="anonymous"
                       />
                     )}
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{item.name}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm mb-2">{item.name}</p>
                       {item.color && (
-                        <div className="flex items-center gap-1 mt-1">
+                        <div className="flex items-center gap-2 mb-2">
                           <div 
-                            className="w-3 h-3 rounded border border-gray-300" 
+                            className="w-4 h-4 rounded border border-gray-300 flex-shrink-0" 
                             style={{ backgroundColor: item.color }}
                           />
-                          <span className="text-xs text-gray-500">{item.color}</span>
+                          <span className="text-xs text-gray-600">Color: {item.color}</span>
                         </div>
                       )}
                       {item.description && (
-                        <p className="text-xs text-gray-600 mt-1 whitespace-pre-line">{item.description}</p>
+                        <div className="text-xs text-gray-700 space-y-0.5">
+                          {item.description.split('\n').map((line: string, i: number) => {
+                            if (!line.trim()) return null;
+                            if (line.includes('Tallas:')) {
+                              return <div key={i} className="mt-1 font-medium">{line}</div>;
+                            }
+                            const parts = line.split('•').map(p => p.trim()).filter(Boolean);
+                            if (parts.length > 1) {
+                              return (
+                                <div key={i} className="space-y-0.5">
+                                  {parts.map((part, j) => (
+                                    <div key={j}>• {part}</div>
+                                  ))}
+                                </div>
+                              );
+                            }
+                            return <div key={i}>{line}</div>;
+                          })}
+                        </div>
                       )}
                     </div>
                   </div>
                 </td>
-                <td className="p-2 text-right font-medium align-top">{fmtEUR(item.price || 0)}</td>
+                <td className="p-3 text-right font-semibold align-top text-base">{fmtEUR(item.price || 0)}</td>
               </tr>
             ))}
           </tbody>
