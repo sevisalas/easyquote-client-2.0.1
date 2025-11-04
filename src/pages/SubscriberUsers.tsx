@@ -40,6 +40,7 @@ const UsuariosSuscriptor = () => {
   const [loading, setLoading] = useState(true);
   const [suscriptor, setSuscriptor] = useState<Suscriptor | null>(null);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [hasHoldedIntegration, setHasHoldedIntegration] = useState(false);
   const [emailNuevoUsuario, setEmailNuevoUsuario] = useState("");
   const [rolNuevoUsuario, setRolNuevoUsuario] = useState<"admin" | "user">("user");
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -141,6 +142,17 @@ const UsuariosSuscriptor = () => {
       }
 
       setUsuarios(usuariosFormateados);
+      
+      // Verificar si hay integración con Holded activa
+      const { data: holdedIntegration, error: holdedError } = await supabase
+        .from('organization_integration_access')
+        .select('id, is_active')
+        .eq('organization_id', id)
+        .eq('integration_id', 'e59838d5-c69a-4dac-b0f1-e61fe8a885a0') // ID de Holded
+        .eq('is_active', true)
+        .maybeSingle();
+      
+      setHasHoldedIntegration(!!holdedIntegration);
       
       // Si es superadmin, cargar credenciales API
       if (isSuperAdmin) {
@@ -774,7 +786,7 @@ const UsuariosSuscriptor = () => {
                     <div className="font-medium">
                       {usuario.display_name || usuario.email}
                     </div>
-                    {usuario.cuenta_holded && (
+                    {hasHoldedIntegration && usuario.cuenta_holded && (
                       <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                         {(() => {
                           const account = salesAccounts.find(acc => acc.holded_account_id === usuario.cuenta_holded);
@@ -938,7 +950,7 @@ const UsuariosSuscriptor = () => {
               </p>
             </div>
             
-            {suscriptor?.subscription_plan && (
+            {hasHoldedIntegration && (
               <div className="space-y-2">
                 <Label htmlFor="cuenta-holded">Cuenta de Ventas (Holded)</Label>
                 <Select
