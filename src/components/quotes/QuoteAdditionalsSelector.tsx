@@ -186,8 +186,8 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
           </Select>
           <Select 
             value={predefinedType} 
-            onValueChange={(value: "net_amount" | "percentage" | "quantity_multiplier") => setPredefinedType(value)}
-            disabled={!newAdditionalId}
+            onValueChange={(value: "net_amount" | "percentage") => setPredefinedType(value)}
+            disabled={true}
           >
             <SelectTrigger className="w-32 h-9">
               <SelectValue />
@@ -195,7 +195,6 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
             <SelectContent className="z-50 bg-popover">
               <SelectItem value="net_amount">Importe</SelectItem>
               <SelectItem value="percentage">%</SelectItem>
-              <SelectItem value="quantity_multiplier">x Cant.</SelectItem>
             </SelectContent>
           </Select>
           <Input 
