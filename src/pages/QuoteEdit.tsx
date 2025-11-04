@@ -313,6 +313,8 @@ export default function QuoteEdit() {
               value: promptData.value,
               order: promptData.order ?? 999,
             }))
+            // Filter out prompts without label or with empty/undefined value
+            .filter((p) => p.label && (p.value !== undefined && p.value !== null && p.value !== ''))
             .sort((a, b) => a.order - b.order);
 
           return {
