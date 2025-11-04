@@ -85,7 +85,7 @@ export const generateQuotePDF = async (
       // Extraer información relevante
       const quantities: any[] = [];
       const images: string[] = [];
-      const colorHex: string | null = null;
+      let colorHex: string | null = null;
       const otherDetails: string[] = [];
       
       // Procesar prompts
@@ -94,15 +94,15 @@ export const generateQuotePDF = async (
           const label = prompt.label || '';
           const value = String(prompt.value || '');
           
-          // Filtrar URLs de imágenes
+          // Extraer URLs de imágenes
           if (value.startsWith('http') && (value.includes('.jpg') || value.includes('.png') || value.includes('.jpeg'))) {
-            // No mostrar URLs de imágenes en el PDF
+            images.push(value);
             return;
           }
           
-          // Filtrar códigos de color
+          // Extraer código de color
           if (value.startsWith('#')) {
-            // No mostrar códigos hex
+            colorHex = value;
             return;
           }
           
@@ -124,27 +124,15 @@ export const generateQuotePDF = async (
         });
       }
       
-      // Procesar outputs (solo los relevantes para el cliente)
-      const relevantOutputs: string[] = [];
+      // Procesar outputs para encontrar imágenes adicionales
       if (item.outputs && Array.isArray(item.outputs)) {
         item.outputs.forEach((output: any) => {
-          const name = String(output.name || '').toLowerCase();
           const type = String(output.type || '').toLowerCase();
+          const value = String(output.value || '');
           
-          // Filtrar precios y totales (ya se muestran arriba)
-          if (type.includes('price') || name.includes('precio') || name.includes('price') || 
-              name.includes('total') || type.includes('tax')) {
-            return;
-          }
-          
-          // Filtrar imágenes de producto
-          if (type.includes('image') || String(output.value).startsWith('http')) {
-            return;
-          }
-          
-          // Agregar outputs descriptivos
-          if (output.value && String(output.value).trim() !== '') {
-            relevantOutputs.push(`${output.name}: ${output.value}`);
+          // Extraer imágenes de outputs
+          if (type.includes('image') && value.startsWith('http')) {
+            images.push(value);
           }
         });
       }
@@ -161,16 +149,13 @@ export const generateQuotePDF = async (
       if (quantities.length > 0) {
         description += (description ? '\n' : '') + 'Tallas: ' + quantities.join(', ');
       }
-      
-      // Outputs relevantes
-      if (relevantOutputs.length > 0) {
-        description += (description ? '\n' : '') + relevantOutputs.join(' • ');
-      }
 
       return {
         name: item.product_name || item.name || 'Producto',
         description: description || item.description || '',
-        price: item.price || 0
+        price: item.price || 0,
+        images: images,
+        color: colorHex
       };
     });
 

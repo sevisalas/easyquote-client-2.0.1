@@ -93,9 +93,28 @@ export default function Template2({ data }: Template2Props) {
           <div className="space-y-3">
             {items.map((item: any, index: number) => (
               <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start">
+                <div className="flex gap-3 items-start">
+                  {item.images && item.images.length > 0 && (
+                    <img 
+                      src={item.images[0]} 
+                      alt={item.name}
+                      className="w-16 h-16 object-cover rounded border border-gray-200"
+                    />
+                  )}
                   <div className="flex-1">
-                    <p className="font-semibold mb-1">{item.description || item.name || item.product_name || 'Producto'}</p>
+                    <p className="font-semibold mb-1">{item.name}</p>
+                    {item.color && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <div 
+                          className="w-4 h-4 rounded border border-gray-300" 
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span className="text-xs text-gray-500">{item.color}</span>
+                      </div>
+                    )}
+                    {item.description && (
+                      <p className="text-sm text-gray-600 mt-1 whitespace-pre-line">{item.description}</p>
+                    )}
                   </div>
                   <div className="text-right ml-4">
                     <p className="font-bold text-lg text-gray-900">{fmtEUR(item.price || 0)}</p>

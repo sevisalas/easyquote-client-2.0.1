@@ -110,17 +110,36 @@ export default function Template5({ data }: Template5Props) {
             {items.map((item: any, index: number) => (
               <div key={index} className="bg-gradient-to-br from-white to-gray-50 p-5 rounded-lg shadow-sm border-l-4 hover:shadow-md transition-shadow" 
                    style={{ borderLeftColor: brandColor }}>
-                <div className="flex justify-between items-start gap-4">
+                <div className="flex gap-3 items-start">
+                  {item.images && item.images.length > 0 && (
+                    <img 
+                      src={item.images[0]} 
+                      alt={item.name}
+                      className="w-16 h-16 object-cover rounded border border-gray-200"
+                    />
+                  )}
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" 
                             style={{ backgroundColor: brandColor }}>
                         {index + 1}
                       </span>
-                      <p className="font-bold text-base">{item.description || item.name || item.product_name || 'Producto'}</p>
+                      <p className="font-bold text-base">{item.name}</p>
                     </div>
+                    {item.color && (
+                      <div className="flex items-center gap-2 mt-1 ml-10">
+                        <div 
+                          className="w-4 h-4 rounded border border-gray-300" 
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span className="text-xs text-gray-500">{item.color}</span>
+                      </div>
+                    )}
+                    {item.description && (
+                      <p className="text-sm text-gray-600 mt-1 ml-10 whitespace-pre-line">{item.description}</p>
+                    )}
                   </div>
-                  <div className="text-right">
+                  <div className="text-right ml-4">
                     <p className="font-bold text-xl" style={{ color: brandColor }}>{fmtEUR(item.price || 0)}</p>
                   </div>
                 </div>

@@ -122,16 +122,39 @@ export default function Template4({ data }: Template4Props) {
                 </th>
               </tr>
             </thead>
-            <tbody>
-              {items.map((item: any, index: number) => (
-                <tr key={index} className="border-b border-gray-100">
-                  <td className="py-4">
-                    <p className="font-semibold mb-1">{item.description || item.name || item.product_name || 'Producto'}</p>
-                  </td>
-                  <td className="py-4 text-right font-semibold">{fmtEUR(item.price || 0)}</td>
-                </tr>
-              ))}
-            </tbody>
+              <tbody>
+                {items.map((item: any, index: number) => (
+                  <tr key={index} className="border-b border-gray-100">
+                    <td className="py-4">
+                      <div className="flex gap-3 items-start">
+                        {item.images && item.images.length > 0 && (
+                          <img 
+                            src={item.images[0]} 
+                            alt={item.name}
+                            className="w-16 h-16 object-cover rounded border border-gray-200"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <p className="font-semibold mb-1">{item.name}</p>
+                          {item.color && (
+                            <div className="flex items-center gap-2 mt-1">
+                              <div 
+                                className="w-4 h-4 rounded border border-gray-300" 
+                                style={{ backgroundColor: item.color }}
+                              />
+                              <span className="text-xs text-gray-500">{item.color}</span>
+                            </div>
+                          )}
+                          {item.description && (
+                            <p className="text-sm text-gray-600 mt-1 whitespace-pre-line">{item.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 text-right font-semibold align-top">{fmtEUR(item.price || 0)}</td>
+                  </tr>
+                ))}
+              </tbody>
           </table>
         </section>
 

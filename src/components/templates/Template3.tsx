@@ -90,7 +90,30 @@ export default function Template3({ data }: Template3Props) {
           {items.map((item: any, index: number) => (
             <div key={index} className="grid grid-cols-12 py-4 border-b border-gray-100">
               <div className="col-span-9">
-                <p className="font-medium mb-1">{item.description || item.name || item.product_name || 'Producto'}</p>
+                <div className="flex gap-2 items-start">
+                  {item.images && item.images.length > 0 && (
+                    <img 
+                      src={item.images[0]} 
+                      alt={item.name}
+                      className="w-12 h-12 object-cover rounded border border-gray-200"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <p className="font-medium mb-1">{item.name}</p>
+                    {item.color && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <div 
+                          className="w-3 h-3 rounded border border-gray-300" 
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span className="text-xs text-gray-500">{item.color}</span>
+                      </div>
+                    )}
+                    {item.description && (
+                      <p className="text-xs text-gray-600 mt-1 whitespace-pre-line">{item.description}</p>
+                    )}
+                  </div>
+                </div>
               </div>
               <div className="col-span-3 text-right">
                 <p className="font-medium">{fmtEUR(item.price || 0)}</p>

@@ -128,11 +128,32 @@ export default function Template6({ data }: Template6Props) {
                 {items.map((item: any, index: number) => (
                   <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                     <td className="p-4 border-b border-slate-100">
-                      <p className="font-serif font-semibold text-slate-800 mb-1">
-                        {item.description || item.name || item.product_name || 'Producto'}
-                      </p>
+                      <div className="flex gap-3 items-start">
+                        {item.images && item.images.length > 0 && (
+                          <img 
+                            src={item.images[0]} 
+                            alt={item.name}
+                            className="w-16 h-16 object-cover rounded border border-gray-200"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <p className="font-serif font-semibold text-slate-800 mb-1">{item.name}</p>
+                          {item.color && (
+                            <div className="flex items-center gap-2 mt-1">
+                              <div 
+                                className="w-4 h-4 rounded border border-gray-300" 
+                                style={{ backgroundColor: item.color }}
+                              />
+                              <span className="text-xs text-gray-500">{item.color}</span>
+                            </div>
+                          )}
+                          {item.description && (
+                            <p className="text-sm text-slate-600 mt-1 whitespace-pre-line leading-relaxed">{item.description}</p>
+                          )}
+                        </div>
+                      </div>
                     </td>
-                    <td className="p-4 border-b border-slate-100 text-right">
+                    <td className="p-4 border-b border-slate-100 text-right align-top">
                       <p className="font-semibold text-slate-800">{fmtEUR(item.price || 0)}</p>
                     </td>
                   </tr>

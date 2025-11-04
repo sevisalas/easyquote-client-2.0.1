@@ -93,9 +93,32 @@ export default function Template1({ data }: Template1Props) {
             {items.map((item: any, index: number) => (
               <tr key={index} className="border-b border-gray-200">
                 <td className="p-2">
-                  <p className="font-medium text-sm">{item.description || item.name || item.product_name || 'Producto'}</p>
+                  <div className="flex gap-2 items-start">
+                    {item.images && item.images.length > 0 && (
+                      <img 
+                        src={item.images[0]} 
+                        alt={item.name}
+                        className="w-12 h-12 object-cover rounded border border-gray-200"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{item.name}</p>
+                      {item.color && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <div 
+                            className="w-3 h-3 rounded border border-gray-300" 
+                            style={{ backgroundColor: item.color }}
+                          />
+                          <span className="text-xs text-gray-500">{item.color}</span>
+                        </div>
+                      )}
+                      {item.description && (
+                        <p className="text-xs text-gray-600 mt-1 whitespace-pre-line">{item.description}</p>
+                      )}
+                    </div>
+                  </div>
                 </td>
-                <td className="p-2 text-right font-medium">{fmtEUR(item.price || 0)}</td>
+                <td className="p-2 text-right font-medium align-top">{fmtEUR(item.price || 0)}</td>
               </tr>
             ))}
           </tbody>
