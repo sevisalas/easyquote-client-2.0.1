@@ -313,8 +313,17 @@ export default function QuoteEdit() {
               value: promptData.value,
               order: promptData.order ?? 999,
             }))
-            // Filter out prompts without label or with empty/undefined value
-            .filter((p) => p.label && (p.value !== undefined && p.value !== null && p.value !== ''))
+            // Filter out only prompts without label AND with truly empty string values
+            .filter((p) => {
+              // Keep if has label
+              if (!p.label) return false;
+              // Keep if value is an object (imagepicker, colorpicker, etc)
+              if (typeof p.value === 'object' && p.value !== null) return true;
+              // Keep if value is not an empty string
+              if (p.value !== '') return true;
+              // Remove only if value is empty string
+              return false;
+            })
             .sort((a, b) => a.order - b.order);
 
           return {
