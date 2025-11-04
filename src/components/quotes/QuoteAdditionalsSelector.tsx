@@ -32,6 +32,8 @@ interface QuoteAdditionalsSelectorProps {
 
 export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange }: QuoteAdditionalsSelectorProps) {
   const [newAdditionalId, setNewAdditionalId] = useState<string>("");
+  const [predefinedType, setPredefinedType] = useState<"net_amount" | "percentage" | "quantity_multiplier">("net_amount");
+  const [predefinedValue, setPredefinedValue] = useState(0);
   const [customName, setCustomName] = useState("");
   const [customValue, setCustomValue] = useState(0);
   const [customType, setCustomType] = useState<"net_amount" | "percentage">("net_amount");
@@ -62,13 +64,24 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
     const newSelected: SelectedQuoteAdditional = {
       id: uniqueId,
       name: additional.name,
-      type: additional.type,
-      value: additional.default_value,
+      type: predefinedType,
+      value: predefinedValue,
       is_discount: additional.is_discount || false,
     };
 
     onChange([...selectedAdditionals, newSelected]);
     setNewAdditionalId("");
+    setPredefinedValue(0);
+  };
+
+  // Update predefined type and value when selection changes
+  const handlePredefinedSelection = (additionalId: string) => {
+    setNewAdditionalId(additionalId);
+    const additional = availableAdditionals.find((a) => a.id === additionalId);
+    if (additional) {
+      setPredefinedType(additional.type);
+      setPredefinedValue(additional.default_value);
+    }
   };
 
   const addCustomAdditional = () => {
@@ -94,6 +107,10 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
 
   const updateAdditionalValue = (id: string, value: number) => {
     onChange(selectedAdditionals.map((sa) => (sa.id === id ? { ...sa, value } : sa)));
+  };
+
+  const updateAdditionalType = (id: string, type: "net_amount" | "percentage" | "quantity_multiplier") => {
+    onChange(selectedAdditionals.map((sa) => (sa.id === id ? { ...sa, type } : sa)));
   };
 
   return (
@@ -122,19 +139,13 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
                 </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                {additional.isCustom ? (
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={additional.value}
-                    onChange={(e) => updateAdditionalValue(additional.id, parseFloat(e.target.value) || 0)}
-                    className="w-24 h-9"
-                  />
-                ) : (
-                  <div className="w-24 h-9 flex items-center justify-end px-3 border rounded bg-muted/50">
-                    <span className="font-medium">{additional.value}</span>
-                  </div>
-                )}
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={additional.value}
+                  onChange={(e) => updateAdditionalValue(additional.id, parseFloat(e.target.value) || 0)}
+                  className="w-24 h-9"
+                />
                 <span className="text-sm text-muted-foreground w-4">
                   {additional.type === "net_amount" ? "€" : additional.type === "quantity_multiplier" ? "x" : "%"}
                 </span>
@@ -155,11 +166,11 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
       {/* Add Predefined Additional */}
       {availableAdditionals.length > 0 && (
         <div className="flex gap-2 items-center max-w-2xl">
-          <Select value={newAdditionalId} onValueChange={setNewAdditionalId}>
+          <Select value={newAdditionalId} onValueChange={handlePredefinedSelection}>
             <SelectTrigger className="flex-1 h-9 justify-start">
               <SelectValue placeholder="Selecciona un ajuste..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-50 bg-popover">
               {availableAdditionals.map((additional) => (
                 <SelectItem key={additional.id} value={additional.id}>
                   {additional.name} (
@@ -173,16 +184,29 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
               ))}
             </SelectContent>
           </Select>
-          <Select value={customType} onValueChange={(value: "net_amount" | "percentage") => setCustomType(value)}>
+          <Select 
+            value={predefinedType} 
+            onValueChange={(value: "net_amount" | "percentage" | "quantity_multiplier") => setPredefinedType(value)}
+            disabled={!newAdditionalId}
+          >
             <SelectTrigger className="w-32 h-9">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-50 bg-popover">
               <SelectItem value="net_amount">Importe</SelectItem>
               <SelectItem value="percentage">%</SelectItem>
+              <SelectItem value="quantity_multiplier">x Cant.</SelectItem>
             </SelectContent>
           </Select>
-          <Input type="number" step="0.01" value={0} placeholder="0" className="w-24 h-9" readOnly />
+          <Input 
+            type="number" 
+            step="0.01" 
+            value={predefinedValue} 
+            onChange={(e) => setPredefinedValue(parseFloat(e.target.value) || 0)}
+            placeholder="0" 
+            className="w-24 h-9" 
+            disabled={!newAdditionalId}
+          />
           <Button onClick={addPredefinedAdditional} disabled={!newAdditionalId} variant="secondary" className="h-9 px-4 shrink-0">
             <Plus className="h-4 w-4 mr-1" />
             Añadir
@@ -202,7 +226,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
           <SelectTrigger className="w-32 h-9">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-50 bg-popover">
             <SelectItem value="net_amount">Importe</SelectItem>
             <SelectItem value="percentage">%</SelectItem>
           </SelectContent>
