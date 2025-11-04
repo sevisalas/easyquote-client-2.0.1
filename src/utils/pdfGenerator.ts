@@ -80,82 +80,47 @@ export const generateQuotePDF = async (
     // Get template configuration
     const config = await getTemplateConfig();
 
-    // Format items with descriptions
+    // Format items - mantener orden original de prompts
     const formattedItems = (quote.items || []).map((item: any) => {
-      // Extraer información relevante
-      const quantities: any[] = [];
       const images: string[] = [];
-      let colorHex: string | null = null;
-      const otherDetails: string[] = [];
+      const promptsFormatted: Array<{label: string, value: string}> = [];
       
-      // Procesar prompts
+      // Extraer imágenes y prompts EN ORDEN
       if (item.prompts && Array.isArray(item.prompts)) {
         item.prompts.forEach((prompt: any) => {
           const label = prompt.label || '';
           const value = String(prompt.value || '');
           
-          // Extraer URLs de imágenes
-          if (value.startsWith('http') && (value.includes('.jpg') || value.includes('.png') || value.includes('.jpeg'))) {
+          // Detectar y extraer imágenes (cualquier URL)
+          if (value.startsWith('http') || value.startsWith('https://')) {
             images.push(value);
-            return;
+            return; // No incluir URLs en la descripción
           }
           
-          // Extraer código de color
-          if (value.startsWith('#')) {
-            colorHex = value;
-            return;
-          }
-          
-          // Agrupar cantidades (tallas, etc.)
-          if (label.toLowerCase().includes('men') || label.toLowerCase().includes('women') || 
-              label.toLowerCase().includes('small') || label.toLowerCase().includes('medium') ||
-              label.toLowerCase().includes('large') || label.toLowerCase().includes('xl')) {
-            const qty = parseInt(value);
-            if (qty > 0) {
-              quantities.push(`${label}: ${value}`);
-            }
-            return;
-          }
-          
-          // Solo agregar detalles relevantes (no cantidades 0, no URLs, no colores)
+          // Incluir TODOS los prompts en orden (excepto valores vacíos o 0)
           if (value !== '0' && value.trim() !== '') {
-            otherDetails.push(`${label}: ${value}`);
+            promptsFormatted.push({ label, value });
           }
         });
       }
       
-      // Procesar outputs para encontrar imágenes adicionales
+      // Extraer imágenes de outputs (OutputImage, etc.)
       if (item.outputs && Array.isArray(item.outputs)) {
         item.outputs.forEach((output: any) => {
           const type = String(output.type || '').toLowerCase();
           const value = String(output.value || '');
           
-          // Extraer imágenes de outputs
-          if (type.includes('image') && value.startsWith('http')) {
+          if (type.includes('image') && (value.startsWith('http') || value.startsWith('https://'))) {
             images.push(value);
           }
         });
       }
-      
-      // Construir descripción compacta
-      let description = '';
-      
-      // Detalles del producto
-      if (otherDetails.length > 0) {
-        description += otherDetails.slice(0, 5).join(' • ');
-      }
-      
-      // Cantidades/tallas (si existen)
-      if (quantities.length > 0) {
-        description += (description ? '\n' : '') + 'Tallas: ' + quantities.join(', ');
-      }
 
       return {
         name: item.product_name || item.name || 'Producto',
-        description: description || item.description || '',
+        prompts: promptsFormatted,
         price: item.price || 0,
-        images: images,
-        color: colorHex
+        images: images
       };
     });
 

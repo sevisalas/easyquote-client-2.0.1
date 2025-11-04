@@ -130,50 +130,34 @@ export default function Template6({ data }: Template6Props) {
                     <td className="p-4 border-b border-slate-100">
                       <div className="flex gap-4 items-start">
                         {item.images && item.images.length > 0 && (
-                          <img 
-                            src={item.images[0]} 
-                            alt={item.name}
-                            className="w-20 h-20 object-cover rounded border border-gray-300 flex-shrink-0"
-                            crossOrigin="anonymous"
-                          />
+                          <div className="flex flex-col gap-2 flex-shrink-0">
+                            {item.images.map((img: string, imgIdx: number) => (
+                              <img 
+                                key={imgIdx}
+                                src={img} 
+                                alt={`${item.name} ${imgIdx + 1}`}
+                                className="w-20 h-20 object-cover rounded border border-gray-300"
+                                crossOrigin="anonymous"
+                              />
+                            ))}
+                          </div>
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="font-serif font-semibold text-slate-800 mb-2">{item.name}</p>
-                          {item.color && (
-                            <div className="flex items-center gap-2 mb-2">
-                              <div 
-                                className="w-4 h-4 rounded border border-gray-300 flex-shrink-0" 
-                                style={{ backgroundColor: item.color }}
-                              />
-                              <span className="text-xs text-gray-600">Color: {item.color}</span>
-                            </div>
-                          )}
-                          {item.description && (
+                          {item.prompts && item.prompts.length > 0 && (
                             <div className="text-sm text-slate-700 space-y-1 leading-relaxed">
-                              {item.description.split('\n').map((line: string, i: number) => {
-                                if (!line.trim()) return null;
-                                if (line.includes('Tallas:')) {
-                                  return <div key={i} className="mt-1 font-medium">{line}</div>;
-                                }
-                                const parts = line.split('•').map(p => p.trim()).filter(Boolean);
-                                if (parts.length > 1) {
-                                  return (
-                                    <div key={i} className="space-y-0.5">
-                                      {parts.map((part, j) => (
-                                        <div key={j}>• {part}</div>
-                                      ))}
-                                    </div>
-                                  );
-                                }
-                                return <div key={i}>{line}</div>;
-                              })}
+                              {item.prompts.map((prompt: any, pIdx: number) => (
+                                <div key={pIdx}>
+                                  <span className="font-medium">{prompt.label}:</span> {prompt.value}
+                                </div>
+                              ))}
                             </div>
                           )}
                         </div>
                       </div>
                     </td>
                     <td className="p-4 border-b border-slate-100 text-right align-top">
-                      <p className="font-semibold text-slate-800 text-lg">{fmtEUR(item.price || 0)}</p>
+                      <p className="font-semibold text-slate-800 text-lg whitespace-nowrap">{fmtEUR(item.price || 0)}</p>
                     </td>
                   </tr>
                 ))}

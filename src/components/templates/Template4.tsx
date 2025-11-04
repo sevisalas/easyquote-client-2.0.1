@@ -128,49 +128,33 @@ export default function Template4({ data }: Template4Props) {
                     <td className="py-4">
                       <div className="flex gap-3 items-start">
                         {item.images && item.images.length > 0 && (
-                          <img 
-                            src={item.images[0]} 
-                            alt={item.name}
-                            className="w-20 h-20 object-cover rounded border border-gray-300 flex-shrink-0"
-                            crossOrigin="anonymous"
-                          />
+                          <div className="flex flex-col gap-2 flex-shrink-0">
+                            {item.images.map((img: string, imgIdx: number) => (
+                              <img 
+                                key={imgIdx}
+                                src={img} 
+                                alt={`${item.name} ${imgIdx + 1}`}
+                                className="w-20 h-20 object-cover rounded border border-gray-300"
+                                crossOrigin="anonymous"
+                              />
+                            ))}
+                          </div>
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold mb-2">{item.name}</p>
-                          {item.color && (
-                            <div className="flex items-center gap-2 mb-2">
-                              <div 
-                                className="w-5 h-5 rounded border border-gray-300 flex-shrink-0" 
-                                style={{ backgroundColor: item.color }}
-                              />
-                              <span className="text-xs text-gray-600">Color: {item.color}</span>
-                            </div>
-                          )}
-                          {item.description && (
+                          {item.prompts && item.prompts.length > 0 && (
                             <div className="text-sm text-gray-700 space-y-1">
-                              {item.description.split('\n').map((line: string, i: number) => {
-                                if (!line.trim()) return null;
-                                if (line.includes('Tallas:')) {
-                                  return <div key={i} className="mt-1 font-medium">{line}</div>;
-                                }
-                                const parts = line.split('•').map(p => p.trim()).filter(Boolean);
-                                if (parts.length > 1) {
-                                  return (
-                                    <div key={i} className="space-y-0.5">
-                                      {parts.map((part, j) => (
-                                        <div key={j}>• {part}</div>
-                                      ))}
-                                    </div>
-                                  );
-                                }
-                                return <div key={i}>{line}</div>;
-                              })}
+                              {item.prompts.map((prompt: any, pIdx: number) => (
+                                <div key={pIdx}>
+                                  <span className="font-medium">{prompt.label}:</span> {prompt.value}
+                                </div>
+                              ))}
                             </div>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 text-right font-semibold align-top text-lg">{fmtEUR(item.price || 0)}</td>
+                    <td className="py-4 text-right font-semibold align-top text-lg whitespace-nowrap">{fmtEUR(item.price || 0)}</td>
                   </tr>
                 ))}
               </tbody>
