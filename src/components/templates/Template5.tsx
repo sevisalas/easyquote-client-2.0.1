@@ -21,7 +21,27 @@ export default function Template5({ data }: Template5Props) {
   const brandColor = config.brandColor || '#ec4899';
 
   return (
-    <div className="bg-white min-h-[297mm] w-[210mm] mx-auto" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+    <div className="bg-white min-h-[297mm] w-[210mm] mx-auto relative" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+      {/* Watermark for Draft */}
+      {quote.status === 'draft' && (
+        <div 
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%) rotate(-45deg)',
+            fontSize: '120px',
+            fontWeight: 'bold',
+            color: 'rgba(0, 0, 0, 0.08)',
+            zIndex: 10,
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          BORRADOR
+        </div>
+      )}
+      
       {/* Creative Header with angled design */}
       <header className="relative pb-12 pt-8 px-8 overflow-hidden">
         <div 

@@ -21,7 +21,27 @@ export default function Template4({ data }: Template4Props) {
   const accentColor = config.brandColor || '#1e40af';
 
   return (
-    <div className="bg-gray-50 min-h-[297mm] w-[210mm] mx-auto" style={{ fontFamily: 'Georgia, serif' }}>
+    <div className="bg-gray-50 min-h-[297mm] w-[210mm] mx-auto relative" style={{ fontFamily: 'Georgia, serif' }}>
+      {/* Watermark for Draft */}
+      {quote.status === 'draft' && (
+        <div 
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%) rotate(-45deg)',
+            fontSize: '120px',
+            fontWeight: 'bold',
+            color: 'rgba(0, 0, 0, 0.08)',
+            zIndex: 10,
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          BORRADOR
+        </div>
+      )}
+      
       {/* Corporate Header */}
       <header className="bg-white p-8 shadow-sm">
         <div className="flex justify-between items-center mb-6">

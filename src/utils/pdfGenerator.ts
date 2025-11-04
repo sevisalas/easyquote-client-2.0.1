@@ -147,7 +147,8 @@ export const generateQuotePDF = async (
         tax_amount: quote.tax_amount || 0,
         discount_amount: quote.discount_amount || 0,
         final_price: quote.final_price || 0,
-        valid_until: quote.valid_until
+        valid_until: quote.valid_until,
+        status: quote.status
       },
       customer: customer || {
         name: 'Cliente',

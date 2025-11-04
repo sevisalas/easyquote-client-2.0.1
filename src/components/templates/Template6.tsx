@@ -19,7 +19,27 @@ export default function Template6({ data }: Template6Props) {
   };
 
   return (
-    <div className="bg-white min-h-[297mm] w-[210mm] mx-auto" style={{ fontFamily: 'Times New Roman, serif' }}>
+    <div className="bg-white min-h-[297mm] w-[210mm] mx-auto relative" style={{ fontFamily: 'Times New Roman, serif' }}>
+      {/* Watermark for Draft */}
+      {quote.status === 'draft' && (
+        <div 
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%) rotate(-45deg)',
+            fontSize: '120px',
+            fontWeight: 'bold',
+            color: 'rgba(0, 0, 0, 0.08)',
+            zIndex: 10,
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          BORRADOR
+        </div>
+      )}
+      
       {/* Executive Header */}
       <header className="bg-gradient-to-r from-slate-900 to-slate-700 text-white p-8">
         <div className="flex justify-between items-start border-b border-white/20 pb-6">

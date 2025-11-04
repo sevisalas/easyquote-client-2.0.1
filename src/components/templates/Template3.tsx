@@ -19,7 +19,27 @@ export default function Template3({ data }: Template3Props) {
   };
 
   return (
-    <div className="bg-white p-12 min-h-[297mm] w-[210mm] mx-auto" style={{ fontFamily: 'Helvetica, sans-serif' }}>
+    <div className="bg-white p-12 min-h-[297mm] w-[210mm] mx-auto relative" style={{ fontFamily: 'Helvetica, sans-serif' }}>
+      {/* Watermark for Draft */}
+      {quote.status === 'draft' && (
+        <div 
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%) rotate(-45deg)',
+            fontSize: '120px',
+            fontWeight: 'bold',
+            color: 'rgba(0, 0, 0, 0.08)',
+            zIndex: 10,
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          BORRADOR
+        </div>
+      )}
+      
       {/* Minimalist Header */}
       <header className="mb-12">
         <div className="flex justify-between items-start border-b border-gray-900 pb-6">

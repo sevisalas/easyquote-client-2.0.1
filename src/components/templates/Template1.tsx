@@ -19,7 +19,27 @@ export default function Template1({ data }: Template1Props) {
   };
 
   return (
-    <div className="bg-white p-8 min-h-[297mm] w-[210mm] mx-auto" style={{ fontFamily: 'Arial, sans-serif' }}>
+    <div className="bg-white p-8 min-h-[297mm] w-[210mm] mx-auto relative" style={{ fontFamily: 'Arial, sans-serif' }}>
+      {/* Watermark for Draft */}
+      {quote.status === 'draft' && (
+        <div 
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%) rotate(-45deg)',
+            fontSize: '120px',
+            fontWeight: 'bold',
+            color: 'rgba(0, 0, 0, 0.08)',
+            zIndex: 10,
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          BORRADOR
+        </div>
+      )}
+      
       {/* Header */}
       <header className="flex justify-between items-start mb-8 pb-4 border-b-2" style={{ borderColor: config.brandColor || '#0ea5e9' }}>
         <div>
