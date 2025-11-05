@@ -111,40 +111,50 @@ export default function Template5({ data }: Template5Props) {
             {items.map((item: any, index: number) => (
               <div key={index} className="bg-gradient-to-br from-white to-gray-50 p-5 rounded-lg shadow-sm border-l-4" 
                    style={{ borderLeftColor: brandColor }}>
-                <div className="flex gap-4 items-start">
-                  {item.images && item.images.length > 0 && (
-                    <div className="flex flex-col gap-2 flex-shrink-0">
-                      {item.images.map((img: string, imgIdx: number) => (
-                        <img 
-                          key={imgIdx}
-                          src={img} 
-                          alt={`${item.name} ${imgIdx + 1}`}
-                          className="w-20 h-20 object-cover rounded border border-gray-300"
-                          crossOrigin="anonymous"
-                        />
-                      ))}
-                    </div>
-                  )}
+                <div className="flex items-start gap-3">
+                  <span className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0" 
+                        style={{ backgroundColor: brandColor }}>
+                    {index + 1}
+                  </span>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0" 
-                            style={{ backgroundColor: brandColor }}>
-                        {index + 1}
-                      </span>
+                    <div className="flex items-start gap-2 mb-2">
+                      {/* Miniaturas de imágenes */}
+                      {item.images && item.images.length > 0 && (
+                        <div className="flex gap-1 flex-shrink-0">
+                          {item.images.map((imgUrl: string, imgIdx: number) => (
+                            <img 
+                              key={imgIdx}
+                              src={imgUrl} 
+                              alt="" 
+                              className="w-10 h-10 object-cover border border-gray-200"
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                          ))}
+                        </div>
+                      )}
                       <p className="font-bold text-base">{item.name}</p>
                     </div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-gray-600">Precio unitario:</span>
+                      <span className="font-bold" style={{ color: brandColor }}>{fmtEUR(item.price || 0)}</span>
+                    </div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-gray-600">Cantidad:</span>
+                      <span className="font-semibold">{item.quantity || 1}</span>
+                    </div>
                     {item.prompts && item.prompts.length > 0 && (
-                      <div className="text-sm text-gray-700 ml-11 space-y-1">
+                      <div className="text-xs text-gray-700 space-y-0.5 mb-2">
                         {item.prompts.map((prompt: any, pIdx: number) => (
                           <div key={pIdx}>
-                            <span className="font-medium">{prompt.label}:</span> {prompt.value}
+                            <span className="font-medium uppercase">{prompt.label}:</span> {prompt.value}
                           </div>
                         ))}
                       </div>
                     )}
                   </div>
                   <div className="text-right ml-4 flex-shrink-0">
-                    <p className="font-bold text-xl whitespace-nowrap" style={{ color: brandColor }}>{fmtEUR(item.price || 0)}</p>
+                    <p className="text-xs text-gray-600 mb-1">Total</p>
+                    <p className="font-bold text-xl whitespace-nowrap" style={{ color: brandColor }}>{fmtEUR((item.price || 0) * (item.quantity || 1))}</p>
                   </div>
                 </div>
               </div>

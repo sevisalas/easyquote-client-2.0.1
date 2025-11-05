@@ -100,20 +100,36 @@ export default function Template2({ data }: Template2Props) {
             <tbody>
               {items.map((item: any, index: number) => (
                 <React.Fragment key={index}>
-                  {/* Fila principal */}
+                  {/* Fila principal del producto */}
                   <tr className="border-b border-gray-300">
                     <td className="p-2">
-                      <p className="font-semibold text-sm">{item.name}</p>
+                      <div className="flex items-start gap-2">
+                        {/* Miniaturas de imágenes */}
+                        {item.images && item.images.length > 0 && (
+                          <div className="flex gap-1 flex-shrink-0">
+                            {item.images.map((imgUrl: string, imgIdx: number) => (
+                              <img 
+                                key={imgIdx}
+                                src={imgUrl} 
+                                alt="" 
+                                className="w-10 h-10 object-cover border border-gray-200"
+                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                              />
+                            ))}
+                          </div>
+                        )}
+                        <p className="font-semibold text-sm">{item.name}</p>
+                      </div>
                     </td>
                     <td className="p-2 text-right text-sm font-medium whitespace-nowrap">{fmtEUR(item.price || 0)}</td>
                     <td className="p-2 text-center text-sm">{item.quantity || 1}</td>
                     <td className="p-2 text-right text-sm font-semibold whitespace-nowrap">{fmtEUR((item.price || 0) * (item.quantity || 1))}</td>
                   </tr>
-                  {/* Prompts debajo */}
+                  {/* Prompts debajo en fila separada */}
                   {item.prompts && item.prompts.length > 0 && (
                     <tr className="border-b border-gray-300">
-                      <td colSpan={4} className="pl-6 pr-2 py-2">
-                        <div className="text-xs text-gray-700 space-y-1">
+                      <td colSpan={4} className="pl-6 pr-2 py-1.5">
+                        <div className="text-xs text-gray-700 space-y-0.5">
                           {item.prompts.map((prompt: any, pIdx: number) => (
                             <div key={pIdx}>
                               <span className="font-medium uppercase">{prompt.label}:</span> {prompt.value}

@@ -169,7 +169,7 @@ export const generateQuotePDF = async (
     );
 
     // Wait for render and images to load
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     // Capture as canvas with better quality
     const canvas = await html2canvas(container.firstChild as HTMLElement, {

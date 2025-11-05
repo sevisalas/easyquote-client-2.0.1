@@ -125,38 +125,47 @@ export default function Template4({ data }: Template4Props) {
             </thead>
               <tbody>
                 {items.map((item: any, index: number) => (
-                  <tr key={index} className="border-b border-gray-100">
-                    <td className="py-4">
-                      <div className="flex gap-3 items-start">
-                        {item.images && item.images.length > 0 && (
-                          <div className="flex flex-col gap-2 flex-shrink-0">
-                            {item.images.map((img: string, imgIdx: number) => (
-                              <img 
-                                key={imgIdx}
-                                src={img} 
-                                alt={`${item.name} ${imgIdx + 1}`}
-                                className="w-20 h-20 object-cover rounded border border-gray-300"
-                                crossOrigin="anonymous"
-                              />
-                            ))}
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold mb-2">{item.name}</p>
-                          {item.prompts && item.prompts.length > 0 && (
-                            <div className="text-sm text-gray-700 space-y-1">
-                              {item.prompts.map((prompt: any, pIdx: number) => (
-                                <div key={pIdx}>
-                                  <span className="font-medium">{prompt.label}:</span> {prompt.value}
-                                </div>
+                  <React.Fragment key={index}>
+                    {/* Fila principal del producto */}
+                    <tr className="border-b border-gray-100">
+                      <td className="py-3 pr-3">
+                        <div className="flex items-start gap-2">
+                          {/* Miniaturas de imágenes */}
+                          {item.images && item.images.length > 0 && (
+                            <div className="flex gap-1 flex-shrink-0">
+                              {item.images.map((imgUrl: string, imgIdx: number) => (
+                                <img 
+                                  key={imgIdx}
+                                  src={imgUrl} 
+                                  alt="" 
+                                  className="w-10 h-10 object-cover border border-gray-200"
+                                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                />
                               ))}
                             </div>
                           )}
+                          <p className="font-semibold">{item.name}</p>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-4 text-right font-semibold align-top text-lg whitespace-nowrap">{fmtEUR(item.price || 0)}</td>
-                  </tr>
+                      </td>
+                      <td className="py-3 text-right text-sm whitespace-nowrap">{fmtEUR(item.price || 0)}</td>
+                      <td className="py-3 text-center text-sm">{item.quantity || 1}</td>
+                      <td className="py-3 text-right font-semibold text-lg whitespace-nowrap">{fmtEUR((item.price || 0) * (item.quantity || 1))}</td>
+                    </tr>
+                    {/* Prompts debajo en fila separada */}
+                    {item.prompts && item.prompts.length > 0 && (
+                      <tr className="border-b border-gray-100">
+                        <td colSpan={4} className="pl-6 py-1.5">
+                          <div className="text-xs text-gray-700 space-y-0.5">
+                            {item.prompts.map((prompt: any, pIdx: number) => (
+                              <div key={pIdx}>
+                                <span className="font-medium uppercase">{prompt.label}:</span> {prompt.value}
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
           </table>

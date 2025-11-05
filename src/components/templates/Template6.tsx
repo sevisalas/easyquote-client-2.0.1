@@ -127,40 +127,47 @@ export default function Template6({ data }: Template6Props) {
               </thead>
               <tbody>
                 {items.map((item: any, index: number) => (
-                  <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                    <td className="p-4 border-b border-slate-100">
-                      <div className="flex gap-4 items-start">
-                        {item.images && item.images.length > 0 && (
-                          <div className="flex flex-col gap-2 flex-shrink-0">
-                            {item.images.map((img: string, imgIdx: number) => (
-                              <img 
-                                key={imgIdx}
-                                src={img} 
-                                alt={`${item.name} ${imgIdx + 1}`}
-                                className="w-20 h-20 object-cover rounded border border-gray-300"
-                                crossOrigin="anonymous"
-                              />
-                            ))}
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-serif font-semibold text-slate-800 mb-2">{item.name}</p>
-                          {item.prompts && item.prompts.length > 0 && (
-                            <div className="text-sm text-slate-700 space-y-1 leading-relaxed">
-                              {item.prompts.map((prompt: any, pIdx: number) => (
-                                <div key={pIdx}>
-                                  <span className="font-medium">{prompt.label}:</span> {prompt.value}
-                                </div>
+                  <React.Fragment key={index}>
+                    {/* Fila principal del producto */}
+                    <tr className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                      <td className="p-4 border-b border-slate-100">
+                        <div className="flex items-start gap-2">
+                          {/* Miniaturas de imágenes */}
+                          {item.images && item.images.length > 0 && (
+                            <div className="flex gap-1 flex-shrink-0">
+                              {item.images.map((imgUrl: string, imgIdx: number) => (
+                                <img 
+                                  key={imgIdx}
+                                  src={imgUrl} 
+                                  alt="" 
+                                  className="w-10 h-10 object-cover border border-gray-200"
+                                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                />
                               ))}
                             </div>
                           )}
+                          <p className="font-serif font-semibold text-slate-800">{item.name}</p>
                         </div>
-                      </div>
-                    </td>
-                    <td className="p-4 border-b border-slate-100 text-right align-top">
-                      <p className="font-semibold text-slate-800 text-lg whitespace-nowrap">{fmtEUR(item.price || 0)}</p>
-                    </td>
-                  </tr>
+                      </td>
+                      <td className="p-4 border-b border-slate-100 text-right align-top">
+                        <p className="font-semibold text-slate-800 text-lg whitespace-nowrap">{fmtEUR(item.price || 0)}</p>
+                      </td>
+                    </tr>
+                    {/* Prompts debajo en fila separada */}
+                    {item.prompts && item.prompts.length > 0 && (
+                      <tr className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                        <td colSpan={2} className="pl-8 py-1.5 border-b border-slate-100">
+                          <div className="text-xs text-slate-700 space-y-0.5">
+                            {item.prompts.map((prompt: any, pIdx: number) => (
+                              <div key={pIdx}>
+                                <span className="font-medium uppercase">{prompt.label}:</span> {prompt.value}
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>

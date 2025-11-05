@@ -91,18 +91,36 @@ export default function Template3({ data }: Template3Props) {
           <tbody>
             {items.map((item: any, index: number) => (
               <React.Fragment key={index}>
+                {/* Fila principal del producto */}
                 <tr className="border-b border-gray-100">
                   <td className="py-3">
-                    <p className="font-medium">{item.name}</p>
+                    <div className="flex items-start gap-2">
+                      {/* Miniaturas de imágenes */}
+                      {item.images && item.images.length > 0 && (
+                        <div className="flex gap-1 flex-shrink-0">
+                          {item.images.map((imgUrl: string, imgIdx: number) => (
+                            <img 
+                              key={imgIdx}
+                              src={imgUrl} 
+                              alt="" 
+                              className="w-10 h-10 object-cover border border-gray-200"
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      <p className="font-medium">{item.name}</p>
+                    </div>
                   </td>
                   <td className="py-3 text-right font-medium whitespace-nowrap">{fmtEUR(item.price || 0)}</td>
                   <td className="py-3 text-center">{item.quantity || 1}</td>
                   <td className="py-3 text-right font-medium whitespace-nowrap">{fmtEUR((item.price || 0) * (item.quantity || 1))}</td>
                 </tr>
+                {/* Prompts debajo en fila separada */}
                 {item.prompts && item.prompts.length > 0 && (
                   <tr className="border-b border-gray-100">
-                    <td colSpan={4} className="pl-6 py-2">
-                      <div className="text-xs text-gray-700 space-y-1">
+                    <td colSpan={4} className="pl-6 py-1.5">
+                      <div className="text-xs text-gray-700 space-y-0.5">
                         {item.prompts.map((prompt: any, pIdx: number) => (
                           <div key={pIdx}>
                             <span className="font-medium uppercase">{prompt.label}:</span> {prompt.value}
