@@ -44,7 +44,7 @@ export default function Template5({ data }: Template5Props) {
       )}
       
       {/* Creative Header with angled design */}
-      <header className="relative pb-12 pt-8 px-8 overflow-hidden">
+      <header className="relative pb-6 pt-4 px-4 overflow-hidden">
         <div 
           className="absolute inset-0 transform -skew-y-3 origin-top-left"
           style={{ 
@@ -55,14 +55,14 @@ export default function Template5({ data }: Template5Props) {
           <div className="flex justify-between items-start">
             <div>
               {config.logoUrl && (
-                <img src={config.logoUrl} alt="Logo" className="h-14 mb-3" />
+                <img src={config.logoUrl} alt="Logo" className="h-10 mb-1" />
               )}
-              <h1 className="text-3xl font-bold mb-1">{config.companyName || 'Mi Empresa'}</h1>
+              <h1 className="text-xl font-bold">{config.companyName || 'Mi Empresa'}</h1>
             </div>
-            <div className="text-right bg-white/20 backdrop-blur-sm p-4 rounded-lg">
-              <h2 className="text-lg font-bold mb-1">PRESUPUESTO</h2>
-              <p className="text-sm">#{quote.quote_number || '-'}</p>
-              <p className="text-xs opacity-90 mt-1">
+            <div className="text-right bg-white/20 backdrop-blur-sm p-2 rounded-lg">
+              <h2 className="text-sm font-bold mb-0.5">PRESUPUESTO</h2>
+              <p className="text-xs">#{quote.quote_number || '-'}</p>
+              <p className="text-[10px] opacity-90">
                 {quote.created_at ? format(new Date(quote.created_at), 'dd/MM/yyyy', { locale: es }) : '-'}
               </p>
             </div>
@@ -70,20 +70,20 @@ export default function Template5({ data }: Template5Props) {
         </div>
       </header>
 
-      <div className="px-8 pb-8">
+      <div className="px-4 pb-4">
         {/* Customer Info - Creative Card */}
-        <section className="mb-6 -mt-6 relative z-20">
-          <div className="bg-white shadow-lg rounded-lg p-5 border-t-4" style={{ borderTopColor: brandColor }}>
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl" style={{ backgroundColor: brandColor }}>
+        <section className="mb-3 -mt-3 relative z-20">
+          <div className="bg-white shadow-lg rounded-lg p-2 border-t-4" style={{ borderTopColor: brandColor }}>
+            <div className="flex items-start gap-2">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: brandColor }}>
                 {(customer.name || 'C').charAt(0).toUpperCase()}
               </div>
               <div className="flex-1">
-                <h3 className="text-xs font-semibold mb-2 uppercase tracking-wide opacity-60">Cliente</h3>
-                <p className="font-bold text-lg mb-1">{customer.name || 'Cliente'}</p>
-                {customer.email && <p className="text-sm text-gray-600">{customer.email}</p>}
-                {customer.phone && <p className="text-sm text-gray-600">{customer.phone}</p>}
-                {customer.address && <p className="text-sm text-gray-600 mt-1">{customer.address}</p>}
+                <h3 className="text-[10px] font-semibold mb-0.5 uppercase tracking-wide opacity-60">Cliente</h3>
+                <p className="font-bold text-sm mb-0.5">{customer.name || 'Cliente'}</p>
+                {customer.email && <p className="text-xs text-gray-600">{customer.email}</p>}
+                {customer.phone && <p className="text-xs text-gray-600">{customer.phone}</p>}
+                {customer.address && <p className="text-xs text-gray-600">{customer.address}</p>}
               </div>
             </div>
           </div>
@@ -91,100 +91,101 @@ export default function Template5({ data }: Template5Props) {
 
         {/* Quote Info */}
         {(quote.title || quote.description) && (
-          <section className="mb-6">
+          <section className="mb-3">
             {quote.title && (
-              <h3 className="font-bold text-2xl mb-2 bg-clip-text text-transparent" 
-                  style={{ backgroundImage: `linear-gradient(135deg, ${brandColor}, ${brandColor}aa)` }}>
+              <h3 className="font-bold text-sm mb-1" style={{ color: brandColor }}>
                 {quote.title}
               </h3>
             )}
-            {quote.description && <p className="text-sm text-gray-700 leading-relaxed">{quote.description}</p>}
+            {quote.description && <p className="text-xs text-gray-700 leading-tight">{quote.description}</p>}
           </section>
         )}
 
-        {/* Items - Creative Cards */}
-        <section className="mb-6">
-          <h3 className="text-xs font-semibold mb-4 uppercase tracking-wider opacity-60">
+        {/* Items Table */}
+        <section className="mb-3">
+          <h3 className="text-xs font-semibold mb-2 uppercase tracking-wider opacity-60">
             Servicios Incluidos
           </h3>
-          <div className="space-y-3">
-            {items.map((item: any, index: number) => (
-              <div key={index} className="bg-gradient-to-br from-white to-gray-50 p-5 rounded-lg shadow-sm border-l-4" 
-                   style={{ borderLeftColor: brandColor }}>
-                <div className="flex items-start gap-3">
-                  <span className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0" 
-                        style={{ backgroundColor: brandColor }}>
-                    {index + 1}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start gap-2 mb-2">
-                      {/* Miniaturas de imágenes */}
-                      {item.images && item.images.length > 0 && (
-                        <div className="flex gap-1 flex-shrink-0">
-                          {item.images.map((imgUrl: string, imgIdx: number) => (
-                            <img 
-                              key={imgIdx}
-                              src={imgUrl} 
-                              alt="" 
-                              className="w-10 h-10 object-cover border border-gray-200"
-                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                            />
+          <table className="w-full border-collapse border border-gray-300">
+            <thead>
+              <tr style={{ backgroundColor: brandColor }} className="text-white">
+                <th className="text-left p-1.5 text-xs font-semibold">CONCEPTO</th>
+                <th className="text-right p-1.5 text-xs font-semibold w-20">PRECIO</th>
+                <th className="text-center p-1.5 text-xs font-semibold w-16">UNID.</th>
+                <th className="text-right p-1.5 text-xs font-semibold w-20">SUBTOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item: any, index: number) => (
+                <React.Fragment key={index}>
+                  {/* Fila principal del producto */}
+                  <tr className="border-b border-gray-300">
+                    <td className="p-1.5">
+                      <div className="flex items-start gap-1.5">
+                        {/* Miniaturas de imágenes */}
+                        {item.images && item.images.length > 0 && (
+                          <div className="flex gap-0.5 flex-shrink-0">
+                            {item.images.map((imgUrl: string, imgIdx: number) => (
+                              <img 
+                                key={imgIdx}
+                                src={imgUrl} 
+                                alt="" 
+                                className="w-8 h-8 object-cover border border-gray-200"
+                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                              />
+                            ))}
+                          </div>
+                        )}
+                        <p className="font-bold text-xs leading-tight">{item.name}</p>
+                      </div>
+                    </td>
+                    <td className="p-1.5 text-right font-bold text-xs whitespace-nowrap" style={{ color: brandColor }}>{fmtEUR(item.price || 0)}</td>
+                    <td className="p-1.5 text-center text-xs">{item.quantity || 1}</td>
+                    <td className="p-1.5 text-right font-bold text-xs whitespace-nowrap" style={{ color: brandColor }}>{fmtEUR((item.price || 0) * (item.quantity || 1))}</td>
+                  </tr>
+                  {/* Prompts debajo en fila separada */}
+                  {item.prompts && item.prompts.length > 0 && (
+                    <tr className="border-b border-gray-300 bg-gray-50/50">
+                      <td colSpan={4} className="pl-4 py-1">
+                        <div className="text-[10px] text-gray-700 space-y-0.5 leading-tight">
+                          {item.prompts.map((prompt: any, pIdx: number) => (
+                            <div key={pIdx}>
+                              <span className="font-medium uppercase">{prompt.label}:</span> {prompt.value}
+                            </div>
                           ))}
                         </div>
-                      )}
-                      <p className="font-bold text-base">{item.name}</p>
-                    </div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-gray-600">Precio unitario:</span>
-                      <span className="font-bold" style={{ color: brandColor }}>{fmtEUR(item.price || 0)}</span>
-                    </div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-gray-600">Cantidad:</span>
-                      <span className="font-semibold">{item.quantity || 1}</span>
-                    </div>
-                    {item.prompts && item.prompts.length > 0 && (
-                      <div className="text-xs text-gray-700 space-y-0.5 mb-2">
-                        {item.prompts.map((prompt: any, pIdx: number) => (
-                          <div key={pIdx}>
-                            <span className="font-medium uppercase">{prompt.label}:</span> {prompt.value}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-right ml-4 flex-shrink-0">
-                    <p className="text-xs text-gray-600 mb-1">Total</p>
-                    <p className="font-bold text-xl whitespace-nowrap" style={{ color: brandColor }}>{fmtEUR((item.price || 0) * (item.quantity || 1))}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
         </section>
 
         {/* Totals - Creative */}
-        <section className="mb-8">
-          <div className="ml-auto w-80 bg-gradient-to-br from-gray-50 to-white p-6 rounded-lg shadow-lg border-2" style={{ borderColor: brandColor }}>
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
+        <section className="mb-3">
+          <div className="ml-auto w-56 bg-gradient-to-br from-gray-50 to-white p-2 rounded-lg shadow-lg border-2" style={{ borderColor: brandColor }}>
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs">
                 <span className="text-gray-600">Subtotal:</span>
                 <span className="font-semibold">{fmtEUR(quote.subtotal || 0)}</span>
               </div>
               {quote.tax_amount > 0 && (
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-xs">
                   <span className="text-gray-600">IVA (21%):</span>
                   <span className="font-semibold">{fmtEUR(quote.tax_amount || 0)}</span>
                 </div>
               )}
               {quote.discount_amount > 0 && (
-                <div className="flex justify-between text-sm text-green-600">
+                <div className="flex justify-between text-xs text-green-600">
                   <span>Ahorro:</span>
                   <span className="font-semibold">-{fmtEUR(quote.discount_amount || 0)}</span>
                 </div>
               )}
-              <div className="flex justify-between pt-4 border-t-2 items-center" style={{ borderColor: brandColor }}>
-                <span className="font-bold text-lg uppercase tracking-wide">Total:</span>
-                <span className="font-bold text-3xl" style={{ color: brandColor }}>{fmtEUR(quote.final_price || 0)}</span>
+              <div className="flex justify-between pt-1.5 border-t-2 items-center" style={{ borderColor: brandColor }}>
+                <span className="font-bold text-sm uppercase tracking-wide">Total:</span>
+                <span className="font-bold text-base" style={{ color: brandColor }}>{fmtEUR(quote.final_price || 0)}</span>
               </div>
             </div>
           </div>
@@ -192,20 +193,20 @@ export default function Template5({ data }: Template5Props) {
 
         {/* Notes */}
         {quote.notes && (
-          <section className="mb-6">
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-l-4 border-orange-400 p-5 rounded-r-lg">
-              <h3 className="text-xs font-semibold mb-2 uppercase tracking-wide text-orange-700">
-                💡 Notas Importantes
+          <section className="mb-3">
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-l-4 border-orange-400 p-2 rounded-r-lg">
+              <h3 className="text-xs font-semibold mb-1 uppercase tracking-wide text-orange-700">
+                💡 Notas
               </h3>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{quote.notes}</p>
+              <p className="text-xs text-gray-700 whitespace-pre-wrap leading-tight">{quote.notes}</p>
             </div>
           </section>
         )}
 
         {/* Footer */}
         {config.footerText && (
-          <footer className="mt-8 pt-4 border-t border-gray-200">
-            <p className="text-xs text-gray-500 text-center leading-relaxed">{config.footerText}</p>
+          <footer className="mt-3 pt-2 border-t border-gray-200">
+            <p className="text-[10px] text-gray-500 text-center leading-tight">{config.footerText}</p>
           </footer>
         )}
       </div>

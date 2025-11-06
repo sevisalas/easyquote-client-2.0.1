@@ -44,118 +44,116 @@ export default function Template4({ data }: Template4Props) {
       )}
       
       {/* Corporate Header */}
-      <header className="bg-white p-8 shadow-sm">
-        <div className="flex justify-between items-center mb-6">
+      <header className="bg-white p-4 shadow-sm">
+        <div className="flex justify-between items-center mb-2">
           {config.logoUrl && (
-            <img src={config.logoUrl} alt="Logo" className="h-16" />
+            <img src={config.logoUrl} alt="Logo" className="h-10" />
           )}
           <div className="text-right">
-            <h1 className="text-2xl font-serif font-bold mb-1" style={{ color: accentColor }}>
+            <h1 className="text-lg font-serif font-bold" style={{ color: accentColor }}>
               {config.companyName || 'Mi Empresa'}
             </h1>
           </div>
         </div>
-        <div className="h-1 w-full" style={{ backgroundColor: accentColor }}></div>
+        <div className="h-0.5 w-full" style={{ backgroundColor: accentColor }}></div>
       </header>
 
-      <div className="p-8">
+      <div className="p-4">
         {/* Document Info Banner */}
-        <div className="bg-white p-6 shadow-sm mb-6 rounded-sm">
+        <div className="bg-white p-3 shadow-sm mb-3 rounded-sm">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: accentColor }}>
+              <h2 className="text-xs font-semibold uppercase tracking-wider mb-0.5" style={{ color: accentColor }}>
                 Presupuesto
               </h2>
-              <p className="text-2xl font-serif font-bold">{quote.quote_number || '-'}</p>
+              <p className="text-lg font-serif font-bold">{quote.quote_number || '-'}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Fecha</p>
-              <p className="text-sm font-semibold">
-                {quote.created_at ? format(new Date(quote.created_at), 'dd MMMM yyyy', { locale: es }) : '-'}
+              <p className="text-[10px] text-gray-500 uppercase tracking-wide">Fecha</p>
+              <p className="text-xs font-semibold">
+                {quote.created_at ? format(new Date(quote.created_at), 'dd MMM yyyy', { locale: es }) : '-'}
               </p>
             </div>
           </div>
         </div>
 
         {/* Customer Info */}
-        <section className="bg-white p-6 shadow-sm mb-6 rounded-sm">
-          <div className="flex items-start gap-3 mb-3">
-            <div className="w-1 h-16" style={{ backgroundColor: accentColor }}></div>
+        <section className="bg-white p-3 shadow-sm mb-3 rounded-sm">
+          <div className="flex items-start gap-2">
+            <div className="w-0.5 h-12" style={{ backgroundColor: accentColor }}></div>
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: accentColor }}>
+              <h3 className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: accentColor }}>
                 Cliente
               </h3>
-              <p className="font-serif font-bold text-lg mb-1">{customer.name || 'Cliente'}</p>
-              {customer.email && <p className="text-sm text-gray-600">{customer.email}</p>}
-              {customer.phone && <p className="text-sm text-gray-600">{customer.phone}</p>}
-              {customer.address && <p className="text-sm text-gray-600 mt-1">{customer.address}</p>}
+              <p className="font-serif font-bold text-sm mb-0.5">{customer.name || 'Cliente'}</p>
+              {customer.email && <p className="text-xs text-gray-600">{customer.email}</p>}
+              {customer.phone && <p className="text-xs text-gray-600">{customer.phone}</p>}
+              {customer.address && <p className="text-xs text-gray-600">{customer.address}</p>}
             </div>
           </div>
         </section>
 
         {/* Quote Description */}
         {(quote.title || quote.description) && (
-          <section className="bg-white p-6 shadow-sm mb-6 rounded-sm">
+          <section className="bg-white p-3 shadow-sm mb-3 rounded-sm">
             {quote.title && (
-              <h3 className="font-serif font-bold text-xl mb-2" style={{ color: accentColor }}>
+              <h3 className="font-serif font-bold text-sm mb-1" style={{ color: accentColor }}>
                 {quote.title}
               </h3>
             )}
             {quote.description && (
-              <p className="text-sm text-gray-700 leading-relaxed">{quote.description}</p>
+              <p className="text-xs text-gray-700 leading-tight">{quote.description}</p>
             )}
           </section>
         )}
 
         {/* Items */}
-        <section className="bg-white p-6 shadow-sm mb-6 rounded-sm">
-          <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: accentColor }}>
+        <section className="bg-white p-3 shadow-sm mb-3 rounded-sm">
+          <h3 className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: accentColor }}>
             Detalle de Conceptos
           </h3>
-          <table className="w-full">
+          <table className="w-full border-collapse border border-gray-300">
             <thead>
-              <tr className="border-b-2" style={{ borderColor: accentColor }}>
-                <th className="text-left py-3 text-xs uppercase tracking-wide font-semibold" style={{ color: accentColor }}>
-                  Concepto
-                </th>
-                <th className="text-right py-3 text-xs uppercase tracking-wide font-semibold w-32" style={{ color: accentColor }}>
-                  Importe
-                </th>
+              <tr style={{ backgroundColor: accentColor }} className="text-white">
+                <th className="text-left p-1.5 text-xs font-semibold">CONCEPTO</th>
+                <th className="text-right p-1.5 text-xs font-semibold w-20">PRECIO</th>
+                <th className="text-center p-1.5 text-xs font-semibold w-16">UNID.</th>
+                <th className="text-right p-1.5 text-xs font-semibold w-20">SUBTOTAL</th>
               </tr>
             </thead>
               <tbody>
                 {items.map((item: any, index: number) => (
                   <React.Fragment key={index}>
                     {/* Fila principal del producto */}
-                    <tr className="border-b border-gray-100">
-                      <td className="py-3 pr-3">
-                        <div className="flex items-start gap-2">
+                    <tr className="border-b border-gray-300">
+                      <td className="p-1.5">
+                        <div className="flex items-start gap-1.5">
                           {/* Miniaturas de imágenes */}
                           {item.images && item.images.length > 0 && (
-                            <div className="flex gap-1 flex-shrink-0">
+                            <div className="flex gap-0.5 flex-shrink-0">
                               {item.images.map((imgUrl: string, imgIdx: number) => (
                                 <img 
                                   key={imgIdx}
                                   src={imgUrl} 
                                   alt="" 
-                                  className="w-10 h-10 object-cover border border-gray-200"
+                                  className="w-8 h-8 object-cover border border-gray-200"
                                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                 />
                               ))}
                             </div>
                           )}
-                          <p className="font-semibold">{item.name}</p>
+                          <p className="font-semibold text-xs leading-tight">{item.name}</p>
                         </div>
                       </td>
-                      <td className="py-3 text-right text-sm whitespace-nowrap">{fmtEUR(item.price || 0)}</td>
-                      <td className="py-3 text-center text-sm">{item.quantity || 1}</td>
-                      <td className="py-3 text-right font-semibold text-lg whitespace-nowrap">{fmtEUR((item.price || 0) * (item.quantity || 1))}</td>
+                      <td className="p-1.5 text-right text-xs whitespace-nowrap">{fmtEUR(item.price || 0)}</td>
+                      <td className="p-1.5 text-center text-xs">{item.quantity || 1}</td>
+                      <td className="p-1.5 text-right font-semibold text-xs whitespace-nowrap">{fmtEUR((item.price || 0) * (item.quantity || 1))}</td>
                     </tr>
                     {/* Prompts debajo en fila separada */}
                     {item.prompts && item.prompts.length > 0 && (
-                      <tr className="border-b border-gray-100">
-                        <td colSpan={4} className="pl-6 py-1.5">
-                          <div className="text-xs text-gray-700 space-y-0.5">
+                      <tr className="border-b border-gray-300">
+                        <td colSpan={4} className="pl-4 py-1">
+                          <div className="text-[10px] text-gray-700 space-y-0.5 leading-tight">
                             {item.prompts.map((prompt: any, pIdx: number) => (
                               <div key={pIdx}>
                                 <span className="font-medium uppercase">{prompt.label}:</span> {prompt.value}
@@ -172,25 +170,25 @@ export default function Template4({ data }: Template4Props) {
         </section>
 
         {/* Totals */}
-        <section className="bg-white p-6 shadow-sm mb-6 rounded-sm ml-auto w-96">
-          <div className="space-y-3">
-            <div className="flex justify-between text-sm">
+        <section className="bg-white p-3 shadow-sm mb-3 rounded-sm ml-auto w-56">
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs">
               <span className="text-gray-600">Subtotal:</span>
               <span className="font-semibold">{fmtEUR(quote.subtotal || 0)}</span>
             </div>
             {quote.tax_amount > 0 && (
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-xs">
                 <span className="text-gray-600">IVA (21%):</span>
                 <span className="font-semibold">{fmtEUR(quote.tax_amount || 0)}</span>
               </div>
             )}
             {quote.discount_amount > 0 && (
-              <div className="flex justify-between text-sm text-red-600">
+              <div className="flex justify-between text-xs text-red-600">
                 <span>Descuento:</span>
                 <span className="font-semibold">-{fmtEUR(quote.discount_amount || 0)}</span>
               </div>
             )}
-            <div className="flex justify-between pt-3 border-t-2 font-bold text-xl" style={{ borderColor: accentColor, color: accentColor }}>
+            <div className="flex justify-between pt-1.5 border-t-2 font-bold text-sm" style={{ borderColor: accentColor, color: accentColor }}>
               <span>TOTAL:</span>
               <span>{fmtEUR(quote.final_price || 0)}</span>
             </div>
@@ -199,18 +197,18 @@ export default function Template4({ data }: Template4Props) {
 
         {/* Notes */}
         {quote.notes && (
-          <section className="bg-white p-6 shadow-sm mb-6 rounded-sm">
-            <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: accentColor }}>
+          <section className="bg-white p-3 shadow-sm mb-3 rounded-sm">
+            <h3 className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: accentColor }}>
               Observaciones
             </h3>
-            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{quote.notes}</p>
+            <p className="text-xs text-gray-700 leading-tight whitespace-pre-wrap">{quote.notes}</p>
           </section>
         )}
 
         {/* Footer */}
         {config.footerText && (
-          <footer className="bg-white p-6 shadow-sm rounded-sm">
-            <p className="text-xs text-gray-600 text-center leading-relaxed">{config.footerText}</p>
+          <footer className="bg-white p-3 shadow-sm rounded-sm">
+            <p className="text-[10px] text-gray-600 text-center leading-tight">{config.footerText}</p>
           </footer>
         )}
       </div>
