@@ -213,7 +213,7 @@ const SalesOrderDetail = () => {
             <div className="space-y-4">
               {items.map((item, index) => {
                 const itemOutputs = item.outputs && Array.isArray(item.outputs) ? item.outputs : [];
-                const itemPrompts = item.prompts && typeof item.prompts === 'object' ? item.prompts : {};
+                const itemPrompts = item.prompts && Array.isArray(item.prompts) ? item.prompts : [];
                 const itemMulti = item.multi as any;
                 
                 return (
@@ -226,10 +226,15 @@ const SalesOrderDetail = () => {
                         )}
                       </div>
                       <div className="text-right ml-4">
-                        <p className="text-xl font-bold text-primary">{item.price.toFixed(2)} €</p>
+                        <div className="flex items-baseline gap-2">
+                          <p className="text-xl font-bold text-primary">{item.price.toFixed(2)} €</p>
+                          {item.quantity && item.quantity > 1 && (
+                            <span className="text-sm text-muted-foreground">x{item.quantity}</span>
+                          )}
+                        </div>
                         {itemMulti?.rows && Array.isArray(itemMulti.rows) && itemMulti.rows.length > 0 && (
                           <p className="text-sm text-muted-foreground">
-                            Cantidad: {itemMulti.rows[0].quantity}
+                            Cantidad: {itemMulti.rows[0].qty}
                           </p>
                         )}
                       </div>
@@ -261,27 +266,27 @@ const SalesOrderDetail = () => {
                     )}
 
                     {/* Prompts */}
-                    {Object.keys(itemPrompts).length > 0 && (
+                    {itemPrompts.length > 0 && (
                       <div className="space-y-1 pl-2 border-l-2 border-muted">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase">Información adicional</p>
-                        {Object.values(itemPrompts).map((promptData: any, idx: number) => {
-                          const value = typeof promptData === 'string' ? promptData : promptData.value;
+                        <p className="text-xs font-semibold text-muted-foreground uppercase">Detalles</p>
+                        {itemPrompts.map((prompt: any, idx: number) => {
+                          const label = prompt.label || '';
+                          const value = prompt.value || '';
                           
-                          // Filtrar datos técnicos que no son útiles para mostrar
+                          // Filtrar URLs e imágenes
                           if (!value || 
                               typeof value === 'object' || 
                               (typeof value === 'string' && (
                                 value.startsWith('http') || 
-                                value.startsWith('#') ||
-                                value.match(/^\d+$/) ||
-                                value.trim() === ''
+                                value.startsWith('#')
                               ))) {
                             return null;
                           }
                           
                           return (
-                            <div key={idx} className="text-sm text-foreground">
-                              {value}
+                            <div key={idx} className="text-sm">
+                              <span className="font-medium text-muted-foreground">{label}:</span>{' '}
+                              <span className="text-foreground">{value}</span>
                             </div>
                           );
                         }).filter(Boolean)}
