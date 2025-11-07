@@ -216,6 +216,24 @@ const SalesOrderDetail = () => {
                 const itemPrompts = item.prompts && Array.isArray(item.prompts) ? item.prompts : [];
                 const itemMulti = item.multi as any;
                 
+                // Determine the actual quantity
+                let displayQuantity = item.quantity;
+                
+                // Check if there's quantity info in multi.rows (for multi-option products)
+                if (itemMulti?.rows && Array.isArray(itemMulti.rows) && itemMulti.rows.length === 1) {
+                  displayQuantity = itemMulti.rows[0].qty || itemMulti.rows[0].quantity || item.quantity;
+                }
+                
+                // Check if there's quantity info in outputs (like "Total Shirts")
+                const quantityOutput = itemOutputs.find((out: any) => 
+                  out.name?.toLowerCase().includes('total') && 
+                  out.type === 'Generic' && 
+                  !isNaN(parseInt(out.value))
+                );
+                if (quantityOutput) {
+                  displayQuantity = parseInt(quantityOutput.value);
+                }
+                
                 return (
                   <div key={item.id} className="border rounded-lg p-4">
                     <div className="flex justify-between items-start mb-3">
@@ -230,7 +248,7 @@ const SalesOrderDetail = () => {
                           <p className="text-xl font-bold text-primary">{item.price.toFixed(2)} €</p>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Cantidad: {item.quantity}
+                          Cantidad: {displayQuantity}
                         </p>
                       </div>
                     </div>
