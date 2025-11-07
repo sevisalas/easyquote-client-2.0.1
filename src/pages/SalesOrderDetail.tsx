@@ -219,12 +219,21 @@ const SalesOrderDetail = () => {
                 // Determine the actual quantity
                 let displayQuantity = item.quantity;
                 
-                // Check if there's quantity info in multi.rows (for multi-option products)
+                // 1. Check if there's quantity info in multi.rows (for multi-option products with single selection)
                 if (itemMulti?.rows && Array.isArray(itemMulti.rows) && itemMulti.rows.length === 1) {
                   displayQuantity = itemMulti.rows[0].qty || itemMulti.rows[0].quantity || item.quantity;
                 }
                 
-                // Check if there's quantity info in outputs (like "Total Shirts")
+                // 2. Check if there's quantity info in prompts (like "Quantity: 100")
+                const quantityPrompt = itemPrompts.find((prompt: any) => 
+                  prompt.label?.toLowerCase() === 'quantity' && 
+                  !isNaN(parseInt(prompt.value))
+                );
+                if (quantityPrompt) {
+                  displayQuantity = parseInt(quantityPrompt.value);
+                }
+                
+                // 3. Check if there's quantity info in outputs (like "Total Shirts: 6")
                 const quantityOutput = itemOutputs.find((out: any) => 
                   out.name?.toLowerCase().includes('total') && 
                   out.type === 'Generic' && 
