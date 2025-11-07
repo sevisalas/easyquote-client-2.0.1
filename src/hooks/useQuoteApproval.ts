@@ -167,11 +167,13 @@ export const useQuoteApproval = () => {
         // If multi with selected quantity, only keep that option
         if (multi?.rows && Array.isArray(multi.rows) && itemQuantities?.[item.id]) {
           const selectedQuantity = itemQuantities[item.id];
-          const selectedRow = multi.rows.find((row: any) => row.quantity === selectedQuantity);
+          const selectedRow = multi.rows.find((row: any) => 
+            row.qty === selectedQuantity || row.quantity === selectedQuantity
+          );
           
           if (selectedRow) {
             finalQuantity = selectedQuantity;
-            finalPrice = selectedRow.price || 0;
+            finalPrice = parseFloat(selectedRow.outs?.find((o: any) => o.type === 'Price')?.value || selectedRow.price || item.price || 0);
             // Keep only the selected row in multi
             finalMulti = {
               ...multi,

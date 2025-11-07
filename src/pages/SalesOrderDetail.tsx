@@ -228,15 +228,10 @@ const SalesOrderDetail = () => {
                       <div className="text-right ml-4">
                         <div className="flex items-baseline gap-2">
                           <p className="text-xl font-bold text-primary">{item.price.toFixed(2)} €</p>
-                          {item.quantity && item.quantity > 1 && (
-                            <span className="text-sm text-muted-foreground">x{item.quantity}</span>
-                          )}
                         </div>
-                        {itemMulti?.rows && Array.isArray(itemMulti.rows) && itemMulti.rows.length > 0 && (
-                          <p className="text-sm text-muted-foreground">
-                            Cantidad: {itemMulti.rows[0].qty}
-                          </p>
-                        )}
+                        <p className="text-sm text-muted-foreground">
+                          Cantidad: {item.quantity}
+                        </p>
                       </div>
                     </div>
 
