@@ -170,6 +170,102 @@ export const useSalesOrders = () => {
     }
   };
 
+  const updateSalesOrderItem = async (
+    itemId: string,
+    updates: { quantity?: number; price?: number; description?: string }
+  ): Promise<boolean> => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('sales_order_items')
+        .update(updates)
+        .eq('id', itemId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Artículo actualizado",
+        description: "Los cambios se han guardado correctamente",
+      });
+      
+      return true;
+    } catch (error: any) {
+      console.error('Error updating sales order item:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo actualizar el artículo",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const recalculateSalesOrderTotals = async (orderId: string): Promise<boolean> => {
+    try {
+      // Fetch all items
+      const { data: items, error: itemsError } = await supabase
+        .from('sales_order_items')
+        .select('price, quantity')
+        .eq('sales_order_id', orderId);
+
+      if (itemsError) throw itemsError;
+
+      // Fetch additionals
+      const { data: additionals, error: additionalsError } = await supabase
+        .from('sales_order_additionals')
+        .select('type, value, is_discount')
+        .eq('sales_order_id', orderId);
+
+      if (additionalsError) throw additionalsError;
+
+      // Calculate subtotal
+      const subtotal = items?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
+
+      // Calculate discount and tax from additionals
+      let discountAmount = 0;
+      let taxAmount = 0;
+
+      additionals?.forEach((add) => {
+        if (add.is_discount) {
+          if (add.type === 'percentage') {
+            discountAmount += (subtotal * add.value) / 100;
+          } else {
+            discountAmount += add.value;
+          }
+        } else {
+          if (add.type === 'percentage') {
+            taxAmount += (subtotal * add.value) / 100;
+          } else {
+            taxAmount += add.value;
+          }
+        }
+      });
+
+      const finalPrice = subtotal - discountAmount + taxAmount;
+
+      // Update order totals
+      const { error: updateError } = await supabase
+        .from('sales_orders')
+        .update({
+          subtotal,
+          discount_amount: discountAmount,
+          tax_amount: taxAmount,
+          final_price: finalPrice,
+        })
+        .eq('id', orderId);
+
+      if (updateError) throw updateError;
+
+      return true;
+    } catch (error: any) {
+      console.error('Error recalculating totals:', error);
+      return false;
+    }
+  };
+
   const deleteSalesOrder = async (orderId: string) => {
     try {
       setLoading(true);
@@ -223,6 +319,8 @@ export const useSalesOrders = () => {
     fetchSalesOrderItems,
     fetchSalesOrderAdditionals,
     updateSalesOrderStatus,
+    updateSalesOrderItem,
+    recalculateSalesOrderTotals,
     deleteSalesOrder,
   };
 };

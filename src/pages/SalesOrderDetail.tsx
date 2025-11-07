@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, Calendar, Trash2 } from "lucide-react";
+import { ArrowLeft, Package, Calendar, Trash2, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { useSalesOrders, SalesOrder, SalesOrderItem, SalesOrderAdditional } from
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { EditOrderItemDialog } from "@/components/sales/EditOrderItemDialog";
 
 const statusColors = {
   pending: "default",
@@ -29,10 +30,12 @@ const SalesOrderDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { canAccessProduccion } = useSubscription();
-  const { loading, fetchSalesOrderById, fetchSalesOrderItems, fetchSalesOrderAdditionals, updateSalesOrderStatus, deleteSalesOrder } = useSalesOrders();
+  const { loading, fetchSalesOrderById, fetchSalesOrderItems, fetchSalesOrderAdditionals, updateSalesOrderStatus, updateSalesOrderItem, recalculateSalesOrderTotals, deleteSalesOrder } = useSalesOrders();
   const [order, setOrder] = useState<SalesOrder | null>(null);
   const [items, setItems] = useState<SalesOrderItem[]>([]);
   const [additionals, setAdditionals] = useState<SalesOrderAdditional[]>([]);
+  const [editingItem, setEditingItem] = useState<SalesOrderItem | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!canAccessProduccion()) {
@@ -71,6 +74,21 @@ const SalesOrderDetail = () => {
     const success = await deleteSalesOrder(id);
     if (success) {
       navigate("/pedidos");
+    }
+  };
+
+  const handleEditItem = (item: SalesOrderItem) => {
+    setEditingItem(item);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveItemEdit = async (itemId: string, updates: { quantity: number; price: number; description?: string }) => {
+    const success = await updateSalesOrderItem(itemId, updates);
+    if (success && id) {
+      // Recalculate totals
+      await recalculateSalesOrderTotals(id);
+      // Reload data
+      await loadOrderData();
     }
   };
 
@@ -252,13 +270,23 @@ const SalesOrderDetail = () => {
                           <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
                         )}
                       </div>
-                      <div className="text-right ml-4">
-                        <div className="flex items-baseline gap-2">
-                          <p className="text-xl font-bold text-primary">{item.price.toFixed(2)} €</p>
+                      <div className="flex items-center gap-3">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditItem(item)}
+                          className="h-8 w-8"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <div className="text-right">
+                          <div className="flex items-baseline gap-2">
+                            <p className="text-xl font-bold text-primary">{item.price.toFixed(2)} €</p>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Cantidad: {displayQuantity}
+                          </p>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          Cantidad: {displayQuantity}
-                        </p>
                       </div>
                     </div>
 
@@ -369,6 +397,14 @@ const SalesOrderDetail = () => {
           )}
         </CardContent>
       </Card>
+
+      <EditOrderItemDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        item={editingItem}
+        onSave={handleSaveItemEdit}
+        saving={loading}
+      />
     </div>
   );
 };
