@@ -234,32 +234,8 @@ const SalesOrderDetail = () => {
                 const itemPrompts = item.prompts && Array.isArray(item.prompts) ? item.prompts : [];
                 const itemMulti = item.multi as any;
                 
-                // Determine the actual quantity
+                // Determine the actual quantity - use database quantity directly
                 let displayQuantity = item.quantity;
-                
-                // 1. Check if there's quantity info in multi.rows (for multi-option products with single selection)
-                if (itemMulti?.rows && Array.isArray(itemMulti.rows) && itemMulti.rows.length === 1) {
-                  displayQuantity = itemMulti.rows[0].qty || itemMulti.rows[0].quantity || item.quantity;
-                }
-                
-                // 2. Check if there's quantity info in prompts (like "Quantity: 100")
-                const quantityPrompt = itemPrompts.find((prompt: any) => 
-                  prompt.label?.toLowerCase() === 'quantity' && 
-                  !isNaN(parseInt(prompt.value))
-                );
-                if (quantityPrompt) {
-                  displayQuantity = parseInt(quantityPrompt.value);
-                }
-                
-                // 3. Check if there's quantity info in outputs (like "Total Shirts: 6")
-                const quantityOutput = itemOutputs.find((out: any) => 
-                  out.name?.toLowerCase().includes('total') && 
-                  out.type === 'Generic' && 
-                  !isNaN(parseInt(out.value))
-                );
-                if (quantityOutput) {
-                  displayQuantity = parseInt(quantityOutput.value);
-                }
                 
                 return (
                   <div key={item.id} className="border rounded-lg p-4">
