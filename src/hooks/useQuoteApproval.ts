@@ -141,7 +141,7 @@ export const useQuoteApproval = () => {
           quote_id: quoteId,
           customer_id: quote.customer_id,
           user_id: quote.user_id,
-          status: 'pending',
+          status: 'draft',
           title: quote.title,
           description: quote.description,
           terms_conditions: quote.terms_conditions,
