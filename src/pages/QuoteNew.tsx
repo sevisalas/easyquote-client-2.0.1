@@ -114,17 +114,28 @@ export default function QuoteNew() {
     validateToken();
   }, []);
 
-  // Load quote for duplication
+  // Load quote for duplication with items
   const { data: duplicateQuote } = useQuery({
     queryKey: ["quote-duplicate", duplicateFromId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: quote, error: quoteError } = await supabase
         .from("quotes")
         .select("*")
         .eq("id", duplicateFromId)
         .single();
-      if (error) throw error;
-      return data;
+      
+      if (quoteError) throw quoteError;
+      
+      // Load quote items
+      const { data: items, error: itemsError } = await supabase
+        .from("quote_items")
+        .select("*")
+        .eq("quote_id", duplicateFromId)
+        .order("position", { ascending: true });
+      
+      if (itemsError) throw itemsError;
+      
+      return { ...quote, items };
     },
     enabled: !!duplicateFromId,
   });
@@ -145,28 +156,35 @@ export default function QuoteNew() {
       setQuoteAdditionals(additionals as SelectedAdditional[]);
     }
 
-    // Load product selections
-    if (duplicateQuote.selections) {
-      const selections = typeof duplicateQuote.selections === 'string' 
-        ? JSON.parse(duplicateQuote.selections) 
-        : duplicateQuote.selections;
-      
-      if (Array.isArray(selections)) {
-        const itemsData: Record<string | number, ItemSnapshot> = {};
-        selections.forEach((item: any, index: number) => {
-          itemsData[index] = {
-            productId: item.productId || "",
-            prompts: item.prompts || {},
-            outputs: item.outputs || [],
-            price: item.price,
-            multi: item.multi,
-            itemDescription: item.productName || "",
-            itemAdditionals: item.itemAdditionals || [],
-            needsRecalculation: true, // Flag to trigger recalculation
-          };
-        });
-        setItems(itemsData);
-      }
+    // Load items from quote_items table
+    if (duplicateQuote.items && Array.isArray(duplicateQuote.items)) {
+      const itemsData: Record<string | number, ItemSnapshot> = {};
+      duplicateQuote.items.forEach((item: any, index: number) => {
+        // Convert prompts array back to object format
+        const promptsObj: Record<string, any> = {};
+        if (Array.isArray(item.prompts)) {
+          item.prompts.forEach((prompt: any) => {
+            promptsObj[prompt.id] = {
+              label: prompt.label,
+              value: prompt.value,
+              order: prompt.order
+            };
+          });
+        }
+
+        itemsData[index] = {
+          productId: item.product_id || "",
+          prompts: promptsObj,
+          outputs: item.outputs || [],
+          price: item.price,
+          multi: item.multi,
+          itemDescription: item.product_name || item.description || "",
+          itemAdditionals: item.item_additionals || [],
+          needsRecalculation: true,
+          isFinalized: true,
+        };
+      });
+      setItems(itemsData);
     }
   }, [duplicateQuote]);
 
