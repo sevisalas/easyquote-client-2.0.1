@@ -92,18 +92,22 @@ export default function QuoteDetail() {
   const allMultiQuantitiesSelected = () => {
     if (!quote?.items) return true;
     
-    // If user selected specific items, only check those
+    // Get items to validate based on selection
+    let itemsToValidate = quote.items;
+    
+    // If user selected specific items, only validate those
     if (selectedItems.size > 0) {
-      return true; // When selecting specific items, validation happens on approve
+      itemsToValidate = quote.items.filter((item: any) => selectedItems.has(item.id));
     }
     
-    // When approving all, check all multi-quantity items
-    const multiItems = quote.items.filter((item: any) => 
+    // Find multi-quantity items that need validation
+    const multiItems = itemsToValidate.filter((item: any) => 
       item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1
     );
     
     if (multiItems.length === 0) return true;
     
+    // All multi-quantity items must have a selected quantity
     return multiItems.every((item: any) => itemQuantities[item.id] !== undefined);
   };
 
