@@ -267,29 +267,41 @@ const SalesOrderDetail = () => {
                     </div>
 
                     {/* Outputs */}
-                    {itemOutputs.length > 0 && (
-                      <div className="space-y-2 mb-3">
-                        {itemOutputs.map((output: any, idx: number) => {
-                          if (output.type === 'ProductImage') {
+                    {(() => {
+                      // Use outputs from multi.rows if available (for approved multi-quantity items)
+                      let displayOutputs = itemOutputs;
+                      
+                      if (itemMulti?.rows && Array.isArray(itemMulti.rows) && itemMulti.rows.length === 1) {
+                        const row = itemMulti.rows[0];
+                        if (row.outs && Array.isArray(row.outs)) {
+                          displayOutputs = row.outs;
+                        }
+                      }
+                      
+                      return displayOutputs.length > 0 && (
+                        <div className="space-y-2 mb-3">
+                          {displayOutputs.map((output: any, idx: number) => {
+                            if (output.type === 'ProductImage') {
+                              return (
+                                <div key={idx}>
+                                  <img 
+                                    src={output.value} 
+                                    alt={output.name}
+                                    className="w-48 h-48 object-contain rounded border"
+                                  />
+                                </div>
+                              );
+                            }
                             return (
-                              <div key={idx}>
-                                <img 
-                                  src={output.value} 
-                                  alt={output.name}
-                                  className="w-48 h-48 object-contain rounded border"
-                                />
+                              <div key={idx} className="text-sm">
+                                <span className="font-medium">{output.name}:</span>{' '}
+                                <span>{output.value}</span>
                               </div>
                             );
-                          }
-                          return (
-                            <div key={idx} className="text-sm">
-                              <span className="font-medium">{output.name}:</span>{' '}
-                              <span>{output.value}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
+                          })}
+                        </div>
+                      );
+                    })()}
 
                     {/* Prompts */}
                     {itemPrompts.length > 0 && (
