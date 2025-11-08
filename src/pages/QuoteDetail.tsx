@@ -372,9 +372,9 @@ export default function QuoteDetail() {
                       onClick={handleApprove}
                       size="sm"
                       className="gap-2"
-                      disabled={isApproving || (selectedItems.size === 0 && !canApproveAll)}
+                      disabled={isApproving || !canApproveAll}
                       variant="default"
-                      title={!canApproveAll && selectedItems.size === 0 ? 'Selecciona las cantidades de los artículos con opciones múltiples' : ''}
+                      title={!canApproveAll ? 'Selecciona las cantidades de los artículos con opciones múltiples' : ''}
                     >
                       <CheckCircle className="h-4 w-4" />
                       {isApproving ? 'Aprobando...' : selectedItems.size > 0 ? `Aprobar ${selectedItems.size} items` : 'Aprobar todo'}
