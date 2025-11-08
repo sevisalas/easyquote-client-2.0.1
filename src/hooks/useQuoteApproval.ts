@@ -227,6 +227,14 @@ export const useQuoteApproval = () => {
 
       if (itemsError) throw itemsError;
 
+      // Update quote status to approved
+      const { error: updateQuoteError } = await supabase
+        .from('quotes')
+        .update({ status: 'approved' })
+        .eq('id', quoteId);
+
+      if (updateQuoteError) throw updateQuoteError;
+
       toast({
         title: "Presupuesto aprobado",
         description: `Presupuesto ${quote.quote_number} → Pedido ${orderNumber}`,
