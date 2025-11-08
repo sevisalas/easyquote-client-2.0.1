@@ -299,6 +299,11 @@ const SalesOrderDetail = () => {
                           const label = prompt.label || '';
                           const value = prompt.value || '';
                           
+                          // Skip quantity field (already shown above)
+                          if (label.toLowerCase() === 'quantity') {
+                            return null;
+                          }
+                          
                           // Filtrar URLs e imágenes
                           if (!value || 
                               typeof value === 'object' || 
