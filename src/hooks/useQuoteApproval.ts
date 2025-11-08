@@ -89,31 +89,49 @@ export const useQuoteApproval = () => {
         .select('*')
         .eq('quote_id', quoteId);
 
-      // Calculate totals - use EXACT quote totals, only recalculate item subtotal
-      let itemsSubtotal = 0;
+      // Calculate subtotal from selected items
+      let subtotal = 0;
       for (const item of itemsToApprove) {
         const multi = item.multi as any;
         let itemPrice = item.price || 0;
-        let itemQuantity = item.quantity || 1;
 
         // If multi with selected quantity, use that specific price
         if (multi?.rows && Array.isArray(multi.rows) && itemQuantities?.[item.id]) {
           const selectedQuantity = itemQuantities[item.id];
-          const selectedRow = multi.rows.find((row: any) => row.quantity === selectedQuantity);
+          const selectedRow = multi.rows.find((row: any) => 
+            row.qty === selectedQuantity || row.quantity === selectedQuantity
+          );
           if (selectedRow) {
-            itemPrice = selectedRow.price || 0;
-            itemQuantity = selectedQuantity;
+            itemPrice = parseFloat(selectedRow.outs?.find((o: any) => o.type === 'Price')?.value || selectedRow.price || item.price || 0);
           }
         }
 
-        itemsSubtotal += itemPrice;
+        subtotal += itemPrice;
       }
 
-      // Use quote's original totals structure
-      const subtotal = itemsSubtotal;
-      const taxAmount = quote.tax_amount || 0;
-      const discountAmount = quote.discount_amount || 0;
-      const finalPrice = subtotal + taxAmount - discountAmount;
+      // Calculate additionals
+      let discountAmount = 0;
+      let taxAmount = 0;
+      
+      if (quoteAdditionals && quoteAdditionals.length > 0) {
+        for (const additional of quoteAdditionals) {
+          if (additional.is_discount) {
+            if (additional.type === 'percentage') {
+              discountAmount += (subtotal * additional.value) / 100;
+            } else {
+              discountAmount += additional.value;
+            }
+          } else {
+            if (additional.type === 'percentage') {
+              taxAmount += (subtotal * additional.value) / 100;
+            } else {
+              taxAmount += additional.value;
+            }
+          }
+        }
+      }
+
+      const finalPrice = subtotal - discountAmount + taxAmount;
 
       // Create sales order - EXACT COPY of quote
       const { data: salesOrder, error: orderError } = await supabase
@@ -157,15 +175,15 @@ export const useQuoteApproval = () => {
         if (additionalsError) throw additionalsError;
       }
 
-      // Create sales order items with selected quantities
+      // Create sales order items - EXACT COPY from quote items
       const orderItems = itemsToApprove.map((item: any, index: number) => {
         const multi = item.multi as any;
         let finalQuantity = item.quantity || 1;
         let finalPrice = item.price || 0;
         let finalMulti = item.multi;
 
-        // If multi with selected quantity, only keep that option
-        if (multi?.rows && Array.isArray(multi.rows) && itemQuantities?.[item.id]) {
+        // ONLY modify if user explicitly selected a quantity from multi options
+        if (multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1 && itemQuantities?.[item.id]) {
           const selectedQuantity = itemQuantities[item.id];
           const selectedRow = multi.rows.find((row: any) => 
             row.qty === selectedQuantity || row.quantity === selectedQuantity
@@ -180,6 +198,13 @@ export const useQuoteApproval = () => {
               rows: [selectedRow]
             };
           }
+        }
+
+        // If there's only one row in multi, use that row's quantity and price
+        if (multi?.rows && Array.isArray(multi.rows) && multi.rows.length === 1) {
+          const singleRow = multi.rows[0];
+          finalQuantity = singleRow.qty || singleRow.quantity || item.quantity || 1;
+          finalPrice = parseFloat(singleRow.outs?.find((o: any) => o.type === 'Price')?.value || singleRow.price || item.price || 0);
         }
 
         return {
@@ -201,43 +226,6 @@ export const useQuoteApproval = () => {
         .insert(orderItems);
 
       if (itemsError) throw itemsError;
-
-      // Mark quote items as accepted with selected quantity
-      const itemUpdates = itemsToApprove.map((item: any) => ({
-        id: item.id,
-        accepted: true,
-        accepted_quantity: itemQuantities?.[item.id] || item.quantity || 1
-      }));
-
-      for (const update of itemUpdates) {
-        const { error: updateItemError } = await supabase
-          .from('quote_items')
-          .update({ 
-            accepted: update.accepted,
-            accepted_quantity: update.accepted_quantity 
-          })
-          .eq('id', update.id);
-        
-        if (updateItemError) throw updateItemError;
-      }
-
-      const updateItemsError = null; // For compatibility
-
-      if (updateItemsError) throw updateItemsError;
-
-      // If all items approved, update quote status
-      const allItemsApproved = quote.items.every((item: any) => 
-        itemsToApprove.find((i: any) => i.id === item.id) || item.accepted
-      );
-
-      if (allItemsApproved) {
-        const { error: updateQuoteError } = await supabase
-          .from('quotes')
-          .update({ status: 'approved' })
-          .eq('id', quoteId);
-
-        if (updateQuoteError) throw updateQuoteError;
-      }
 
       toast({
         title: "Presupuesto aprobado",
