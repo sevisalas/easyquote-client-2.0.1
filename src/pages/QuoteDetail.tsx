@@ -333,7 +333,7 @@ export default function QuoteDetail() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-lg">
-                {quote.title ? quote.title : `Presupuesto #${quote.quote_number}`}
+                Presupuesto {quote.quote_number}
               </CardTitle>
               <CardDescription className="mt-0.5">
                 Fecha: {format(new Date(quote.created_at), 'dd/MM/yyyy', { locale: es })}
