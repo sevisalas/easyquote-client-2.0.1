@@ -229,7 +229,7 @@ export const useQuoteApproval = () => {
 
       toast({
         title: "Presupuesto aprobado",
-        description: `Se creó el pedido ${orderNumber}`,
+        description: `Presupuesto ${quote.quote_number} → Pedido ${orderNumber}`,
       });
 
       return salesOrder;
