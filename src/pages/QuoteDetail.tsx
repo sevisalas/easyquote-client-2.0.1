@@ -88,6 +88,27 @@ export default function QuoteDetail() {
     item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1
   ) || false;
 
+  // Check if all multi-quantity items have a selected quantity
+  const allMultiQuantitiesSelected = () => {
+    if (!quote?.items) return true;
+    
+    // If user selected specific items, only check those
+    if (selectedItems.size > 0) {
+      return true; // When selecting specific items, validation happens on approve
+    }
+    
+    // When approving all, check all multi-quantity items
+    const multiItems = quote.items.filter((item: any) => 
+      item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1
+    );
+    
+    if (multiItems.length === 0) return true;
+    
+    return multiItems.every((item: any) => itemQuantities[item.id] !== undefined);
+  };
+
+  const canApproveAll = allMultiQuantitiesSelected();
+
   const handleGeneratePDF = async () => {
     if (!quote?.id) return;
     
@@ -347,8 +368,9 @@ export default function QuoteDetail() {
                       onClick={handleApprove}
                       size="sm"
                       className="gap-2"
-                      disabled={isApproving}
+                      disabled={isApproving || (selectedItems.size === 0 && !canApproveAll)}
                       variant="default"
+                      title={!canApproveAll && selectedItems.size === 0 ? 'Selecciona las cantidades de los artículos con opciones múltiples' : ''}
                     >
                       <CheckCircle className="h-4 w-4" />
                       {isApproving ? 'Aprobando...' : selectedItems.size > 0 ? `Aprobar ${selectedItems.size} items` : 'Aprobar todo'}
