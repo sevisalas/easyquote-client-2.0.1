@@ -297,11 +297,11 @@ const SalesOrderDetail = () => {
                         <p className="text-xs font-semibold text-muted-foreground uppercase">Detalles</p>
                         {itemPrompts.map((prompt: any, idx: number) => {
                           const label = prompt.label || '';
-                          const value = prompt.value || '';
+                          let value = prompt.value || '';
                           
-                          // Skip quantity field (already shown above)
+                          // Use actual quantity from database for Quantity field
                           if (label.toLowerCase() === 'quantity') {
-                            return null;
+                            value = displayQuantity.toString();
                           }
                           
                           // Filtrar URLs e imágenes
