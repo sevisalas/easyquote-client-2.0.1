@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
+import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -115,26 +115,34 @@ export default function ProductManagement() {
   const [selectedProduct, setSelectedProduct] = useState<EasyQuoteProduct | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
-  const [hasToken, setHasToken] = useState<boolean>(!!sessionStorage.getItem("easyquote_token"));
+  const [hasToken, setHasToken] = useState<boolean | null>(null);
+  const [tokenChecking, setTokenChecking] = useState(true);
   
-  // Escuchar cambios en el token de EasyQuote
+  // Validate EasyQuote token on mount
   useEffect(() => {
-    const checkToken = () => {
-      const token = sessionStorage.getItem("easyquote_token");
+    const validateToken = async () => {
+      setTokenChecking(true);
+      try {
+        const token = await getEasyQuoteToken();
+        setHasToken(!!token);
+      } catch (error) {
+        console.error("Error validating EasyQuote token:", error);
+        setHasToken(false);
+      } finally {
+        setTokenChecking(false);
+      }
+    };
+    
+    validateToken();
+    
+    // Listen for token updates
+    const checkToken = async () => {
+      const token = await getEasyQuoteToken();
       setHasToken(!!token);
     };
-
-    // Verificar token al cargar el componente
-    checkToken();
-
-    // Escuchar cambios en localStorage
-    window.addEventListener('storage', checkToken);
     
-    // También escuchar un evento personalizado para cambios en la misma pestaña
     window.addEventListener('easyquote-token-updated', checkToken);
-
     return () => {
-      window.removeEventListener('storage', checkToken);
       window.removeEventListener('easyquote-token-updated', checkToken);
     };
   }, []);

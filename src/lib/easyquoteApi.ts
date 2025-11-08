@@ -2,6 +2,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { notifyUnauthorized } from '@/hooks/useTokenRefresh';
 
 /**
+ * Verifica si un token JWT de EasyQuote es válido y no ha expirado
+ */
+function isTokenValid(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const expirationTime = payload.exp * 1000; // Convert to milliseconds
+    const now = Date.now();
+    // Add 5 minute buffer before expiration
+    return now < (expirationTime - 5 * 60 * 1000);
+  } catch (error) {
+    console.error('Error validating token:', error);
+    return false;
+  }
+}
+
+/**
  * Intenta refrescar el token de EasyQuote automáticamente
  */
 async function refreshEasyQuoteToken(): Promise<string | null> {
@@ -35,6 +51,8 @@ async function refreshEasyQuoteToken(): Promise<string | null> {
     }
 
     sessionStorage.setItem('easyquote_token', data.token);
+    // Dispatch event to notify other components
+    window.dispatchEvent(new Event('easyquote-token-updated'));
     return data.token;
   } catch (err) {
     console.error('Error refreshing EasyQuote token:', err);
@@ -94,15 +112,22 @@ export async function invokeEasyQuoteFunction<T = any>(
 }
 
 /**
- * Obtiene el token de EasyQuote, refrescándolo si es necesario
+ * Obtiene el token de EasyQuote, refrescándolo si es necesario o ha expirado
  */
 export async function getEasyQuoteToken(): Promise<string | null> {
   let token = sessionStorage.getItem('easyquote_token');
   
-  if (!token) {
-    // Intentar obtener uno nuevo
-    token = await refreshEasyQuoteToken();
+  // Si hay token, verificar si es válido
+  if (token) {
+    if (isTokenValid(token)) {
+      return token;
+    }
+    // Token expirado o inválido, intentar refrescar
+    console.log('EasyQuote token expired or invalid, refreshing...');
   }
+  
+  // Intentar obtener uno nuevo
+  token = await refreshEasyQuoteToken();
   
   return token;
 }

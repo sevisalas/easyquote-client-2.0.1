@@ -21,7 +21,7 @@ import { es } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { EasyQuoteConnectivityTest } from "@/components/diagnostics/EasyQuoteConnectivityTest";
-import { invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
+import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
 
 interface EasyQuoteExcelFile {
   id: string;
@@ -75,26 +75,34 @@ export default function ExcelFiles() {
   };
 
   const subscriberId = getSubscriberIdFromToken();
-  const [hasToken, setHasToken] = useState<boolean>(!!sessionStorage.getItem("easyquote_token"));
+  const [hasToken, setHasToken] = useState<boolean | null>(null);
+  const [tokenChecking, setTokenChecking] = useState(true);
   
-  // Escuchar cambios en el token de EasyQuote
+  // Validate EasyQuote token on mount
   useEffect(() => {
-    const checkToken = () => {
-      const token = sessionStorage.getItem("easyquote_token");
+    const validateToken = async () => {
+      setTokenChecking(true);
+      try {
+        const token = await getEasyQuoteToken();
+        setHasToken(!!token);
+      } catch (error) {
+        console.error("Error validating EasyQuote token:", error);
+        setHasToken(false);
+      } finally {
+        setTokenChecking(false);
+      }
+    };
+    
+    validateToken();
+    
+    // Listen for token updates
+    const checkToken = async () => {
+      const token = await getEasyQuoteToken();
       setHasToken(!!token);
     };
-
-    // Verificar token al cargar el componente
-    checkToken();
-
-    // Escuchar cambios en localStorage
-    window.addEventListener('storage', checkToken);
     
-    // También escuchar un evento personalizado para cambios en la misma pestaña
     window.addEventListener('easyquote-token-updated', checkToken);
-
     return () => {
-      window.removeEventListener('storage', checkToken);
       window.removeEventListener('easyquote-token-updated', checkToken);
     };
   }, []);

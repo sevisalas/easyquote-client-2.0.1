@@ -18,6 +18,7 @@ import { CustomerSelector } from "@/components/quotes/CustomerSelector";
 import QuoteItem from "@/components/quotes/QuoteItem";
 import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
+import { getEasyQuoteToken } from "@/lib/easyquoteApi";
 
 type ItemSnapshot = {
   productId: string;
@@ -92,8 +93,26 @@ export default function QuoteNew() {
     );
   }, [items]);
 
-  // Check if user has EasyQuote token
-  const hasToken = Boolean(sessionStorage.getItem("easyquote_token"));
+  // Check and validate EasyQuote token
+  const [hasToken, setHasToken] = useState<boolean | null>(null);
+  const [tokenChecking, setTokenChecking] = useState(true);
+
+  useEffect(() => {
+    const validateToken = async () => {
+      setTokenChecking(true);
+      try {
+        const token = await getEasyQuoteToken();
+        setHasToken(!!token);
+      } catch (error) {
+        console.error("Error validating EasyQuote token:", error);
+        setHasToken(false);
+      } finally {
+        setTokenChecking(false);
+      }
+    };
+    
+    validateToken();
+  }, []);
 
   // Load quote for duplication
   const { data: duplicateQuote } = useQuery({
@@ -441,6 +460,31 @@ export default function QuoteNew() {
     }
   };
 
+  if (tokenChecking || hasToken === null) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Nuevo presupuesto</span>
+              <Button onClick={() => navigate(-1)} variant="outline">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Volver
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                Verificando conexión con EasyQuote...
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!hasToken) {
     return (
       <div className="container mx-auto py-8">
@@ -457,7 +501,7 @@ export default function QuoteNew() {
           <CardContent>
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-4">
-                Para crear presupuestos necesitas conectar tu cuenta de EasyQuote.
+                No se pudo conectar con EasyQuote. Por favor, verifica tu conexión en Integraciones.
               </p>
               <Button onClick={() => navigate("/integraciones")}>
                 Ir a Integraciones
