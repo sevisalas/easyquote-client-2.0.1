@@ -319,6 +319,12 @@ export default function SalesOrderNew() {
           }))
           .sort((a, b) => a.order - b.order);
 
+        // Extract quantity from "Quantity" prompt if exists
+        const quantityPrompt = promptsArray.find(p => 
+          p.label.toLowerCase() === 'quantity' || p.label.toLowerCase() === 'cantidad'
+        );
+        const quantity = quantityPrompt?.value ? Number(quantityPrompt.value) : 1;
+
         return {
           sales_order_id: order.id,
           product_id: item.productId,
@@ -328,7 +334,7 @@ export default function SalesOrderNew() {
           outputs: item.outputs || [],
           multi: item.multi || null,
           price: item.price || 0,
-          quantity: 1,
+          quantity: quantity,
           position: index,
         };
       });
