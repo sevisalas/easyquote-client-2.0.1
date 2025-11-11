@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 const statusColors = {
+  draft: "outline",
   pending: "default",
   in_production: "secondary",
   completed: "default",
@@ -24,6 +25,7 @@ const statusColors = {
 } as const;
 
 const statusLabels = {
+  draft: "Borrador",
   pending: "Pendiente",
   in_production: "En Producción",
   completed: "Completado",

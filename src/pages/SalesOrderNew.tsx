@@ -289,7 +289,7 @@ export default function SalesOrderNew() {
         order_number: orderNumber,
         title: title || `Pedido ${orderNumber}`,
         description: description || itemsArray[0]?.itemDescription || "",
-        status: 'pending' as const,
+        status: 'draft' as const, // Start as draft
         order_date: new Date().toISOString(),
         delivery_date: deliveryDate || null,
         subtotal: totals.subtotal,
@@ -363,40 +363,10 @@ export default function SalesOrderNew() {
         if (additionalsError) throw additionalsError;
       }
 
-      // Export to Holded if requested
-      if (exportToHolded && isHoldedActive) {
-        try {
-          const { error: holdedError } = await supabase.functions.invoke('holded-export-order', {
-            body: { orderId: order.id }
-          });
-
-          if (holdedError) {
-            console.error('Error exporting to Holded:', holdedError);
-            toast({
-              title: "Advertencia",
-              description: "El pedido se creó pero hubo un error al exportar a Holded",
-              variant: "destructive"
-            });
-          } else {
-            toast({
-              title: "Pedido creado y exportado",
-              description: `Pedido ${orderNumber} creado y exportado a Holded correctamente`
-            });
-          }
-        } catch (holdedError: any) {
-          console.error('Error exporting to Holded:', holdedError);
-          toast({
-            title: "Advertencia",
-            description: "El pedido se creó pero hubo un error al exportar a Holded",
-            variant: "destructive"
-          });
-        }
-      } else {
-        toast({ 
-          title: "Pedido creado", 
-          description: `Pedido ${orderNumber} creado correctamente` 
-        });
-      }
+      toast({ 
+        title: "Pedido creado como borrador", 
+        description: `Pedido ${orderNumber} creado. Cambia el estado a "Pendiente" para enviarlo a Holded.` 
+      });
       
       navigate(`/pedidos/${order.id}`);
     } catch (error: any) {

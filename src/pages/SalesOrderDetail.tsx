@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 
 const statusColors = {
+  draft: "outline",
   pending: "default",
   in_production: "secondary",
   completed: "default",
@@ -22,6 +23,7 @@ const statusColors = {
 } as const;
 
 const statusLabels = {
+  draft: "Borrador",
   pending: "Pendiente",
   in_production: "En Producción",
   completed: "Completado",
@@ -64,10 +66,21 @@ const SalesOrderDetail = () => {
   };
 
   const handleStatusChange = async (newStatus: SalesOrder['status']) => {
-    if (!id) return;
-    const success = await updateSalesOrderStatus(id, newStatus);
-    if (success) {
-      setOrder(prev => prev ? { ...prev, status: newStatus } : null);
+    if (!id || !order) return;
+    
+    // If changing from draft to pending and created_from_scratch, export to Holded automatically
+    if (order.status === 'draft' && newStatus === 'pending' && order.created_from_scratch && isHoldedActive) {
+      const success = await updateSalesOrderStatus(id, newStatus);
+      if (success) {
+        setOrder(prev => prev ? { ...prev, status: newStatus } : null);
+        // Automatically export to Holded
+        await handleExportToHolded();
+      }
+    } else {
+      const success = await updateSalesOrderStatus(id, newStatus);
+      if (success) {
+        setOrder(prev => prev ? { ...prev, status: newStatus } : null);
+      }
     }
   };
 
@@ -190,16 +203,6 @@ const SalesOrderDetail = () => {
           <p className="text-muted-foreground">Detalle del pedido</p>
         </div>
         <Badge variant={statusColors[order.status]}>{statusLabels[order.status]}</Badge>
-        {isHoldedActive && order.created_from_scratch && !order.holded_document_id && (
-          <Button 
-            onClick={handleExportToHolded} 
-            disabled={isExporting}
-            size="sm"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            {isExporting ? 'Exportando...' : 'Exportar a Holded'}
-          </Button>
-        )}
         {order.holded_document_id && (
           <Button 
             onClick={handleDownloadHoldedPdf}
@@ -248,17 +251,23 @@ const SalesOrderDetail = () => {
             )}
             <div>
               <label className="text-sm font-medium text-muted-foreground">Estado</label>
-              <Select value={order.status} onValueChange={handleStatusChange}>
+              <Select value={order.status} onValueChange={handleStatusChange} disabled={isExporting}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="draft">Borrador</SelectItem>
                   <SelectItem value="pending">Pendiente</SelectItem>
                   <SelectItem value="in_production">En Producción</SelectItem>
                   <SelectItem value="completed">Completado</SelectItem>
                   <SelectItem value="cancelled">Cancelado</SelectItem>
                 </SelectContent>
               </Select>
+              {order.status === 'draft' && order.created_from_scratch && isHoldedActive && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  💡 Cambia a "Pendiente" para enviar automáticamente a Holded
+                </p>
+              )}
             </div>
           </div>
 
