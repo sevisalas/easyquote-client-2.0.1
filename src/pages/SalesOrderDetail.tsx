@@ -89,8 +89,9 @@ const SalesOrderDetail = () => {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/pedidos")}>
-          <ArrowLeft className="h-5 w-5" />
+        <Button variant="outline" onClick={() => navigate("/pedidos")}>
+          <ArrowLeft className="h-4 w-4" />
+          Volver al listado
         </Button>
         <div className="flex-1">
           <h1 className="text-3xl font-bold flex items-center gap-2">
