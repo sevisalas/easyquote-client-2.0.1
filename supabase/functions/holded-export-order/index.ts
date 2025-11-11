@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
     console.log('📦 Order items fetched:', JSON.stringify(orderItems, null, 2));
     console.log('📦 Order additionals:', JSON.stringify(orderAdditionals || [], null, 2));
 
-    // Get Holded contact if customer_id exists
+    // Get Holded contact
     let contactId = null;
     if (order.customer_id) {
       const { data: holdedContact } = await supabase
@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
       throw new Error('No se encontró contactId de Holded para este cliente');
     }
 
-    // Get the sales account (cuenta_holded) from the order creator
+    // Get the sales account from the order creator
     let salesChannelId = null;
     const { data: memberData } = await supabase
       .from('organization_members')
@@ -126,9 +126,7 @@ Deno.serve(async (req) => {
       console.log('Using sales account:', salesChannelId);
     }
 
-    // Use API key directly from environment
     const apiKey = '88610992d47b9783e7703c488a8c01cf';
-    console.log('Using Holded API key');
 
     // Build complete payload with all order data
     const items: any[] = [];

@@ -24,6 +24,7 @@ export interface SalesOrder {
   holded_document_number?: string;
   created_at: string;
   updated_at: string;
+  created_from_scratch?: boolean;
 }
 
 export interface SalesOrderAdditional {

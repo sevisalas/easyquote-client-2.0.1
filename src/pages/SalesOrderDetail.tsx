@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, Calendar, Trash2 } from "lucide-react";
+import { ArrowLeft, Package, Calendar, Trash2, Upload, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,9 @@ import { useSalesOrders, SalesOrder, SalesOrderItem, SalesOrderAdditional } from
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 
 const statusColors = {
   pending: "default",
@@ -33,6 +36,8 @@ const SalesOrderDetail = () => {
   const [order, setOrder] = useState<SalesOrder | null>(null);
   const [items, setItems] = useState<SalesOrderItem[]>([]);
   const [additionals, setAdditionals] = useState<SalesOrderAdditional[]>([]);
+  const [isExporting, setIsExporting] = useState(false);
+  const { isHoldedActive } = useHoldedIntegration();
 
   useEffect(() => {
     if (!canAccessProduccion()) {
@@ -74,6 +79,90 @@ const SalesOrderDetail = () => {
     }
   };
 
+  const handleExportToHolded = async () => {
+    if (!id || !order) return;
+    
+    setIsExporting(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        toast.error('No hay sesión activa');
+        return;
+      }
+
+      const response = await fetch(
+        'https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/holded-export-order',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.session.access_token}`
+          },
+          body: JSON.stringify({ orderId: id })
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Error al exportar a Holded');
+      }
+
+      toast.success('Pedido exportado a Holded correctamente');
+      loadOrderData(); // Reload to show Holded number
+    } catch (error: any) {
+      console.error('Error exporting to Holded:', error);
+      toast.error(error.message || 'Error al exportar a Holded');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDownloadHoldedPdf = async () => {
+    if (!order?.holded_document_id) return;
+
+    try {
+      toast.loading('Descargando PDF...');
+      
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        toast.error('No hay sesión activa');
+        return;
+      }
+
+      const response = await fetch(
+        'https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/holded-download-pdf',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.session.access_token}`
+          },
+          body: JSON.stringify({ holdedEstimateId: order.holded_document_id })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Error al descargar el PDF');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pedido-${order.holded_document_number || order.order_number}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success('PDF descargado correctamente');
+    } catch (error: any) {
+      console.error('Error downloading PDF:', error);
+      toast.error('Error al descargar el PDF');
+    }
+  };
+
   if (!canAccessProduccion()) {
     return null;
   }
@@ -101,6 +190,26 @@ const SalesOrderDetail = () => {
           <p className="text-muted-foreground">Detalle del pedido</p>
         </div>
         <Badge variant={statusColors[order.status]}>{statusLabels[order.status]}</Badge>
+        {isHoldedActive && order.created_from_scratch && !order.holded_document_id && (
+          <Button 
+            onClick={handleExportToHolded} 
+            disabled={isExporting}
+            size="sm"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            {isExporting ? 'Exportando...' : 'Exportar a Holded'}
+          </Button>
+        )}
+        {order.holded_document_id && (
+          <Button 
+            onClick={handleDownloadHoldedPdf}
+            variant="outline"
+            size="sm"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            PDF Holded
+          </Button>
+        )}
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="destructive" size="icon">
@@ -199,6 +308,13 @@ const SalesOrderDetail = () => {
             <div>
               <label className="text-sm font-medium text-muted-foreground">Términos y condiciones</label>
               <p className="text-sm whitespace-pre-wrap text-muted-foreground">{order.terms_conditions}</p>
+            </div>
+          )}
+
+          {order.holded_document_number && (
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Número Holded</label>
+              <p className="text-base font-mono">{order.holded_document_number}</p>
             </div>
           )}
         </CardContent>

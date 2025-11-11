@@ -373,6 +373,7 @@ const SalesOrdersList = () => {
                   <TableHead className="py-2">Descripción</TableHead>
                   <TableHead className="py-2 text-right">Total</TableHead>
                   <TableHead className="py-2">Estado</TableHead>
+                  <TableHead className="py-2">Holded</TableHead>
                   <TableHead className="py-2">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -388,6 +389,9 @@ const SalesOrdersList = () => {
                       <Badge variant={statusColors[order.status]}>
                         {statusLabels[order.status]}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="py-2">
+                      {order.holded_document_number || '-'}
                     </TableCell>
                     <TableCell className="py-2">
                       <div className="flex items-center gap-1">
