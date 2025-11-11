@@ -53,7 +53,7 @@ const SalesOrdersList = () => {
             <Package className="h-8 w-8" />
             Pedidos
           </h1>
-          <p className="text-muted-foreground">Gestionar pedidos generados desde presupuestos</p>
+          <p className="text-muted-foreground">Gestiona pedidos de producción desde presupuestos aprobados o creados desde cero</p>
         </div>
         <Button onClick={() => navigate("/pedidos/nuevo")}>
           Crear nuevo pedido
