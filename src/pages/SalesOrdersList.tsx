@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, Eye, Copy, X, Search, CalendarIcon } from "lucide-react";
+import { Eye, Copy, X, Search, CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,12 @@ const statusLabels = {
   in_production: "En Producción",
   completed: "Completado",
   cancelled: "Cancelado",
+};
+
+const fmtEUR = (n: any) => {
+  const num = typeof n === "number" ? n : parseFloat(String(n ?? "").replace(/\./g, "").replace(",", "."));
+  if (Number.isNaN(num)) return String(n ?? "");
+  return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 2 }).format(num);
 };
 
 const SalesOrdersList = () => {
@@ -140,7 +146,7 @@ const SalesOrdersList = () => {
         .insert({
           user_id: originalOrder.user_id,
           customer_id: originalOrder.customer_id,
-          order_number: `TEMP-${Date.now()}`, // Temporal, se actualizará
+          order_number: `TEMP-${Date.now()}`,
           title: originalOrder.title ? `${originalOrder.title} (Copia)` : undefined,
           description: originalOrder.description,
           notes: originalOrder.notes,
@@ -165,7 +171,6 @@ const SalesOrdersList = () => {
       const nextNumber = (count || 0) + 1;
       const newOrderNumber = `SO-${year}-${String(nextNumber).padStart(4, '0')}`;
 
-      // Update with proper order number
       await supabase
         .from('sales_orders')
         .update({ order_number: newOrderNumber })
@@ -215,141 +220,193 @@ const SalesOrdersList = () => {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Package className="h-8 w-8" />
-            Pedidos
-          </h1>
-          <p className="text-muted-foreground">Gestiona pedidos de producción desde presupuestos aprobados o creados desde cero</p>
-        </div>
-        <Button onClick={() => navigate("/pedidos/nuevo")}>
-          Crear nuevo pedido
-        </Button>
-      </div>
+    <main className="p-1 md:p-2">
+      <header className="sr-only">
+        <h1>Listado de pedidos</h1>
+        <link rel="canonical" href={`${window.location.origin}/pedidos`} />
+        <meta name="description" content="Listado de pedidos en la aplicación." />
+      </header>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Listado de pedidos</CardTitle>
-          <CardDescription>
-            {filteredOrders.length} de {orders.length} pedido{orders.length !== 1 ? "s" : ""}
-          </CardDescription>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Listado de pedidos</CardTitle>
+            <Button 
+              size="sm" 
+              onClick={() => navigate('/pedidos/nuevo')}
+              className="h-8 text-xs"
+            >
+              Nuevo Pedido
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Filters */}
-          <div className="grid gap-4 md:grid-cols-5">
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Cliente..."
-                value={customerFilter}
-                onChange={(e) => setCustomerFilter(e.target.value)}
-                className="pl-8"
-              />
+        <CardContent className="p-2">
+          {/* Filters Section */}
+          <div className="mb-3 p-3 bg-muted/30 rounded border">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+              {/* Customer Filter */}
+              <div className="relative">
+                <Search className="absolute left-2 top-1.5 h-3 w-3 text-muted-foreground" />
+                <Input
+                  placeholder="Cliente..."
+                  value={customerFilter}
+                  onChange={(e) => setCustomerFilter(e.target.value)}
+                  className="h-7 text-xs pl-7"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="h-6 text-xs px-2">
+                    <SelectValue placeholder="Estado..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="pending">Pendiente</SelectItem>
+                    <SelectItem value="in_production">En Producción</SelectItem>
+                    <SelectItem value="completed">Completado</SelectItem>
+                    <SelectItem value="cancelled">Cancelado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Order Number Filter */}
+              <div>
+                <Input
+                  placeholder="Nº..."
+                  value={orderNumberFilter}
+                  onChange={(e) => setOrderNumberFilter(e.target.value)}
+                  className="h-6 text-xs px-2"
+                />
+              </div>
+
+              {/* Date From Filter */}
+              <div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "h-6 w-full justify-start text-left font-normal text-xs px-1",
+                        !dateFromFilter && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-1 h-2 w-2" />
+                      {dateFromFilter ? format(dateFromFilter, "dd/MM") : "Desde"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateFromFilter}
+                      onSelect={setDateFromFilter}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Date To Filter */}
+              <div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "h-6 w-full justify-start text-left font-normal text-xs px-1",
+                        !dateToFilter && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-1 h-2 w-2" />
+                      {dateToFilter ? format(dateToFilter, "dd/MM") : "Hasta"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateToFilter}
+                      onSelect={setDateToFilter}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Estado..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="pending">Pendiente</SelectItem>
-                <SelectItem value="in_production">En Producción</SelectItem>
-                <SelectItem value="completed">Completado</SelectItem>
-                <SelectItem value="cancelled">Cancelado</SelectItem>
-              </SelectContent>
-            </Select>
-            <Input
-              placeholder="N°..."
-              value={orderNumberFilter}
-              onChange={(e) => setOrderNumberFilter(e.target.value)}
-            />
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("justify-start text-left font-normal", !dateFromFilter && "text-muted-foreground")}>
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateFromFilter ? format(dateFromFilter, "PPP") : "Desde"}
+
+            {/* Clear Filters Button */}
+            {hasActiveFilters && (
+              <div className="mt-2 flex justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="h-6 text-xs px-2"
+                >
+                  <X className="w-3 h-3 mr-1" />
+                  Limpiar
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar mode="single" selected={dateFromFilter} onSelect={setDateFromFilter} initialFocus />
-              </PopoverContent>
-            </Popover>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("justify-start text-left font-normal", !dateToFilter && "text-muted-foreground")}>
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateToFilter ? format(dateToFilter, "PPP") : "Hasta"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar mode="single" selected={dateToFilter} onSelect={setDateToFilter} initialFocus />
-              </PopoverContent>
-            </Popover>
+              </div>
+            )}
           </div>
 
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearAllFilters}>
-              <X className="h-4 w-4 mr-2" />
-              Limpiar filtros
-            </Button>
-          )}
+          {/* Results Summary */}
+          <div className="mb-2 text-xs text-muted-foreground">
+            {filteredOrders.length} de {orders.length} pedidos
+          </div>
 
           {loading ? (
-            <div className="text-center py-8">Cargando pedidos...</div>
+            <p className="text-sm text-muted-foreground">Cargando pedidos...</p>
+          ) : filteredOrders.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {orders.length === 0 ? "Aún no hay pedidos." : "No se encontraron pedidos con los filtros aplicados."}
+            </p>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>N°</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Descripción</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
+                <TableRow className="h-10">
+                  <TableHead className="py-2">Fecha</TableHead>
+                  <TableHead className="py-2">Nº</TableHead>
+                  <TableHead className="py-2">Cliente</TableHead>
+                  <TableHead className="py-2">Descripción</TableHead>
+                  <TableHead className="py-2 text-right">Total</TableHead>
+                  <TableHead className="py-2">Estado</TableHead>
+                  <TableHead className="py-2">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredOrders.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">
-                      No hay pedidos que coincidan con los filtros
+                {filteredOrders.map((order) => (
+                  <TableRow key={order.id} className="h-12">
+                    <TableCell className="py-2">{new Date(order.order_date).toLocaleDateString("es-ES")}</TableCell>
+                    <TableCell className="py-2">{order.order_number}</TableCell>
+                    <TableCell className="py-2">{getCustomerName(order.customer_id)}</TableCell>
+                    <TableCell className="py-2">{order.description || order.title || ""}</TableCell>
+                    <TableCell className="py-2 text-right">{fmtEUR(order.final_price)}</TableCell>
+                    <TableCell className="py-2">
+                      <Badge variant={statusColors[order.status]}>
+                        {statusLabels[order.status]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="py-2">
+                      <div className="flex items-center gap-1">
+                        <Button size="sm" variant="secondary" className="h-7 px-2 text-xs" onClick={() => navigate(`/pedidos/${order.id}`)}>
+                          Ver
+                        </Button>
+                        <Button size="sm" variant="default" className="h-7 px-2 text-xs" onClick={() => handleDuplicate(order.id)}>
+                          Duplicar
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
-                ) : (
-                  filteredOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell>{new Date(order.order_date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}</TableCell>
-                      <TableCell className="font-medium">{order.order_number}</TableCell>
-                      <TableCell>{getCustomerName(order.customer_id)}</TableCell>
-                      <TableCell className="max-w-xs truncate">{order.description || order.title || "—"}</TableCell>
-                      <TableCell>{order.final_price.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</TableCell>
-                      <TableCell>
-                        <Badge variant={statusColors[order.status]}>{statusLabels[order.status]}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="sm" onClick={() => navigate(`/pedidos/${order.id}`)}>
-                            <Eye className="h-4 w-4" />
-                            Ver
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleDuplicate(order.id)}>
-                            <Copy className="h-4 w-4" />
-                            Duplicar
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
+                ))}
               </TableBody>
             </Table>
           )}
         </CardContent>
       </Card>
-    </div>
+    </main>
   );
 };
 
