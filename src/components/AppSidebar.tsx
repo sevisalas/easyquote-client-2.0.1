@@ -274,6 +274,32 @@ export function AppSidebar() {
                             {!isCollapsed && <span>Pedidos</span>}
                           </NavLink>
                         </SidebarMenuButton>
+                        <SidebarMenuSub className="ml-2">
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={currentPath === "/pedidos"}
+                              className="h-6 px-2"
+                            >
+                              <NavLink to="/pedidos" end className={getNavCls}>
+                                <Package className="mr-2 h-4 w-4" />
+                                {!isCollapsed && <span>Listado</span>}
+                              </NavLink>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={currentPath === "/pedidos/nuevo"}
+                              className="h-6 px-2"
+                            >
+                              <NavLink to="/pedidos/nuevo" className={getNavCls}>
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                {!isCollapsed && <span>Nuevo</span>}
+                              </NavLink>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        </SidebarMenuSub>
                      </SidebarMenuItem>
                    )}
 
