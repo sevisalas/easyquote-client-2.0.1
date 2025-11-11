@@ -37,6 +37,7 @@ import ProductTestPage from "./pages/ProductTestPage";
 import ImageManagement from "./pages/ImageManagement";
 import SalesOrdersList from "./pages/SalesOrdersList";
 import SalesOrderDetail from "./pages/SalesOrderDetail";
+import SalesOrderNew from "./pages/SalesOrderNew";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { useSessionMonitor } from "./hooks/useSessionMonitor";
 
@@ -304,6 +305,16 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <SalesOrdersList />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pedidos/nuevo"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SalesOrderNew />
             </AppLayout>
           </ProtectedRoute>
         }

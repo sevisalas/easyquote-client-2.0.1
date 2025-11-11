@@ -55,6 +55,9 @@ const SalesOrdersList = () => {
           </h1>
           <p className="text-muted-foreground">Gestionar pedidos generados desde presupuestos</p>
         </div>
+        <Button onClick={() => navigate("/pedidos/nuevo")}>
+          Crear nuevo pedido
+        </Button>
       </div>
 
       <Card>

@@ -133,7 +133,7 @@ export const useQuoteApproval = () => {
 
       const finalPrice = subtotal - discountAmount + taxAmount;
 
-      // Create sales order - EXACT COPY of quote
+      // Create sales order - EXACT COPY of quote (mark as NOT from scratch)
       const { data: salesOrder, error: orderError } = await supabase
         .from('sales_orders')
         .insert({
@@ -151,6 +151,7 @@ export const useQuoteApproval = () => {
           discount_amount: discountAmount,
           final_price: finalPrice,
           notes: quote.notes,
+          created_from_scratch: false,
         })
         .select()
         .single();

@@ -54,6 +54,9 @@ verify_jwt = false
 [functions.holded-export-estimate]
 verify_jwt = true
 
+[functions.holded-export-order]
+verify_jwt = true
+
 [functions.get-organization-users]
 verify_jwt = true
 

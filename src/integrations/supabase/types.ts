@@ -1189,6 +1189,7 @@ export type Database = {
       sales_orders: {
         Row: {
           created_at: string
+          created_from_scratch: boolean
           customer_id: string | null
           delivery_date: string | null
           description: string | null
@@ -1212,6 +1213,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_from_scratch?: boolean
           customer_id?: string | null
           delivery_date?: string | null
           description?: string | null
@@ -1235,6 +1237,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_from_scratch?: boolean
           customer_id?: string | null
           delivery_date?: string | null
           description?: string | null
