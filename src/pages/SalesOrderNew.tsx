@@ -108,7 +108,7 @@ export default function SalesOrderNew() {
     validateToken();
   }, []);
 
-  // Generate order number based on organization
+  // Generate order number based on organization (same as quote approval)
   const generateOrderNumber = async (): Promise<string> => {
     const year = new Date().getFullYear();
     const { data: { user } } = await supabase.auth.getUser();
@@ -131,15 +131,15 @@ export default function SalesOrderNew() {
 
     const userIds = allOrgMembers?.map(m => m.user_id) || [];
 
-    // Count orders from all organization members for this year
+    // Count ALL orders from all organization members for this year (same sequence as quotes)
     const { count } = await supabase
       .from("sales_orders")
       .select("*", { count: "exact", head: true })
       .in("user_id", userIds)
-      .like("order_number", `PED-${year}-%`);
+      .like("order_number", `SO-${year}-%`);
     
     const nextNumber = (count || 0) + 1;
-    return `PED-${year}-${String(nextNumber).padStart(4, "0")}`;
+    return `SO-${year}-${String(nextNumber).padStart(4, "0")}`;
   };
 
   // Calculate totals
