@@ -130,174 +130,87 @@ Deno.serve(async (req) => {
 
     // Build complete payload with all order data
     const items: any[] = [];
-    const appliedDiscounts: string[] = [];
-    let hasMultiQuantities = false;
-    let globalQtyCounter = 0;
     
     orderItems.forEach((item: any) => {
-      console.log('🔍 Processing item - ALL FIELDS:', JSON.stringify(item, null, 2));
+      console.log('🔍 Processing item:', JSON.stringify(item, null, 2));
       
-      // Check if item has multiple quantities
-      const itemHasMultiQuantities = item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1;
+      let description = '';
       
-      if (itemHasMultiQuantities) {
-        hasMultiQuantities = true;
-        // Create one item per quantity row
-        item.multi.rows.forEach((row: any) => {
-          globalQtyCounter++;
-          const qtyLabel = `Q${globalQtyCounter}`;
-          let description = '';
-          
-          // Build description from prompts
-          if (item.prompts) {
-            let promptsArray: any[] = [];
-            
-            if (Array.isArray(item.prompts)) {
-              promptsArray = item.prompts;
-            } else if (typeof item.prompts === 'object') {
-              promptsArray = Object.entries(item.prompts).map(([key, value]) => ({
-                id: key,
-                ...(typeof value === 'object' ? value : { value })
-              }));
-            }
-            
-            if (promptsArray.length > 0) {
-              description = promptsArray
-                .sort((a, b) => (a.order || 999) - (b.order || 999))
-                .map((prompt) => {
-                  if (prompt && 'label' in prompt && 'value' in prompt) {
-                    if (prompt.id === item.multi.qtyPrompt && row.qty) {
-                      return `${prompt.label}: ${row.qty}`;
-                    }
-                    return `${prompt.label}: ${prompt.value}`;
-                  }
-                  return '';
-                })
-                .filter(Boolean)
-                .join('\n');
-            }
-          }
-          
-          // Add outputs from the specific row
-          if (row.outs && Array.isArray(row.outs) && row.outs.length > 0) {
-            const outputsText = row.outs
-              .filter((out: any) => {
-                const name = String(out.name || '').toLowerCase();
-                const type = String(out.type || '').toLowerCase();
-                return !type.includes('price') && !name.includes('precio') && !name.includes('price');
-              })
-              .map((out: any) => `${out.name}: ${out.value}`)
-              .join('\n');
-            
-            if (outputsText) {
-              description += (description ? '\n' : '') + outputsText;
-            }
-          }
-          
-          // Get price from this specific row
-          const priceOut = (row.outs || []).find((o: any) => 
-            String(o?.type || '').toLowerCase() === 'price' ||
-            String(o?.name || '').toLowerCase().includes('precio') ||
-            String(o?.name || '').toLowerCase().includes('price')
-          );
-          
-          const priceValue = priceOut?.value;
-          let price = typeof priceValue === "number" 
+      // Build description from prompts
+      if (item.prompts) {
+        let promptsArray: any[] = [];
+        
+        if (Array.isArray(item.prompts)) {
+          promptsArray = item.prompts;
+        } else if (typeof item.prompts === 'object') {
+          promptsArray = Object.entries(item.prompts).map(([key, value]) => ({
+            id: key,
+            ...(typeof value === 'object' ? value : { value })
+          }));
+        }
+        
+        if (promptsArray.length > 0) {
+          description = promptsArray
+            .sort((a, b) => (a.order || 999) - (b.order || 999))
+            .map((prompt) => {
+              if (prompt && 'label' in prompt && 'value' in prompt) {
+                return `${prompt.label}: ${prompt.value}`;
+              }
+              return '';
+            })
+            .filter(Boolean)
+            .join('\n');
+        }
+      }
+      
+      // Add outputs to description
+      if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
+        const outputsText = item.outputs
+          .filter((out: any) => {
+            const name = String(out.name || '').toLowerCase();
+            const type = String(out.type || '').toLowerCase();
+            return !type.includes('price') && !name.includes('precio') && !name.includes('price');
+          })
+          .map((out: any) => `${out.name}: ${out.value}`)
+          .join('\n');
+        
+        if (outputsText) {
+          description += (description ? '\n' : '') + outputsText;
+        }
+      }
+      
+      // Get price
+      let price = 0;
+      if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
+        const priceOut = item.outputs.find((o: any) => 
+          String(o?.type || '').toLowerCase() === 'price' ||
+          String(o?.name || '').toLowerCase().includes('precio') ||
+          String(o?.name || '').toLowerCase().includes('price')
+        );
+        
+        if (priceOut) {
+          const priceValue = priceOut.value;
+          price = typeof priceValue === "number" 
             ? priceValue 
             : parseFloat(String(priceValue || 0).replace(/\./g, "").replace(",", ".")) || 0;
-          
-          price = Math.round(price * 100) / 100;
-          
-          const itemData: any = {
-            name: `${item.product_name || 'Producto'} (${qtyLabel})`,
-            desc: description,
-            units: 1,
-            subtotal: price,
-            taxes: ["s_iva_21"]
-          };
-          
-          items.push(itemData);
-        });
-      } else {
-        // Single item without multi quantities
-        let description = '';
-        
-        // Build description from prompts
-        if (item.prompts) {
-          let promptsArray: any[] = [];
-          
-          if (Array.isArray(item.prompts)) {
-            promptsArray = item.prompts;
-          } else if (typeof item.prompts === 'object') {
-            promptsArray = Object.entries(item.prompts).map(([key, value]) => ({
-              id: key,
-              ...(typeof value === 'object' ? value : { value })
-            }));
-          }
-          
-          if (promptsArray.length > 0) {
-            description = promptsArray
-              .sort((a, b) => (a.order || 999) - (b.order || 999))
-              .map((prompt) => {
-                if (prompt && 'label' in prompt && 'value' in prompt) {
-                  return `${prompt.label}: ${prompt.value}`;
-                }
-                return '';
-              })
-              .filter(Boolean)
-              .join('\n');
-          }
-        }
-        
-        // Add outputs to description
-        if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
-          const outputsText = item.outputs
-            .filter((out: any) => {
-              const name = String(out.name || '').toLowerCase();
-              const type = String(out.type || '').toLowerCase();
-              return !type.includes('price') && !name.includes('precio') && !name.includes('price');
-            })
-            .map((out: any) => `${out.name}: ${out.value}`)
-            .join('\n');
-          
-          if (outputsText) {
-            description += (description ? '\n' : '') + outputsText;
-          }
-        }
-        
-        // Get price
-        let price = 0;
-        if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
-          const priceOut = item.outputs.find((o: any) => 
-            String(o?.type || '').toLowerCase() === 'price' ||
-            String(o?.name || '').toLowerCase().includes('precio') ||
-            String(o?.name || '').toLowerCase().includes('price')
-          );
-          
-          if (priceOut) {
-            const priceValue = priceOut.value;
-            price = typeof priceValue === "number" 
-              ? priceValue 
-              : parseFloat(String(priceValue || 0).replace(/\./g, "").replace(",", ".")) || 0;
-          } else {
-            price = parseFloat(item.price) || 0;
-          }
         } else {
           price = parseFloat(item.price) || 0;
         }
-        
-        price = Math.round(price * 100) / 100;
-        
-        const itemData: any = {
-          name: item.product_name || 'Producto',
-          desc: description,
-          units: item.quantity || 1,
-          subtotal: price,
-          taxes: ["s_iva_21"]
-        };
-        
-        items.push(itemData);
+      } else {
+        price = parseFloat(item.price) || 0;
       }
+      
+      price = Math.round(price * 100) / 100;
+      
+      const itemData: any = {
+        name: item.product_name || 'Producto',
+        desc: description,
+        units: item.quantity || 1,
+        subtotal: price,
+        taxes: ["s_iva_21"]
+      };
+      
+      items.push(itemData);
     });
 
     // Add order additionals

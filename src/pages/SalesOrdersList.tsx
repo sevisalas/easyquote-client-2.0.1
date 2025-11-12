@@ -189,8 +189,7 @@ const SalesOrdersList = () => {
             quantity: item.quantity,
             price: item.price,
             prompts: item.prompts,
-            outputs: item.outputs,
-            multi: item.multi
+            outputs: item.outputs
           }))
         );
       }

@@ -22,7 +22,6 @@ type ItemSnapshot = {
   prompts: Record<string, any>;
   outputs: any[];
   price?: number;
-  multi?: any;
   itemDescription?: string;
   itemAdditionals?: any[];
   needsRecalculation?: boolean;
@@ -332,7 +331,6 @@ export default function SalesOrderNew() {
           description: item.itemDescription || "",
           prompts: promptsArray,
           outputs: item.outputs || [],
-          multi: item.multi || null,
           price: item.price || 0,
           quantity: quantity,
           position: index,

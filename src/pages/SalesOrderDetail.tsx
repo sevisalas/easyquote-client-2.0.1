@@ -340,10 +340,7 @@ const SalesOrderDetail = () => {
               {items.map((item, index) => {
                 const itemOutputs = item.outputs && Array.isArray(item.outputs) ? item.outputs : [];
                 const itemPrompts = item.prompts && Array.isArray(item.prompts) ? item.prompts : [];
-                const itemMulti = item.multi as any;
-                
-                // Determine the actual quantity - use database quantity directly
-                let displayQuantity = item.quantity;
+                const displayQuantity = item.quantity;
                 
                 return (
                   <div key={item.id} className="border rounded-lg p-4">
@@ -365,20 +362,9 @@ const SalesOrderDetail = () => {
                     </div>
 
                     {/* Outputs */}
-                    {(() => {
-                      // Use outputs from multi.rows if available (for approved multi-quantity items)
-                      let displayOutputs = itemOutputs;
-                      
-                      if (itemMulti?.rows && Array.isArray(itemMulti.rows) && itemMulti.rows.length === 1) {
-                        const row = itemMulti.rows[0];
-                        if (row.outs && Array.isArray(row.outs)) {
-                          displayOutputs = row.outs;
-                        }
-                      }
-                      
-                      return displayOutputs.length > 0 && (
-                        <div className="space-y-2 mb-3">
-                          {displayOutputs.map((output: any, idx: number) => {
+                    {itemOutputs.length > 0 && (
+                      <div className="space-y-2 mb-3">
+                        {itemOutputs.map((output: any, idx: number) => {
                             if (output.type === 'ProductImage') {
                               return (
                                 <div key={idx}>
@@ -396,10 +382,9 @@ const SalesOrderDetail = () => {
                                 <span>{output.value}</span>
                               </div>
                             );
-                          })}
-                        </div>
-                      );
-                    })()}
+                        })}
+                      </div>
+                    )}
 
                     {/* Prompts */}
                     {itemPrompts.length > 0 && (
