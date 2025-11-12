@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { CalendarDays, Plus, Save, ArrowLeft } from "lucide-react";
+import { CalendarDays, Plus, Save, ArrowLeft, Download } from "lucide-react";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -433,16 +433,34 @@ export default function SalesOrderNew() {
   }
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Nuevo pedido</span>
-            <Button onClick={() => navigate(-1)} variant="outline">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Volver
+    <div className="container mx-auto py-4 space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold">Nuevo pedido</h1>
+          {isHoldedActive && (
+            <Button
+              onClick={handleImportContacts}
+              disabled={isImportingContacts}
+              variant="outline"
+              size="sm"
+              className="text-xs h-7"
+            >
+              <Download className="w-3 h-3 mr-1" />
+              {isImportingContacts ? "Importando..." : "Actualizar contactos"}
             </Button>
-          </CardTitle>
+          )}
+        </div>
+        <Button onClick={() => navigate(-1)} variant="outline" size="sm">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Volver
+        </Button>
+      </div>
+
+      {/* Order Details */}
+      <Card>
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="text-lg">Información del pedido</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Customer Selection */}
@@ -452,16 +470,6 @@ export default function SalesOrderNew() {
               value={customerId}
               onValueChange={setCustomerId}
             />
-            {isHoldedActive && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleImportContacts}
-                disabled={isImportingContacts}
-              >
-                {isImportingContacts ? "Importando..." : "Importar contactos de Holded"}
-              </Button>
-            )}
           </div>
 
           <Separator />
