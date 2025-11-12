@@ -39,6 +39,7 @@ interface QuoteItemProps {
   onRemove?: (id: string | number) => void;
   onFinishEdit?: (id: string | number) => void;
   shouldExpand?: boolean;
+  hideMultiQuantities?: boolean;
 }
 
 interface Additional {
@@ -49,7 +50,7 @@ interface Additional {
   default_value: number;
 }
 
-export default function QuoteItem({ hasToken, id, initialData, onChange, onRemove, onFinishEdit, shouldExpand }: QuoteItemProps) {
+export default function QuoteItem({ hasToken, id, initialData, onChange, onRemove, onFinishEdit, shouldExpand, hideMultiQuantities = false }: QuoteItemProps) {
   // Local state per item
   const [productId, setProductId] = useState<string>("");
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
@@ -783,157 +784,159 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               </CardContent>
             </Card>
 
-            <Card className="border-accent/50 bg-muted/30">
-              <CardHeader className="py-2 px-3">
-                <CardTitle className="text-base">Múltiples cantidades</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label>Activar</Label>
+            {!hideMultiQuantities && (
+              <Card className="border-accent/50 bg-muted/30">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-base">Múltiples cantidades</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label>Activar</Label>
+                    </div>
+                    <Switch checked={multiEnabled} onCheckedChange={setMultiEnabled} />
                   </div>
-                  <Switch checked={multiEnabled} onCheckedChange={setMultiEnabled} />
-                </div>
 
-                {multiEnabled && (
-                  <>
-                    <div className="space-y-2">
-                      <Label>Selecciona el campo a usar</Label>
-                      <Select value={qtyPrompt} onValueChange={setQtyPrompt} disabled={numericPrompts.length === 0}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona prompt numérico" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {numericPrompts.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  {multiEnabled && (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Selecciona el campo a usar</Label>
+                        <Select value={qtyPrompt} onValueChange={setQtyPrompt} disabled={numericPrompts.length === 0}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona prompt numérico" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {numericPrompts.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label>¿Cuántos?</Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={MAX_QTY}
-                        value={qtyCount}
-                        onChange={(e) => {
-                          const n = parseInt(e.target.value || "0", 10);
-                          if (Number.isNaN(n)) return;
-                          setQtyCount(Math.max(1, Math.min(MAX_QTY, n)));
-                        }}
-                        className="w-20"
-                      />
-                    </div>
-
-                    <div className="grid gap-2 grid-cols-2 md:grid-cols-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Q1</Label>
+                      <div className="space-y-2">
+                        <Label>¿Cuántos?</Label>
                         <Input
                           type="number"
                           min={1}
-                          value={qtyInputs[0] ?? ""}
-                          readOnly
-                          className="bg-muted px-2"
+                          max={MAX_QTY}
+                          value={qtyCount}
+                          onChange={(e) => {
+                            const n = parseInt(e.target.value || "0", 10);
+                            if (Number.isNaN(n)) return;
+                            setQtyCount(Math.max(1, Math.min(MAX_QTY, n)));
+                          }}
+                          className="w-20"
                         />
                       </div>
-                      {Array.from({ length: qtyCount - 1 }, (_, i) => i + 1).map((idx) => (
-                        <div key={idx} className="space-y-1">
-                          <Label className="text-xs">Q{idx + 1}</Label>
+
+                      <div className="grid gap-2 grid-cols-2 md:grid-cols-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Q1</Label>
                           <Input
                             type="number"
                             min={1}
-                            value={qtyInputs[idx] ?? ""}
-                            onChange={(e) => {
-                              const v = e.target.value;
-                              setQtyInputs((prev) => {
-                                const next = [...prev];
-                                next[idx] = v;
-                                return next;
-                              });
-                            }}
-                            className="px-2"
+                            value={qtyInputs[0] ?? ""}
+                            readOnly
+                            className="bg-muted px-2"
                           />
                         </div>
-                      ))}
-                    </div>
+                        {Array.from({ length: qtyCount - 1 }, (_, i) => i + 1).map((idx) => (
+                          <div key={idx} className="space-y-1">
+                            <Label className="text-xs">Q{idx + 1}</Label>
+                            <Input
+                              type="number"
+                              min={1}
+                              value={qtyInputs[idx] ?? ""}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setQtyInputs((prev) => {
+                                  const next = [...prev];
+                                  next[idx] = v;
+                                  return next;
+                                });
+                              }}
+                              className="px-2"
+                            />
+                          </div>
+                        ))}
+                      </div>
 
-                     {multiLoading ? (
-                      <p className="text-sm text-muted-foreground">Calculando...</p>
-                    ) : (Array.isArray(multiRows) && multiRows.length > 0 ? (
-                      <>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                          {multiRows.map((r, idx) => {
-                            const priceOut = (r.outs || []).find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
-                            const priceValue = typeof priceOut?.value === "number" ? priceOut.value : parseFloat(String(priceOut?.value).replace(/\./g, "").replace(",", "."));
-                            const formattedPrice = !isNaN(priceValue) ? new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(priceValue) : "0,00";
-                            return (
-                              <div key={idx} className="border rounded p-2">
-                                <div className="text-xs text-muted-foreground mb-1">Q{idx + 1}</div>
-                                <div className="text-xs">{formattedPrice}</div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                       {multiLoading ? (
+                        <p className="text-sm text-muted-foreground">Calculando...</p>
+                      ) : (Array.isArray(multiRows) && multiRows.length > 0 ? (
+                        <>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            {multiRows.map((r, idx) => {
+                              const priceOut = (r.outs || []).find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
+                              const priceValue = typeof priceOut?.value === "number" ? priceOut.value : parseFloat(String(priceOut?.value).replace(/\./g, "").replace(",", "."));
+                              const formattedPrice = !isNaN(priceValue) ? new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(priceValue) : "0,00";
+                              return (
+                                <div key={idx} className="border rounded p-2">
+                                  <div className="text-xs text-muted-foreground mb-1">Q{idx + 1}</div>
+                                  <div className="text-xs">{formattedPrice}</div>
+                                </div>
+                              );
+                            })}
+                          </div>
 
-                        <div className="mt-3">
-                          <Accordion type="single" collapsible className="w-full">
-                            <AccordionItem value="detalles">
-                              <AccordionTrigger>Detalles</AccordionTrigger>
-                              <AccordionContent>
-                                <Tabs defaultValue="q1" className="w-full">
-                                  <TabsList className="mb-3">
-                                    {multiRows.map((_, idx) => (
-                                      <TabsTrigger key={idx} value={`q${idx + 1}`}>Q{idx + 1}</TabsTrigger>
-                                    ))}
-                                  </TabsList>
+                          <div className="mt-3">
+                            <Accordion type="single" collapsible className="w-full">
+                              <AccordionItem value="detalles">
+                                <AccordionTrigger>Detalles</AccordionTrigger>
+                                <AccordionContent>
+                                  <Tabs defaultValue="q1" className="w-full">
+                                    <TabsList className="mb-3">
+                                      {multiRows.map((_, idx) => (
+                                        <TabsTrigger key={idx} value={`q${idx + 1}`}>Q{idx + 1}</TabsTrigger>
+                                      ))}
+                                    </TabsList>
 
-                                  {multiRows.map((r, idx) => {
-                                    const outs = r.outs || [];
-                                    const priceOut = outs.find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
-                                    const details = outs.filter((o:any) => {
-                                      const t = String(o?.type || '').toLowerCase();
-                                      const n = String(o?.name || '').toLowerCase();
-                                      const v = String(o?.value ?? '');
-                                      const isImageLike = t.includes('image') || n.includes('image');
-                                      const isNA = v === '' || v === '#N/A';
-                                      return o !== priceOut && !isImageLike && !isNA;
-                                    });
-                                    return (
-                                      <TabsContent key={idx} value={`q${idx + 1}`}>
-                                        <div className="p-3 rounded-md border bg-card/50 space-y-2">
-                                          <div className="flex items-center justify-between">
-                                            <span className="text-sm text-muted-foreground">Precio total</span>
-                                            <span className="font-semibold">{formatEUR(priceOut?.value)}</span>
+                                    {multiRows.map((r, idx) => {
+                                      const outs = r.outs || [];
+                                      const priceOut = outs.find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
+                                      const details = outs.filter((o:any) => {
+                                        const t = String(o?.type || '').toLowerCase();
+                                        const n = String(o?.name || '').toLowerCase();
+                                        const v = String(o?.value ?? '');
+                                        const isImageLike = t.includes('image') || n.includes('image');
+                                        const isNA = v === '' || v === '#N/A';
+                                        return o !== priceOut && !isImageLike && !isNA;
+                                      });
+                                      return (
+                                        <TabsContent key={idx} value={`q${idx + 1}`}>
+                                          <div className="p-3 rounded-md border bg-card/50 space-y-2">
+                                            <div className="flex items-center justify-between">
+                                              <span className="text-sm text-muted-foreground">Precio total</span>
+                                              <span className="font-semibold">{formatEUR(priceOut?.value)}</span>
+                                            </div>
+                                            {details.length > 0 && (
+                                                <div className="space-y-1 mt-2">
+                                                  {details.map((o:any, i:number) => (
+                                                    <div key={i} className="flex items-center justify-between text-sm">
+                                                      <span className="text-muted-foreground">{o.name ?? 'Dato'}</span>
+                                                      <span>{String(o.value)}</span>
+                                                    </div>
+                                                  ))}
+                                                </div>
+                                            )}
                                           </div>
-                                          {details.length > 0 && (
-                                              <div className="space-y-1 mt-2">
-                                                {details.map((o:any, i:number) => (
-                                                  <div key={i} className="flex items-center justify-between text-sm">
-                                                    <span className="text-muted-foreground">{o.name ?? 'Dato'}</span>
-                                                    <span>{String(o.value)}</span>
-                                                  </div>
-                                                ))}
-                                              </div>
-                                          )}
-                                        </div>
-                                      </TabsContent>
-                                    );
-                                  })}
-                                </Tabs>
-                              </AccordionContent>
-                            </AccordionItem>
-                          </Accordion>
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">Añade cantidades para ver precios.</p>
-                    ))}
-                  </>
-                )}
-              </CardContent>
-            </Card>
+                                        </TabsContent>
+                                      );
+                                    })}
+                                  </Tabs>
+                                </AccordionContent>
+                              </AccordionItem>
+                            </Accordion>
+                          </div>
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Añade cantidades para ver precios.</p>
+                      ))}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       )}
