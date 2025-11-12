@@ -48,7 +48,6 @@ export default function SalesOrderNew() {
   const [orderAdditionals, setOrderAdditionals] = useState<SelectedAdditional[]>([]);
   const [loading, setSaving] = useState(false);
   const [isImportingContacts, setIsImportingContacts] = useState(false);
-  const [exportToHolded, setExportToHolded] = useState(false);
 
   // Holded integration
   const { isHoldedActive } = useHoldedIntegration();
@@ -599,22 +598,6 @@ export default function SalesOrderNew() {
           </div>
 
           <Separator />
-
-          {/* Holded Export Option */}
-          {isHoldedActive && (
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="exportToHolded"
-                checked={exportToHolded}
-                onChange={(e) => setExportToHolded(e.target.checked)}
-                className="rounded"
-              />
-              <Label htmlFor="exportToHolded" className="cursor-pointer">
-                Exportar a Holded al crear el pedido
-              </Label>
-            </div>
-          )}
 
           {/* Actions */}
           <div className="flex justify-end gap-4">

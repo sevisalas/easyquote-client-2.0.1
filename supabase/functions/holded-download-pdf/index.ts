@@ -6,23 +6,32 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { holdedEstimateId } = await req.json();
+    const { holdedEstimateId, holdedDocumentId, documentType = 'estimate' } = await req.json();
     
-    if (!holdedEstimateId) {
-      throw new Error('holdedEstimateId is required');
+    const documentId = holdedEstimateId || holdedDocumentId;
+    
+    if (!documentId) {
+      throw new Error('holdedEstimateId or holdedDocumentId is required');
     }
 
     // Use API key directly
     const apiKey = '88610992d47b9783e7703c488a8c01cf';
+    
+    // Determine the correct endpoint based on document type
+    const endpoint = documentType === 'salesorder' 
+      ? `https://api.holded.com/api/invoicing/v1/documents/salesorder/${documentId}/pdf`
+      : `https://api.holded.com/api/invoicing/v1/documents/estimate/${documentId}/pdf`;
+    
     console.log('=== HOLDED PDF DOWNLOAD DEBUG ===');
-    console.log('Holded Estimate ID:', holdedEstimateId);
+    console.log('Document ID:', documentId);
+    console.log('Document Type:', documentType);
     console.log('API Key (first 10):', apiKey.substring(0, 10) + '...');
-    console.log('Full URL:', `https://api.holded.com/api/invoicing/v1/documents/estimate/${holdedEstimateId}/pdf`);
+    console.log('Full URL:', endpoint);
     console.log('================================');
 
     // Download PDF from Holded
     const holdedResponse = await fetch(
-      `https://api.holded.com/api/invoicing/v1/documents/estimate/${holdedEstimateId}/pdf`,
+      endpoint,
       {
         method: 'GET',
         headers: {
@@ -57,11 +66,15 @@ Deno.serve(async (req) => {
     console.log('PDF decoded successfully, size:', bytes.length);
 
     // Return the PDF
+    const fileName = documentType === 'salesorder' 
+      ? `pedido-${documentId}.pdf`
+      : `presupuesto-${documentId}.pdf`;
+
     return new Response(bytes, {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="presupuesto-${holdedEstimateId}.pdf"`
+        'Content-Disposition': `attachment; filename="${fileName}"`
       },
       status: 200
     });
