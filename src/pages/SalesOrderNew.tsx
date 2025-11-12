@@ -12,8 +12,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { CustomerSelector } from "@/components/quotes/CustomerSelector";
-import QuoteItem from "@/components/quotes/QuoteItem";
-import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
+import SalesOrderItem from "@/components/sales/SalesOrderItem";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 import { getEasyQuoteToken } from "@/lib/easyquoteApi";
 
@@ -539,7 +538,7 @@ export default function SalesOrderNew() {
             </div>
 
             {Object.entries(items).map(([id, snapshot]) => (
-              <QuoteItem
+              <SalesOrderItem
                 key={id}
                 id={id}
                 hasToken={hasToken || false}
