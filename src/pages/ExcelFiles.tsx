@@ -126,7 +126,7 @@ export default function ExcelFiles() {
       if (error || !data) return [];
       return Array.isArray(data) ? data : (data?.items || data?.data || []);
     },
-    enabled: hasToken,
+    enabled: !!hasToken,
   });
 
   // Get products associated with the selected file
@@ -151,7 +151,7 @@ export default function ExcelFiles() {
       }
       return data;
     },
-    enabled: hasToken
+    enabled: !!hasToken
   });
 
   // Fetch Excel files from EasyQuote API
@@ -178,7 +178,7 @@ export default function ExcelFiles() {
       const data = await response.json();
       return data;
     },
-    enabled: hasToken,
+    enabled: !!hasToken,
     retry: (failureCount, error: any) => {
       if (error?.message?.includes("401")) {
         return false;
