@@ -141,7 +141,7 @@ const Index = () => {
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-foreground mb-4">Presupuestos</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
           <Card className="border-primary/20 hover:border-primary/40 transition-all">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -219,7 +219,7 @@ const Index = () => {
             <div className="mb-6">
               <h2 className="text-xl font-semibold text-foreground mb-4">Pedidos</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
               <Card className="border-primary/20 hover:border-primary/40 transition-all">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
