@@ -108,37 +108,17 @@ export default function SalesOrderNew() {
   // Generate order number based on organization (same as quote approval)
   const generateOrderNumber = async (): Promise<string> => {
     const year = new Date().getFullYear();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Usuario no autenticado");
-
-    const { data: orgMembers } = await supabase
-      .from("organization_members")
-      .select("user_id, organization_id")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!orgMembers) {
-      throw new Error("Usuario no pertenece a ninguna organización");
-    }
-
-    const { data: allOrgMembers } = await supabase
-      .from("organization_members")
-      .select("user_id")
-      .eq("organization_id", orgMembers.organization_id);
-
-    const userIds = allOrgMembers?.map(m => m.user_id) || [];
-
-    // Get all orders for this year and organization
+    
+    // Get ALL orders for this year across ALL organizations to ensure global uniqueness
     const { data: existingOrders } = await supabase
       .from("sales_orders")
       .select("order_number")
-      .in("user_id", userIds)
       .like("order_number", `SO-${year}-%`)
       .order("created_at", { ascending: false });
     
     let nextNumber = 1;
     if (existingOrders && existingOrders.length > 0) {
-      // Find the highest number from all orders
+      // Find the highest number from all orders globally
       const numbers = existingOrders
         .map(order => {
           const match = order.order_number.match(/SO-\d{4}-(\d+)/);
