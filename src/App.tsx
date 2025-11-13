@@ -19,6 +19,7 @@ import QuoteDetail from "./pages/QuoteDetail";
 import EditarSuscriptor from "./pages/SubscriberEdit";
 import UsuariosSuscriptor from "./pages/SubscriberUsers";
 import SubscribersList from "./pages/SubscribersList";
+import NuevoSuscriptor from "./pages/SubscriberNew";
 import GestionPlanes from "./pages/PlansManagement";
 import Integrations from "./pages/Integrations";
 import IntegrationAccess from "./pages/IntegrationAccess";
@@ -155,6 +156,16 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <SubscribersList />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/usuarios/nuevo"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <NuevoSuscriptor />
             </AppLayout>
           </ProtectedRoute>
         }
