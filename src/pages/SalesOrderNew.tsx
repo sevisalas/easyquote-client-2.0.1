@@ -105,33 +105,16 @@ export default function SalesOrderNew() {
     validateToken();
   }, []);
 
-  // Generate order number based on organization (same as quote approval)
+  // Generate order number using atomic database function
   const generateOrderNumber = async (): Promise<string> => {
-    const year = new Date().getFullYear();
+    const { data, error } = await supabase.rpc('generate_sales_order_number');
     
-    // Get ALL orders for this year across ALL organizations to ensure global uniqueness
-    const { data: existingOrders } = await supabase
-      .from("sales_orders")
-      .select("order_number")
-      .like("order_number", `SO-${year}-%`)
-      .order("created_at", { ascending: false });
-    
-    let nextNumber = 1;
-    if (existingOrders && existingOrders.length > 0) {
-      // Find the highest number from all orders globally
-      const numbers = existingOrders
-        .map(order => {
-          const match = order.order_number.match(/SO-\d{4}-(\d+)/);
-          return match ? parseInt(match[1], 10) : 0;
-        })
-        .filter(num => num > 0);
-      
-      if (numbers.length > 0) {
-        nextNumber = Math.max(...numbers) + 1;
-      }
+    if (error) {
+      console.error('Error generating order number:', error);
+      throw new Error('No se pudo generar el número de pedido');
     }
     
-    return `SO-${year}-${String(nextNumber).padStart(4, "0")}`;
+    return data;
   };
 
   // Calculate totals
