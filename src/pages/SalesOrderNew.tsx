@@ -287,33 +287,61 @@ export default function SalesOrderNew() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuario no autenticado");
 
-      const orderNumber = await generateOrderNumber();
       const itemsArray = Object.values(items);
 
-      const orderData = {
-        user_id: user.id,
-        customer_id: customerId,
-        order_number: orderNumber,
-        title: title || `Pedido ${orderNumber}`,
-        description: description || itemsArray[0]?.itemDescription || "",
-        status: 'draft' as const, // Start as draft
-        order_date: new Date().toISOString(),
-        delivery_date: deliveryDate || null,
-        subtotal: totals.subtotal,
-        tax_amount: totals.taxAmount,
-        discount_amount: totals.discountAmount,
-        final_price: totals.finalPrice,
-        notes: notes || "",
-        created_from_scratch: true, // Mark as created from scratch
-      };
+      // Retry logic for handling duplicate key errors
+      let order;
+      let orderNumber = '';
+      let attempts = 0;
+      const maxAttempts = 5;
+      
+      while (attempts < maxAttempts) {
+        try {
+          orderNumber = await generateOrderNumber();
+          
+          const orderData = {
+            user_id: user.id,
+            customer_id: customerId,
+            order_number: orderNumber,
+            title: title || `Pedido ${orderNumber}`,
+            description: description || itemsArray[0]?.itemDescription || "",
+            status: 'draft' as const,
+            order_date: new Date().toISOString(),
+            delivery_date: deliveryDate || null,
+            subtotal: totals.subtotal,
+            tax_amount: totals.taxAmount,
+            discount_amount: totals.discountAmount,
+            final_price: totals.finalPrice,
+            notes: notes || "",
+            created_from_scratch: true,
+          };
 
-      const { data: order, error } = await supabase
-        .from("sales_orders")
-        .insert(orderData)
-        .select()
-        .single();
+          const { data, error } = await supabase
+            .from("sales_orders")
+            .insert(orderData)
+            .select()
+            .single();
 
-      if (error) throw error;
+          if (error) {
+            // If duplicate key error, retry with new number
+            if (error.code === '23505') {
+              attempts++;
+              console.log(`Duplicate order number detected, retrying... (attempt ${attempts})`);
+              await new Promise(resolve => setTimeout(resolve, 100 * attempts)); // Small delay
+              continue;
+            }
+            throw error;
+          }
+
+          order = data;
+          break;
+        } catch (err) {
+          if (attempts >= maxAttempts - 1) throw err;
+          attempts++;
+        }
+      }
+
+      if (!order) throw new Error("No se pudo generar un número de pedido único");
 
       // Create order items
       const orderItemsData = itemsArray.map((item, index) => {
