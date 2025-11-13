@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Plus, Users, TrendingUp, Clock, CheckCircle2, ArrowRight } from "lucide-react";
+import { FileText, Plus, Users, TrendingUp, Clock, CheckCircle2, ArrowRight, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -13,7 +13,7 @@ const Index = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
-  const { isSuperAdmin } = useSubscription();
+  const { isSuperAdmin, isERPSubscription } = useSubscription();
 
   // Obtener estadísticas rápidas
   const { data: stats } = useQuery({
@@ -98,17 +98,19 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Acción Principal */}
-          <div className="flex justify-center">
-            <Button
-              size="lg"
-              onClick={() => navigate("/presupuestos/nuevo")}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Crear nuevo presupuesto
-            </Button>
-          </div>
+          {/* Acción Principal - Solo mostrar si NO tienen módulo ERP */}
+          {!isERPSubscription() && (
+            <div className="flex justify-center">
+              <Button
+                size="lg"
+                onClick={() => navigate("/presupuestos/nuevo")}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Crear nuevo presupuesto
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Stats Cards */}
@@ -185,7 +187,7 @@ const Index = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className={`grid gap-6 ${isERPSubscription() ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
           <Card
             className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer"
             onClick={() => navigate("/presupuestos")}
@@ -217,6 +219,25 @@ const Index = () => {
               <p className="text-sm text-muted-foreground">Administra tu cartera de clientes</p>
             </CardContent>
           </Card>
+
+          {/* Gestionar Pedidos - Solo mostrar si tienen módulo ERP */}
+          {isERPSubscription() && (
+            <Card
+              className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer"
+              onClick={() => navigate("/pedidos")}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Package className="w-6 h-6 text-primary" />
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2 text-foreground">Gestionar Pedidos</h3>
+                <p className="text-sm text-muted-foreground">Accede a todos tus pedidos de venta</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
