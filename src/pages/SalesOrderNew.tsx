@@ -107,11 +107,15 @@ export default function SalesOrderNew() {
 
   // Generate order number using atomic database function
   const generateOrderNumber = async (): Promise<string> => {
-    const { data, error } = await supabase.rpc('generate_sales_order_number');
+    const { data, error } = await (supabase.rpc as any)('generate_sales_order_number');
     
     if (error) {
       console.error('Error generating order number:', error);
       throw new Error('No se pudo generar el número de pedido');
+    }
+    
+    if (!data || typeof data !== 'string') {
+      throw new Error('Número de pedido inválido recibido');
     }
     
     return data;
@@ -257,66 +261,36 @@ export default function SalesOrderNew() {
 
       const itemsArray = Object.values(items);
 
-      // Retry logic for handling duplicate key errors
-      let order;
-      let orderNumber = '';
-      let attempts = 0;
-      const maxAttempts = 5;
+      // Generate unique order number atomically
+      const orderNumber = await generateOrderNumber();
       
-      while (attempts < maxAttempts) {
-        try {
-          // Always generate a fresh order number from the database on each attempt
-          // This ensures we always have the latest information, even if other users are creating orders
-          orderNumber = await generateOrderNumber();
-          
-          // Add a small random delay on retries to reduce collision probability
-          if (attempts > 0) {
-            await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
-          }
-          
-          const orderData = {
-            user_id: user.id,
-            customer_id: customerId,
-            order_number: orderNumber,
-            title: title || `Pedido ${orderNumber}`,
-            description: description || itemsArray[0]?.itemDescription || "",
-            status: 'draft' as const,
-            order_date: new Date().toISOString(),
-            delivery_date: deliveryDate || null,
-            subtotal: totals.subtotal,
-            tax_amount: totals.taxAmount,
-            discount_amount: totals.discountAmount,
-            final_price: totals.finalPrice,
-            notes: notes || "",
-            created_from_scratch: true,
-          };
+      const orderData = {
+        user_id: user.id,
+        customer_id: customerId,
+        order_number: orderNumber,
+        title: title || `Pedido ${orderNumber}`,
+        description: description || itemsArray[0]?.itemDescription || "",
+        status: 'draft' as const,
+        order_date: new Date().toISOString(),
+        delivery_date: deliveryDate || null,
+        subtotal: totals.subtotal,
+        tax_amount: totals.taxAmount,
+        discount_amount: totals.discountAmount,
+        final_price: totals.finalPrice,
+        notes: notes || "",
+        created_from_scratch: true,
+      };
 
-          const { data, error } = await supabase
-            .from("sales_orders")
-            .insert(orderData)
-            .select()
-            .single();
+      const { data: order, error: orderError } = await supabase
+        .from("sales_orders")
+        .insert(orderData)
+        .select()
+        .single();
 
-          if (error) {
-            // If duplicate key error, retry with new number
-            if (error.code === '23505') {
-              attempts++;
-              console.log(`Duplicate order number detected, retrying... (attempt ${attempts})`);
-              await new Promise(resolve => setTimeout(resolve, 100 * attempts)); // Small delay
-              continue;
-            }
-            throw error;
-          }
-
-          order = data;
-          break;
-        } catch (err) {
-          if (attempts >= maxAttempts - 1) throw err;
-          attempts++;
-        }
+      if (orderError) {
+        console.error("Error creating sales order:", orderError);
+        throw new Error(`Error al crear el pedido: ${orderError.message}`);
       }
-
-      if (!order) throw new Error("No se pudo generar un número de pedido único");
 
       // Create order items
       const orderItemsData = itemsArray.map((item, index) => {
