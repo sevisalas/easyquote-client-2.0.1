@@ -128,14 +128,24 @@ export default function SalesOrderNew() {
 
     const userIds = allOrgMembers?.map(m => m.user_id) || [];
 
-    // Count ALL orders from all organization members for this year (same sequence as quotes)
-    const { count } = await supabase
+    // Get the highest order number for this year to avoid duplicates
+    const { data: existingOrders } = await supabase
       .from("sales_orders")
-      .select("*", { count: "exact", head: true })
+      .select("order_number")
       .in("user_id", userIds)
-      .like("order_number", `SO-${year}-%`);
+      .like("order_number", `SO-${year}-%`)
+      .order("order_number", { ascending: false })
+      .limit(1);
     
-    const nextNumber = (count || 0) + 1;
+    let nextNumber = 1;
+    if (existingOrders && existingOrders.length > 0) {
+      const lastNumber = existingOrders[0].order_number;
+      const match = lastNumber.match(/SO-\d{4}-(\d+)/);
+      if (match) {
+        nextNumber = parseInt(match[1], 10) + 1;
+      }
+    }
+    
     return `SO-${year}-${String(nextNumber).padStart(4, "0")}`;
   };
 
