@@ -128,21 +128,26 @@ export default function SalesOrderNew() {
 
     const userIds = allOrgMembers?.map(m => m.user_id) || [];
 
-    // Get the highest order number for this year to avoid duplicates
+    // Get all orders for this year and organization
     const { data: existingOrders } = await supabase
       .from("sales_orders")
       .select("order_number")
       .in("user_id", userIds)
       .like("order_number", `SO-${year}-%`)
-      .order("order_number", { ascending: false })
-      .limit(1);
+      .order("created_at", { ascending: false });
     
     let nextNumber = 1;
     if (existingOrders && existingOrders.length > 0) {
-      const lastNumber = existingOrders[0].order_number;
-      const match = lastNumber.match(/SO-\d{4}-(\d+)/);
-      if (match) {
-        nextNumber = parseInt(match[1], 10) + 1;
+      // Find the highest number from all orders
+      const numbers = existingOrders
+        .map(order => {
+          const match = order.order_number.match(/SO-\d{4}-(\d+)/);
+          return match ? parseInt(match[1], 10) : 0;
+        })
+        .filter(num => num > 0);
+      
+      if (numbers.length > 0) {
+        nextNumber = Math.max(...numbers) + 1;
       }
     }
     
