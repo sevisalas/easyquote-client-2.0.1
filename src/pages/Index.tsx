@@ -71,7 +71,7 @@ const Index = () => {
       } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
-        
+
         // Primero intentar obtener display_name de organization_members
         const { data: member } = await supabase
           .from("organization_members")
@@ -118,7 +118,7 @@ const Index = () => {
               <h1 className="text-xl md:text-2xl font-bold text-foreground">
                 Hola, <span className="text-primary font-bold">{userName}</span>
               </h1>
-              <p className="text-muted-foreground mt-1">Gestiona tus presupuestos de forma profesional</p>
+              <p className="text-muted-foreground mt-1">Gestiona tus presupuestos y pedidos de forma profesional</p>
             </div>
           </div>
 
@@ -139,7 +139,7 @@ const Index = () => {
 
         {/* Stats Cards - Presupuestos */}
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Estadísticas de Presupuestos</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-4">Presupuestos</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
           <Card className="border-primary/20 hover:border-primary/40 transition-all">
@@ -217,7 +217,7 @@ const Index = () => {
         {isERPSubscription() && (
           <>
             <div className="mb-6">
-              <h2 className="text-xl font-semibold text-foreground mb-4">Estadísticas de Pedidos</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-4">Pedidos</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
               <Card className="border-primary/20 hover:border-primary/40 transition-all">
@@ -294,7 +294,7 @@ const Index = () => {
         )}
 
         {/* Quick Actions */}
-        <div className={`grid gap-6 ${isERPSubscription() ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+        <div className={`grid gap-6 ${isERPSubscription() ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
           <Card
             className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer"
             onClick={() => navigate("/presupuestos")}
