@@ -86,6 +86,9 @@ const SubscribersList = () => {
             Gestionar suscriptores y sus usuarios
           </p>
         </div>
+        <Button onClick={() => navigate('/usuarios/nuevo')}>
+          Nuevo Suscriptor
+        </Button>
       </div>
 
       <Card>
