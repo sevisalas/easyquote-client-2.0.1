@@ -184,7 +184,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     queryKey: ["easyquote-products"],
     queryFn: fetchProducts,
     retry: 1,
-    enabled: hasToken,
+    enabled: !!hasToken,
   });
 
   // Sincronizar itemDescription con productName cuando está vacío
@@ -211,7 +211,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   const { data: pricing, error: pricingError, refetch: refetchPricing } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate],
-    enabled: hasToken && !!productId,
+    enabled: !!hasToken && !!productId,
     retry: 1,
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
@@ -330,7 +330,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   const { data: multiResults, isFetching: multiLoading } = useQuery({
     queryKey: ["easyquote-multi", productId, debouncedPromptValues, qtyPrompt, qtyInputs, multiEnabled],
-    enabled: hasToken && !!productId && multiEnabled && !!qtyPrompt && qtyInputs.some((q) => q && q.trim() !== ""),
+    enabled: !!hasToken && !!productId && multiEnabled && !!qtyPrompt && qtyInputs.some((q) => q && q.trim() !== ""),
     refetchOnWindowFocus: false,
     retry: 1,
     queryFn: async () => {
