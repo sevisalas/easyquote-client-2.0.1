@@ -292,24 +292,18 @@ export default function SalesOrderNew() {
       // Retry logic for handling duplicate key errors
       let order;
       let orderNumber = '';
-      let baseOrderNumber = '';
       let attempts = 0;
       const maxAttempts = 5;
       
       while (attempts < maxAttempts) {
         try {
-          // Get base order number on first attempt, then increment manually on retries
-          if (attempts === 0) {
-            baseOrderNumber = await generateOrderNumber();
-            orderNumber = baseOrderNumber;
-          } else {
-            // Increment the number manually on retries to avoid race conditions
-            const match = baseOrderNumber.match(/SO-(\d{4})-(\d+)/);
-            if (match) {
-              const year = match[1];
-              const num = parseInt(match[2], 10) + attempts;
-              orderNumber = `SO-${year}-${String(num).padStart(4, "0")}`;
-            }
+          // Always generate a fresh order number from the database on each attempt
+          // This ensures we always have the latest information, even if other users are creating orders
+          orderNumber = await generateOrderNumber();
+          
+          // Add a small random delay on retries to reduce collision probability
+          if (attempts > 0) {
+            await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
           }
           
           const orderData = {
