@@ -455,7 +455,7 @@ export default function ProductManagement() {
       console.log("ProductManagement: Products received", data.length);
       return data as EasyQuoteProduct[];
     },
-    enabled: hasToken,
+    enabled: !!hasToken,
     retry: (failureCount, error: any) => {
       // Si es error de autorización, no reintentar
       if (error?.message?.includes("401") || error?.message?.includes("EASYQUOTE_UNAUTHORIZED")) {
@@ -480,7 +480,7 @@ export default function ProductManagement() {
       if (error || !data) return [];
       return data as EasyQuoteProduct[];
     },
-    enabled: hasToken,
+    enabled: !!hasToken,
     retry: false
   });
 
