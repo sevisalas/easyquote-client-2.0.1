@@ -25,13 +25,18 @@ export default function Clientes() {
   const { organization, membership } = useSubscription();
   const [clientes, setClientes] = useState<LocalClient[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [totalClients, setTotalClients] = useState(0);
   const itemsPerPage = 25;
 
-  const fetchClientes = async () => {
-    setLoading(true);
+  const fetchClientes = async (isInitialLoad = false) => {
+    if (isInitialLoad) {
+      setLoading(true);
+    } else {
+      setSearchLoading(true);
+    }
     try {
       console.log('🔍 Fetching customers with search term:', searchTerm);
 
@@ -130,6 +135,7 @@ export default function Clientes() {
       });
     } finally {
       setLoading(false);
+      setSearchLoading(false);
     }
   };
 
@@ -137,7 +143,7 @@ export default function Clientes() {
   useEffect(() => {
     const organizationId = organization?.id || membership?.organization?.id;
     if (organizationId) {
-      fetchClientes();
+      fetchClientes(true); // Initial load
     } else if (organization === null && membership === null) {
       // Organization is explicitly null (not loading)
       setLoading(false);
@@ -163,7 +169,7 @@ export default function Clientes() {
       if (currentPage !== 1) {
         setCurrentPage(1);
       } else {
-        fetchClientes();
+        fetchClientes(false); // Not initial load
       }
     }, 300);
     
