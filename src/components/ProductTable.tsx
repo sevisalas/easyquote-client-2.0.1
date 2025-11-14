@@ -89,19 +89,19 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead className="w-[330px]">Producto</TableHead>
-                <TableHead className="w-[220px]">Excel</TableHead>
-                <TableHead className="w-[90px]">Estado</TableHead>
-                <TableHead className="w-[150px]">Categoría</TableHead>
-                {isWooCommerceActive && <TableHead className="w-[80px]">Woo</TableHead>}
-                <TableHead className="w-[140px]">Acciones</TableHead>
+              <TableRow className="h-9">
+                <TableHead className="w-[330px] py-2 text-xs font-semibold">Producto</TableHead>
+                <TableHead className="w-[220px] py-2 text-xs font-semibold">Excel</TableHead>
+                <TableHead className="w-[90px] py-2 text-xs font-semibold">Estado</TableHead>
+                <TableHead className="w-[150px] py-2 text-xs font-semibold">Categoría</TableHead>
+                {isWooCommerceActive && <TableHead className="w-[80px] py-2 text-xs font-semibold">Woo</TableHead>}
+                <TableHead className="w-[140px] py-2 text-xs font-semibold">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="py-3 max-w-[330px]">
+                <TableRow key={product.id} className="h-auto">
+                  <TableCell className="py-1.5 px-3 max-w-[330px]">
                     <div className="w-full">
                       <button
                         onClick={() => {
@@ -111,39 +111,39 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                             description: `ID: ${product.id}`,
                           });
                         }}
-                        className="font-medium text-left hover:text-primary transition-colors w-full break-words block"
+                        className="text-sm font-medium text-left hover:text-primary transition-colors w-full break-words block"
                         title="Click para copiar ID"
                       >
                         {product.productName}
                       </button>
                       {product.description && (
-                        <div className="text-sm text-muted-foreground line-clamp-2">{product.description}</div>
+                        <div className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{product.description}</div>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="py-3 max-w-[220px]">
+                  <TableCell className="py-1.5 px-3 max-w-[220px]">
                     <span className="font-mono text-xs text-muted-foreground break-words block">
                       {getExcelFileName(product.excelfileId)}
                     </span>
                   </TableCell>
-                  <TableCell className="py-2">
-                    <Badge variant={product.isActive ? "default" : "secondary"} className="text-xs">
+                  <TableCell className="py-1.5 px-3">
+                    <Badge variant={product.isActive ? "default" : "secondary"} className="text-xs px-2 py-0 h-5">
                       {product.isActive ? "Activo" : "Inactivo"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="py-2">
+                  <TableCell className="py-1.5 px-3">
                     {(() => {
                       const mapping = getProductMapping(product.id);
                       if (mapping?.product_categories) {
                         return (
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center gap-1.5">
                             <div
-                              className="w-3 h-3 rounded-full flex-shrink-0"
+                              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                               style={{ backgroundColor: mapping.product_categories.color }}
                             />
-                            <span className="text-xs truncate max-w-[80px]">{mapping.product_categories.name}</span>
+                            <span className="text-xs truncate max-w-[70px]">{mapping.product_categories.name}</span>
                             {mapping.product_subcategories && (
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4">
                                 {mapping.product_subcategories.name}
                               </Badge>
                             )}
@@ -151,16 +151,16 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                         );
                       }
                       return (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs px-2 py-0 h-5">
                           Sin categoría
                         </Badge>
                       );
                     })()}
                   </TableCell>
                   {isWooCommerceActive && (
-                    <TableCell className="py-2">
+                    <TableCell className="py-1.5 px-3">
                       {wooLoading ? (
-                        <Skeleton className="h-5 w-5 rounded" />
+                        <Skeleton className="h-4 w-4 rounded" />
                       ) : (
                         (() => {
                           const linkStatus = wooLinks?.[product.id];
@@ -169,7 +169,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <button className="flex items-center gap-1 hover:opacity-80 transition-opacity">
-                                    <ShoppingCart className="h-4 w-4 text-green-600" />
+                                    <ShoppingCart className="h-3.5 w-3.5 text-green-600" />
                                     <span className="text-xs text-green-600 font-medium">{linkStatus.count}</span>
                                   </button>
                                 </PopoverTrigger>
@@ -221,25 +221,25 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                       )}
                     </TableCell>
                   )}
-                  <TableCell className="py-2">
+                  <TableCell className="py-1.5 px-3">
                     <div className="flex gap-1">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onEditProduct(product)}
-                        title="Editar producto"
-                        className="text-xs px-2"
+                        onClick={() => navigate(`/admin/productos/test/${product.id}`)}
+                        title="Test"
+                        className="h-7 w-7 p-0"
                       >
-                        <Edit className="h-3 w-3" />
+                        <TestTube className="h-3.5 w-3.5" />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/admin/productos/test?productId=${product.id}`)}
-                        title="Probar producto"
-                        className="text-xs px-2"
+                        onClick={() => onEditProduct(product)}
+                        title="Editar"
+                        className="h-7 w-7 p-0"
                       >
-                        <TestTube className="h-3 w-3" />
+                        <Edit className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </TableCell>

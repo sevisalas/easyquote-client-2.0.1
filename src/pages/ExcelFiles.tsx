@@ -1249,27 +1249,27 @@ export default function ExcelFiles() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Nombre archivo</TableHead>
-                  <TableHead>Tamaño</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="w-24">Cumple requisitos</TableHead>
-                  <TableHead>Última modificación</TableHead>
-                  <TableHead className="text-center">Acciones</TableHead>
+                <TableRow className="h-9">
+                  <TableHead className="py-2 text-xs font-semibold">Nombre archivo</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Tamaño</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Estado</TableHead>
+                  <TableHead className="w-24 py-2 text-xs font-semibold">Cumple requisitos</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Última modificación</TableHead>
+                  <TableHead className="text-center py-2 text-xs font-semibold">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredFiles.map((file) => (
-                  <TableRow key={file.id}>
-                    <TableCell className="font-medium">
+                  <TableRow key={file.id} className="h-auto">
+                    <TableCell className="py-1.5 px-3 text-sm font-medium">
                       <div className="flex items-center gap-2">
-                        <FileSpreadsheet className="h-4 w-4" />
-                        {file.fileName}
+                        <FileSpreadsheet className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span className="truncate">{file.fileName}</span>
                       </div>
                     </TableCell>
-                    <TableCell>{formatFileSize(file.fileSizeKb)}</TableCell>
-                    <TableCell>
-                      <Badge variant={file.isActive ? "default" : "secondary"}>
+                    <TableCell className="py-1.5 px-3 text-sm">{formatFileSize(file.fileSizeKb)}</TableCell>
+                    <TableCell className="py-1.5 px-3">
+                      <Badge variant={file.isActive ? "default" : "secondary"} className="text-xs px-2 py-0 h-5">
                         {file.isActive ? (
                           <>
                             <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -1283,8 +1283,8 @@ export default function ExcelFiles() {
                         )}
                       </Badge>
                     </TableCell>
-                    <TableCell className="w-24">
-                      <Badge variant={file.isPlanCompliant ? "default" : "destructive"} className="text-xs">
+                    <TableCell className="w-24 py-1.5 px-3">
+                      <Badge variant={file.isPlanCompliant ? "default" : "destructive"} className="text-xs px-2 py-0 h-5">
                         {file.isPlanCompliant ? (
                           <>
                             <Check className="h-3 w-3 mr-1" />
@@ -1298,14 +1298,16 @@ export default function ExcelFiles() {
                         )}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      {formatDistanceToNow(new Date(file.dateModified), {
-                        addSuffix: true,
-                        locale: es
-                      })}
+                    <TableCell className="py-1.5 px-3">
+                      <div className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(file.dateModified), {
+                          addSuffix: true,
+                          locale: es
+                        })}
+                      </div>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                    <TableCell className="text-right py-1.5 px-3">
+                      <div className="flex justify-end gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1314,9 +1316,9 @@ export default function ExcelFiles() {
                             setIsProductsDialogOpen(true);
                           }}
                           title="Ver productos asociados"
-                          className="relative"
+                          className="relative h-7 w-7 p-0"
                         >
-                          <Package className="h-4 w-4" />
+                          <Package className="h-3.5 w-3.5" />
                           {(() => {
                             const count = allProducts.filter((p: any) => 
                               p.excelfileId === file.id && 
@@ -1325,7 +1327,7 @@ export default function ExcelFiles() {
                             return count > 0 && (
                               <Badge 
                                 variant="default" 
-                                className="absolute -top-1 -right-1 h-5 min-w-[20px] px-1 flex items-center justify-center text-xs rounded-full"
+                                className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 flex items-center justify-center text-xs rounded-full"
                               >
                                 {count}
                               </Badge>
@@ -1337,8 +1339,9 @@ export default function ExcelFiles() {
                           size="sm"
                           onClick={() => downloadFile(file.id, file.fileName)}
                           title="Descargar Excel"
+                          className="h-7 w-7 p-0"
                         >
-                          <Download className="h-4 w-4" />
+                          <Download className="h-3.5 w-3.5" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -1348,8 +1351,9 @@ export default function ExcelFiles() {
                             setIsUpdateExcelDialogOpen(true);
                           }}
                           title="Actualizar Excel"
+                          className="h-7 w-7 p-0"
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-3.5 w-3.5" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -1357,8 +1361,9 @@ export default function ExcelFiles() {
                           onClick={() => deleteMutation.mutate(file.id)}
                           disabled={deleteMutation.isPending}
                           title="Borrar Excel"
+                          className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </TableCell>
