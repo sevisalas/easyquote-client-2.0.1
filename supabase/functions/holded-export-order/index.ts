@@ -121,7 +121,10 @@ Deno.serve(async (req) => {
       console.log('Using sales account:', salesChannelId);
     }
 
-    const apiKey = '88610992d47b9783e7703c488a8c01cf';
+    const apiKey = Deno.env.get('HOLDED_API_KEY');
+    if (!apiKey) {
+      throw new Error('HOLDED_API_KEY no está configurada');
+    }
 
     // Build complete payload with all order data
     const items: any[] = [];
