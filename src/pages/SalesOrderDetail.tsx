@@ -68,8 +68,8 @@ const SalesOrderDetail = () => {
   const handleStatusChange = async (newStatus: SalesOrder['status']) => {
     if (!id || !order) return;
     
-    // If changing from draft to pending and created_from_scratch, export to Holded automatically
-    if (order.status === 'draft' && newStatus === 'pending' && order.created_from_scratch && isHoldedActive) {
+    // If changing to pending, export to Holded automatically if integration is active
+    if (newStatus === 'pending' && order.status !== 'pending' && isHoldedActive && !order.holded_document_id) {
       const success = await updateSalesOrderStatus(id, newStatus);
       if (success) {
         setOrder(prev => prev ? { ...prev, status: newStatus } : null);
