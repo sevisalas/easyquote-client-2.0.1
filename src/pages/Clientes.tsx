@@ -228,13 +228,13 @@ export default function Clientes() {
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="py-2">Nombre</TableHead>
-              <TableHead className="py-2">Email</TableHead>
-              <TableHead className="py-2">Teléfono</TableHead>
-              <TableHead className="py-2">Origen</TableHead>
-              <TableHead className="py-2">Notas</TableHead>
-              <TableHead className="py-2 text-right">Acciones</TableHead>
+            <TableRow className="h-9">
+              <TableHead className="py-2 text-xs font-semibold">Nombre</TableHead>
+              <TableHead className="py-2 text-xs font-semibold">Email</TableHead>
+              <TableHead className="py-2 text-xs font-semibold">Teléfono</TableHead>
+              <TableHead className="py-2 text-xs font-semibold">Origen</TableHead>
+              <TableHead className="py-2 text-xs font-semibold">Notas</TableHead>
+              <TableHead className="py-2 text-right text-xs font-semibold">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -248,29 +248,29 @@ export default function Clientes() {
               </TableRow>
             ) : (
               clientes.map((cliente) => (
-                <TableRow key={`${cliente.source}-${cliente.id}`}>
-                  <TableCell className="py-2 font-medium">{cliente.name || "Sin nombre"}</TableCell>
-                  <TableCell className="py-2">{cliente.email}</TableCell>
-                  <TableCell className="py-2">{cliente.phone}</TableCell>
-                  <TableCell className="py-2">
-                    <Badge variant={cliente.source === 'local' ? 'default' : 'secondary'}>
+                <TableRow key={`${cliente.source}-${cliente.id}`} className="h-auto">
+                  <TableCell className="py-1.5 px-3 text-sm font-medium">{cliente.name || "Sin nombre"}</TableCell>
+                  <TableCell className="py-1.5 px-3 text-sm">{cliente.email}</TableCell>
+                  <TableCell className="py-1.5 px-3 text-sm">{cliente.phone}</TableCell>
+                  <TableCell className="py-1.5 px-3">
+                    <Badge variant={cliente.source === 'local' ? 'default' : 'secondary'} className="text-xs px-2 py-0 h-5">
                       {cliente.source === 'local' ? 'Local' : 'Holded'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="py-2">{cliente.notes}</TableCell>
-                  <TableCell className="py-2 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                  <TableCell className="py-1.5 px-3 text-sm">{cliente.notes}</TableCell>
+                  <TableCell className="py-1.5 px-3 text-right">
+                    <div className="flex items-center justify-end gap-1">
                       {cliente.source === 'local' ? (
                         <>
-                          <Button variant="ghost" size="sm" onClick={() => navigate(`/clientes/${cliente.id}/editar`)}>
-                            <Edit className="h-4 w-4" />
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/clientes/${cliente.id}/editar`)} className="h-7 w-7 p-0">
+                            <Edit className="h-3.5 w-3.5" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => deleteCliente(cliente.id)}>
-                            <Trash2 className="h-4 w-4" />
+                          <Button variant="ghost" size="sm" onClick={() => deleteCliente(cliente.id)} className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10">
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </>
                       ) : (
-                        <span className="text-sm text-muted-foreground">Solo lectura</span>
+                        <span className="text-xs text-muted-foreground">Solo lectura</span>
                       )}
                     </div>
                   </TableCell>
