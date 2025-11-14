@@ -297,22 +297,6 @@ const Index = () => {
         <div className={`grid gap-6 ${isERPSubscription() ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
           <Card
             className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer"
-            onClick={() => navigate("/presupuestos")}
-          >
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <FileText className="w-6 h-6 text-primary" />
-                </div>
-                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2 text-foreground">Gestionar Presupuestos</h3>
-              <p className="text-sm text-muted-foreground">Ver, editar y administrar todos tus presupuestos</p>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer"
             onClick={() => navigate("/clientes")}
           >
             <CardContent className="p-6">
@@ -324,6 +308,22 @@ const Index = () => {
               </div>
               <h3 className="text-lg font-semibold mb-2 text-foreground">Gestionar Clientes</h3>
               <p className="text-sm text-muted-foreground">Administra tu cartera de clientes</p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer"
+            onClick={() => navigate("/presupuestos")}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <FileText className="w-6 h-6 text-primary" />
+                </div>
+                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2 text-foreground">Gestionar Presupuestos</h3>
+              <p className="text-sm text-muted-foreground">Ver, editar y administrar todos tus presupuestos</p>
             </CardContent>
           </Card>
 
