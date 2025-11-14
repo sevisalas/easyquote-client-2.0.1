@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, Calendar, Trash2, Upload, Download } from "lucide-react";
+import { ArrowLeft, Package, Calendar, Trash2, Upload, Download, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { useSalesOrders, SalesOrder, SalesOrderItem, SalesOrderAdditional } from
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
@@ -39,6 +40,7 @@ const SalesOrderDetail = () => {
   const [items, setItems] = useState<SalesOrderItem[]>([]);
   const [additionals, setAdditionals] = useState<SalesOrderAdditional[]>([]);
   const [isExporting, setIsExporting] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const { isHoldedActive } = useHoldedIntegration();
 
   useEffect(() => {
@@ -387,84 +389,112 @@ const SalesOrderDetail = () => {
                 const itemOutputs = item.outputs && Array.isArray(item.outputs) ? item.outputs : [];
                 const itemPrompts = item.prompts && Array.isArray(item.prompts) ? item.prompts : [];
                 const displayQuantity = item.quantity;
+                const isExpanded = expandedItems.has(item.id);
                 
                 return (
-                  <div key={item.id} className="border rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg">{item.product_name}</h3>
-                        {item.description && (
-                          <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-baseline gap-2">
-                          <p className="text-xl font-bold text-primary">{item.price.toFixed(2)} €</p>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Cantidad: {displayQuantity}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Outputs */}
-                    {itemOutputs.length > 0 && (
-                      <div className="space-y-2 mb-3">
-                        {itemOutputs.map((output: any, idx: number) => {
-                            if (output.type === 'ProductImage') {
-                              return (
-                                <div key={idx}>
-                                  <img 
-                                    src={output.value} 
-                                    alt={output.name}
-                                    className="w-48 h-48 object-contain rounded border"
-                                  />
-                                </div>
-                              );
-                            }
-                            return (
-                              <div key={idx} className="text-sm">
-                                <span className="font-medium">{output.name}:</span>{' '}
-                                <span>{output.value}</span>
-                              </div>
-                            );
-                        })}
-                      </div>
-                    )}
-
-                    {/* Prompts */}
-                    {itemPrompts.length > 0 && (
-                      <div className="space-y-1 pl-2 border-l-2 border-muted">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase">Detalles</p>
-                        {itemPrompts.map((prompt: any, idx: number) => {
-                          const label = prompt.label || '';
-                          let value = prompt.value || '';
-                          
-                          // Use actual quantity from database for Quantity field
-                          if (label.toLowerCase() === 'quantity') {
-                            value = displayQuantity.toString();
-                          }
-                          
-                          // Filtrar URLs e imágenes
-                          if (!value || 
-                              typeof value === 'object' || 
-                              (typeof value === 'string' && (
-                                value.startsWith('http') || 
-                                value.startsWith('#')
-                              ))) {
-                            return null;
-                          }
-                          
-                          return (
-                            <div key={idx} className="text-sm">
-                              <span className="font-medium text-muted-foreground">{label}:</span>{' '}
-                              <span className="text-foreground">{value}</span>
+                  <Collapsible
+                    key={item.id}
+                    open={isExpanded}
+                    onOpenChange={() => {
+                      const newExpanded = new Set(expandedItems);
+                      if (isExpanded) {
+                        newExpanded.delete(item.id);
+                      } else {
+                        newExpanded.add(item.id);
+                      }
+                      setExpandedItems(newExpanded);
+                    }}
+                  >
+                    <div className="border rounded-lg">
+                      <CollapsibleTrigger className="w-full p-4 hover:bg-muted/50 transition-colors">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-3 flex-1 text-left">
+                            <ChevronDown
+                              className={`h-5 w-5 transition-transform ${
+                                isExpanded ? "transform rotate-180" : ""
+                              }`}
+                            />
+                            <div>
+                              <h3 className="font-semibold text-lg">{item.product_name}</h3>
+                              {item.description && (
+                                <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
+                              )}
                             </div>
-                          );
-                        }).filter(Boolean)}
-                      </div>
-                    )}
-                  </div>
+                          </div>
+                          <div className="text-right ml-4">
+                            <div className="flex items-baseline gap-2">
+                              <p className="text-xl font-bold text-primary">{item.price.toFixed(2)} €</p>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              Cantidad: {displayQuantity}
+                            </p>
+                          </div>
+                        </div>
+                      </CollapsibleTrigger>
+
+                      <CollapsibleContent>
+                        <div className="px-4 pb-4 pt-2 space-y-3">
+                          {/* Outputs */}
+                          {itemOutputs.length > 0 && (
+                            <div className="space-y-2">
+                              {itemOutputs.map((output: any, idx: number) => {
+                                  if (output.type === 'ProductImage') {
+                                    return (
+                                      <div key={idx}>
+                                        <img 
+                                          src={output.value} 
+                                          alt={output.name}
+                                          className="w-48 h-48 object-contain rounded border"
+                                        />
+                                      </div>
+                                    );
+                                  }
+                                  return (
+                                    <div key={idx} className="text-sm">
+                                      <span className="font-medium">{output.name}:</span>{' '}
+                                      <span>{output.value}</span>
+                                    </div>
+                                  );
+                              })}
+                            </div>
+                          )}
+
+                          {/* Prompts */}
+                          {itemPrompts.length > 0 && (
+                            <div className="space-y-1 pl-2 border-l-2 border-muted">
+                              <p className="text-xs font-semibold text-muted-foreground uppercase">Detalles</p>
+                              {itemPrompts.map((prompt: any, idx: number) => {
+                                const label = prompt.label || '';
+                                let value = prompt.value || '';
+                                
+                                // Use actual quantity from database for Quantity field
+                                if (label.toLowerCase() === 'quantity') {
+                                  value = displayQuantity.toString();
+                                }
+                                
+                                // Filtrar URLs e imágenes
+                                if (!value || 
+                                    typeof value === 'object' || 
+                                    (typeof value === 'string' && (
+                                      value.startsWith('http') || 
+                                      value.startsWith('#')
+                                    ))) {
+                                  return null;
+                                }
+                                
+                                return (
+                                  <div key={idx} className="text-sm">
+                                    <span className="font-medium text-muted-foreground">{label}:</span>{' '}
+                                    <span className="text-foreground">{value}</span>
+                                  </div>
+                                );
+                              }).filter(Boolean)}
+                            </div>
+                          )}
+                        </div>
+                      </CollapsibleContent>
+                    </div>
+                  </Collapsible>
                 );
               })}
 
