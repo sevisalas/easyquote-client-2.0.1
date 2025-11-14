@@ -53,10 +53,10 @@ const Index = () => {
 
       return {
         total: data?.length ?? 0,
-        draft: data?.filter((o) => o.status === "Borrador").length ?? 0,
-        pending: data?.filter((o) => o.status === "Pendiente").length ?? 0,
-        production: data?.filter((o) => o.status === "En producción").length ?? 0,
-        completed: data?.filter((o) => o.status === "Completado").length ?? 0,
+        draft: data?.filter((o) => o.status === "draft").length ?? 0,
+        pending: data?.filter((o) => o.status === "pending").length ?? 0,
+        production: data?.filter((o) => o.status === "in_production").length ?? 0,
+        completed: data?.filter((o) => o.status === "completed").length ?? 0,
       };
     },
     enabled: isERPSubscription(),
