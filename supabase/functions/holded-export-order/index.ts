@@ -46,11 +46,6 @@ Deno.serve(async (req) => {
       throw new Error('Order not found');
     }
 
-    // Check if order was created from scratch
-    if (!order.created_from_scratch) {
-      throw new Error('Solo se pueden exportar a Holded los pedidos creados desde cero');
-    }
-
     // Verify user has access to this order
     if (order.user_id !== user.id) {
       const { data: userOrg } = await supabase
