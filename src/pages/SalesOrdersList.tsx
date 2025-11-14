@@ -166,7 +166,8 @@ const SalesOrdersList = () => {
           discount_amount: originalOrder.discount_amount,
           tax_amount: originalOrder.tax_amount,
           final_price: originalOrder.final_price,
-          status: 'draft'
+          status: 'draft',
+          created_from_scratch: originalOrder.created_from_scratch
         })
         .select()
         .single();
