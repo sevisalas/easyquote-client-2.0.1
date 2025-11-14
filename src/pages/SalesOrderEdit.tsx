@@ -6,11 +6,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2 } from "lucide-react";
 import { useSalesOrders, SalesOrder, SalesOrderItem } from "@/hooks/useSalesOrders";
 import { CustomerSelector } from "@/components/quotes/CustomerSelector";
-import { EditOrderItemDialog } from "@/components/sales/EditOrderItemDialog";
 import { supabase } from "@/integrations/supabase/client";
+import QuoteItem from "@/components/quotes/QuoteItem";
 
 const fmtEUR = (amount: number) => {
   return new Intl.NumberFormat("es-ES", {
@@ -40,8 +40,7 @@ export default function SalesOrderEdit() {
     notes: "",
     delivery_date: "",
   });
-  const [editingItem, setEditingItem] = useState<SalesOrderItem | null>(null);
-  const [savingItem, setSavingItem] = useState(false);
+  const [hasToken] = useState(true); // Assuming token exists for editing
 
   useEffect(() => {
     if (id) {
@@ -114,20 +113,91 @@ export default function SalesOrderEdit() {
     }
   };
 
-  const handleItemUpdate = async (itemId: string, updates: { quantity?: number; price?: number; description?: string }) => {
-    setSavingItem(true);
+  const handleItemChange = async (itemId: string | number, snapshot: any) => {
+    const itemIndex = items.findIndex((item) => item.id === itemId);
+    if (itemIndex === -1) return;
+
+    const updatedItems = [...items];
+    updatedItems[itemIndex] = {
+      ...updatedItems[itemIndex],
+      prompts: snapshot.prompts,
+      outputs: snapshot.outputs,
+      multi: snapshot.multi,
+      description: snapshot.itemDescription,
+      price: snapshot.price?.total || snapshot.price || 0,
+    };
+    setItems(updatedItems);
+  };
+
+  const handleItemFinish = async (itemId: string | number) => {
+    const item = items.find((i) => i.id === itemId);
+    if (!item || !id) return;
+
     try {
-      const success = await updateSalesOrderItem(itemId, updates);
-      if (success && id) {
-        await recalculateSalesOrderTotals(id);
-        await loadOrderData();
-        toast.success("Artículo actualizado");
-      }
+      const { error } = await supabase
+        .from("sales_order_items")
+        .update({
+          prompts: item.prompts,
+          outputs: item.outputs,
+          multi: item.multi,
+          description: item.description,
+          price: item.price,
+        })
+        .eq("id", item.id);
+
+      if (error) throw error;
+
+      await recalculateSalesOrderTotals(id);
+      await loadOrderData();
+      toast.success("Artículo actualizado");
     } catch (error) {
       console.error("Error updating item:", error);
       toast.error("Error al actualizar el artículo");
-    } finally {
-      setSavingItem(false);
+    }
+  };
+
+  const handleRemoveItem = async (itemId: string | number) => {
+    if (!id) return;
+
+    try {
+      const { error } = await supabase
+        .from("sales_order_items")
+        .delete()
+        .eq("id", String(itemId));
+
+      if (error) throw error;
+
+      await recalculateSalesOrderTotals(id);
+      await loadOrderData();
+      toast.success("Artículo eliminado");
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      toast.error("Error al eliminar el artículo");
+    }
+  };
+
+  const handleAddItem = async () => {
+    if (!id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("sales_order_items")
+        .insert({
+          sales_order_id: id,
+          product_name: "Nuevo producto",
+          price: 0,
+          quantity: 1,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await loadOrderData();
+      toast.success("Artículo añadido");
+    } catch (error) {
+      console.error("Error adding item:", error);
+      toast.error("Error al añadir el artículo");
     }
   };
 
@@ -217,32 +287,38 @@ export default function SalesOrderEdit() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Artículos del Pedido</CardTitle>
-          <CardDescription>Edita las cantidades y precios de los artículos</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {items.map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-4 border rounded">
-                <div className="flex-1">
-                  <div className="font-medium">{item.product_name}</div>
-                  {item.description && (
-                    <div className="text-sm text-muted-foreground">{item.description}</div>
-                  )}
-                  <div className="text-sm mt-1">
-                    Cantidad: {item.quantity} | Precio: {fmtEUR(item.price)} | Subtotal: {fmtEUR(item.quantity * item.price)}
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setEditingItem(item)}
-                >
-                  Editar
-                </Button>
-              </div>
-            ))}
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Artículos del Pedido</CardTitle>
+              <CardDescription>Configura los productos del pedido</CardDescription>
+            </div>
+            <Button onClick={handleAddItem} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Añadir Artículo
+            </Button>
           </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {items.map((item, index) => (
+            <QuoteItem
+              key={item.id}
+              id={item.id}
+              hasToken={hasToken}
+              initialData={{
+                productId: item.product_id || "",
+                prompts: (item.prompts as Record<string, any>) || {},
+                outputs: (item.outputs as any[]) || [],
+                multi: item.multi,
+                itemDescription: item.description || "",
+                price: item.price,
+                isFinalized: true,
+              }}
+              onChange={handleItemChange}
+              onRemove={handleRemoveItem}
+              onFinishEdit={handleItemFinish}
+              shouldExpand={false}
+            />
+          ))}
 
           <div className="mt-6 pt-4 border-t">
             <div className="flex justify-between text-lg font-bold">
@@ -252,16 +328,6 @@ export default function SalesOrderEdit() {
           </div>
         </CardContent>
       </Card>
-
-      {editingItem && (
-        <EditOrderItemDialog
-          item={editingItem}
-          open={!!editingItem}
-          onOpenChange={(open) => !open && setEditingItem(null)}
-          onSave={handleItemUpdate}
-          saving={savingItem}
-        />
-      )}
     </div>
   );
 }
