@@ -316,44 +316,44 @@ const QuotesList = () => {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="h-10">
-                  <TableHead className="py-2">Fecha</TableHead>
-                  <TableHead className="py-2">Nº</TableHead>
-                  <TableHead className="py-2">Cliente</TableHead>
-                  <TableHead className="py-2">Descripción</TableHead>
-                  <TableHead className="py-2 text-right">Total</TableHead>
+                <TableRow className="h-9">
+                  <TableHead className="py-2 text-xs font-semibold">Fecha</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Nº</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Cliente</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Descripción</TableHead>
+                  <TableHead className="py-2 text-right text-xs font-semibold">Total</TableHead>
                   {isHoldedActive && (
                     <>
-                      <TableHead className="py-2">Nº Holded</TableHead>
-                      <TableHead className="py-2">PDF</TableHead>
+                      <TableHead className="py-2 text-xs font-semibold">Nº Holded</TableHead>
+                      <TableHead className="py-2 text-xs font-semibold">PDF</TableHead>
                     </>
                   )}
-                  <TableHead className="py-2">Estado</TableHead>
-                  <TableHead className="py-2">Acciones</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Estado</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredQuotes.map((q: any) => (
-                  <TableRow key={q.id} className="h-12">
-                    <TableCell className="py-2">{new Date(q.created_at).toLocaleDateString("es-ES")}</TableCell>
-                    <TableCell className="py-2">{q.quote_number}</TableCell>
-                    <TableCell className="py-2"><CustomerName customerId={q.customer_id} /></TableCell>
-                    <TableCell className="py-2">{q.description || ""}</TableCell>
-                    <TableCell className="py-2 text-right">{fmtEUR(q.final_price)}</TableCell>
+                  <TableRow key={q.id} className="h-auto">
+                    <TableCell className="py-1.5 px-3 text-sm">{new Date(q.created_at).toLocaleDateString("es-ES")}</TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm font-medium">{q.quote_number}</TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm"><CustomerName customerId={q.customer_id} /></TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm">{q.description || ""}</TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm text-right font-medium">{fmtEUR(q.final_price)}</TableCell>
                     {isHoldedActive && (
                       <>
-                        <TableCell className="py-2">
+                        <TableCell className="py-1.5 px-3">
                           {q.holded_estimate_number ? (
                             <span className="text-xs font-mono text-muted-foreground">{q.holded_estimate_number}</span>
                           ) : (
                             <span className="text-xs text-muted-foreground">—</span>
                           )}
                         </TableCell>
-                        <TableCell className="py-2">
+                        <TableCell className="py-1.5 px-3">
                           {q.holded_estimate_id && (
                             <span title="Descargar PDF de Holded">
                               <Download 
-                                className="h-4 w-4 cursor-pointer text-muted-foreground hover:text-foreground transition-colors" 
+                                className="h-3.5 w-3.5 cursor-pointer text-muted-foreground hover:text-foreground transition-colors" 
                                 onClick={() => handleDownloadHoldedPdf(q.holded_estimate_id, q.holded_estimate_number || q.quote_number, q.customer_id)}
                               />
                             </span>
@@ -361,12 +361,12 @@ const QuotesList = () => {
                         </TableCell>
                       </>
                     )}
-                    <TableCell className="py-2">
-                      <Badge variant={getStatusVariant(q.status)}>
+                    <TableCell className="py-1.5 px-3">
+                      <Badge variant={getStatusVariant(q.status)} className="text-xs px-2 py-0 h-5">
                         {statusLabel[q.status] || q.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="py-2">
+                    <TableCell className="py-1.5 px-3">
                       <div className="flex items-center gap-1">
                         <Button size="sm" variant="secondary" className="h-7 px-2 text-xs" onClick={() => navigate(`/presupuestos/${q.id}`)}>
                           Ver

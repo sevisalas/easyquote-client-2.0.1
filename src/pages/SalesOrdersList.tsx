@@ -367,34 +367,34 @@ const SalesOrdersList = () => {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="h-10">
-                  <TableHead className="py-2">Fecha</TableHead>
-                  <TableHead className="py-2">Nº</TableHead>
-                  <TableHead className="py-2">Cliente</TableHead>
-                  <TableHead className="py-2">Descripción</TableHead>
-                  <TableHead className="py-2 text-right">Total</TableHead>
-                  <TableHead className="py-2">Estado</TableHead>
-                  <TableHead className="py-2">Holded</TableHead>
-                  <TableHead className="py-2">Acciones</TableHead>
+                <TableRow className="h-9">
+                  <TableHead className="py-2 text-xs font-semibold">Fecha</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Nº</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Cliente</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Descripción</TableHead>
+                  <TableHead className="py-2 text-right text-xs font-semibold">Total</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Estado</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Holded</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredOrders.map((order) => (
-                  <TableRow key={order.id} className="h-12">
-                    <TableCell className="py-2">{new Date(order.order_date).toLocaleDateString("es-ES")}</TableCell>
-                    <TableCell className="py-2">{order.order_number}</TableCell>
-                    <TableCell className="py-2">{getCustomerName(order.customer_id)}</TableCell>
-                    <TableCell className="py-2">{order.description || order.title || ""}</TableCell>
-                    <TableCell className="py-2 text-right">{fmtEUR(order.final_price)}</TableCell>
-                    <TableCell className="py-2">
-                      <Badge variant={statusColors[order.status]}>
+                  <TableRow key={order.id} className="h-auto">
+                    <TableCell className="py-1.5 px-3 text-sm">{new Date(order.order_date).toLocaleDateString("es-ES")}</TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm font-medium">{order.order_number}</TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm">{getCustomerName(order.customer_id)}</TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm">{order.description || order.title || ""}</TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm text-right font-medium">{fmtEUR(order.final_price)}</TableCell>
+                    <TableCell className="py-1.5 px-3">
+                      <Badge variant={statusColors[order.status]} className="text-xs px-2 py-0 h-5">
                         {statusLabels[order.status]}
                       </Badge>
                     </TableCell>
-                    <TableCell className="py-2">
+                    <TableCell className="py-1.5 px-3 text-sm">
                       {order.holded_document_number || '-'}
                     </TableCell>
-                    <TableCell className="py-2">
+                    <TableCell className="py-1.5 px-3">
                       <div className="flex items-center gap-1">
                         <Button size="sm" variant="secondary" className="h-7 px-2 text-xs" onClick={() => navigate(`/pedidos/${order.id}`)}>
                           Ver
