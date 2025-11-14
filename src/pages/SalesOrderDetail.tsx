@@ -304,7 +304,7 @@ const SalesOrderDetail = () => {
               <Select 
                 value={order.status} 
                 onValueChange={handleStatusChange} 
-                disabled={isExporting || order.status !== 'draft'}
+                disabled={isExporting}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -320,11 +320,6 @@ const SalesOrderDetail = () => {
               {order.status === 'draft' && order.created_from_scratch && isHoldedActive && (
                 <p className="text-sm text-muted-foreground mt-1">
                   💡 Cambia a "Pendiente" para enviar automáticamente a Holded
-                </p>
-              )}
-              {order.status !== 'draft' && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  El estado solo se puede cambiar cuando el pedido está en Borrador
                 </p>
               )}
             </div>
