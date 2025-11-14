@@ -146,7 +146,7 @@ export default function Clientes() {
     }
   }, [currentPage, organization, membership]);
 
-  // Effect separado para búsqueda (resetear página)
+  // Effect separado para búsqueda con debounce (resetear página)
   useEffect(() => {
     const organizationId = organization?.id || membership?.organization?.id;
     if (!organizationId) {
@@ -158,11 +158,16 @@ export default function Clientes() {
       return;
     }
     
-    if (currentPage !== 1) {
-      setCurrentPage(1);
-    } else {
-      fetchClientes();
-    }
+    // Debounce search - wait 300ms after user stops typing
+    const timer = setTimeout(() => {
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+      } else {
+        fetchClientes();
+      }
+    }, 300);
+    
+    return () => clearTimeout(timer);
   }, [searchTerm, organization, membership]);
 
   const deleteCliente = async (id: string) => {
