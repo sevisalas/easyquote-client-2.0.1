@@ -39,6 +39,7 @@ import ImageManagement from "./pages/ImageManagement";
 import SalesOrdersList from "./pages/SalesOrdersList";
 import SalesOrderDetail from "./pages/SalesOrderDetail";
 import SalesOrderNew from "./pages/SalesOrderNew";
+import SalesOrderEdit from "./pages/SalesOrderEdit";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { useSessionMonitor } from "./hooks/useSessionMonitor";
 
@@ -326,6 +327,16 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <SalesOrderNew />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pedidos/:id/editar"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SalesOrderEdit />
             </AppLayout>
           </ProtectedRoute>
         }

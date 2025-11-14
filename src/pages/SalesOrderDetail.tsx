@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, Calendar, Trash2, Upload, Download, ChevronDown } from "lucide-react";
+import { ArrowLeft, Package, Calendar, Trash2, Upload, Download, ChevronDown, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -257,6 +257,16 @@ const SalesOrderDetail = () => {
           >
             <Download className="h-4 w-4 mr-2" />
             PDF Holded
+          </Button>
+        )}
+        {order.status === 'draft' && (
+          <Button 
+            onClick={() => navigate(`/pedidos/${id}/editar`)}
+            variant="outline"
+            size="sm"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Editar
           </Button>
         )}
         {order.status === 'draft' && (
