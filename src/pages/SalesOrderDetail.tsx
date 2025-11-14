@@ -314,7 +314,6 @@ const SalesOrderDetail = () => {
                   <SelectItem value="pending">Pendiente</SelectItem>
                   <SelectItem value="in_production">En Producción</SelectItem>
                   <SelectItem value="completed">Completado</SelectItem>
-                  <SelectItem value="cancelled">Cancelado</SelectItem>
                 </SelectContent>
               </Select>
               {order.status === 'draft' && order.created_from_scratch && isHoldedActive && (
