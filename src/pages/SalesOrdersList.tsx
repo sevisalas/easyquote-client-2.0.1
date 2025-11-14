@@ -125,11 +125,14 @@ const SalesOrdersList = () => {
   const hasActiveFilters = customerFilter || statusFilter || orderNumberFilter || dateFromFilter || dateToFilter;
 
   const handleDuplicate = async (orderId: string) => {
+    const toastId = toast.loading("Duplicando pedido...");
+    
     try {
       const originalOrder = orders.find(o => o.id === orderId);
-      if (!originalOrder) return;
-
-      toast.loading("Duplicando pedido...");
+      if (!originalOrder) {
+        toast.dismiss(toastId);
+        return;
+      }
 
       // Fetch order items and additionals
       const { data: items } = await supabase
@@ -142,13 +145,20 @@ const SalesOrdersList = () => {
         .select('*')
         .eq('sales_order_id', orderId);
 
+      // Generate proper order number using atomic function
+      const { data: orderNumber, error: numberError } = await (supabase.rpc as any)('generate_sales_order_number');
+      
+      if (numberError || !orderNumber) {
+        throw new Error('No se pudo generar el número de pedido');
+      }
+
       // Create new order
       const { data: newOrder, error: orderError } = await supabase
         .from('sales_orders')
         .insert({
           user_id: originalOrder.user_id,
           customer_id: originalOrder.customer_id,
-          order_number: `TEMP-${Date.now()}`,
+          order_number: orderNumber,
           title: originalOrder.title ? `${originalOrder.title} (Copia)` : undefined,
           description: originalOrder.description,
           notes: originalOrder.notes,
@@ -156,27 +166,12 @@ const SalesOrdersList = () => {
           discount_amount: originalOrder.discount_amount,
           tax_amount: originalOrder.tax_amount,
           final_price: originalOrder.final_price,
-          status: 'pending'
+          status: 'draft'
         })
         .select()
         .single();
 
       if (orderError) throw orderError;
-
-      // Generate proper order number
-      const year = new Date().getFullYear();
-      const { count } = await supabase
-        .from('sales_orders')
-        .select('*', { count: 'exact', head: true })
-        .like('order_number', `SO-${year}-%`);
-      
-      const nextNumber = (count || 0) + 1;
-      const newOrderNumber = `SO-${year}-${String(nextNumber).padStart(4, '0')}`;
-
-      await supabase
-        .from('sales_orders')
-        .update({ order_number: newOrderNumber })
-        .eq('id', newOrder.id);
 
       // Copy items
       if (items && items.length > 0) {
@@ -207,11 +202,13 @@ const SalesOrdersList = () => {
         );
       }
 
+      toast.dismiss(toastId);
       toast.success("Pedido duplicado correctamente");
       loadOrders();
       navigate(`/pedidos/${newOrder.id}`);
     } catch (error) {
       console.error('Error duplicating order:', error);
+      toast.dismiss(toastId);
       toast.error("Error al duplicar el pedido");
     }
   };
