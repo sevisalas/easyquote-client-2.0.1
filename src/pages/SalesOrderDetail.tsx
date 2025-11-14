@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, Calendar, Trash2, Upload, Download, ChevronDown, Edit } from "lucide-react";
+import { ArrowLeft, Trash2, Download, ChevronDown, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 const statusColors = {
   draft: "outline",
@@ -27,6 +29,13 @@ const statusLabels = {
   pending: "Pendiente",
   in_production: "En Producción",
   completed: "Completado",
+};
+
+const fmtEUR = (amount: number) => {
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: 'EUR'
+  }).format(amount);
 };
 
 const SalesOrderDetail = () => {
@@ -235,170 +244,167 @@ const SalesOrderDetail = () => {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="outline" onClick={() => navigate("/pedidos")}>
-          <ArrowLeft className="h-4 w-4" />
-          Volver al listado
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Package className="h-8 w-8" />
-            Pedido {order.order_number}
-          </h1>
-          <p className="text-muted-foreground">Detalle del pedido</p>
-        </div>
-        <Badge variant={statusColors[order.status]}>{statusLabels[order.status]}</Badge>
-        {order.holded_document_id && (
-          <Button 
-            onClick={handleDownloadHoldedPdf}
-            variant="outline"
-            size="sm"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            PDF Holded
-          </Button>
-        )}
-        {order.status === 'draft' && (
-          <Button 
-            onClick={() => navigate(`/pedidos/${id}/editar`)}
-            variant="outline"
-            size="sm"
-          >
-            <Edit className="h-4 w-4 mr-2" />
-            Editar
-          </Button>
-        )}
-        {order.status === 'draft' && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="icon">
-                <Trash2 className="h-5 w-5" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>¿Eliminar pedido?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta acción no se puede deshacer. El pedido {order.order_number} será eliminado permanentemente.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  Eliminar
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
-      </div>
-
+    <div className="container mx-auto py-2 space-y-3">
+      {/* Header */}
       <Card>
-        <CardHeader>
-          <CardTitle>Información del Pedido</CardTitle>
-          <CardDescription>Pedido: {order.order_number}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            {order.title && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Título</label>
-                <p className="text-base">{order.title}</p>
-              </div>
-            )}
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Estado</label>
-              <Select 
-                value={order.status} 
-                onValueChange={handleStatusChange} 
-                disabled={isExporting}
+              <CardTitle className="text-lg">
+                Pedido {order.order_number}
+              </CardTitle>
+              <CardDescription className="mt-0.5">
+                Fecha: {format(new Date(order.order_date), 'dd/MM/yyyy', { locale: es })}
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => navigate("/pedidos")}
+                size="sm"
+                variant="outline"
+                className="gap-2"
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Borrador</SelectItem>
-                  <SelectItem value="pending">Pendiente</SelectItem>
-                  <SelectItem value="in_production">En Producción</SelectItem>
-                  <SelectItem value="completed">Completado</SelectItem>
-                </SelectContent>
-              </Select>
-              {order.status === 'draft' && order.created_from_scratch && isHoldedActive && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  💡 Cambia a "Pendiente" para enviar automáticamente a Holded
-                </p>
+                <ArrowLeft className="h-4 w-4" />
+                Volver
+              </Button>
+              {order.holded_document_id && (
+                <Button 
+                  onClick={handleDownloadHoldedPdf}
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  PDF Holded
+                </Button>
+              )}
+              {order.status === 'draft' && (
+                <Button 
+                  onClick={() => navigate(`/pedidos/${id}/editar`)}
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  Editar
+                </Button>
+              )}
+              {order.status === 'draft' && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="destructive" className="gap-2">
+                      <Trash2 className="h-4 w-4" />
+                      Eliminar
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>¿Eliminar pedido?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta acción no se puede deshacer. El pedido {order.order_number} será eliminado permanentemente.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Eliminar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
             </div>
           </div>
+        </CardHeader>
+      </Card>
 
-          {order.description && (
+      {/* Información del Pedido */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Información del pedido</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Descripción</label>
-              <p className="text-base whitespace-pre-wrap">{order.description}</p>
+              <label className="text-xs font-medium text-muted-foreground">cliente</label>
+              <p className="text-sm font-medium mt-0.5">
+                {order.customer_id || 'No especificado'}
+              </p>
             </div>
-          )}
-
-          <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Fecha de pedido
-              </label>
-              <p className="text-base">{new Date(order.order_date).toLocaleDateString()}</p>
+              <label className="text-xs font-medium text-muted-foreground">estado</label>
+              <div className="mt-0.5">
+                <Select value={order.status} onValueChange={handleStatusChange} disabled={isExporting}>
+                  <SelectTrigger className="h-7 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Borrador</SelectItem>
+                    <SelectItem value="pending">Pendiente</SelectItem>
+                    <SelectItem value="in_production">En Producción</SelectItem>
+                    <SelectItem value="completed">Completado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            {order.valid_until && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Válido hasta
-                </label>
-                <p className="text-base">{new Date(order.valid_until).toLocaleDateString()}</p>
-              </div>
-            )}
-            {order.delivery_date && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Fecha de entrega
-                </label>
-                <p className="text-base">{new Date(order.delivery_date).toLocaleDateString()}</p>
-              </div>
-            )}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">total</label>
+              <p className="text-base font-semibold mt-0.5">{fmtEUR(order.final_price || 0)}</p>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">entrega</label>
+              <p className="text-sm mt-0.5">
+                {order.delivery_date 
+                  ? format(new Date(order.delivery_date), 'dd/MM/yyyy', { locale: es })
+                  : 'No especificado'
+                }
+              </p>
+            </div>
           </div>
-
-          {order.notes && (
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Notas</label>
-              <p className="text-base whitespace-pre-wrap">{order.notes}</p>
+          
+          {(order.title || order.description || order.notes) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
+              {order.title && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">título</label>
+                  <p className="text-sm mt-0.5">{order.title}</p>
+                </div>
+              )}
+              {order.description && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">descripción</label>
+                  <p className="text-sm mt-0.5 whitespace-pre-wrap">{order.description}</p>
+                </div>
+              )}
+              {order.notes && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">notas</label>
+                  <p className="text-sm mt-0.5 whitespace-pre-wrap">{order.notes}</p>
+                </div>
+              )}
             </div>
           )}
 
-          {order.terms_conditions && (
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Términos y condiciones</label>
-              <p className="text-sm whitespace-pre-wrap text-muted-foreground">{order.terms_conditions}</p>
-            </div>
-          )}
-
-          {order.holded_document_number && (
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Número Holded</label>
-              <p className="text-base font-mono">{order.holded_document_number}</p>
+          {order.status === 'draft' && order.created_from_scratch && isHoldedActive && (
+            <div className="pt-1">
+              <p className="text-xs text-muted-foreground">
+                💡 Cambia a "Pendiente" para enviar automáticamente a Holded
+              </p>
             </div>
           )}
         </CardContent>
       </Card>
 
+      {/* Artículos del Pedido */}
       <Card>
-        <CardHeader>
-          <CardTitle>Artículos del pedido</CardTitle>
-          <CardDescription>{items.length} artículo{items.length !== 1 ? "s" : ""}</CardDescription>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Artículos del pedido</CardTitle>
         </CardHeader>
-        <CardContent>
-          {items.length > 0 ? (
-            <div className="space-y-4">
-              {items.map((item, index) => {
+        <CardContent className="pt-0">
+          {items.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No hay artículos en este pedido</p>
+          ) : (
+            <div className="space-y-2">{items.map((item, index) => {
                 const itemOutputs = item.outputs && Array.isArray(item.outputs) ? item.outputs : [];
                 const itemPrompts = item.prompts && Array.isArray(item.prompts) ? item.prompts : [];
                 const isExpanded = expandedItems.has(item.id);
@@ -501,7 +507,7 @@ const SalesOrderDetail = () => {
               <div className="space-y-2">
                 <div className="flex justify-between text-base">
                   <span className="text-muted-foreground">Subtotal:</span>
-                  <span className="font-medium">{order.subtotal.toFixed(2)} €</span>
+                  <span className="font-medium">{fmtEUR(order.subtotal)}</span>
                 </div>
 
                 {/* Additionals */}
@@ -512,7 +518,7 @@ const SalesOrderDetail = () => {
                     </span>
                     <span className={additional.is_discount ? "text-green-600 font-medium" : "font-medium"}>
                       {additional.is_discount && "-"}
-                      {additional.type === 'percentage' ? `${additional.value}%` : `${additional.value.toFixed(2)} €`}
+                      {additional.type === 'percentage' ? `${additional.value}%` : fmtEUR(additional.value)}
                     </span>
                   </div>
                 ))}
@@ -520,14 +526,14 @@ const SalesOrderDetail = () => {
                 {order.discount_amount > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-green-600">Descuento:</span>
-                    <span className="text-green-600 font-medium">-{order.discount_amount.toFixed(2)} €</span>
+                    <span className="text-green-600 font-medium">-{fmtEUR(order.discount_amount)}</span>
                   </div>
                 )}
 
                 {order.tax_amount > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Impuestos:</span>
-                    <span className="font-medium">{order.tax_amount.toFixed(2)} €</span>
+                    <span className="font-medium">{fmtEUR(order.tax_amount)}</span>
                   </div>
                 )}
 
@@ -535,13 +541,9 @@ const SalesOrderDetail = () => {
 
                 <div className="flex justify-between text-xl font-bold pt-2">
                   <span>Total del pedido:</span>
-                  <span className="text-primary">{order.final_price.toFixed(2)} €</span>
+                  <span className="text-primary">{fmtEUR(order.final_price)}</span>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No hay artículos en este pedido
             </div>
           )}
         </CardContent>
