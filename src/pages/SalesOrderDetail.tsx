@@ -261,27 +261,29 @@ const SalesOrderDetail = () => {
             PDF Holded
           </Button>
         )}
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="destructive" size="icon">
-              <Trash2 className="h-5 w-5" />
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>¿Eliminar pedido?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta acción no se puede deshacer. El pedido {order.order_number} será eliminado permanentemente.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                Eliminar
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {order.status === 'draft' && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="icon">
+                <Trash2 className="h-5 w-5" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>¿Eliminar pedido?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta acción no se puede deshacer. El pedido {order.order_number} será eliminado permanentemente.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Eliminar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       <Card>
@@ -299,7 +301,11 @@ const SalesOrderDetail = () => {
             )}
             <div>
               <label className="text-sm font-medium text-muted-foreground">Estado</label>
-              <Select value={order.status} onValueChange={handleStatusChange} disabled={isExporting}>
+              <Select 
+                value={order.status} 
+                onValueChange={handleStatusChange} 
+                disabled={isExporting || order.status !== 'draft'}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -314,6 +320,11 @@ const SalesOrderDetail = () => {
               {order.status === 'draft' && order.created_from_scratch && isHoldedActive && (
                 <p className="text-sm text-muted-foreground mt-1">
                   💡 Cambia a "Pendiente" para enviar automáticamente a Holded
+                </p>
+              )}
+              {order.status !== 'draft' && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  El estado solo se puede cambiar cuando el pedido está en Borrador
                 </p>
               )}
             </div>
