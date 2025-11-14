@@ -1370,6 +1370,7 @@ export type Database = {
       encrypt_credential: { Args: { credential_text: string }; Returns: string }
       generate_api_key: { Args: never; Returns: string }
       generate_api_secret: { Args: never; Returns: string }
+      generate_sales_order_number: { Args: never; Returns: string }
       get_customer_audit_trail: {
         Args: { p_customer_id: string; p_limit?: number }
         Returns: {
