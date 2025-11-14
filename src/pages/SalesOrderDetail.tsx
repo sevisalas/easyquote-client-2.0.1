@@ -388,7 +388,6 @@ const SalesOrderDetail = () => {
               {items.map((item, index) => {
                 const itemOutputs = item.outputs && Array.isArray(item.outputs) ? item.outputs : [];
                 const itemPrompts = item.prompts && Array.isArray(item.prompts) ? item.prompts : [];
-                const displayQuantity = item.quantity;
                 const isExpanded = expandedItems.has(item.id);
                 
                 return (
@@ -414,20 +413,10 @@ const SalesOrderDetail = () => {
                                 isExpanded ? "transform rotate-180" : ""
                               }`}
                             />
-                            <div>
-                              <h3 className="font-semibold text-lg">{item.product_name}</h3>
-                              {item.description && (
-                                <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
-                              )}
-                            </div>
+                            <h3 className="font-semibold text-lg">{item.description || item.product_name}</h3>
                           </div>
                           <div className="text-right ml-4">
-                            <div className="flex items-baseline gap-2">
-                              <p className="text-xl font-bold text-primary">{item.price.toFixed(2)} €</p>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              Cantidad: {displayQuantity}
-                            </p>
+                            <p className="text-xl font-bold text-primary">{item.price.toFixed(2)} €</p>
                           </div>
                         </div>
                       </CollapsibleTrigger>
@@ -466,11 +455,6 @@ const SalesOrderDetail = () => {
                               {itemPrompts.map((prompt: any, idx: number) => {
                                 const label = prompt.label || '';
                                 let value = prompt.value || '';
-                                
-                                // Use actual quantity from database for Quantity field
-                                if (label.toLowerCase() === 'quantity') {
-                                  value = displayQuantity.toString();
-                                }
                                 
                                 // Filtrar URLs e imágenes
                                 if (!value || 
