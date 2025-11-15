@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerName } from "@/components/quotes/CustomerName";
+import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 
 const statusColors = {
   draft: "outline",
@@ -41,6 +42,7 @@ const SalesOrdersList = () => {
   const navigate = useNavigate();
   const { canAccessProduccion } = useSubscription();
   const { loading, fetchSalesOrders } = useSalesOrders();
+  const { isHoldedActive } = useHoldedIntegration();
   const [orders, setOrders] = useState<SalesOrder[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   
@@ -417,9 +419,13 @@ const SalesOrdersList = () => {
                   <TableHead className="py-2 text-xs font-semibold">Cliente</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Descripción</TableHead>
                   <TableHead className="py-2 text-right text-xs font-semibold">Total</TableHead>
+                  {isHoldedActive && (
+                    <>
+                      <TableHead className="py-2 text-xs font-semibold">Nº Holded</TableHead>
+                      <TableHead className="py-2 text-xs font-semibold">PDF</TableHead>
+                    </>
+                  )}
                   <TableHead className="py-2 text-xs font-semibold">Estado</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold">Nº Holded</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold">PDF</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -433,27 +439,31 @@ const SalesOrdersList = () => {
                     </TableCell>
                     <TableCell className="py-1.5 px-3 text-sm">{order.description || order.title || ""}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm text-right font-medium">{fmtEUR(order.final_price)}</TableCell>
+                    {isHoldedActive && (
+                      <>
+                        <TableCell className="py-1.5 px-3">
+                          {order.holded_document_number ? (
+                            <span className="text-xs font-mono text-muted-foreground">{order.holded_document_number}</span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-1.5 px-3">
+                          {order.holded_document_id && (
+                            <span title="Descargar PDF de Holded">
+                              <Download 
+                                className="h-3.5 w-3.5 cursor-pointer text-muted-foreground hover:text-foreground transition-colors" 
+                                onClick={() => handleDownloadHoldedPdf(order.holded_document_id!, order.holded_document_number || order.order_number)}
+                              />
+                            </span>
+                          )}
+                        </TableCell>
+                      </>
+                    )}
                     <TableCell className="py-1.5 px-3">
                       <Badge variant={statusColors[order.status]} className="text-xs px-2 py-0 h-5">
                         {statusLabels[order.status]}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="py-1.5 px-3">
-                      {order.holded_document_number ? (
-                        <span className="text-xs font-mono text-muted-foreground">{order.holded_document_number}</span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="py-1.5 px-3">
-                      {order.holded_document_id && (
-                        <span title="Descargar PDF de Holded">
-                          <Download 
-                            className="h-3.5 w-3.5 cursor-pointer text-muted-foreground hover:text-foreground transition-colors" 
-                            onClick={() => handleDownloadHoldedPdf(order.holded_document_id!, order.holded_document_number || order.order_number)}
-                          />
-                        </span>
-                      )}
                     </TableCell>
                     <TableCell className="py-1.5 px-3">
                       <div className="flex items-center gap-1">
