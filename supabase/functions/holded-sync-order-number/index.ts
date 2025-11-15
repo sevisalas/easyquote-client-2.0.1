@@ -60,18 +60,29 @@ serve(async (req) => {
       );
     }
 
-    // Get user's organization
+    // Get user's organization (from the authenticated user, not the order creator)
     const { data: orgMember } = await supabase
       .from("organization_members")
       .select("organization_id")
-      .eq("user_id", order.user_id)
-      .single();
+      .eq("user_id", user.id)
+      .maybeSingle();
 
     if (!orgMember) {
-      return new Response(
-        JSON.stringify({ error: "Organization not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      // Try to get organization where user is the owner
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("api_user_id", user.id)
+        .maybeSingle();
+      
+      if (!org) {
+        return new Response(
+          JSON.stringify({ error: "Organization not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      orgMember.organization_id = org.id;
     }
 
     // Get Holded access token
