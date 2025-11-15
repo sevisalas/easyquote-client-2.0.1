@@ -90,10 +90,23 @@ export default function SalesOrderEdit() {
 
     setSaving(true);
     try {
+      // Separar customer_id y holded_contact_id
+      let customerId = null;
+      let holdedContactId = null;
+
+      if (formData.customer_id) {
+        if (formData.customer_id.startsWith('holded:')) {
+          holdedContactId = formData.customer_id.replace('holded:', '');
+        } else {
+          customerId = formData.customer_id;
+        }
+      }
+
       const { data, error } = await supabase
         .from("sales_orders")
         .update({
-          customer_id: formData.customer_id || null,
+          customer_id: customerId,
+          holded_contact_id: holdedContactId,
           title: formData.title || null,
           description: formData.description || null,
           notes: formData.notes || null,

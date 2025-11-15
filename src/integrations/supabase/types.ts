@@ -1195,6 +1195,7 @@ export type Database = {
           description: string | null
           discount_amount: number
           final_price: number
+          holded_contact_id: string | null
           holded_document_id: string | null
           holded_document_number: string | null
           id: string
@@ -1219,6 +1220,7 @@ export type Database = {
           description?: string | null
           discount_amount?: number
           final_price?: number
+          holded_contact_id?: string | null
           holded_document_id?: string | null
           holded_document_number?: string | null
           id?: string
@@ -1243,6 +1245,7 @@ export type Database = {
           description?: string | null
           discount_amount?: number
           final_price?: number
+          holded_contact_id?: string | null
           holded_document_id?: string | null
           holded_document_number?: string | null
           id?: string
@@ -1265,6 +1268,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_orders_holded_contact_id_fkey"
+            columns: ["holded_contact_id"]
+            isOneToOne: false
+            referencedRelation: "holded_contacts"
             referencedColumns: ["id"]
           },
           {

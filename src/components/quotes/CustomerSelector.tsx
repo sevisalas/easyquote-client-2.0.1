@@ -153,72 +153,6 @@ export const CustomerSelector = ({
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
-  // Función para obtener o crear cliente local desde Holded
-  const getOrCreateLocalCustomer = async (holdedCustomer: HoldedCustomer): Promise<string | null> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('❌ No hay usuario autenticado');
-        return null;
-      }
-
-      console.log('🔍 Buscando cliente local para holded_id:', holdedCustomer.holded_id);
-      
-      // PRIMERO: Buscar si ya existe un cliente local con este holded_id
-      const { data: existingCustomer, error: searchError } = await supabase
-        .from("customers")
-        .select("id, name, holded_id")
-        .eq("holded_id", holdedCustomer.holded_id)
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      console.log('🔍 Resultado búsqueda:', { existingCustomer, searchError });
-
-      // Si ya existe, devolver su ID (NO crear duplicado)
-      if (existingCustomer) {
-        console.log('✅ Cliente local YA EXISTE, reutilizando ID:', existingCustomer.id);
-        return existingCustomer.id;
-      }
-
-      // SOLO si NO existe, crear uno nuevo
-      console.log('📝 NO existe, creando nuevo cliente local para holded_id:', holdedCustomer.holded_id);
-      const { data: newCustomer, error } = await supabase
-        .from("customers")
-        .insert({
-          user_id: user.id,
-          holded_id: holdedCustomer.holded_id,
-          name: holdedCustomer.name,
-          email: holdedCustomer.email || null,
-          phone: holdedCustomer.phone || null
-        })
-        .select("id, name, holded_id")
-        .single();
-
-      if (error) {
-        console.error('❌ Error creando cliente local:', error);
-        return null;
-      }
-
-      console.log('✅ Cliente local CREADO:', newCustomer);
-      return newCustomer.id;
-    } catch (err) {
-      console.error('❌ Excepción en getOrCreateLocalCustomer:', err);
-      return null;
-    }
-  };
-
-  const handleCustomerSelect = async (customer: Customer) => {
-    if (customer.source === 'holded') {
-      const localCustomerId = await getOrCreateLocalCustomer(customer as HoldedCustomer);
-      if (localCustomerId) {
-        onValueChange(localCustomerId);
-      }
-    } else {
-      onValueChange(customer.id);
-    }
-    setOpen(false);
-  };
-
   // Cargar TODOS los clientes (locales + Holded)
   const { data: customers, isLoading, error } = useQuery({ 
     queryKey: ["all-customers"], 
@@ -340,7 +274,10 @@ export const CustomerSelector = ({
                           {paginatedCustomers.filter(c => c.source === 'local').map((customer) => (
                             <button
                               key={customer.id}
-                              onClick={() => handleCustomerSelect(customer)}
+                              onClick={() => {
+                                onValueChange(customer.id);
+                                setOpen(false);
+                              }}
                               className="w-full flex items-center gap-2 px-2 py-2 rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
                             >
                               <User className="h-4 w-4 text-blue-500 flex-shrink-0" />
@@ -374,7 +311,11 @@ export const CustomerSelector = ({
                           {paginatedCustomers.filter(c => c.source === 'holded').map((customer) => (
                             <button
                               key={customer.id}
-                              onClick={() => handleCustomerSelect(customer)}
+                              onClick={() => {
+                                // Pasar el ID de holded_contacts con prefijo especial
+                                onValueChange('holded:' + customer.id);
+                                setOpen(false);
+                              }}
                               className="w-full flex items-center gap-2 px-2 py-2 rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
                             >
                               <User className="h-4 w-4 text-green-500 flex-shrink-0" />
