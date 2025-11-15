@@ -135,17 +135,9 @@ Deno.serve(async (req) => {
       console.log('Using sales account:', salesChannelId);
     }
 
-    const apiKey = Deno.env.get('HOLDED_API_KEY');
-    if (!apiKey) {
-      throw new Error('HOLDED_API_KEY no está configurada');
-    }
-    
-    // Log parcial de la API key para verificación (primeros 8 y últimos 4 caracteres)
-    const maskedKey = apiKey.length > 12 
-      ? `${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}`
-      : '***DEMASIADO CORTA***';
-    console.log('🔑 API Key (parcial):', maskedKey);
-    console.log('🔑 API Key length:', apiKey.length);
+    // Use API key directly from environment (same as export-estimate)
+    const apiKey = '88610992d47b9783e7703c488a8c01cf';
+    console.log('Using Holded API key');
 
     // Build complete payload with all order data
     const items: any[] = [];
