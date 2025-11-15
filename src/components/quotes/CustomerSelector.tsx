@@ -153,6 +153,61 @@ export const CustomerSelector = ({
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
+  // Función para crear/obtener cliente local desde Holded
+  const getOrCreateLocalCustomer = async (holdedCustomer: HoldedCustomer): Promise<string | null> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      // Buscar si ya existe un cliente local con este holded_id
+      const { data: existingCustomer } = await supabase
+        .from("customers")
+        .select("id")
+        .eq("holded_id", holdedCustomer.holded_id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (existingCustomer) {
+        return existingCustomer.id;
+      }
+
+      // Si no existe, crear uno nuevo
+      const { data: newCustomer, error } = await supabase
+        .from("customers")
+        .insert({
+          user_id: user.id,
+          holded_id: holdedCustomer.holded_id,
+          name: holdedCustomer.name,
+          email: holdedCustomer.email || null,
+          phone: holdedCustomer.phone || null
+        })
+        .select("id")
+        .single();
+
+      if (error) {
+        console.error('Error creando cliente local:', error);
+        return null;
+      }
+
+      return newCustomer.id;
+    } catch (err) {
+      console.error('Error en getOrCreateLocalCustomer:', err);
+      return null;
+    }
+  };
+
+  const handleCustomerSelect = async (customer: Customer) => {
+    if (customer.source === 'holded') {
+      const localCustomerId = await getOrCreateLocalCustomer(customer as HoldedCustomer);
+      if (localCustomerId) {
+        onValueChange(localCustomerId);
+      }
+    } else {
+      onValueChange(customer.id);
+    }
+    setOpen(false);
+  };
+
   // Cargar todos los clientes
   const { data: customers, isLoading, error } = useQuery({ 
     queryKey: ["all-customers"], 
@@ -275,10 +330,7 @@ export const CustomerSelector = ({
                           {paginatedCustomers.filter(c => c.source === 'local').map((customer) => (
                             <button
                               key={customer.id}
-                              onClick={() => {
-                                onValueChange(customer.id);
-                                setOpen(false);
-                              }}
+                              onClick={() => handleCustomerSelect(customer)}
                               className="w-full flex items-center gap-2 px-2 py-2 rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
                             >
                               <User className="h-4 w-4 text-blue-500 flex-shrink-0" />
@@ -312,10 +364,7 @@ export const CustomerSelector = ({
                           {paginatedCustomers.filter(c => c.source === 'holded').map((customer) => (
                             <button
                               key={customer.id}
-                              onClick={() => {
-                                onValueChange(customer.id);
-                                setOpen(false);
-                              }}
+                              onClick={() => handleCustomerSelect(customer)}
                               className="w-full flex items-center gap-2 px-2 py-2 rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
                             >
                               <User className="h-4 w-4 text-green-500 flex-shrink-0" />
