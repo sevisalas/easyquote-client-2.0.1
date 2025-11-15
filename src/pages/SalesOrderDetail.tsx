@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { CustomerName } from "@/components/quotes/CustomerName";
 
 const statusColors = {
   draft: "outline",
@@ -103,6 +104,12 @@ const SalesOrderDetail = () => {
 
   const handleExportToHolded = async () => {
     if (!id || !order) return;
+    
+    // Validar que el pedido tenga un cliente asignado
+    if (!order.customer_id) {
+      toast.error('El pedido debe tener un cliente asignado para exportar a Holded');
+      return;
+    }
     
     setIsExporting(true);
     try {
@@ -328,7 +335,7 @@ const SalesOrderDetail = () => {
             <div>
               <label className="text-xs font-medium text-muted-foreground">cliente</label>
               <p className="text-sm font-medium mt-0.5">
-                {order.customer_id || 'No especificado'}
+                <CustomerName customerId={order.customer_id} fallback="No asignado" />
               </p>
             </div>
             <div>
