@@ -157,24 +157,31 @@ export const CustomerSelector = ({
   const getOrCreateLocalCustomer = async (holdedCustomer: HoldedCustomer): Promise<string | null> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+      if (!user) {
+        console.error('❌ No hay usuario autenticado');
+        return null;
+      }
 
+      console.log('🔍 Buscando cliente local para holded_id:', holdedCustomer.holded_id);
+      
       // PRIMERO: Buscar si ya existe un cliente local con este holded_id
-      const { data: existingCustomer } = await supabase
+      const { data: existingCustomer, error: searchError } = await supabase
         .from("customers")
-        .select("id")
+        .select("id, name, holded_id")
         .eq("holded_id", holdedCustomer.holded_id)
         .eq("user_id", user.id)
         .maybeSingle();
 
+      console.log('🔍 Resultado búsqueda:', { existingCustomer, searchError });
+
       // Si ya existe, devolver su ID (NO crear duplicado)
       if (existingCustomer) {
-        console.log('✅ Cliente local ya existe:', existingCustomer.id);
+        console.log('✅ Cliente local YA EXISTE, reutilizando ID:', existingCustomer.id);
         return existingCustomer.id;
       }
 
       // SOLO si NO existe, crear uno nuevo
-      console.log('📝 Creando nuevo cliente local para Holded:', holdedCustomer.holded_id);
+      console.log('📝 NO existe, creando nuevo cliente local para holded_id:', holdedCustomer.holded_id);
       const { data: newCustomer, error } = await supabase
         .from("customers")
         .insert({
@@ -184,7 +191,7 @@ export const CustomerSelector = ({
           email: holdedCustomer.email || null,
           phone: holdedCustomer.phone || null
         })
-        .select("id")
+        .select("id, name, holded_id")
         .single();
 
       if (error) {
@@ -192,10 +199,10 @@ export const CustomerSelector = ({
         return null;
       }
 
-      console.log('✅ Cliente local creado:', newCustomer.id);
+      console.log('✅ Cliente local CREADO:', newCustomer);
       return newCustomer.id;
     } catch (err) {
-      console.error('❌ Error en getOrCreateLocalCustomer:', err);
+      console.error('❌ Excepción en getOrCreateLocalCustomer:', err);
       return null;
     }
   };
