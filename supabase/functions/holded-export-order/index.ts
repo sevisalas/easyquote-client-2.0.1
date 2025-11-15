@@ -92,7 +92,21 @@ Deno.serve(async (req) => {
 
     // Get Holded contact
     let contactId = null;
-    if (order.customer_id) {
+    
+    // First check if there's a direct holded_contact_id
+    if (order.holded_contact_id) {
+      const { data: holdedContact } = await supabase
+        .from('holded_contacts')
+        .select('holded_id')
+        .eq('id', order.holded_contact_id)
+        .single();
+      
+      if (holdedContact?.holded_id) {
+        contactId = holdedContact.holded_id;
+      }
+    }
+    // If not, try to get it from customer_id (legacy support)
+    else if (order.customer_id) {
       const { data: holdedContact } = await supabase
         .from('holded_contacts')
         .select('holded_id')
