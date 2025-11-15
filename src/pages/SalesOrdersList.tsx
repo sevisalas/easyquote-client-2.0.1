@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, Copy, X, Search, CalendarIcon } from "lucide-react";
+import { Eye, Copy, X, Search, CalendarIcon, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -124,6 +124,52 @@ const SalesOrdersList = () => {
   };
 
   const hasActiveFilters = customerFilter || statusFilter || orderNumberFilter || dateFromFilter || dateToFilter;
+
+  const handleDownloadHoldedPdf = async (holdedDocumentId: string, orderNumber: string) => {
+    try {
+      toast.loading('Descargando PDF...');
+      
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        toast.error('No hay sesión activa');
+        return;
+      }
+
+      const response = await fetch(
+        'https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/holded-download-pdf',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.session.access_token}`
+          },
+          body: JSON.stringify({ 
+            holdedDocumentId: holdedDocumentId,
+            documentType: 'salesorder'
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Error al descargar el PDF');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${orderNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success('PDF descargado correctamente');
+    } catch (error: any) {
+      console.error('Error downloading Holded PDF:', error);
+      toast.error('Error al descargar el PDF de Holded');
+    }
+  };
 
   const handleDuplicate = async (orderId: string) => {
     const toastId = toast.loading("Duplicando pedido...");
@@ -372,7 +418,8 @@ const SalesOrdersList = () => {
                   <TableHead className="py-2 text-xs font-semibold">Descripción</TableHead>
                   <TableHead className="py-2 text-right text-xs font-semibold">Total</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Estado</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold">Holded</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Nº Holded</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">PDF</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -391,8 +438,22 @@ const SalesOrdersList = () => {
                         {statusLabels[order.status]}
                       </Badge>
                     </TableCell>
-                    <TableCell className="py-1.5 px-3 text-sm">
-                      {order.holded_document_number || '-'}
+                    <TableCell className="py-1.5 px-3">
+                      {order.holded_document_number ? (
+                        <span className="text-xs font-mono text-muted-foreground">{order.holded_document_number}</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-1.5 px-3">
+                      {order.holded_document_id && (
+                        <span title="Descargar PDF de Holded">
+                          <Download 
+                            className="h-3.5 w-3.5 cursor-pointer text-muted-foreground hover:text-foreground transition-colors" 
+                            onClick={() => handleDownloadHoldedPdf(order.holded_document_id!, order.holded_document_number || order.order_number)}
+                          />
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="py-1.5 px-3">
                       <div className="flex items-center gap-1">
