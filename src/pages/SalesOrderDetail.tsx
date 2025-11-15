@@ -48,6 +48,7 @@ const SalesOrderDetail = () => {
   const [items, setItems] = useState<SalesOrderItem[]>([]);
   const [additionals, setAdditionals] = useState<SalesOrderAdditional[]>([]);
   const [isExporting, setIsExporting] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const { isHoldedActive } = useHoldedIntegration();
 
@@ -238,6 +239,50 @@ const SalesOrderDetail = () => {
     }
   };
 
+  const handleSyncHoldedNumber = async () => {
+    if (!id || !order?.holded_document_id) {
+      toast.error('No se puede sincronizar este pedido');
+      return;
+    }
+
+    try {
+      setIsSyncing(true);
+      toast.loading('Sincronizando número de Holded...');
+
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        toast.error('No hay sesión activa');
+        return;
+      }
+
+      const response = await fetch(
+        'https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/holded-sync-order-number',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.session.access_token}`,
+          },
+          body: JSON.stringify({ orderId: id }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al sincronizar');
+      }
+
+      setOrder(prev => prev ? { ...prev, holded_document_number: data.holdedNumber } : null);
+      toast.success(`Número sincronizado: ${data.holdedNumber}`);
+    } catch (error: any) {
+      console.error('Error syncing Holded number:', error);
+      toast.error(error.message || 'Error al sincronizar el número de Holded');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   if (!canAccessProduccion()) {
     return null;
   }
@@ -374,10 +419,25 @@ const SalesOrderDetail = () => {
           </div>
           
           {/* Número de documento Holded */}
-          {isHoldedActive && order.holded_document_number && (
+          {isHoldedActive && order.holded_document_id && (
             <div className="pt-2">
               <label className="text-xs font-medium text-muted-foreground">Nº documento Holded</label>
-              <p className="text-sm font-mono mt-0.5">{order.holded_document_number}</p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-sm font-mono">
+                  {order.holded_document_number || 'No sincronizado'}
+                </p>
+                {!order.holded_document_number && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleSyncHoldedNumber}
+                    disabled={isSyncing}
+                    className="h-6 text-xs"
+                  >
+                    Sincronizar
+                  </Button>
+                )}
+              </div>
             </div>
           )}
           
