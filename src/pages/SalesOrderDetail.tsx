@@ -73,6 +73,48 @@ const SalesOrderDetail = () => {
       
       const additionalsData = await fetchSalesOrderAdditionals(id);
       setAdditionals(additionalsData);
+      
+      // Auto-sync Holded number if missing
+      if (orderData.holded_document_id && !orderData.holded_document_number) {
+        syncOrderNumber();
+      }
+    }
+  };
+
+  const syncOrderNumber = async () => {
+    if (!id || !order?.holded_document_id) return;
+    
+    setIsSyncing(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return;
+
+      const response = await fetch(
+        'https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/holded-sync-order-number',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.session.access_token}`
+          },
+          body: JSON.stringify({ orderId: id })
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Error al sincronizar');
+      }
+
+      if (result.holdedNumber) {
+        setOrder(prev => prev ? { ...prev, holded_document_number: result.holdedNumber } : null);
+        toast.success('Número de Holded sincronizado');
+      }
+    } catch (error: any) {
+      console.error('Error syncing order number:', error);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
