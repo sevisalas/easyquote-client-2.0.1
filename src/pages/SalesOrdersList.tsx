@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { CustomerName } from "@/components/quotes/CustomerName";
 
 const statusColors = {
   draft: "outline",
@@ -78,14 +79,16 @@ const SalesOrdersList = () => {
     setCustomers([...(localCustomers || []), ...(holdedContacts || [])]);
   };
 
-  const getCustomerName = (id?: string | null) => 
-    customers.find((c: any) => c.id === id)?.name || "—";
+  const getCustomerName = (customerId?: string | null, holdedContactId?: string | null) => {
+    const id = customerId || holdedContactId;
+    return customers.find((c: any) => c.id === id)?.name || "—";
+  };
 
   // Filtered orders
   const filteredOrders = useMemo(() => {
     return orders.filter((order: SalesOrder) => {
       // Customer filter
-      if (customerFilter && !getCustomerName(order.customer_id).toLowerCase().includes(customerFilter.toLowerCase())) {
+      if (customerFilter && !getCustomerName(order.customer_id, order.holded_contact_id).toLowerCase().includes(customerFilter.toLowerCase())) {
         return false;
       }
       
@@ -378,7 +381,9 @@ const SalesOrdersList = () => {
                   <TableRow key={order.id} className="h-auto">
                     <TableCell className="py-1.5 px-3 text-sm">{new Date(order.order_date).toLocaleDateString("es-ES")}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm font-medium">{order.order_number}</TableCell>
-                    <TableCell className="py-1.5 px-3 text-sm">{getCustomerName(order.customer_id)}</TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm">
+                      <CustomerName customerId={order.customer_id} holdedContactId={order.holded_contact_id} />
+                    </TableCell>
                     <TableCell className="py-1.5 px-3 text-sm">{order.description || order.title || ""}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm text-right font-medium">{fmtEUR(order.final_price)}</TableCell>
                     <TableCell className="py-1.5 px-3">
