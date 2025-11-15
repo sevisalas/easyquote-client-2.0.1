@@ -373,6 +373,14 @@ const SalesOrderDetail = () => {
             </div>
           </div>
           
+          {/* Número de documento Holded */}
+          {isHoldedActive && order.holded_document_number && (
+            <div className="pt-2">
+              <label className="text-xs font-medium text-muted-foreground">Nº documento Holded</label>
+              <p className="text-sm font-mono mt-0.5">{order.holded_document_number}</p>
+            </div>
+          )}
+          
           {(order.title || order.description || order.notes) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
               {order.title && (
