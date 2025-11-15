@@ -62,6 +62,56 @@ const SalesOrdersList = () => {
     loadCustomers();
   }, [canAccessProduccion, navigate]);
 
+  // Auto-sync missing Holded numbers
+  useEffect(() => {
+    const syncMissingHoldedNumbers = async () => {
+      const ordersNeedingSync = orders.filter(
+        o => o.holded_document_id && !o.holded_document_number
+      );
+
+      if (ordersNeedingSync.length === 0) return;
+
+      console.log(`Sincronizando ${ordersNeedingSync.length} números de Holded...`);
+
+      for (const order of ordersNeedingSync) {
+        try {
+          const { data: session } = await supabase.auth.getSession();
+          if (!session.session) continue;
+
+          const response = await fetch(
+            'https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/holded-sync-order-number',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.session.access_token}`,
+              },
+              body: JSON.stringify({ orderId: order.id }),
+            }
+          );
+
+          const data = await response.json();
+          if (response.ok && data.holdedNumber) {
+            // Update local state
+            setOrders(prevOrders =>
+              prevOrders.map(o =>
+                o.id === order.id
+                  ? { ...o, holded_document_number: data.holdedNumber }
+                  : o
+              )
+            );
+          }
+        } catch (error) {
+          console.error('Error syncing Holded number for order', order.order_number, error);
+        }
+      }
+    };
+
+    if (orders.length > 0 && isHoldedActive) {
+      syncMissingHoldedNumbers();
+    }
+  }, [orders.length, isHoldedActive]);
+
   const loadOrders = async () => {
     const data = await fetchSalesOrders();
     setOrders(data);
