@@ -61,28 +61,35 @@ serve(async (req) => {
     }
 
     // Get user's organization (from the authenticated user, not the order creator)
+    console.log("User ID:", user.id);
     let organizationId: string | null = null;
 
-    const { data: orgMember } = await supabase
+    const { data: orgMember, error: orgMemberError } = await supabase
       .from("organization_members")
       .select("organization_id")
       .eq("user_id", user.id)
       .maybeSingle();
 
+    console.log("orgMember:", orgMember, "error:", orgMemberError);
+
     if (orgMember) {
       organizationId = orgMember.organization_id;
     } else {
       // Try to get organization where user is the owner
-      const { data: org } = await supabase
+      const { data: org, error: orgError } = await supabase
         .from("organizations")
         .select("id")
         .eq("api_user_id", user.id)
         .maybeSingle();
       
+      console.log("org:", org, "error:", orgError);
+      
       if (org) {
         organizationId = org.id;
       }
     }
+
+    console.log("Final organizationId:", organizationId);
 
     if (!organizationId) {
       return new Response(
@@ -105,7 +112,9 @@ serve(async (req) => {
       );
     }
 
-    const { data: access } = await supabase
+    console.log("Looking for integration access with org:", organizationId, "integration:", integration.id);
+
+    const { data: access, error: accessError } = await supabase
       .from("organization_integration_access")
       .select("access_token_encrypted")
       .eq("organization_id", organizationId)
@@ -113,7 +122,10 @@ serve(async (req) => {
       .eq("is_active", true)
       .maybeSingle();
 
+    console.log("access:", access, "error:", accessError);
+
     if (!access?.access_token_encrypted) {
+      console.error("No access token found for organization:", organizationId);
       return new Response(
         JSON.stringify({ error: "Holded not configured" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
