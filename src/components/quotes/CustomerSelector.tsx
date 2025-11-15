@@ -153,69 +153,13 @@ export const CustomerSelector = ({
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
-  // Función para crear/obtener cliente local desde Holded
-  const getOrCreateLocalCustomer = async (holdedCustomer: HoldedCustomer): Promise<string | null> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-
-      // Buscar si ya existe un cliente local con este holded_id
-      const { data: existingCustomer } = await supabase
-        .from("customers")
-        .select("id")
-        .eq("holded_id", holdedCustomer.holded_id)
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (existingCustomer) {
-        return existingCustomer.id;
-      }
-
-      // Si no existe, crear uno nuevo
-      const { data: newCustomer, error } = await supabase
-        .from("customers")
-        .insert({
-          user_id: user.id,
-          holded_id: holdedCustomer.holded_id,
-          name: holdedCustomer.name,
-          email: holdedCustomer.email || null,
-          phone: holdedCustomer.phone || null
-        })
-        .select("id")
-        .single();
-
-      if (error) {
-        console.error('Error creando cliente local:', error);
-        return null;
-      }
-
-      return newCustomer.id;
-    } catch (err) {
-      console.error('Error en getOrCreateLocalCustomer:', err);
-      return null;
-    }
-  };
-
-  const handleCustomerSelect = async (customer: Customer) => {
-    if (customer.source === 'holded') {
-      const localCustomerId = await getOrCreateLocalCustomer(customer as HoldedCustomer);
-      if (localCustomerId) {
-        onValueChange(localCustomerId);
-      }
-    } else {
-      onValueChange(customer.id);
-    }
-    setOpen(false);
-  };
-
-  // Cargar todos los clientes
+  // Cargar SOLO clientes locales (no Holded)
   const { data: customers, isLoading, error } = useQuery({ 
-    queryKey: ["all-customers"], 
+    queryKey: ["local-customers-only"], 
     queryFn: async () => {
-      console.log('🚀 Iniciando carga de clientes...');
-      const result = await fetchAllCustomers();
-      console.log('✅ Clientes cargados:', result.length, result);
-      return result;
+      const localCustomers = await fetchLocalCustomers();
+      console.log('✅ Clientes locales cargados:', localCustomers.length);
+      return localCustomers;
     }
   });
 
@@ -269,16 +213,9 @@ export const CustomerSelector = ({
           >
             {selectedCustomer ? (
               <div className="flex items-center gap-2 truncate">
-                <User className={`h-4 w-4 flex-shrink-0 ${
-                  selectedCustomer.source === 'holded' ? 'text-green-500' : 'text-blue-500'
-                }`} />
+                <User className="h-4 w-4 flex-shrink-0 text-blue-500" />
                 <div className="flex flex-col items-start truncate">
-                  <div className="flex items-center gap-1">
-                    <span className="font-medium truncate">{selectedCustomer.name || 'Sin nombre'}</span>
-                    {selectedCustomer.source === 'holded' && (
-                      <span className="text-[10px] bg-green-100 text-green-700 px-1 rounded">Holded</span>
-                    )}
-                  </div>
+                  <span className="font-medium truncate">{selectedCustomer.name || 'Sin nombre'}</span>
                   {selectedCustomer.email && (
                     <span className="text-xs text-muted-foreground truncate">
                       {selectedCustomer.email}
@@ -321,73 +258,34 @@ export const CustomerSelector = ({
                     </div>
                   ) : (
                     <div className="p-2">
-                      {/* Clientes locales */}
-                      {paginatedCustomers.filter(c => c.source === 'local').length > 0 && (
-                        <div className="mb-4">
-                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                            Clientes Locales
-                          </div>
-                          {paginatedCustomers.filter(c => c.source === 'local').map((customer) => (
-                            <button
-                              key={customer.id}
-                              onClick={() => handleCustomerSelect(customer)}
-                              className="w-full flex items-center gap-2 px-2 py-2 rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                              <User className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                              <div className="flex flex-col flex-1 min-w-0 items-start">
-                                <div className="flex items-center gap-2 w-full">
-                                  <span className="font-medium truncate">{customer.name}</span>
-                                  <Check
-                                    className={cn(
-                                      "ml-auto h-4 w-4 flex-shrink-0",
-                                      value === customer.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                </div>
-                                {customer.email && (
-                                  <span className="text-xs text-muted-foreground truncate w-full text-left">
-                                    {customer.email}
-                                  </span>
+                      {paginatedCustomers.map((customer) => (
+                        <button
+                          key={customer.id}
+                          onClick={() => {
+                            onValueChange(customer.id);
+                            setOpen(false);
+                          }}
+                          className="w-full flex items-center gap-2 px-2 py-2 rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                        >
+                          <User className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                          <div className="flex flex-col flex-1 min-w-0 items-start">
+                            <div className="flex items-center gap-2 w-full">
+                              <span className="font-medium truncate">{customer.name}</span>
+                              <Check
+                                className={cn(
+                                  "ml-auto h-4 w-4 flex-shrink-0",
+                                  value === customer.id ? "opacity-100" : "opacity-0"
                                 )}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Clientes de Holded */}
-                      {paginatedCustomers.filter(c => c.source === 'holded').length > 0 && (
-                        <div>
-                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                            Contactos de Holded
+                              />
+                            </div>
+                            {customer.email && (
+                              <span className="text-xs text-muted-foreground truncate w-full text-left">
+                                {customer.email}
+                              </span>
+                            )}
                           </div>
-                          {paginatedCustomers.filter(c => c.source === 'holded').map((customer) => (
-                            <button
-                              key={customer.id}
-                              onClick={() => handleCustomerSelect(customer)}
-                              className="w-full flex items-center gap-2 px-2 py-2 rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                              <User className="h-4 w-4 text-green-500 flex-shrink-0" />
-                              <div className="flex flex-col flex-1 min-w-0 items-start">
-                                <div className="flex items-center gap-2 w-full">
-                                  <span className="font-medium truncate">{customer.name}</span>
-                                  <Check
-                                    className={cn(
-                                      "ml-auto h-4 w-4 flex-shrink-0",
-                                      value === customer.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                </div>
-                                {customer.email && (
-                                  <span className="text-xs text-muted-foreground truncate w-full text-left">
-                                    {customer.email}
-                                  </span>
-                                )}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                        </button>
+                      ))}
                     </div>
                   )}
                 </ScrollArea>
