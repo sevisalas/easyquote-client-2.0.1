@@ -98,55 +98,13 @@ serve(async (req) => {
       );
     }
 
-    // Get Holded access token
-    const { data: integration } = await supabase
-      .from("integrations")
-      .select("id")
-      .eq("name", "Holded")
-      .single();
-
-    if (!integration) {
+    // Get Holded API key from environment secret
+    const apiKey = Deno.env.get("HOLDED_API_KEY");
+    
+    if (!apiKey) {
+      console.error("HOLDED_API_KEY not found in environment");
       return new Response(
-        JSON.stringify({ error: "Holded integration not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log("Looking for integration access with org:", organizationId, "integration:", integration.id);
-
-    // Use service role client to bypass RLS for reading integration access
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-
-    const { data: access, error: accessError } = await supabaseAdmin
-      .from("organization_integration_access")
-      .select("access_token_encrypted")
-      .eq("organization_id", organizationId)
-      .eq("integration_id", integration.id)
-      .eq("is_active", true)
-      .maybeSingle();
-
-    console.log("access:", access, "error:", accessError);
-
-    if (!access?.access_token_encrypted) {
-      console.error("No access token found for organization:", organizationId);
-      return new Response(
-        JSON.stringify({ error: "Holded not configured" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Decrypt the access token using admin client
-    const { data: decryptedToken, error: decryptError } = await supabaseAdmin.rpc(
-      "decrypt_credential",
-      { encrypted_data: access.access_token_encrypted }
-    );
-
-    if (decryptError || !decryptedToken) {
-      return new Response(
-        JSON.stringify({ error: "Failed to decrypt Holded token" }),
+        JSON.stringify({ error: "Holded API key not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -157,7 +115,7 @@ serve(async (req) => {
       {
         method: "GET",
         headers: {
-          key: decryptedToken,
+          key: apiKey,
           "Content-Type": "application/json",
         },
       }
