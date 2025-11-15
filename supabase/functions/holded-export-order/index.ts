@@ -90,10 +90,10 @@ Deno.serve(async (req) => {
     console.log('📦 Order items fetched:', JSON.stringify(orderItems, null, 2));
     console.log('📦 Order additionals:', JSON.stringify(orderAdditionals || [], null, 2));
 
-    // Get Holded contact
+    // Get Holded contact ID - first try holded_contact_id, then customer_id
     let contactId = null;
     
-    // First check if there's a direct holded_contact_id
+    // First try: direct holded_contact_id reference
     if (order.holded_contact_id) {
       const { data: holdedContact } = await supabase
         .from('holded_contacts')
@@ -103,23 +103,30 @@ Deno.serve(async (req) => {
       
       if (holdedContact?.holded_id) {
         contactId = holdedContact.holded_id;
+        console.log('Found contactId from holded_contact_id:', contactId);
       }
     }
-    // If not, try to get it from customer_id (legacy support)
-    else if (order.customer_id) {
-      const { data: holdedContact } = await supabase
-        .from('holded_contacts')
+    
+    // Second try: get holded_id from customers table
+    if (!contactId && order.customer_id) {
+      const { data: customer } = await supabase
+        .from('customers')
         .select('holded_id')
         .eq('id', order.customer_id)
         .single();
       
-      if (holdedContact?.holded_id) {
-        contactId = holdedContact.holded_id;
+      if (customer?.holded_id) {
+        contactId = customer.holded_id;
+        console.log('Found contactId from customer.holded_id:', contactId);
       }
     }
 
     if (!contactId) {
-      throw new Error('No se encontró contactId de Holded para este cliente');
+      console.error('Order data:', { 
+        customer_id: order.customer_id, 
+        holded_contact_id: order.holded_contact_id 
+      });
+      throw new Error('No se encontró contactId de Holded para este cliente. El cliente debe estar sincronizado con Holded.');
     }
 
     // Get the sales account from the order creator
