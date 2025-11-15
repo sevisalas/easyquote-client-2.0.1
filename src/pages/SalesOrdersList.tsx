@@ -65,18 +65,31 @@ const SalesOrdersList = () => {
   // Auto-sync missing Holded numbers
   useEffect(() => {
     const syncMissingHoldedNumbers = async () => {
-      if (!isHoldedActive) return;
+      console.log("=== SYNC CHECK ===");
+      console.log("isHoldedActive:", isHoldedActive);
+      console.log("orders.length:", orders.length);
+      
+      if (!isHoldedActive) {
+        console.log("❌ Holded not active, skipping sync");
+        return;
+      }
       
       const ordersNeedingSync = orders.filter(
         o => o.holded_document_id && !o.holded_document_number
       );
 
-      if (ordersNeedingSync.length === 0) return;
+      console.log("Orders needing sync:", ordersNeedingSync.length, ordersNeedingSync.map(o => o.order_number));
 
-      console.log(`Sincronizando ${ordersNeedingSync.length} números de Holded...`);
+      if (ordersNeedingSync.length === 0) {
+        console.log("✓ No orders need sync");
+        return;
+      }
+
+      console.log(`🔄 Sincronizando ${ordersNeedingSync.length} números de Holded...`);
 
       for (const order of ordersNeedingSync) {
         try {
+          console.log(`Syncing order ${order.order_number}...`);
           const { data, error } = await supabase.functions.invoke('holded-sync-order-number', {
             body: { orderId: order.id }
           });
@@ -95,6 +108,8 @@ const SalesOrdersList = () => {
               )
             );
             console.log(`✓ Sincronizado número ${data.holdedNumber} para ${order.order_number}`);
+          } else {
+            console.log('No holdedNumber in response:', data);
           }
         } catch (error) {
           console.error('Error syncing order', order.order_number, error);
@@ -103,7 +118,10 @@ const SalesOrdersList = () => {
     };
 
     if (orders.length > 0) {
+      console.log("Triggering sync with", orders.length, "orders");
       syncMissingHoldedNumbers();
+    } else {
+      console.log("No orders yet, skipping sync");
     }
   }, [orders.length, isHoldedActive]);
 
