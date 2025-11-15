@@ -65,38 +65,24 @@ const SalesOrdersList = () => {
   // Auto-sync missing Holded numbers
   useEffect(() => {
     const syncMissingHoldedNumbers = async () => {
-      console.log("=== SYNC CHECK ===");
-      console.log("isHoldedActive:", isHoldedActive);
-      console.log("orders.length:", orders.length);
-      
-      if (!isHoldedActive) {
-        console.log("❌ Holded not active, skipping sync");
-        return;
-      }
+      if (!isHoldedActive) return;
       
       const ordersNeedingSync = orders.filter(
         o => o.holded_document_id && !o.holded_document_number
       );
 
-      console.log("Orders needing sync:", ordersNeedingSync.length, ordersNeedingSync.map(o => o.order_number));
-
-      if (ordersNeedingSync.length === 0) {
-        console.log("✓ No orders need sync");
-        return;
-      }
-
-      console.log(`🔄 Sincronizando ${ordersNeedingSync.length} números de Holded...`);
+      if (ordersNeedingSync.length === 0) return;
 
       for (const order of ordersNeedingSync) {
         try {
-          console.log(`Syncing order ${order.order_number}...`);
           const { data, error } = await supabase.functions.invoke('holded-sync-order-number', {
             body: { orderId: order.id }
           });
 
           if (error) {
-            console.error('Error syncing Holded number:', error);
-            continue;
+            console.error('Error al sincronizar número de Holded:', error);
+            toast.error("Error: Holded no está configurado correctamente. Por favor, ve a Integraciones y reconecta Holded.");
+            break; // Stop trying after first error
           }
 
           if (data?.holdedNumber) {
@@ -107,21 +93,17 @@ const SalesOrdersList = () => {
                   : o
               )
             );
-            console.log(`✓ Sincronizado número ${data.holdedNumber} para ${order.order_number}`);
-          } else {
-            console.log('No holdedNumber in response:', data);
           }
         } catch (error) {
           console.error('Error syncing order', order.order_number, error);
+          toast.error("Error: Holded no está configurado correctamente. Por favor, ve a Integraciones y reconecta Holded.");
+          break;
         }
       }
     };
 
     if (orders.length > 0) {
-      console.log("Triggering sync with", orders.length, "orders");
       syncMissingHoldedNumbers();
-    } else {
-      console.log("No orders yet, skipping sync");
     }
   }, [orders.length, isHoldedActive]);
 
