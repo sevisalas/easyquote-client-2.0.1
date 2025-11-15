@@ -304,7 +304,7 @@ Deno.serve(async (req) => {
       .from('sales_orders')
       .update({
         holded_document_id: holdedData.id,
-        holded_document_number: holdedData.docNumber || null,
+        holded_document_number: holdedData.invoiceNum || null,
       })
       .eq('id', orderId);
 
@@ -316,7 +316,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         holdedId: holdedData.id,
-        holdedNumber: holdedData.docNumber 
+        holdedNumber: holdedData.invoiceNum 
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
