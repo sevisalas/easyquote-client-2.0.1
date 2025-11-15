@@ -139,6 +139,13 @@ Deno.serve(async (req) => {
     if (!apiKey) {
       throw new Error('HOLDED_API_KEY no está configurada');
     }
+    
+    // Log parcial de la API key para verificación (primeros 8 y últimos 4 caracteres)
+    const maskedKey = apiKey.length > 12 
+      ? `${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}`
+      : '***DEMASIADO CORTA***';
+    console.log('🔑 API Key (parcial):', maskedKey);
+    console.log('🔑 API Key length:', apiKey.length);
 
     // Build complete payload with all order data
     const items: any[] = [];
