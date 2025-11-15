@@ -7,6 +7,7 @@ export interface SalesOrder {
   order_number: string;
   quote_id?: string;
   customer_id?: string;
+  holded_contact_id?: string;
   user_id: string;
   status: 'draft' | 'pending' | 'in_production' | 'completed';
   order_date: string;
