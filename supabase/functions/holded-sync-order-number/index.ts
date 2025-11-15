@@ -114,7 +114,13 @@ serve(async (req) => {
 
     console.log("Looking for integration access with org:", organizationId, "integration:", integration.id);
 
-    const { data: access, error: accessError } = await supabase
+    // Use service role client to bypass RLS for reading integration access
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    const { data: access, error: accessError } = await supabaseAdmin
       .from("organization_integration_access")
       .select("access_token_encrypted")
       .eq("organization_id", organizationId)
@@ -132,8 +138,8 @@ serve(async (req) => {
       );
     }
 
-    // Decrypt the access token
-    const { data: decryptedToken, error: decryptError } = await supabase.rpc(
+    // Decrypt the access token using admin client
+    const { data: decryptedToken, error: decryptError } = await supabaseAdmin.rpc(
       "decrypt_credential",
       { encrypted_data: access.access_token_encrypted }
     );
