@@ -197,7 +197,18 @@ export const CustomerSelector = ({
   }, [searchValue, filteredCustomers.length, paginatedCustomers.length]);
 
   // Encontrar el cliente seleccionado
-  const selectedCustomer = customers?.find(customer => customer.id === value);
+  const selectedCustomer = useMemo(() => {
+    if (!value || !customers) return null;
+    
+    // Si el value tiene prefijo 'holded:', buscar en clientes de Holded
+    if (value.startsWith('holded:')) {
+      const holdedId = value.replace('holded:', '');
+      return customers.find(customer => customer.id === holdedId && customer.source === 'holded');
+    }
+    
+    // Si no tiene prefijo, buscar en clientes locales
+    return customers.find(customer => customer.id === value && customer.source === 'local');
+  }, [value, customers]);
 
   return (
     <div className="space-y-2">
@@ -328,7 +339,7 @@ export const CustomerSelector = ({
                                   <Check
                                     className={cn(
                                       "ml-auto h-4 w-4 flex-shrink-0",
-                                      value === customer.id ? "opacity-100" : "opacity-0"
+                                      value === `holded:${customer.id}` ? "opacity-100" : "opacity-0"
                                     )}
                                   />
                                 </div>
