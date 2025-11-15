@@ -62,6 +62,51 @@ const SalesOrdersList = () => {
     loadCustomers();
   }, [canAccessProduccion, navigate]);
 
+  // Auto-sync missing Holded numbers
+  useEffect(() => {
+    const syncMissingHoldedNumbers = async () => {
+      if (!isHoldedActive) return;
+      
+      const ordersNeedingSync = orders.filter(
+        o => o.holded_document_id && !o.holded_document_number
+      );
+
+      if (ordersNeedingSync.length === 0) return;
+
+      console.log(`Sincronizando ${ordersNeedingSync.length} números de Holded...`);
+
+      for (const order of ordersNeedingSync) {
+        try {
+          const { data, error } = await supabase.functions.invoke('holded-sync-order-number', {
+            body: { orderId: order.id }
+          });
+
+          if (error) {
+            console.error('Error syncing Holded number:', error);
+            continue;
+          }
+
+          if (data?.holdedNumber) {
+            setOrders(prevOrders =>
+              prevOrders.map(o =>
+                o.id === order.id
+                  ? { ...o, holded_document_number: data.holdedNumber }
+                  : o
+              )
+            );
+            console.log(`✓ Sincronizado número ${data.holdedNumber} para ${order.order_number}`);
+          }
+        } catch (error) {
+          console.error('Error syncing order', order.order_number, error);
+        }
+      }
+    };
+
+    if (orders.length > 0) {
+      syncMissingHoldedNumbers();
+    }
+  }, [orders.length, isHoldedActive]);
+
   const loadOrders = async () => {
     const data = await fetchSalesOrders();
     setOrders(data);
