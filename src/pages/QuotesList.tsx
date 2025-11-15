@@ -338,10 +338,7 @@ const QuotesList = () => {
                     <TableCell className="py-1.5 px-3 text-sm">{new Date(q.created_at).toLocaleDateString("es-ES")}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm font-medium">{q.quote_number}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm">
-                      <CustomerName 
-                        customerId={q.customer_id?.startsWith('holded:') ? undefined : q.customer_id}
-                        holdedContactId={q.customer_id?.startsWith('holded:') ? q.customer_id.replace('holded:', '') : undefined}
-                      />
+                      <CustomerName customerId={q.customer_id} />
                     </TableCell>
                     <TableCell className="py-1.5 px-3 text-sm">{q.description || ""}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm text-right font-medium">{fmtEUR(q.final_price)}</TableCell>

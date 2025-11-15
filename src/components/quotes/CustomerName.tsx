@@ -18,8 +18,23 @@ export const CustomerName = ({ customerId, holdedContactId, fallback = "—" }: 
 
     const fetchCustomerName = async () => {
       try {
-        // If customerId is provided, fetch from local customers
+        // If holdedContactId is provided explicitly, fetch from holded_contacts
+        if (holdedContactId) {
+          const { data: holdedContact } = await supabase
+            .from('holded_contacts')
+            .select('name')
+            .eq('id', holdedContactId)
+            .maybeSingle();
+
+          if (holdedContact) {
+            setCustomerName(holdedContact.name || fallback);
+            return;
+          }
+        }
+
+        // If customerId is provided, try both tables
         if (customerId) {
+          // First try local customers
           const { data: localCustomer } = await supabase
             .from('customers')
             .select('name')
@@ -30,14 +45,12 @@ export const CustomerName = ({ customerId, holdedContactId, fallback = "—" }: 
             setCustomerName(localCustomer.name || fallback);
             return;
           }
-        }
 
-        // If holdedContactId is provided, fetch from holded_contacts
-        if (holdedContactId) {
+          // If not found in customers, try holded_contacts
           const { data: holdedContact } = await supabase
             .from('holded_contacts')
             .select('name')
-            .eq('id', holdedContactId)
+            .eq('id', customerId)
             .maybeSingle();
 
           if (holdedContact) {
