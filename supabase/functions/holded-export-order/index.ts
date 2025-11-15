@@ -299,12 +299,15 @@ Deno.serve(async (req) => {
     const holdedData = JSON.parse(responseText);
     console.log('✅ Order exported to Holded:', holdedData);
 
+    // Holded returns an array, get the first element
+    const holdedResult = Array.isArray(holdedData) ? holdedData[0] : holdedData;
+
     // Update order with Holded IDs
     const { error: updateError } = await supabase
       .from('sales_orders')
       .update({
-        holded_document_id: holdedData.id,
-        holded_document_number: holdedData.invoiceNum || null,
+        holded_document_id: holdedResult.id,
+        holded_document_number: holdedResult.invoiceNum || null,
       })
       .eq('id', orderId);
 
@@ -315,8 +318,8 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        holdedId: holdedData.id,
-        holdedNumber: holdedData.invoiceNum 
+        holdedId: holdedResult.id,
+        holdedNumber: holdedResult.invoiceNum 
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
