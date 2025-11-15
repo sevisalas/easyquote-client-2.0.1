@@ -61,13 +61,17 @@ serve(async (req) => {
     }
 
     // Get user's organization (from the authenticated user, not the order creator)
+    let organizationId: string | null = null;
+
     const { data: orgMember } = await supabase
       .from("organization_members")
       .select("organization_id")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (!orgMember) {
+    if (orgMember) {
+      organizationId = orgMember.organization_id;
+    } else {
       // Try to get organization where user is the owner
       const { data: org } = await supabase
         .from("organizations")
@@ -75,14 +79,16 @@ serve(async (req) => {
         .eq("api_user_id", user.id)
         .maybeSingle();
       
-      if (!org) {
-        return new Response(
-          JSON.stringify({ error: "Organization not found" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+      if (org) {
+        organizationId = org.id;
       }
-      
-      orgMember.organization_id = org.id;
+    }
+
+    if (!organizationId) {
+      return new Response(
+        JSON.stringify({ error: "Organization not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Get Holded access token
@@ -102,10 +108,10 @@ serve(async (req) => {
     const { data: access } = await supabase
       .from("organization_integration_access")
       .select("access_token_encrypted")
-      .eq("organization_id", orgMember.organization_id)
+      .eq("organization_id", organizationId)
       .eq("integration_id", integration.id)
       .eq("is_active", true)
-      .single();
+      .maybeSingle();
 
     if (!access?.access_token_encrypted) {
       return new Response(
