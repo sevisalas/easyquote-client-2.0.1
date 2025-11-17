@@ -41,10 +41,11 @@ serve(async (req) => {
     const { data: roles } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('user_id', authUser.id)
-      .single();
+      .eq('user_id', authUser.id);
 
-    if (!roles || roles.role !== 'superadmin') {
+    const isSuperAdmin = roles?.some(r => r.role === 'superadmin') || false;
+
+    if (!isSuperAdmin) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized. Only superadmins can access this endpoint.' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -52,6 +53,8 @@ serve(async (req) => {
     }
 
     const { userId } = await req.json();
+
+    console.log('Fetching user:', userId);
 
     if (!userId) {
       return new Response(
@@ -64,12 +67,14 @@ serve(async (req) => {
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
 
     if (userError) {
-      console.error('Error fetching user:', userError);
+      console.error('Error fetching user by ID:', userId, userError);
       return new Response(
         JSON.stringify({ error: userError.message }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('Successfully fetched user:', userData.user.email);
 
     return new Response(
       JSON.stringify({ 
@@ -85,8 +90,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in get-user-by-id function:', error);
+    console.error('Error stack:', error.stack);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
