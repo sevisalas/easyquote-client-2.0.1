@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, X, Search, Download } from "lucide-react";
+import { CalendarIcon, X, Search, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,6 +67,10 @@ const QuotesList = () => {
   const [quoteNumberFilter, setQuoteNumberFilter] = useState("");
   const [dateFromFilter, setDateFromFilter] = useState<Date | undefined>();
   const [dateToFilter, setDateToFilter] = useState<Date | undefined>();
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 25;
 
   useEffect(() => {
     document.title = "Presupuestos | Listado";
@@ -79,6 +83,11 @@ const QuotesList = () => {
   });
 
   const getCustomerName = (id?: string | null) => customers.find((c: any) => c.id === id)?.name || "—";
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [customerFilter, statusFilter, quoteNumberFilter, dateFromFilter, dateToFilter]);
 
   // Filtered quotes based on all filters
   const filteredQuotes = useMemo(() => {
@@ -110,6 +119,12 @@ const QuotesList = () => {
       return true;
     });
   }, [quotes, customerFilter, statusFilter, quoteNumberFilter, dateFromFilter, dateToFilter, customers]);
+
+  // Paginated quotes
+  const paginatedQuotes = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredQuotes.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredQuotes, currentPage, itemsPerPage]);
 
   const clearAllFilters = () => {
     setCustomerFilter("");
@@ -333,7 +348,7 @@ const QuotesList = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredQuotes.map((q: any) => (
+                {paginatedQuotes.map((q: any) => (
                   <TableRow key={q.id} className="h-auto">
                     <TableCell className="py-1.5 px-3 text-sm">{new Date(q.created_at).toLocaleDateString("es-ES")}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm font-medium">{q.quote_number}</TableCell>
@@ -403,6 +418,114 @@ const QuotesList = () => {
                 ))}
               </TableBody>
             </Table>
+          )}
+
+          {/* Pagination */}
+          {filteredQuotes.length > itemsPerPage && (
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                title="Primera página"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                title="Anterior"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              {/* Números de página */}
+              {(() => {
+                const totalPages = Math.ceil(filteredQuotes.length / itemsPerPage);
+                const pageNumbers = [];
+                const showPages = 5;
+                
+                let startPage = Math.max(1, currentPage - Math.floor(showPages / 2));
+                let endPage = Math.min(totalPages, startPage + showPages - 1);
+                
+                if (endPage - startPage < showPages - 1) {
+                  startPage = Math.max(1, endPage - showPages + 1);
+                }
+                
+                if (startPage > 1) {
+                  pageNumbers.push(
+                    <Button
+                      key={1}
+                      variant={currentPage === 1 ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(1)}
+                    >
+                      1
+                    </Button>
+                  );
+                  if (startPage > 2) {
+                    pageNumbers.push(
+                      <span key="dots1" className="px-2">...</span>
+                    );
+                  }
+                }
+                
+                for (let i = startPage; i <= endPage; i++) {
+                  pageNumbers.push(
+                    <Button
+                      key={i}
+                      variant={currentPage === i ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(i)}
+                    >
+                      {i}
+                    </Button>
+                  );
+                }
+                
+                if (endPage < totalPages) {
+                  if (endPage < totalPages - 1) {
+                    pageNumbers.push(
+                      <span key="dots2" className="px-2">...</span>
+                    );
+                  }
+                  pageNumbers.push(
+                    <Button
+                      key={totalPages}
+                      variant={currentPage === totalPages ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(totalPages)}
+                    >
+                      {totalPages}
+                    </Button>
+                  );
+                }
+                
+                return pageNumbers;
+              })()}
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+                disabled={currentPage >= Math.ceil(filteredQuotes.length / itemsPerPage)}
+                title="Siguiente"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(Math.ceil(filteredQuotes.length / itemsPerPage))}
+                disabled={currentPage >= Math.ceil(filteredQuotes.length / itemsPerPage)}
+                title="Última página"
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
