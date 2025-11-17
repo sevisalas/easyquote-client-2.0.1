@@ -226,7 +226,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/admin/productos/test/${product.id}`)}
+                        onClick={() => navigate(`/admin/productos/test?productId=${product.id}`)}
                         title="Test"
                         className="h-7 w-7 p-0"
                       >
