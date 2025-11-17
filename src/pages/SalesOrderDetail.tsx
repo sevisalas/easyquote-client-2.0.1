@@ -186,45 +186,6 @@ const SalesOrderDetail = () => {
       
       // Reload to get the holded_document_id
       await loadOrderData();
-      
-      // Automatically download PDF after export
-      if (result.holdedId) {
-        try {
-          toast.loading('Descargando PDF...');
-          
-          const pdfResponse = await fetch(
-            'https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/holded-download-pdf',
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session.session.access_token}`
-              },
-              body: JSON.stringify({ 
-                holdedDocumentId: result.holdedId,
-                documentType: 'salesorder'
-              })
-            }
-          );
-
-          if (pdfResponse.ok) {
-            const blob = await pdfResponse.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `pedido-${result.holdedNumber || order.order_number}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-            
-            toast.success('PDF descargado correctamente');
-          }
-        } catch (pdfError) {
-          console.error('Error downloading PDF:', pdfError);
-          // Don't show error toast for PDF download failure, export was successful
-        }
-      }
     } catch (error: any) {
       console.error('Error exporting to Holded:', error);
       toast.error(error.message || 'Error al exportar a Holded');
