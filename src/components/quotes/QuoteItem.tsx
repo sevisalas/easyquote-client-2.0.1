@@ -601,6 +601,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     }
   }, [pricing, productId]);
 
+  // Mark product as loaded after initial pricing fetch
+  useEffect(() => {
+    if (pricing && isNewProduct) {
+      console.log("✅ Producto cargado exitosamente, marcando como no nuevo");
+      setIsNewProduct(false);
+    }
+  }, [pricing, isNewProduct]);
+
   const handlePromptChange = (id: string, value: any, label: string) => {
     console.log("🔄 Usuario cambió prompt manualmente:", { id, value, label });
     setUserHasChangedPrompts(true); // Marcar que el usuario ha hecho cambios manuales
