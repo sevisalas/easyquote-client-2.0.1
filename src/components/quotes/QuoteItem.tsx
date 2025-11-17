@@ -154,10 +154,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     }
   }, [productId, promptValues, itemDescription, itemAdditionals, multiEnabled, qtyPrompt, qtyInputs, isExpanded]);
 
+  // Debounce promptValues changes - RESET IMMEDIATELY when productId changes
   useEffect(() => {
     const t = setTimeout(() => setDebouncedPromptValues(promptValues), 350);
     return () => clearTimeout(t);
-  }, [promptValues]);
+  }, [promptValues, productId]); // Added productId to immediately clear on product change
 
   const fetchProducts = async (): Promise<any[]> => {
     const token = sessionStorage.getItem("easyquote_token");
