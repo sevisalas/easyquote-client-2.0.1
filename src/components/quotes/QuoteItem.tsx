@@ -169,11 +169,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // that uses previousProductIdRef to detect real product changes
 
   // Debounce promptValues changes - pero NO si es un producto nuevo (cargando valores iniciales)
+  // IMPORTANTE: Incluir productId en dependencies para cancelar debounce al cambiar de producto
   useEffect(() => {
     if (isNewProduct) return; // No debounce si aún no hemos inicializado los valores por defecto
     const t = setTimeout(() => setDebouncedPromptValues(promptValues), 350);
     return () => clearTimeout(t);
-  }, [promptValues, isNewProduct]);
+  }, [promptValues, isNewProduct, productId]);
 
   const fetchProducts = async (): Promise<any[]> => {
     const token = sessionStorage.getItem("easyquote_token");
