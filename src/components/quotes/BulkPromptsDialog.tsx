@@ -20,9 +20,9 @@ interface BulkPromptData {
   promptType: number;
   valueRequired: boolean;
   valueOptionRange: string;
-  valueQuantityAllowedDecimals: number;
-  valueQuantityMin: number;
-  valueQuantityMax: number;
+  valueQuantityAllowedDecimals: number | null;
+  valueQuantityMin: number | null;
+  valueQuantityMax: number | null;
   promptSeq: number;
 }
 
@@ -77,9 +77,9 @@ export function BulkPromptsDialog({
     promptType: promptTypes[0]?.id || 0,
     valueRequired: false,
     valueOptionRange: "",
-    valueQuantityAllowedDecimals: 0,
-    valueQuantityMin: 1,
-    valueQuantityMax: 9999,
+    valueQuantityAllowedDecimals: null,
+    valueQuantityMin: null,
+    valueQuantityMax: null,
     promptSeq: seq
   });
 
@@ -98,9 +98,33 @@ export function BulkPromptsDialog({
   };
 
   const updatePrompt = (index: number, field: keyof BulkPromptData, value: any) => {
-    const updated = prompts.map((prompt, i) => 
-      i === index ? { ...prompt, [field]: value } : prompt
-    );
+    const updated = prompts.map((prompt, i) => {
+      if (i === index) {
+        const newPrompt = { ...prompt, [field]: value };
+        
+        // Si se cambia el tipo de prompt, resetear campos específicos del tipo
+        if (field === 'promptType') {
+          const newType = promptTypes.find(type => type.id === value);
+          const isNumericType = newType?.promptType === "Number" || newType?.promptType === "Quantity";
+          
+          if (isNumericType) {
+            // Si es numérico, establecer valores por defecto
+            newPrompt.valueQuantityAllowedDecimals = 0;
+            newPrompt.valueQuantityMin = 1;
+            newPrompt.valueQuantityMax = 9999;
+            newPrompt.valueOptionRange = "";
+          } else {
+            // Si no es numérico, establecer campos numéricos como null
+            newPrompt.valueQuantityAllowedDecimals = null;
+            newPrompt.valueQuantityMin = null;
+            newPrompt.valueQuantityMax = null;
+          }
+        }
+        
+        return newPrompt;
+      }
+      return prompt;
+    });
     setPrompts(updated);
   };
 
@@ -250,8 +274,8 @@ export function BulkPromptsDialog({
                             <Label className="text-xs">Decs.</Label>
                             <Input
                               type="number"
-                              value={prompt.valueQuantityAllowedDecimals}
-                              onChange={(e) => updatePrompt(index, 'valueQuantityAllowedDecimals', parseInt(e.target.value) || 0)}
+                              value={prompt.valueQuantityAllowedDecimals ?? ""}
+                              onChange={(e) => updatePrompt(index, 'valueQuantityAllowedDecimals', e.target.value === "" ? null : parseInt(e.target.value) || 0)}
                               className="h-8 text-xs"
                             />
                           </div>
@@ -259,8 +283,8 @@ export function BulkPromptsDialog({
                             <Label className="text-xs">Min</Label>
                             <Input
                               type="number"
-                              value={prompt.valueQuantityMin}
-                              onChange={(e) => updatePrompt(index, 'valueQuantityMin', parseFloat(e.target.value) || 1)}
+                              value={prompt.valueQuantityMin ?? ""}
+                              onChange={(e) => updatePrompt(index, 'valueQuantityMin', e.target.value === "" ? null : parseFloat(e.target.value) || 1)}
                               className="h-8 text-xs"
                             />
                           </div>
@@ -268,8 +292,8 @@ export function BulkPromptsDialog({
                             <Label className="text-xs">Max</Label>
                             <Input
                               type="number"
-                              value={prompt.valueQuantityMax}
-                              onChange={(e) => updatePrompt(index, 'valueQuantityMax', parseFloat(e.target.value) || 9999)}
+                              value={prompt.valueQuantityMax ?? ""}
+                              onChange={(e) => updatePrompt(index, 'valueQuantityMax', e.target.value === "" ? null : parseFloat(e.target.value) || 9999)}
                               className="h-8 text-xs"
                             />
                           </div>
