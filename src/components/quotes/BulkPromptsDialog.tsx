@@ -104,20 +104,14 @@ export function BulkPromptsDialog({
         
         // Si se cambia el tipo de prompt, resetear campos específicos del tipo
         if (field === 'promptType') {
-          // Verificar por ID: 1 = Number (tipo numérico)
-          const isNumericType = value === 1;
+          // Siempre establecer campos numéricos como null
+          newPrompt.valueQuantityAllowedDecimals = null;
+          newPrompt.valueQuantityMin = null;
+          newPrompt.valueQuantityMax = null;
           
-          if (isNumericType) {
-            // Si es numérico, establecer valores por defecto
-            newPrompt.valueQuantityAllowedDecimals = 0;
-            newPrompt.valueQuantityMin = 1;
-            newPrompt.valueQuantityMax = 9999;
+          // Limpiar rango si es tipo numérico
+          if (value === 1) {
             newPrompt.valueOptionRange = "";
-          } else {
-            // Si no es numérico, establecer campos numéricos como null
-            newPrompt.valueQuantityAllowedDecimals = null;
-            newPrompt.valueQuantityMin = null;
-            newPrompt.valueQuantityMax = null;
           }
         }
         
