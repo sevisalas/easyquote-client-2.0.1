@@ -112,7 +112,10 @@ export default function ProductTestPage() {
         // Decode token to get subscriberId
         const tokenParts = token.split('.');
         const payload = JSON.parse(atob(tokenParts[1]));
-        const subscriberId = payload.subscriberId || payload.sub;
+        const subscriberId = payload.SubscriberID || payload.subscriberId || payload.sub;
+        
+        console.log("Token payload:", payload);
+        console.log("Extracted subscriberId:", subscriberId);
 
         // Find the Excel file for this product
         const excelFile = excelFiles.find((f: any) => f.id === selectedProduct.excelfileId);
