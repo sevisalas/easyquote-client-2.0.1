@@ -127,11 +127,18 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setDebouncedPromptValues(normalizedPrompts); // También inicializar debounced para evitar re-fetch
       setItemDescription(initialData.itemDescription || "");
       
-      // Si hay outputs guardados, marcar que no necesitamos fetchear
-      if (initialData.outputs && Array.isArray(initialData.outputs) && initialData.outputs.length > 0) {
-        console.log('✅ Initial outputs found:', initialData.outputs);
+      // Solo marcar hasInitialOutputs si TANTO outputs COMO prompts están guardados
+      const hasPromptsData = initialData.prompts && Object.keys(initialData.prompts).length > 0;
+      const hasOutputsData = initialData.outputs && Array.isArray(initialData.outputs) && initialData.outputs.length > 0;
+      
+      if (hasOutputsData && hasPromptsData) {
+        console.log('✅ Initial outputs and prompts found:', { outputs: initialData.outputs, prompts: initialData.prompts });
         setHasInitialOutputs(true);
-        setIsNewProduct(false); // No es un producto "nuevo" si ya tiene datos guardados
+        setIsNewProduct(false);
+      } else {
+        console.log('⚠️ Missing prompts or outputs, will fetch from API:', { hasPromptsData, hasOutputsData });
+        setHasInitialOutputs(false);
+        setIsNewProduct(true); // Forzar carga desde API
       }
       
       // Convertir formato antiguo a nuevo si es necesario
@@ -257,51 +264,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     },
   });
 
-  // Cargar definiciones de prompts desde master-files cuando hay datos guardados
-  const { data: masterFileData } = useQuery({
-    queryKey: ["easyquote-master-files", productId],
-    enabled: !!hasToken && !!productId && hasInitialOutputs,
-    retry: 1,
-    staleTime: Infinity,
-    queryFn: async () => {
-      const token = sessionStorage.getItem("easyquote_token");
-      if (!token) throw new Error("No token");
-      
-      // Decodificar token para obtener subscriberId
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const subscriberId = payload.SubscriberID;
-      
-      // Obtener el archivo Excel asociado al producto
-      const selectedProduct = products?.find((p: any) => String(p.id) === String(productId));
-      if (!selectedProduct?.excelfileId) throw new Error("No excelfileId");
-      
-      const { data: excelFile } = await supabase
-        .from('excel_files')
-        .select('filename')
-        .eq('file_id', selectedProduct.excelfileId)
-        .single();
-      
-      if (!excelFile) throw new Error("Excel file not found");
-      
-      const { data, error } = await invokeEasyQuoteFunction("easyquote-master-files", {
-        token,
-        subscriberId,
-        fileId: selectedProduct.excelfileId,
-        fileName: excelFile.filename
-      });
-      
-      if (error) throw error;
-      return data;
-    }
-  });
-
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct, userHasChangedPrompts],
-    // Permitir query si:
-    // 1. Es producto nuevo Y no hay valores antiguos en debounce (carga inicial limpia)
-    // 2. NO es producto nuevo (producto ya cargado, puede recibir updates)
-    enabled: !!hasToken && !!productId && !hasInitialOutputs && 
-             (isNewProduct ? Object.keys(debouncedPromptValues).length === 0 : true),
+    // Solo NO ejecutar si tenemos datos completos guardados (outputs Y prompts)
+    enabled: !!hasToken && !!productId && !hasInitialOutputs,
     retry: false, // No reintentar automáticamente para productos con error 500
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
@@ -578,9 +544,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     });
   }, [qtyCount]);
 
-  // Usar master-files si está disponible (datos guardados), sino pricing (datos nuevos)
-  const productData = hasInitialOutputs ? masterFileData : pricing;
-  const prompts = extractPrompts(productData);
+  const prompts = extractPrompts(pricing);
 
   const formatEUR = (val: any) => {
     const num = typeof val === "number" ? val : parseFloat(String(val).replace(/\./g, "").replace(",", "."));
@@ -673,11 +637,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     return result;
   };
 
-  // Initialize all prompts when pricing or master-files data loads
+  // Initialize all prompts when pricing data loads
   useEffect(() => {
-    const dataSource = hasInitialOutputs ? masterFileData : pricing;
-    if (dataSource && productId && !hasInitialOutputs) {
-      const allPrompts = extractAllPrompts(dataSource);
+    if (pricing && productId && !hasInitialOutputs) {
+      const allPrompts = extractAllPrompts(pricing);
       
       // Merge with existing prompts (preserve user changes)
       setPromptValues((prev) => {
@@ -699,7 +662,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         setIsNewProduct(false);
       }
     }
-  }, [pricing, masterFileData, productId, isNewProduct, hasInitialOutputs]);
+  }, [pricing, productId, isNewProduct, hasInitialOutputs]);
 
   const handlePromptChange = (id: string, value: any, label: string) => {
     console.log("🔄 Usuario cambió prompt manualmente:", { id, value, label });
@@ -708,9 +671,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     setPromptValues((prev) => {
       let order = prev[id]?.order;
       
-      const dataSource = hasInitialOutputs ? masterFileData : pricing;
-      if (order === undefined && dataSource) {
-        const prompts = (dataSource as any)?.prompts || [];
+      if (order === undefined && pricing) {
+        const prompts = (pricing as any)?.prompts || [];
         const promptDef = prompts.find((p: any) => String(p.id) === String(id));
         if (promptDef) {
           order = Number.isFinite(Number(promptDef.promptSequence)) 
@@ -915,8 +877,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                     <p className="font-semibold">Por favor, selecciona otro producto o contacta al administrador.</p>
                   </AlertDescription>
                 </Alert>
-              ) : productData ? (
-                <PromptsForm product={productData} values={promptValues} onChange={handlePromptChange} />
+              ) : pricing ? (
+                <PromptsForm product={pricing} values={promptValues} onChange={handlePromptChange} />
               ) : (
                 <p className="text-sm text-muted-foreground">Cargando prompts…</p>
               )}
