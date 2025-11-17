@@ -259,21 +259,31 @@ export default function SalesOrderNew() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuario no autenticado");
 
+      // Separar customer_id y holded_contact_id
+      let actualCustomerId = customerId;
+      let holdedContactId = null;
+
+      if (customerId.startsWith('holded:')) {
+        holdedContactId = customerId.replace('holded:', '');
+        actualCustomerId = holdedContactId;
+      }
+
       // Verificar si el cliente existe en la tabla customers
       const { data: existingCustomer } = await supabase
         .from('customers')
         .select('id')
-        .eq('id', customerId)
+        .eq('id', actualCustomerId)
         .maybeSingle();
 
-      let finalCustomerId = customerId;
+      let finalCustomerId = actualCustomerId;
+      let finalHoldedContactId = holdedContactId;
 
       // Si no existe en customers, verificar si es un contacto de Holded
       if (!existingCustomer) {
         const { data: holdedContact } = await supabase
           .from('holded_contacts')
           .select('*')
-          .eq('id', customerId)
+          .eq('id', actualCustomerId)
           .maybeSingle();
 
         if (holdedContact) {
@@ -292,6 +302,7 @@ export default function SalesOrderNew() {
 
           if (customerError) throw new Error(`Error al crear cliente: ${customerError.message}`);
           finalCustomerId = newCustomer.id;
+          finalHoldedContactId = actualCustomerId;
         } else {
           throw new Error("El cliente seleccionado no existe");
         }
@@ -305,6 +316,7 @@ export default function SalesOrderNew() {
       const orderData = {
         user_id: user.id,
         customer_id: finalCustomerId,
+        holded_contact_id: finalHoldedContactId,
         order_number: orderNumber,
         title: title || `Pedido ${orderNumber}`,
         description: description || itemsArray[0]?.itemDescription || "",
