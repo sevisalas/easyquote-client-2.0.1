@@ -130,13 +130,6 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
                     <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">Descuento</span>
                   )}
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {additional.type === "net_amount"
-                    ? "Importe neto"
-                    : additional.type === "quantity_multiplier"
-                      ? "Por cantidad total"
-                      : "Porcentaje sobre subtotal"}
-                </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 <Input
