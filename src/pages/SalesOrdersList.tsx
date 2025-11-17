@@ -267,6 +267,7 @@ const SalesOrdersList = () => {
         .insert({
           user_id: originalOrder.user_id,
           customer_id: originalOrder.customer_id,
+          holded_contact_id: originalOrder.holded_contact_id,
           order_number: orderNumber,
           title: originalOrder.title ? `${originalOrder.title} (Copia)` : undefined,
           description: originalOrder.description,
