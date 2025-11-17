@@ -102,13 +102,53 @@ export default function ProductTestPage() {
       if (!token) return;
 
       try {
+        // Get product details to extract excelfileId
+        const selectedProduct = products.find((p: any) => p.id === productId);
+        if (!selectedProduct) {
+          console.error("Product not found");
+          return;
+        }
+
+        // Decode token to get subscriberId
+        const tokenParts = token.split('.');
+        const payload = JSON.parse(atob(tokenParts[1]));
+        const subscriberId = payload.subscriberId || payload.sub;
+
+        // Find the Excel file for this product
+        const excelFile = excelFiles.find((f: any) => f.id === selectedProduct.excelfileId);
+        if (!excelFile) {
+          console.error("Excel file not found for product");
+          // Fallback to pricing only
+          const { data: pricingData, error: pricingError } = await invokeEasyQuoteFunction("easyquote-pricing", {
+            token, 
+            productId: productId,
+            inputs: []
+          });
+          
+          if (pricingError) throw pricingError;
+          
+          setProductDetail(pricingData);
+          
+          const initialValues: Record<string, any> = {};
+          (pricingData?.prompts || []).forEach((prompt: any) => {
+            initialValues[prompt.id] = prompt.currentValue;
+          });
+          setPromptValues(initialValues);
+          return;
+        }
+
         // First, get ALL prompts from master-files
         const { data: masterData, error: masterError } = await invokeEasyQuoteFunction("easyquote-master-files", {
           token,
-          productId: productId
+          subscriberId,
+          fileId: selectedProduct.excelfileId,
+          fileName: excelFile.filename || excelFile.fileName || excelFile.name
         });
         
-        if (masterError) throw masterError;
+        if (masterError) {
+          console.error("Master files error:", masterError);
+          throw masterError;
+        }
         
         console.log("Master files data:", masterData);
         
