@@ -93,8 +93,23 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     initializedRef.current = true;
     try {
       setProductId(initialData.productId || "");
-      setPromptValues(initialData.prompts || {});
-      setDebouncedPromptValues(initialData.prompts || {}); // También inicializar debounced para evitar re-fetch
+      
+      // Normalize prompts format: extract just the value if it's an object with {label, value, order}
+      const normalizedPrompts: Record<string, any> = {};
+      if (initialData.prompts) {
+        Object.entries(initialData.prompts).forEach(([promptId, promptData]: [string, any]) => {
+          // If it's an object with a value property, extract just the value
+          if (promptData && typeof promptData === 'object' && 'value' in promptData) {
+            normalizedPrompts[promptId] = promptData.value;
+          } else {
+            // Otherwise use the value as-is
+            normalizedPrompts[promptId] = promptData;
+          }
+        });
+      }
+      
+      setPromptValues(normalizedPrompts);
+      setDebouncedPromptValues(normalizedPrompts); // También inicializar debounced para evitar re-fetch
       setItemDescription(initialData.itemDescription || "");
       
       // Si hay outputs guardados, marcar que no necesitamos fetchear
