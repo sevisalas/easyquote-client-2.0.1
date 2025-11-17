@@ -347,6 +347,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         setIsNewProduct(false);
       }
       
+      // Si obtuvimos nuevos outputs, desactivar hasInitialOutputs para que se usen los nuevos
+      if (data?.outputValues && hasInitialOutputs) {
+        console.log("✅ Nuevos outputs recibidos, desactivando hasInitialOutputs para usar datos actualizados");
+        setHasInitialOutputs(false);
+      }
+      
       return data;
     },
   });
@@ -414,11 +420,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Derive prompts and outputs
   const outputs = useMemo(() => {
-    // Si hay outputs guardados, usarlos
-    if (hasInitialOutputs && initialData?.outputs) {
+    // Si hay outputs guardados Y NO hemos hecho ningún cambio aún, usarlos
+    if (hasInitialOutputs && initialData?.outputs && !pricing?.outputValues) {
       return initialData.outputs;
     }
-    // Si no, extraer desde pricing
+    // Una vez que pricing tiene datos (después de GET o PATCH), usar esos
     return Array.isArray((pricing as any)?.outputValues) ? (pricing as any).outputValues : [];
   }, [pricing, hasInitialOutputs, initialData]);
   const imageOutputs = useMemo(
