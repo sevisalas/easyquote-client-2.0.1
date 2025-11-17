@@ -452,7 +452,7 @@ Deno.serve(async (req) => {
           
           const itemData: any = {
             name: cleanName,
-            desc: additional.description || cleanName,
+            desc: '',
             units: 1,
             subtotal: price,
             taxes: ["s_iva_21"]
