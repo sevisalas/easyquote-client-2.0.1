@@ -225,8 +225,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
       
-      // If this is a new product, use GET without inputs to load all prompts and outputs
-      const inputsToSend = isNewProduct ? [] : (() => {
+      console.log("🔥 Fetching pricing for product:", productId, "isNewProduct:", isNewProduct);
+
+      // Si es producto nuevo, NO enviar inputs en absoluto para forzar GET limpio
+      const requestBody: any = {
+        token,
+        productId
+      };
+
+      // Solo incluir inputs si NO es un producto nuevo
+      if (!isNewProduct) {
         const norm: Record<string, any> = {};
         Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
           // Extract actual value if it's stored as {label, value}
@@ -250,17 +258,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             norm[k] = actualValue;
           }
         });
-        return Object.entries(norm).map(([id, value]) => ({ id, value }));
-      })();
+        const inputsArray = Object.entries(norm).map(([id, value]) => ({ id, value }));
+        if (inputsArray.length > 0) {
+          requestBody.inputs = inputsArray;
+        }
+      }
 
-      console.log("🔥 Fetching pricing for product:", productId, "isNewProduct:", isNewProduct, "inputs:", inputsToSend);
+      console.log("📤 Request body:", requestBody);
 
       // Usar solo la edge function para evitar errores con IDs incorrectos
-      const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
-        token,
-        productId,
-        inputs: inputsToSend
-      });
+      const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", requestBody);
       
       if (error) {
         if (error.status === 401 || error.code === 'EASYQUOTE_UNAUTHORIZED') {
