@@ -154,11 +154,25 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     }
   }, [productId, promptValues, itemDescription, itemAdditionals, multiEnabled, qtyPrompt, qtyInputs, isExpanded]);
 
-  // Debounce promptValues changes - RESET IMMEDIATELY when productId changes
+  // Reset ALL states when productId changes - this is a NEW product, not an update
+  useEffect(() => {
+    if (!productId) return;
+    
+    // Clear all product-specific states immediately
+    setPromptValues({});
+    setDebouncedPromptValues({});
+    setMultiEnabled(false);
+    setQtyPrompt("");
+    setQtyInputs(["", "", "", "", ""]);
+    setItemAdditionals([]);
+    setForceRecalculate(false);
+  }, [productId]);
+
+  // Debounce promptValues changes
   useEffect(() => {
     const t = setTimeout(() => setDebouncedPromptValues(promptValues), 350);
     return () => clearTimeout(t);
-  }, [promptValues, productId]); // Added productId to immediately clear on product change
+  }, [promptValues]);
 
   const fetchProducts = async (): Promise<any[]> => {
     const token = sessionStorage.getItem("easyquote_token");
