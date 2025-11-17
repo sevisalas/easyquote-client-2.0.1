@@ -140,21 +140,14 @@ export default function QuoteEdit() {
     queryKey: ["quote", id],
     queryFn: () => fetchQuote(id!),
     enabled: !!id,
-    staleTime: 0, // Always fetch fresh data
-    gcTime: 0, // Don't cache (gcTime replaces cacheTime in newer versions)
   });
-  
-  // Force refetch on mount
-  useEffect(() => {
-    if (id) {
-      queryClient.invalidateQueries({ queryKey: ["quote", id] });
-    }
-  }, [id, queryClient]);
 
   // Customers are now handled by CustomerSelector component
 
   useEffect(() => {
+    console.log('🔥🔥🔥 USE EFFECT CALLED - quote exists:', !!quote);
     if (quote) {
+      console.log('🔥🔥🔥 QUOTE DATA:', JSON.stringify(quote, null, 2));
       // Detect if customer_id belongs to holded_contacts and add prefix for selector
       const checkCustomerSource = async () => {
         if (quote.customer_id) {
