@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
-import PromptsForm, { extractPrompts, isVisiblePrompt, type PromptDef } from "@/components/quotes/PromptsForm";
+import PromptsForm, { extractPrompts, type PromptDef } from "@/components/quotes/PromptsForm";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -689,63 +689,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const selectedProductInfo = products?.find((p: any) => String(p.id) === String(productId));
   const productName = selectedProductInfo ? getProductLabel(selectedProductInfo) : "";
 
-  // Filter visible prompts based on product configuration
-  const visiblePrompts = useMemo(() => {
-    if (!pricing) return promptValues;
-    
-    const allPrompts = extractPrompts(pricing);
-    const effectiveValues: Record<string, any> = {};
-    
-    // Extract actual values from promptValues
-    Object.entries(promptValues).forEach(([key, val]) => {
-      effectiveValues[key] = (val && typeof val === 'object' && 'value' in val) ? val.value : val;
-    });
-    
-    // Filter to only include visible prompts
-    const visiblePromptIds = new Set(
-      allPrompts.filter(p => isVisiblePrompt(p, effectiveValues)).map(p => p.id)
-    );
-    
-    // Build filtered prompts with FULL structure preserved
-    const filtered: Record<string, any> = {};
-    Object.entries(promptValues).forEach(([key, value]) => {
-      if (visiblePromptIds.has(key)) {
-        // CRITICAL: Always preserve the full {label, value, order} structure
-        // If value is already an object with label/value/order, keep it
-        // Otherwise, construct it from the prompt definition
-        if (typeof value === 'object' && value !== null && 'label' in value && 'value' in value) {
-          filtered[key] = value;
-        } else {
-          // Find prompt definition to get label
-          const promptDef = allPrompts.find(p => p.id === key);
-          // Try to get order from pricing.prompts if available
-          let order = 999;
-          if (pricing) {
-            const pricingPrompts = (pricing as any)?.prompts || [];
-            const pricingPrompt = pricingPrompts.find((p: any) => String(p.id) === String(key));
-            if (pricingPrompt) {
-              order = Number.isFinite(Number(pricingPrompt.promptSequence)) 
-                ? Number(pricingPrompt.promptSequence) 
-                : (Number.isFinite(Number(pricingPrompt.order)) ? Number(pricingPrompt.order) : 999);
-            }
-          }
-          filtered[key] = {
-            label: promptDef?.label || key,
-            value: value,
-            order: order
-          };
-        }
-      }
-    });
-    
-    return filtered;
-  }, [pricing, promptValues]);
-
   // Sync with parent (without adding additionals to product name)
   useEffect(() => {
     onChange?.(id, {
       productId,
-      prompts: visiblePrompts, // Use filtered prompts
+      prompts: promptValues, // Save ALL prompts, visibility filtering is only for Holded export
       outputs,
       price: finalPrice,
       multi: multiEnabled ? { qtyPrompt, qtyInputs, rows: multiRows } : null,
@@ -753,7 +701,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       itemAdditionals,
       isFinalized: initialData?.isFinalized, // Preserve isFinalized state
     });
-  }, [id, onChange, productId, visiblePrompts, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, productName, itemAdditionals, initialData?.isFinalized]);
+  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, productName, itemAdditionals, initialData?.isFinalized]);
 
   const isComplete = productId && priceOutput && finalPrice > 0;
 
