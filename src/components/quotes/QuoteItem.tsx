@@ -257,6 +257,44 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     },
   });
 
+  // Cargar definiciones de prompts desde master-files cuando hay datos guardados
+  const { data: masterFileData } = useQuery({
+    queryKey: ["easyquote-master-files", productId],
+    enabled: !!hasToken && !!productId && hasInitialOutputs,
+    retry: 1,
+    staleTime: Infinity,
+    queryFn: async () => {
+      const token = sessionStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No token");
+      
+      // Decodificar token para obtener subscriberId
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const subscriberId = payload.SubscriberID;
+      
+      // Obtener el archivo Excel asociado al producto
+      const selectedProduct = products?.find((p: any) => String(p.id) === String(productId));
+      if (!selectedProduct?.excelfileId) throw new Error("No excelfileId");
+      
+      const { data: excelFile } = await supabase
+        .from('excel_files')
+        .select('filename')
+        .eq('file_id', selectedProduct.excelfileId)
+        .single();
+      
+      if (!excelFile) throw new Error("Excel file not found");
+      
+      const { data, error } = await invokeEasyQuoteFunction("easyquote-master-files", {
+        token,
+        subscriberId,
+        fileId: selectedProduct.excelfileId,
+        fileName: excelFile.filename
+      });
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct, userHasChangedPrompts],
     // Permitir query si:
@@ -399,7 +437,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   }, []);
 
   // Derive prompts and outputs
-  const outputs = useMemo(() => ((pricing as any)?.outputValues ?? []) as any[], [pricing]);
+  const outputs = useMemo(() => {
+    // Si hay outputs guardados, usarlos
+    if (hasInitialOutputs && initialData?.outputs) {
+      return initialData.outputs;
+    }
+    // Si no, extraer desde pricing
+    return Array.isArray((pricing as any)?.outputValues) ? (pricing as any).outputValues : [];
+  }, [pricing, hasInitialOutputs, initialData]);
   const imageOutputs = useMemo(
     () => outputs.filter((o: any) => /^https?:\/\//i.test(String(o?.value ?? ""))),
     [outputs]
@@ -533,6 +578,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     });
   }, [qtyCount]);
 
+  // Usar master-files si está disponible (datos guardados), sino pricing (datos nuevos)
+  const productData = hasInitialOutputs ? masterFileData : pricing;
+  const prompts = extractPrompts(productData);
+
   const formatEUR = (val: any) => {
     const num = typeof val === "number" ? val : parseFloat(String(val).replace(/\./g, "").replace(",", "."));
     if (isNaN(num)) return `${String(val)} €`;
@@ -624,10 +673,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     return result;
   };
 
-  // Initialize all prompts when pricing data loads
+  // Initialize all prompts when pricing or master-files data loads
   useEffect(() => {
-    if (pricing && productId) {
-      const allPrompts = extractAllPrompts(pricing);
+    const dataSource = hasInitialOutputs ? masterFileData : pricing;
+    if (dataSource && productId && !hasInitialOutputs) {
+      const allPrompts = extractAllPrompts(dataSource);
       
       // Merge with existing prompts (preserve user changes)
       setPromptValues((prev) => {
@@ -649,7 +699,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         setIsNewProduct(false);
       }
     }
-  }, [pricing, productId, isNewProduct]);
+  }, [pricing, masterFileData, productId, isNewProduct, hasInitialOutputs]);
 
   const handlePromptChange = (id: string, value: any, label: string) => {
     console.log("🔄 Usuario cambió prompt manualmente:", { id, value, label });
@@ -658,8 +708,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     setPromptValues((prev) => {
       let order = prev[id]?.order;
       
-      if (order === undefined && pricing) {
-        const prompts = (pricing as any)?.prompts || [];
+      const dataSource = hasInitialOutputs ? masterFileData : pricing;
+      if (order === undefined && dataSource) {
+        const prompts = (dataSource as any)?.prompts || [];
         const promptDef = prompts.find((p: any) => String(p.id) === String(id));
         if (promptDef) {
           order = Number.isFinite(Number(promptDef.promptSequence)) 
@@ -864,8 +915,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                     <p className="font-semibold">Por favor, selecciona otro producto o contacta al administrador.</p>
                   </AlertDescription>
                 </Alert>
-              ) : pricing ? (
-                <PromptsForm product={pricing} values={promptValues} onChange={handlePromptChange} />
+              ) : productData ? (
+                <PromptsForm product={productData} values={promptValues} onChange={handlePromptChange} />
               ) : (
                 <p className="text-sm text-muted-foreground">Cargando prompts…</p>
               )}
