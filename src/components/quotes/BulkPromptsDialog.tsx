@@ -104,14 +104,20 @@ export function BulkPromptsDialog({
         
         // Si se cambia el tipo de prompt, resetear campos específicos del tipo
         if (field === 'promptType') {
-          // Siempre establecer campos numéricos como null
-          newPrompt.valueQuantityAllowedDecimals = null;
-          newPrompt.valueQuantityMin = null;
-          newPrompt.valueQuantityMax = null;
+          // Verificar por ID: 0 = Number, 7 = Quantity (tipos numéricos)
+          const isNumericType = value === 0 || value === 7;
           
-          // Limpiar rango si es tipo numérico
-          if (value === 1) {
+          if (isNumericType) {
+            // Si es numérico, mantener null para que el usuario los complete
+            newPrompt.valueQuantityAllowedDecimals = null;
+            newPrompt.valueQuantityMin = null;
+            newPrompt.valueQuantityMax = null;
             newPrompt.valueOptionRange = "";
+          } else {
+            // Si no es numérico, establecer campos numéricos como null
+            newPrompt.valueQuantityAllowedDecimals = null;
+            newPrompt.valueQuantityMin = null;
+            newPrompt.valueQuantityMax = null;
           }
         }
         
@@ -167,8 +173,8 @@ export function BulkPromptsDialog({
 
             <div className="space-y-3">
               {prompts.map((prompt, index) => {
-                // Verificar por ID: 1 = Number (tipo numérico)
-                const isNumericType = prompt.promptType === 1;
+                // Verificar por ID: 0 = Number, 7 = Quantity (tipos numéricos)
+                const isNumericType = prompt.promptType === 0 || prompt.promptType === 7;
 
                 return (
                   <div key={index} className="p-4 border rounded-lg">

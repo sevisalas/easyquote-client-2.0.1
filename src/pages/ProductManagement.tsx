@@ -784,14 +784,14 @@ export default function ProductManagement() {
           valueRequired: promptData.valueRequired
         };
         
-        // Solo añadir campos numéricos si el tipo de prompt es Number (promptType === 1)
-        // Para otros tipos como DropDown, estos campos deben ser null o no enviarse
-        if (promptData.promptType === 1) {
-          newPrompt.valueQuantityAllowedDecimals = promptData.valueQuantityAllowedDecimals ?? 0;
-          newPrompt.valueQuantityMin = promptData.valueQuantityMin ?? 1;
-          newPrompt.valueQuantityMax = promptData.valueQuantityMax ?? 9999;
+        // Solo añadir campos numéricos si el tipo de prompt es Number (0) o Quantity (7)
+        // Para otros tipos como DropDown (1), estos campos deben ser null
+        if (promptData.promptType === 0 || promptData.promptType === 7) {
+          newPrompt.valueQuantityAllowedDecimals = promptData.valueQuantityAllowedDecimals ?? null;
+          newPrompt.valueQuantityMin = promptData.valueQuantityMin ?? null;
+          newPrompt.valueQuantityMax = promptData.valueQuantityMax ?? null;
         } else {
-          // Para tipos que no son Number, enviar null explícitamente
+          // Para tipos que no son Number o Quantity, enviar null explícitamente
           newPrompt.valueQuantityAllowedDecimals = null;
           newPrompt.valueQuantityMin = null;
           newPrompt.valueQuantityMax = null;
