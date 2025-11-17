@@ -310,6 +310,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Track if prompts were initialized from saved data
   const previousProductIdRef = useRef<string>("");
+  const hasMarkedAsLoadedRef = useRef<boolean>(false);
   
   // Reset prompts only when product changes (not on initial load with saved data)
   useEffect(() => {
@@ -326,6 +327,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setIsNewProduct(true); // Mark as new product to trigger GET without inputs
       setHasInitialOutputs(false); // Resetear flag de outputs iniciales
       setUserHasChangedPrompts(false); // Resetear flag de cambios manuales
+      hasMarkedAsLoadedRef.current = false; // Reset loaded flag for new product
     }
     previousProductIdRef.current = productId;
     
@@ -599,13 +601,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         return merged;
       });
       
-      // Mark product as loaded ONLY after prompts are initialized
-      if (isNewProduct) {
+      // Mark product as loaded ONLY once per product selection
+      if (isNewProduct && !hasMarkedAsLoadedRef.current) {
         console.log("✅ Producto cargado exitosamente, marcando como no nuevo");
         setIsNewProduct(false);
+        hasMarkedAsLoadedRef.current = true;
       }
     }
-  }, [pricing, productId, isNewProduct]);
+  }, [pricing, productId]);
 
   const handlePromptChange = (id: string, value: any, label: string) => {
     console.log("🔄 Usuario cambió prompt manualmente:", { id, value, label });
