@@ -225,10 +225,11 @@ export default function QuoteEdit() {
           // Convert prompts from array format (DB) to object format (QuoteItem expects)
           let promptsObj: Record<string, string> = {};
           if (Array.isArray(item.prompts)) {
-            // Convert array [{id, label, value, order}] to object {label: value}
+            // Convert array [{id, label, value, order}] to object {id: value}
+            // PromptsForm expects the ID as the key, not the label
             item.prompts.forEach((prompt: any) => {
-              if (prompt && prompt.label && prompt.value !== undefined) {
-                promptsObj[prompt.label] = String(prompt.value);
+              if (prompt && prompt.id && prompt.value !== undefined) {
+                promptsObj[prompt.id] = String(prompt.value);
               }
             });
             console.log(`🔍 Converted ${item.prompts.length} prompts to object format for item ${idx}`, promptsObj);
