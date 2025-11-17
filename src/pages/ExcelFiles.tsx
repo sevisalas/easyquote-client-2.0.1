@@ -83,7 +83,9 @@ export default function ExcelFiles() {
     const validateToken = async () => {
       setTokenChecking(true);
       try {
+        console.log('[ExcelFiles] Attempting to get EasyQuote token...');
         const token = await getEasyQuoteToken();
+        console.log('[ExcelFiles] Token result:', token ? 'Token obtained' : 'No token');
         setHasToken(!!token);
       } catch (error) {
         console.error("Error validating EasyQuote token:", error);
