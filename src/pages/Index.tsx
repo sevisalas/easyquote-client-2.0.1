@@ -306,7 +306,7 @@ const Index = () => {
                 </div>
                 <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
               </div>
-              <h3 className="text-lg font-semibold mb-2 text-foreground">Gestionar clientes</h3>
+              <h3 className="text-lg font-semibold mb-2 text-foreground">Gestionar Clientes</h3>
               <p className="text-sm text-muted-foreground">Administra tu cartera de clientes</p>
             </CardContent>
           </Card>
@@ -322,7 +322,7 @@ const Index = () => {
                 </div>
                 <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
               </div>
-              <h3 className="text-lg font-semibold mb-2 text-foreground">Gestionar presupuestos</h3>
+              <h3 className="text-lg font-semibold mb-2 text-foreground">Gestionar Presupuestos</h3>
               <p className="text-sm text-muted-foreground">Ver, editar y administrar todos tus presupuestos</p>
             </CardContent>
           </Card>
@@ -340,16 +340,16 @@ const Index = () => {
                   </div>
                   <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2 text-foreground">Gestionar pedidos</h3>
+                <h3 className="text-lg font-semibold mb-2 text-foreground">Gestionar Pedidos</h3>
                 <p className="text-sm text-muted-foreground">Accede a todos tus pedidos de venta</p>
               </CardContent>
             </Card>
           )}
         </div>
-
+        
         {/* Version Info */}
         <div className="mt-8 flex justify-end">
-          <p className="text-xs text-muted-foreground">EasyQuote ver 1.1.2</p>
+          <p className="text-xs text-muted-foreground">EasyQuote ver 1.0.2</p>
         </div>
       </div>
     </div>

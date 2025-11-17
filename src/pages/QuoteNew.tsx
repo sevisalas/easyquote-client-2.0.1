@@ -370,15 +370,9 @@ export default function QuoteNew() {
       const quoteNumber = await generateQuoteNumber();
       const itemsArray = Object.values(items);
 
-      // Extraer el UUID si es un contacto de Holded (formato: "holded:uuid")
-      let actualCustomerId = customerId;
-      if (customerId && customerId.startsWith('holded:')) {
-        actualCustomerId = customerId.replace('holded:', '');
-      }
-
       const quoteData = {
         user_id: user.id,
-        customer_id: actualCustomerId || null,
+        customer_id: customerId,
         quote_number: quoteNumber,
         title: title || `Presupuesto ${quoteNumber}`,
         description: description || itemsArray[0]?.itemDescription || "",

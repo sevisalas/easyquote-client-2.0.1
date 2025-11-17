@@ -281,16 +281,10 @@ export default function QuoteEdit() {
 
   const updateQuoteMutation = useMutation({
     mutationFn: async (data: Partial<Quote>) => {
-      // Extraer el UUID si es un contacto de Holded (formato: "holded:uuid")
-      let actualCustomerId = data.customer_id;
-      if (actualCustomerId && actualCustomerId.startsWith('holded:')) {
-        actualCustomerId = actualCustomerId.replace('holded:', '');
-      }
-
       const { error } = await supabase
         .from("quotes")
         .update({
-          customer_id: actualCustomerId,
+          customer_id: data.customer_id,
           title: data.title,
           description: data.description,
           notes: data.notes,
