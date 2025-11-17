@@ -444,15 +444,15 @@ Deno.serve(async (req) => {
             price = Math.round(parseFloat(String(value)) * 100) / 100;
           }
           
+          // Remove "Ajuste sobre el presupuesto/pedido" from name
+          const cleanName = (additional.name || 'Ajuste')
+            .replace(/\s*Ajuste sobre el presupuesto\s*/gi, '')
+            .replace(/\s*Ajuste sobre el pedido\s*/gi, '')
+            .trim() || 'Ajuste';
+          
           const itemData: any = {
-            name: additional.name || 'Ajuste',
-            desc: additional.description || (
-              additional.type === 'percentage' 
-                ? `Ajuste ${value}%` 
-                : (additional.type === 'quantity_multiplier' || additional.type === 'multiplier')
-                ? `Multiplicador x${value}`
-                : 'Ajuste sobre el presupuesto'
-            ),
+            name: cleanName,
+            desc: additional.description || cleanName,
             units: 1,
             subtotal: price,
             taxes: ["s_iva_21"]
