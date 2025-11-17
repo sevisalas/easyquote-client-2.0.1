@@ -598,16 +598,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         
         return merged;
       });
+      
+      // Mark product as loaded ONLY after prompts are initialized
+      if (isNewProduct) {
+        console.log("✅ Producto cargado exitosamente, marcando como no nuevo");
+        setIsNewProduct(false);
+      }
     }
-  }, [pricing, productId]);
-
-  // Mark product as loaded after initial pricing fetch
-  useEffect(() => {
-    if (pricing && isNewProduct) {
-      console.log("✅ Producto cargado exitosamente, marcando como no nuevo");
-      setIsNewProduct(false);
-    }
-  }, [pricing, isNewProduct]);
+  }, [pricing, productId, isNewProduct]);
 
   const handlePromptChange = (id: string, value: any, label: string) => {
     console.log("🔄 Usuario cambió prompt manualmente:", { id, value, label });
