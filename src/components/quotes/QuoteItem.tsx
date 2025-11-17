@@ -216,13 +216,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // This duplicate reset is handled by the more sophisticated useEffect below (lines 291-320)
   // that uses previousProductIdRef to detect real product changes
 
-  // Debounce promptValues changes - pero NO si es un producto nuevo (cargando valores iniciales)
-  // IMPORTANTE: Incluir productId en dependencies para cancelar debounce al cambiar de producto
+  // Debounce promptValues changes
   useEffect(() => {
-    if (isNewProduct) return; // No debounce si aún no hemos inicializado los valores por defecto
-    const t = setTimeout(() => setDebouncedPromptValues(promptValues), 350);
+    const t = setTimeout(() => {
+      console.log("⏱️ Debounce: actualizando debouncedPromptValues", promptValues);
+      setDebouncedPromptValues(promptValues);
+    }, 350);
     return () => clearTimeout(t);
-  }, [promptValues, isNewProduct, productId]);
+  }, [promptValues]);
 
   const fetchProducts = async (): Promise<any[]> => {
     const token = sessionStorage.getItem("easyquote_token");
@@ -278,10 +279,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct, userHasChangedPrompts],
     // SIEMPRE cargar el producto para obtener las definiciones de prompts
     enabled: !!hasToken && !!productId,
-    retry: false, // No reintentar automáticamente para productos con error 500
-    placeholderData: keepPreviousData,
+    retry: false,
+    placeholderData: isNewProduct ? undefined : keepPreviousData,
     refetchOnWindowFocus: false,
-    staleTime: forceRecalculate ? 0 : 5000,
+    staleTime: 0, // Siempre refetch para cambios en prompts
     queryFn: async () => {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
@@ -828,19 +829,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               <Label>Selecciona producto</Label>
               <Select onValueChange={(value) => {
                 console.log("🔄 Usuario cambió de producto:", value);
-                // Resetear completamente el estado para el nuevo producto
                 setProductId(value);
-                setIsNewProduct(true); // Marcar como producto nuevo
-                setUserHasChangedPrompts(false); // Usuario no ha cambiado nada aún
-                setPromptValues({}); // Limpiar prompts antiguos
-                setDebouncedPromptValues({}); // Limpiar valores debounced
-                setHasInitialOutputs(false); // No hay outputs iniciales
-                
-                // Establecer automáticamente el itemDescription con el nombre del producto
-                const selectedProduct = products?.find((p: any) => String(p.id) === String(value));
-                if (selectedProduct) {
-                  setItemDescription(getProductLabel(selectedProduct));
-                }
+                // El reset completo lo maneja el useEffect de líneas 365-405
               }} value={productId} disabled={!hasToken}>
                 <SelectTrigger ref={selectRef}>
                   <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
