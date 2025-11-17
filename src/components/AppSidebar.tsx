@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -157,6 +157,15 @@ export function AppSidebar() {
                        <NavLink to="/integraciones-acceso" end className={getNavCls}>
                          <Plug className="mr-2 h-4 w-4" />
                          {!isCollapsed && <span>Integraciones</span>}
+                       </NavLink>
+                     </SidebarMenuButton>
+                  </SidebarMenuItem>
+
+                  <SidebarMenuItem>
+                     <SidebarMenuButton asChild isActive={currentPath === "/superadmin/usuarios"} className="h-7 px-2">
+                       <NavLink to="/superadmin/usuarios" end className={getNavCls}>
+                         <Shield className="mr-2 h-4 w-4" />
+                         {!isCollapsed && <span>SuperAdmins</span>}
                        </NavLink>
                      </SidebarMenuButton>
                   </SidebarMenuItem>
