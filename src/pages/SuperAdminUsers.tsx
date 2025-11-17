@@ -261,7 +261,7 @@ const SuperAdminUsers = () => {
       if (editPassword) {
         const { error: passwordError } = await supabase.functions.invoke('update-user-password', {
           body: { 
-            userEmail: editEmail,
+            email: editEmail,
             newPassword: editPassword 
           },
           headers: {
