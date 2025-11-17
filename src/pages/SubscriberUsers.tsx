@@ -67,6 +67,7 @@ const UsuariosSuscriptor = () => {
   const [editingUser, setEditingUser] = useState<Usuario | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editDisplayName, setEditDisplayName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
   const [editCuentaHolded, setEditCuentaHolded] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
 
@@ -361,6 +362,7 @@ const UsuariosSuscriptor = () => {
   const abrirEditarUsuario = (usuario: Usuario) => {
     setEditingUser(usuario);
     setEditDisplayName(usuario.display_name || '');
+    setEditEmail(usuario.email);
     setEditCuentaHolded(usuario.cuenta_holded || 'none');
     setShowEditDialog(true);
   };
@@ -371,6 +373,26 @@ const UsuariosSuscriptor = () => {
     setSavingEdit(true);
 
     try {
+      // Actualizar email si cambió
+      if (editEmail !== editingUser.email) {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        const { error: emailError } = await supabase.functions.invoke('update-user-email', {
+          body: { 
+            userId: editingUser.id, 
+            newEmail: editEmail 
+          },
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`
+          }
+        });
+
+        if (emailError) {
+          throw new Error(emailError.message || "No se pudo actualizar el email");
+        }
+      }
+
+      // Actualizar otros campos en organization_members
       const { error } = await supabase
         .from('organization_members')
         .update({
@@ -390,6 +412,7 @@ const UsuariosSuscriptor = () => {
       setShowEditDialog(false);
       setEditingUser(null);
       setEditDisplayName("");
+      setEditEmail("");
       setEditCuentaHolded("");
       obtenerDatos();
     } catch (error: any) {
@@ -937,6 +960,20 @@ const UsuariosSuscriptor = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                placeholder="email@ejemplo.com"
+              />
+              <p className="text-sm text-muted-foreground">
+                El email del usuario para iniciar sesión
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="display-name">Nombre de usuario</Label>
               <Input
                 id="display-name"
@@ -991,6 +1028,7 @@ const UsuariosSuscriptor = () => {
                 setShowEditDialog(false);
                 setEditingUser(null);
                 setEditDisplayName("");
+                setEditEmail("");
                 setEditCuentaHolded("");
               }}
             >
