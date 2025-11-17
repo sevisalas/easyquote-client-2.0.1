@@ -144,14 +144,30 @@ export default function QuoteEdit() {
 
   useEffect(() => {
     if (quote) {
-      setFormData({
-        quote_number: quote.quote_number,
-        customer_id: quote.customer_id,
-        title: quote.title,
-        description: quote.description,
-        notes: quote.notes,
-        status: quote.status,
-        valid_until: quote.valid_until,
+      // Detect if customer_id belongs to holded_contacts and add prefix for selector
+      const checkCustomerSource = async () => {
+        if (quote.customer_id) {
+          const { data: holdedContact } = await supabase
+            .from('holded_contacts')
+            .select('id')
+            .eq('id', quote.customer_id)
+            .maybeSingle();
+          
+          return holdedContact ? `holded:${quote.customer_id}` : quote.customer_id;
+        }
+        return quote.customer_id;
+      };
+
+      checkCustomerSource().then(customerIdValue => {
+        setFormData({
+          quote_number: quote.quote_number,
+          customer_id: customerIdValue,
+          title: quote.title,
+          description: quote.description,
+          notes: quote.notes,
+          status: quote.status,
+          valid_until: quote.valid_until,
+        });
       });
 
       // Load quote additionals - the data is stored as JSON array in quotes.quote_additionals field
@@ -281,10 +297,15 @@ export default function QuoteEdit() {
 
   const updateQuoteMutation = useMutation({
     mutationFn: async (data: Partial<Quote>) => {
+      // Extract UUID from "holded:" prefix if present
+      const actualCustomerId = data.customer_id?.startsWith('holded:') 
+        ? data.customer_id.replace('holded:', '') 
+        : data.customer_id;
+
       const { error } = await supabase
         .from("quotes")
         .update({
-          customer_id: data.customer_id,
+          customer_id: actualCustomerId,
           title: data.title,
           description: data.description,
           notes: data.notes,
