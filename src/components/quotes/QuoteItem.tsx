@@ -92,11 +92,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     if (!initialData) return;
     initializedRef.current = true;
     try {
+      console.log('🔍 QuoteItem initialData:', initialData);
       setProductId(initialData.productId || "");
       
       // Normalize prompts format: extract just the value if it's an object with {label, value, order}
       const normalizedPrompts: Record<string, any> = {};
       if (initialData.prompts) {
+        console.log('🔍 Raw prompts:', initialData.prompts);
         Object.entries(initialData.prompts).forEach(([promptId, promptData]: [string, any]) => {
           // If it's an object with a value property, extract just the value
           if (promptData && typeof promptData === 'object' && 'value' in promptData) {
@@ -106,6 +108,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             normalizedPrompts[promptId] = promptData;
           }
         });
+        console.log('🔍 Normalized prompts:', normalizedPrompts);
       }
       
       setPromptValues(normalizedPrompts);
@@ -114,6 +117,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       
       // Si hay outputs guardados, marcar que no necesitamos fetchear
       if (initialData.outputs && Array.isArray(initialData.outputs) && initialData.outputs.length > 0) {
+        console.log('🔍 Initial outputs found:', initialData.outputs);
         setHasInitialOutputs(true);
         setIsNewProduct(false); // No es un producto "nuevo" si ya tiene datos guardados
       }
