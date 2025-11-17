@@ -9,7 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Edit, ChevronDown } from "lucide-react";
@@ -481,7 +481,7 @@ export default function QuoteEdit() {
     });
   };
 
-  const handleItemChange = (itemId: string | number, snapshot: any) => {
+  const handleItemChange = useCallback((itemId: string | number, snapshot: any) => {
     setItems((prev) => {
       return prev.map((item, index) =>
         item.id === itemId || index.toString() === itemId.toString()
@@ -501,7 +501,7 @@ export default function QuoteEdit() {
           : item,
       );
     });
-  };
+  }, []);
 
   const handleItemRemove = (itemId: string | number) => {
     setItems((prev) =>

@@ -707,7 +707,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       lastSyncedSnapshot.current = snapshotString;
       onChange(id, snapshot);
     }
-  }, [id, productId, finalPrice, multiEnabled, itemDescription, itemAdditionals]);
+  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, itemAdditionals, products, initialData?.isFinalized]);
 
   const isComplete = productId && priceOutput && finalPrice > 0;
 
