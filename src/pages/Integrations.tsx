@@ -30,6 +30,14 @@ export default function Integrations() {
   const [loadingApiKey, setLoadingApiKey] = useState(true);
   const [generatingApiKey, setGeneratingApiKey] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+  
+  // EasyQuote credentials state
+  const [easyQuoteUsername, setEasyQuoteUsername] = useState("");
+  const [easyQuotePassword, setEasyQuotePassword] = useState("");
+  const [savingEasyQuote, setSavingEasyQuote] = useState(false);
+  const [hasEasyQuoteCredentials, setHasEasyQuoteCredentials] = useState(false);
+  const [loadingEasyQuote, setLoadingEasyQuote] = useState(true);
+  
   const { toast } = useToast();
 
   const currentOrganization = organization || membership?.organization;
