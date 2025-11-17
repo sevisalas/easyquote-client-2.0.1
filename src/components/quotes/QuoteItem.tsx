@@ -312,22 +312,28 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const previousProductIdRef = useRef<string>("");
   const hasMarkedAsLoadedRef = useRef<boolean>(false);
   
-  // Reset prompts only when product changes (not on initial load with saved data)
+  // Reset ALL states when product changes - complete clean slate
   useEffect(() => {
     // Only reset if product actually changed (not initial load)
     if (previousProductIdRef.current && previousProductIdRef.current !== productId) {
-      console.log("🔄 Product changed, resetting all states", { from: previousProductIdRef.current, to: productId });
-      // Reset all states to prevent sending old product prompt values to new product
+      console.log("🔄 Producto cambió - RESET COMPLETO de todos los estados", { from: previousProductIdRef.current, to: productId });
+      
+      // Reset EVERYTHING to initial state
       setPromptValues({});
       setDebouncedPromptValues({});
       setMultiEnabled(false);
       setQtyPrompt("");
       setQtyInputs(["", "", "", "", ""]);
       setItemAdditionals([]);
-      setIsNewProduct(true); // Mark as new product to trigger GET without inputs
-      setHasInitialOutputs(false); // Resetear flag de outputs iniciales
-      setUserHasChangedPrompts(false); // Resetear flag de cambios manuales
-      hasMarkedAsLoadedRef.current = false; // Reset loaded flag for new product
+      setItemDescription("");
+      setIsNewProduct(true);
+      setHasInitialOutputs(false);
+      setUserHasChangedPrompts(false);
+      setForceRecalculate(false);
+      setHasUnsavedChanges(false);
+      hasMarkedAsLoadedRef.current = false;
+      
+      console.log("✅ Estados reseteados completamente, listo para cargar nuevo producto");
     }
     previousProductIdRef.current = productId;
     
@@ -601,14 +607,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         return merged;
       });
       
-      // Mark product as loaded ONLY once per product selection
-      if (isNewProduct && !hasMarkedAsLoadedRef.current) {
+      // Mark product as loaded after prompts are initialized
+      if (isNewProduct) {
         console.log("✅ Producto cargado exitosamente, marcando como no nuevo");
         setIsNewProduct(false);
-        hasMarkedAsLoadedRef.current = true;
       }
     }
-  }, [pricing, productId]);
+  }, [pricing, productId, isNewProduct]);
 
   const handlePromptChange = (id: string, value: any, label: string) => {
     console.log("🔄 Usuario cambió prompt manualmente:", { id, value, label });
