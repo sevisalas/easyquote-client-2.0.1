@@ -61,6 +61,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [isNewProduct, setIsNewProduct] = useState<boolean>(true);
   const [hasInitialOutputs, setHasInitialOutputs] = useState<boolean>(false);
   const [userHasChangedPrompts, setUserHasChangedPrompts] = useState<boolean>(false);
+  const [hasLoadedPromptsFromSavedData, setHasLoadedPromptsFromSavedData] = useState<boolean>(false);
   const selectRef = useRef<HTMLButtonElement>(null);
 
   // Auto-expand/collapse based on shouldExpand prop
@@ -137,14 +138,20 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setDebouncedPromptValues(normalizedPrompts);
       setItemDescription(initialData.itemDescription || "");
       
+      // Marcar que tenemos prompts guardados para forzar actualización de outputs
+      const hasPromptsData = Object.keys(normalizedPrompts).length > 0;
+      if (hasPromptsData) {
+        console.log('✅ Prompts guardados encontrados, se forzará actualización de outputs con estos valores');
+        setHasLoadedPromptsFromSavedData(true);
+        setIsNewProduct(false);
+      }
+      
       // Solo marcar hasInitialOutputs si hay outputs guardados
-      // Los prompts siempre se deben cargar desde el producto para tener las definiciones
       const hasOutputsData = initialData.outputs && Array.isArray(initialData.outputs) && initialData.outputs.length > 0;
       
       if (hasOutputsData) {
-        console.log('✅ Initial outputs found, will use saved outputs but load product for prompt definitions');
+        console.log('✅ Initial outputs found, will use saved outputs but refresh pricing');
         setHasInitialOutputs(true);
-        setIsNewProduct(false);
       } else {
         console.log('⚠️ Missing outputs, will fetch everything from API');
         setHasInitialOutputs(false);
@@ -276,7 +283,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   });
 
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError } = useQuery({
-    queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct, userHasChangedPrompts],
+    queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct, userHasChangedPrompts, hasLoadedPromptsFromSavedData],
     // SIEMPRE cargar el producto para obtener las definiciones de prompts
     enabled: !!hasToken && !!productId,
     retry: false,
@@ -287,16 +294,19 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
       
-      console.log("🔥 Fetching pricing for product:", productId, "isNewProduct:", isNewProduct, "userHasChangedPrompts:", userHasChangedPrompts);
+      console.log("🔥 Fetching pricing for product:", productId, "isNewProduct:", isNewProduct, "userHasChangedPrompts:", userHasChangedPrompts, "hasLoadedPromptsFromSavedData:", hasLoadedPromptsFromSavedData);
 
-      // Si es producto nuevo O el usuario NO ha cambiado nada, NO enviar inputs
       const requestBody: any = {
         token,
         productId
       };
 
-      // Solo incluir inputs si NO es un producto nuevo Y el usuario ha cambiado algo manualmente
-      if (!isNewProduct && userHasChangedPrompts) {
+      // Incluir inputs si:
+      // 1. Tenemos prompts cargados de datos guardados (para actualizar outputs/precios)
+      // 2. El usuario ha cambiado algo manualmente
+      const shouldSendInputs = hasLoadedPromptsFromSavedData || (!isNewProduct && userHasChangedPrompts);
+      
+      if (shouldSendInputs) {
         const norm: Record<string, any> = {};
         Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
           // Extract actual value if it's stored as {label, value}
@@ -327,6 +337,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       }
 
       console.log("📤 Request body:", requestBody);
+      
+      // Si enviamos inputs por prompts guardados, marcar que ya se actualizaron
+      if (hasLoadedPromptsFromSavedData) {
+        console.log("✅ Actualizando outputs con prompts guardados, desactivando flag");
+        setHasLoadedPromptsFromSavedData(false);
+      }
 
       // Usar solo la edge function para evitar errores con IDs incorrectos
       const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", requestBody);
@@ -379,6 +395,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setIsNewProduct(true);
       setHasInitialOutputs(false);
       setUserHasChangedPrompts(false);
+      setHasLoadedPromptsFromSavedData(false); // Reset flag
       setForceRecalculate(false);
       setHasUnsavedChanges(false);
       hasMarkedAsLoadedRef.current = false;
