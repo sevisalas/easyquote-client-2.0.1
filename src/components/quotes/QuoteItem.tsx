@@ -690,26 +690,26 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const selectedProductInfo = products?.find((p: any) => String(p.id) === String(productId));
   const productName = selectedProductInfo ? getProductLabel(selectedProductInfo) : "";
 
-  // Sync with parent (without adding additionals to product name)
+  // Memoize snapshot to prevent unnecessary re-renders
+  const snapshot = useMemo(() => ({
+    productId,
+    prompts: promptValues, // Save ALL prompts, visibility filtering is only for Holded export
+    outputs,
+    price: finalPrice,
+    multi: multiEnabled ? { qtyPrompt, qtyInputs, rows: multiRows } : null,
+    itemDescription: itemDescription || productName,
+    itemAdditionals,
+    isFinalized: initialData?.isFinalized, // Preserve isFinalized state
+  }), [productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, productName, itemAdditionals, initialData?.isFinalized]);
+
+  // Sync with parent - only when snapshot actually changes
   useEffect(() => {
-    const snapshot = {
-      productId,
-      prompts: promptValues, // Save ALL prompts, visibility filtering is only for Holded export
-      outputs,
-      price: finalPrice,
-      multi: multiEnabled ? { qtyPrompt, qtyInputs, rows: multiRows } : null,
-      itemDescription: itemDescription || productName,
-      itemAdditionals,
-      isFinalized: initialData?.isFinalized, // Preserve isFinalized state
-    };
-    
-    // Only call onChange if data actually changed to prevent infinite loops
     const snapshotString = JSON.stringify(snapshot);
     if (snapshotString !== lastSyncedSnapshot.current) {
       lastSyncedSnapshot.current = snapshotString;
       onChange?.(id, snapshot);
     }
-  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, productName, itemAdditionals, initialData?.isFinalized]);
+  }, [id, onChange, snapshot]);
 
   const isComplete = productId && priceOutput && finalPrice > 0;
 
