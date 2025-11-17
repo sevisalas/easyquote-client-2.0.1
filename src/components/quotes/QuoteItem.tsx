@@ -60,8 +60,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [itemDescription, setItemDescription] = useState<string>("");
   const [isNewProduct, setIsNewProduct] = useState<boolean>(true);
   const [hasInitialOutputs, setHasInitialOutputs] = useState<boolean>(false);
-  const [userHasChangedPrompts, setUserHasChangedPrompts] = useState<boolean>(false);
-  const [hasLoadedPromptsFromSavedData, setHasLoadedPromptsFromSavedData] = useState<boolean>(false);
   const selectRef = useRef<HTMLButtonElement>(null);
 
   // Auto-expand/collapse based on shouldExpand prop
@@ -138,11 +136,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setDebouncedPromptValues(normalizedPrompts);
       setItemDescription(initialData.itemDescription || "");
       
-      // Marcar que tenemos prompts guardados para forzar actualización de outputs
+      // Marcar como NO nuevo si tiene prompts guardados
       const hasPromptsData = Object.keys(normalizedPrompts).length > 0;
       if (hasPromptsData) {
-        console.log('✅ Prompts guardados encontrados, se forzará actualización de outputs con estos valores');
-        setHasLoadedPromptsFromSavedData(true);
+        console.log('✅ Artículo guardado detectado, hará PATCH con valores guardados para actualizar precios');
         setIsNewProduct(false);
       }
       
@@ -155,7 +152,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       } else {
         console.log('⚠️ Missing outputs, will fetch everything from API');
         setHasInitialOutputs(false);
-        setIsNewProduct(true);
       }
       
       // Convertir formato antiguo a nuevo si es necesario
@@ -283,30 +279,25 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   });
 
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError } = useQuery({
-    queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct, userHasChangedPrompts, hasLoadedPromptsFromSavedData],
-    // SIEMPRE cargar el producto para obtener las definiciones de prompts
+    queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct],
     enabled: !!hasToken && !!productId,
     retry: false,
     placeholderData: isNewProduct ? undefined : keepPreviousData,
     refetchOnWindowFocus: false,
-    staleTime: 0, // Siempre refetch para cambios en prompts
+    staleTime: 0,
     queryFn: async () => {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
       
-      console.log("🔥 Fetching pricing for product:", productId, "isNewProduct:", isNewProduct, "userHasChangedPrompts:", userHasChangedPrompts, "hasLoadedPromptsFromSavedData:", hasLoadedPromptsFromSavedData);
+      console.log("🔥 Fetching pricing for product:", productId, "isNewProduct:", isNewProduct);
 
       const requestBody: any = {
         token,
         productId
       };
 
-      // Incluir inputs si:
-      // 1. Tenemos prompts cargados de datos guardados (para actualizar outputs/precios)
-      // 2. El usuario ha cambiado algo manualmente
-      const shouldSendInputs = hasLoadedPromptsFromSavedData || (!isNewProduct && userHasChangedPrompts);
-      
-      if (shouldSendInputs) {
+      // Si NO es producto nuevo (artículo guardado), enviar inputs para PATCH y actualizar precios
+      if (!isNewProduct) {
         const norm: Record<string, any> = {};
         Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
           // Extract actual value if it's stored as {label, value}
@@ -337,12 +328,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       }
 
       console.log("📤 Request body:", requestBody);
-      
-      // Si enviamos inputs por prompts guardados, marcar que ya se actualizaron
-      if (hasLoadedPromptsFromSavedData) {
-        console.log("✅ Actualizando outputs con prompts guardados, desactivando flag");
-        setHasLoadedPromptsFromSavedData(false);
-      }
 
       // Usar solo la edge function para evitar errores con IDs incorrectos
       const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", requestBody);
@@ -394,8 +379,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setItemDescription("");
       setIsNewProduct(true);
       setHasInitialOutputs(false);
-      setUserHasChangedPrompts(false);
-      setHasLoadedPromptsFromSavedData(false); // Reset flag
       setForceRecalculate(false);
       setHasUnsavedChanges(false);
       hasMarkedAsLoadedRef.current = false;
@@ -692,8 +675,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   }, [pricing, productId, isNewProduct, hasInitialOutputs]);
 
   const handlePromptChange = (id: string, value: any, label: string) => {
-    console.log("🔄 Usuario cambió prompt manualmente:", { id, value, label });
-    setUserHasChangedPrompts(true);
+    console.log("🔄 Usuario cambió prompt:", { id, value, label });
     
     setPromptValues((prev) => {
       let order = prev[id]?.order;
