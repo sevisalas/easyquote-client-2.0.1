@@ -761,7 +761,7 @@ export default function QuoteEdit() {
                   {isEditing ? (
                     // Editing mode - show only QuoteItem component
                     <>
-                      {/* console.log('🔍 Passing to QuoteItem - item:', item) */}
+                      {console.log('🔍 Passing to QuoteItem - item:', item)}
                       <QuoteItem
                         hasToken={true}
                         id={itemId}
