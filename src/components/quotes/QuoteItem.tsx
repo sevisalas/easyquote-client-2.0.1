@@ -228,8 +228,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct, userHasChangedPrompts],
-    // CRITICAL: NO ejecutar query mientras isNewProduct es true para evitar enviar datos del producto anterior
-    enabled: !!hasToken && !!productId && !hasInitialOutputs && !isNewProduct,
+    // Permitir query si:
+    // 1. Es producto nuevo Y no hay valores antiguos en debounce (carga inicial limpia)
+    // 2. NO es producto nuevo (producto ya cargado, puede recibir updates)
+    enabled: !!hasToken && !!productId && !hasInitialOutputs && 
+             (isNewProduct ? Object.keys(debouncedPromptValues).length === 0 : true),
     retry: false, // No reintentar automáticamente para productos con error 500
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
