@@ -770,7 +770,8 @@ export default function ProductManagement() {
     
     try {
       for (const promptData of prompts) {
-        const newPrompt = {
+        // Base prompt data que siempre se envía
+        const newPrompt: any = {
           productId: selectedProduct.id,
           promptSeq: promptData.promptSeq,
           promptType: promptData.promptType,
@@ -779,12 +780,22 @@ export default function ProductManagement() {
           valueSheet: promptData.sheet,  // Same sheet
           valueCell: promptData.valueCell,
           valueOptionSheet: promptData.sheet,  // Same sheet
-          valueOptionRange: promptData.valueOptionRange,
-          valueRequired: promptData.valueRequired,
-          valueQuantityAllowedDecimals: promptData.valueQuantityAllowedDecimals,
-          valueQuantityMin: promptData.valueQuantityMin,
-          valueQuantityMax: promptData.valueQuantityMax
+          valueOptionRange: promptData.valueOptionRange || "",
+          valueRequired: promptData.valueRequired
         };
+        
+        // Solo añadir campos numéricos si el tipo de prompt es Number (promptType === 1)
+        // Para otros tipos como DropDown, estos campos deben ser null o no enviarse
+        if (promptData.promptType === 1) {
+          newPrompt.valueQuantityAllowedDecimals = promptData.valueQuantityAllowedDecimals ?? 0;
+          newPrompt.valueQuantityMin = promptData.valueQuantityMin ?? 1;
+          newPrompt.valueQuantityMax = promptData.valueQuantityMax ?? 9999;
+        } else {
+          // Para tipos que no son Number, enviar null explícitamente
+          newPrompt.valueQuantityAllowedDecimals = null;
+          newPrompt.valueQuantityMin = null;
+          newPrompt.valueQuantityMax = null;
+        }
         
         await createPromptMutation.mutateAsync(newPrompt);
       }
