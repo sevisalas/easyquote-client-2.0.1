@@ -102,26 +102,53 @@ export default function ProductTestPage() {
       if (!token) return;
 
       try {
-        const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
-          token, 
-          productId: productId,
-          inputs: [] // Siempre enviar inputs, aunque sea vacío
+        // First, get ALL prompts from master-files
+        const { data: masterData, error: masterError } = await invokeEasyQuoteFunction("easyquote-master-files", {
+          token,
+          productId: productId
         });
         
-        if (error) throw error;
+        if (masterError) throw masterError;
         
-        setProductDetail(data);
+        console.log("Master files data:", masterData);
         
-        // Reset prompt values with current values from API
-        if (data?.prompts) {
-          const currentValues: Record<string, any> = {};
-          data.prompts.forEach((prompt: any) => {
-            if (prompt.currentValue !== undefined && prompt.currentValue !== null) {
-              currentValues[prompt.id] = prompt.currentValue;
-            }
-          });
-          setPromptValues(currentValues);
-        }
+        // Then get initial pricing to get current values
+        const { data: pricingData, error: pricingError } = await invokeEasyQuoteFunction("easyquote-pricing", {
+          token, 
+          productId: productId,
+          inputs: []
+        });
+        
+        if (pricingError) throw pricingError;
+        
+        console.log("Initial pricing data:", pricingData);
+        
+        // Combine: use ALL prompts from master-files, with current values from pricing
+        const allPrompts = masterData?.prompts || [];
+        const pricingPrompts = pricingData?.prompts || [];
+        
+        // Map current values from pricing to master prompts
+        const enrichedPrompts = allPrompts.map((masterPrompt: any) => {
+          const pricingPrompt = pricingPrompts.find((p: any) => p.id === masterPrompt.id);
+          return {
+            ...masterPrompt,
+            currentValue: pricingPrompt?.currentValue ?? masterPrompt.currentValue
+          };
+        });
+        
+        setProductDetail({
+          ...pricingData,
+          prompts: enrichedPrompts
+        });
+        
+        // Reset prompt values with current values from pricing
+        const currentValues: Record<string, any> = {};
+        pricingPrompts.forEach((prompt: any) => {
+          if (prompt.currentValue !== undefined && prompt.currentValue !== null) {
+            currentValues[prompt.id] = prompt.currentValue;
+          }
+        });
+        setPromptValues(currentValues);
         
       } catch (error) {
         console.error("Error fetching product detail:", error);
