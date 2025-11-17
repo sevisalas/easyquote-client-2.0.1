@@ -892,24 +892,29 @@ export default function QuoteEdit() {
                   <>
                     {quoteAdditionals.map((additional, index) => {
                       let amount = 0;
+                      // Remove "Ajuste sobre el presupuesto" from name if present
+                      const cleanName = additional.name
+                        .replace(/\s*Ajuste sobre el presupuesto\s*/gi, '')
+                        .replace(/\s*Ajuste sobre el pedido\s*/gi, '')
+                        .trim();
                       let displayText = "";
                       const subtotal = calculateSubtotal();
 
                       switch (additional.type) {
                         case "percentage":
                           amount = (subtotal * additional.value) / 100;
-                          displayText = `${additional.name} (${additional.value}%)`;
+                          displayText = `${cleanName} (${additional.value}%)`;
                           break;
                         case "net_amount":
                           amount = additional.value;
-                          displayText = additional.name;
+                          displayText = cleanName;
                           break;
                         case "quantity_multiplier":
-                          displayText = `${additional.name} (×${additional.value})`;
+                          displayText = `${cleanName} (×${additional.value})`;
                           break;
                         default:
                           amount = additional.value;
-                          displayText = additional.name;
+                          displayText = cleanName;
                       }
 
                       if (additional.type !== "quantity_multiplier") {

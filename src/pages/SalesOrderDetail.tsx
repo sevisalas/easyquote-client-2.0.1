@@ -593,17 +593,25 @@ const SalesOrderDetail = () => {
                 </div>
 
                 {/* Additionals */}
-                {additionals.map((additional) => (
-                  <div key={additional.id} className="flex justify-between text-sm">
-                    <span className={additional.is_discount ? "text-green-600" : "text-muted-foreground"}>
-                      {additional.name}:
-                    </span>
-                    <span className={additional.is_discount ? "text-green-600 font-medium" : "font-medium"}>
-                      {additional.is_discount && "-"}
-                      {additional.type === 'percentage' ? `${additional.value}%` : fmtEUR(additional.value)}
-                    </span>
-                  </div>
-                ))}
+                {additionals.map((additional) => {
+                  // Remove "Ajuste sobre el presupuesto/pedido" from name if present
+                  const cleanName = additional.name
+                    .replace(/\s*Ajuste sobre el presupuesto\s*/gi, '')
+                    .replace(/\s*Ajuste sobre el pedido\s*/gi, '')
+                    .trim();
+                  
+                  return (
+                    <div key={additional.id} className="flex justify-between text-sm">
+                      <span className={additional.is_discount ? "text-green-600" : "text-muted-foreground"}>
+                        {cleanName}:
+                      </span>
+                      <span className={additional.is_discount ? "text-green-600 font-medium" : "font-medium"}>
+                        {additional.is_discount && "-"}
+                        {additional.type === 'percentage' ? `${additional.value}%` : fmtEUR(additional.value)}
+                      </span>
+                    </div>
+                  );
+                })}
 
                 {order.discount_amount > 0 && (
                   <div className="flex justify-between text-sm">
