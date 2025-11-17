@@ -112,37 +112,43 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       console.log('✅ Starting initialization with initialData:', initialData);
       setProductId(initialData.productId || "");
       
-      // Normalize prompts format: keep the full structure {label, value, order}
+      // Normalize prompts format: extract just the values
       const normalizedPrompts: Record<string, any> = {};
       if (initialData.prompts) {
         console.log('🔍 Raw prompts:', initialData.prompts);
-        Object.entries(initialData.prompts).forEach(([promptId, promptData]: [string, any]) => {
-          // Keep the full structure - PromptsForm needs it
-          normalizedPrompts[promptId] = promptData;
-        });
-        console.log('🔍 Normalized prompts (keeping full structure):', normalizedPrompts);
+        
+        // Handle array format [{id, label, order, value}]
+        if (Array.isArray(initialData.prompts)) {
+          initialData.prompts.forEach((prompt: any) => {
+            if (prompt.id) {
+              normalizedPrompts[prompt.id] = prompt.value;
+            }
+          });
+        } else {
+          // Handle object format {promptId: {label, value, order}}
+          Object.entries(initialData.prompts).forEach(([promptId, promptData]: [string, any]) => {
+            normalizedPrompts[promptId] = typeof promptData === 'object' ? promptData.value : promptData;
+          });
+        }
+        console.log('🔍 Normalized prompts (extracted values):', normalizedPrompts);
       }
       
       setPromptValues(normalizedPrompts);
-      setDebouncedPromptValues(normalizedPrompts); // También inicializar debounced para evitar re-fetch
+      setDebouncedPromptValues(normalizedPrompts);
       setItemDescription(initialData.itemDescription || "");
       
-      // Solo marcar hasInitialOutputs si TANTO outputs COMO prompts están guardados
-      const hasPromptsData = initialData.prompts && (
-        Array.isArray(initialData.prompts) 
-          ? initialData.prompts.length > 0 
-          : Object.keys(initialData.prompts).length > 0
-      );
+      // Solo marcar hasInitialOutputs si hay outputs guardados
+      // Los prompts siempre se deben cargar desde el producto para tener las definiciones
       const hasOutputsData = initialData.outputs && Array.isArray(initialData.outputs) && initialData.outputs.length > 0;
       
-      if (hasOutputsData && hasPromptsData) {
-        console.log('✅ Initial outputs and prompts found:', { outputs: initialData.outputs, prompts: initialData.prompts });
+      if (hasOutputsData) {
+        console.log('✅ Initial outputs found, will use saved outputs but load product for prompt definitions');
         setHasInitialOutputs(true);
         setIsNewProduct(false);
       } else {
-        console.log('⚠️ Missing prompts or outputs, will fetch from API:', { hasPromptsData, hasOutputsData });
+        console.log('⚠️ Missing outputs, will fetch everything from API');
         setHasInitialOutputs(false);
-        setIsNewProduct(true); // Forzar carga desde API
+        setIsNewProduct(true);
       }
       
       // Convertir formato antiguo a nuevo si es necesario
@@ -270,13 +276,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct, userHasChangedPrompts],
-    // Solo NO ejecutar si tenemos datos completos guardados (outputs Y prompts)
-    enabled: !!hasToken && !!productId && !hasInitialOutputs,
+    // SIEMPRE cargar el producto para obtener las definiciones de prompts
+    enabled: !!hasToken && !!productId,
     retry: false, // No reintentar automáticamente para productos con error 500
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     staleTime: forceRecalculate ? 0 : 5000,
-    initialData: hasInitialOutputs && initialData ? { prompts: initialData.prompts, outputValues: initialData.outputs } : undefined, // Usar outputs guardados como initialData
     queryFn: async () => {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
