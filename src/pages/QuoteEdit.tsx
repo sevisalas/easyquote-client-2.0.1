@@ -140,6 +140,8 @@ export default function QuoteEdit() {
     queryKey: ["quote", id],
     queryFn: () => fetchQuote(id!),
     enabled: !!id,
+    refetchOnMount: 'always', // Always fetch fresh data on mount
+    refetchOnWindowFocus: false,
   });
 
   // Customers are now handled by CustomerSelector component
