@@ -128,7 +128,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setItemDescription(initialData.itemDescription || "");
       
       // Solo marcar hasInitialOutputs si TANTO outputs COMO prompts están guardados
-      const hasPromptsData = initialData.prompts && Object.keys(initialData.prompts).length > 0;
+      const hasPromptsData = initialData.prompts && (
+        Array.isArray(initialData.prompts) 
+          ? initialData.prompts.length > 0 
+          : Object.keys(initialData.prompts).length > 0
+      );
       const hasOutputsData = initialData.outputs && Array.isArray(initialData.outputs) && initialData.outputs.length > 0;
       
       if (hasOutputsData && hasPromptsData) {
