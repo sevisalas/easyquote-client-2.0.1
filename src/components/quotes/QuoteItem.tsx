@@ -87,6 +87,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Inicialización desde datos previos (duplicar)
   const initializedRef = useRef(false);
+  const lastSyncedSnapshot = useRef<string>("");
   
   // Reset initialization when item ID changes OR when initialData changes significantly
   useEffect(() => {
@@ -691,7 +692,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Sync with parent (without adding additionals to product name)
   useEffect(() => {
-    onChange?.(id, {
+    const snapshot = {
       productId,
       prompts: promptValues, // Save ALL prompts, visibility filtering is only for Holded export
       outputs,
@@ -700,7 +701,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       itemDescription: itemDescription || productName,
       itemAdditionals,
       isFinalized: initialData?.isFinalized, // Preserve isFinalized state
-    });
+    };
+    
+    // Only call onChange if data actually changed to prevent infinite loops
+    const snapshotString = JSON.stringify(snapshot);
+    if (snapshotString !== lastSyncedSnapshot.current) {
+      lastSyncedSnapshot.current = snapshotString;
+      onChange?.(id, snapshot);
+    }
   }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, productName, itemAdditionals, initialData?.isFinalized]);
 
   const isComplete = productId && priceOutput && finalPrice > 0;
