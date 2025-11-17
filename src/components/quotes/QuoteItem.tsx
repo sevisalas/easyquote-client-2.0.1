@@ -87,12 +87,23 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Inicialización desde datos previos (duplicar)
   const initializedRef = useRef(false);
+  
+  // Log para debug - ver si initialData llega
+  console.log('🔍 QuoteItem rendered with initialData:', initialData);
+  
   useEffect(() => {
-    if (initializedRef.current) return;
-    if (!initialData) return;
+    console.log('🔍 useEffect executed - initializedRef:', initializedRef.current, 'initialData:', initialData);
+    if (initializedRef.current) {
+      console.log('⚠️ useEffect cancelled - already initialized');
+      return;
+    }
+    if (!initialData) {
+      console.log('⚠️ useEffect cancelled - no initialData');
+      return;
+    }
     initializedRef.current = true;
     try {
-      console.log('🔍 QuoteItem initialData:', initialData);
+      console.log('✅ Starting initialization with initialData:', initialData);
       setProductId(initialData.productId || "");
       
       // Normalize prompts format: extract just the value if it's an object with {label, value, order}
@@ -117,7 +128,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       
       // Si hay outputs guardados, marcar que no necesitamos fetchear
       if (initialData.outputs && Array.isArray(initialData.outputs) && initialData.outputs.length > 0) {
-        console.log('🔍 Initial outputs found:', initialData.outputs);
+        console.log('✅ Initial outputs found:', initialData.outputs);
         setHasInitialOutputs(true);
         setIsNewProduct(false); // No es un producto "nuevo" si ya tiene datos guardados
       }
