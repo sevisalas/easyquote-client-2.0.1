@@ -43,7 +43,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     if (inputsList.length > 0) {
-      console.log("easyquote-pricing: using PATCH with inputs", { count: inputsList.length });
+      console.log("easyquote-pricing: using PATCH with inputs", { count: inputsList.length, inputs: inputsList });
       res = await fetch(baseUrl, {
         method: "PATCH",
         headers: {
@@ -97,6 +97,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const text = await res.text();
+    console.log("easyquote-pricing: raw response", { status: res.status, textLength: text.length, preview: text.substring(0, 500) });
     let data: any;
     try {
       data = text ? JSON.parse(text) : {};
