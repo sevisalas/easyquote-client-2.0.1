@@ -108,6 +108,9 @@ function isVisiblePrompt(p: PromptDef, values: Record<string, any>): boolean {
   return true;
 }
 
+// Export for use in other components
+export { isVisiblePrompt, evalCondition, matchValue };
+
 function extractPrompts(product: any): PromptDef[] {
   const candidates = [
     product?.prompts,
@@ -186,6 +189,9 @@ function extractPrompts(product: any): PromptDef[] {
     };
   });
 }
+
+// Export for use in other components
+export { extractPrompts };
 
 export default function PromptsForm({
   product,
