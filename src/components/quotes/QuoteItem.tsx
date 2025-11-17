@@ -58,6 +58,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [forceRecalculate, setForceRecalculate] = useState<boolean>(false);
   const [isExpanded, setIsExpanded] = useState<boolean>(shouldExpand || false);
   const [itemDescription, setItemDescription] = useState<string>("");
+  const [isChangingProduct, setIsChangingProduct] = useState<boolean>(false);
   const selectRef = useRef<HTMLButtonElement>(null);
 
   // Auto-expand/collapse based on shouldExpand prop
