@@ -279,6 +279,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     // Only reset if product actually changed (not initial load)
     if (previousProductIdRef.current && previousProductIdRef.current !== productId) {
       console.log("🔄 Product changed, resetting all states", { from: previousProductIdRef.current, to: productId });
+      // Activar flag para bloquear pricing query
+      setIsChangingProduct(true);
       // Reset all states to prevent sending old product prompt values to new product
       setPromptValues({});
       setDebouncedPromptValues({});
