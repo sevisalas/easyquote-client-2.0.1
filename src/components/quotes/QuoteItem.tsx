@@ -305,8 +305,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         productId
       };
 
-      // Si NO es producto nuevo (artículo guardado), enviar inputs para PATCH y actualizar precios
-      if (!isNewProduct) {
+      // Si NO es producto nuevo Y tenemos valores de prompts, enviar inputs para PATCH
+      const hasPromptValues = debouncedPromptValues && Object.keys(debouncedPromptValues).length > 0;
+      
+      if (!isNewProduct && hasPromptValues) {
+        console.log("📝 Artículo guardado con valores, enviando PATCH para actualizar precios");
         const norm: Record<string, any> = {};
         Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
           // Extract actual value if it's stored as {label, value}
@@ -334,6 +337,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         if (inputsArray.length > 0) {
           requestBody.inputs = inputsArray;
         }
+      } else if (!isNewProduct && !hasPromptValues) {
+        console.log("⚠️ Artículo guardado sin valores de prompts, haciendo GET para obtener configuración");
+        // Forzar GET aunque no sea nuevo producto si no hay prompts
+      } else {
+        console.log("✨ Producto nuevo, haciendo GET para obtener configuración inicial");
       }
 
       console.log("📤 Request body:", requestBody);
