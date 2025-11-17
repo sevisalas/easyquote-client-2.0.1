@@ -207,6 +207,7 @@ export default function QuoteEdit() {
 
       // Load from database (quote_items table)
       if (quote.items && quote.items.length > 0) {
+        console.log('🔍 Raw quote.items from DB:', quote.items);
         const dbItems = quote.items.map((item: any) => {
           // Convert prompts from array format (DB) to object format (QuoteItem expects)
           let promptsObj: Record<string, any> = {};
@@ -224,7 +225,7 @@ export default function QuoteEdit() {
             promptsObj = item.prompts;
           }
 
-          return {
+          const mappedItem = {
             id: item.id,
             product_name: item.product_name || "",
             description: item.description || "",
@@ -240,7 +241,10 @@ export default function QuoteEdit() {
             itemDescription: item.product_name || "",
             itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
           };
+          console.log('🔍 Mapped item:', mappedItem);
+          return mappedItem;
         });
+        console.log('🔍 All dbItems:', dbItems);
         allItems.push(...dbItems);
       }
 
@@ -724,22 +728,25 @@ export default function QuoteEdit() {
                 >
                   {isEditing ? (
                     // Editing mode - show only QuoteItem component
-                    <QuoteItem
-                      hasToken={true}
-                      id={itemId}
-                      initialData={{
-                        productId: item.productId || "",
-                        prompts: item.prompts || {},
-                        outputs: item.outputs || [],
-                        price: item.price || 0,
-                        multi: item.multi, // No forzar valor por defecto
-                        itemDescription: item.itemDescription || item.product_name || "",
-                        itemAdditionals: item.itemAdditionals || [],
-                      }}
-                      onChange={handleItemChange}
-                      onRemove={handleItemRemove}
-                      onFinishEdit={handleItemSaveEdit}
-                    />
+                    <>
+                      {console.log('🔍 Passing to QuoteItem - item:', item)}
+                      <QuoteItem
+                        hasToken={true}
+                        id={itemId}
+                        initialData={{
+                          productId: item.productId || "",
+                          prompts: item.prompts || {},
+                          outputs: item.outputs || [],
+                          price: item.price || 0,
+                          multi: item.multi, // No forzar valor por defecto
+                          itemDescription: item.itemDescription || item.product_name || "",
+                          itemAdditionals: item.itemAdditionals || [],
+                        }}
+                        onChange={handleItemChange}
+                        onRemove={handleItemRemove}
+                        onFinishEdit={handleItemSaveEdit}
+                      />
+                    </>
                   ) : (
                     // View mode with collapsible details
                     <Collapsible
