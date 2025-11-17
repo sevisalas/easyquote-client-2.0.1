@@ -22,23 +22,37 @@ function isTokenValid(token: string): boolean {
  */
 async function refreshEasyQuoteToken(): Promise<string | null> {
   try {
+    console.log('[EasyQuote] Starting token refresh...');
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
+    if (!user) {
+      console.log('[EasyQuote] No user found');
+      return null;
+    }
+    console.log('[EasyQuote] User ID:', user.id);
 
     // Usar credenciales de la organización (owner o propias)
     const { data: credentials, error: credError } = await supabase.rpc('get_organization_easyquote_credentials', {
       p_user_id: user.id
     });
 
+    console.log('[EasyQuote] Credentials fetch result:', {
+      hasCredentials: !!credentials,
+      credentialCount: credentials?.length || 0,
+      error: credError
+    });
+
     if (credError || !credentials || credentials.length === 0) {
+      console.error('[EasyQuote] Failed to get credentials:', credError);
       return null;
     }
 
     const cred = credentials[0];
     if (!cred.api_username || !cred.api_password) {
+      console.error('[EasyQuote] Credentials missing username or password');
       return null;
     }
 
+    console.log('[EasyQuote] Attempting authentication with username:', cred.api_username);
     const { data, error } = await supabase.functions.invoke('easyquote-auth', {
       body: {
         email: cred.api_username,
@@ -47,15 +61,17 @@ async function refreshEasyQuoteToken(): Promise<string | null> {
     });
 
     if (error || !data?.token) {
+      console.error('[EasyQuote] Authentication failed:', error);
       return null;
     }
 
+    console.log('[EasyQuote] Authentication successful, token obtained');
     sessionStorage.setItem('easyquote_token', data.token);
     // Dispatch event to notify other components
     window.dispatchEvent(new Event('easyquote-token-updated'));
     return data.token;
   } catch (err) {
-    console.error('Error refreshing EasyQuote token:', err);
+    console.error('[EasyQuote] Error refreshing token:', err);
     return null;
   }
 }
