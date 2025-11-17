@@ -135,10 +135,6 @@ export default function QuoteEdit() {
     quoteAdditionals: SelectedQuoteAdditional[];
   }>({ formData: {}, items: [], quoteAdditionals: [] });
 
-  // Invalidate cache on mount to ensure fresh data
-  useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: ["quote", id] });
-  }, [id, queryClient]);
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ["quote", id],
@@ -227,17 +223,15 @@ export default function QuoteEdit() {
           });
           
           // Convert prompts from array format (DB) to object format (QuoteItem expects)
-          let promptsObj: Record<string, any> = {};
+          let promptsObj: Record<string, string> = {};
           if (Array.isArray(item.prompts)) {
-            // Convert array [{id, label, value, order}] to object {id: {label, value, order}}
+            // Convert array [{id, label, value, order}] to object {label: value}
             item.prompts.forEach((prompt: any) => {
-              promptsObj[prompt.id] = {
-                label: prompt.label,
-                value: prompt.value,
-                order: prompt.order,
-              };
+              if (prompt && prompt.label && prompt.value !== undefined) {
+                promptsObj[prompt.label] = String(prompt.value);
+              }
             });
-            console.log(`🔍 Converted ${item.prompts.length} prompts to object format for item ${idx}`);
+            console.log(`🔍 Converted ${item.prompts.length} prompts to object format for item ${idx}`, promptsObj);
           } else if (typeof item.prompts === "object" && item.prompts !== null) {
             // Already in object format
             promptsObj = item.prompts;
