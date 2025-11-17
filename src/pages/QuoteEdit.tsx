@@ -9,7 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Edit, ChevronDown } from "lucide-react";
@@ -149,9 +149,9 @@ export default function QuoteEdit() {
   // Customers are now handled by CustomerSelector component
 
   useEffect(() => {
-    console.log('🔥🔥🔥 USE EFFECT CALLED - quote exists:', !!quote);
+    // console.log('🔥🔥🔥 USE EFFECT CALLED - quote exists:', !!quote);
     if (quote) {
-      console.log('🔥🔥🔥 QUOTE DATA:', JSON.stringify(quote, null, 2));
+      // console.log('🔥🔥🔥 QUOTE DATA:', JSON.stringify(quote, null, 2));
       // Detect if customer_id belongs to holded_contacts and add prefix for selector
       const checkCustomerSource = async () => {
         if (quote.customer_id) {
@@ -434,32 +434,32 @@ export default function QuoteEdit() {
     const subtotal = calculateSubtotal();
     let total = subtotal;
 
-    console.log("🔢 Calculando total - Subtotal:", subtotal);
-    console.log("🔢 Ajustes a aplicar:", quoteAdditionals);
+    // console.log("🔢 Calculando total - Subtotal:", subtotal);
+    // console.log("🔢 Ajustes a aplicar:", quoteAdditionals);
 
     // Aplicar ajustes
     quoteAdditionals.forEach((additional) => {
       switch (additional.type) {
         case "net_amount":
-          console.log(`🔢 Aplicando net_amount: ${additional.value}`);
+          // console.log(`🔢 Aplicando net_amount: ${additional.value}`);
           total += additional.value;
           break;
         case "percentage":
           const percentageAmount = (subtotal * additional.value) / 100;
-          console.log(`🔢 Aplicando percentage: ${additional.value}% = ${percentageAmount}`);
+          // console.log(`🔢 Aplicando percentage: ${additional.value}% = ${percentageAmount}`);
           total += percentageAmount;
           break;
         case "quantity_multiplier":
-          console.log(`🔢 Aplicando multiplier: ×${additional.value}`);
+          // console.log(`🔢 Aplicando multiplier: ×${additional.value}`);
           total *= additional.value;
           break;
         default:
-          console.log(`🔢 Aplicando default: ${additional.value}`);
+          // console.log(`🔢 Aplicando default: ${additional.value}`);
           total += additional.value;
       }
     });
 
-    console.log("🔢 Total final calculado:", total);
+    // console.log("🔢 Total final calculado:", total);
     return total;
   };
 
@@ -472,16 +472,16 @@ export default function QuoteEdit() {
     setEditingItems((prev) => new Set([...prev, id]));
   };
 
-  const handleItemSaveEdit = (itemId: string | number) => {
+  const handleItemSaveEdit = useCallback((itemId: string | number) => {
     const id = itemId.toString();
     setEditingItems((prev) => {
       const newSet = new Set(prev);
       newSet.delete(id);
       return newSet;
     });
-  };
+  }, []);
 
-  const handleItemChange = (itemId: string | number, snapshot: any) => {
+  const handleItemChange = useCallback((itemId: string | number, snapshot: any) => {
     setItems((prev) => {
       return prev.map((item, index) =>
         item.id === itemId || index.toString() === itemId.toString()
@@ -501,15 +501,15 @@ export default function QuoteEdit() {
           : item,
       );
     });
-  };
+  }, []);
 
-  const handleItemRemove = (itemId: string | number) => {
+  const handleItemRemove = useCallback((itemId: string | number) => {
     setItems((prev) =>
       prev.filter((item, index) => {
         return item.id !== itemId && index.toString() !== itemId.toString();
       }),
     );
-  };
+  }, []);
 
   const addItem = () => {
     const newItemId = `temp-${Date.now()}`;
@@ -761,7 +761,7 @@ export default function QuoteEdit() {
                   {isEditing ? (
                     // Editing mode - show only QuoteItem component
                     <>
-                      {console.log('🔍 Passing to QuoteItem - item:', item)}
+                      {/* console.log('🔍 Passing to QuoteItem - item:', item) */}
                       <QuoteItem
                         hasToken={true}
                         id={itemId}

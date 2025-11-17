@@ -89,33 +89,34 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const initializedRef = useRef(false);
   const lastSyncedSnapshot = useRef<string>("");
   
-  // Reset initialization when item ID changes OR when initialData changes significantly
+  // Reset initialization ONLY when item ID changes (different item)
   useEffect(() => {
     initializedRef.current = false;
-  }, [id, initialData?.productId]);
+    lastSyncedSnapshot.current = "";
+  }, [id]);
   
-  // Log para debug - ver si initialData llega
-  console.log('🔍 QuoteItem rendered with initialData:', initialData);
+  // Log para debug - ver si initialData llega (solo cuando cambia)
+  // console.log('🔍 QuoteItem rendered with initialData:', initialData);
   
   useEffect(() => {
-    console.log('🔍 useEffect executed - initializedRef:', initializedRef.current, 'initialData:', initialData);
+    // console.log('🔍 useEffect executed - initializedRef:', initializedRef.current, 'initialData:', initialData);
     if (initializedRef.current) {
-      console.log('⚠️ useEffect cancelled - already initialized');
+      // console.log('⚠️ useEffect cancelled - already initialized');
       return;
     }
     if (!initialData) {
-      console.log('⚠️ useEffect cancelled - no initialData');
+      // console.log('⚠️ useEffect cancelled - no initialData');
       return;
     }
     initializedRef.current = true;
     try {
-      console.log('✅ Starting initialization with initialData:', initialData);
+      // console.log('✅ Starting initialization with initialData:', initialData);
       setProductId(initialData.productId || "");
       
       // Normalize prompts format: extract just the value if it's an object with {label, value, order}
       const normalizedPrompts: Record<string, any> = {};
       if (initialData.prompts) {
-        console.log('🔍 Raw prompts:', initialData.prompts);
+        // console.log('🔍 Raw prompts:', initialData.prompts);
         Object.entries(initialData.prompts).forEach(([promptId, promptData]: [string, any]) => {
           // If it's an object with a value property, extract just the value
           if (promptData && typeof promptData === 'object' && 'value' in promptData) {
@@ -125,7 +126,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             normalizedPrompts[promptId] = promptData;
           }
         });
-        console.log('🔍 Normalized prompts:', normalizedPrompts);
+        // console.log('🔍 Normalized prompts:', normalizedPrompts);
       }
       
       setPromptValues(normalizedPrompts);
@@ -134,7 +135,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       
       // Si hay outputs guardados, marcar que no necesitamos fetchear
       if (initialData.outputs && Array.isArray(initialData.outputs) && initialData.outputs.length > 0) {
-        console.log('✅ Initial outputs found:', initialData.outputs);
+        // console.log('✅ Initial outputs found:', initialData.outputs);
         setHasInitialOutputs(true);
         setIsNewProduct(false); // No es un producto "nuevo" si ya tiene datos guardados
       }
@@ -713,16 +714,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   const isComplete = productId && priceOutput && finalPrice > 0;
 
-  // Debug logging para el botón Finalizar
-  useEffect(() => {
-    console.log("🔍 Estado de finalización:", {
-      productId: !!productId,
-      priceOutput: !!priceOutput,
-      finalPrice,
-      isComplete,
-      outputsLength: outputs.length
-    });
-  }, [productId, priceOutput, finalPrice, isComplete, outputs]);
+  // Debug logging para el botón Finalizar (comentado para reducir ruido)
+  // useEffect(() => {
+  //   console.log("🔍 Estado de finalización:", {
+  //     productId: !!productId,
+  //     priceOutput: !!priceOutput,
+  //     finalPrice,
+  //     isComplete,
+  //     outputsLength: outputs.length
+  //   });
+  // }, [productId, priceOutput, finalPrice, isComplete, outputs]);
 
   return (
     <>
