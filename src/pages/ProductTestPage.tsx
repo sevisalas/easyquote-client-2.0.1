@@ -219,11 +219,6 @@ export default function ProductTestPage() {
       const norm: Record<string, any> = {};
       Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
         if (v === "" || v === undefined || v === null) return;
-        
-        // Find the prompt to check its type
-        const prompt = productDetail?.prompts?.find((p: any) => p.id === k);
-        const promptType = prompt?.promptType;
-        
         if (typeof v === "string") {
           const trimmed = v.trim();
           const isHex = /^#[0-9a-f]{6}$/i.test(trimmed);
@@ -231,15 +226,8 @@ export default function ProductTestPage() {
             // Remove the # for color values as API expects without #
             norm[k] = trimmed.substring(1).toUpperCase();
           } else {
-            // Only convert to number if it's a numeric prompt type (Number=0 or Quantity=7)
-            const isNumericType = promptType === 0 || promptType === 7;
-            if (isNumericType) {
-              const asNum = parseFloat(trimmed);
-              norm[k] = Number.isNaN(asNum) ? trimmed : asNum;
-            } else {
-              // For dropdowns and other types, keep the original string value
-              norm[k] = trimmed;
-            }
+            const asNum = parseFloat(trimmed);
+            norm[k] = Number.isNaN(asNum) ? trimmed : asNum;
           }
         } else {
           norm[k] = v;
