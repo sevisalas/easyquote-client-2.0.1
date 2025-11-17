@@ -59,6 +59,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [isExpanded, setIsExpanded] = useState<boolean>(shouldExpand || false);
   const [itemDescription, setItemDescription] = useState<string>("");
   const [isNewProduct, setIsNewProduct] = useState<boolean>(true);
+  const [hasInitialOutputs, setHasInitialOutputs] = useState<boolean>(false);
   const selectRef = useRef<HTMLButtonElement>(null);
 
   // Auto-expand/collapse based on shouldExpand prop
@@ -92,7 +93,15 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     try {
       setProductId(initialData.productId || "");
       setPromptValues(initialData.prompts || {});
+      setDebouncedPromptValues(initialData.prompts || {}); // También inicializar debounced para evitar re-fetch
       setItemDescription(initialData.itemDescription || "");
+      
+      // Si hay outputs guardados, marcar que no necesitamos fetchear
+      if (initialData.outputs && Array.isArray(initialData.outputs) && initialData.outputs.length > 0) {
+        setHasInitialOutputs(true);
+        setIsNewProduct(false); // No es un producto "nuevo" si ya tiene datos guardados
+      }
+      
       // Convertir formato antiguo a nuevo si es necesario
       const additionals = initialData.itemAdditionals;
       if (additionals && !Array.isArray(additionals)) {
@@ -217,11 +226,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct],
-    enabled: !!hasToken && !!productId,
+    enabled: !!hasToken && !!productId && !hasInitialOutputs, // No fetchear si ya tenemos outputs guardados
     retry: false, // No reintentar automáticamente para productos con error 500
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     staleTime: forceRecalculate ? 0 : 5000,
+    initialData: hasInitialOutputs && initialData ? { prompts: initialData.prompts, outputValues: initialData.outputs } : undefined, // Usar outputs guardados como initialData
     queryFn: async () => {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
@@ -278,17 +288,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         throw error;
       }
       
-      // Si es producto nuevo, inicializar promptValues con los currentValue de la respuesta
-      if (isNewProduct && data?.prompts) {
-        const initialValues: Record<string, any> = {};
-        (data.prompts as any[]).forEach((prompt: any) => {
-          if (prompt.currentValue !== undefined && prompt.currentValue !== null) {
-            initialValues[prompt.id] = prompt.currentValue;
-          }
-        });
-        console.log("🎯 Inicializando promptValues con valores por defecto del GET:", initialValues);
-        setPromptValues(initialValues);
-        setDebouncedPromptValues(initialValues);
+      // NO inicializar promptValues automáticamente
+      // Los valores por defecto ya están en pricing.prompts[].currentValue
+      // Solo se actualizará promptValues cuando el usuario cambie algo manualmente
+      if (isNewProduct) {
         setIsNewProduct(false);
       }
       
@@ -320,6 +323,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setQtyInputs(["", "", "", "", ""]);
       setItemAdditionals([]);
       setIsNewProduct(true); // Mark as new product to trigger GET without inputs
+      setHasInitialOutputs(false); // Resetear flag de outputs iniciales
     }
     previousProductIdRef.current = productId;
     
