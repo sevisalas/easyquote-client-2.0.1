@@ -90,20 +90,22 @@ Deno.serve(async (req) => {
     console.log('📦 Order items fetched:', JSON.stringify(orderItems, null, 2));
     console.log('📦 Order additionals:', JSON.stringify(orderAdditionals || [], null, 2));
 
-    // Get Holded contact ID - first try holded_contact_id, then customer_id
+    // Get Holded contact ID and contact data
     let contactId = null;
+    let contactData: any = null;
     
     // First try: direct holded_contact_id reference
     if (order.holded_contact_id) {
       const { data: holdedContact } = await supabase
         .from('holded_contacts')
-        .select('holded_id')
+        .select('*')
         .eq('id', order.holded_contact_id)
         .single();
       
       if (holdedContact?.holded_id) {
         contactId = holdedContact.holded_id;
-        console.log('Found contactId from holded_contact_id:', contactId);
+        contactData = holdedContact;
+        console.log('Found contact from holded_contact_id:', contactId, contactData.name);
       }
     }
     
@@ -111,13 +113,14 @@ Deno.serve(async (req) => {
     if (!contactId && order.customer_id) {
       const { data: customer } = await supabase
         .from('customers')
-        .select('holded_id')
+        .select('*')
         .eq('id', order.customer_id)
         .single();
       
       if (customer?.holded_id) {
         contactId = customer.holded_id;
-        console.log('Found contactId from customer.holded_id:', contactId);
+        contactData = customer;
+        console.log('Found contact from customer.holded_id:', contactId, contactData.name);
       }
     }
 
@@ -265,11 +268,26 @@ Deno.serve(async (req) => {
     // Build the payload for Holded API
     const payload: any = {
       contactId,
-      contactName: '', // Holded will fill this
+      contactName: contactData?.name || '',
       desc: order.description || order.title || '',
       date: Math.floor(new Date(order.order_date).getTime() / 1000),
       items
     };
+
+    // Add contact address information if available
+    if (contactData?.address) {
+      payload.contactAddress = contactData.address;
+    }
+    
+    // Add contact email if available
+    if (contactData?.email) {
+      payload.contactEmail = contactData.email;
+    }
+    
+    // Add contact phone if available
+    if (contactData?.phone || contactData?.mobile) {
+      payload.contactPhone = contactData.phone || contactData.mobile;
+    }
 
     if (salesChannelId) {
       payload.salesChannelId = salesChannelId;
