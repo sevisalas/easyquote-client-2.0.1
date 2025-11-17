@@ -706,10 +706,35 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       allPrompts.filter(p => isVisiblePrompt(p, effectiveValues)).map(p => p.id)
     );
     
+    // Build filtered prompts with FULL structure preserved
     const filtered: Record<string, any> = {};
     Object.entries(promptValues).forEach(([key, value]) => {
       if (visiblePromptIds.has(key)) {
-        filtered[key] = value;
+        // CRITICAL: Always preserve the full {label, value, order} structure
+        // If value is already an object with label/value/order, keep it
+        // Otherwise, construct it from the prompt definition
+        if (typeof value === 'object' && value !== null && 'label' in value && 'value' in value) {
+          filtered[key] = value;
+        } else {
+          // Find prompt definition to get label
+          const promptDef = allPrompts.find(p => p.id === key);
+          // Try to get order from pricing.prompts if available
+          let order = 999;
+          if (pricing) {
+            const pricingPrompts = (pricing as any)?.prompts || [];
+            const pricingPrompt = pricingPrompts.find((p: any) => String(p.id) === String(key));
+            if (pricingPrompt) {
+              order = Number.isFinite(Number(pricingPrompt.promptSequence)) 
+                ? Number(pricingPrompt.promptSequence) 
+                : (Number.isFinite(Number(pricingPrompt.order)) ? Number(pricingPrompt.order) : 999);
+            }
+          }
+          filtered[key] = {
+            label: promptDef?.label || key,
+            value: value,
+            order: order
+          };
+        }
       }
     });
     
