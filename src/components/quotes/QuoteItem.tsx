@@ -112,20 +112,15 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       console.log('✅ Starting initialization with initialData:', initialData);
       setProductId(initialData.productId || "");
       
-      // Normalize prompts format: extract just the value if it's an object with {label, value, order}
+      // Normalize prompts format: keep the full structure {label, value, order}
       const normalizedPrompts: Record<string, any> = {};
       if (initialData.prompts) {
         console.log('🔍 Raw prompts:', initialData.prompts);
         Object.entries(initialData.prompts).forEach(([promptId, promptData]: [string, any]) => {
-          // If it's an object with a value property, extract just the value
-          if (promptData && typeof promptData === 'object' && 'value' in promptData) {
-            normalizedPrompts[promptId] = promptData.value;
-          } else {
-            // Otherwise use the value as-is
-            normalizedPrompts[promptId] = promptData;
-          }
+          // Keep the full structure - PromptsForm needs it
+          normalizedPrompts[promptId] = promptData;
         });
-        console.log('🔍 Normalized prompts:', normalizedPrompts);
+        console.log('🔍 Normalized prompts (keeping full structure):', normalizedPrompts);
       }
       
       setPromptValues(normalizedPrompts);
