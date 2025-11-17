@@ -220,11 +220,20 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // that uses previousProductIdRef to detect real product changes
 
   // Debounce promptValues changes
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
   useEffect(() => {
+    // Cancelar timer anterior si existe
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
     const t = setTimeout(() => {
       console.log("⏱️ Debounce: actualizando debouncedPromptValues", promptValues);
       setDebouncedPromptValues(promptValues);
     }, 350);
+    
+    debounceTimerRef.current = t;
     return () => clearTimeout(t);
   }, [promptValues]);
 
@@ -340,10 +349,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         throw error;
       }
       
-      // NO inicializar promptValues automáticamente
+      // NO inicializar promptValues automáticamente si es producto nuevo
       // Los valores por defecto ya están en pricing.prompts[].currentValue
-      // Solo se actualizará promptValues cuando el usuario cambie algo manualmente
-      if (isNewProduct) {
+      // Solo cambiar isNewProduct a false si obtuvimos datos válidos
+      if (isNewProduct && data?.prompts) {
+        console.log("✅ GET exitoso, marcando producto como cargado");
         setIsNewProduct(false);
       }
       
@@ -374,6 +384,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     // Only reset if product actually changed (not initial load)
     if (previousProductIdRef.current && previousProductIdRef.current !== productId) {
       console.log("🔄 Producto cambió - RESET COMPLETO de todos los estados", { from: previousProductIdRef.current, to: productId });
+      
+      // Cancelar cualquier debounce pendiente
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
       
       // Reset EVERYTHING to initial state
       setPromptValues({});
