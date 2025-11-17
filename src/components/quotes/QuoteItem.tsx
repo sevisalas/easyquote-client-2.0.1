@@ -158,11 +158,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // This duplicate reset is handled by the more sophisticated useEffect below (lines 291-320)
   // that uses previousProductIdRef to detect real product changes
 
-  // Debounce promptValues changes
+  // Debounce promptValues changes - pero NO si es un producto nuevo (cargando valores iniciales)
   useEffect(() => {
+    if (isNewProduct) return; // No debounce si aún no hemos inicializado los valores por defecto
     const t = setTimeout(() => setDebouncedPromptValues(promptValues), 350);
     return () => clearTimeout(t);
-  }, [promptValues]);
+  }, [promptValues, isNewProduct]);
 
   const fetchProducts = async (): Promise<any[]> => {
     const token = sessionStorage.getItem("easyquote_token");
@@ -277,8 +278,17 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         throw error;
       }
       
-      // After successful fetch for new product, mark it as no longer new
-      if (isNewProduct) {
+      // Si es producto nuevo, inicializar promptValues con los currentValue de la respuesta
+      if (isNewProduct && data?.prompts) {
+        const initialValues: Record<string, any> = {};
+        (data.prompts as any[]).forEach((prompt: any) => {
+          if (prompt.currentValue !== undefined && prompt.currentValue !== null) {
+            initialValues[prompt.id] = prompt.currentValue;
+          }
+        });
+        console.log("🎯 Inicializando promptValues con valores por defecto del GET:", initialValues);
+        setPromptValues(initialValues);
+        setDebouncedPromptValues(initialValues);
         setIsNewProduct(false);
       }
       
