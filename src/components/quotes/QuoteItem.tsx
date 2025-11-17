@@ -274,11 +274,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   
   // Reset prompts only when product changes (not on initial load with saved data)
   useEffect(() => {
-    // Only reset user inputs when product changes (not initial load)
+    // Only reset if product actually changed (not initial load)
     if (previousProductIdRef.current && previousProductIdRef.current !== productId) {
-      console.log("🔄 Product changed, resetting user inputs", { from: previousProductIdRef.current, to: productId });
-      // Only reset user-specific inputs, let queries handle data refresh
+      console.log("🔄 Product changed, resetting all states", { from: previousProductIdRef.current, to: productId });
+      // Reset all states to prevent sending old product prompt values to new product
+      setPromptValues({});
+      setDebouncedPromptValues({});
       setMultiEnabled(false);
+      setQtyPrompt("");
       setQtyInputs(["", "", "", "", ""]);
       setItemAdditionals([]);
     }
