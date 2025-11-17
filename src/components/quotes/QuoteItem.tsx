@@ -60,6 +60,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [itemDescription, setItemDescription] = useState<string>("");
   const [isNewProduct, setIsNewProduct] = useState<boolean>(true);
   const [hasInitialOutputs, setHasInitialOutputs] = useState<boolean>(false);
+  const [userHasChangedPrompts, setUserHasChangedPrompts] = useState<boolean>(false);
   const selectRef = useRef<HTMLButtonElement>(null);
 
   // Auto-expand/collapse based on shouldExpand prop
@@ -225,7 +226,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   });
 
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError } = useQuery({
-    queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct],
+    queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct, userHasChangedPrompts],
     enabled: !!hasToken && !!productId && !hasInitialOutputs, // No fetchear si ya tenemos outputs guardados
     retry: false, // No reintentar automáticamente para productos con error 500
     placeholderData: keepPreviousData,
@@ -236,16 +237,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
       
-      console.log("🔥 Fetching pricing for product:", productId, "isNewProduct:", isNewProduct);
+      console.log("🔥 Fetching pricing for product:", productId, "isNewProduct:", isNewProduct, "userHasChangedPrompts:", userHasChangedPrompts);
 
-      // Si es producto nuevo, NO enviar inputs en absoluto para forzar GET limpio
+      // Si es producto nuevo O el usuario NO ha cambiado nada, NO enviar inputs
       const requestBody: any = {
         token,
         productId
       };
 
-      // Solo incluir inputs si NO es un producto nuevo
-      if (!isNewProduct) {
+      // Solo incluir inputs si NO es un producto nuevo Y el usuario ha cambiado algo manualmente
+      if (!isNewProduct && userHasChangedPrompts) {
         const norm: Record<string, any> = {};
         Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
           // Extract actual value if it's stored as {label, value}
@@ -324,6 +325,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setItemAdditionals([]);
       setIsNewProduct(true); // Mark as new product to trigger GET without inputs
       setHasInitialOutputs(false); // Resetear flag de outputs iniciales
+      setUserHasChangedPrompts(false); // Resetear flag de cambios manuales
     }
     previousProductIdRef.current = productId;
     
@@ -600,6 +602,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   }, [pricing, productId]);
 
   const handlePromptChange = (id: string, value: any, label: string) => {
+    console.log("🔄 Usuario cambió prompt manualmente:", { id, value, label });
+    setUserHasChangedPrompts(true); // Marcar que el usuario ha hecho cambios manuales
+    
     setPromptValues((prev) => {
       // Preserve the order field if it exists, or find it from product definition
       let order = prev[id]?.order;
