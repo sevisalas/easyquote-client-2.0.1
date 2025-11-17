@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -658,25 +658,22 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   const handlePromptChange = (id: string, value: any, label: string) => {
     console.log("🔄 Usuario cambió prompt manualmente:", { id, value, label });
-    setUserHasChangedPrompts(true); // Marcar que el usuario ha hecho cambios manuales
+    setUserHasChangedPrompts(true);
     
     setPromptValues((prev) => {
-      // Preserve the order field if it exists, or find it from product definition
       let order = prev[id]?.order;
       
-      // If no order exists, try to get it from the product pricing prompts using promptSequence
       if (order === undefined && pricing) {
         const prompts = (pricing as any)?.prompts || [];
         const promptDef = prompts.find((p: any) => String(p.id) === String(id));
         if (promptDef) {
-          // Usar promptSequence de EasyQuote API
           order = Number.isFinite(Number(promptDef.promptSequence)) 
             ? Number(promptDef.promptSequence) 
             : (Number.isFinite(Number(promptDef.order)) ? Number(promptDef.order) : prompts.indexOf(promptDef));
         }
       }
       
-      return {
+      const newValues = {
         ...prev, 
         [id]: { 
           label, 
@@ -684,11 +681,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           order: order !== undefined ? order : 999
         } 
       };
+      
+      // Trigger sync after state update
+      setTimeout(() => syncToParent(), 0);
+      
+      return newValues;
     });
   };
 
-  // Sync with parent - only when snapshot actually changes
-  useEffect(() => {
+  // Sync with parent only on specific user actions, not automatically
+  const syncToParent = useCallback(() => {
     if (!onChange) return;
     
     const snapshot = {
