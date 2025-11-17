@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Shield, Eye, EyeOff, Key } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Shield, Eye, EyeOff, Key, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,14 @@ const SuperAdminUsers = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<SuperAdmin | null>(null);
   const [deleting, setDeleting] = useState(false);
+  
+  // Estados para edición
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<SuperAdmin | null>(null);
+  const [editEmail, setEditEmail] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [showEditPassword, setShowEditPassword] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     document.title = "Gestión de SuperAdmins | EasyQuote";
@@ -201,6 +209,91 @@ const SuperAdminUsers = () => {
     }
   };
 
+  const openEditDialog = (admin: SuperAdmin) => {
+    setUserToEdit(admin);
+    setEditEmail(admin.email);
+    setEditPassword("");
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSuperAdmin = async () => {
+    if (!userToEdit) return;
+
+    if (!editEmail) {
+      toast({
+        title: "Error",
+        description: "El email es obligatorio",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (editPassword && editPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "La contraseña debe tener al menos 6 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setEditing(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Actualizar email si cambió
+      if (editEmail !== userToEdit.email) {
+        const { error: emailError } = await supabase.functions.invoke('update-user-email', {
+          body: { 
+            userId: userToEdit.id, 
+            newEmail: editEmail 
+          },
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`
+          }
+        });
+
+        if (emailError) throw emailError;
+      }
+
+      // Actualizar contraseña si se proporcionó
+      if (editPassword) {
+        const { error: passwordError } = await supabase.functions.invoke('update-user-password', {
+          body: { 
+            userEmail: editEmail,
+            newPassword: editPassword 
+          },
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`
+          }
+        });
+
+        if (passwordError) throw passwordError;
+      }
+
+      toast({
+        title: "Éxito",
+        description: "SuperAdmin actualizado exitosamente",
+      });
+
+      setEditDialogOpen(false);
+      setUserToEdit(null);
+      setEditEmail("");
+      setEditPassword("");
+      loadSuperAdmins();
+    } catch (error: any) {
+      console.error('Error editing superadmin:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo actualizar el superadmin",
+        variant: "destructive",
+      });
+    } finally {
+      setEditing(false);
+    }
+  };
+
   if (!isSuperAdmin) {
     return null;
   }
@@ -359,16 +452,25 @@ const SuperAdminUsers = () => {
                         {new Date(admin.created_at).toLocaleDateString('es-ES')}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setUserToDelete(admin);
-                            setDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEditDialog(admin)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setUserToDelete(admin);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -377,6 +479,95 @@ const SuperAdminUsers = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Dialog de edición */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar SuperAdmin</DialogTitle>
+              <DialogDescription>
+                Modifica el email y/o contraseña del superadmin
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">Email</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  placeholder="admin@ejemplo.com"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-password">Nueva Contraseña (opcional)</Label>
+                <div className="relative">
+                  <Input
+                    id="edit-password"
+                    type={showEditPassword ? "text" : "password"}
+                    placeholder="Dejar vacío para no cambiar"
+                    value={editPassword}
+                    onChange={(e) => setEditPassword(e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3"
+                    onClick={() => setShowEditPassword(!showEditPassword)}
+                  >
+                    {showEditPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Mínimo 6 caracteres. Dejar vacío si no deseas cambiar la contraseña.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const length = 12;
+                    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+                    let password = "";
+                    for (let i = 0; i < length; i++) {
+                      password += charset.charAt(Math.floor(Math.random() * charset.length));
+                    }
+                    setEditPassword(password);
+                  }}
+                  className="w-full mt-2"
+                >
+                  <Key className="h-4 w-4 mr-2" />
+                  Generar contraseña aleatoria
+                </Button>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditDialogOpen(false);
+                  setUserToEdit(null);
+                  setEditEmail("");
+                  setEditPassword("");
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleEditSuperAdmin}
+                disabled={editing}
+              >
+                {editing ? "Guardando..." : "Guardar Cambios"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Dialog de confirmación de eliminación */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
