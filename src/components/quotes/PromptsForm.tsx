@@ -212,16 +212,15 @@ export default function PromptsForm({
     });
     return { ...defaultsMap, ...extractedValues };
   }, [defaultsMap, values]);
-  const visiblePrompts = useMemo(() => prompts.filter((p) => isVisiblePrompt(p, effectiveValues)), [prompts, effectiveValues]);
-
+  // Show ALL prompts - visibility filtering is only for Holded export
   if (!product) return null;
-  if (!visiblePrompts?.length) {
+  if (!prompts?.length) {
     return <p className="text-sm text-muted-foreground">Este producto no define opciones.</p>;
   }
 
   return (
     <div className="space-y-2">
-      {visiblePrompts.map((p) => (
+      {prompts.map((p) => (
         <div key={p.id} className="space-y-1">
           <Label htmlFor={p.id} className="text-sm">{p.label}{p.required ? " *" : ""}</Label>
           {p.description && (
