@@ -697,6 +697,17 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   const isComplete = productId && priceOutput && finalPrice > 0;
 
+  // Debug logging para el botón Finalizar
+  useEffect(() => {
+    console.log("🔍 Estado de finalización:", {
+      productId: !!productId,
+      priceOutput: !!priceOutput,
+      finalPrice,
+      isComplete,
+      outputsLength: outputs.length
+    });
+  }, [productId, priceOutput, finalPrice, isComplete, outputs]);
+
   return (
     <>
     <div className={`border rounded-lg p-2 ${isExpanded ? 'border-r-4 border-r-primary' : 'border-r-4 border-r-secondary'}`}>
