@@ -144,15 +144,36 @@ export default function QuoteEdit() {
 
   useEffect(() => {
     if (quote) {
-      setFormData({
-        quote_number: quote.quote_number,
-        customer_id: quote.customer_id,
-        title: quote.title,
-        description: quote.description,
-        notes: quote.notes,
-        status: quote.status,
-        valid_until: quote.valid_until,
-      });
+      // Check if customer_id corresponds to a Holded contact
+      const checkCustomerSource = async () => {
+        let finalCustomerId = quote.customer_id;
+        
+        if (quote.customer_id) {
+          // Check if this ID exists in holded_contacts
+          const { data: holdedContact } = await supabase
+            .from('holded_contacts')
+            .select('id')
+            .eq('id', quote.customer_id)
+            .maybeSingle();
+          
+          // If found in holded_contacts, add the prefix
+          if (holdedContact) {
+            finalCustomerId = `holded:${quote.customer_id}`;
+          }
+        }
+        
+        setFormData({
+          quote_number: quote.quote_number,
+          customer_id: finalCustomerId,
+          title: quote.title,
+          description: quote.description,
+          notes: quote.notes,
+          status: quote.status,
+          valid_until: quote.valid_until,
+        });
+      };
+      
+      checkCustomerSource();
 
       // Load quote additionals - the data is stored as JSON array in quotes.quote_additionals field
       const loadedAdditionals: SelectedQuoteAdditional[] = [];
