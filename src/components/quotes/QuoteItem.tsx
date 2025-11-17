@@ -60,6 +60,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [itemDescription, setItemDescription] = useState<string>("");
   const [isNewProduct, setIsNewProduct] = useState<boolean>(true);
   const [hasInitialOutputs, setHasInitialOutputs] = useState<boolean>(false);
+  const [userHasChangedCurrentProduct, setUserHasChangedCurrentProduct] = useState<boolean>(false);
   const selectRef = useRef<HTMLButtonElement>(null);
 
   // Auto-expand/collapse based on shouldExpand prop
@@ -305,11 +306,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         productId
       };
 
-      // Si NO es producto nuevo Y tenemos valores de prompts, enviar inputs para PATCH
+      // Si NO es producto nuevo Y tenemos valores de prompts Y el usuario ha cambiado algo, enviar PATCH
       const hasPromptValues = debouncedPromptValues && Object.keys(debouncedPromptValues).length > 0;
       
-      if (!isNewProduct && hasPromptValues) {
-        console.log("📝 Artículo guardado con valores, enviando PATCH para actualizar precios");
+      if (!isNewProduct && hasPromptValues && userHasChangedCurrentProduct) {
+        console.log("📝 Usuario cambió valores del producto, enviando PATCH para actualizar precios");
         const norm: Record<string, any> = {};
         Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
           // Extract actual value if it's stored as {label, value}
@@ -337,9 +338,38 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         if (inputsArray.length > 0) {
           requestBody.inputs = inputsArray;
         }
+      } else if (!isNewProduct && hasPromptValues && !userHasChangedCurrentProduct) {
+        console.log("✅ Artículo guardado cargando primera vez, haciendo PATCH para actualizar precios");
+        // Para artículos guardados en la primera carga, hacer PATCH con valores guardados
+        const norm: Record<string, any> = {};
+        Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
+          const actualValue = (v && typeof v === 'object' && 'value' in v) ? v.value : v;
+          if (actualValue === "" || actualValue === undefined || actualValue === null) return;
+          if (typeof actualValue === "string") {
+            const trimmed = actualValue.trim();
+            const isHex = /^#[0-9a-f]{6}$/i.test(trimmed);
+            if (isHex) {
+              norm[k] = trimmed.slice(1).toUpperCase();
+              return;
+            }
+            const num = Number(trimmed.replace(",", "."));
+            if (!Number.isNaN(num) && /^-?\d+([.,]\d+)?$/.test(trimmed)) {
+              norm[k] = num;
+              return;
+            }
+            norm[k] = trimmed;
+          } else {
+            norm[k] = actualValue;
+          }
+        });
+        const inputsArray = Object.entries(norm).map(([id, value]) => ({ id, value }));
+        if (inputsArray.length > 0) {
+          requestBody.inputs = inputsArray;
+        }
+        // Marcar que ya hicimos la primera carga
+        setUserHasChangedCurrentProduct(true);
       } else if (!isNewProduct && !hasPromptValues) {
         console.log("⚠️ Artículo guardado sin valores de prompts, haciendo GET para obtener configuración");
-        // Forzar GET aunque no sea nuevo producto si no hay prompts
       } else {
         console.log("✨ Producto nuevo, haciendo GET para obtener configuración inicial");
       }
@@ -411,6 +441,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setHasInitialOutputs(false);
       setForceRecalculate(false);
       setHasUnsavedChanges(false);
+      setUserHasChangedCurrentProduct(false); // Reset flag para nuevo producto
       hasMarkedAsLoadedRef.current = false;
       
       console.log("✅ Estados reseteados completamente, listo para cargar nuevo producto");
@@ -706,6 +737,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   const handlePromptChange = (id: string, value: any, label: string) => {
     console.log("🔄 Usuario cambió prompt:", { id, value, label });
+    
+    // Marcar que el usuario ha cambiado valores del producto actual
+    setUserHasChangedCurrentProduct(true);
     
     setPromptValues((prev) => {
       let order = prev[id]?.order;
