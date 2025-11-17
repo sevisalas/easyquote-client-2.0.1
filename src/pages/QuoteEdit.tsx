@@ -135,6 +135,11 @@ export default function QuoteEdit() {
     quoteAdditionals: SelectedQuoteAdditional[];
   }>({ formData: {}, items: [], quoteAdditionals: [] });
 
+  // Invalidate cache on mount to ensure fresh data
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["quote", id] });
+  }, [id, queryClient]);
+
   const { data: quote, isLoading } = useQuery({
     queryKey: ["quote", id],
     queryFn: () => fetchQuote(id!),
