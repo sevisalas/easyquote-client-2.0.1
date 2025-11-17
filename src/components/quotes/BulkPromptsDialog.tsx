@@ -104,8 +104,8 @@ export function BulkPromptsDialog({
         
         // Si se cambia el tipo de prompt, resetear campos específicos del tipo
         if (field === 'promptType') {
-          const newType = promptTypes.find(type => type.id === value);
-          const isNumericType = newType?.promptType === "Number" || newType?.promptType === "Quantity";
+          // Verificar por ID: 1 = Number (tipo numérico)
+          const isNumericType = value === 1;
           
           if (isNumericType) {
             // Si es numérico, establecer valores por defecto
@@ -173,8 +173,8 @@ export function BulkPromptsDialog({
 
             <div className="space-y-3">
               {prompts.map((prompt, index) => {
-                const currentType = promptTypes.find(type => type.id === prompt.promptType);
-                const isNumericType = currentType?.promptType === "Number" || currentType?.promptType === "Quantity";
+                // Verificar por ID: 1 = Number (tipo numérico)
+                const isNumericType = prompt.promptType === 1;
 
                 return (
                   <div key={index} className="p-4 border rounded-lg">
