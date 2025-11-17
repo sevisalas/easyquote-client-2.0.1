@@ -209,10 +209,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     },
   });
 
-  const { data: pricing, error: pricingError, refetch: refetchPricing } = useQuery({
+  const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate],
     enabled: !!hasToken && !!productId,
-    retry: 1,
+    retry: false, // No reintentar automáticamente para productos con error 500
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     staleTime: forceRecalculate ? 0 : 5000,
@@ -725,7 +725,18 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               <CardTitle>Opciones</CardTitle>
             </CardHeader>
             <CardContent>
-              {pricing ? (
+              {isPricingError && pricingError ? (
+                <Alert variant="destructive">
+                  <AlertTitle>Error al cargar este producto</AlertTitle>
+                  <AlertDescription className="space-y-2">
+                    <p>Este producto tiene problemas de configuración en EasyQuote.</p>
+                    <p className="text-xs text-muted-foreground">
+                      {pricingError instanceof Error ? pricingError.message : "Error desconocido"}
+                    </p>
+                    <p className="font-semibold">Por favor, selecciona otro producto o contacta al administrador.</p>
+                  </AlertDescription>
+                </Alert>
+              ) : pricing ? (
                 <PromptsForm product={pricing} values={promptValues} onChange={handlePromptChange} />
               ) : (
                 <p className="text-sm text-muted-foreground">Cargando prompts…</p>
@@ -734,6 +745,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           </Card>
 
           <div className="md:col-span-2 md:sticky md:top-6 self-start space-y-3">
+            {isPricingError && pricingError && (
+              <Alert variant="destructive">
+                <AlertTitle>Producto no disponible</AlertTitle>
+                <AlertDescription>
+                  Este producto no puede ser usado actualmente. Selecciona otro de la lista.
+                </AlertDescription>
+              </Alert>
+            )}
             {imageOutputs.length > 0 && (
               <section className={imageOutputs.length === 1 ? "flex justify-center" : "grid grid-cols-2 gap-3"}>
                 {imageOutputs.map((o: any, idx: number) => (
