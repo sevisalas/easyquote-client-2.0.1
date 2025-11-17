@@ -810,7 +810,15 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             <div className="space-y-2">
               <Label>Selecciona producto</Label>
               <Select onValueChange={(value) => {
+                console.log("🔄 Usuario cambió de producto:", value);
+                // Resetear completamente el estado para el nuevo producto
                 setProductId(value);
+                setIsNewProduct(true); // Marcar como producto nuevo
+                setUserHasChangedPrompts(false); // Usuario no ha cambiado nada aún
+                setPromptValues({}); // Limpiar prompts antiguos
+                setDebouncedPromptValues({}); // Limpiar valores debounced
+                setHasInitialOutputs(false); // No hay outputs iniciales
+                
                 // Establecer automáticamente el itemDescription con el nombre del producto
                 const selectedProduct = products?.find((p: any) => String(p.id) === String(value));
                 if (selectedProduct) {
