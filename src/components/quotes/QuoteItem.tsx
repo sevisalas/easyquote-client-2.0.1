@@ -89,13 +89,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const initializedRef = useRef(false);
   const lastSyncedSnapshot = useRef<string>("");
   
-  // Reset initialization ONLY when item ID changes (different item)
+  // Reset initialization when item ID changes OR when initialData changes significantly
   useEffect(() => {
     initializedRef.current = false;
-    lastSyncedSnapshot.current = "";
-  }, [id]);
+  }, [id, initialData?.productId]);
   
-  // Log para debug - ver si initialData llega (solo cuando cambia)
+  // Log para debug - ver si initialData llega
   console.log('🔍 QuoteItem rendered with initialData:', initialData);
   
   useEffect(() => {
@@ -714,16 +713,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   const isComplete = productId && priceOutput && finalPrice > 0;
 
-  // Debug logging para el botón Finalizar (comentado para reducir ruido)
-  // useEffect(() => {
-  //   console.log("🔍 Estado de finalización:", {
-  //     productId: !!productId,
-  //     priceOutput: !!priceOutput,
-  //     finalPrice,
-  //     isComplete,
-  //     outputsLength: outputs.length
-  //   });
-  // }, [productId, priceOutput, finalPrice, isComplete, outputs]);
+  // Debug logging para el botón Finalizar
+  useEffect(() => {
+    console.log("🔍 Estado de finalización:", {
+      productId: !!productId,
+      priceOutput: !!priceOutput,
+      finalPrice,
+      isComplete,
+      outputsLength: outputs.length
+    });
+  }, [productId, priceOutput, finalPrice, isComplete, outputs]);
 
   return (
     <>
