@@ -88,6 +88,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Inicialización desde datos previos (duplicar)
   const initializedRef = useRef(false);
   
+  // Reset initialization when item ID changes
+  useEffect(() => {
+    initializedRef.current = false;
+  }, [id]);
+  
   // Log para debug - ver si initialData llega
   console.log('🔍 QuoteItem rendered with initialData:', initialData);
   
