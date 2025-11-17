@@ -276,7 +276,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   useEffect(() => {
     // Only reset if product actually changed (not initial load)
     if (previousProductIdRef.current && previousProductIdRef.current !== productId) {
+      console.log("🔄 Product changed, resetting all states", { from: previousProductIdRef.current, to: productId });
       setPromptValues({});
+      setDebouncedPromptValues({});
+      setMultiEnabled(false);
+      setQtyPrompt("");
+      setQtyInputs(["", "", "", "", ""]);
+      setItemAdditionals([]);
+      setForceRecalculate(prev => !prev); // Toggle to force refetch
     }
     previousProductIdRef.current = productId;
     
