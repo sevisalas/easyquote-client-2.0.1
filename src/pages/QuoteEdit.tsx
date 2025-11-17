@@ -225,13 +225,17 @@ export default function QuoteEdit() {
           });
           
           // Convert prompts from array format (DB) to object format (QuoteItem expects)
-          let promptsObj: Record<string, string> = {};
+          // Keep full structure {id: {label, value, order}} for proper saving later
+          let promptsObj: Record<string, any> = {};
           if (Array.isArray(item.prompts)) {
-            // Convert array [{id, label, value, order}] to object {id: value}
-            // PromptsForm expects the ID as the key, not the label
+            // Convert array [{id, label, value, order}] to object {id: {label, value, order}}
             item.prompts.forEach((prompt: any) => {
               if (prompt && prompt.id && prompt.value !== undefined) {
-                promptsObj[prompt.id] = String(prompt.value);
+                promptsObj[prompt.id] = {
+                  label: prompt.label || prompt.id,
+                  value: prompt.value,
+                  order: prompt.order ?? 999
+                };
               }
             });
             console.log(`🔍 Converted ${item.prompts.length} prompts to object format for item ${idx}`, promptsObj);
