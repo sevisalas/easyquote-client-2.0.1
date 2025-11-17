@@ -86,7 +86,8 @@ const fetchQuote = async (id: string): Promise<Quote> => {
   if (error) throw error;
   if (!data) throw new Error("Presupuesto no encontrado");
 
-  console.log("Quote data loaded:", data); // Debug log
+  console.log("✅ Quote data loaded from DB:", data);
+  console.log("✅ Quote items from DB:", data.items);
   return data as any;
 };
 
@@ -207,8 +208,19 @@ export default function QuoteEdit() {
 
       // Load from database (quote_items table)
       if (quote.items && quote.items.length > 0) {
-        console.log('🔍 Raw quote.items from DB:', quote.items);
-        const dbItems = quote.items.map((item: any) => {
+        console.log('🔍 Loading items from DB - count:', quote.items.length);
+        console.log('🔍 First item raw data:', JSON.stringify(quote.items[0], null, 2));
+        
+        const dbItems = quote.items.map((item: any, idx: number) => {
+          console.log(`🔍 Processing item ${idx}:`, {
+            id: item.id,
+            product_name: item.product_name,
+            promptsType: typeof item.prompts,
+            promptsIsArray: Array.isArray(item.prompts),
+            promptsLength: Array.isArray(item.prompts) ? item.prompts.length : 'N/A',
+            outputsLength: Array.isArray(item.outputs) ? item.outputs.length : 'N/A'
+          });
+          
           // Convert prompts from array format (DB) to object format (QuoteItem expects)
           let promptsObj: Record<string, any> = {};
           if (Array.isArray(item.prompts)) {
@@ -220,9 +232,13 @@ export default function QuoteEdit() {
                 order: prompt.order,
               };
             });
+            console.log(`🔍 Converted ${item.prompts.length} prompts to object format for item ${idx}`);
           } else if (typeof item.prompts === "object" && item.prompts !== null) {
             // Already in object format
             promptsObj = item.prompts;
+            console.log(`🔍 Item ${idx} prompts already in object format`);
+          } else {
+            console.warn(`⚠️ Item ${idx} prompts is neither array nor object:`, typeof item.prompts);
           }
 
           const mappedItem = {
@@ -241,11 +257,17 @@ export default function QuoteEdit() {
             itemDescription: item.product_name || "",
             itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
           };
-          console.log('🔍 Mapped item:', mappedItem);
+          console.log(`🔍 Mapped item ${idx}:`, {
+            id: mappedItem.id,
+            promptsCount: Object.keys(mappedItem.prompts).length,
+            outputsCount: mappedItem.outputs.length
+          });
           return mappedItem;
         });
-        console.log('🔍 All dbItems:', dbItems);
+        console.log('🔍 Total dbItems created:', dbItems.length);
         allItems.push(...dbItems);
+      } else {
+        console.log('⚠️ No quote.items found or empty array');
       }
 
       // Load from JSON selections (if no database items)
