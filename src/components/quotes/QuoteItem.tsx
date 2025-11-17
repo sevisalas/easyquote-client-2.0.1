@@ -96,27 +96,27 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   }, [id]);
   
   // Log para debug - ver si initialData llega (solo cuando cambia)
-  // console.log('🔍 QuoteItem rendered with initialData:', initialData);
+  console.log('🔍 QuoteItem rendered with initialData:', initialData);
   
   useEffect(() => {
-    // console.log('🔍 useEffect executed - initializedRef:', initializedRef.current, 'initialData:', initialData);
+    console.log('🔍 useEffect executed - initializedRef:', initializedRef.current, 'initialData:', initialData);
     if (initializedRef.current) {
-      // console.log('⚠️ useEffect cancelled - already initialized');
+      console.log('⚠️ useEffect cancelled - already initialized');
       return;
     }
     if (!initialData) {
-      // console.log('⚠️ useEffect cancelled - no initialData');
+      console.log('⚠️ useEffect cancelled - no initialData');
       return;
     }
     initializedRef.current = true;
     try {
-      // console.log('✅ Starting initialization with initialData:', initialData);
+      console.log('✅ Starting initialization with initialData:', initialData);
       setProductId(initialData.productId || "");
       
       // Normalize prompts format: extract just the value if it's an object with {label, value, order}
       const normalizedPrompts: Record<string, any> = {};
       if (initialData.prompts) {
-        // console.log('🔍 Raw prompts:', initialData.prompts);
+        console.log('🔍 Raw prompts:', initialData.prompts);
         Object.entries(initialData.prompts).forEach(([promptId, promptData]: [string, any]) => {
           // If it's an object with a value property, extract just the value
           if (promptData && typeof promptData === 'object' && 'value' in promptData) {
@@ -126,7 +126,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             normalizedPrompts[promptId] = promptData;
           }
         });
-        // console.log('🔍 Normalized prompts:', normalizedPrompts);
+        console.log('🔍 Normalized prompts:', normalizedPrompts);
       }
       
       setPromptValues(normalizedPrompts);
@@ -135,7 +135,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       
       // Si hay outputs guardados, marcar que no necesitamos fetchear
       if (initialData.outputs && Array.isArray(initialData.outputs) && initialData.outputs.length > 0) {
-        // console.log('✅ Initial outputs found:', initialData.outputs);
+        console.log('✅ Initial outputs found:', initialData.outputs);
         setHasInitialOutputs(true);
         setIsNewProduct(false); // No es un producto "nuevo" si ya tiene datos guardados
       }
