@@ -21,6 +21,7 @@ serve(async (req: Request): Promise<Response> => {
 
     const { token, productId, inputs } = await req.json();
     console.log("easyquote-pricing: Request received", { productId, inputsCount: Array.isArray(inputs) ? inputs.length : (inputs ? Object.keys(inputs).length : 0) });
+    console.log("easyquote-pricing: Raw inputs received:", JSON.stringify(inputs, null, 2));
     if (!token || !productId) {
       return new Response(JSON.stringify({ error: "Missing token or productId" }), {
         status: 400,
@@ -44,6 +45,7 @@ serve(async (req: Request): Promise<Response> => {
 
     if (inputsList.length > 0) {
       console.log("easyquote-pricing: using PATCH with inputs", { count: inputsList.length, inputs: inputsList });
+      console.log("easyquote-pricing: Sending to API:", JSON.stringify(inputsList, null, 2));
       res = await fetch(baseUrl, {
         method: "PATCH",
         headers: {
