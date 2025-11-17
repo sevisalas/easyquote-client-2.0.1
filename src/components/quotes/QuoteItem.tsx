@@ -58,6 +58,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [forceRecalculate, setForceRecalculate] = useState<boolean>(false);
   const [isExpanded, setIsExpanded] = useState<boolean>(shouldExpand || false);
   const [itemDescription, setItemDescription] = useState<string>("");
+  const [isNewProduct, setIsNewProduct] = useState<boolean>(true);
   const selectRef = useRef<HTMLButtonElement>(null);
 
   // Auto-expand/collapse based on shouldExpand prop
@@ -154,19 +155,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     }
   }, [productId, promptValues, itemDescription, itemAdditionals, multiEnabled, qtyPrompt, qtyInputs, isExpanded]);
 
-  // Reset ALL states when productId changes - this is a NEW product, not an update
-  useEffect(() => {
-    if (!productId) return;
-    
-    // Clear all product-specific states immediately
-    setPromptValues({});
-    setDebouncedPromptValues({});
-    setMultiEnabled(false);
-    setQtyPrompt("");
-    setQtyInputs(["", "", "", "", ""]);
-    setItemAdditionals([]);
-    setForceRecalculate(false);
-  }, [productId]);
+  // This duplicate reset is handled by the more sophisticated useEffect below (lines 291-320)
+  // that uses previousProductIdRef to detect real product changes
 
   // Debounce promptValues changes
   useEffect(() => {
@@ -225,7 +215,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   });
 
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError } = useQuery({
-    queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate],
+    queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct],
     enabled: !!hasToken && !!productId,
     retry: false, // No reintentar automáticamente para productos con error 500
     placeholderData: keepPreviousData,
@@ -234,35 +224,42 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     queryFn: async () => {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
-      const norm: Record<string, any> = {};
-      Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
-        // Extract actual value if it's stored as {label, value}
-        const actualValue = (v && typeof v === 'object' && 'value' in v) ? v.value : v;
-        
-        if (actualValue === "" || actualValue === undefined || actualValue === null) return;
-        if (typeof actualValue === "string") {
-          const trimmed = actualValue.trim();
-          const isHex = /^#[0-9a-f]{6}$/i.test(trimmed);
-          if (isHex) {
-            norm[k] = trimmed.slice(1).toUpperCase();
-            return;
+      
+      // If this is a new product, use GET without inputs to load all prompts and outputs
+      const inputsToSend = isNewProduct ? [] : (() => {
+        const norm: Record<string, any> = {};
+        Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
+          // Extract actual value if it's stored as {label, value}
+          const actualValue = (v && typeof v === 'object' && 'value' in v) ? v.value : v;
+          
+          if (actualValue === "" || actualValue === undefined || actualValue === null) return;
+          if (typeof actualValue === "string") {
+            const trimmed = actualValue.trim();
+            const isHex = /^#[0-9a-f]{6}$/i.test(trimmed);
+            if (isHex) {
+              norm[k] = trimmed.slice(1).toUpperCase();
+              return;
+            }
+            const num = Number(trimmed.replace(",", "."));
+            if (!Number.isNaN(num) && /^-?\d+([.,]\d+)?$/.test(trimmed)) {
+              norm[k] = num;
+              return;
+            }
+            norm[k] = trimmed;
+          } else {
+            norm[k] = actualValue;
           }
-          const num = Number(trimmed.replace(",", "."));
-          if (!Number.isNaN(num) && /^-?\d+([.,]\d+)?$/.test(trimmed)) {
-            norm[k] = num;
-            return;
-          }
-          norm[k] = trimmed;
-        } else {
-          norm[k] = actualValue;
-        }
-      });
+        });
+        return Object.entries(norm).map(([id, value]) => ({ id, value }));
+      })();
+
+      console.log("🔥 Fetching pricing for product:", productId, "isNewProduct:", isNewProduct, "inputs:", inputsToSend);
 
       // Usar solo la edge function para evitar errores con IDs incorrectos
       const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
         token,
         productId,
-        inputs: Object.entries(norm).map(([id, value]) => ({ id, value }))
+        inputs: inputsToSend
       });
       
       if (error) {
@@ -272,6 +269,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         }
         throw error;
       }
+      
+      // After successful fetch for new product, mark it as no longer new
+      if (isNewProduct) {
+        setIsNewProduct(false);
+      }
+      
       return data;
     },
   });
@@ -299,6 +302,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setQtyPrompt("");
       setQtyInputs(["", "", "", "", ""]);
       setItemAdditionals([]);
+      setIsNewProduct(true); // Mark as new product to trigger GET without inputs
     }
     previousProductIdRef.current = productId;
     
