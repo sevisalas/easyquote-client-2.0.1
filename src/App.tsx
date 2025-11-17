@@ -21,6 +21,8 @@ import UsuariosSuscriptor from "./pages/SubscriberUsers";
 import SubscribersList from "./pages/SubscribersList";
 import NuevoSuscriptor from "./pages/SubscriberNew";
 import GestionPlanes from "./pages/PlansManagement";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import SuperAdminUsers from "./pages/SuperAdminUsers";
 import Integrations from "./pages/Integrations";
 import IntegrationAccess from "./pages/IntegrationAccess";
 import ExcelFiles from "./pages/ExcelFiles";
@@ -197,6 +199,26 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <GestionPlanes />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/superadmin/dashboard"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SuperAdminDashboard />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/superadmin/usuarios"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SuperAdminUsers />
             </AppLayout>
           </ProtectedRoute>
         }
