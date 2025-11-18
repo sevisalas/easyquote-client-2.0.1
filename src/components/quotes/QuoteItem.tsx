@@ -708,22 +708,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     return result;
   };
 
-  // Initialize all prompts when pricing data loads - ONLY for new products
-  useEffect(() => {
-    // Solo inicializar prompts por defecto si es un producto NUEVO
-    if (pricing && productId && isNewProduct && !hasInitialOutputs) {
-      console.log("🆕 Producto nuevo detectado, cargando valores por defecto del API");
-      const allPrompts = extractAllPrompts(pricing);
-      
-      setPromptValues(allPrompts);
-      
-      // Mark product as loaded after prompts are initialized
-      console.log("✅ Producto cargado exitosamente, marcando como no nuevo");
-      setIsNewProduct(false);
-    } else if (pricing && productId && !isNewProduct) {
-      console.log("💾 Producto guardado detectado, manteniendo valores cargados desde la base de datos");
-    }
-  }, [pricing, productId, isNewProduct, hasInitialOutputs]);
+  // Los valores ya se cargan desde initialData (líneas 110-145)
+  // No se necesita useEffect adicional que sobrescriba valores guardados
 
   const handlePromptChange = (id: string, value: any, label: string) => {
     console.log("🔄 Usuario cambió prompt:", { id, value, label });
