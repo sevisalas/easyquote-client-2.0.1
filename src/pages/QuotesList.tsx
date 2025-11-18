@@ -41,20 +41,11 @@ const fetchQuotes = async () => {
 };
 
 const fetchCustomers = async () => {
-  // Fetch local customers
-  const { data: localCustomers, error: localError } = await supabase
+  const { data, error } = await supabase
     .from("customers")
     .select("id, name");
-  if (localError) throw localError;
-
-  // Fetch Holded contacts
-  const { data: holdedContacts, error: holdedError } = await supabase
-    .from("holded_contacts")
-    .select("id, name");
-  if (holdedError) throw holdedError;
-
-  // Combine both sources
-  return [...(localCustomers || []), ...(holdedContacts || [])];
+  if (error) throw error;
+  return data || [];
 };
 
 const QuotesList = () => {

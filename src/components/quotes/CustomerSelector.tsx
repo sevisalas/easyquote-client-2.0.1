@@ -97,9 +97,10 @@ const fetchHoldedCustomers = async (): Promise<HoldedCustomer[]> => {
     }
 
     const { data, error } = await supabase
-      .from("holded_contacts")
-      .select("id, holded_id, name, email, phone")
+      .from("customers")
+      .select("id, holded_id, name, email, phone, source")
       .eq("organization_id", org.id)
+      .eq("source", "holded")
       .order("created_at", { ascending: false })
       .limit(50000);
     
