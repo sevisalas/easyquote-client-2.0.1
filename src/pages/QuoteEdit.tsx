@@ -530,6 +530,36 @@ export default function QuoteEdit() {
   };
 
   const handleItemChange = useCallback((itemId: string | number, snapshot: any) => {
+    console.log('📥 handleItemChange - snapshot recibido:', {
+      itemId,
+      prompts: snapshot.prompts,
+      promptsType: Array.isArray(snapshot.prompts) ? 'array' : typeof snapshot.prompts
+    });
+    
+    // Convertir prompts de array a objeto para mantener consistencia
+    let promptsObj: Record<string, any> = {};
+    if (Array.isArray(snapshot.prompts)) {
+      // Si viene como array [{id, label, value, order}], convertir a objeto
+      snapshot.prompts.forEach((p: any) => {
+        if (p && p.id) {
+          promptsObj[p.id] = {
+            label: p.label || p.id,
+            value: p.value,
+            order: p.order ?? 999
+          };
+        }
+      });
+      console.log('✅ Prompts convertidos de array a objeto:', {
+        originalCount: snapshot.prompts.length,
+        convertedCount: Object.keys(promptsObj).length,
+        sample: Object.entries(promptsObj).slice(0, 3)
+      });
+    } else if (typeof snapshot.prompts === 'object' && snapshot.prompts !== null) {
+      // Si ya es objeto, usar tal cual
+      promptsObj = snapshot.prompts;
+      console.log('✅ Prompts ya en formato objeto:', Object.keys(promptsObj).length);
+    }
+    
     setItems((prev) => {
       return prev.map((item, index) =>
         item.id === itemId || index.toString() === itemId.toString()
@@ -540,8 +570,7 @@ export default function QuoteEdit() {
               price: snapshot.price || 0,
               // Update QuoteItem fields
               productId: snapshot.productId,
-              // snapshot.prompts ya viene como array [{id, label, value, order}]
-              prompts: snapshot.prompts,
+              prompts: promptsObj,  // ✅ Ahora siempre es objeto
               outputs: snapshot.outputs,
               multi: snapshot.multi,
               itemDescription: snapshot.itemDescription,
