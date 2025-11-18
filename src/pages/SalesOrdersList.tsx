@@ -534,6 +534,27 @@ const SalesOrdersList = () => {
                         <Button size="sm" variant="default" className="h-7 px-2 text-xs" onClick={() => handleDuplicate(order.id)}>
                           Duplicar
                         </Button>
+                        {order.status === 'draft' && (
+                          <Button 
+                            size="sm" 
+                            variant="destructive" 
+                            className="h-7 px-2 text-xs" 
+                            onClick={async () => {
+                              if (confirm('¿Estás seguro de que quieres eliminar este pedido?')) {
+                                try {
+                                  const { error } = await supabase.from('sales_orders').delete().eq('id', order.id);
+                                  if (error) throw error;
+                                  toast.success('Pedido eliminado');
+                                  loadOrders();
+                                } catch (e: any) {
+                                  toast.error('Error al eliminar', { description: e?.message });
+                                }
+                              }
+                            }}
+                          >
+                            Eliminar
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
