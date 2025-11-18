@@ -113,7 +113,9 @@ export type Database = {
           integration_id: string | null
           name: string
           notes: string | null
+          organization_id: string | null
           phone: string | null
+          source: string
           updated_at: string
           user_id: string
         }
@@ -126,7 +128,9 @@ export type Database = {
           integration_id?: string | null
           name: string
           notes?: string | null
+          organization_id?: string | null
           phone?: string | null
+          source?: string
           updated_at?: string
           user_id: string
         }
@@ -139,11 +143,21 @@ export type Database = {
           integration_id?: string | null
           name?: string
           notes?: string | null
+          organization_id?: string | null
           phone?: string | null
+          source?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       easyquote_credentials: {
         Row: {
@@ -219,50 +233,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      holded_contacts: {
-        Row: {
-          created_at: string
-          email: string | null
-          holded_id: string
-          id: string
-          mobile: string | null
-          name: string
-          organization_id: string
-          phone: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          email?: string | null
-          holded_id: string
-          id?: string
-          mobile?: string | null
-          name: string
-          organization_id?: string
-          phone?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          email?: string | null
-          holded_id?: string
-          id?: string
-          mobile?: string | null
-          name?: string
-          organization_id?: string
-          phone?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "holded_contacts_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       holded_sales_accounts: {
         Row: {
@@ -1195,7 +1165,6 @@ export type Database = {
           description: string | null
           discount_amount: number
           final_price: number
-          holded_contact_id: string | null
           holded_document_id: string | null
           holded_document_number: string | null
           id: string
@@ -1220,7 +1189,6 @@ export type Database = {
           description?: string | null
           discount_amount?: number
           final_price?: number
-          holded_contact_id?: string | null
           holded_document_id?: string | null
           holded_document_number?: string | null
           id?: string
@@ -1245,7 +1213,6 @@ export type Database = {
           description?: string | null
           discount_amount?: number
           final_price?: number
-          holded_contact_id?: string | null
           holded_document_id?: string | null
           holded_document_number?: string | null
           id?: string
@@ -1268,13 +1235,6 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sales_orders_holded_contact_id_fkey"
-            columns: ["holded_contact_id"]
-            isOneToOne: false
-            referencedRelation: "holded_contacts"
             referencedColumns: ["id"]
           },
           {

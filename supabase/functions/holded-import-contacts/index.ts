@@ -54,14 +54,28 @@ async function importContactsBackground(
 
     console.log(`Background: Total contacts fetched: ${allContacts.length}`);
 
-    // Transform and insert contacts in batches
+    // Get organization owner user_id first
+    const orgClient = createClient(supabaseUrl, supabaseKey);
+    const { data: orgData } = await orgClient
+      .from('organizations')
+      .select('api_user_id')
+      .eq('id', organizationId)
+      .single();
+
+    if (!orgData) {
+      console.log('Background: Organization not found');
+      return;
+    }
+
+    // Transform and insert contacts in batches with source='holded'
     const contactsToInsert = allContacts.map((contact: any) => ({
       holded_id: contact.id,
+      organization_id: organizationId,
+      user_id: orgData.api_user_id,
       name: contact.name || 'Sin nombre',
       email: contact.email || null,
-      phone: contact.phone || null,
-      mobile: contact.mobile || null,
-      organization_id: organizationId,
+      phone: contact.phone || contact.mobile || null,
+      source: 'holded'
     }));
 
     let imported = 0;
@@ -71,7 +85,7 @@ async function importContactsBackground(
       const batch = contactsToInsert.slice(i, i + 100);
       
       const { data, error } = await supabase
-        .from('holded_contacts')
+        .from('customers')
         .upsert(batch, { 
           onConflict: 'holded_id,organization_id',
           ignoreDuplicates: false 
@@ -287,14 +301,27 @@ serve(async (req) => {
 
     console.log(`Total contacts fetched: ${allContacts.length}`);
 
-    // Transform and insert contacts in batches
+    // Get organization owner user_id first
+    const { data: orgData } = await supabaseAdmin
+      .from('organizations')
+      .select('api_user_id')
+      .eq('id', organizationId)
+      .single();
+
+    if (!orgData) {
+      console.error('Organization not found for ID:', organizationId);
+      throw new Error('Organization not found');
+    }
+
+    // Transform and insert contacts in batches with source='holded'
     const contactsToInsert = allContacts.map((contact: any) => ({
       holded_id: contact.id,
+      organization_id: organizationId,
+      user_id: orgData.api_user_id,
       name: contact.name || 'Sin nombre',
       email: contact.email || null,
-      phone: contact.phone || null,
-      mobile: contact.mobile || null,
-      organization_id: organizationId,
+      phone: contact.phone || contact.mobile || null,
+      source: 'holded'
     }));
 
     let imported = 0;
@@ -303,8 +330,8 @@ serve(async (req) => {
     for (let i = 0; i < contactsToInsert.length; i += 100) {
       const batch = contactsToInsert.slice(i, i + 100);
       
-      const { data, error } = await supabase
-        .from('holded_contacts')
+      const { data, error} = await supabaseAdmin
+        .from('customers')
         .upsert(batch, { 
           onConflict: 'holded_id,organization_id',
           ignoreDuplicates: false 

@@ -83,17 +83,18 @@ Deno.serve(async (req) => {
     console.log('📦 Quote items fetched:', JSON.stringify(quoteItems, null, 2));
     console.log('📦 Quote additionals from quote JSON:', JSON.stringify(quoteAdditionals, null, 2));
 
-    // Get Holded contact if customer_id exists
-    let contactId = null;
+    // Get customer holded_id if customer_id exists
+    let contactId: string | null = null;
+    
     if (quote.customer_id) {
-      const { data: holdedContact } = await supabase
-        .from('holded_contacts')
+      const { data: customer } = await supabase
+        .from('customers')
         .select('holded_id')
         .eq('id', quote.customer_id)
-        .single();
+        .maybeSingle();
       
-      if (holdedContact?.holded_id) {
-        contactId = holdedContact.holded_id;
+      if (customer?.holded_id) {
+        contactId = customer.holded_id;
       }
     }
 
