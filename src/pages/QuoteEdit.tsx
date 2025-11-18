@@ -540,6 +540,7 @@ export default function QuoteEdit() {
               price: snapshot.price || 0,
               // Update QuoteItem fields
               productId: snapshot.productId,
+              // snapshot.prompts ya viene como array [{id, label, value, order}]
               prompts: snapshot.prompts,
               outputs: snapshot.outputs,
               multi: snapshot.multi,

@@ -112,7 +112,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       console.log('✅ Starting initialization with initialData:', initialData);
       setProductId(initialData.productId || "");
       
-      // Normalize prompts format: extract just the values
+      // Normalize prompts format: mantener estructura completa {label, value, order}
       const normalizedPrompts: Record<string, any> = {};
       if (initialData.prompts) {
         console.log('🔍 Raw prompts from DB:', initialData.prompts);
@@ -120,16 +120,30 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         // Handle array format [{id, label, order, value}]
         if (Array.isArray(initialData.prompts)) {
           initialData.prompts.forEach((prompt: any) => {
-            if (prompt.id) {
-              normalizedPrompts[prompt.id] = prompt.value;
-              console.log(`  📌 Loaded prompt ${prompt.id} = ${prompt.value}`);
+            if (prompt.id && prompt.value !== undefined && prompt.value !== null && prompt.value !== '') {
+              normalizedPrompts[prompt.id] = {
+                label: prompt.label || prompt.id,
+                value: prompt.value,
+                order: prompt.order ?? 999
+              };
+              console.log(`  📌 Loaded prompt ${prompt.id} =`, normalizedPrompts[prompt.id]);
             }
           });
         } else {
-          // Handle object format {promptId: {label, value, order}}
+          // Handle object format {promptId: {label, value, order}} or {promptId: value}
           Object.entries(initialData.prompts).forEach(([promptId, promptData]: [string, any]) => {
-            normalizedPrompts[promptId] = typeof promptData === 'object' ? promptData.value : promptData;
-            console.log(`  📌 Loaded prompt ${promptId} = ${normalizedPrompts[promptId]}`);
+            if (typeof promptData === 'object' && promptData !== null && 'value' in promptData) {
+              // Ya está en formato completo
+              normalizedPrompts[promptId] = promptData;
+            } else {
+              // Valor simple, crear estructura completa
+              normalizedPrompts[promptId] = {
+                label: promptId,
+                value: promptData,
+                order: 999
+              };
+            }
+            console.log(`  📌 Loaded prompt ${promptId} =`, normalizedPrompts[promptId]);
           });
         }
         console.log('✅ Normalized prompts (valores GUARDADOS cargados):', normalizedPrompts);
@@ -786,9 +800,34 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       hasOutputs: outputs && outputs.length > 0
     });
     
+    // Convertir promptValues de formato {promptId: {label, value, order}} a array [{id, label, value, order}]
+    const promptsArray: any[] = [];
+    Object.entries(promptValues).forEach(([id, promptData]) => {
+      // promptData puede ser un objeto {label, value, order} o un valor simple
+      if (typeof promptData === 'object' && promptData !== null && 'value' in promptData) {
+        const value = promptData.value;
+        if (value !== undefined && value !== null && value !== '') {
+          promptsArray.push({
+            id,
+            label: promptData.label || id,
+            value,
+            order: promptData.order ?? 999
+          });
+        }
+      } else if (promptData !== undefined && promptData !== null && promptData !== '') {
+        // Valor simple (fallback por si acaso)
+        promptsArray.push({
+          id,
+          label: id,
+          value: promptData,
+          order: 999
+        });
+      }
+    });
+    
     const snapshot = {
       productId,
-      prompts: promptValues,
+      prompts: promptsArray,
       outputs,
       price: finalPrice,
       multi: multiEnabled ? { qtyPrompt, qtyInputs, rows: multiRows } : null,
@@ -801,8 +840,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     if (snapshotString !== lastSyncedSnapshot.current) {
       lastSyncedSnapshot.current = snapshotString;
       console.log('✅ Sincronizando snapshot al padre:', {
-        promptsCount: Object.keys(promptValues).length,
-        snapshotPreview: { ...snapshot, prompts: Object.keys(snapshot.prompts) }
+        promptsCount: promptsArray.length,
+        snapshotPreview: { ...snapshot, prompts: promptsArray.slice(0, 3) }
       });
       onChange(id, snapshot);
     } else {
