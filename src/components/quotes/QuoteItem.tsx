@@ -894,9 +894,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 console.log("🔄 Usuario cambió de producto:", value);
                 setProductId(value);
                 // El reset completo lo maneja el useEffect de líneas 365-405
-              }} value={productId} disabled={!hasToken}>
+              }} value={productId} disabled={!hasToken || !!initialData?.productId}>
                 <SelectTrigger ref={selectRef}>
-                  <SelectValue placeholder={hasToken ? "Elige un producto" : "Conecta EasyQuote para cargar"} />
+                  <SelectValue placeholder={hasToken ? (initialData?.productId ? "No se puede cambiar el producto" : "Elige un producto") : "Conecta EasyQuote para cargar"} />
                 </SelectTrigger>
                 <SelectContent>
                   {products?.map((p: any) => (
@@ -904,6 +904,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   ))}
                 </SelectContent>
               </Select>
+              {initialData?.productId && (
+                <p className="text-xs text-muted-foreground">Para cambiar el producto, elimina este artículo y crea uno nuevo.</p>
+              )}
             </div>
 
             {productId && (
