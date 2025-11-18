@@ -65,6 +65,7 @@ export default function ProductTestPage() {
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
   const [debouncedPromptValues, setDebouncedPromptValues] = useState<Record<string, any>>({});
   const [productDetail, setProductDetail] = useState<any>(null);
+  const [isLoadingProduct, setIsLoadingProduct] = useState(false);
   
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
 
@@ -95,11 +96,16 @@ export default function ProductTestPage() {
     const fetchProductDetail = async () => {
       if (!productId) {
         setProductDetail(null);
+        setIsLoadingProduct(false);
         return;
       }
       
+      setIsLoadingProduct(true);
       const token = sessionStorage.getItem("easyquote_token");
-      if (!token) return;
+      if (!token) {
+        setIsLoadingProduct(false);
+        return;
+      }
 
       try {
         // Get product details to extract excelfileId
@@ -197,6 +203,8 @@ export default function ProductTestPage() {
         console.error("Error fetching product detail:", error);
         setProductDetail(null);
         setPromptValues({});
+      } finally {
+        setIsLoadingProduct(false);
       }
     };
 
@@ -437,7 +445,17 @@ export default function ProductTestPage() {
                 )}
 
                 {/* Product Configuration */}
-                {productDetail && (
+                {productId && isLoadingProduct && (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Cargando producto...</AlertTitle>
+                    <AlertDescription>
+                      Obteniendo configuración del producto desde EasyQuote.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                {productId && !isLoadingProduct && productDetail && (
                   <div className="space-y-4">
                     <div className="border-t pt-4">
                       <h3 className="font-medium mb-4">Configuración del Producto</h3>
