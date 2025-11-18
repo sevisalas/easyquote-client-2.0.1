@@ -226,6 +226,17 @@ export default function ProductTestPage() {
         
         if (typeof v === "string") {
           const trimmed = v.trim();
+          
+          // Skip empty strings
+          if (trimmed === "") return;
+          
+          // Skip strings that are only special characters without meaningful content
+          // (e.g., "," or "." or "-" by themselves)
+          if (trimmed.length < 3 && /^[^\w\s]+$/.test(trimmed)) {
+            console.warn(`⚠️ Skipping invalid value for prompt ${k}:`, v);
+            return;
+          }
+          
           const isHex = /^#[0-9a-f]{6}$/i.test(trimmed);
           if (isHex) {
             // Remove the # for color values as API expects without #
@@ -241,6 +252,13 @@ export default function ProductTestPage() {
               norm[k] = trimmed;
             }
           }
+        } else if (typeof v === "number") {
+          // Skip invalid numbers
+          if (!isFinite(v)) {
+            console.warn(`⚠️ Skipping invalid number for prompt ${k}:`, v);
+            return;
+          }
+          norm[k] = v;
         } else {
           norm[k] = v;
         }
