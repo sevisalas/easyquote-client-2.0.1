@@ -385,7 +385,6 @@ const SalesOrderDetail = () => {
               <p className="text-sm font-medium mt-0.5">
                 <CustomerName 
                   customerId={order.customer_id} 
-                  holdedContactId={order.holded_contact_id}
                   fallback="No asignado" 
                 />
               </p>

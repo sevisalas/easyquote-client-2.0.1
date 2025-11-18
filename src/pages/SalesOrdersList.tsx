@@ -496,7 +496,7 @@ const SalesOrdersList = () => {
                     <TableCell className="py-1.5 px-3 text-sm">{new Date(order.order_date).toLocaleDateString("es-ES")}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm font-medium">{order.order_number}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm">
-                      <CustomerName customerId={order.customer_id} holdedContactId={order.holded_contact_id} />
+                      <CustomerName customerId={order.customer_id} />
                     </TableCell>
                     <TableCell className="py-1.5 px-3 text-sm">{order.description || order.title || ""}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm text-right font-medium">{fmtEUR(order.final_price)}</TableCell>

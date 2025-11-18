@@ -354,9 +354,10 @@ export default function Integrations() {
     setIsDeleting(true);
     try {
       const { error } = await supabase
-        .from('holded_contacts')
+        .from('customers')
         .delete()
-        .eq('organization_id', currentOrganization.id);
+        .eq('organization_id', currentOrganization.id)
+        .eq('source', 'holded');
 
       if (error) throw error;
 

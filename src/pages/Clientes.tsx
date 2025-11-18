@@ -96,7 +96,7 @@ export default function Clientes() {
       }));
       console.log('✅ Total clients combined:', allClients.length);
 
-      setTotalClients(holdedCount || 0);
+      setTotalClients(customersCount || 0);
       setClientes(allClients);
     } catch (error) {
       console.error("❌ Error al obtener clientes:", error);

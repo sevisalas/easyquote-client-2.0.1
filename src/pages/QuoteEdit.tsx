@@ -152,16 +152,16 @@ export default function QuoteEdit() {
     console.log('🔥🔥🔥 USE EFFECT CALLED - quote exists:', !!quote);
     if (quote) {
       console.log('🔥🔥🔥 QUOTE DATA:', JSON.stringify(quote, null, 2));
-      // Detect if customer_id belongs to holded_contacts and add prefix for selector
+      // Detect if customer is from Holded and add prefix for selector
       const checkCustomerSource = async () => {
         if (quote.customer_id) {
-          const { data: holdedContact } = await supabase
-            .from('holded_contacts')
-            .select('id')
+          const { data: customer } = await supabase
+            .from('customers')
+            .select('id, source')
             .eq('id', quote.customer_id)
             .maybeSingle();
           
-          return holdedContact ? `holded:${quote.customer_id}` : quote.customer_id;
+          return (customer && customer.source === 'holded') ? `holded:${quote.customer_id}` : quote.customer_id;
         }
         return quote.customer_id;
       };
