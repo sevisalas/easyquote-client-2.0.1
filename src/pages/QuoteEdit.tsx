@@ -377,21 +377,47 @@ export default function QuoteEdit() {
       // Insert all current items
       if (items.length > 0) {
         const itemsToInsert = items.map((item, index) => {
+          console.log(`📦 Preparando item ${index} para guardar:`, {
+            id: item.id,
+            productId: item.productId,
+            prompts: item.prompts,
+            promptsType: typeof item.prompts,
+            promptsKeys: item.prompts ? Object.keys(item.prompts) : []
+          });
+          
           // Convert prompts object to sorted array and keep order field
+          // El formato recibido debe ser {promptId: {label, value, order}} o {promptId: valor}
           const promptsArray = Object.entries(item.prompts || {})
-            .map(([id, promptData]: [string, any]) => ({
-              id,
-              label: promptData.label,
-              value: promptData.value,
-              order: promptData.order ?? 999,
-            }))
-            // Keep prompts with label and valid value (not empty string, null, or undefined)
+            .map(([id, promptData]: [string, any]) => {
+              // Si promptData es un objeto con label/value, usarlo; si no, crear estructura
+              if (typeof promptData === 'object' && promptData !== null && 'value' in promptData) {
+                return {
+                  id,
+                  label: promptData.label || id,
+                  value: promptData.value,
+                  order: promptData.order ?? 999,
+                };
+              } else {
+                // promptData es el valor directo
+                return {
+                  id,
+                  label: id,
+                  value: promptData,
+                  order: 999,
+                };
+              }
+            })
+            // Keep prompts with valid value (not empty string, null, or undefined)
             .filter((p) => {
-              if (!p.label) return false;
               if (p.value === null || p.value === undefined || p.value === '') return false;
               return true;
             })
             .sort((a, b) => a.order - b.order);
+
+          console.log(`✅ Item ${index} - Prompts array generado:`, {
+            count: promptsArray.length,
+            sample: promptsArray.slice(0, 3)
+          });
 
           return {
             quote_id: id,
@@ -575,6 +601,13 @@ export default function QuoteEdit() {
   };
 
   const handleSave = () => {
+    console.log('💾 GUARDANDO - Estado actual de items:', items.map(item => ({
+      id: item.id,
+      productId: item.productId,
+      promptsKeys: Object.keys(item.prompts || {}),
+      promptsCount: Object.keys(item.prompts || {}).length,
+      prompts: item.prompts
+    })));
     updateQuoteMutation.mutate(formData);
   };
 
