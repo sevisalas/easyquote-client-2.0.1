@@ -153,6 +153,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         // NO marcar userHasChangedCurrentProduct aquí, eso se hará después del PATCH inicial
       }
       
+      // ✅ Marcar como inicializado SIEMPRE (con o sin prompts)
+      setIsInitialized(true);
+      
       // Solo marcar hasInitialOutputs si hay outputs guardados
       const hasOutputsData = initialData.outputs && Array.isArray(initialData.outputs) && initialData.outputs.length > 0;
       
