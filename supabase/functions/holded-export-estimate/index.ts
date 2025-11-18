@@ -119,27 +119,154 @@ Deno.serve(async (req) => {
     const apiKey = '88610992d47b9783e7703c488a8c01cf';
     console.log('Using Holded API key');
 
-    // Helper function to check if prompt should be visible (not hidden by visibility rules)
-    // This is used ONLY for Holded export - NOT for filtering data in the database
-    const isPromptVisibleForHolded = (promptId: string, allPrompts: Record<string, any>): boolean => {
-      // Build values object for visibility evaluation
+    // Get EasyQuote credentials to fetch product definitions
+    const { data: easyquoteCredsData } = await supabase
+      .rpc('get_organization_easyquote_credentials', { p_user_id: user.id });
+    
+    const easyquoteCreds = easyquoteCredsData?.[0];
+    if (!easyquoteCreds) {
+      console.warn('No EasyQuote credentials found, will include all prompts with labels');
+    }
+
+    // Get EasyQuote token for fetching product definitions
+    let easyquoteToken: string | null = null;
+    if (easyquoteCreds) {
+      const { data: tokenData, error: tokenError } = await supabase.functions.invoke('easyquote-auth', {
+        body: {
+          email: easyquoteCreds.api_username,
+          password: easyquoteCreds.api_password
+        }
+      });
+      
+      if (!tokenError && tokenData?.token) {
+        easyquoteToken = tokenData.token;
+        console.log('✅ Got EasyQuote token for product definitions');
+      } else {
+        console.warn('Failed to get EasyQuote token:', tokenError);
+      }
+    }
+
+    // Get unique product IDs and fetch their definitions
+    const productDefinitions: Record<string, any> = {};
+    if (easyquoteToken) {
+      const uniqueProductIds = [...new Set(quoteItems.map((item: any) => item.product_id).filter(Boolean))];
+      
+      for (const productId of uniqueProductIds) {
+        try {
+          // Get the product to find its excelFileId
+          const { data: productData } = await supabase
+            .from('products')
+            .select('excelfileId, name')
+            .eq('product_id', productId)
+            .single();
+
+          if (productData?.excelfileId) {
+            // Get Excel file info
+            const { data: excelFile } = await supabase
+              .from('excel_files')
+              .select('file_id, filename')
+              .eq('file_id', productData.excelfileId)
+              .single();
+
+            if (excelFile) {
+              // Decode token to get subscriberId
+              const tokenParts = easyquoteToken.split('.');
+              if (tokenParts.length === 3) {
+                const payload = JSON.parse(atob(tokenParts[1]));
+                const subscriberId = payload.SubscriberID;
+
+                // Fetch product definition
+                const { data: masterFileData, error: masterFileError } = await supabase.functions.invoke('easyquote-master-files', {
+                  body: {
+                    token: easyquoteToken,
+                    subscriberId,
+                    fileId: excelFile.file_id,
+                    fileName: excelFile.filename,
+                    productId
+                  }
+                });
+
+                if (!masterFileError && masterFileData?.product) {
+                  productDefinitions[productId] = masterFileData.product;
+                  console.log(`✅ Loaded definition for product ${productId}`);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.warn(`Failed to load definition for product ${productId}:`, error);
+        }
+      }
+    }
+
+    // Helper functions for prompt visibility (replicated from src/utils/promptVisibility.ts)
+    const matchValue = (current: any, expected: any): boolean => {
+      if (Array.isArray(expected)) return expected.map(String).includes(String(current));
+      if (typeof expected === "boolean") return Boolean(current) === expected;
+      return String(current) === String(expected);
+    };
+
+    const evalCondition = (cond: any, values: Record<string, any>): boolean => {
+      if (!cond) return true;
+      // Array => AND of items
+      if (Array.isArray(cond)) return cond.every((c: any) => evalCondition(c, values));
+      if (typeof cond === "string") {
+        // very simple format: "field=value" (AND by &&)
+        const parts = cond.split(/\s*&&\s*/);
+        return parts.every((p) => {
+          const [k, v] = p.split("=");
+          if (!k) return true;
+          return matchValue(values[k.trim()], (v ?? "").trim());
+        });
+      }
+      if (typeof cond === "object") {
+        // Support anyOf / allOf
+        if (Array.isArray(cond.allOf)) return cond.allOf.every((c: any) => evalCondition(c, values));
+        if (Array.isArray(cond.anyOf)) return cond.anyOf.some((c: any) => evalCondition(c, values));
+        // { field, id, key, equals/value }
+        const field = cond.field ?? cond.id ?? cond.key;
+        if (field) {
+          const expected = cond.equals ?? cond.value ?? cond.is;
+          return matchValue(values[field], expected);
+        }
+        // Mapping object: { size: "L", color: "red" }
+        return Object.entries(cond).every(([k, v]) => matchValue(values[k], v));
+      }
+      return true;
+    };
+
+    const isPromptVisible = (promptId: string, allPrompts: Record<string, any>, productId: string): boolean => {
+      const productDef = productDefinitions[productId];
+      if (!productDef || !productDef.prompts) {
+        // If no product definition, include all prompts with labels (fallback behavior)
+        const promptData = allPrompts[promptId];
+        return promptData && promptData.label && promptData.label.trim() !== '';
+      }
+
+      // Find prompt definition
+      const promptDef = productDef.prompts.find((p: any) => p.id === promptId);
+      if (!promptDef) {
+        // If not found in definition, include it if it has a label
+        const promptData = allPrompts[promptId];
+        return promptData && promptData.label && promptData.label.trim() !== '';
+      }
+      
+      // Build values object for evaluation
       const values: Record<string, any> = {};
       Object.entries(allPrompts).forEach(([id, data]: [string, any]) => {
         values[id] = data.value;
       });
       
-      // Get the prompt data
-      const promptData = allPrompts[promptId];
-      if (!promptData) return true;
-      
-      // Check if this prompt has a label - if no label, it's likely hidden
-      if (!promptData.label || promptData.label.trim() === '') {
-        return false;
+      // Check hiddenWhen condition
+      if (promptDef.hiddenWhen && evalCondition(promptDef.hiddenWhen, values)) {
+        return false; // Hidden when condition is met
       }
       
-      // For now, we show all prompts that have a label
-      // The visibility rules in EasyQuote are complex and handled by their API
-      // We keep all prompts in the database but only show labeled ones in Holded
+      // Check visibility condition
+      if (promptDef.visibility && !evalCondition(promptDef.visibility, values)) {
+        return false; // Not visible because condition not met
+      }
+      
       return true;
     };
 
@@ -163,7 +290,7 @@ Deno.serve(async (req) => {
           const qtyLabel = `Q${globalQtyCounter}`; // Use global counter instead of local index
           let description = '';
           
-            // Build description from prompts (filter out hidden ones for Holded)
+            // Build description from prompts (filter using visibility rules)
           if (item.prompts) {
             let promptsArray: any[] = [];
             
@@ -185,10 +312,7 @@ Deno.serve(async (req) => {
             
             if (promptsArray.length > 0) {
               description = promptsArray
-                .filter(prompt => {
-                  // Only include prompts with labels (exclude hidden/unlabeled prompts)
-                  return prompt && prompt.label && prompt.label.trim() !== '' && isPromptVisibleForHolded(prompt.id, promptsObj);
-                })
+                .filter(prompt => prompt && prompt.label && isPromptVisible(prompt.id, promptsObj, item.product_id || ''))
                 .sort((a, b) => (a.order || 999) - (b.order || 999))
                 .map((prompt) => {
                   // For the quantity prompt, use the value from this specific row
@@ -307,7 +431,7 @@ Deno.serve(async (req) => {
         // Single item without multi quantities
         let description = '';
         
-        // Build description from prompts (filter out hidden ones for Holded)
+        // Build description from prompts (filter using visibility rules)
         if (item.prompts) {
           let promptsArray: any[] = [];
           
@@ -329,10 +453,7 @@ Deno.serve(async (req) => {
           
           if (promptsArray.length > 0) {
             description = promptsArray
-              .filter(prompt => {
-                // Only include prompts with labels (exclude hidden/unlabeled prompts)
-                return prompt && prompt.label && prompt.label.trim() !== '' && isPromptVisibleForHolded(prompt.id, promptsObj);
-              })
+              .filter(prompt => prompt && prompt.label && isPromptVisible(prompt.id, promptsObj, item.product_id || ''))
               .sort((a, b) => (a.order || 999) - (b.order || 999))
               .map((prompt) => {
                 return `${prompt.label}: ${prompt.value}`;
