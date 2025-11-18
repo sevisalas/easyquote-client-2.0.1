@@ -205,10 +205,17 @@ export default function PromptsForm({
   const prompts = useMemo(() => extractPrompts(product), [product]);
   const defaultsMap = useMemo(() => Object.fromEntries(prompts.map((p) => [p.id, p.default])), [prompts]);
   const effectiveValues = useMemo(() => {
-    // Extract values from the stored format (could be {label, value} or just value)
+    // Extract values from the stored format
+    // values puede ser {promptId: {label, value, order}} o {promptId: value}
     const extractedValues: Record<string, any> = {};
     Object.entries(values).forEach(([key, val]) => {
-      extractedValues[key] = (val && typeof val === 'object' && 'value' in val) ? val.value : val;
+      if (val && typeof val === 'object' && 'value' in val) {
+        // Formato completo {label, value, order}
+        extractedValues[key] = val.value;
+      } else {
+        // Valor simple
+        extractedValues[key] = val;
+      }
     });
     return { ...defaultsMap, ...extractedValues };
   }, [defaultsMap, values]);
