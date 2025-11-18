@@ -472,7 +472,7 @@ const SalesOrdersList = () => {
               {orders.length === 0 ? "Aún no hay pedidos." : "No se encontraron pedidos con los filtros aplicados."}
             </p>
           ) : (
-            <Table>
+            <Table className="table-fixed">
               <TableHeader>
                 <TableRow className="h-9">
                   <TableHead className="py-2 text-xs font-semibold">Fecha</TableHead>
