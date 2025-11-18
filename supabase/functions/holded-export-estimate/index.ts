@@ -119,6 +119,42 @@ Deno.serve(async (req) => {
     const apiKey = '88610992d47b9783e7703c488a8c01cf';
     console.log('Using Holded API key');
 
+    // Helper function to check if prompt is visible
+    const isPromptVisible = (prompt: any, allPrompts: Record<string, any>): boolean => {
+      // If no visibility conditions, it's visible
+      if (!prompt.hiddenWhen && !prompt.visibility) return true;
+      
+      // Check hiddenWhen condition
+      if (prompt.hiddenWhen) {
+        if (typeof prompt.hiddenWhen === 'object') {
+          const field = prompt.hiddenWhen.field || prompt.hiddenWhen.id;
+          const expectedValue = prompt.hiddenWhen.equals || prompt.hiddenWhen.value;
+          if (field && allPrompts[field]) {
+            const currentValue = allPrompts[field].value;
+            if (String(currentValue) === String(expectedValue)) {
+              return false; // Hidden when condition is met
+            }
+          }
+        }
+      }
+      
+      // Check visibility condition
+      if (prompt.visibility) {
+        if (typeof prompt.visibility === 'object') {
+          const field = prompt.visibility.field || prompt.visibility.id;
+          const expectedValue = prompt.visibility.equals || prompt.visibility.value;
+          if (field && allPrompts[field]) {
+            const currentValue = allPrompts[field].value;
+            if (String(currentValue) !== String(expectedValue)) {
+              return false; // Not visible because condition not met
+            }
+          }
+        }
+      }
+      
+      return true;
+    };
+
     // Build complete payload with all quote data
     const items: any[] = [];
     const appliedDiscounts: string[] = [];
@@ -139,7 +175,7 @@ Deno.serve(async (req) => {
           const qtyLabel = `Q${globalQtyCounter}`; // Use global counter instead of local index
           let description = '';
           
-          // Build description from prompts
+          // Build description from prompts (ONLY VISIBLE ONES)
           if (item.prompts) {
             let promptsArray: any[] = [];
             
@@ -153,8 +189,15 @@ Deno.serve(async (req) => {
               }));
             }
             
+            // Convert to object for visibility checking
+            const promptsObj = promptsArray.reduce((acc: any, p: any) => {
+              acc[p.id] = p;
+              return acc;
+            }, {});
+            
             if (promptsArray.length > 0) {
               description = promptsArray
+                .filter(prompt => isPromptVisible(prompt, promptsObj)) // Filter only visible prompts
                 .sort((a, b) => (a.order || 999) - (b.order || 999))
                 .map((prompt) => {
                   if (prompt && 'label' in prompt && 'value' in prompt) {
@@ -276,7 +319,7 @@ Deno.serve(async (req) => {
         // Single item without multi quantities
         let description = '';
         
-        // Build description from prompts
+        // Build description from prompts (ONLY VISIBLE ONES)
         if (item.prompts) {
           let promptsArray: any[] = [];
           
@@ -290,8 +333,15 @@ Deno.serve(async (req) => {
             }));
           }
           
+          // Convert to object for visibility checking
+          const promptsObj = promptsArray.reduce((acc: any, p: any) => {
+            acc[p.id] = p;
+            return acc;
+          }, {});
+          
           if (promptsArray.length > 0) {
             description = promptsArray
+              .filter(prompt => isPromptVisible(prompt, promptsObj)) // Filter only visible prompts
               .sort((a, b) => (a.order || 999) - (b.order || 999))
               .map((prompt) => {
                 if (prompt && 'label' in prompt && 'value' in prompt) {
