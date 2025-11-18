@@ -62,6 +62,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [hasInitialOutputs, setHasInitialOutputs] = useState<boolean>(false);
   const [userHasChangedCurrentProduct, setUserHasChangedCurrentProduct] = useState<boolean>(false);
   const [isInitializing, setIsInitializing] = useState<boolean>(false); // Flag para prevenir sync durante inicialización
+  const [isInitialized, setIsInitialized] = useState<boolean>(false); // Flag para evitar query antes de inicialización
   const selectRef = useRef<HTMLButtonElement>(null);
 
   // Auto-expand/collapse based on shouldExpand prop
@@ -105,7 +106,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       return;
     }
     if (!initialData) {
-      console.log('⚠️ useEffect cancelled - no initialData');
+      console.log('⚠️ No initialData - producto nuevo, habilitando query inmediatamente');
+      setIsInitialized(true);
+      initializedRef.current = true;
       return;
     }
     initializedRef.current = true;
@@ -192,6 +195,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       if (initialData.needsRecalculation) {
         setForceRecalculate(true);
       }
+      
+      console.log('✅ Initialization complete - enabling query');
+      setIsInitialized(true);
     } catch {}
   }, [initialData]);
 
@@ -300,6 +306,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct],
     enabled: (() => {
+      // ESPERAR a que termine la inicialización
+      if (!isInitialized) {
+        console.log("⏳ Query disabled: waiting for initialization to complete...");
+        return false;
+      }
+      
       // Verificar condiciones básicas
       if (!hasToken || !productId) {
         console.log("❌ Query disabled: missing token or productId");
