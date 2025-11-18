@@ -90,27 +90,11 @@ Deno.serve(async (req) => {
     console.log('📦 Order items fetched:', JSON.stringify(orderItems, null, 2));
     console.log('📦 Order additionals:', JSON.stringify(orderAdditionals || [], null, 2));
 
-    // Get Holded contact ID and contact data
+    // Get Holded contact ID and contact data from customers table
     let contactId = null;
     let contactData: any = null;
     
-    // First try: direct holded_contact_id reference
-    if (order.holded_contact_id) {
-      const { data: holdedContact } = await supabase
-        .from('holded_contacts')
-        .select('*')
-        .eq('id', order.holded_contact_id)
-        .single();
-      
-      if (holdedContact?.holded_id) {
-        contactId = holdedContact.holded_id;
-        contactData = holdedContact;
-        console.log('Found contact from holded_contact_id:', contactId, contactData.name);
-      }
-    }
-    
-    // Second try: get holded_id from customers table
-    if (!contactId && order.customer_id) {
+    if (order.customer_id) {
       const { data: customer } = await supabase
         .from('customers')
         .select('*')
@@ -120,6 +104,9 @@ Deno.serve(async (req) => {
       if (customer?.holded_id) {
         contactId = customer.holded_id;
         contactData = customer;
+        console.log('Found customer with holded_id:', contactId, contactData.name);
+      }
+    }
         console.log('Found contact from customer.holded_id:', contactId, contactData.name);
       }
     }
@@ -149,6 +136,42 @@ Deno.serve(async (req) => {
     const apiKey = '88610992d47b9783e7703c488a8c01cf';
     console.log('Using Holded API key');
 
+    // Helper function to check if prompt is visible
+    const isPromptVisible = (prompt: any, allPrompts: Record<string, any>): boolean => {
+      // If no visibility conditions, it's visible
+      if (!prompt.hiddenWhen && !prompt.visibility) return true;
+      
+      // Check hiddenWhen condition
+      if (prompt.hiddenWhen) {
+        if (typeof prompt.hiddenWhen === 'object') {
+          const field = prompt.hiddenWhen.field || prompt.hiddenWhen.id;
+          const expectedValue = prompt.hiddenWhen.equals || prompt.hiddenWhen.value;
+          if (field && allPrompts[field]) {
+            const currentValue = allPrompts[field].value;
+            if (String(currentValue) === String(expectedValue)) {
+              return false; // Hidden when condition is met
+            }
+          }
+        }
+      }
+      
+      // Check visibility condition
+      if (prompt.visibility) {
+        if (typeof prompt.visibility === 'object') {
+          const field = prompt.visibility.field || prompt.visibility.id;
+          const expectedValue = prompt.visibility.equals || prompt.visibility.value;
+          if (field && allPrompts[field]) {
+            const currentValue = allPrompts[field].value;
+            if (String(currentValue) !== String(expectedValue)) {
+              return false; // Not visible because condition not met
+            }
+          }
+        }
+      }
+      
+      return true;
+    };
+
     // Build complete payload with all order data
     const items: any[] = [];
     
@@ -157,7 +180,7 @@ Deno.serve(async (req) => {
       
       let description = '';
       
-      // Build description from prompts
+      // Build description from prompts (ONLY VISIBLE ONES)
       if (item.prompts) {
         let promptsArray: any[] = [];
         
@@ -170,8 +193,15 @@ Deno.serve(async (req) => {
           }));
         }
         
+        // Convert to object for visibility checking
+        const promptsObj = promptsArray.reduce((acc: any, p: any) => {
+          acc[p.id] = p;
+          return acc;
+        }, {});
+        
         if (promptsArray.length > 0) {
           description = promptsArray
+            .filter(prompt => isPromptVisible(prompt, promptsObj)) // Filter only visible prompts
             .sort((a, b) => (a.order || 999) - (b.order || 999))
             .map((prompt) => {
               if (prompt && 'label' in prompt && 'value' in prompt) {
