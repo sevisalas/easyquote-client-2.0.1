@@ -186,13 +186,28 @@ export default function QuoteEdit() {
 
       // Check if quote_additionals is a direct JSON array (most common case)
       if (Array.isArray(quote.quote_additionals)) {
-        const jsonAdditionals = quote.quote_additionals.map((additional: any, index: number) => ({
-          id: additional.id || `temp-${Date.now()}-${index}`,
-          name: additional.name,
-          type: additional.type || "net_amount",
-          value: parseFloat(additional.value) || 0,
-          isCustom: !additional.id, // If no predefined ID, it's custom
-        }));
+        const jsonAdditionals = quote.quote_additionals.map((additional: any, index: number) => {
+          // Clean ID: if it contains underscore with timestamp, extract only the UUID part
+          let cleanId = additional.id;
+          if (cleanId && typeof cleanId === 'string' && cleanId.includes('_')) {
+            const parts = cleanId.split('_');
+            // Check if first part is a valid UUID (36 chars with hyphens)
+            if (parts[0] && parts[0].length === 36 && parts[0].includes('-')) {
+              cleanId = parts[0];
+            } else {
+              // If not a valid UUID, treat as custom
+              cleanId = null;
+            }
+          }
+          
+          return {
+            id: cleanId || `temp-${Date.now()}-${index}`,
+            name: additional.name,
+            type: additional.type || "net_amount",
+            value: parseFloat(additional.value) || 0,
+            isCustom: !cleanId, // If no valid ID, it's custom
+          };
+        });
         loadedAdditionals.push(...jsonAdditionals);
         console.log("Loaded from JSON array:", jsonAdditionals);
       }
