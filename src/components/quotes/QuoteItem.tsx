@@ -62,7 +62,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [hasInitialOutputs, setHasInitialOutputs] = useState<boolean>(false);
   const [userHasChangedCurrentProduct, setUserHasChangedCurrentProduct] = useState<boolean>(false);
   const [isInitializing, setIsInitializing] = useState<boolean>(false); // Flag para prevenir sync durante inicialización
-  const [isInitialized, setIsInitialized] = useState<boolean>(false); // Flag para evitar query antes de inicialización
   const selectRef = useRef<HTMLButtonElement>(null);
 
   // Auto-expand/collapse based on shouldExpand prop
@@ -106,8 +105,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       return;
     }
     if (!initialData) {
-      console.log('⚠️ No initialData - producto nuevo, habilitando query inmediatamente');
-      setIsInitialized(true);
+      console.log('⚠️ No initialData - producto nuevo');
       initializedRef.current = true;
       return;
     }
@@ -195,9 +193,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       if (initialData.needsRecalculation) {
         setForceRecalculate(true);
       }
-      
-      console.log('✅ Initialization complete - enabling query');
-      setIsInitialized(true);
     } catch {}
   }, [initialData]);
 
@@ -306,30 +301,30 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct],
     enabled: (() => {
-      // ESPERAR a que termine la inicialización
-      if (!isInitialized) {
-        console.log("⏳ Query disabled: waiting for initialization to complete...");
-        return false;
-      }
-      
       // Verificar condiciones básicas
       if (!hasToken || !productId) {
         console.log("❌ Query disabled: missing token or productId");
         return false;
       }
       
-      // Para artículos guardados (no nuevos), esperar a que debouncedPromptValues esté listo
-      if (!isNewProduct) {
-        const hasPrompts = debouncedPromptValues && Object.keys(debouncedPromptValues).length > 0;
-        if (!hasPrompts) {
-          console.log("⏳ Query disabled: waiting for saved prompts to load...");
-          return false;
-        }
-        console.log("✅ Query enabled: saved article with", Object.keys(debouncedPromptValues).length, "prompts ready");
-      } else {
-        console.log("✅ Query enabled: new product");
+      // Si no tenemos prompts válidos, no hacer query
+      if (!debouncedPromptValues || Object.keys(debouncedPromptValues).length === 0) {
+        console.log("❌ Query disabled: no prompts");
+        return false;
       }
       
+      // Si hay initialData (artículo guardado), SOLO hacer query si el usuario ha hecho cambios
+      if (initialData) {
+        if (!userHasChangedCurrentProduct && !forceRecalculate) {
+          console.log("ℹ️ Query disabled: usando datos guardados, sin cambios del usuario");
+          return false;
+        }
+        console.log("✅ Query enabled: usuario ha modificado el producto guardado");
+        return true;
+      }
+      
+      // Si NO hay initialData (producto nuevo), hacer query normal
+      console.log("✅ Query enabled: producto nuevo");
       return true;
     })(),
     retry: false,
