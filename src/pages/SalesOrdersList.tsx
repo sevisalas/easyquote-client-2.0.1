@@ -472,8 +472,9 @@ const SalesOrdersList = () => {
               {orders.length === 0 ? "Aún no hay pedidos." : "No se encontraron pedidos con los filtros aplicados."}
             </p>
           ) : (
-            <Table className="table-fixed">
-              <TableHeader>
+            <div className="w-full">
+              <Table className="table-fixed w-full">
+                <TableHeader>
                 <TableRow className="h-9">
                   <TableHead className="py-2 text-xs font-semibold">Fecha</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Nº</TableHead>
@@ -561,6 +562,7 @@ const SalesOrdersList = () => {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
 
           {/* Pagination */}
