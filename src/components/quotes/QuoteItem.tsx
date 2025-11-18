@@ -294,7 +294,27 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct],
-    enabled: !!hasToken && !!productId,
+    enabled: (() => {
+      // Verificar condiciones básicas
+      if (!hasToken || !productId) {
+        console.log("❌ Query disabled: missing token or productId");
+        return false;
+      }
+      
+      // Para artículos guardados (no nuevos), esperar a que debouncedPromptValues esté listo
+      if (!isNewProduct) {
+        const hasPrompts = debouncedPromptValues && Object.keys(debouncedPromptValues).length > 0;
+        if (!hasPrompts) {
+          console.log("⏳ Query disabled: waiting for saved prompts to load...");
+          return false;
+        }
+        console.log("✅ Query enabled: saved article with", Object.keys(debouncedPromptValues).length, "prompts ready");
+      } else {
+        console.log("✅ Query enabled: new product");
+      }
+      
+      return true;
+    })(),
     retry: false,
     placeholderData: isNewProduct ? undefined : keepPreviousData,
     refetchOnWindowFocus: false,
