@@ -708,30 +708,20 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     return result;
   };
 
-  // Initialize all prompts when pricing data loads
+  // Initialize all prompts when pricing data loads - ONLY for new products
   useEffect(() => {
-    if (pricing && productId && !hasInitialOutputs) {
+    // Solo inicializar prompts por defecto si es un producto NUEVO
+    if (pricing && productId && isNewProduct && !hasInitialOutputs) {
+      console.log("🆕 Producto nuevo detectado, cargando valores por defecto del API");
       const allPrompts = extractAllPrompts(pricing);
       
-      // Merge with existing prompts (preserve user changes)
-      setPromptValues((prev) => {
-        const merged = { ...allPrompts };
-        
-        // Keep user-modified values
-        Object.entries(prev).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            merged[key] = value;
-          }
-        });
-        
-        return merged;
-      });
+      setPromptValues(allPrompts);
       
       // Mark product as loaded after prompts are initialized
-      if (isNewProduct) {
-        console.log("✅ Producto cargado exitosamente, marcando como no nuevo");
-        setIsNewProduct(false);
-      }
+      console.log("✅ Producto cargado exitosamente, marcando como no nuevo");
+      setIsNewProduct(false);
+    } else if (pricing && productId && !isNewProduct) {
+      console.log("💾 Producto guardado detectado, manteniendo valores cargados desde la base de datos");
     }
   }, [pricing, productId, isNewProduct, hasInitialOutputs]);
 
