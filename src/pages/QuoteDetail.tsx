@@ -266,9 +266,27 @@ export default function QuoteDetail() {
         .eq('id', quoteId);
 
       if (error) throw error;
+
+      // Si el estado es "sent" y Holded está activo, exportar automáticamente
+      if (status === 'sent' && isHoldedActive) {
+        console.log('🚀 Attempting to export to Holded after status change to sent');
+        const { error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
+          body: { quoteId }
+        });
+
+        if (holdedError) {
+          console.error('❌ Error exporting to Holded:', holdedError);
+          throw new Error('Error al exportar a Holded: ' + holdedError.message);
+        }
+        console.log('✅ Successfully exported to Holded');
+      }
     },
-    onSuccess: () => {
-      toast.success('Estado actualizado correctamente');
+    onSuccess: (_, variables) => {
+      if (variables.status === 'sent' && isHoldedActive) {
+        toast.success('Estado actualizado y presupuesto exportado a Holded');
+      } else {
+        toast.success('Estado actualizado correctamente');
+      }
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
     },
