@@ -924,6 +924,11 @@ export default function QuoteEdit() {
                             <div className="pl-8 space-y-1 border-l-2 border-muted">
                               <p className="text-xs font-semibold text-muted-foreground uppercase">Opciones seleccionadas</p>
                               {Object.entries(itemPrompts)
+                                .filter(([key, promptData]: [string, any]) => {
+                                  // Filter non-visible prompts (only show those with labels)
+                                  const hasLabel = typeof promptData === 'object' && promptData.label && promptData.label.trim() !== '';
+                                  return hasLabel || typeof promptData === 'string';
+                                })
                                 .sort(([, a]: [string, any], [, b]: [string, any]) => (a.order ?? 999) - (b.order ?? 999))
                                 .map(([key, promptData]: [string, any], idx: number) => {
                                   const label = typeof promptData === 'object' ? promptData.label : key;
