@@ -571,13 +571,32 @@ export default function QuoteEdit() {
     updateQuoteMutation.mutate(formData);
   };
 
-  const handleStatusChange = (newStatus: string) => {
+  const handleStatusChange = async (newStatus: string) => {
     // Actualizar formData con el nuevo estado
     const updatedFormData = { ...formData, status: newStatus };
     setFormData(updatedFormData);
     
     // Guardar automáticamente con el nuevo estado
     updateQuoteMutation.mutate(updatedFormData);
+
+    // Si el estado es "sent" y Holded está activo, exportar a Holded automáticamente
+    if (newStatus === 'sent' && isHoldedActive && id) {
+      try {
+        const { error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
+          body: { quoteId: id }
+        });
+
+        if (holdedError) {
+          console.error('Error exporting to Holded:', holdedError);
+          toast.error("El presupuesto se guardó pero hubo un error al exportar a Holded");
+        } else {
+          toast.success("Presupuesto exportado a Holded exitosamente");
+        }
+      } catch (error) {
+        console.error('Error exporting to Holded:', error);
+        toast.error("Error al exportar a Holded");
+      }
+    }
   };
 
   if (isLoading) {
