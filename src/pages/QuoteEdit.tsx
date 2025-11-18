@@ -129,6 +129,7 @@ export default function QuoteEdit() {
   const [editingItems, setEditingItems] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isStatusChange, setIsStatusChange] = useState(false); // Track if update is from status change
   const [initialState, setInitialState] = useState<{
     formData: Partial<Quote>;
     items: QuoteItem[];
@@ -433,7 +434,14 @@ export default function QuoteEdit() {
       toast.success("Presupuesto actualizado correctamente");
       queryClient.invalidateQueries({ queryKey: ["quote", id] });
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
-      navigate(`/presupuestos/${id}`);
+      
+      // Only navigate if not a status change (to allow Holded export to complete)
+      if (!isStatusChange) {
+        navigate(`/presupuestos/${id}`);
+      }
+      
+      // Reset the flag
+      setIsStatusChange(false);
     },
     onError: (error) => {
       toast.error("Error al actualizar el presupuesto");
@@ -576,26 +584,34 @@ export default function QuoteEdit() {
     const updatedFormData = { ...formData, status: newStatus };
     setFormData(updatedFormData);
     
-    // Guardar automáticamente con el nuevo estado
-    updateQuoteMutation.mutate(updatedFormData);
+    // Set flag to prevent navigation in onSuccess
+    setIsStatusChange(true);
+    
+    try {
+      // Guardar automáticamente con el nuevo estado y esperar a que se complete
+      await updateQuoteMutation.mutateAsync(updatedFormData);
 
-    // Si el estado es "sent" y Holded está activo, exportar a Holded automáticamente
-    if (newStatus === 'sent' && isHoldedActive && id) {
-      try {
+      // Si el estado es "sent" y Holded está activo, exportar a Holded automáticamente
+      if (newStatus === 'sent' && isHoldedActive && id) {
+        console.log('🚀 Attempting to export to Holded after status change to sent');
         const { error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
           body: { quoteId: id }
         });
 
         if (holdedError) {
-          console.error('Error exporting to Holded:', holdedError);
+          console.error('❌ Error exporting to Holded:', holdedError);
           toast.error("El presupuesto se guardó pero hubo un error al exportar a Holded");
         } else {
+          console.log('✅ Successfully exported to Holded');
           toast.success("Presupuesto exportado a Holded exitosamente");
+          // Recargar los datos del presupuesto para mostrar el número de Holded
+          queryClient.invalidateQueries({ queryKey: ["quote", id] });
         }
-      } catch (error) {
-        console.error('Error exporting to Holded:', error);
-        toast.error("Error al exportar a Holded");
       }
+    } catch (error) {
+      console.error('Error in handleStatusChange:', error);
+      setIsStatusChange(false); // Reset flag on error
+      // El error del guardado ya se maneja en onError de la mutación
     }
   };
 
