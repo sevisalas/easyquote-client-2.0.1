@@ -53,17 +53,29 @@ export default function Clientes() {
 
       const startIndex = (currentPage - 1) * itemsPerPage;
       
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('⚠️ No authenticated user');
+        setClientes([]);
+        setTotalClients(0);
+        setLoading(false);
+        return;
+      }
+
       console.log('🔑 Fetching with auth context:', { 
+        userId: user.id,
         organizationId,
         searchTerm,
         page: currentPage 
       });
 
       // Fetch all customers from unified table with pagination
+      // Include both organization customers AND user's own customers
       let customersQuery = supabase
         .from("customers")
         .select("*", { count: "exact" })
-        .eq("organization_id", organizationId)
+        .or(`organization_id.eq.${organizationId},user_id.eq.${user.id}`)
         .order("name", { ascending: true })
         .range(startIndex, startIndex + itemsPerPage - 1);
 
