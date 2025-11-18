@@ -45,12 +45,24 @@ serve(async (req: Request): Promise<Response> => {
     });
 
     const text = await res.text();
+    console.log(`easyquote-products: Response status: ${res.status}, text length: ${text.length}, preview: ${text.substring(0, 200)}`);
+    
     let data: any;
     try {
       data = text ? JSON.parse(text) : {};
     } catch (e) {
-      console.error("easyquote-products: JSON parse error", e, text);
-      return new Response(JSON.stringify({ error: "Invalid response from EasyQuote" }), {
+      console.error("easyquote-products: JSON parse error", e);
+      console.error("easyquote-products: Response status:", res.status);
+      console.error("easyquote-products: Response text (first 500 chars):", text.substring(0, 500));
+      console.error("easyquote-products: Response text (last 500 chars):", text.substring(Math.max(0, text.length - 500)));
+      
+      return new Response(JSON.stringify({ 
+        error: "Invalid response from EasyQuote",
+        details: {
+          status: res.status,
+          textPreview: text.substring(0, 200)
+        }
+      }), {
         status: 502,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
