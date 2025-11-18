@@ -113,8 +113,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       console.log('✅ Starting initialization with initialData:', initialData);
       setProductId(initialData.productId || "");
       
-      // Normalize prompts format: mantener estructura completa {label, value, order}
-      const normalizedPrompts: Record<string, any> = {};
+      // Extraer solo los VALORES de los prompts guardados
+      const promptValuesOnly: Record<string, any> = {};
       if (initialData.prompts) {
         console.log('🔍 Raw prompts from DB:', initialData.prompts);
         
@@ -122,42 +122,32 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         if (Array.isArray(initialData.prompts)) {
           initialData.prompts.forEach((prompt: any) => {
             if (prompt.id && prompt.value !== undefined && prompt.value !== null && prompt.value !== '') {
-              normalizedPrompts[prompt.id] = {
-                label: prompt.label || prompt.id,
-                value: prompt.value,
-                order: prompt.order ?? 999
-              };
-              console.log(`  📌 Loaded prompt ${prompt.id} =`, normalizedPrompts[prompt.id]);
+              promptValuesOnly[prompt.id] = prompt.value;  // ✅ SOLO el valor
+              console.log(`  📌 Loaded prompt ${prompt.id} = ${prompt.value}`);
             }
           });
         } else {
           // Handle object format {promptId: {label, value, order}} or {promptId: value}
           Object.entries(initialData.prompts).forEach(([promptId, promptData]: [string, any]) => {
             if (typeof promptData === 'object' && promptData !== null && 'value' in promptData) {
-              // Ya está en formato completo
-              normalizedPrompts[promptId] = promptData;
+              promptValuesOnly[promptId] = promptData.value;  // ✅ SOLO el valor
             } else {
-              // Valor simple, crear estructura completa
-              normalizedPrompts[promptId] = {
-                label: promptId,
-                value: promptData,
-                order: 999
-              };
+              promptValuesOnly[promptId] = promptData;  // Ya es valor simple
             }
-            console.log(`  📌 Loaded prompt ${promptId} =`, normalizedPrompts[promptId]);
+            console.log(`  📌 Loaded prompt ${promptId} = ${promptValuesOnly[promptId]}`);
           });
         }
-        console.log('✅ Normalized prompts (valores GUARDADOS cargados):', normalizedPrompts);
+        console.log('✅ Prompt values (SOLO VALORES guardados):', promptValuesOnly);
       }
       
-      setPromptValues(normalizedPrompts);
-      setDebouncedPromptValues(normalizedPrompts);
+      setPromptValues(promptValuesOnly);
+      setDebouncedPromptValues(promptValuesOnly);
       setItemDescription(initialData.itemDescription || "");
       
       // Marcar como NO nuevo si tiene prompts guardados
-      const hasPromptsData = Object.keys(normalizedPrompts).length > 0;
+      const hasPromptsData = Object.keys(promptValuesOnly).length > 0;
       if (hasPromptsData) {
-        console.log('✅ Artículo guardado detectado con', Object.keys(normalizedPrompts).length, 'prompts');
+        console.log('✅ Artículo guardado detectado con', Object.keys(promptValuesOnly).length, 'prompts');
         console.log('🎯 Se hará PATCH con estos valores guardados para recalcular outputs y precio');
         setIsNewProduct(false);
         // NO marcar userHasChangedCurrentProduct aquí, eso se hará después del PATCH inicial
