@@ -115,22 +115,24 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       // Normalize prompts format: extract just the values
       const normalizedPrompts: Record<string, any> = {};
       if (initialData.prompts) {
-        console.log('🔍 Raw prompts:', initialData.prompts);
+        console.log('🔍 Raw prompts from DB:', initialData.prompts);
         
         // Handle array format [{id, label, order, value}]
         if (Array.isArray(initialData.prompts)) {
           initialData.prompts.forEach((prompt: any) => {
             if (prompt.id) {
               normalizedPrompts[prompt.id] = prompt.value;
+              console.log(`  📌 Loaded prompt ${prompt.id} = ${prompt.value}`);
             }
           });
         } else {
           // Handle object format {promptId: {label, value, order}}
           Object.entries(initialData.prompts).forEach(([promptId, promptData]: [string, any]) => {
             normalizedPrompts[promptId] = typeof promptData === 'object' ? promptData.value : promptData;
+            console.log(`  📌 Loaded prompt ${promptId} = ${normalizedPrompts[promptId]}`);
           });
         }
-        console.log('🔍 Normalized prompts (extracted values):', normalizedPrompts);
+        console.log('✅ Normalized prompts (valores GUARDADOS cargados):', normalizedPrompts);
       }
       
       setPromptValues(normalizedPrompts);
@@ -140,8 +142,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       // Marcar como NO nuevo si tiene prompts guardados
       const hasPromptsData = Object.keys(normalizedPrompts).length > 0;
       if (hasPromptsData) {
-        console.log('✅ Artículo guardado detectado, hará PATCH con valores guardados para actualizar precios');
+        console.log('✅ Artículo guardado detectado con', Object.keys(normalizedPrompts).length, 'prompts');
+        console.log('🎯 Se hará PATCH con estos valores guardados para recalcular outputs y precio');
         setIsNewProduct(false);
+        // NO marcar userHasChangedCurrentProduct aquí, eso se hará después del PATCH inicial
       }
       
       // Solo marcar hasInitialOutputs si hay outputs guardados
@@ -299,7 +303,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
       
-      console.log("🔥 Fetching pricing for product:", productId, "isNewProduct:", isNewProduct);
+      console.log("🔥 Fetching pricing for product:", productId);
+      console.log("  - isNewProduct:", isNewProduct);
+      console.log("  - userHasChangedCurrentProduct:", userHasChangedCurrentProduct);
+      console.log("  - debouncedPromptValues:", debouncedPromptValues);
 
       const requestBody: any = {
         token,
@@ -308,6 +315,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
       // Si NO es producto nuevo Y tenemos valores de prompts Y el usuario ha cambiado algo, enviar PATCH
       const hasPromptValues = debouncedPromptValues && Object.keys(debouncedPromptValues).length > 0;
+      console.log("  - hasPromptValues:", hasPromptValues);
       
       if (!isNewProduct && hasPromptValues && userHasChangedCurrentProduct) {
         console.log("📝 Usuario cambió valores del producto, enviando PATCH para actualizar precios");
@@ -338,8 +346,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         if (inputsArray.length > 0) {
           requestBody.inputs = inputsArray;
         }
+        console.log("  📤 Enviando PATCH con inputs:", inputsArray);
       } else if (!isNewProduct && hasPromptValues && !userHasChangedCurrentProduct) {
-        console.log("✅ Artículo guardado cargando primera vez, haciendo PATCH para actualizar precios");
+        console.log("💾 Artículo guardado - PRIMERA CARGA");
+        console.log("🎯 Haciendo PATCH con valores GUARDADOS para recalcular outputs y precio");
         // Para artículos guardados en la primera carga, hacer PATCH con valores guardados
         const norm: Record<string, any> = {};
         Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
@@ -366,6 +376,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         if (inputsArray.length > 0) {
           requestBody.inputs = inputsArray;
         }
+        console.log("  📤 Enviando PATCH con valores guardados:", inputsArray);
         // Marcar que ya hicimos la primera carga
         setUserHasChangedCurrentProduct(true);
       } else if (!isNewProduct && !hasPromptValues) {
