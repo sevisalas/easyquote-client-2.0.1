@@ -232,39 +232,53 @@ export default function QuoteEdit() {
       // Load from database (quote_items table)
       if (quote.items && quote.items.length > 0) {
         console.log('🔍 Loading items from DB - count:', quote.items.length);
-        console.log('🔍 First item raw data:', JSON.stringify(quote.items[0], null, 2));
+        console.log('🔍 Quote selections (valores guardados):', quote.selections);
         
         const dbItems = quote.items.map((item: any, idx: number) => {
           console.log(`🔍 Processing item ${idx}:`, {
             id: item.id,
             product_name: item.product_name,
-            promptsType: typeof item.prompts,
-            promptsIsArray: Array.isArray(item.prompts),
-            promptsLength: Array.isArray(item.prompts) ? item.prompts.length : 'N/A',
+            product_id: item.product_id,
+            promptsInQuoteItems: item.prompts,
             outputsLength: Array.isArray(item.outputs) ? item.outputs.length : 'N/A'
           });
           
-          // Convert prompts from array format (DB) to object format (QuoteItem expects)
-          // Keep full structure {id: {label, value, order}} for proper saving later
+          // CRÍTICO: Los valores de prompts están en quote.selections, no en quote_items.prompts
+          // quote_items.prompts solo tiene [{id, order}] sin valores
+          // Buscar los valores en selections que coincidan con este item
           let promptsObj: Record<string, any> = {};
-          if (Array.isArray(item.prompts)) {
-            // Convert array [{id, label, value, order}] to object {id: {label, value, order}}
-            item.prompts.forEach((prompt: any) => {
-              if (prompt && prompt.id && prompt.value !== undefined) {
-                promptsObj[prompt.id] = {
-                  label: prompt.label || prompt.id,
-                  value: prompt.value,
-                  order: prompt.order ?? 999
-                };
+          
+          if (quote.selections && Array.isArray(quote.selections)) {
+            // Buscar en selections el item que corresponde (mismo productId o misma posición)
+            const matchingSelection = quote.selections.find((sel: any) => 
+              sel.productId === item.product_id || sel.isFinalized
+            ) || quote.selections[idx];
+            
+            if (matchingSelection && matchingSelection.prompts) {
+              console.log(`✅ Item ${idx}: Found valores in selections:`, matchingSelection.prompts);
+              // Los valores están en formato {promptId: valor} o {promptId: {label, value}}
+              if (typeof matchingSelection.prompts === 'object') {
+                Object.entries(matchingSelection.prompts).forEach(([promptId, promptValue]: [string, any]) => {
+                  if (promptValue !== undefined && promptValue !== null) {
+                    // Si es un objeto con label/value, guardarlo completo; si no, crear estructura
+                    if (typeof promptValue === 'object' && 'value' in promptValue) {
+                      promptsObj[promptId] = promptValue;
+                    } else {
+                      promptsObj[promptId] = {
+                        label: promptId,
+                        value: promptValue,
+                        order: 999
+                      };
+                    }
+                  }
+                });
+                console.log(`✅ Item ${idx}: Extracted ${Object.keys(promptsObj).length} prompts with valores`);
               }
-            });
-            console.log(`🔍 Converted ${item.prompts.length} prompts to object format for item ${idx}`, promptsObj);
-          } else if (typeof item.prompts === "object" && item.prompts !== null) {
-            // Already in object format
-            promptsObj = item.prompts;
-            console.log(`🔍 Item ${idx} prompts already in object format`);
+            } else {
+              console.warn(`⚠️ Item ${idx}: No matching selection found in quote.selections`);
+            }
           } else {
-            console.warn(`⚠️ Item ${idx} prompts is neither array nor object:`, typeof item.prompts);
+            console.warn(`⚠️ No selections array in quote data`);
           }
 
           const mappedItem = {
