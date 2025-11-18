@@ -128,9 +128,10 @@ export default function Integrations() {
     
     try {
       const { count, error } = await supabase
-        .from('holded_contacts')
+        .from('customers')
         .select('*', { count: 'exact', head: true })
-        .eq('organization_id', currentOrganization.id);
+        .eq('organization_id', currentOrganization.id)
+        .eq('source', 'holded');
 
       if (error) throw error;
       setContactsCount(count || 0);

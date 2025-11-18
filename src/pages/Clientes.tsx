@@ -59,58 +59,32 @@ export default function Clientes() {
         page: currentPage 
       });
 
-      // Fetch Holded contacts with pagination
-      let holdedQuery = supabase
-        .from("holded_contacts")
+      // Fetch all customers from unified table with pagination
+      let customersQuery = supabase
+        .from("customers")
         .select("*", { count: "exact" })
         .eq("organization_id", organizationId)
         .order("name", { ascending: true })
         .range(startIndex, startIndex + itemsPerPage - 1);
 
       if (searchTerm) {
-        holdedQuery = holdedQuery.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+        customersQuery = customersQuery.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
       }
 
-      const { data: holdedData, error: holdedError, count: holdedCount } = await holdedQuery;
+      const { data: customersData, error: customersError, count: customersCount } = await customersQuery;
 
-      console.log('📊 Holded contacts query result:', { 
-        data: holdedData,
-        error: holdedError,
-        count: holdedCount 
-      });
-
-      if (holdedError) {
-        console.error("❌ Error fetching Holded contacts:", holdedError);
-      }
-
-      // Fetch local customers
-      const { data: customersData, error: customersError } = await supabase
-        .from("customers")
-        .select("*")
-        .order("name", { ascending: true });
-
-      console.log('📊 Local customers query result:', {
+      console.log('📊 Customers query result:', { 
         data: customersData,
-        error: customersError
+        error: customersError,
+        count: customersCount 
       });
 
       if (customersError) {
-        console.error("❌ Error fetching local customers:", customersError);
+        console.error("❌ Error fetching customers:", customersError);
       }
 
-      // Combine and format all contacts
-      const holdedClients: LocalClient[] = (holdedData || []).map(c => ({
-        id: c.id,
-        name: c.name || '',
-        email: c.email || '',
-        phone: c.phone || '',
-        notes: '',
-        integration_id: '',
-        created_at: c.created_at,
-        source: 'holded' as const
-      }));
-
-      const localClients: LocalClient[] = (customersData || []).map(c => ({
+      // Format all contacts
+      const allClients: LocalClient[] = (customersData || []).map(c => ({
         id: c.id,
         name: c.name || '',
         email: c.email || '',
@@ -118,10 +92,8 @@ export default function Clientes() {
         notes: c.notes || '',
         integration_id: c.integration_id || '',
         created_at: c.created_at,
-        source: 'local' as const
+        source: c.source as 'local' | 'holded'
       }));
-
-      const allClients = [...holdedClients, ...localClients];
       console.log('✅ Total clients combined:', allClients.length);
 
       setTotalClients(holdedCount || 0);

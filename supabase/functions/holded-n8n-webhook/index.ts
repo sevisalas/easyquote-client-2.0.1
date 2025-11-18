@@ -93,16 +93,31 @@ serve(async (req) => {
       );
     }
 
-    // Insert or update contact
+    // Get organization owner user_id
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('api_user_id')
+      .eq('id', organizationId)
+      .single();
+
+    if (!org) {
+      return new Response(
+        JSON.stringify({ error: 'Organization not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Insert or update contact in customers table with source='holded'
     const { data, error } = await supabase
-      .from('holded_contacts')
+      .from('customers')
       .upsert({
         holded_id: holded_id.toString(),
+        organization_id: organizationId,
+        user_id: org.api_user_id,
         name: name.trim(),
         email: email?.trim() || null,
-        phone: phone?.trim() || null,
-        mobile: mobile?.trim() || null,
-        organization_id: organizationId,
+        phone: phone?.trim() || mobile?.trim() || null,
+        source: 'holded'
       }, {
         onConflict: 'holded_id,organization_id',
         ignoreDuplicates: false

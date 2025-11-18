@@ -122,12 +122,12 @@ const SalesOrdersList = () => {
       .from("customers")
       .select("id, name");
 
-    // Fetch Holded contacts
-    const { data: holdedContacts } = await supabase
-      .from("holded_contacts")
+    // Fetch all customers from unified table
+    const { data: allCustomers } = await supabase
+      .from("customers")
       .select("id, name");
 
-    setCustomers([...(localCustomers || []), ...(holdedContacts || [])]);
+    setCustomers(allCustomers || []);
   };
 
   // Reset to first page when filters change

@@ -76,13 +76,26 @@ Deno.serve(async (req) => {
 
     const holdedData = await holdedResponse.json();
 
-    // Transform Holded contacts to our format
+    // Transform Holded contacts to our format and check if they exist in customers
+    const holdedIds = holdedData.map((c: any) => c.id);
+    
+    // Get existing customers from our database
+    const { data: existingCustomers } = await supabaseClient
+      .from('customers')
+      .select('holded_id')
+      .eq('organization_id', organizationId)
+      .eq('source', 'holded')
+      .in('holded_id', holdedIds);
+
+    const existingHoldedIds = new Set(existingCustomers?.map(c => c.holded_id) || []);
+
     const contacts = holdedData.map((contact: any) => ({
       id: contact.id,
       name: contact.name || contact.customName,
       email: contact.email,
       code: contact.code,
-      vatNumber: contact.vatnumber
+      vatNumber: contact.vatnumber,
+      existsInDb: existingHoldedIds.has(contact.id)
     }));
 
     return new Response(
