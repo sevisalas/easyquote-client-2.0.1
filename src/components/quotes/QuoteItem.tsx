@@ -318,18 +318,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         return false;
       }
       
-      // Para artículos guardados (no nuevos), esperar a que debouncedPromptValues esté listo
-      if (!isNewProduct) {
-        const hasPrompts = debouncedPromptValues && Object.keys(debouncedPromptValues).length > 0;
-        if (!hasPrompts) {
-          console.log("⏳ Query disabled: waiting for saved prompts to load...");
-          return false;
-        }
-        console.log("✅ Query enabled: saved article with", Object.keys(debouncedPromptValues).length, "prompts ready");
-      } else {
-        console.log("✅ Query enabled: new product");
-      }
-      
+      // Si pasamos las validaciones, confiar en que los datos están listos
+      console.log("✅ Query enabled:", isNewProduct ? "new product" : "saved article");
       return true;
     })(),
     retry: false,
@@ -350,11 +340,17 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         productId
       };
 
-      // Si NO es producto nuevo Y tenemos valores de prompts, SIEMPRE enviar PATCH (nunca GET para artículos guardados)
+      // Si NO es producto nuevo Y tenemos valores de prompts, SIEMPRE enviar PATCH
       const hasPromptValues = debouncedPromptValues && Object.keys(debouncedPromptValues).length > 0;
       console.log("  - hasPromptValues:", hasPromptValues);
       
-      if (!isNewProduct && hasPromptValues) {
+      if (!isNewProduct) {
+        if (!hasPromptValues) {
+          console.error("❌ LÓGICA ERROR: artículo guardado sin prompts en debouncedPromptValues!");
+          console.error("  promptValues:", promptValues);
+          console.error("  debouncedPromptValues:", debouncedPromptValues);
+          throw new Error("Artículo guardado sin datos de prompts - error de inicialización");
+        }
         // SIEMPRE PATCH para artículos guardados, tanto en primera carga como en cambios
         console.log("💾 Artículo guardado - enviando PATCH con valores guardados");
         const norm: Record<string, any> = {};
@@ -389,10 +385,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           console.log("✅ Primera carga completa, próximos cambios serán por usuario");
           setUserHasChangedCurrentProduct(true);
         }
-      } else if (isNewProduct) {
-        console.log("✨ Producto nuevo, haciendo GET para obtener configuración inicial");
       } else {
-        console.log("⚠️ Artículo guardado pero sin prompts aún - esperando inicialización");
+        console.log("✨ Producto nuevo, haciendo GET para obtener configuración inicial");
       }
 
       console.log("📤 Request body:", requestBody);
