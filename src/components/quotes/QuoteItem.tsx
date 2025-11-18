@@ -778,6 +778,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const syncToParent = useCallback(() => {
     if (!onChange) return;
     
+    console.log('🔄 syncToParent ejecutándose:', {
+      productId,
+      promptValuesKeys: Object.keys(promptValues),
+      promptValuesCount: Object.keys(promptValues).length,
+      promptValues,
+      hasOutputs: outputs && outputs.length > 0
+    });
+    
     const snapshot = {
       productId,
       prompts: promptValues,
@@ -792,7 +800,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     const snapshotString = JSON.stringify(snapshot);
     if (snapshotString !== lastSyncedSnapshot.current) {
       lastSyncedSnapshot.current = snapshotString;
+      console.log('✅ Sincronizando snapshot al padre:', {
+        promptsCount: Object.keys(promptValues).length,
+        snapshotPreview: { ...snapshot, prompts: Object.keys(snapshot.prompts) }
+      });
       onChange(id, snapshot);
+    } else {
+      console.log('⏭️ Snapshot sin cambios, no sincronizando');
     }
   }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, itemAdditionals, products, initialData?.isFinalized]);
 
