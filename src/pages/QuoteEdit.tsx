@@ -571,6 +571,15 @@ export default function QuoteEdit() {
     updateQuoteMutation.mutate(formData);
   };
 
+  const handleStatusChange = (newStatus: string) => {
+    // Actualizar formData con el nuevo estado
+    const updatedFormData = { ...formData, status: newStatus };
+    setFormData(updatedFormData);
+    
+    // Guardar automáticamente con el nuevo estado
+    updateQuoteMutation.mutate(updatedFormData);
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-2">
@@ -664,7 +673,7 @@ export default function QuoteEdit() {
               <Label htmlFor="status" className="text-xs">
                 estado
               </Label>
-              <Select value={formData.status || "draft"} onValueChange={(value) => handleInputChange("status", value)}>
+              <Select value={formData.status || "draft"} onValueChange={handleStatusChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar estado" />
                 </SelectTrigger>
