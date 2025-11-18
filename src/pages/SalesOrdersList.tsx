@@ -472,23 +472,22 @@ const SalesOrdersList = () => {
               {orders.length === 0 ? "Aún no hay pedidos." : "No se encontraron pedidos con los filtros aplicados."}
             </p>
           ) : (
-            <div className="w-full">
-              <Table className="table-fixed w-full">
+            <Table>
               <TableHeader>
                 <TableRow className="h-9">
-                  <TableHead className="py-2 text-xs font-semibold w-[80px]">Fecha</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold w-[110px]">Nº</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold w-[200px]">Cliente</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Fecha</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Nº</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Cliente</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Descripción</TableHead>
-                  <TableHead className="py-2 text-right text-xs font-semibold w-[100px]">Total</TableHead>
+                  <TableHead className="py-2 text-right text-xs font-semibold">Total</TableHead>
                   {isHoldedActive && (
                     <>
-                      <TableHead className="py-2 text-xs font-semibold w-[100px]">Nº Holded</TableHead>
-                      <TableHead className="py-2 text-xs font-semibold w-[60px]">PDF</TableHead>
+                      <TableHead className="py-2 text-xs font-semibold">Nº Holded</TableHead>
+                      <TableHead className="py-2 text-xs font-semibold">PDF</TableHead>
                     </>
                   )}
-                  <TableHead className="py-2 text-xs font-semibold w-[100px]">Estado</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold w-[180px]">Acciones</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Estado</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -562,7 +561,6 @@ const SalesOrdersList = () => {
                 ))}
               </TableBody>
             </Table>
-            </div>
           )}
 
           {/* Pagination */}
