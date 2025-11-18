@@ -763,9 +763,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         } 
       };
       
-      // Trigger sync after state update
-      setTimeout(() => syncToParent(), 0);
-      
       return newValues;
     });
   };
@@ -793,6 +790,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, itemAdditionals, products, initialData?.isFinalized]);
 
   const isComplete = productId && priceOutput && finalPrice > 0;
+
+  // Sync changes to parent when dependencies change
+  useEffect(() => {
+    if (onChange && productId) {
+      syncToParent();
+    }
+  }, [syncToParent, onChange, productId]);
 
   // Debug logging para el botón Finalizar
   useEffect(() => {
@@ -848,6 +852,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             <div className="flex flex-col gap-2 float-right ml-4 mb-2">
               <Button 
                 onClick={() => {
+                  // Sincronizar cambios antes de finalizar
+                  syncToParent();
                   if (onFinishEdit) {
                     onFinishEdit(id);
                   }
@@ -1202,6 +1208,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
           <AlertDialogAction onClick={() => {
             setShowExitConfirm(false);
+            // Sincronizar cambios antes de salir
+            syncToParent();
             onFinishEdit?.(id);
           }}>
             Salir sin guardar
