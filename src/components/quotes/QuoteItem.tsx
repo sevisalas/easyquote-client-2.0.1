@@ -348,17 +348,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         productId
       };
 
-      // Si NO es producto nuevo Y tenemos valores de prompts Y el usuario ha cambiado algo, enviar PATCH
+      // Si NO es producto nuevo Y tenemos valores de prompts, SIEMPRE enviar PATCH (nunca GET para artículos guardados)
       const hasPromptValues = debouncedPromptValues && Object.keys(debouncedPromptValues).length > 0;
       console.log("  - hasPromptValues:", hasPromptValues);
       
-      if (!isNewProduct && hasPromptValues && userHasChangedCurrentProduct) {
-        console.log("📝 Usuario cambió valores del producto, enviando PATCH para actualizar precios");
+      if (!isNewProduct && hasPromptValues) {
+        // SIEMPRE PATCH para artículos guardados, tanto en primera carga como en cambios
+        console.log("💾 Artículo guardado - enviando PATCH con valores guardados");
         const norm: Record<string, any> = {};
         Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
-          // Extract actual value if it's stored as {label, value}
           const actualValue = (v && typeof v === 'object' && 'value' in v) ? v.value : v;
-          
           if (actualValue === "" || actualValue === undefined || actualValue === null) return;
           if (typeof actualValue === "string") {
             const trimmed = actualValue.trim();
@@ -382,42 +381,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           requestBody.inputs = inputsArray;
         }
         console.log("  📤 Enviando PATCH con inputs:", inputsArray);
-      } else if (!isNewProduct && hasPromptValues && !userHasChangedCurrentProduct) {
-        console.log("💾 Artículo guardado - PRIMERA CARGA");
-        console.log("🎯 Haciendo PATCH con valores GUARDADOS para recalcular outputs y precio");
-        // Para artículos guardados en la primera carga, hacer PATCH con valores guardados
-        const norm: Record<string, any> = {};
-        Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
-          const actualValue = (v && typeof v === 'object' && 'value' in v) ? v.value : v;
-          if (actualValue === "" || actualValue === undefined || actualValue === null) return;
-          if (typeof actualValue === "string") {
-            const trimmed = actualValue.trim();
-            const isHex = /^#[0-9a-f]{6}$/i.test(trimmed);
-            if (isHex) {
-              norm[k] = trimmed.slice(1).toUpperCase();
-              return;
-            }
-            const num = Number(trimmed.replace(",", "."));
-            if (!Number.isNaN(num) && /^-?\d+([.,]\d+)?$/.test(trimmed)) {
-              norm[k] = num;
-              return;
-            }
-            norm[k] = trimmed;
-          } else {
-            norm[k] = actualValue;
-          }
-        });
-        const inputsArray = Object.entries(norm).map(([id, value]) => ({ id, value }));
-        if (inputsArray.length > 0) {
-          requestBody.inputs = inputsArray;
+        
+        // Marcar que se hizo la primera carga si no estaba marcado
+        if (!userHasChangedCurrentProduct) {
+          console.log("✅ Primera carga completa, próximos cambios serán por usuario");
+          setUserHasChangedCurrentProduct(true);
         }
-        console.log("  📤 Enviando PATCH con valores guardados:", inputsArray);
-        // Marcar que ya hicimos la primera carga
-        setUserHasChangedCurrentProduct(true);
-      } else if (!isNewProduct && !hasPromptValues) {
-        console.log("⚠️ Artículo guardado sin valores de prompts, haciendo GET para obtener configuración");
-      } else {
+      } else if (isNewProduct) {
         console.log("✨ Producto nuevo, haciendo GET para obtener configuración inicial");
+      } else {
+        console.log("⚠️ Artículo guardado pero sin prompts aún - esperando inicialización");
       }
 
       console.log("📤 Request body:", requestBody);
