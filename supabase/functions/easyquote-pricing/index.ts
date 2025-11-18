@@ -34,13 +34,46 @@ serve(async (req: Request): Promise<Response> => {
     // Prefer POST with JSON body when inputs are provided; fallback to GET with query if POST fails
     let res: Response | null = null;
 
-    // Prepare inputs as an array of { id, value }
+    // Prepare inputs as an array of { id, value } and filter invalid values
     let inputsList: any[] = [];
     if (Array.isArray(inputs)) {
       inputsList = inputs as any[];
     } else if (inputs && typeof inputs === "object" && Object.keys(inputs).length > 0) {
       inputsList = Object.entries(inputs).map(([id, value]) => ({ id, value }));
     }
+    
+    // Filter out invalid values that could cause EasyQuote API to crash
+    inputsList = inputsList.filter(input => {
+      const value = input.value;
+      
+      // Remove null or undefined
+      if (value === null || value === undefined) {
+        console.log(`⚠️ Filtering out prompt ${input.id}: value is null/undefined`);
+        return false;
+      }
+      
+      // For strings, check if it's empty or only contains whitespace/special chars
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed === '') {
+          console.log(`⚠️ Filtering out prompt ${input.id}: empty string`);
+          return false;
+        }
+        // Filter out strings that are only special characters without alphanumeric content
+        if (trimmed.length < 3 && /^[^\w\s]+$/.test(trimmed)) {
+          console.log(`⚠️ Filtering out prompt ${input.id}: only special characters (${value})`);
+          return false;
+        }
+      }
+      
+      // For numbers, check if it's valid
+      if (typeof value === 'number' && !isFinite(value)) {
+        console.log(`⚠️ Filtering out prompt ${input.id}: invalid number`);
+        return false;
+      }
+      
+      return true;
+    });
 
     if (inputsList.length > 0) {
       console.log("easyquote-pricing: using PATCH with inputs", { count: inputsList.length, inputs: inputsList });
