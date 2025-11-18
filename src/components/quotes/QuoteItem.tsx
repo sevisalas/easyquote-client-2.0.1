@@ -61,6 +61,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [isNewProduct, setIsNewProduct] = useState<boolean>(true);
   const [hasInitialOutputs, setHasInitialOutputs] = useState<boolean>(false);
   const [userHasChangedCurrentProduct, setUserHasChangedCurrentProduct] = useState<boolean>(false);
+  const [isInitializing, setIsInitializing] = useState<boolean>(false); // Flag para prevenir sync durante inicialización
   const selectRef = useRef<HTMLButtonElement>(null);
 
   // Auto-expand/collapse based on shouldExpand prop
@@ -775,7 +776,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         }
       }
       
-      const newValues = {
+      return {
         ...prev, 
         [id]: { 
           label, 
@@ -783,14 +784,18 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           order: order !== undefined ? order : 999
         } 
       };
-      
-      return newValues;
     });
   };
 
   // Sync with parent only on specific user actions, not automatically
   const syncToParent = useCallback(() => {
     if (!onChange) return;
+    
+    // NO sincronizar durante la inicialización
+    if (isInitializing) {
+      console.log('⏸️ syncToParent bloqueado durante inicialización');
+      return;
+    }
     
     console.log('🔄 syncToParent ejecutándose:', {
       productId,
@@ -847,16 +852,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     } else {
       console.log('⏭️ Snapshot sin cambios, no sincronizando');
     }
-  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, itemAdditionals, products, initialData?.isFinalized]);
+  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, itemAdditionals, products, initialData?.isFinalized, isInitializing]);
 
   const isComplete = productId && priceOutput && finalPrice > 0;
 
-  // Sync changes to parent when dependencies change
-  useEffect(() => {
-    if (onChange && productId) {
-      syncToParent();
-    }
-  }, [syncToParent, onChange, productId]);
+  // NO sincronizar automáticamente durante inicialización
+  // syncToParent solo debe llamarse cuando el usuario hace cambios explícitos
+  // o cuando finaliza la edición del producto
 
   // Debug logging para el botón Finalizar
   useEffect(() => {
