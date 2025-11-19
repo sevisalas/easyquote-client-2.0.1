@@ -56,7 +56,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
   const [debouncedPromptValues, setDebouncedPromptValues] = useState<Record<string, any>>({});
   const [forceRecalculate, setForceRecalculate] = useState<boolean>(false);
-  const [isExpanded, setIsExpanded] = useState<boolean>(shouldExpand || false);
+  const [isExpanded, setIsExpanded] = useState<boolean>(shouldExpand === true); // Solo expandir si shouldExpand es explícitamente true
   const [userCollapsed, setUserCollapsed] = useState<boolean>(false); // Flag para colapso manual del usuario
   const [itemDescription, setItemDescription] = useState<string>("");
   const [isNewProduct, setIsNewProduct] = useState<boolean>(true);
@@ -68,8 +68,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Auto-expand/collapse based on shouldExpand prop - pero respetar colapso manual del usuario
   useEffect(() => {
-    if (shouldExpand !== undefined && !userCollapsed) {
-      setIsExpanded(shouldExpand);
+    if (shouldExpand === true && !userCollapsed) {
+      setIsExpanded(true);
+    } else if (shouldExpand === false && !userCollapsed) {
+      setIsExpanded(false);
     }
   }, [shouldExpand, id, userCollapsed]);
 
