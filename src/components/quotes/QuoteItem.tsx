@@ -436,9 +436,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         throw error;
       }
       
-      // NO inicializar promptValues automáticamente aquí - lo haremos en un useEffect
-      // Los valores por defecto ya están en pricing.prompts[].currentValue
-      // Solo cambiar isNewProduct a false si obtuvimos datos válidos
+      // Inicializar promptValues con los datos del API si es un producto nuevo
       if (isNewProduct && data?.prompts) {
         console.log("✅ GET exitoso con prompts, marcando producto como cargado");
         console.log("📦 Prompts recibidos del API:", {
@@ -452,6 +450,26 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             order: p.promptSequence
           }))
         });
+        
+        // Inicializar promptValues con los valores por defecto del API
+        const defaultValues: Record<string, any> = {};
+        data.prompts.forEach((prompt: any) => {
+          if (prompt.id && prompt.currentValue !== undefined && prompt.currentValue !== null) {
+            defaultValues[prompt.id] = {
+              label: prompt.promptText || prompt.label || prompt.id,
+              value: prompt.currentValue,
+              order: prompt.promptSequence ?? prompt.order ?? 999
+            };
+            console.log(`  📌 Inicializando ${prompt.id} = ${prompt.currentValue}`);
+          }
+        });
+        
+        if (Object.keys(defaultValues).length > 0) {
+          console.log("✅ Estableciendo valores iniciales en promptValues:", defaultValues);
+          setPromptValues(defaultValues);
+          setDebouncedPromptValues(defaultValues);
+        }
+        
         setIsNewProduct(false);
       }
       
