@@ -135,16 +135,15 @@ const SalesOrdersList = () => {
     setCurrentPage(1);
   }, [customerFilter, statusFilter, orderNumberFilter, dateFromFilter, dateToFilter]);
 
-  const getCustomerName = (customerId?: string | null, holdedContactId?: string | null) => {
-    const id = customerId || holdedContactId;
-    return customers.find((c: any) => c.id === id)?.name || "—";
+  const getCustomerName = (customerId?: string | null) => {
+    return customers.find((c: any) => c.id === customerId)?.name || "—";
   };
 
   // Filtered orders
   const filteredOrders = useMemo(() => {
     return orders.filter((order: SalesOrder) => {
       // Customer filter
-      if (customerFilter && !getCustomerName(order.customer_id, order.holded_contact_id).toLowerCase().includes(customerFilter.toLowerCase())) {
+      if (customerFilter && !getCustomerName(order.customer_id).toLowerCase().includes(customerFilter.toLowerCase())) {
         return false;
       }
       
@@ -267,7 +266,6 @@ const SalesOrdersList = () => {
         .insert({
           user_id: originalOrder.user_id,
           customer_id: originalOrder.customer_id,
-          holded_contact_id: originalOrder.holded_contact_id,
           order_number: orderNumber,
           title: originalOrder.title ? `${originalOrder.title} (Copia)` : undefined,
           description: originalOrder.description,
