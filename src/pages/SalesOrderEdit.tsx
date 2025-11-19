@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useSalesOrders, SalesOrder, SalesOrderItem } from "@/hooks/useSalesOrders";
 import { CustomerSelector } from "@/components/quotes/CustomerSelector";
 import { supabase } from "@/integrations/supabase/client";
@@ -228,72 +228,94 @@ export default function SalesOrderEdit() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <Button variant="outline" onClick={() => navigate(`/pedidos/${id}`)}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Volver
-        </Button>
-        <h1 className="text-3xl font-bold">Editar Pedido {order.order_number}</h1>
-        <Button onClick={handleSave} disabled={saving}>
-          <Save className="h-4 w-4 mr-2" />
-          {saving ? "Guardando..." : "Guardar"}
-        </Button>
-      </div>
-
+      {/* Header with title and actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Datos del Pedido</CardTitle>
-          <CardDescription>Información general del pedido</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">Pedido: {order.order_number}</CardTitle>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleSave} disabled={saving} size="sm">
+                {saving ? "Guardando..." : "Guardar"}
+              </Button>
+              <Button onClick={() => navigate(`/pedidos/${id}`)} size="sm" variant="outline">
+                Cancelar
+              </Button>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="customer">Cliente</Label>
-            <CustomerSelector
-              value={formData.customer_id}
-              onValueChange={(customerId) => setFormData({ ...formData, customer_id: customerId })}
-            />
+      </Card>
+
+      {/* Order Details - Compact Layout */}
+      <Card>
+        <CardContent className="space-y-2 pt-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="space-y-1.5">
+              <CustomerSelector
+                value={formData.customer_id}
+                onValueChange={(customerId) => setFormData({ ...formData, customer_id: customerId })}
+                label="cliente"
+                placeholder="Seleccionar cliente..."
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="title" className="text-xs">
+                título
+              </Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Título del pedido"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="delivery_date" className="text-xs">
+                Fecha de Entrega
+              </Label>
+              <Input
+                id="delivery_date"
+                type="date"
+                value={formData.delivery_date}
+                onChange={(e) => setFormData({ ...formData, delivery_date: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              {/* Empty space to maintain grid structure */}
+            </div>
           </div>
 
-          <div>
-            <Label htmlFor="title">Título</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="Título del pedido"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="description">Descripción</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Descripción del pedido"
-              rows={3}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="delivery_date">Fecha de Entrega</Label>
-            <Input
-              id="delivery_date"
-              type="date"
-              value={formData.delivery_date}
-              onChange={(e) => setFormData({ ...formData, delivery_date: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="notes">Notas</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Notas adicionales"
-              rows={3}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="description" className="text-xs">
+                Descripción
+              </Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Descripción del pedido"
+                rows={2}
+                className="text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="notes" className="text-xs">
+                Notas
+              </Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="Notas adicionales"
+                rows={2}
+                className="text-sm"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -303,7 +325,6 @@ export default function SalesOrderEdit() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Artículos del Pedido</CardTitle>
-              <CardDescription>Configura los productos del pedido</CardDescription>
             </div>
             <Button onClick={handleAddItem} size="sm">
               <Plus className="h-4 w-4 mr-2" />
