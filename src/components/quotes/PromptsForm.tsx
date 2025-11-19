@@ -223,15 +223,28 @@ export default function PromptsForm({
   }, [defaultsMap, values]);
 
   // Filtrar prompts por visibilidad según sus reglas hiddenWhen y visibility
-  // SOLO si no estamos mostrando un artículo guardado
   const visiblePrompts = useMemo(() => {
     if (showAllPrompts) {
-      // Para artículos guardados, mostrar TODOS los prompts
-      return prompts;
+      // Para artículos guardados, mostrar:
+      // 1. Prompts que tienen valores guardados (independientemente de visibilidad)
+      // 2. Prompts sin reglas de visibilidad (siempre visibles)
+      // 3. Prompts que pasan el filtro de visibilidad
+      return prompts.filter(p => {
+        // Si tiene valor guardado, mostrarlo siempre
+        const hasValue = values[p.id] !== undefined && values[p.id] !== null && values[p.id] !== '';
+        if (hasValue) return true;
+        
+        // Si no tiene reglas de visibilidad, mostrarlo siempre
+        const hasNoVisibilityRules = !p.hiddenWhen && !p.visibility;
+        if (hasNoVisibilityRules) return true;
+        
+        // Si tiene reglas, verificar si pasa el filtro
+        return isVisiblePrompt(p, effectiveValues);
+      });
     }
     // Para nuevos artículos, filtrar por visibilidad
     return prompts.filter(p => isVisiblePrompt(p, effectiveValues));
-  }, [prompts, effectiveValues, showAllPrompts]);
+  }, [prompts, effectiveValues, showAllPrompts, values]);
 
   if (!product) return null;
   if (!prompts?.length) {
