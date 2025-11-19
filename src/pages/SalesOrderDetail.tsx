@@ -495,6 +495,7 @@ const SalesOrderDetail = () => {
                   <Collapsible
                     key={item.id}
                     open={isExpanded}
+                    defaultOpen={false}
                     onOpenChange={() => {
                       const newExpanded = new Set(expandedItems);
                       if (isExpanded) {
