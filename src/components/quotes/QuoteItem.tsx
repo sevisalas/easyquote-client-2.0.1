@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
-import PromptsForm, { extractPrompts, type PromptDef } from "@/components/quotes/PromptsForm";
+import PromptsForm, { extractPrompts, isVisiblePrompt, type PromptDef } from "@/components/quotes/PromptsForm";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -877,21 +877,55 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       hasOutputs: outputs && outputs.length > 0
     });
     
-    // Convertir promptValues de formato {promptId: {label, value, order}} a array [{id, label, value, order}]
-    // GUARDAR TODOS los prompts, incluso los ocultos (con valor null)
+    // Extraer las definiciones de prompts del producto para obtener reglas de visibilidad
+    const promptDefs = extractPrompts(pricing as any);
+    
+    // Convertir promptValues a formato Record para evaluar visibilidad
+    const currentValues: Record<string, any> = {};
+    Object.entries(promptValues).forEach(([id, promptData]) => {
+      const value = (typeof promptData === 'object' && promptData !== null && 'value' in promptData) 
+        ? promptData.value 
+        : promptData;
+      currentValues[id] = value;
+    });
+    
+    // Filtrar solo prompts VISIBLES según las reglas de visibilidad
     const promptsArray: any[] = [];
     Object.entries(promptValues).forEach(([id, promptData]) => {
+      // Obtener definición del prompt para verificar visibilidad
+      const promptDef = promptDefs.find(p => String(p.id) === String(id));
+      
+      // Si no hay definición, incluir el prompt (fallback para compatibilidad)
+      // Si hay definición, verificar visibilidad usando isVisiblePrompt
+      const isVisible = !promptDef || isVisiblePrompt(promptDef, currentValues);
+      
+      if (!isVisible) {
+        console.log('👁️ Prompt oculto, NO se guarda:', id);
+        return; // Skip this prompt
+      }
+      
       // promptData puede ser un objeto {label, value, order} o un valor simple
       if (typeof promptData === 'object' && promptData !== null && 'value' in promptData) {
-        // Guardar SIEMPRE, incluso si el valor es null/undefined (para prompts ocultos)
+        const value = promptData.value;
+        
+        // Skip prompts with empty/null values, URLs, or colors
+        if (!value || value === '' || value === null) return;
+        if (typeof value === 'object') return;
+        if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('#'))) return;
+        
         promptsArray.push({
           id,
           label: promptData.label || id,
-          value: promptData.value, // Puede ser null para prompts ocultos
+          value: promptData.value,
           order: promptData.order ?? 999
         });
       } else {
         // Valor simple (fallback)
+        const value = promptData;
+        if (!value || value === '' || value === null) return;
+        if (typeof value === 'object') return;
+        if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('#'))) return;
+        
         promptsArray.push({
           id,
           label: id,
