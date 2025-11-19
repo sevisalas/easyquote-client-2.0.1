@@ -468,15 +468,21 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     }
   }, [forceRecalculate, hasToken, productId, refetchPricing]);
 
-  // Inicializar promptValues cuando llega pricing por primera vez para producto nuevo
+  // Inicializar/Fusionar TODOS los prompts del producto con los valores guardados
   useEffect(() => {
-    // Solo para productos nuevos que acaban de cargar pricing
-    if (!isNewProduct && pricing?.prompts && Object.keys(promptValues).length === 0 && !initialData) {
-      console.log("🎨 Inicializando promptValues con valores por defecto de pricing");
+    if (!pricing?.prompts || !Array.isArray(pricing.prompts)) return;
+    
+    // Si NO hay initialData, inicializar con valores por defecto (producto nuevo)
+    if (!initialData && isNewProduct && Object.keys(promptValues).length === 0) {
+      console.log("🎨 Producto NUEVO - Inicializando promptValues con valores por defecto de pricing");
       const defaultValues: Record<string, any> = {};
       pricing.prompts.forEach((prompt: any) => {
         if (prompt.id && prompt.currentValue !== undefined && prompt.currentValue !== null) {
-          defaultValues[prompt.id] = prompt.currentValue;
+          defaultValues[prompt.id] = {
+            label: prompt.promptText || prompt.label || prompt.id,
+            value: prompt.currentValue,
+            order: prompt.promptSequence ?? prompt.order ?? 999
+          };
           console.log(`  📌 ${prompt.id} = ${prompt.currentValue}`);
         }
       });
@@ -486,8 +492,43 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         setPromptValues(defaultValues);
         setDebouncedPromptValues(defaultValues);
       }
+      return;
     }
-  }, [pricing, isNewProduct, promptValues, initialData]);
+    
+    // Si HAY initialData, fusionar TODOS los prompts con los valores guardados
+    if (initialData && hasPerformedInitialLoad && Object.keys(promptValues).length > 0) {
+      console.log("🔄 Fusionando TODOS los prompts del producto con valores guardados");
+      const mergedValues: Record<string, any> = { ...promptValues };
+      let hasChanges = false;
+      
+      pricing.prompts.forEach((prompt: any) => {
+        if (!prompt.id) return;
+        
+        // Si el prompt NO existe en promptValues, añadirlo con su valor por defecto o null
+        if (!(prompt.id in mergedValues)) {
+          const defaultValue = prompt.currentValue !== undefined && prompt.currentValue !== null 
+            ? prompt.currentValue 
+            : null;
+          
+          mergedValues[prompt.id] = {
+            label: prompt.promptText || prompt.label || prompt.id,
+            value: defaultValue,
+            order: prompt.promptSequence ?? prompt.order ?? 999
+          };
+          hasChanges = true;
+          console.log(`  ➕ Añadiendo prompt faltante: ${prompt.id} = ${defaultValue}`);
+        }
+      });
+      
+      if (hasChanges) {
+        console.log("✅ Prompts fusionados, actualizando state con TODOS los prompts");
+        setPromptValues(mergedValues);
+        setDebouncedPromptValues(mergedValues);
+      } else {
+        console.log("✅ Todos los prompts ya estaban presentes");
+      }
+    }
+  }, [pricing, isNewProduct, initialData, promptValues, hasPerformedInitialLoad]);
 
   // Track if prompts were initialized from saved data
   const previousProductIdRef = useRef<string>("");
