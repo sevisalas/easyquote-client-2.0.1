@@ -261,14 +261,6 @@ export default function SettingsNumberingFormats() {
               </div>
 
               <div className="flex gap-2 items-end">
-                <div className="flex items-center h-8">
-                  <Switch
-                    id="quote-use-year"
-                    checked={quoteFormat.use_year}
-                    onCheckedChange={(checked) => setQuoteFormat({ ...quoteFormat, use_year: checked })}
-                  />
-                  <Label htmlFor="quote-use-year" className="text-xs cursor-pointer ml-2">Año</Label>
-                </div>
                 <div className="flex-1">
                   <Label htmlFor="quote-digits" className="text-xs">Dígitos</Label>
                   <Select
@@ -285,6 +277,14 @@ export default function SettingsNumberingFormats() {
                       <SelectItem value="6">6 (000001)</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="flex items-center h-8">
+                  <Switch
+                    id="quote-use-year"
+                    checked={quoteFormat.use_year}
+                    onCheckedChange={(checked) => setQuoteFormat({ ...quoteFormat, use_year: checked })}
+                  />
+                  <Label htmlFor="quote-use-year" className="text-xs cursor-pointer ml-2">Año</Label>
                 </div>
                 {quoteFormat.use_year && (
                   <div className="flex-1">
@@ -342,14 +342,6 @@ export default function SettingsNumberingFormats() {
               </div>
 
               <div className="flex gap-2 items-end">
-                <div className="flex items-center h-8">
-                  <Switch
-                    id="order-use-year"
-                    checked={orderFormat.use_year}
-                    onCheckedChange={(checked) => setOrderFormat({ ...orderFormat, use_year: checked })}
-                  />
-                  <Label htmlFor="order-use-year" className="text-xs cursor-pointer ml-2">Año</Label>
-                </div>
                 <div className="flex-1">
                   <Label htmlFor="order-digits" className="text-xs">Dígitos</Label>
                   <Select
@@ -366,6 +358,14 @@ export default function SettingsNumberingFormats() {
                       <SelectItem value="6">6 (000001)</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="flex items-center h-8">
+                  <Switch
+                    id="order-use-year"
+                    checked={orderFormat.use_year}
+                    onCheckedChange={(checked) => setOrderFormat({ ...orderFormat, use_year: checked })}
+                  />
+                  <Label htmlFor="order-use-year" className="text-xs cursor-pointer ml-2">Año</Label>
                 </div>
                 {orderFormat.use_year && (
                   <div className="flex-1">
