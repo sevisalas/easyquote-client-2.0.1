@@ -166,15 +166,24 @@ serve(async (req: Request): Promise<Response> => {
       
       // Mensaje de error más descriptivo
       const errorMessage = data?.message || data?.error || res.statusText || "Error desconocido";
-      const detailedError = res.status === 500 
-        ? `Error del servidor de EasyQuote al procesar el producto (${productId}): ${errorMessage}. Por favor, verifica la configuración del producto en EasyQuote.`
-        : `Error al obtener precio: ${errorMessage}`;
+      
+      let detailedError: string;
+      let helpText: string | undefined;
+      
+      if (res.status === 500) {
+        detailedError = `Error interno del servidor de EasyQuote (Producto: ${productId})`;
+        helpText = "Este error indica un problema de configuración en la plataforma de EasyQuote. Verifica: 1) Valores por defecto de prompts, 2) Fórmulas de cálculo (sin errores ni divisiones por cero), 3) Reglas de visibilidad y dependencias entre prompts.";
+      } else {
+        detailedError = `Error al obtener precio: ${errorMessage}`;
+      }
       
       return new Response(JSON.stringify({ 
         error: detailedError,
+        helpText,
         status: res.status,
         productId,
-        details: data
+        details: data,
+        easyquoteResponse: errorMessage
       }), {
         status: res.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
