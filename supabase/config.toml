@@ -6,6 +6,9 @@ verify_jwt = true
 [functions.holded-n8n-webhook]
 verify_jwt = false
 
+[functions.reprotel-webhook]
+verify_jwt = false
+
 [functions.easyquote-auth]
 verify_jwt = false
 
