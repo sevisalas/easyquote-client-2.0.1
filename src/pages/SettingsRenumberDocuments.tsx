@@ -76,23 +76,21 @@ const SettingsRenumberDocuments = () => {
       const selectedOrg = organizations.find(o => o.id === selectedOrgId);
       if (!selectedOrg) return;
 
-      // Fetch numbering formats
-      const { data: formats, error: formatsError } = await supabase
-        .from('numbering_formats')
-        .select('*')
-        .eq('user_id', selectedOrg.api_user_id);
+      // Call edge function with elevated privileges
+      const { data, error } = await supabase.functions.invoke('get-organization-documents-info', {
+        body: { organizationId: selectedOrg.id }
+      });
 
-      if (formatsError) throw formatsError;
+      if (error) throw error;
 
-      const quoteFormat = formats?.find(f => f.document_type === 'quote');
-      const orderFormat = formats?.find(f => f.document_type === 'order');
+      const { quoteFormat: fetchedQuoteFormat, orderFormat: fetchedOrderFormat, quotesCount, ordersCount } = data;
 
-      setQuoteFormat(quoteFormat ? {
-        prefix: quoteFormat.prefix,
-        suffix: quoteFormat.suffix,
-        use_year: quoteFormat.use_year,
-        year_format: quoteFormat.year_format,
-        sequential_digits: quoteFormat.sequential_digits
+      setQuoteFormat(fetchedQuoteFormat ? {
+        prefix: fetchedQuoteFormat.prefix,
+        suffix: fetchedQuoteFormat.suffix,
+        use_year: fetchedQuoteFormat.use_year,
+        year_format: fetchedQuoteFormat.year_format,
+        sequential_digits: fetchedQuoteFormat.sequential_digits
       } : {
         prefix: '',
         suffix: '',
@@ -101,12 +99,12 @@ const SettingsRenumberDocuments = () => {
         sequential_digits: 4
       });
 
-      setOrderFormat(orderFormat ? {
-        prefix: orderFormat.prefix,
-        suffix: orderFormat.suffix,
-        use_year: orderFormat.use_year,
-        year_format: orderFormat.year_format,
-        sequential_digits: orderFormat.sequential_digits
+      setOrderFormat(fetchedOrderFormat ? {
+        prefix: fetchedOrderFormat.prefix,
+        suffix: fetchedOrderFormat.suffix,
+        use_year: fetchedOrderFormat.use_year,
+        year_format: fetchedOrderFormat.year_format,
+        sequential_digits: fetchedOrderFormat.sequential_digits
       } : {
         prefix: 'SO-',
         suffix: '',
@@ -114,17 +112,6 @@ const SettingsRenumberDocuments = () => {
         year_format: 'YYYY',
         sequential_digits: 4
       });
-
-      // Fetch document counts
-      const { count: quotesCount } = await supabase
-        .from('quotes')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', selectedOrg.api_user_id);
-
-      const { count: ordersCount } = await supabase
-        .from('sales_orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', selectedOrg.api_user_id);
 
       setDocumentCounts({
         quotes: quotesCount || 0,
