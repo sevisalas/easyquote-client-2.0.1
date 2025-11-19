@@ -333,16 +333,45 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       }
 
       console.log("📂 Excel file found:", productData.filename);
-
-      const { data, error } = await invokeEasyQuoteFunction("easyquote-master-files", {
-        token,
-        subscriberId: productData.file_id,
-        fileId: productData.file_id,
-        fileName: productData.filename,
-        productId
+      console.log("📊 Excel file data:", {
+        file_id: productData.file_id,
+        filename: productData.filename,
+        original_filename: productData.original_filename,
+        is_master: productData.is_master
       });
 
-      if (error) throw error;
+      // Extraer el subscriberId del token JWT
+      let subscriberId: string;
+      try {
+        const tokenParts = token.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          subscriberId = payload.SubscriberID;
+          console.log("📝 SubscriberID from token:", subscriberId);
+        } else {
+          throw new Error("Token JWT inválido");
+        }
+      } catch (tokenError) {
+        console.error("❌ Error al extraer SubscriberID del token:", tokenError);
+        throw new Error("No se pudo extraer el SubscriberID del token");
+      }
+
+      const masterFilesPayload = {
+        token,
+        subscriberId, // SubscriberID del token JWT
+        fileId: productData.file_id, // ID del archivo Excel en EasyQuote
+        fileName: productData.filename, // Nombre del archivo
+        productId
+      };
+      
+      console.log("🚀 Calling easyquote-master-files with:", masterFilesPayload);
+
+      const { data, error } = await invokeEasyQuoteFunction("easyquote-master-files", masterFilesPayload);
+
+      if (error) {
+        console.error("❌ Error from easyquote-master-files:", error);
+        throw error;
+      }
       console.log("✅ Master files fetched:", data);
       return data;
     },

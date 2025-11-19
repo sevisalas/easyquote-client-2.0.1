@@ -32,9 +32,13 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Construct the EasyQuote master file URL
-    const masterFileUrl = `https://sheets.easyquote.cloud/${subscriberId}/${fileId}/${fileName}`;
+    // URL-encode the fileName to handle spaces and special characters
+    const encodedFileName = encodeURIComponent(fileName);
+    const masterFileUrl = `https://sheets.easyquote.cloud/${subscriberId}/${fileId}/${encodedFileName}`;
     
     console.log("Fetching master file from:", masterFileUrl);
+    console.log("Original fileName:", fileName);
+    console.log("Encoded fileName:", encodedFileName);
 
     // Fetch the file with the EasyQuote token
     const fileResponse = await fetch(masterFileUrl, {
