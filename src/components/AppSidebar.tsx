@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -333,18 +333,29 @@ export function AppSidebar() {
                            </SidebarMenuSubButton>
                          </SidebarMenuSubItem>
                        )}
-                        {/* Plantilla PDF - Solo si tienen acceso a generación de PDFs */}
-                        {hasPdfAccess && (
-                          <SidebarMenuSubItem>
-                            <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/plantilla-pdf"} className="h-6 px-2">
-                              <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
-                                <FileText className="mr-2 h-4 w-4" />
-                                {!isCollapsed && <span>Plantilla PDF</span>}
-                              </NavLink>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        )}
-                        {/* Integraciones - Solo admins */}
+                         {/* Plantilla PDF - Solo si tienen acceso a generación de PDFs */}
+                         {hasPdfAccess && (
+                           <SidebarMenuSubItem>
+                             <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/plantilla-pdf"} className="h-6 px-2">
+                               <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
+                                 <FileText className="mr-2 h-4 w-4" />
+                                 {!isCollapsed && <span>Plantilla PDF</span>}
+                               </NavLink>
+                             </SidebarMenuSubButton>
+                           </SidebarMenuSubItem>
+                         )}
+                         {/* Formatos de Numeración - Solo admins */}
+                         {(isSuperAdmin || isOrgAdmin) && (
+                           <SidebarMenuSubItem>
+                             <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/formatos-numeracion"} className="h-6 px-2">
+                               <NavLink to="/configuracion/formatos-numeracion" end className={getNavCls}>
+                                 <Hash className="mr-2 h-4 w-4" />
+                                 {!isCollapsed && <span>Formatos de Numeración</span>}
+                               </NavLink>
+                             </SidebarMenuSubButton>
+                           </SidebarMenuSubItem>
+                         )}
+                         {/* Integraciones - Solo admins */}
                         {(isSuperAdmin || isOrgAdmin) && (
                           <>
                             <SidebarMenuSubItem>
