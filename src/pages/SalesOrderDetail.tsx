@@ -17,6 +17,7 @@ import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CustomerName } from "@/components/quotes/CustomerName";
+import { isVisiblePrompt, type PromptDef } from "@/utils/promptVisibility";
 
 const statusColors = {
   draft: "outline",
@@ -549,32 +550,53 @@ const SalesOrderDetail = () => {
                           )}
 
                           {/* Prompts */}
-                          {itemPrompts.length > 0 && (
-                            <div className="space-y-1 pl-2 border-l-2 border-muted">
-                              <p className="text-xs font-semibold text-muted-foreground uppercase">Detalles</p>
-                              {itemPrompts.map((prompt: any, idx: number) => {
-                                const label = prompt.label || '';
-                                let value = prompt.value || '';
-                                
-                                // Filtrar URLs e imágenes
-                                if (!value || 
-                                    typeof value === 'object' || 
-                                    (typeof value === 'string' && (
-                                      value.startsWith('http') || 
-                                      value.startsWith('#')
-                                    ))) {
-                                  return null;
-                                }
-                                
-                                return (
+                          {itemPrompts.length > 0 && (() => {
+                            // Build values map for visibility evaluation
+                            const promptValues: Record<string, any> = {};
+                            itemPrompts.forEach((p: any) => {
+                              if (p.id) promptValues[p.id] = p.value;
+                            });
+
+                            // Filter visible prompts
+                            const visiblePrompts = itemPrompts.filter((prompt: any) => {
+                              const label = prompt.label || '';
+                              let value = prompt.value || '';
+                              
+                              // Filter URLs and images
+                              if (!value || 
+                                  typeof value === 'object' || 
+                                  (typeof value === 'string' && (
+                                    value.startsWith('http') || 
+                                    value.startsWith('#')
+                                  ))) {
+                                return false;
+                              }
+
+                              // Apply visibility rules
+                              const promptDef: PromptDef = {
+                                id: prompt.id || '',
+                                label: label,
+                                hiddenWhen: prompt.hiddenWhen,
+                                visibility: prompt.visibility
+                              };
+
+                              return isVisiblePrompt(promptDef, promptValues);
+                            });
+
+                            if (visiblePrompts.length === 0) return null;
+
+                            return (
+                              <div className="space-y-1 pl-2 border-l-2 border-muted">
+                                <p className="text-xs font-semibold text-muted-foreground uppercase">Detalles</p>
+                                {visiblePrompts.map((prompt: any, idx: number) => (
                                   <div key={idx} className="text-sm">
-                                    <span className="font-medium text-muted-foreground">{label}:</span>{' '}
-                                    <span className="text-foreground">{value}</span>
+                                    <span className="font-medium text-muted-foreground">{prompt.label}:</span>{' '}
+                                    <span className="text-foreground">{prompt.value}</span>
                                   </div>
-                                );
-                              }).filter(Boolean)}
-                            </div>
-                          )}
+                                ))}
+                              </div>
+                            );
+                          })()}
                         </div>
                       </CollapsibleContent>
                     </div>

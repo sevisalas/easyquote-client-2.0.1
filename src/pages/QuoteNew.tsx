@@ -63,7 +63,7 @@ export default function QuoteNew() {
   const currentOrganization = organization || membership?.organization;
 
   // Numbering format
-  const { data: quoteFormat } = useNumberingFormat('quote');
+  const { data: quoteFormat, isLoading: isLoadingFormat } = useNumberingFormat('quote');
 
   // Generate next item ID
   const nextItemId = useMemo(() => Math.max(0, ...Object.keys(items).map(k => Number(k) || 0)) + 1, [items]);
@@ -502,7 +502,7 @@ export default function QuoteNew() {
     }
   };
 
-  if (tokenChecking || hasToken === null) {
+  if (tokenChecking || hasToken === null || isLoadingFormat) {
     return (
       <div className="container mx-auto py-8">
         <Card>
@@ -518,7 +518,7 @@ export default function QuoteNew() {
           <CardContent>
             <div className="text-center py-8">
               <p className="text-muted-foreground">
-                Verificando conexión con EasyQuote...
+                {isLoadingFormat ? 'Cargando configuración...' : 'Verificando conexión con EasyQuote...'}
               </p>
             </div>
           </CardContent>
@@ -743,7 +743,7 @@ export default function QuoteNew() {
           <div className="flex gap-4 justify-end">
             <Button
               onClick={() => handleSave("draft")}
-              disabled={loading}
+              disabled={loading || !quoteFormat}
               variant="outline"
             >
               <Save className="w-4 h-4 mr-2" />
@@ -751,7 +751,7 @@ export default function QuoteNew() {
             </Button>
             <Button
               onClick={() => handleSave("sent")}
-              disabled={loading}
+              disabled={loading || !quoteFormat}
             >
               <Save className="w-4 h-4 mr-2" />
               Guardar y enviar
