@@ -11,8 +11,8 @@ function MainContent({ children }: PropsWithChildren) {
   return (
     <main 
       className={cn(
-        "flex-1 p-4 transition-[margin] duration-200 ease-linear",
-        isCollapsed ? "md:ml-12" : "md:ml-56"
+        "flex-1 py-4 transition-[margin] duration-200 ease-linear",
+        isCollapsed ? "md:ml-12 md:pr-4 md:pl-4" : "md:ml-56 md:pr-4 md:pl-6"
       )}
     >
       {children}
