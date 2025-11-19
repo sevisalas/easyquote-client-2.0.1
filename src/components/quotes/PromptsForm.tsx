@@ -197,10 +197,12 @@ export default function PromptsForm({
   product,
   values,
   onChange,
+  showAllPrompts = false,
 }: {
   product: any;
   values: Record<string, any>;
   onChange: (id: string, value: any, label: string) => void;
+  showAllPrompts?: boolean;
 }) {
   const prompts = useMemo(() => extractPrompts(product), [product]);
   const defaultsMap = useMemo(() => Object.fromEntries(prompts.map((p) => [p.id, p.default])), [prompts]);
@@ -221,9 +223,15 @@ export default function PromptsForm({
   }, [defaultsMap, values]);
 
   // Filtrar prompts por visibilidad según sus reglas hiddenWhen y visibility
+  // SOLO si no estamos mostrando un artículo guardado
   const visiblePrompts = useMemo(() => {
+    if (showAllPrompts) {
+      // Para artículos guardados, mostrar TODOS los prompts
+      return prompts;
+    }
+    // Para nuevos artículos, filtrar por visibilidad
     return prompts.filter(p => isVisiblePrompt(p, effectiveValues));
-  }, [prompts, effectiveValues]);
+  }, [prompts, effectiveValues, showAllPrompts]);
 
   if (!product) return null;
   if (!prompts?.length) {

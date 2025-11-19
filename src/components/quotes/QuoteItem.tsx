@@ -1041,7 +1041,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   </AlertDescription>
                 </Alert>
               ) : pricing ? (
-                <PromptsForm product={pricing} values={promptValues} onChange={handlePromptChange} />
+                <PromptsForm product={pricing} values={promptValues} onChange={handlePromptChange} showAllPrompts={!!initialData} />
               ) : (
                 <p className="text-sm text-muted-foreground">Cargando prompts…</p>
               )}
