@@ -439,7 +439,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       // Inicializar promptValues con los datos del API si es un producto nuevo
       if (isNewProduct && data?.prompts) {
         console.log("✅ GET exitoso con prompts, marcando producto como cargado");
-        console.log("📦 Prompts recibidos del API:", {
+        console.log("📦 Prompts recibidos del API (GET inicial):", {
           productId,
           promptsCount: data.prompts.length,
           prompts: data.prompts.map((p: any) => ({
@@ -480,6 +480,38 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         }
         
         setIsNewProduct(false);
+      }
+      
+      // Logging adicional para PATCH: mostrar qué prompts devuelve el API después de cambios
+      if (!isNewProduct && data?.prompts) {
+        console.log("🔄 Prompts recibidos del API (después de PATCH):", {
+          productId,
+          promptsCount: data.prompts.length,
+          prompts: data.prompts.map((p: any) => ({
+            id: p.id,
+            label: p.promptText || p.label,
+            type: p.promptType,
+            currentValue: p.currentValue,
+            order: p.promptSequence,
+            visible: p.visible !== false
+          }))
+        });
+        
+        // Mostrar diferencias con los prompts actuales
+        const currentPromptIds = Object.keys(promptValues);
+        const newPromptIds = data.prompts.map((p: any) => String(p.id));
+        
+        const added = newPromptIds.filter(id => !currentPromptIds.includes(id));
+        const removed = currentPromptIds.filter(id => !newPromptIds.includes(id));
+        
+        if (added.length > 0 || removed.length > 0) {
+          console.log("⚡ Cambios en prompts después de PATCH:", {
+            added: added.length > 0 ? added : "ninguno",
+            removed: removed.length > 0 ? removed : "ninguno",
+            totalBefore: currentPromptIds.length,
+            totalAfter: newPromptIds.length
+          });
+        }
       }
       
       // Si obtuvimos nuevos outputs, desactivar hasInitialOutputs para que se usen los nuevos
