@@ -14,6 +14,7 @@ import QuoteNew from "./pages/QuoteNew";
 import QuoteEdit from "./pages/QuoteEdit";
 import QuotesList from "./pages/QuotesList";
 import SettingsPdfTemplate from "./pages/SettingsPdfTemplate";
+import SettingsNumberingFormats from "./pages/SettingsNumberingFormats";
 import Additionals from "./pages/Additionals";
 import QuoteDetail from "./pages/QuoteDetail";
 import EditarSuscriptor from "./pages/SubscriberEdit";
@@ -149,6 +150,16 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <SettingsPdfTemplate />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/configuracion/formatos-numeracion"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SettingsNumberingFormats />
             </AppLayout>
           </ProtectedRoute>
         }

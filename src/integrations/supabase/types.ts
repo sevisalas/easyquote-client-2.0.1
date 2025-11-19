@@ -370,6 +370,53 @@ export type Database = {
           },
         ]
       }
+      numbering_formats: {
+        Row: {
+          created_at: string
+          document_type: string
+          id: string
+          organization_id: string | null
+          prefix: string
+          suffix: string | null
+          updated_at: string
+          use_year: boolean
+          user_id: string
+          year_format: string
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          id?: string
+          organization_id?: string | null
+          prefix?: string
+          suffix?: string | null
+          updated_at?: string
+          use_year?: boolean
+          user_id: string
+          year_format?: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          id?: string
+          organization_id?: string | null
+          prefix?: string
+          suffix?: string | null
+          updated_at?: string
+          use_year?: boolean
+          user_id?: string
+          year_format?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "numbering_formats_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_api_credentials: {
         Row: {
           api_key: string | null
