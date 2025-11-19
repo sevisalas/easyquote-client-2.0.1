@@ -567,7 +567,7 @@ export default function QuoteEdit() {
           ? {
               ...item,
               product_name: snapshot.itemDescription || item.product_name,
-              description: item.description,
+              description: snapshot.itemDescription || item.description,
               price: snapshot.price || 0,
               // Update QuoteItem fields
               productId: snapshot.productId,
