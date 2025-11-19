@@ -14,7 +14,7 @@ function MainContent({ children }: PropsWithChildren) {
       <main 
         className={cn(
           "flex-1 p-4 transition-all duration-300 ease-in-out overflow-x-hidden",
-          isCollapsed ? "ml-2" : "ml-4"
+          isCollapsed ? "ml-16" : "ml-60"
         )}
       >
         {children}
