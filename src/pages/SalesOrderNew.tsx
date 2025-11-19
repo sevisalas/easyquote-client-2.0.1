@@ -56,7 +56,7 @@ export default function SalesOrderNew() {
   const currentOrganization = organization || membership?.organization;
 
   // Numbering format
-  const { data: orderFormat } = useNumberingFormat('order');
+  const { data: orderFormat, isLoading: isLoadingFormat } = useNumberingFormat('order');
 
   // Check access
   useEffect(() => {
@@ -421,7 +421,7 @@ export default function SalesOrderNew() {
     }
   };
 
-  if (tokenChecking || hasToken === null) {
+  if (tokenChecking || hasToken === null || isLoadingFormat) {
     return (
       <div className="container mx-auto py-8">
         <Card>
@@ -437,7 +437,7 @@ export default function SalesOrderNew() {
           <CardContent>
             <div className="text-center py-8">
               <p className="text-muted-foreground">
-                Verificando conexión con EasyQuote...
+                {isLoadingFormat ? 'Cargando configuración...' : 'Verificando conexión con EasyQuote...'}
               </p>
             </div>
           </CardContent>
@@ -649,7 +649,7 @@ export default function SalesOrderNew() {
             </Button>
             <Button
               onClick={handleSave}
-              disabled={loading || Object.keys(items).length === 0 || !allItemsComplete}
+              disabled={loading || !orderFormat || Object.keys(items).length === 0 || !allItemsComplete}
             >
               <Save className="w-4 h-4 mr-2" />
               {loading ? "Guardando..." : "Crear pedido"}
