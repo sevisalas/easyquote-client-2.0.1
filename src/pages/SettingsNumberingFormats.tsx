@@ -204,15 +204,13 @@ export default function SettingsNumberingFormats() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto py-6 space-y-6">
+      <div className="container mx-auto py-4 space-y-4 max-w-5xl">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Formatos de numeración</h1>
-            <p className="text-muted-foreground mt-1">
-              Configura el formato de los números de presupuestos y pedidos
-            </p>
+            <h1 className="text-2xl font-bold">Formatos de numeración</h1>
+            <p className="text-sm text-muted-foreground">Configura el formato de los números</p>
           </div>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving} size="sm">
             {saving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -221,148 +219,139 @@ export default function SettingsNumberingFormats() {
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                Guardar cambios
+                Guardar
               </>
             )}
           </Button>
         </div>
 
-        {/* Presupuestos */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Formato de Presupuestos</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="quote-prefix">Prefijo</Label>
-                <Input
-                  id="quote-prefix"
-                  value={quoteFormat.prefix}
-                  onChange={(e) => setQuoteFormat({ ...quoteFormat, prefix: e.target.value })}
-                  placeholder="Ej: PRES-"
-                />
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Presupuestos */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Presupuestos</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Label htmlFor="quote-prefix" className="text-xs">Prefijo</Label>
+                  <Input
+                    id="quote-prefix"
+                    className="h-8 text-sm"
+                    value={quoteFormat.prefix}
+                    onChange={(e) => setQuoteFormat({ ...quoteFormat, prefix: e.target.value })}
+                    placeholder="PRES-"
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label htmlFor="quote-suffix" className="text-xs">Sufijo</Label>
+                  <Input
+                    id="quote-suffix"
+                    className="h-8 text-sm"
+                    value={quoteFormat.suffix}
+                    onChange={(e) => setQuoteFormat({ ...quoteFormat, suffix: e.target.value })}
+                    placeholder="-A"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="quote-suffix">Sufijo (opcional)</Label>
-                <Input
-                  id="quote-suffix"
-                  value={quoteFormat.suffix}
-                  onChange={(e) => setQuoteFormat({ ...quoteFormat, suffix: e.target.value })}
-                  placeholder="Ej: -A"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="quote-use-year"
-                checked={quoteFormat.use_year}
-                onCheckedChange={(checked) => setQuoteFormat({ ...quoteFormat, use_year: checked })}
-              />
-              <Label htmlFor="quote-use-year" className="cursor-pointer">
-                Incluir año
-              </Label>
-            </div>
-
-            {quoteFormat.use_year && (
-              <div className="space-y-2">
-                <Label htmlFor="quote-year-format">Formato del año</Label>
-                <Select
-                  value={quoteFormat.year_format}
-                  onValueChange={(value: 'YY' | 'YYYY') => setQuoteFormat({ ...quoteFormat, year_format: value })}
-                >
-                  <SelectTrigger id="quote-year-format" className="w-[200px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="YY">2 dígitos (25)</SelectItem>
-                    <SelectItem value="YYYY">4 dígitos (2025)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className="pt-4 border-t">
-              <Label className="text-sm text-muted-foreground">Vista previa:</Label>
-              <p className="text-lg font-mono font-semibold mt-1">
-                {generateExample(quoteFormat)}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Pedidos */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Formato de Pedidos</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="order-prefix">Prefijo</Label>
-                <Input
-                  id="order-prefix"
-                  value={orderFormat.prefix}
-                  onChange={(e) => setOrderFormat({ ...orderFormat, prefix: e.target.value })}
-                  placeholder="Ej: SO-"
-                />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="quote-use-year"
+                    checked={quoteFormat.use_year}
+                    onCheckedChange={(checked) => setQuoteFormat({ ...quoteFormat, use_year: checked })}
+                  />
+                  <Label htmlFor="quote-use-year" className="text-xs cursor-pointer">Año</Label>
+                </div>
+                {quoteFormat.use_year && (
+                  <Select
+                    value={quoteFormat.year_format}
+                    onValueChange={(value: 'YY' | 'YYYY') => setQuoteFormat({ ...quoteFormat, year_format: value })}
+                  >
+                    <SelectTrigger className="w-24 h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="YY">25</SelectItem>
+                      <SelectItem value="YYYY">2025</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="order-suffix">Sufijo (opcional)</Label>
-                <Input
-                  id="order-suffix"
-                  value={orderFormat.suffix}
-                  onChange={(e) => setOrderFormat({ ...orderFormat, suffix: e.target.value })}
-                  placeholder="Ej: -B"
-                />
+              <div className="pt-2 border-t">
+                <p className="text-xs text-muted-foreground mb-1">Vista previa:</p>
+                <p className="text-sm font-mono font-semibold">{generateExample(quoteFormat)}</p>
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="order-use-year"
-                checked={orderFormat.use_year}
-                onCheckedChange={(checked) => setOrderFormat({ ...orderFormat, use_year: checked })}
-              />
-              <Label htmlFor="order-use-year" className="cursor-pointer">
-                Incluir año
-              </Label>
-            </div>
-
-            {orderFormat.use_year && (
-              <div className="space-y-2">
-                <Label htmlFor="order-year-format">Formato del año</Label>
-                <Select
-                  value={orderFormat.year_format}
-                  onValueChange={(value: 'YY' | 'YYYY') => setOrderFormat({ ...orderFormat, year_format: value })}
-                >
-                  <SelectTrigger id="order-year-format" className="w-[200px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="YY">2 dígitos (25)</SelectItem>
-                    <SelectItem value="YYYY">4 dígitos (2025)</SelectItem>
-                  </SelectContent>
-                </Select>
+          {/* Pedidos */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Pedidos</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Label htmlFor="order-prefix" className="text-xs">Prefijo</Label>
+                  <Input
+                    id="order-prefix"
+                    className="h-8 text-sm"
+                    value={orderFormat.prefix}
+                    onChange={(e) => setOrderFormat({ ...orderFormat, prefix: e.target.value })}
+                    placeholder="SO-"
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label htmlFor="order-suffix" className="text-xs">Sufijo</Label>
+                  <Input
+                    id="order-suffix"
+                    className="h-8 text-sm"
+                    value={orderFormat.suffix}
+                    onChange={(e) => setOrderFormat({ ...orderFormat, suffix: e.target.value })}
+                    placeholder="-B"
+                  />
+                </div>
               </div>
-            )}
 
-            <div className="pt-4 border-t">
-              <Label className="text-sm text-muted-foreground">Vista previa:</Label>
-              <p className="text-lg font-mono font-semibold mt-1">
-                {generateExample(orderFormat)}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="order-use-year"
+                    checked={orderFormat.use_year}
+                    onCheckedChange={(checked) => setOrderFormat({ ...orderFormat, use_year: checked })}
+                  />
+                  <Label htmlFor="order-use-year" className="text-xs cursor-pointer">Año</Label>
+                </div>
+                {orderFormat.use_year && (
+                  <Select
+                    value={orderFormat.year_format}
+                    onValueChange={(value: 'YY' | 'YYYY') => setOrderFormat({ ...orderFormat, year_format: value })}
+                  >
+                    <SelectTrigger className="w-24 h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="YY">25</SelectItem>
+                      <SelectItem value="YYYY">2025</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
 
-        <div className="bg-muted/50 p-4 rounded-lg">
-          <p className="text-sm text-muted-foreground">
-            <strong>Nota:</strong> El número secuencial se genera automáticamente y siempre tendrá 5 dígitos (00001, 00002, etc.).
-            Los formatos configurados se aplicarán a todos los nuevos presupuestos y pedidos creados.
+              <div className="pt-2 border-t">
+                <p className="text-xs text-muted-foreground mb-1">Vista previa:</p>
+                <p className="text-sm font-mono font-semibold">{generateExample(orderFormat)}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="bg-muted/50 p-3 rounded-lg">
+          <p className="text-xs text-muted-foreground">
+            <strong>Nota:</strong> El número secuencial se genera automáticamente con 5 dígitos (00001, 00002, etc.).
           </p>
         </div>
       </div>
