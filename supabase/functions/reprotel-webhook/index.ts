@@ -61,6 +61,7 @@ serve(async (req) => {
     const { 
       reprotel_id,
       id, // Alternative field name for reprotel_id
+      holded_id, // Support holded_id from n8n forwarding
       name: rawName,
       email,
       phone,
@@ -68,12 +69,12 @@ serve(async (req) => {
     } = bodyData;
 
     const name = sanitizeName(rawName);
-    const reprotelId = reprotel_id || id;
+    const reprotelId = reprotel_id || id || holded_id;
 
     if (!reprotelId) {
       return new Response(
         JSON.stringify({ 
-          error: 'Missing required field: reprotel_id or id',
+          error: 'Missing required field: reprotel_id, id, or holded_id',
           received: bodyData 
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
