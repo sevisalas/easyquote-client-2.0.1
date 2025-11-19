@@ -672,45 +672,20 @@ export default function QuoteDetail() {
                             <CollapsibleContent className="mt-3 space-y-2">
                               {/* Prompts */}
                               {Object.keys(itemPrompts).length > 0 && (() => {
-                                // Build values map for visibility evaluation
-                                const promptValues: Record<string, any> = {};
-                                Object.entries(itemPrompts).forEach(([key, promptData]: [string, any]) => {
-                                  const value = typeof promptData === 'object' ? promptData.value : promptData;
-                                  promptValues[key] = value;
-                                });
-
-                                // Filter visible prompts
+                                // Los prompts guardados ya son los correctos, solo mostrarlos
                                 const visiblePrompts = Object.entries(itemPrompts)
                                   .filter(([key, promptData]: [string, any]) => {
                                     const label = typeof promptData === 'object' ? promptData.label : key;
-                                    const value = typeof promptData === 'string' ? promptData : promptData.value;
+                                    const value = typeof promptData === 'object' ? promptData.value : promptData;
                                     
-                                    // Skip empty values
-                                    if (!value || value === '' || typeof value === 'object') {
-                                      return false;
-                                    }
+                                    // Solo filtrar valores vacíos, null, URLs e imágenes
+                                    if (!value || value === '' || value === null) return false;
+                                    if (typeof value === 'object') return false;
+                                    if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('#'))) return false;
                                     
-                                    // Filter non-visible prompts (only show those with labels)
+                                    // Debe tener label
                                     const hasLabel = typeof promptData === 'object' && promptData.label && promptData.label.trim() !== '';
-                                    if (!hasLabel && typeof promptData !== 'string') {
-                                      return false;
-                                    }
-
-                                    // Filter URLs and images
-                                    if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('#'))) {
-                                      return false;
-                                    }
-
-                                    // Apply visibility rules
-                                    const promptDef: PromptDef = {
-                                      id: key,
-                                      label: label,
-                                      type: 'text',
-                                      hiddenWhen: typeof promptData === 'object' ? promptData.hiddenWhen : undefined,
-                                      visibility: typeof promptData === 'object' ? promptData.visibility : undefined
-                                    };
-
-                                    return isVisiblePrompt(promptDef, promptValues);
+                                    return hasLabel;
                                   })
                                   .sort(([, a]: [string, any], [, b]: [string, any]) => (a.order ?? 999) - (b.order ?? 999));
 
@@ -721,7 +696,7 @@ export default function QuoteDetail() {
                                     <p className="text-xs font-semibold text-muted-foreground uppercase">Opciones seleccionadas</p>
                                     {visiblePrompts.map(([key, promptData]: [string, any], idx: number) => {
                                       const label = typeof promptData === 'object' ? promptData.label : key;
-                                      const value = typeof promptData === 'string' ? promptData : promptData.value;
+                                      const value = typeof promptData === 'object' ? promptData.value : promptData;
                                       
                                       const valueStr = String(value);
                                       
