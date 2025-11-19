@@ -24,6 +24,7 @@ import NuevoSuscriptor from "./pages/SubscriberNew";
 import GestionPlanes from "./pages/PlansManagement";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SuperAdminUsers from "./pages/SuperAdminUsers";
+import SettingsRenumberDocuments from "./pages/SettingsRenumberDocuments";
 import Integrations from "./pages/Integrations";
 import IntegrationAccess from "./pages/IntegrationAccess";
 import ExcelFiles from "./pages/ExcelFiles";
@@ -230,6 +231,16 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <SuperAdminUsers />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/superadmin/renumerar"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SettingsRenumberDocuments />
             </AppLayout>
           </ProtectedRoute>
         }
