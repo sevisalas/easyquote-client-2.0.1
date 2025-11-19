@@ -160,7 +160,18 @@ export default function SalesOrderEdit() {
       if (error) throw error;
 
       await recalculateSalesOrderTotals(id);
-      await loadOrderData();
+      
+      // Actualizar solo el total del pedido sin recargar todos los items
+      const { data: updatedOrder } = await supabase
+        .from("sales_orders")
+        .select("final_price")
+        .eq("id", id)
+        .single();
+      
+      if (updatedOrder && order) {
+        setOrder({ ...order, final_price: updatedOrder.final_price });
+      }
+      
       toast.success("Artículo actualizado");
     } catch (error) {
       console.error("Error updating item:", error);
@@ -180,7 +191,20 @@ export default function SalesOrderEdit() {
       if (error) throw error;
 
       await recalculateSalesOrderTotals(id);
-      await loadOrderData();
+      
+      // Actualizar estado local sin recargar todos los datos
+      setItems(items.filter(item => item.id !== itemId));
+      
+      const { data: updatedOrder } = await supabase
+        .from("sales_orders")
+        .select("final_price")
+        .eq("id", id)
+        .single();
+      
+      if (updatedOrder && order) {
+        setOrder({ ...order, final_price: updatedOrder.final_price });
+      }
+      
       toast.success("Artículo eliminado");
     } catch (error) {
       console.error("Error deleting item:", error);
@@ -205,7 +229,11 @@ export default function SalesOrderEdit() {
 
       if (error) throw error;
 
-      await loadOrderData();
+      // Añadir el nuevo item al estado local sin recargar
+      if (data) {
+        setItems([...items, data as SalesOrderItem]);
+      }
+      
       toast.success("Artículo añadido");
     } catch (error) {
       console.error("Error adding item:", error);
