@@ -260,51 +260,49 @@ export default function SettingsNumberingFormats() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
+              <div className="flex gap-2 items-end">
+                <div className="flex items-center h-8">
                   <Switch
                     id="quote-use-year"
                     checked={quoteFormat.use_year}
                     onCheckedChange={(checked) => setQuoteFormat({ ...quoteFormat, use_year: checked })}
                   />
-                  <Label htmlFor="quote-use-year" className="text-xs cursor-pointer">Año</Label>
+                  <Label htmlFor="quote-use-year" className="text-xs cursor-pointer ml-2">Año</Label>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex-1">
+                  <Label htmlFor="quote-digits" className="text-xs">Dígitos</Label>
+                  <Select
+                    value={quoteFormat.sequential_digits.toString()}
+                    onValueChange={(value) => setQuoteFormat({ ...quoteFormat, sequential_digits: parseInt(value) })}
+                  >
+                    <SelectTrigger id="quote-digits" className="h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">3 (001)</SelectItem>
+                      <SelectItem value="4">4 (0001)</SelectItem>
+                      <SelectItem value="5">5 (00001)</SelectItem>
+                      <SelectItem value="6">6 (000001)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {quoteFormat.use_year && (
                   <div className="flex-1">
-                    <Label htmlFor="quote-digits" className="text-xs">Dígitos</Label>
+                    <Label htmlFor="quote-year-format" className="text-xs">Formato año</Label>
                     <Select
-                      value={quoteFormat.sequential_digits.toString()}
-                      onValueChange={(value) => setQuoteFormat({ ...quoteFormat, sequential_digits: parseInt(value) })}
+                      value={quoteFormat.year_format}
+                      onValueChange={(value: 'YY' | 'YYYY') => setQuoteFormat({ ...quoteFormat, year_format: value })}
                     >
-                      <SelectTrigger id="quote-digits" className="h-8 text-sm">
+                      <SelectTrigger id="quote-year-format" className="h-8 text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="3">3 (001)</SelectItem>
-                        <SelectItem value="4">4 (0001)</SelectItem>
-                        <SelectItem value="5">5 (00001)</SelectItem>
-                        <SelectItem value="6">6 (000001)</SelectItem>
+                        <SelectItem value="YY">25</SelectItem>
+                        <SelectItem value="YYYY">2025</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  {quoteFormat.use_year && (
-                    <div className="flex-1">
-                      <Label htmlFor="quote-year-format" className="text-xs">Formato año</Label>
-                      <Select
-                        value={quoteFormat.year_format}
-                        onValueChange={(value: 'YY' | 'YYYY') => setQuoteFormat({ ...quoteFormat, year_format: value })}
-                      >
-                        <SelectTrigger id="quote-year-format" className="h-8 text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="YY">25</SelectItem>
-                          <SelectItem value="YYYY">2025</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
 
               <div className="pt-2 border-t">
@@ -343,51 +341,49 @@ export default function SettingsNumberingFormats() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
+              <div className="flex gap-2 items-end">
+                <div className="flex items-center h-8">
                   <Switch
                     id="order-use-year"
                     checked={orderFormat.use_year}
                     onCheckedChange={(checked) => setOrderFormat({ ...orderFormat, use_year: checked })}
                   />
-                  <Label htmlFor="order-use-year" className="text-xs cursor-pointer">Año</Label>
+                  <Label htmlFor="order-use-year" className="text-xs cursor-pointer ml-2">Año</Label>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex-1">
+                  <Label htmlFor="order-digits" className="text-xs">Dígitos</Label>
+                  <Select
+                    value={orderFormat.sequential_digits.toString()}
+                    onValueChange={(value) => setOrderFormat({ ...orderFormat, sequential_digits: parseInt(value) })}
+                  >
+                    <SelectTrigger id="order-digits" className="h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">3 (001)</SelectItem>
+                      <SelectItem value="4">4 (0001)</SelectItem>
+                      <SelectItem value="5">5 (00001)</SelectItem>
+                      <SelectItem value="6">6 (000001)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {orderFormat.use_year && (
                   <div className="flex-1">
-                    <Label htmlFor="order-digits" className="text-xs">Dígitos</Label>
+                    <Label htmlFor="order-year-format" className="text-xs">Formato año</Label>
                     <Select
-                      value={orderFormat.sequential_digits.toString()}
-                      onValueChange={(value) => setOrderFormat({ ...orderFormat, sequential_digits: parseInt(value) })}
+                      value={orderFormat.year_format}
+                      onValueChange={(value: 'YY' | 'YYYY') => setOrderFormat({ ...orderFormat, year_format: value })}
                     >
-                      <SelectTrigger id="order-digits" className="h-8 text-sm">
+                      <SelectTrigger id="order-year-format" className="h-8 text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="3">3 (001)</SelectItem>
-                        <SelectItem value="4">4 (0001)</SelectItem>
-                        <SelectItem value="5">5 (00001)</SelectItem>
-                        <SelectItem value="6">6 (000001)</SelectItem>
+                        <SelectItem value="YY">25</SelectItem>
+                        <SelectItem value="YYYY">2025</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  {orderFormat.use_year && (
-                    <div className="flex-1">
-                      <Label htmlFor="order-year-format" className="text-xs">Formato año</Label>
-                      <Select
-                        value={orderFormat.year_format}
-                        onValueChange={(value: 'YY' | 'YYYY') => setOrderFormat({ ...orderFormat, year_format: value })}
-                      >
-                        <SelectTrigger id="order-year-format" className="h-8 text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="YY">25</SelectItem>
-                          <SelectItem value="YYYY">2025</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
 
               <div className="pt-2 border-t">
