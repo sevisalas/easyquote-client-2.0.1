@@ -344,17 +344,17 @@ export function AppSidebar() {
                              </SidebarMenuSubButton>
                            </SidebarMenuSubItem>
                          )}
-                         {/* Formatos de Numeración - Solo admins */}
-                         {(isSuperAdmin || isOrgAdmin) && (
-                           <SidebarMenuSubItem>
+                          {/* Formatos de Numeración - Solo superadmins (desarrollo) */}
+                          {isSuperAdmin && (
+                            <SidebarMenuSubItem>
                               <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/formatos-numeracion"} className="h-6 px-2">
                                 <NavLink to="/configuracion/formatos-numeracion" end className={getNavCls}>
                                   <Hash className="mr-2 h-4 w-4" />
                                   {!isCollapsed && <span>Numeraciones</span>}
                                 </NavLink>
                               </SidebarMenuSubButton>
-                           </SidebarMenuSubItem>
-                         )}
+                            </SidebarMenuSubItem>
+                          )}
                          {/* Integraciones - Solo admins */}
                         {(isSuperAdmin || isOrgAdmin) && (
                           <>
