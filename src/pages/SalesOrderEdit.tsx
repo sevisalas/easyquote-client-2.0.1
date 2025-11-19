@@ -349,7 +349,6 @@ export default function SalesOrderEdit() {
               onChange={handleItemChange}
               onRemove={handleRemoveItem}
               onFinishEdit={handleItemFinish}
-              shouldExpand={false}
             />
           ))}
 
