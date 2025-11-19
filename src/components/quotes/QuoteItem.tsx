@@ -310,9 +310,15 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         return false;
       }
       
-      // Si no tenemos prompts válidos, no hacer query
+      // IMPORTANTE: Para productos NUEVOS, SIEMPRE permitir la query inicial (GET sin inputs)
+      if (isNewProduct) {
+        console.log("✅ Query enabled: producto nuevo, obteniendo prompts iniciales");
+        return true;
+      }
+      
+      // Para productos NO nuevos, requerir prompts
       if (!debouncedPromptValues || Object.keys(debouncedPromptValues).length === 0) {
-        console.log("❌ Query disabled: no prompts");
+        console.log("❌ Query disabled: no prompts para producto cargado");
         return false;
       }
       
@@ -326,8 +332,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         return true;
       }
       
-      // Si NO hay initialData (producto nuevo), hacer query normal
-      console.log("✅ Query enabled: producto nuevo");
+      // Query normal para productos con prompts
+      console.log("✅ Query enabled: producto con prompts");
       return true;
     })(),
     retry: false,
@@ -406,11 +412,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         throw error;
       }
       
-      // NO inicializar promptValues automáticamente si es producto nuevo
+      // NO inicializar promptValues automáticamente aquí - lo haremos en un useEffect
       // Los valores por defecto ya están en pricing.prompts[].currentValue
       // Solo cambiar isNewProduct a false si obtuvimos datos válidos
       if (isNewProduct && data?.prompts) {
-        console.log("✅ GET exitoso, marcando producto como cargado");
+        console.log("✅ GET exitoso con prompts, marcando producto como cargado");
         setIsNewProduct(false);
       }
       
@@ -431,6 +437,27 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setForceRecalculate(false);
     }
   }, [forceRecalculate, hasToken, productId, refetchPricing]);
+
+  // Inicializar promptValues cuando llega pricing por primera vez para producto nuevo
+  useEffect(() => {
+    // Solo para productos nuevos que acaban de cargar pricing
+    if (!isNewProduct && pricing?.prompts && Object.keys(promptValues).length === 0 && !initialData) {
+      console.log("🎨 Inicializando promptValues con valores por defecto de pricing");
+      const defaultValues: Record<string, any> = {};
+      pricing.prompts.forEach((prompt: any) => {
+        if (prompt.id && prompt.currentValue !== undefined && prompt.currentValue !== null) {
+          defaultValues[prompt.id] = prompt.currentValue;
+          console.log(`  📌 ${prompt.id} = ${prompt.currentValue}`);
+        }
+      });
+      
+      if (Object.keys(defaultValues).length > 0) {
+        console.log("✅ Estableciendo valores iniciales:", defaultValues);
+        setPromptValues(defaultValues);
+        setDebouncedPromptValues(defaultValues);
+      }
+    }
+  }, [pricing, isNewProduct, promptValues, initialData]);
 
   // Track if prompts were initialized from saved data
   const previousProductIdRef = useRef<string>("");
