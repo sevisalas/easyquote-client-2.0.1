@@ -939,9 +939,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   const isComplete = productId && priceOutput && finalPrice > 0;
 
-  // NO sincronizar automáticamente durante inicialización
-  // syncToParent solo debe llamarse cuando el usuario hace cambios explícitos
-  // o cuando finaliza la edición del producto
+  // Sincronizar automáticamente cuando cambien los prompts (excepto durante inicialización)
+  useEffect(() => {
+    if (!isInitializing && productId && Object.keys(promptValues).length > 0) {
+      console.log('🔄 Auto-sincronizando cambios de prompts');
+      syncToParent();
+    }
+  }, [promptValues, isInitializing, productId, syncToParent]);
 
   // Debug logging para el botón Finalizar
   useEffect(() => {
