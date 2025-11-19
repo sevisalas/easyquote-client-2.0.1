@@ -889,35 +889,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       currentValues[id] = value;
     });
     
-    // Filtrar solo prompts VISIBLES según las reglas de visibilidad
+    // Guardar TODOS los prompts sin filtros
     const promptsArray: any[] = [];
     Object.entries(promptValues).forEach(([id, promptData]) => {
-      // Obtener definición del prompt para verificar visibilidad
-      const promptDef = promptDefs.find(p => String(p.id) === String(id));
-      
-      // CRÍTICO: Si no hay definición del prompt, NO guardarlo
-      // (significa que es un prompt de una configuración alternativa que ya no aplica)
-      if (!promptDef) {
-        console.log('🚫 Prompt sin definición en producto actual, NO se guarda:', id);
-        return;
-      }
-      
-      // Verificar visibilidad usando isVisiblePrompt
-      const isVisible = isVisiblePrompt(promptDef, currentValues);
-      
-      if (!isVisible) {
-        console.log('👁️ Prompt oculto por reglas de visibilidad, NO se guarda:', id, promptDef.label);
-        return; // Skip this prompt
-      }
-      
       // promptData puede ser un objeto {label, value, order} o un valor simple
       if (typeof promptData === 'object' && promptData !== null && 'value' in promptData) {
         const value = promptData.value;
-        
-        // Skip prompts with empty/null values, URLs, or colors
-        if (!value || value === '' || value === null) return;
-        if (typeof value === 'object') return;
-        if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('#'))) return;
         
         promptsArray.push({
           id,
