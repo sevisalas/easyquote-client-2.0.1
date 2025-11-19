@@ -220,6 +220,11 @@ export default function PromptsForm({
     return { ...defaultsMap, ...extractedValues };
   }, [defaultsMap, values]);
 
+  // Filtrar solo los prompts visibles según las reglas hiddenWhen/visibility
+  const visiblePrompts = useMemo(() => {
+    return prompts.filter(p => isVisiblePrompt(p, effectiveValues));
+  }, [prompts, effectiveValues]);
+
   if (!product) return null;
   if (!prompts?.length) {
     return <p className="text-sm text-muted-foreground">Este producto no define opciones.</p>;
@@ -227,7 +232,7 @@ export default function PromptsForm({
 
   return (
     <div className="space-y-2">
-      {prompts.map((p) => (
+      {visiblePrompts.map((p) => (
         <div key={p.id} className="space-y-1">
           <Label htmlFor={p.id} className="text-sm">{p.label}{p.required ? " *" : ""}</Label>
           {p.description && (
