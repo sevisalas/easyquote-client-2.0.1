@@ -194,18 +194,20 @@ export default function ProductTestPage() {
         console.log("📋 Prompts from pricing:", pricingData?.prompts?.length || 0);
 
         // Combine: use ALL prompts from master-files, with current values from pricing
-        const allPrompts = masterData?.prompts || [];
+        const masterPrompts = masterData?.prompts || [];
         const pricingPrompts = pricingData?.prompts || [];
-        console.log("🔄 Combining prompts - Master:", allPrompts.length, "Pricing:", pricingPrompts.length);
+        console.log("🔄 Combining prompts - Master:", masterPrompts.length, "Pricing:", pricingPrompts.length);
 
-        // Map current values from pricing to master prompts
-        const enrichedPrompts = allPrompts.map((masterPrompt: any) => {
-          const pricingPrompt = pricingPrompts.find((p: any) => p.id === masterPrompt.id);
-          return {
-            ...masterPrompt,
-            currentValue: pricingPrompt?.currentValue ?? masterPrompt.currentValue,
-          };
-        });
+        // Si master-files no devuelve prompts, usar los de pricing directamente como fallback
+        const enrichedPrompts = masterPrompts.length > 0
+          ? masterPrompts.map((masterPrompt: any) => {
+              const pricingPrompt = pricingPrompts.find((p: any) => p.id === masterPrompt.id);
+              return {
+                ...masterPrompt,
+                currentValue: pricingPrompt?.currentValue ?? masterPrompt.currentValue,
+              };
+            })
+          : pricingPrompts;
         console.log("✅ Enriched prompts created:", enrichedPrompts.length);
 
         const finalProductDetail = {
