@@ -19,6 +19,7 @@ import QuoteItem from "@/components/quotes/QuoteItem";
 import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 import { getEasyQuoteToken } from "@/lib/easyquoteApi";
+import { useNumberingFormat, generateDocumentNumber } from "@/hooks/useNumberingFormat";
 
 type ItemSnapshot = {
   productId: string;
@@ -60,6 +61,9 @@ export default function QuoteNew() {
   const { isHoldedActive } = useHoldedIntegration();
   const { organization, membership } = useSubscription();
   const currentOrganization = organization || membership?.organization;
+
+  // Numbering format
+  const { data: quoteFormat } = useNumberingFormat('quote');
 
   // Generate next item ID
   const nextItemId = useMemo(() => Math.max(0, ...Object.keys(items).map(k => Number(k) || 0)) + 1, [items]);
@@ -188,13 +192,16 @@ export default function QuoteNew() {
     }
   }, [duplicateQuote]);
 
-  // Generate quote number based on organization
+  // Generate quote number using configured format
   const generateQuoteNumber = async (): Promise<string> => {
-    const year = new Date().getFullYear();
+    if (!quoteFormat) {
+      throw new Error("No se pudo obtener el formato de numeración");
+    }
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Usuario no autenticado");
 
-    // Get all organization members user_ids
+    // Get organization members
     const { data: orgMembers } = await supabase
       .from("organization_members")
       .select("user_id, organization_id")
@@ -213,15 +220,27 @@ export default function QuoteNew() {
 
     const userIds = allOrgMembers?.map(m => m.user_id) || [];
 
-    // Count quotes from all organization members for this year
+    // Build pattern for counting based on format
+    const year = new Date().getFullYear();
+    const yearStr = quoteFormat.year_format === 'YY' 
+      ? year.toString().slice(-2) 
+      : year.toString();
+    
+    let countPattern = quoteFormat.prefix;
+    if (quoteFormat.use_year) {
+      countPattern += yearStr;
+    }
+    countPattern += '-%';
+
+    // Count existing quotes matching this pattern
     const { count } = await supabase
       .from("quotes")
       .select("*", { count: "exact", head: true })
       .in("user_id", userIds)
-      .like("quote_number", `${year}-%`);
+      .like("quote_number", countPattern);
     
     const nextNumber = (count || 0) + 1;
-    return `${year}-${String(nextNumber).padStart(4, "0")}`;
+    return generateDocumentNumber(quoteFormat, nextNumber);
   };
 
   // Calculate totals
