@@ -873,6 +873,10 @@ export default function QuoteEdit() {
               // Check if item has details to show
               const itemOutputs = item.outputs && Array.isArray(item.outputs) ? item.outputs : [];
               const itemPrompts = item.prompts && typeof item.prompts === 'object' ? item.prompts : {};
+              
+              // Debug: mostrar los prompts en consola
+              console.log('📋 Item prompts para', item.product_name || item.name, ':', itemPrompts);
+              
               const hasDetails = itemOutputs.length > 0 || Object.keys(itemPrompts).length > 0;
 
               return (
