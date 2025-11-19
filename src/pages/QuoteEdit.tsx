@@ -383,7 +383,8 @@ export default function QuoteEdit() {
             productId: item.productId,
             prompts: item.prompts,
             promptsType: typeof item.prompts,
-            promptsKeys: item.prompts ? Object.keys(item.prompts) : []
+            promptsKeys: item.prompts ? Object.keys(item.prompts) : [],
+            promptsCount: item.prompts ? Object.keys(item.prompts).length : 0
           });
           
           // Convert prompts object to sorted array and keep order field
@@ -412,7 +413,8 @@ export default function QuoteEdit() {
 
           console.log(`✅ Item ${index} - Prompts array generado:`, {
             count: promptsArray.length,
-            sample: promptsArray.slice(0, 3)
+            sample: promptsArray.slice(0, 5),
+            all: promptsArray
           });
 
           return {
