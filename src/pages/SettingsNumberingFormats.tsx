@@ -45,12 +45,12 @@ export default function SettingsNumberingFormats() {
   });
 
   useEffect(() => {
-    if (!subscriptionLoading && !isOrgAdmin && !isSuperAdmin) {
+    if (!subscriptionLoading && !isSuperAdmin) {
       navigate("/");
       return;
     }
     loadFormats();
-  }, [subscriptionLoading, isOrgAdmin, isSuperAdmin, navigate]);
+  }, [subscriptionLoading, isSuperAdmin, navigate]);
 
   const loadFormats = async () => {
     try {
