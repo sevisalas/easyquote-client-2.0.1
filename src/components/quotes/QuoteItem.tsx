@@ -851,21 +851,20 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     });
     
     // Convertir promptValues de formato {promptId: {label, value, order}} a array [{id, label, value, order}]
+    // GUARDAR TODOS los prompts, incluso los ocultos (con valor null)
     const promptsArray: any[] = [];
     Object.entries(promptValues).forEach(([id, promptData]) => {
       // promptData puede ser un objeto {label, value, order} o un valor simple
       if (typeof promptData === 'object' && promptData !== null && 'value' in promptData) {
-        const value = promptData.value;
-        if (value !== undefined && value !== null && value !== '') {
-          promptsArray.push({
-            id,
-            label: promptData.label || id,
-            value,
-            order: promptData.order ?? 999
-          });
-        }
-      } else if (promptData !== undefined && promptData !== null && promptData !== '') {
-        // Valor simple (fallback por si acaso)
+        // Guardar SIEMPRE, incluso si el valor es null/undefined (para prompts ocultos)
+        promptsArray.push({
+          id,
+          label: promptData.label || id,
+          value: promptData.value, // Puede ser null para prompts ocultos
+          order: promptData.order ?? 999
+        });
+      } else {
+        // Valor simple (fallback)
         promptsArray.push({
           id,
           label: id,
