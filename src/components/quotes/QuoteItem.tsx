@@ -62,6 +62,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [hasInitialOutputs, setHasInitialOutputs] = useState<boolean>(false);
   const [userHasChangedCurrentProduct, setUserHasChangedCurrentProduct] = useState<boolean>(false);
   const [isInitializing, setIsInitializing] = useState<boolean>(false); // Flag para prevenir sync durante inicialización
+  const [hasPerformedInitialLoad, setHasPerformedInitialLoad] = useState<boolean>(false); // Flag para primera carga de artículos guardados
   const selectRef = useRef<HTMLButtonElement>(null);
 
   // Auto-expand/collapse based on shouldExpand prop
@@ -324,8 +325,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         return false;
       }
       
-      // Si hay initialData (artículo guardado), SOLO hacer query si el usuario ha hecho cambios
+      // Si hay initialData (artículo guardado), hacer query inicial para obtener prompts
       if (initialData) {
+        // Permitir la primera carga para obtener las definiciones de los prompts
+        if (!hasPerformedInitialLoad) {
+          console.log("✅ Query enabled: primera carga de artículo guardado para obtener definiciones de prompts");
+          return true;
+        }
+        // Después de la primera carga, solo hacer query si el usuario ha hecho cambios
         if (!userHasChangedCurrentProduct && !forceRecalculate) {
           console.log("ℹ️ Query disabled: usando datos guardados, sin cambios del usuario");
           return false;
@@ -428,6 +435,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         setHasInitialOutputs(false);
       }
       
+      // Marcar que ya se realizó la carga inicial si había initialData
+      if (initialData && !hasPerformedInitialLoad) {
+        console.log("✅ Primera carga completada para artículo guardado");
+        setHasPerformedInitialLoad(true);
+      }
+      
       return data;
     },
   });
@@ -490,6 +503,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setForceRecalculate(false);
       setHasUnsavedChanges(false);
       setUserHasChangedCurrentProduct(false); // Reset flag para nuevo producto
+      setHasPerformedInitialLoad(false); // Reset flag para carga inicial
       hasMarkedAsLoadedRef.current = false;
       
       console.log("✅ Estados reseteados completamente, listo para cargar nuevo producto");
