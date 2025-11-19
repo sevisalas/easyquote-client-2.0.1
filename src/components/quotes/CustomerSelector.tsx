@@ -40,7 +40,8 @@ interface CustomerSelectorProps {
 const fetchLocalCustomers = async (): Promise<LocalCustomer[]> => {
   const { data, error } = await supabase
     .from("customers")
-    .select("id, name, email, phone")
+    .select("id, name, email, phone, source")
+    .or("source.eq.local,source.is.null")
     .order("created_at", { ascending: false })
     .limit(50000);
   
