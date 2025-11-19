@@ -146,17 +146,48 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Get unique product IDs and fetch their definitions
-    // Ya no cargamos product definitions de master-files
-    // La visibilidad de prompts se maneja en el cliente antes de guardar
-
-    // Los prompts que vienen desde la BD ya están filtrados por visibilidad en el cliente
-
+    // Helper function to check if prompt is visible based on conditions
     const isPromptVisible = (promptId: string, allPrompts: Record<string, any>, productId: string): boolean => {
-      // Todos los prompts que vienen desde la BD ya están filtrados por visibilidad
-      // Solo incluimos prompts que tienen label (prompts completos, no solo valores)
-      const promptData = allPrompts[promptId];
-      return Boolean(promptData?.label);
+      const prompt = allPrompts[promptId];
+      
+      // If no prompt data or no label, not visible
+      if (!prompt || !prompt.label) return false;
+      
+      // If prompt value is null, it's likely hidden
+      if (prompt.value === null || prompt.value === undefined) return false;
+      
+      // If no visibility conditions, it's visible
+      if (!prompt.hiddenWhen && !prompt.visibility) return true;
+      
+      // Check hiddenWhen condition
+      if (prompt.hiddenWhen) {
+        if (typeof prompt.hiddenWhen === 'object') {
+          const field = prompt.hiddenWhen.field || prompt.hiddenWhen.id;
+          const expectedValue = prompt.hiddenWhen.equals || prompt.hiddenWhen.value;
+          if (field && allPrompts[field]) {
+            const currentValue = allPrompts[field].value;
+            if (String(currentValue) === String(expectedValue)) {
+              return false; // Hidden when condition is met
+            }
+          }
+        }
+      }
+      
+      // Check visibility condition
+      if (prompt.visibility) {
+        if (typeof prompt.visibility === 'object') {
+          const field = prompt.visibility.field || prompt.visibility.id;
+          const expectedValue = prompt.visibility.equals || prompt.visibility.value;
+          if (field && allPrompts[field]) {
+            const currentValue = allPrompts[field].value;
+            if (String(currentValue) !== String(expectedValue)) {
+              return false; // Not visible because condition not met
+            }
+          }
+        }
+      }
+      
+      return true;
     };
 
     // Build complete payload with all quote data

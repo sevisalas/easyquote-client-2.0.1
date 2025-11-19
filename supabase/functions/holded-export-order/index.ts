@@ -135,6 +135,12 @@ Deno.serve(async (req) => {
 
     // Helper function to check if prompt is visible
     const isPromptVisible = (prompt: any, allPrompts: Record<string, any>): boolean => {
+      // If no prompt data or no label, not visible
+      if (!prompt || !prompt.label) return false;
+      
+      // If prompt value is null, it's likely hidden
+      if (prompt.value === null || prompt.value === undefined) return false;
+      
       // If no visibility conditions, it's visible
       if (!prompt.hiddenWhen && !prompt.visibility) return true;
       
