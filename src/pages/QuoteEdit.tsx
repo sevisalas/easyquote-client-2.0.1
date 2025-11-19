@@ -408,11 +408,6 @@ export default function QuoteEdit() {
                 };
               }
             })
-            // Keep prompts with valid value (not empty string, null, or undefined)
-            .filter((p) => {
-              if (p.value === null || p.value === undefined || p.value === '') return false;
-              return true;
-            })
             .sort((a, b) => a.order - b.order);
 
           console.log(`✅ Item ${index} - Prompts array generado:`, {
