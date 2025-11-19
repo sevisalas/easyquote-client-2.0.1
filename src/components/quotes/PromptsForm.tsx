@@ -221,8 +221,18 @@ export default function PromptsForm({
   }, [defaultsMap, values]);
 
   // Filtrar solo los prompts visibles según las reglas hiddenWhen/visibility
+  // Y también excluir los que tienen valor null (prompts ocultos guardados)
   const visiblePrompts = useMemo(() => {
-    return prompts.filter(p => isVisiblePrompt(p, effectiveValues));
+    return prompts.filter(p => {
+      // 1. Debe cumplir reglas de visibilidad
+      if (!isVisiblePrompt(p, effectiveValues)) return false;
+      
+      // 2. No debe tener valor null (indica que está oculto/sin valor)
+      const currentValue = effectiveValues[p.id];
+      if (currentValue === null || currentValue === undefined) return false;
+      
+      return true;
+    });
   }, [prompts, effectiveValues]);
 
   if (!product) return null;
