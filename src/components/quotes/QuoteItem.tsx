@@ -667,15 +667,15 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       }
     }
     
-    // Auto-expand when a product is selected for the first time
-    if (productId && !isExpanded) {
+    // Auto-expand when a product is selected for the first time - pero solo si shouldExpand no está definido o es true
+    if (productId && !isExpanded && shouldExpand !== false && !userCollapsed) {
       setIsExpanded(true);
     }
-  }, [productId, products]);
+  }, [productId, products, shouldExpand, userCollapsed]);
 
-  // Auto-expand when component mounts without a product
+  // Auto-expand when component mounts without a product - pero solo si shouldExpand no está definido o es true
   useEffect(() => {
-    if (!productId) {
+    if (!productId && shouldExpand !== false) {
       setIsExpanded(true);
     }
   }, []);
