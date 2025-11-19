@@ -19,6 +19,7 @@ interface NumberingFormat {
   suffix: string;
   use_year: boolean;
   year_format: 'YY' | 'YYYY';
+  sequential_digits: number;
 }
 
 export default function SettingsNumberingFormats() {
@@ -31,14 +32,16 @@ export default function SettingsNumberingFormats() {
     prefix: '',
     suffix: '',
     use_year: true,
-    year_format: 'YY'
+    year_format: 'YY',
+    sequential_digits: 4
   });
   const [orderFormat, setOrderFormat] = useState<NumberingFormat>({
     document_type: 'order',
     prefix: 'SO-',
     suffix: '',
     use_year: true,
-    year_format: 'YYYY'
+    year_format: 'YYYY',
+    sequential_digits: 4
   });
 
   useEffect(() => {
@@ -73,7 +76,8 @@ export default function SettingsNumberingFormats() {
             prefix: quoteData.prefix || '',
             suffix: quoteData.suffix || '',
             use_year: quoteData.use_year,
-            year_format: quoteData.year_format as 'YY' | 'YYYY'
+            year_format: quoteData.year_format as 'YY' | 'YYYY',
+            sequential_digits: quoteData.sequential_digits || 4
           });
         }
 
@@ -84,7 +88,8 @@ export default function SettingsNumberingFormats() {
             prefix: orderData.prefix || '',
             suffix: orderData.suffix || '',
             use_year: orderData.use_year,
-            year_format: orderData.year_format as 'YY' | 'YYYY'
+            year_format: orderData.year_format as 'YY' | 'YYYY',
+            sequential_digits: orderData.sequential_digits || 4
           });
         }
       }
@@ -111,7 +116,7 @@ export default function SettingsNumberingFormats() {
       example += yearStr;
     }
     
-    example += '-' + sequential.toString().padStart(5, '0');
+    example += '-' + sequential.toString().padStart(format.sequential_digits, '0');
     
     if (format.suffix) {
       example += format.suffix;
@@ -255,29 +260,48 @@ export default function SettingsNumberingFormats() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="quote-use-year"
-                    checked={quoteFormat.use_year}
-                    onCheckedChange={(checked) => setQuoteFormat({ ...quoteFormat, use_year: checked })}
-                  />
-                  <Label htmlFor="quote-use-year" className="text-xs cursor-pointer">Año</Label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="quote-use-year"
+                      checked={quoteFormat.use_year}
+                      onCheckedChange={(checked) => setQuoteFormat({ ...quoteFormat, use_year: checked })}
+                    />
+                    <Label htmlFor="quote-use-year" className="text-xs cursor-pointer">Año</Label>
+                  </div>
+                  {quoteFormat.use_year && (
+                    <Select
+                      value={quoteFormat.year_format}
+                      onValueChange={(value: 'YY' | 'YYYY') => setQuoteFormat({ ...quoteFormat, year_format: value })}
+                    >
+                      <SelectTrigger className="w-24 h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="YY">25</SelectItem>
+                        <SelectItem value="YYYY">2025</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
-                {quoteFormat.use_year && (
+                <div>
+                  <Label htmlFor="quote-digits" className="text-xs">Dígitos secuencial</Label>
                   <Select
-                    value={quoteFormat.year_format}
-                    onValueChange={(value: 'YY' | 'YYYY') => setQuoteFormat({ ...quoteFormat, year_format: value })}
+                    value={quoteFormat.sequential_digits.toString()}
+                    onValueChange={(value) => setQuoteFormat({ ...quoteFormat, sequential_digits: parseInt(value) })}
                   >
-                    <SelectTrigger className="w-24 h-7 text-xs">
+                    <SelectTrigger id="quote-digits" className="h-8 text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="YY">25</SelectItem>
-                      <SelectItem value="YYYY">2025</SelectItem>
+                      <SelectItem value="3">3 (001)</SelectItem>
+                      <SelectItem value="4">4 (0001)</SelectItem>
+                      <SelectItem value="5">5 (00001)</SelectItem>
+                      <SelectItem value="6">6 (000001)</SelectItem>
                     </SelectContent>
                   </Select>
-                )}
+                </div>
               </div>
 
               <div className="pt-2 border-t">
@@ -316,29 +340,48 @@ export default function SettingsNumberingFormats() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="order-use-year"
-                    checked={orderFormat.use_year}
-                    onCheckedChange={(checked) => setOrderFormat({ ...orderFormat, use_year: checked })}
-                  />
-                  <Label htmlFor="order-use-year" className="text-xs cursor-pointer">Año</Label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="order-use-year"
+                      checked={orderFormat.use_year}
+                      onCheckedChange={(checked) => setOrderFormat({ ...orderFormat, use_year: checked })}
+                    />
+                    <Label htmlFor="order-use-year" className="text-xs cursor-pointer">Año</Label>
+                  </div>
+                  {orderFormat.use_year && (
+                    <Select
+                      value={orderFormat.year_format}
+                      onValueChange={(value: 'YY' | 'YYYY') => setOrderFormat({ ...orderFormat, year_format: value })}
+                    >
+                      <SelectTrigger className="w-24 h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="YY">25</SelectItem>
+                        <SelectItem value="YYYY">2025</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
-                {orderFormat.use_year && (
+                <div>
+                  <Label htmlFor="order-digits" className="text-xs">Dígitos secuencial</Label>
                   <Select
-                    value={orderFormat.year_format}
-                    onValueChange={(value: 'YY' | 'YYYY') => setOrderFormat({ ...orderFormat, year_format: value })}
+                    value={orderFormat.sequential_digits.toString()}
+                    onValueChange={(value) => setOrderFormat({ ...orderFormat, sequential_digits: parseInt(value) })}
                   >
-                    <SelectTrigger className="w-24 h-7 text-xs">
+                    <SelectTrigger id="order-digits" className="h-8 text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="YY">25</SelectItem>
-                      <SelectItem value="YYYY">2025</SelectItem>
+                      <SelectItem value="3">3 (001)</SelectItem>
+                      <SelectItem value="4">4 (0001)</SelectItem>
+                      <SelectItem value="5">5 (00001)</SelectItem>
+                      <SelectItem value="6">6 (000001)</SelectItem>
                     </SelectContent>
                   </Select>
-                )}
+                </div>
               </div>
 
               <div className="pt-2 border-t">
@@ -351,7 +394,7 @@ export default function SettingsNumberingFormats() {
 
         <div className="bg-muted/50 p-3 rounded-lg">
           <p className="text-xs text-muted-foreground">
-            <strong>Nota:</strong> El número secuencial se genera automáticamente con 5 dígitos (00001, 00002, etc.).
+            <strong>Nota:</strong> El número secuencial se genera automáticamente según los dígitos configurados.
           </p>
         </div>
       </div>

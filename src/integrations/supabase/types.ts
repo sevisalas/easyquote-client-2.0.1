@@ -377,6 +377,7 @@ export type Database = {
           id: string
           organization_id: string | null
           prefix: string
+          sequential_digits: number
           suffix: string | null
           updated_at: string
           use_year: boolean
@@ -389,6 +390,7 @@ export type Database = {
           id?: string
           organization_id?: string | null
           prefix?: string
+          sequential_digits?: number
           suffix?: string | null
           updated_at?: string
           use_year?: boolean
@@ -401,6 +403,7 @@ export type Database = {
           id?: string
           organization_id?: string | null
           prefix?: string
+          sequential_digits?: number
           suffix?: string | null
           updated_at?: string
           use_year?: boolean
