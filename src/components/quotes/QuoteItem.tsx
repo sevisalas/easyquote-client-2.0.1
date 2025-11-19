@@ -298,8 +298,79 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     },
   });
 
-  // Los prompts SIEMPRE están guardados en la BD cuando editamos un item existente
-  // No necesitamos cargar desde master-files
+  // Query para obtener la configuración completa del producto (incluyendo reglas de visibilidad)
+  // Necesitamos esto SIEMPRE para:
+  // 1. Saber qué prompts mostrar/ocultar según las reglas hiddenWhen/visibility
+  // 2. Obtener valores por defecto si no hay prompts guardados
+  const { data: masterData, isLoading: isMasterLoading } = useQuery({
+    queryKey: ["easyquote-master-files", productId],
+    enabled: !!hasToken && !!productId && !isInitializing,
+    retry: false,
+    queryFn: async () => {
+      const token = sessionStorage.getItem("easyquote_token");
+      if (!token) throw new Error("Falta token de EasyQuote");
+
+      console.log("📥 Fetching master files for product:", productId);
+      
+      const { data: productData } = await supabase
+        .from('excel_files')
+        .select('*')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (!productData) {
+        throw new Error("No se encontró archivo Excel asociado");
+      }
+
+      const { data, error } = await invokeEasyQuoteFunction("easyquote-master-files", {
+        token,
+        subscriberId: productData.file_id,
+        fileId: productData.file_id,
+        fileName: productData.filename,
+        productId
+      });
+
+      if (error) throw error;
+      console.log("✅ Master files fetched:", data);
+      return data;
+    },
+  });
+
+  // Inicializar prompts desde masterData si NO hay prompts guardados en la BD
+  useEffect(() => {
+    if (!masterData) return;
+    
+    const currentPromptsCount = Object.keys(promptValues).length;
+    console.log("📥 Evaluando master files - currentPromptsCount:", currentPromptsCount);
+    
+    // Si ya hay prompts cargados, no sobrescribir
+    if (currentPromptsCount > 0) {
+      console.log("ℹ️ Ya hay prompts cargados desde BD, usando esos valores");
+      return;
+    }
+    
+    console.log("⚠️ No hay prompts guardados, usando valores por defecto de master files");
+    
+    // Extraer prompts con valores por defecto
+    const defaultPrompts: Record<string, any> = {};
+    if (masterData.prompts && Array.isArray(masterData.prompts)) {
+      masterData.prompts.forEach((prompt: any) => {
+        if (prompt.id && prompt.defaultValue !== undefined && prompt.defaultValue !== null) {
+          defaultPrompts[prompt.id] = prompt.defaultValue;
+          console.log(`  📌 Default prompt ${prompt.id} = ${prompt.defaultValue}`);
+        }
+      });
+    }
+    
+    if (Object.keys(defaultPrompts).length > 0) {
+      console.log("✅ Setting default prompts from master files:", defaultPrompts);
+      setPromptValues(defaultPrompts);
+      setDebouncedPromptValues(defaultPrompts);
+      setIsNewProduct(false);
+      setUserHasChangedCurrentProduct(false);
+    }
+  }, [masterData]);
 
   // Query principal de pricing
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError } = useQuery({
@@ -984,8 +1055,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                     <p className="font-semibold">Por favor, selecciona otro producto o contacta al administrador.</p>
                   </AlertDescription>
                 </Alert>
-              ) : pricing ? (
-                <PromptsForm product={pricing} values={promptValues} onChange={handlePromptChange} />
+              ) : masterData ? (
+                <PromptsForm product={masterData} values={promptValues} onChange={handlePromptChange} />
               ) : (
                 <p className="text-sm text-muted-foreground">Cargando prompts…</p>
               )}
