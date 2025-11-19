@@ -220,8 +220,10 @@ export default function PromptsForm({
     return { ...defaultsMap, ...extractedValues };
   }, [defaultsMap, values]);
 
-  // NO FILTRAR NADA - Mostrar TODOS los prompts guardados
-  const visiblePrompts = prompts;
+  // Filtrar prompts por visibilidad según sus reglas hiddenWhen y visibility
+  const visiblePrompts = useMemo(() => {
+    return prompts.filter(p => isVisiblePrompt(p, effectiveValues));
+  }, [prompts, effectiveValues]);
 
   if (!product) return null;
   if (!prompts?.length) {

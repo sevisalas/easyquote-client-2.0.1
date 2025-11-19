@@ -276,12 +276,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     enabled: !!hasToken,
   });
 
-  // Sincronizar itemDescription con productName cuando está vacío
+  // Sincronizar itemDescription con productName cuando está vacío o es "nuevo artículo"
   useEffect(() => {
-    if (productId && !itemDescription && products) {
+    if (productId && (!itemDescription || itemDescription.toLowerCase().includes('nuevo')) && products) {
       const selectedProduct = products.find((p: any) => String(p.id) === String(productId));
       if (selectedProduct) {
-        setItemDescription(getProductLabel(selectedProduct));
+        const productLabel = getProductLabel(selectedProduct);
+        console.log('🏷️ Estableciendo nombre del producto:', productLabel);
+        setItemDescription(productLabel);
       }
     }
   }, [productId, products, itemDescription]);

@@ -593,7 +593,7 @@ export default function QuoteEdit() {
     const newItemId = `temp-${Date.now()}`;
     const newItem: QuoteItem = {
       id: newItemId,
-      product_name: "Nuevo artículo",
+      product_name: "",
       description: "",
       price: 0,
       // QuoteItem compatibility
@@ -601,7 +601,7 @@ export default function QuoteEdit() {
       prompts: {},
       outputs: [],
       multi: undefined,
-      itemDescription: "Nuevo artículo",
+      itemDescription: "",
       itemAdditionals: [],
     };
     setItems((prev) => [...prev, newItem]);
