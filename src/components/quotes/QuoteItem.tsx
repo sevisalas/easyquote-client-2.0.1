@@ -57,6 +57,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [debouncedPromptValues, setDebouncedPromptValues] = useState<Record<string, any>>({});
   const [forceRecalculate, setForceRecalculate] = useState<boolean>(false);
   const [isExpanded, setIsExpanded] = useState<boolean>(shouldExpand || false);
+  const [userCollapsed, setUserCollapsed] = useState<boolean>(false); // Flag para colapso manual del usuario
   const [itemDescription, setItemDescription] = useState<string>("");
   const [isNewProduct, setIsNewProduct] = useState<boolean>(true);
   const [hasInitialOutputs, setHasInitialOutputs] = useState<boolean>(false);
@@ -65,12 +66,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [hasPerformedInitialLoad, setHasPerformedInitialLoad] = useState<boolean>(false); // Flag para primera carga de artículos guardados
   const selectRef = useRef<HTMLButtonElement>(null);
 
-  // Auto-expand/collapse based on shouldExpand prop
+  // Auto-expand/collapse based on shouldExpand prop - pero respetar colapso manual del usuario
   useEffect(() => {
-    if (shouldExpand !== undefined) {
+    if (shouldExpand !== undefined && !userCollapsed) {
       setIsExpanded(shouldExpand);
     }
-  }, [shouldExpand, id]);
+  }, [shouldExpand, id, userCollapsed]);
 
   // Multi-cantidades
   const [multiEnabled, setMultiEnabled] = useState<boolean>(false);
@@ -1060,7 +1061,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsExpanded(true)}
+                onClick={() => {
+                  setUserCollapsed(false); // Resetear flag de colapso manual
+                  setIsExpanded(true);
+                }}
                 className="gap-2"
               >
                 <Pencil className="w-4 h-4" />
@@ -1089,6 +1093,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 onClick={() => {
                   // Sincronizar cambios antes de finalizar
                   syncToParent();
+                  // Marcar como colapsado manualmente por el usuario
+                  setUserCollapsed(true);
                   // Colapsar el item
                   setIsExpanded(false);
                   if (onFinishEdit) {
@@ -1122,7 +1128,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               <Button 
                 variant="ghost" 
                 size="sm"
-                onClick={() => setIsExpanded(false)}
+                onClick={() => {
+                  setUserCollapsed(true); // Marcar como colapsado manualmente
+                  setIsExpanded(false);
+                }}
               >
                 <ChevronUp className="w-4 h-4 mr-2" />
                 Contraer
