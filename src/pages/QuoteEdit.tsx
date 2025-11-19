@@ -984,22 +984,13 @@ export default function QuoteEdit() {
 
                           {/* Prompts */}
                           {Object.keys(itemPrompts).length > 0 && (() => {
-                            // Los prompts guardados ya son los correctos, solo mostrarlos
+                            // Mostrar TODOS los prompts sin ningún filtro
                             const visiblePrompts = Object.entries(itemPrompts)
-                              .filter(([key, promptData]: [string, any]) => {
-                                const label = typeof promptData === 'object' ? promptData.label : key;
-                                const value = typeof promptData === 'object' ? promptData.value : promptData;
-                                
-                                // Solo filtrar valores vacíos, null, URLs e imágenes
-                                if (!value || value === '' || value === null) return false;
-                                if (typeof value === 'object') return false;
-                                if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('#'))) return false;
-                                
-                                // Debe tener label
-                                const hasLabel = typeof promptData === 'object' && promptData.label && promptData.label.trim() !== '';
-                                return hasLabel;
-                              })
-                              .sort(([, a]: [string, any], [, b]: [string, any]) => (a.order ?? 999) - (b.order ?? 999));
+                              .sort(([, a]: [string, any], [, b]: [string, any]) => {
+                                const orderA = typeof a === 'object' && a !== null ? (a.order ?? 999) : 999;
+                                const orderB = typeof b === 'object' && b !== null ? (b.order ?? 999) : 999;
+                                return orderA - orderB;
+                              });
 
                             if (visiblePrompts.length === 0) return null;
 
@@ -1007,13 +998,17 @@ export default function QuoteEdit() {
                               <div className="pl-8 space-y-1 border-l-2 border-muted">
                                 <p className="text-xs font-semibold text-muted-foreground uppercase">Opciones seleccionadas</p>
                                 {visiblePrompts.map(([key, promptData]: [string, any], idx: number) => {
-                                  const label = typeof promptData === 'object' ? promptData.label : key;
-                                  const value = typeof promptData === 'object' ? promptData.value : promptData;
+                                  const label = typeof promptData === 'object' && promptData !== null && promptData.label 
+                                    ? promptData.label 
+                                    : key;
+                                  const value = typeof promptData === 'object' && promptData !== null && 'value' in promptData 
+                                    ? promptData.value 
+                                    : promptData;
                                   
-                                  const valueStr = String(value);
+                                  const valueStr = value === null || value === undefined ? '' : String(value);
                                   
                                   // Handle image URLs
-                                  if (valueStr.startsWith('http')) {
+                                  if (valueStr && valueStr.startsWith('http')) {
                                     return (
                                       <div key={idx} className="text-sm">
                                         <span className="font-medium text-muted-foreground">{label}:</span>
@@ -1027,7 +1022,7 @@ export default function QuoteEdit() {
                                   }
                                   
                                   // Handle hex colors
-                                  if (valueStr.startsWith('#')) {
+                                  if (valueStr && valueStr.startsWith('#')) {
                                     return (
                                       <div key={idx} className="text-sm flex items-center gap-2">
                                         <span className="font-medium text-muted-foreground">{label}:</span>
@@ -1042,11 +1037,11 @@ export default function QuoteEdit() {
                                     );
                                   }
                                   
-                                  // Handle regular text values
+                                  // Handle all other values (including empty strings, nulls, etc.)
                                   return (
                                     <div key={idx} className="text-sm">
                                       <span className="font-medium text-muted-foreground">{label}:</span>{' '}
-                                      <span className="text-foreground">{valueStr}</span>
+                                      <span className="text-foreground">{valueStr || '(vacío)'}</span>
                                     </div>
                                   );
                                 })}
