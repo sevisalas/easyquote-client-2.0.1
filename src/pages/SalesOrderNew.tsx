@@ -465,20 +465,27 @@ export default function SalesOrderNew() {
         <CardHeader className="py-3 px-4">
           <CardTitle className="text-lg">Información del pedido</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Customer Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="customer">Cliente *</Label>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <CustomerSelector
               value={customerId}
               onValueChange={setCustomerId}
+              label="Cliente *"
+              placeholder="Buscar cliente..."
             />
+            
+            <div className="space-y-2">
+              <Label htmlFor="deliveryDate">Fecha de entrega</Label>
+              <Input
+                id="deliveryDate"
+                type="date"
+                value={deliveryDate}
+                onChange={(e) => setDeliveryDate(e.target.value)}
+              />
+            </div>
           </div>
 
-          <Separator />
-
-          {/* Order Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="title">Título del pedido</Label>
               <Input
@@ -488,17 +495,16 @@ export default function SalesOrderNew() {
                 placeholder="Ej: Pedido Corporativo 2025"
               />
             </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="deliveryDate">Fecha de entrega</Label>
-              <div className="relative">
-                <Input
-                  id="deliveryDate"
-                  type="date"
-                  value={deliveryDate}
-                  onChange={(e) => setDeliveryDate(e.target.value)}
-                />
-                <CalendarDays className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-              </div>
+              <Label htmlFor="notes">Notas internas</Label>
+              <Textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Notas para uso interno..."
+                rows={3}
+              />
             </div>
           </div>
 
@@ -509,17 +515,6 @@ export default function SalesOrderNew() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Descripción del pedido..."
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notas internas</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Notas para uso interno..."
               rows={3}
             />
           </div>
