@@ -304,7 +304,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // 2. Obtener valores por defecto si no hay prompts guardados
   const { data: masterData, isLoading: isMasterLoading } = useQuery({
     queryKey: ["easyquote-master-files", productId],
-    enabled: !!hasToken && !!productId && !isInitializing,
+    enabled: !!hasToken && !!productId && !isInitializing && !!products,
     retry: false,
     queryFn: async () => {
       const token = sessionStorage.getItem("easyquote_token");
@@ -312,16 +312,27 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
       console.log("📥 Fetching master files for product:", productId);
       
+      // 1. Buscar el producto en la lista de productos de EasyQuote para obtener su excelfileId
+      const selectedProduct = products?.find((p: any) => String(p.id) === String(productId));
+      if (!selectedProduct || !selectedProduct.excelfileId) {
+        throw new Error(`No se encontró el producto ${productId} o no tiene excelfileId`);
+      }
+      
+      console.log("📄 Product excelfileId:", selectedProduct.excelfileId);
+      
+      // 2. Buscar el archivo Excel correspondiente usando el excelfileId del producto
       const { data: productData } = await supabase
         .from('excel_files')
         .select('*')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .eq('file_id', selectedProduct.excelfileId)
         .limit(1)
         .maybeSingle();
 
       if (!productData) {
-        throw new Error("No se encontró archivo Excel asociado");
+        throw new Error(`No se encontró archivo Excel con id ${selectedProduct.excelfileId}`);
       }
+
+      console.log("📂 Excel file found:", productData.filename);
 
       const { data, error } = await invokeEasyQuoteFunction("easyquote-master-files", {
         token,
