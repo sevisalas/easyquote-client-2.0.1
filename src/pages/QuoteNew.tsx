@@ -19,6 +19,7 @@ import QuoteItem from "@/components/quotes/QuoteItem";
 import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 import { getEasyQuoteToken } from "@/lib/easyquoteApi";
+import { useNumberingFormat, generateDocumentNumber } from "@/hooks/useNumberingFormat";
 
 type ItemSnapshot = {
   productId: string;
@@ -60,6 +61,9 @@ export default function QuoteNew() {
   const { isHoldedActive } = useHoldedIntegration();
   const { organization, membership } = useSubscription();
   const currentOrganization = organization || membership?.organization;
+
+  // Numbering format
+  const { data: numberingFormat, isLoading: isLoadingFormat } = useNumberingFormat('quote');
 
   // Generate next item ID
   const nextItemId = useMemo(() => Math.max(0, ...Object.keys(items).map(k => Number(k) || 0)) + 1, [items]);
