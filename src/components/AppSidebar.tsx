@@ -169,6 +169,15 @@ export function AppSidebar() {
                        </NavLink>
                      </SidebarMenuButton>
                   </SidebarMenuItem>
+
+                  <SidebarMenuItem>
+                     <SidebarMenuButton asChild isActive={currentPath === "/superadmin/renumerar"} className="h-7 px-2">
+                       <NavLink to="/superadmin/renumerar" end className={getNavCls}>
+                         <Hash className="mr-2 h-4 w-4" />
+                         {!isCollapsed && <span>Renumerar</span>}
+                       </NavLink>
+                     </SidebarMenuButton>
+                  </SidebarMenuItem>
                 </>
               )}
 
