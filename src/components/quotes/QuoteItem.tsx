@@ -334,6 +334,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         return true;
       }
       
+      // Para artículos guardados, permitir la primera carga para obtener definiciones
+      if (initialData && !hasPerformedInitialLoad) {
+        console.log("✅ Query enabled: primera carga de artículo guardado para obtener todas las definiciones de prompts");
+        return true;
+      }
+      
       // Para productos NO nuevos, requerir prompts
       if (!debouncedPromptValues || Object.keys(debouncedPromptValues).length === 0) {
         console.log("❌ Query disabled: no prompts para producto cargado");
@@ -342,11 +348,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       
       // Si hay initialData (artículo guardado), hacer query inicial para obtener prompts
       if (initialData) {
-        // Permitir la primera carga para obtener las definiciones de los prompts
-        if (!hasPerformedInitialLoad) {
-          console.log("✅ Query enabled: primera carga de artículo guardado para obtener definiciones de prompts");
-          return true;
-        }
         // Después de la primera carga, solo hacer query si el usuario ha hecho cambios
         if (!userHasChangedCurrentProduct && !forceRecalculate) {
           console.log("ℹ️ Query disabled: usando datos guardados, sin cambios del usuario");
