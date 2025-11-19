@@ -266,9 +266,8 @@ export default function PromptsForm({
           {/* Select (dropdown) */}
           {p.type === "select" && (
             <Select value={(effectiveValues[p.id] ?? undefined) as any} onValueChange={(v) => {
-              const selectedOption = p.options?.find(opt => opt.value === v);
-              const displayValue = selectedOption?.label ?? v;
-              onChange(p.id, displayValue, p.label);
+              // Enviar el valor real (v), NO el label de la opción
+              onChange(p.id, v, p.label);
             }}>
               <SelectTrigger id={p.id}>
                 <SelectValue placeholder="Selecciona una opción" />
