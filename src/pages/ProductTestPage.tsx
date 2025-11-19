@@ -477,12 +477,30 @@ export default function ProductTestPage() {
 
           {/* Results */}
           <div>
-            {(textOutputs.length > 0 || imageOutputs.length > 0) && (
+            {productId && (
               <Card>
                 <CardHeader>
                   <CardTitle>Resultados</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {pricingLoading && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Calculando resultados...</p>
+                    </div>
+                  )}
+
+                  {!pricingLoading && !pricing && !isLoadingProduct && productDetail && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Configura los parámetros para ver los resultados</p>
+                    </div>
+                  )}
+
+                  {!pricingLoading && pricing && textOutputs.length === 0 && imageOutputs.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No hay resultados disponibles para esta configuración</p>
+                    </div>
+                  )}
+
                   {/* Text outputs */}
                   {textOutputs.length > 0 && (
                     <div className="space-y-2 text-sm">
