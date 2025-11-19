@@ -895,12 +895,18 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       // Obtener definición del prompt para verificar visibilidad
       const promptDef = promptDefs.find(p => String(p.id) === String(id));
       
-      // Si no hay definición, incluir el prompt (fallback para compatibilidad)
-      // Si hay definición, verificar visibilidad usando isVisiblePrompt
-      const isVisible = !promptDef || isVisiblePrompt(promptDef, currentValues);
+      // CRÍTICO: Si no hay definición del prompt, NO guardarlo
+      // (significa que es un prompt de una configuración alternativa que ya no aplica)
+      if (!promptDef) {
+        console.log('🚫 Prompt sin definición en producto actual, NO se guarda:', id);
+        return;
+      }
+      
+      // Verificar visibilidad usando isVisiblePrompt
+      const isVisible = isVisiblePrompt(promptDef, currentValues);
       
       if (!isVisible) {
-        console.log('👁️ Prompt oculto, NO se guarda:', id);
+        console.log('👁️ Prompt oculto por reglas de visibilidad, NO se guarda:', id, promptDef.label);
         return; // Skip this prompt
       }
       
