@@ -115,7 +115,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       console.log('✅ Starting initialization with initialData:', initialData);
       setProductId(initialData.productId || "");
       
-      // Extraer solo los VALORES de los prompts guardados
+      // Preservar TODOS los datos de los prompts guardados (label, value, order)
       const promptValuesOnly: Record<string, any> = {};
       if (initialData.prompts) {
         console.log('🔍 Raw prompts from DB:', initialData.prompts);
@@ -123,23 +123,38 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         // Handle array format [{id, label, order, value}]
         if (Array.isArray(initialData.prompts)) {
           initialData.prompts.forEach((prompt: any) => {
-            if (prompt.id && prompt.value !== undefined && prompt.value !== null && prompt.value !== '') {
-              promptValuesOnly[prompt.id] = prompt.value;  // ✅ SOLO el valor
-              console.log(`  📌 Loaded prompt ${prompt.id} = ${prompt.value}`);
+            if (prompt.id) {
+              // Preservar el objeto completo con label, value y order
+              promptValuesOnly[prompt.id] = {
+                label: prompt.label || prompt.id,
+                value: prompt.value,
+                order: prompt.order ?? 999
+              };
+              console.log(`  📌 Loaded prompt ${prompt.id}:`, promptValuesOnly[prompt.id]);
             }
           });
         } else {
           // Handle object format {promptId: {label, value, order}} or {promptId: value}
           Object.entries(initialData.prompts).forEach(([promptId, promptData]: [string, any]) => {
             if (typeof promptData === 'object' && promptData !== null && 'value' in promptData) {
-              promptValuesOnly[promptId] = promptData.value;  // ✅ SOLO el valor
+              // Ya está en formato completo, preservarlo
+              promptValuesOnly[promptId] = {
+                label: promptData.label || promptId,
+                value: promptData.value,
+                order: promptData.order ?? 999
+              };
             } else {
-              promptValuesOnly[promptId] = promptData;  // Ya es valor simple
+              // Valor simple, crear objeto completo
+              promptValuesOnly[promptId] = {
+                label: promptId,
+                value: promptData,
+                order: 999
+              };
             }
-            console.log(`  📌 Loaded prompt ${promptId} = ${promptValuesOnly[promptId]}`);
+            console.log(`  📌 Loaded prompt ${promptId}:`, promptValuesOnly[promptId]);
           });
         }
-        console.log('✅ Prompt values (SOLO VALORES guardados):', promptValuesOnly);
+        console.log('✅ Prompts guardados preservados con labels:', promptValuesOnly);
       }
       
       setPromptValues(promptValuesOnly);
