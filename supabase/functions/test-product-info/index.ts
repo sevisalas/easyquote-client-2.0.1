@@ -16,7 +16,7 @@ serve(async (req: Request): Promise<Response> => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { productName = "Booklets" } = await req.json();
+    const { productName, productId } = await req.json();
 
     // Get user credentials
     const authHeader = req.headers.get('Authorization');
@@ -70,27 +70,44 @@ serve(async (req: Request): Promise<Response> => {
 
     const { token: easyquoteToken } = await authResponse.json();
 
-    // Get products list
-    const productsResponse = await fetch('https://api.easyquote.cloud/api/v1/products?isActive=true', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${easyquoteToken}`,
-        'Accept': 'application/json'
+    let targetProductId = productId;
+    let targetProductName = productName;
+
+    // Si no se proporciona productId, buscar por nombre
+    if (!targetProductId && productName) {
+      const productsResponse = await fetch('https://api.easyquote.cloud/api/v1/products?isActive=true', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${easyquoteToken}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      const products = await productsResponse.json();
+      const product = products.find((p: any) => p.productName === productName);
+
+      if (!product) {
+        return new Response(JSON.stringify({ error: `Product ${productName} not found` }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
-    });
+      
+      targetProductId = product.productId;
+      targetProductName = product.productName;
+    }
 
-    const products = await productsResponse.json();
-    const product = products.find((p: any) => p.productName === productName);
-
-    if (!product) {
-      return new Response(JSON.stringify({ error: `Product ${productName} not found` }), {
-        status: 404,
+    if (!targetProductId) {
+      return new Response(JSON.stringify({ error: "productId or productName required" }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     // Get pricing info with default values (empty inputs)
-    const pricingResponse = await fetch(`https://api.easyquote.cloud/api/v1/pricing/${product.productId}`, {
+    console.log(`Testing product: ${targetProductName} (${targetProductId})`);
+    
+    const pricingResponse = await fetch(`https://api.easyquote.cloud/api/v1/pricing/${targetProductId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${easyquoteToken}`,
@@ -98,18 +115,70 @@ serve(async (req: Request): Promise<Response> => {
       }
     });
 
-    const pricingData = await pricingResponse.json();
+    console.log(`Pricing response status: ${pricingResponse.status}`);
+    
+    // Capturar el texto de respuesta para análisis
+    const responseText = await pricingResponse.text();
+    console.log(`Response text (first 500 chars): ${responseText.substring(0, 500)}`);
+
+    // Si el servidor devuelve error
+    if (!pricingResponse.ok) {
+      let errorData: any = {};
+      try {
+        errorData = JSON.parse(responseText);
+      } catch {
+        errorData = { rawResponse: responseText };
+      }
+
+      return new Response(JSON.stringify({
+        error: "EasyQuote API Error",
+        status: pricingResponse.status,
+        statusText: pricingResponse.statusText,
+        productId: targetProductId,
+        productName: targetProductName,
+        errorDetails: errorData,
+        diagnostics: {
+          message: "El producto tiene una configuración incorrecta en EasyQuote",
+          suggestions: [
+            "Verificar que todos los prompts tengan valores por defecto válidos",
+            "Revisar que las fórmulas de cálculo estén correctamente configuradas",
+            "Asegurarse de que no haya dependencias circulares en los prompts",
+            "Verificar que los tipos de datos de los prompts sean consistentes"
+          ]
+        }
+      }, null, 2), {
+        status: pricingResponse.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Parsear datos si todo está bien
+    let pricingData: any;
+    try {
+      pricingData = JSON.parse(responseText);
+    } catch (parseError) {
+      return new Response(JSON.stringify({
+        error: "Failed to parse EasyQuote response",
+        productId: targetProductId,
+        rawResponse: responseText.substring(0, 1000)
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Filter only Price type outputs
     const priceOutputs = pricingData.outputs?.filter((output: any) => output.type === "Price") || [];
 
     const result = {
-      productName: product.productName,
-      productId: product.productId,
+      productName: targetProductName,
+      productId: targetProductId,
       prompts: pricingData.prompts || [],
       priceOutputs: priceOutputs,
       finalPrice: priceOutputs.find((o: any) => o.name === "Total" || o.name.includes("Price"))?.value || null,
-      fullOutputs: pricingData.outputs // Para debug
+      fullOutputs: pricingData.outputs, // Para debug
+      promptsCount: pricingData.prompts?.length || 0,
+      outputsCount: pricingData.outputs?.length || 0
     };
 
     return new Response(JSON.stringify(result, null, 2), {

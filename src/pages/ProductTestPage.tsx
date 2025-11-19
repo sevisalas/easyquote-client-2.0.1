@@ -47,6 +47,8 @@ export default function ProductTestPage() {
   const [isLoadingProduct, setIsLoadingProduct] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [hasUserModifiedPrompts, setHasUserModifiedPrompts] = useState(false);
+  const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
+  const [isDiagnosing, setIsDiagnosing] = useState(false);
 
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
 
@@ -315,6 +317,33 @@ export default function ProductTestPage() {
     }));
   };
 
+  const handleDiagnoseProduct = async () => {
+    if (!productId) return;
+    
+    setIsDiagnosing(true);
+    setDiagnosticResult(null);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No hay sesión activa");
+
+      const { data, error } = await supabase.functions.invoke("test-product-info", {
+        body: { productId }
+      });
+
+      if (error) throw error;
+      setDiagnosticResult(data);
+    } catch (error: any) {
+      console.error("Error al diagnosticar producto:", error);
+      setDiagnosticResult({
+        error: "Error al ejecutar diagnóstico",
+        details: error.message
+      });
+    } finally {
+      setIsDiagnosing(false);
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
@@ -370,6 +399,66 @@ export default function ProductTestPage() {
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Cargando producto...</AlertTitle>
                     <AlertDescription>Obteniendo configuración del producto desde EasyQuote.</AlertDescription>
+                  </Alert>
+                )}
+
+                {productId && !isLoadingProduct && !productDetail && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error al cargar el producto</AlertTitle>
+                    <AlertDescription className="space-y-3">
+                      <p>El servidor de EasyQuote devolvió un error 500. Esto indica un problema de configuración en EasyQuote.</p>
+                      <Button 
+                        onClick={handleDiagnoseProduct} 
+                        disabled={isDiagnosing}
+                        size="sm"
+                        variant="outline"
+                      >
+                        {isDiagnosing ? "Diagnosticando..." : "🔍 Diagnosticar Producto"}
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {diagnosticResult && (
+                  <Alert className={diagnosticResult.error ? "border-destructive" : "border-blue-500"}>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Resultado del Diagnóstico</AlertTitle>
+                    <AlertDescription className="space-y-2">
+                      {diagnosticResult.error ? (
+                        <div className="space-y-2">
+                          <p className="font-semibold">Error: {diagnosticResult.error}</p>
+                          <p className="text-sm">Producto: {diagnosticResult.productName} (ID: {diagnosticResult.productId})</p>
+                          <p className="text-sm">Estado HTTP: {diagnosticResult.status}</p>
+                          
+                          {diagnosticResult.diagnostics && (
+                            <div className="mt-4 space-y-2">
+                              <p className="font-semibold text-sm">Posibles causas:</p>
+                              <ul className="list-disc list-inside text-sm space-y-1">
+                                {diagnosticResult.diagnostics.suggestions?.map((suggestion: string, idx: number) => (
+                                  <li key={idx}>{suggestion}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          
+                          {diagnosticResult.errorDetails && (
+                            <details className="mt-3">
+                              <summary className="cursor-pointer text-sm font-medium">Ver detalles técnicos</summary>
+                              <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto max-h-40">
+                                {JSON.stringify(diagnosticResult.errorDetails, null, 2)}
+                              </pre>
+                            </details>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-green-600 font-semibold">✅ El producto cargó correctamente</p>
+                          <p className="text-sm mt-2">Prompts: {diagnosticResult.promptsCount}</p>
+                          <p className="text-sm">Outputs: {diagnosticResult.outputsCount}</p>
+                        </div>
+                      )}
+                    </AlertDescription>
                   </Alert>
                 )}
 
