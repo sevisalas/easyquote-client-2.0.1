@@ -107,9 +107,6 @@ Deno.serve(async (req) => {
         console.log('Found customer with holded_id:', contactId, contactData.name);
       }
     }
-        console.log('Found contact from customer.holded_id:', contactId, contactData.name);
-      }
-    }
 
     if (!contactId) {
       console.error('Order data:', { 
