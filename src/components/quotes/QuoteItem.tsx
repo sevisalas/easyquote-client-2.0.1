@@ -302,7 +302,20 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Se ejecuta SOLO si hay productId pero NO hay prompts guardados
   const { data: masterData, isLoading: isMasterLoading } = useQuery({
     queryKey: ["easyquote-master-files", productId],
-    enabled: !!hasToken && !!productId && Object.keys(promptValues).length === 0 && !isInitializing,
+    enabled: (() => {
+      const hasPrompts = promptValues && Object.keys(promptValues).length > 0;
+      const shouldFetch = !!hasToken && !!productId && !hasPrompts && !isInitializing;
+      
+      console.log("🔍 Master-files query enabled check:", {
+        hasToken: !!hasToken,
+        hasProductId: !!productId,
+        hasPrompts,
+        isInitializing,
+        shouldFetch
+      });
+      
+      return shouldFetch;
+    })(),
     retry: false,
     queryFn: async () => {
       const token = sessionStorage.getItem("easyquote_token");
@@ -338,7 +351,17 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Inicializar prompts desde masterData cuando no hay prompts guardados
   useEffect(() => {
-    if (!masterData || Object.keys(promptValues).length > 0) return;
+    // Solo ejecutar si tenemos masterData Y no tenemos prompts cargados aún
+    if (!masterData) return;
+    
+    const currentPromptsCount = Object.keys(promptValues).length;
+    console.log("📥 Evaluando si cargar master files - currentPromptsCount:", currentPromptsCount);
+    
+    // Si ya tenemos prompts (más de 0), no sobrescribir
+    if (currentPromptsCount > 0) {
+      console.log("ℹ️ Ya hay prompts cargados, no sobrescribir");
+      return;
+    }
     
     console.log("📥 Inicializando prompts desde master files:", masterData);
     
@@ -357,9 +380,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       console.log("✅ Setting default prompts from master files:", defaultPrompts);
       setPromptValues(defaultPrompts);
       setDebouncedPromptValues(defaultPrompts);
-      setIsNewProduct(true); // Es un producto nuevo que se va a configurar
+      setIsNewProduct(false); // Marcar como NOT nuevo para que haga PATCH
+      setUserHasChangedCurrentProduct(false); // Usuario no ha cambiado nada aún
     }
-  }, [masterData, promptValues]);
+  }, [masterData]);
 
   // Query principal de pricing
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError } = useQuery({
