@@ -451,6 +451,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           }))
         });
         
+        // Bloquear sincronización durante inicialización
+        setIsInitializing(true);
+        
         // Inicializar promptValues con los valores por defecto del API
         const defaultValues: Record<string, any> = {};
         data.prompts.forEach((prompt: any) => {
@@ -468,6 +471,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           console.log("✅ Estableciendo valores iniciales en promptValues:", defaultValues);
           setPromptValues(defaultValues);
           setDebouncedPromptValues(defaultValues);
+          
+          // Desbloquear sincronización después de un tick para asegurar que React actualizó el estado
+          setTimeout(() => {
+            console.log("✅ Desbloqueando sincronización después de inicialización");
+            setIsInitializing(false);
+          }, 0);
         }
         
         setIsNewProduct(false);
