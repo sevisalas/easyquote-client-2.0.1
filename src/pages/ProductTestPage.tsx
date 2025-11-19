@@ -15,30 +15,30 @@ import { Link } from "react-router-dom";
 const fetchProducts = async () => {
   const token = sessionStorage.getItem("easyquote_token");
   if (!token) throw new Error("No hay token de EasyQuote disponible. Por favor, inicia sesión nuevamente.");
-  
+
   const { data, error } = await invokeEasyQuoteFunction("easyquote-products", {
     token,
-    includeInactive: true // Get all products to see plan compliance
+    includeInactive: true, // Get all products to see plan compliance
   });
-  
+
   if (error) throw error;
-  
-  const list = Array.isArray(data) ? data : (data?.items || data?.data || []);
+
+  const list = Array.isArray(data) ? data : data?.items || data?.data || [];
   return list.filter((product: any) => product.isActive === true);
 };
 
 const fetchExcelFiles = async () => {
   const token = sessionStorage.getItem("easyquote_token");
   if (!token) return [];
-  
+
   try {
-    const response = await fetch('https://api.easyquote.cloud/api/v1/excelfiles', {
+    const response = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     });
-    
+
     if (!response.ok) return [];
     const files = await response.json();
     return Array.isArray(files) ? files : [];
@@ -68,7 +68,7 @@ export default function ProductTestPage() {
   const [isLoadingProduct, setIsLoadingProduct] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [hasUserModifiedPrompts, setHasUserModifiedPrompts] = useState(false);
-  
+
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
 
   // Debounce prompt values
@@ -83,14 +83,14 @@ export default function ProductTestPage() {
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["easyquote-products"],
     queryFn: fetchProducts,
-    enabled: !!sessionStorage.getItem("easyquote_token")
+    enabled: !!sessionStorage.getItem("easyquote_token"),
   });
 
   // Fetch excel files to check plan compliance
   const { data: excelFiles = [] } = useQuery({
     queryKey: ["easyquote-excel-files"],
     queryFn: fetchExcelFiles,
-    enabled: !!sessionStorage.getItem("easyquote_token")
+    enabled: !!sessionStorage.getItem("easyquote_token"),
   });
 
   // Fetch product detail when productId changes
@@ -101,11 +101,11 @@ export default function ProductTestPage() {
         setIsLoadingProduct(false);
         return;
       }
-      
+
       setIsLoadingProduct(true);
       setIsInitialLoad(true);
       setHasUserModifiedPrompts(false);
-      
+
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) {
         setIsLoadingProduct(false);
@@ -120,7 +120,7 @@ export default function ProductTestPage() {
         }
 
         // Decode token to get subscriberId
-        const tokenParts = token.split('.');
+        const tokenParts = token.split(".");
         const payload = JSON.parse(atob(tokenParts[1]));
         const subscriberId = payload.SubscriberID || payload.subscriberId || payload.sub;
 
@@ -130,15 +130,15 @@ export default function ProductTestPage() {
           console.error("Excel file not found for product");
           // Fallback to pricing only
           const { data: pricingData, error: pricingError } = await invokeEasyQuoteFunction("easyquote-pricing", {
-            token, 
+            token,
             productId: productId,
-            inputs: []
+            inputs: [],
           });
-          
+
           if (pricingError) throw pricingError;
-          
+
           setProductDetail(pricingData);
-          
+
           const initialValues: Record<string, any> = {};
           (pricingData?.prompts || []).forEach((prompt: any) => {
             initialValues[prompt.id] = prompt.currentValue;
@@ -154,41 +154,41 @@ export default function ProductTestPage() {
           token,
           subscriberId,
           fileId: selectedProduct.excelfileId,
-          fileName: excelFile.filename || excelFile.fileName || excelFile.name
+          fileName: excelFile.filename || excelFile.fileName || excelFile.name,
         });
-        
+
         if (masterError) {
           console.error("Master files error:", masterError);
           throw masterError;
         }
-        
+
         // Then get initial pricing to get current values
         const { data: pricingData, error: pricingError } = await invokeEasyQuoteFunction("easyquote-pricing", {
-          token, 
+          token,
           productId: productId,
-          inputs: []
+          inputs: [],
         });
-        
+
         if (pricingError) throw pricingError;
-        
+
         // Combine: use ALL prompts from master-files, with current values from pricing
         const allPrompts = masterData?.prompts || [];
         const pricingPrompts = pricingData?.prompts || [];
-        
+
         // Map current values from pricing to master prompts
         const enrichedPrompts = allPrompts.map((masterPrompt: any) => {
           const pricingPrompt = pricingPrompts.find((p: any) => p.id === masterPrompt.id);
           return {
             ...masterPrompt,
-            currentValue: pricingPrompt?.currentValue ?? masterPrompt.currentValue
+            currentValue: pricingPrompt?.currentValue ?? masterPrompt.currentValue,
           };
         });
-        
+
         setProductDetail({
           ...pricingData,
-          prompts: enrichedPrompts
+          prompts: enrichedPrompts,
         });
-        
+
         // Reset prompt values with current values from pricing
         const currentValues: Record<string, any> = {};
         pricingPrompts.forEach((prompt: any) => {
@@ -198,10 +198,9 @@ export default function ProductTestPage() {
         });
         setPromptValues(currentValues);
         setDebouncedPromptValues(currentValues);
-        
+
         // Mark initial load as complete after a short delay to prevent immediate refetch
         setTimeout(() => setIsInitialLoad(false), 1000);
-        
       } catch (error) {
         console.error("Error fetching product detail:", error);
         setProductDetail(null);
@@ -216,7 +215,11 @@ export default function ProductTestPage() {
   }, [productId, products, excelFiles]);
 
   // Fetch pricing data ONLY when user modifies prompts (not on initial load)
-  const { data: pricing, isLoading: pricingLoading, refetch: refetchPricing } = useQuery({
+  const {
+    data: pricing,
+    isLoading: pricingLoading,
+    refetch: refetchPricing,
+  } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues],
     enabled: !!sessionStorage.getItem("easyquote_token") && !!productId && !isInitialLoad && hasUserModifiedPrompts,
     refetchOnWindowFocus: false,
@@ -224,31 +227,31 @@ export default function ProductTestPage() {
     queryFn: async () => {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
-      
+
       console.log("Making pricing call with inputs:", debouncedPromptValues);
-      
+
       // Always prepare inputs, even if empty
       const norm: Record<string, any> = {};
       Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
         if (v === "" || v === undefined || v === null) return;
-        
+
         // Find the prompt to check its type
         const prompt = productDetail?.prompts?.find((p: any) => p.id === k);
         const promptType = prompt?.promptType;
-        
+
         if (typeof v === "string") {
           const trimmed = v.trim();
-          
+
           // Skip empty strings
           if (trimmed === "") return;
-          
+
           // Skip strings that are only special characters without meaningful content
           // (e.g., "," or "." or "-" by themselves)
           if (trimmed.length < 3 && /^[^\w\s]+$/.test(trimmed)) {
             console.warn(`⚠️ Skipping invalid value for prompt ${k}:`, v);
             return;
           }
-          
+
           const isHex = /^#[0-9a-f]{6}$/i.test(trimmed);
           if (isHex) {
             // Remove the # for color values as API expects without #
@@ -278,36 +281,36 @@ export default function ProductTestPage() {
 
       // Convert to array format for API
       const inputsArray = Object.entries(norm).map(([id, value]) => ({ id, value }));
-      
+
       console.log("Sending inputs to API:", inputsArray);
 
       const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
-        token, 
-        productId, 
-        inputs: inputsArray
+        token,
+        productId,
+        inputs: inputsArray,
       });
       if (error) throw error;
-      
+
       console.log("Pricing data received:", data);
       console.log("Pricing outputValues:", data?.outputValues);
       console.log("Pricing price field:", data?.price);
       console.log("All pricing fields:", Object.keys(data || {}));
-      
+
       // Update product detail with new prompts structure (for updated options)
       if (data?.prompts) {
-        setProductDetail(prevDetail => ({
+        setProductDetail((prevDetail) => ({
           ...prevDetail,
-          prompts: data.prompts
+          prompts: data.prompts,
         }));
       }
-      
+
       return data;
     },
   });
 
   // Auto-select product if productId is in URL params
   useEffect(() => {
-    const productIdFromUrl = searchParams.get('productId');
+    const productIdFromUrl = searchParams.get("productId");
     if (productIdFromUrl && products.length > 0) {
       const productExists = products.find((p: any) => p.id === productIdFromUrl);
       if (productExists) {
@@ -319,21 +322,21 @@ export default function ProductTestPage() {
   // Derive outputs from pricing data - based on real API response structure
   const outputs = useMemo(() => {
     if (!pricing) return [];
-    
+
     // Check different possible structures for outputs
     const outputValues = pricing.outputValues || pricing.outputs || pricing.results || [];
     console.log("Processing outputs:", outputValues);
-    
+
     return Array.isArray(outputValues) ? outputValues : [];
   }, [pricing]);
 
   // Show ALL outputs exactly as they come from the API - no filtering, no modifications
   const allOutputs = useMemo(() => {
     if (!pricing) return [];
-    
+
     const outputValues = pricing.outputValues || pricing.outputs || pricing.results || [];
     console.log("Showing ALL raw outputs:", outputValues);
-    
+
     return Array.isArray(outputValues) ? outputValues : [];
   }, [pricing]);
 
@@ -341,7 +344,7 @@ export default function ProductTestPage() {
   const textOutputs = useMemo(() => {
     return allOutputs.filter((o: any) => {
       const value = String(o?.value ?? "");
-      return !(/^https?:\/\//i.test(value));
+      return !/^https?:\/\//i.test(value);
     });
   }, [allOutputs]);
 
@@ -363,9 +366,7 @@ export default function ProductTestPage() {
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Acceso denegado</AlertTitle>
-          <AlertDescription>
-            Solo los administradores pueden acceder a esta página de prueba.
-          </AlertDescription>
+          <AlertDescription>Solo los administradores pueden acceder a esta página de prueba.</AlertDescription>
         </Alert>
       </div>
     );
@@ -373,17 +374,17 @@ export default function ProductTestPage() {
 
   const formatCurrency = (value: number) => {
     if (isNaN(value)) return "0,00 €";
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR'
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency: "EUR",
     }).format(value);
   };
 
   const handlePromptChange = (id: string, value: any) => {
     setHasUserModifiedPrompts(true);
-    setPromptValues(prev => ({
+    setPromptValues((prev) => ({
       ...prev,
-      [id]: value
+      [id]: value,
     }));
   };
 
@@ -401,7 +402,7 @@ export default function ProductTestPage() {
             </Button>
           </div>
           <h1 className="text-3xl font-bold">
-            {selectedProduct ? getProductLabel(selectedProduct) : "Configurador de Producto"}
+            {selectedProduct ? getProductLabel(selectedProduct) : "Pruba de productos"}
           </h1>
         </div>
       </div>
@@ -442,9 +443,9 @@ export default function ProductTestPage() {
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Archivo no compatible con el plan</AlertTitle>
                     <AlertDescription>
-                      El archivo Excel "{selectedExcelFile?.fileName}" no es compatible con tu plan de EasyQuote.
-                      Esto causa errores al obtener precios. Verifica en EasyQuote qué características del archivo
-                      exceden los límites de tu plan (filas, columnas, complejidad de fórmulas, etc.).
+                      El archivo Excel "{selectedExcelFile?.fileName}" no es compatible con tu plan de EasyQuote. Esto
+                      causa errores al obtener precios. Verifica en EasyQuote qué características del archivo exceden
+                      los límites de tu plan (filas, columnas, complejidad de fórmulas, etc.).
                     </AlertDescription>
                   </Alert>
                 )}
@@ -454,21 +455,15 @@ export default function ProductTestPage() {
                   <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Cargando producto...</AlertTitle>
-                    <AlertDescription>
-                      Obteniendo configuración del producto desde EasyQuote.
-                    </AlertDescription>
+                    <AlertDescription>Obteniendo configuración del producto desde EasyQuote.</AlertDescription>
                   </Alert>
                 )}
-                
+
                 {productId && !isLoadingProduct && productDetail && (
                   <div className="space-y-4">
                     <div className="border-t pt-4">
                       <h3 className="font-medium mb-4">Configuración del Producto</h3>
-                      <PromptsForm
-                        product={productDetail}
-                        values={promptValues}
-                        onChange={handlePromptChange}
-                      />
+                      <PromptsForm product={productDetail} values={promptValues} onChange={handlePromptChange} />
                     </div>
                   </div>
                 )}
@@ -495,16 +490,16 @@ export default function ProductTestPage() {
                       ))}
                     </div>
                   )}
-                  
+
                   {/* Image outputs at the end */}
                   {imageOutputs.length > 0 && (
                     <div className="space-y-3 border-t pt-4">
                       {imageOutputs.map((output, index) => (
                         <div key={`${output.value}-${index}`} className="space-y-2">
                           <div className="text-sm font-medium">{output.label || output.name}</div>
-                          <img 
+                          <img
                             key={output.value}
-                            src={output.value} 
+                            src={output.value}
                             alt={output.label || output.name || `Imagen ${index + 1}`}
                             className="w-full max-w-md rounded border"
                           />
