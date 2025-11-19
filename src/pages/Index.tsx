@@ -346,10 +346,10 @@ const Index = () => {
             </Card>
           )}
         </div>
-        
+
         {/* Version Info */}
         <div className="mt-8 flex justify-end">
-          <p className="text-xs text-muted-foreground">EasyQuote ver 1.0.2</p>
+          <p className="text-xs text-muted-foreground">EasyQuote ver 1.1.3</p>
         </div>
       </div>
     </div>
