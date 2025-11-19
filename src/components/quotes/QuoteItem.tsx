@@ -903,12 +903,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           order: promptData.order ?? 999
         });
       } else {
-        // Valor simple (fallback)
-        const value = promptData;
-        if (!value || value === '' || value === null) return;
-        if (typeof value === 'object') return;
-        if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('#'))) return;
-        
+        // Valor simple (fallback) - guardar sin filtrar
         promptsArray.push({
           id,
           label: id,
