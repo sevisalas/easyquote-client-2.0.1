@@ -81,6 +81,7 @@ export default function ProductTestPage() {
       setIsLoadingProduct(true);
       setIsInitialLoad(true);
       setHasUserModifiedPrompts(false);
+      setDiagnosticResult(null);
 
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) {
