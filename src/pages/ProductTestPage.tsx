@@ -27,27 +27,6 @@ const fetchProducts = async () => {
   return list.filter((product: any) => product.isActive === true);
 };
 
-const fetchExcelFiles = async () => {
-  const token = sessionStorage.getItem("easyquote_token");
-  if (!token) return [];
-
-  try {
-    const response = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) return [];
-    const files = await response.json();
-    return Array.isArray(files) ? files : [];
-  } catch (error) {
-    console.error("Error fetching excel files:", error);
-    return [];
-  }
-};
-
 const getProductLabel = (p: any) =>
   p?.name ??
   p?.title ??
@@ -86,13 +65,6 @@ export default function ProductTestPage() {
     enabled: !!sessionStorage.getItem("easyquote_token"),
   });
 
-  // Fetch excel files to check plan compliance
-  const { data: excelFiles = [] } = useQuery({
-    queryKey: ["easyquote-excel-files"],
-    queryFn: fetchExcelFiles,
-    enabled: !!sessionStorage.getItem("easyquote_token"),
-  });
-
   // Fetch product detail when productId changes
   useEffect(() => {
     const fetchProductDetail = async () => {
@@ -117,7 +89,7 @@ export default function ProductTestPage() {
       console.log("✅ EasyQuote token found");
 
       try {
-        // Get product details to extract excelfileId
+        // Get product details
         const selectedProduct = products.find((p: any) => p.id === productId);
         if (!selectedProduct) {
           console.error("🔴 Product not found in products list:", productId);
@@ -125,60 +97,7 @@ export default function ProductTestPage() {
         }
         console.log("✅ Selected product:", selectedProduct.productName || selectedProduct.name);
 
-        // Decode token to get subscriberId
-        const tokenParts = token.split(".");
-        const payload = JSON.parse(atob(tokenParts[1]));
-        const subscriberId = payload.SubscriberID || payload.subscriberId || payload.sub;
-        console.log("✅ SubscriberID:", subscriberId);
-
-        // Find the Excel file for this product
-        const excelFile = excelFiles.find((f: any) => f.id === selectedProduct.excelfileId);
-        if (!excelFile) {
-          console.error("🔴 Excel file not found for product, using pricing fallback");
-          // Fallback to pricing only
-          const { data: pricingData, error: pricingError } = await invokeEasyQuoteFunction("easyquote-pricing", {
-            token,
-            productId: productId,
-            inputs: [],
-          });
-
-          if (pricingError) {
-            console.error("🔴 Pricing error:", pricingError);
-            throw pricingError;
-          }
-          console.log("✅ Pricing data (fallback):", pricingData);
-          console.log("📋 Prompts from pricing:", pricingData?.prompts?.length || 0);
-
-          setProductDetail(pricingData);
-
-          const initialValues: Record<string, any> = {};
-          (pricingData?.prompts || []).forEach((prompt: any) => {
-            initialValues[prompt.id] = prompt.currentValue;
-          });
-          setPromptValues(initialValues);
-          setDebouncedPromptValues(initialValues);
-          setIsInitialLoad(false);
-          return;
-        }
-        console.log("✅ Excel file found:", excelFile.filename || excelFile.fileName);
-
-        // First, get ALL prompts from master-files
-        console.log("📡 Calling easyquote-master-files...");
-        const { data: masterData, error: masterError } = await invokeEasyQuoteFunction("easyquote-master-files", {
-          token,
-          subscriberId,
-          fileId: selectedProduct.excelfileId,
-          fileName: excelFile.filename || excelFile.fileName || excelFile.name,
-        });
-
-        if (masterError) {
-          console.error("🔴 Master files error:", masterError);
-          throw masterError;
-        }
-        console.log("✅ Master data received:", masterData);
-        console.log("📋 Prompts from master-files:", masterData?.prompts?.length || 0);
-
-        // Then get initial pricing to get current values
+        // Get pricing data (which includes prompts)
         console.log("📡 Calling easyquote-pricing...");
         const { data: pricingData, error: pricingError } = await invokeEasyQuoteFunction("easyquote-pricing", {
           token,
@@ -193,33 +112,11 @@ export default function ProductTestPage() {
         console.log("✅ Pricing data received:", pricingData);
         console.log("📋 Prompts from pricing:", pricingData?.prompts?.length || 0);
 
-        // Combine: use ALL prompts from master-files, with current values from pricing
-        const masterPrompts = masterData?.prompts || [];
-        const pricingPrompts = pricingData?.prompts || [];
-        console.log("🔄 Combining prompts - Master:", masterPrompts.length, "Pricing:", pricingPrompts.length);
-
-        // Si master-files no devuelve prompts, usar los de pricing directamente como fallback
-        const enrichedPrompts = masterPrompts.length > 0
-          ? masterPrompts.map((masterPrompt: any) => {
-              const pricingPrompt = pricingPrompts.find((p: any) => p.id === masterPrompt.id);
-              return {
-                ...masterPrompt,
-                currentValue: pricingPrompt?.currentValue ?? masterPrompt.currentValue,
-              };
-            })
-          : pricingPrompts;
-        console.log("✅ Enriched prompts created:", enrichedPrompts.length);
-
-        const finalProductDetail = {
-          ...pricingData,
-          prompts: enrichedPrompts,
-        };
-        console.log("✅ Final product detail:", finalProductDetail);
-        setProductDetail(finalProductDetail);
+        setProductDetail(pricingData);
 
         // Reset prompt values with current values from pricing
         const currentValues: Record<string, any> = {};
-        pricingPrompts.forEach((prompt: any) => {
+        (pricingData?.prompts || []).forEach((prompt: any) => {
           if (prompt.currentValue !== undefined && prompt.currentValue !== null) {
             currentValues[prompt.id] = prompt.currentValue;
           }
@@ -244,7 +141,7 @@ export default function ProductTestPage() {
     };
 
     fetchProductDetail();
-  }, [productId, products, excelFiles]);
+  }, [productId, products]);
 
   // Fetch pricing data ONLY when user modifies prompts (not on initial load)
   const {
@@ -388,8 +285,6 @@ export default function ProductTestPage() {
   }, [allOutputs]);
 
   const selectedProduct = products.find((p: any) => p.id === productId);
-  const selectedExcelFile = excelFiles.find((f: any) => f.id === selectedProduct?.excelfileId);
-  const isPlanCompliant = selectedExcelFile?.isPlanCompliant !== false;
 
   // Check permissions - AFTER all hooks are called
   if (!isSuperAdmin && !isOrgAdmin) {
@@ -468,19 +363,6 @@ export default function ProductTestPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Plan Compliance Warning */}
-                {selectedProduct && !isPlanCompliant && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Archivo no compatible con el plan</AlertTitle>
-                    <AlertDescription>
-                      El archivo Excel "{selectedExcelFile?.fileName}" no es compatible con tu plan de EasyQuote. Esto
-                      causa errores al obtener precios. Verifica en EasyQuote qué características del archivo exceden
-                      los límites de tu plan (filas, columnas, complejidad de fórmulas, etc.).
-                    </AlertDescription>
-                  </Alert>
-                )}
 
                 {/* Product Configuration */}
                 {productId && isLoadingProduct && (
