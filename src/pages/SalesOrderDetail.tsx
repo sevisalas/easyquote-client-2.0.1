@@ -551,49 +551,58 @@ const SalesOrderDetail = () => {
 
                           {/* Prompts */}
                           {itemPrompts.length > 0 && (() => {
-                            // Build values map for visibility evaluation
-                            const promptValues: Record<string, any> = {};
-                            itemPrompts.forEach((p: any) => {
-                              if (p.id) promptValues[p.id] = p.value;
-                            });
-
-                            // Filter visible prompts
-                            const visiblePrompts = itemPrompts.filter((prompt: any) => {
-                              const label = prompt.label || '';
-                              let value = prompt.value || '';
-                              
-                              // Filter URLs and images
-                              if (!value || 
-                                  typeof value === 'object' || 
-                                  (typeof value === 'string' && (
-                                    value.startsWith('http') || 
-                                    value.startsWith('#')
-                                  ))) {
-                                return false;
-                              }
-
-                              // Apply visibility rules
-                              const promptDef: PromptDef = {
-                                id: prompt.id || '',
-                                label: label,
-                                hiddenWhen: prompt.hiddenWhen,
-                                visibility: prompt.visibility
-                              };
-
-                              return isVisiblePrompt(promptDef, promptValues);
-                            });
+                            // Mostrar TODOS los prompts sin ningún filtro
+                            const visiblePrompts = itemPrompts
+                              .sort((a: any, b: any) => (a.order ?? 999) - (b.order ?? 999));
 
                             if (visiblePrompts.length === 0) return null;
 
                             return (
                               <div className="space-y-1 pl-2 border-l-2 border-muted">
                                 <p className="text-xs font-semibold text-muted-foreground uppercase">Detalles</p>
-                                {visiblePrompts.map((prompt: any, idx: number) => (
-                                  <div key={idx} className="text-sm">
-                                    <span className="font-medium text-muted-foreground">{prompt.label}:</span>{' '}
-                                    <span className="text-foreground">{prompt.value}</span>
-                                  </div>
-                                ))}
+                                {visiblePrompts.map((prompt: any, idx: number) => {
+                                  const label = prompt.label || prompt.id || 'Desconocido';
+                                  const value = prompt.value ?? '';
+                                  const valueStr = String(value);
+                                  
+                                  // Handle image URLs
+                                  if (valueStr && valueStr.startsWith('http')) {
+                                    return (
+                                      <div key={idx} className="text-sm">
+                                        <span className="font-medium text-muted-foreground">{label}:</span>
+                                        <img 
+                                          src={valueStr} 
+                                          alt={label}
+                                          className="mt-1 w-32 h-32 object-contain rounded border"
+                                        />
+                                      </div>
+                                    );
+                                  }
+                                  
+                                  // Handle hex colors
+                                  if (valueStr && valueStr.startsWith('#')) {
+                                    return (
+                                      <div key={idx} className="text-sm flex items-center gap-2">
+                                        <span className="font-medium text-muted-foreground">{label}:</span>
+                                        <div className="flex items-center gap-2">
+                                          <div 
+                                            className="w-6 h-6 rounded border shadow-sm"
+                                            style={{ backgroundColor: valueStr }}
+                                          />
+                                          <span className="text-foreground">{valueStr}</span>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                  
+                                  // Handle all other values
+                                  return (
+                                    <div key={idx} className="text-sm">
+                                      <span className="font-medium text-muted-foreground">{label}:</span>{' '}
+                                      <span className="text-foreground">{valueStr || '(vacío)'}</span>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             );
                           })()}
