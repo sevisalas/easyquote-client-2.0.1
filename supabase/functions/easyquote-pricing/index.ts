@@ -42,6 +42,44 @@ serve(async (req: Request): Promise<Response> => {
       inputsList = Object.entries(inputs).map(([id, value]) => ({ id, value }));
     }
     
+    // Remove duplicates: prefer UUID IDs over numeric IDs
+    // This handles cases where old prompts (numeric IDs) are mixed with new prompts (UUID IDs)
+    const seenPromptSequences = new Map<number, any>();
+    const filteredInputsList: any[] = [];
+    
+    for (const input of inputsList) {
+      const id = String(input.id);
+      
+      // Determine if this is a numeric ID or UUID
+      const isNumericId = /^\d+$/.test(id);
+      const isUuidId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      
+      if (isNumericId) {
+        // Store numeric ID prompts temporarily
+        const sequence = parseInt(id, 10);
+        if (!seenPromptSequences.has(sequence)) {
+          seenPromptSequences.set(sequence, input);
+        }
+      } else if (isUuidId) {
+        // UUID IDs always take precedence - add them directly and remove any numeric ID at same position
+        // We'll add all UUID prompts to the final list
+        filteredInputsList.push(input);
+      } else {
+        // Unknown ID format, keep it
+        filteredInputsList.push(input);
+      }
+    }
+    
+    // Only add numeric ID prompts if no UUID prompts were found (backward compatibility)
+    if (filteredInputsList.length === 0 && seenPromptSequences.size > 0) {
+      filteredInputsList.push(...Array.from(seenPromptSequences.values()));
+      console.log("easyquote-pricing: Using numeric IDs (legacy mode)");
+    } else if (filteredInputsList.length > 0) {
+      console.log("easyquote-pricing: Using UUID IDs, discarded", seenPromptSequences.size, "numeric IDs");
+    }
+    
+    inputsList = filteredInputsList;
+    
     // Filter out invalid values that could cause EasyQuote API to crash
     inputsList = inputsList.filter(input => {
       const value = input.value;
@@ -102,16 +140,8 @@ serve(async (req: Request): Promise<Response> => {
           });
           
           if (!res.ok && res.status >= 400 && res.status < 500) {
-            console.log("easyquote-pricing: POST returned client error, trying GET", { status: res.status });
-            const query = `?inputs=${encodeURIComponent(JSON.stringify(inputs))}`;
-            const url = `${baseUrl}${query}`;
-            res = await fetch(url, {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                Accept: "application/json",
-              },
-            });
+            console.log("easyquote-pricing: POST returned client error, status:", res.status);
+            // Don't try GET with query params as it returns 404 HTML from the server
           }
         } catch (e2) {
           console.error("easyquote-pricing: POST attempt failed", e2);
