@@ -122,6 +122,8 @@ export default function SalesOrderEdit() {
     const updatedItems = [...items];
     updatedItems[itemIndex] = {
       ...updatedItems[itemIndex],
+      product_id: snapshot.productId || updatedItems[itemIndex].product_id,
+      product_name: snapshot.itemDescription || updatedItems[itemIndex].product_name,
       prompts: snapshot.prompts,
       outputs: snapshot.outputs,
       multi: snapshot.multi,
@@ -135,10 +137,18 @@ export default function SalesOrderEdit() {
     const item = items.find((i) => i.id === itemId);
     if (!item || !id) return;
 
+    // Si no tiene product_id, no se puede guardar
+    if (!item.product_id) {
+      toast.error("Debe seleccionar un producto");
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from("sales_order_items")
         .update({
+          product_id: item.product_id,
+          product_name: item.product_name || item.product_id,
           prompts: item.prompts,
           outputs: item.outputs,
           multi: item.multi,
