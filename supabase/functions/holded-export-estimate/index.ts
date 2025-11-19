@@ -147,127 +147,16 @@ Deno.serve(async (req) => {
     }
 
     // Get unique product IDs and fetch their definitions
-    const productDefinitions: Record<string, any> = {};
-    if (easyquoteToken) {
-      const uniqueProductIds = [...new Set(quoteItems.map((item: any) => item.product_id).filter(Boolean))];
-      
-      for (const productId of uniqueProductIds) {
-        try {
-          // Get the product to find its excelFileId
-          const { data: productData } = await supabase
-            .from('products')
-            .select('excelfileId, name')
-            .eq('product_id', productId)
-            .single();
+    // Ya no cargamos product definitions de master-files
+    // La visibilidad de prompts se maneja en el cliente antes de guardar
 
-          if (productData?.excelfileId) {
-            // Get Excel file info
-            const { data: excelFile } = await supabase
-              .from('excel_files')
-              .select('file_id, filename')
-              .eq('file_id', productData.excelfileId)
-              .single();
-
-            if (excelFile) {
-              // Decode token to get subscriberId
-              const tokenParts = easyquoteToken.split('.');
-              if (tokenParts.length === 3) {
-                const payload = JSON.parse(atob(tokenParts[1]));
-                const subscriberId = payload.SubscriberID;
-
-                // Fetch product definition
-                const { data: masterFileData, error: masterFileError } = await supabase.functions.invoke('easyquote-master-files', {
-                  body: {
-                    token: easyquoteToken,
-                    subscriberId,
-                    fileId: excelFile.file_id,
-                    fileName: excelFile.filename,
-                    productId
-                  }
-                });
-
-                if (!masterFileError && masterFileData?.product) {
-                  productDefinitions[productId] = masterFileData.product;
-                  console.log(`✅ Loaded definition for product ${productId}`);
-                }
-              }
-            }
-          }
-        } catch (error) {
-          console.warn(`Failed to load definition for product ${productId}:`, error);
-        }
-      }
-    }
-
-    // Helper functions for prompt visibility (replicated from src/utils/promptVisibility.ts)
-    const matchValue = (current: any, expected: any): boolean => {
-      if (Array.isArray(expected)) return expected.map(String).includes(String(current));
-      if (typeof expected === "boolean") return Boolean(current) === expected;
-      return String(current) === String(expected);
-    };
-
-    const evalCondition = (cond: any, values: Record<string, any>): boolean => {
-      if (!cond) return true;
-      // Array => AND of items
-      if (Array.isArray(cond)) return cond.every((c: any) => evalCondition(c, values));
-      if (typeof cond === "string") {
-        // very simple format: "field=value" (AND by &&)
-        const parts = cond.split(/\s*&&\s*/);
-        return parts.every((p) => {
-          const [k, v] = p.split("=");
-          if (!k) return true;
-          return matchValue(values[k.trim()], (v ?? "").trim());
-        });
-      }
-      if (typeof cond === "object") {
-        // Support anyOf / allOf
-        if (Array.isArray(cond.allOf)) return cond.allOf.every((c: any) => evalCondition(c, values));
-        if (Array.isArray(cond.anyOf)) return cond.anyOf.some((c: any) => evalCondition(c, values));
-        // { field, id, key, equals/value }
-        const field = cond.field ?? cond.id ?? cond.key;
-        if (field) {
-          const expected = cond.equals ?? cond.value ?? cond.is;
-          return matchValue(values[field], expected);
-        }
-        // Mapping object: { size: "L", color: "red" }
-        return Object.entries(cond).every(([k, v]) => matchValue(values[k], v));
-      }
-      return true;
-    };
+    // Los prompts que vienen desde la BD ya están filtrados por visibilidad en el cliente
 
     const isPromptVisible = (promptId: string, allPrompts: Record<string, any>, productId: string): boolean => {
-      const productDef = productDefinitions[productId];
-      if (!productDef || !productDef.prompts) {
-        // If no product definition, include all prompts with labels (fallback behavior)
-        const promptData = allPrompts[promptId];
-        return promptData && promptData.label && promptData.label.trim() !== '';
-      }
-
-      // Find prompt definition
-      const promptDef = productDef.prompts.find((p: any) => p.id === promptId);
-      if (!promptDef) {
-        // If not found in definition, include it if it has a label
-        const promptData = allPrompts[promptId];
-        return promptData && promptData.label && promptData.label.trim() !== '';
-      }
-      
-      // Build values object for evaluation
-      const values: Record<string, any> = {};
-      Object.entries(allPrompts).forEach(([id, data]: [string, any]) => {
-        values[id] = data.value;
-      });
-      
-      // Check hiddenWhen condition
-      if (promptDef.hiddenWhen && evalCondition(promptDef.hiddenWhen, values)) {
-        return false; // Hidden when condition is met
-      }
-      
-      // Check visibility condition
-      if (promptDef.visibility && !evalCondition(promptDef.visibility, values)) {
-        return false; // Not visible because condition not met
-      }
-      
-      return true;
+      // Todos los prompts que vienen desde la BD ya están filtrados por visibilidad
+      // Solo incluimos prompts que tienen label (prompts completos, no solo valores)
+      const promptData = allPrompts[promptId];
+      return Boolean(promptData?.label);
     };
 
     // Build complete payload with all quote data

@@ -221,21 +221,14 @@ export default function ExcelFiles() {
     queryClient.invalidateQueries({ queryKey: ["excel-files-meta"] });
   };
 
-  // Generate public URL for master files
-  const generatePublicUrl = (fileId: string, fileName: string) => {
-    if (!subscriberId) return null;
-    return `https://sheets.easyquote.cloud/${subscriberId}/${fileId}/${encodeURIComponent(fileName)}`;
-  };
-
   // Combine API files with Supabase metadata and filter by active status
   const filesWithMeta = files.map(file => {
     const meta = excelFilesMeta?.find(m => m.file_id === file.id);
     const isMaster = meta?.is_master || false;
-    const fileUrl = isMaster ? generatePublicUrl(file.id, file.fileName) : null;
     return {
       ...file,
       isMaster,
-      fileUrl
+      fileUrl: null // Los archivos maestros ya no existen
     };
   });
 
@@ -751,103 +744,43 @@ export default function ExcelFiles() {
       console.log('📥 Descargando desde:', downloadUrl);
 
       // Try direct download first (works when in same domain/no CORS)
-      try {
-        const response = await fetch(downloadUrl, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
+      const response = await fetch(downloadUrl, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        
+        if (blob.size === 0) {
+          throw new Error("El archivo está vacío");
+        }
+
+        console.log('✅ Descarga directa exitosa, tamaño:', blob.size);
+
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(link);
+        }, 100);
+
+        toast({
+          title: "Archivo descargado",
+          description: `${fileName} descargado correctamente`,
         });
-
-        if (response.ok) {
-          const blob = await response.blob();
-          
-          if (blob.size === 0) {
-            throw new Error("El archivo está vacío");
-          }
-
-          console.log('✅ Descarga directa exitosa, tamaño:', blob.size);
-
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = fileName;
-          document.body.appendChild(link);
-          link.click();
-          
-          setTimeout(() => {
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(link);
-          }, 100);
-
-          toast({
-            title: "Archivo descargado",
-            description: `${fileName} descargado correctamente`,
-          });
-          return;
-        }
-      } catch (directError) {
-        console.log('⚠️ Descarga directa falló (posiblemente CORS), usando proxy...');
+        return;
       }
 
-      // Fallback: use edge function as proxy for CORS
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error("No hay sesión activa");
-      }
-
-      const response = await fetch(
-        `https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/easyquote-master-files`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhyand2dmVteGZ6bWVvZ2FwdHp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3NTcwNTAsImV4cCI6MjA3MzMzMzA1MH0.A55mKrk9fwRXiK_en0eEh-0wK9tefWjKuLMAqxbufnE'
-          },
-          body: JSON.stringify({
-            token,
-            subscriberId,
-            fileId,
-            fileName
-          })
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
-        throw new Error(`Error ${response.status}`);
-      }
-
-      const arrayBuffer = await response.arrayBuffer();
-
-      if (arrayBuffer.byteLength === 0) {
-        throw new Error("El archivo está vacío");
-      }
-
-      console.log('✅ Descarga via proxy exitosa, tamaño:', arrayBuffer.byteLength);
-
-      const blob = new Blob([arrayBuffer], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      });
-
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(link);
-      }, 100);
-
-      toast({
-        title: "Archivo descargado",
-        description: `${fileName} descargado correctamente`,
-      });
+      // Si la respuesta no es OK, mostrar error
+      throw new Error("No se pudo descargar el archivo. Intenta nuevamente.");
     } catch (error) {
       console.error("❌ Error de descarga:", error);
       toast({
