@@ -110,27 +110,59 @@ serve(async (req) => {
       );
     }
 
-    // Insert or update contact in customers table with source='reprotel'
-    const { data, error } = await supabase
+    // Check if customer already exists
+    const { data: existingCustomer } = await supabase
       .from('customers')
-      .upsert({
-        integration_id: reprotelId.toString(),
-        organization_id: organizationId,
-        user_id: org.api_user_id,
-        name: name,
-        email: email || null,
-        phone: phone || null,
-        address: address || null,
-        source: 'reprotel'
-      }, {
-        onConflict: 'integration_id,organization_id',
-        ignoreDuplicates: false
-      })
-      .select()
-      .single();
+      .select('id')
+      .eq('integration_id', reprotelId.toString())
+      .eq('organization_id', organizationId)
+      .maybeSingle();
+
+    let data;
+    let error;
+
+    if (existingCustomer) {
+      // Update existing customer
+      const result = await supabase
+        .from('customers')
+        .update({
+          name: name,
+          email: email || null,
+          phone: phone || null,
+          address: address || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingCustomer.id)
+        .select()
+        .single();
+      
+      data = result.data;
+      error = result.error;
+      console.log('Customer updated:', existingCustomer.id);
+    } else {
+      // Insert new customer
+      const result = await supabase
+        .from('customers')
+        .insert({
+          integration_id: reprotelId.toString(),
+          organization_id: organizationId,
+          user_id: org.api_user_id,
+          name: name,
+          email: email || null,
+          phone: phone || null,
+          address: address || null,
+          source: 'reprotel'
+        })
+        .select()
+        .single();
+      
+      data = result.data;
+      error = result.error;
+      console.log('New customer created');
+    }
 
     if (error) {
-      console.error('Error upserting customer:', error);
+      console.error('Error creating/updating customer:', error);
       return new Response(
         JSON.stringify({ 
           error: 'Failed to create/update customer',
