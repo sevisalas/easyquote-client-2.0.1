@@ -253,24 +253,26 @@ export default function ProductTestPage() {
 
   // Derive outputs from pricing data - based on real API response structure
   const outputs = useMemo(() => {
-    if (!pricing) return [];
+    const source = pricing || productDetail;
+    if (!source) return [];
 
     // Check different possible structures for outputs
-    const outputValues = pricing.outputValues || pricing.outputs || pricing.results || [];
+    const outputValues = source.outputValues || source.outputs || source.results || [];
     console.log("Processing outputs:", outputValues);
 
     return Array.isArray(outputValues) ? outputValues : [];
-  }, [pricing]);
+  }, [pricing, productDetail]);
 
   // Show ALL outputs exactly as they come from the API - no filtering, no modifications
   const allOutputs = useMemo(() => {
-    if (!pricing) return [];
+    const source = pricing || productDetail;
+    if (!source) return [];
 
-    const outputValues = pricing.outputValues || pricing.outputs || pricing.results || [];
+    const outputValues = source.outputValues || source.outputs || source.results || [];
     console.log("Showing ALL raw outputs:", outputValues);
 
     return Array.isArray(outputValues) ? outputValues : [];
-  }, [pricing]);
+  }, [pricing, productDetail]);
 
   // Separate text outputs from image outputs
   const textOutputs = useMemo(() => {
