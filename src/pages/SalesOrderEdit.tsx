@@ -90,23 +90,12 @@ export default function SalesOrderEdit() {
 
     setSaving(true);
     try {
-      // Separar customer_id y holded_contact_id
-      let customerId = null;
-      let holdedContactId = null;
-
-      if (formData.customer_id) {
-        if (formData.customer_id.startsWith('holded:')) {
-          holdedContactId = formData.customer_id.replace('holded:', '');
-        } else {
-          customerId = formData.customer_id;
-        }
-      }
-
+      // El customer_id ya viene correctamente desde CustomerSelector
+      // (apunta directamente a la tabla customers que incluye clientes locales y de Holded)
       const { data, error } = await supabase
         .from("sales_orders")
         .update({
-          customer_id: customerId,
-          holded_contact_id: holdedContactId,
+          customer_id: formData.customer_id || null,
           title: formData.title || null,
           description: formData.description || null,
           notes: formData.notes || null,

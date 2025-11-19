@@ -150,7 +150,7 @@ const SalesOrderDetail = () => {
     if (!id || !order) return;
     
     // Validar que el pedido tenga un cliente asignado
-    if (!order.customer_id && !order.holded_contact_id) {
+    if (!order.customer_id) {
       toast.error('El pedido debe tener un cliente asignado para exportar a Holded');
       return;
     }
