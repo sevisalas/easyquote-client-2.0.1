@@ -66,6 +66,8 @@ export default function ProductTestPage() {
   const [debouncedPromptValues, setDebouncedPromptValues] = useState<Record<string, any>>({});
   const [productDetail, setProductDetail] = useState<any>(null);
   const [isLoadingProduct, setIsLoadingProduct] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [hasUserModifiedPrompts, setHasUserModifiedPrompts] = useState(false);
   
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
 
@@ -101,6 +103,9 @@ export default function ProductTestPage() {
       }
       
       setIsLoadingProduct(true);
+      setIsInitialLoad(true);
+      setHasUserModifiedPrompts(false);
+      
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) {
         setIsLoadingProduct(false);
@@ -111,7 +116,6 @@ export default function ProductTestPage() {
         // Get product details to extract excelfileId
         const selectedProduct = products.find((p: any) => p.id === productId);
         if (!selectedProduct) {
-          console.error("Product not found");
           return;
         }
 
@@ -119,9 +123,6 @@ export default function ProductTestPage() {
         const tokenParts = token.split('.');
         const payload = JSON.parse(atob(tokenParts[1]));
         const subscriberId = payload.SubscriberID || payload.subscriberId || payload.sub;
-        
-        console.log("Token payload:", payload);
-        console.log("Extracted subscriberId:", subscriberId);
 
         // Find the Excel file for this product
         const excelFile = excelFiles.find((f: any) => f.id === selectedProduct.excelfileId);
@@ -143,6 +144,8 @@ export default function ProductTestPage() {
             initialValues[prompt.id] = prompt.currentValue;
           });
           setPromptValues(initialValues);
+          setDebouncedPromptValues(initialValues);
+          setIsInitialLoad(false);
           return;
         }
 
@@ -159,8 +162,6 @@ export default function ProductTestPage() {
           throw masterError;
         }
         
-        console.log("Master files data:", masterData);
-        
         // Then get initial pricing to get current values
         const { data: pricingData, error: pricingError } = await invokeEasyQuoteFunction("easyquote-pricing", {
           token, 
@@ -169,8 +170,6 @@ export default function ProductTestPage() {
         });
         
         if (pricingError) throw pricingError;
-        
-        console.log("Initial pricing data:", pricingData);
         
         // Combine: use ALL prompts from master-files, with current values from pricing
         const allPrompts = masterData?.prompts || [];
@@ -198,23 +197,28 @@ export default function ProductTestPage() {
           }
         });
         setPromptValues(currentValues);
+        setDebouncedPromptValues(currentValues);
+        
+        // Mark initial load as complete after a short delay to prevent immediate refetch
+        setTimeout(() => setIsInitialLoad(false), 1000);
         
       } catch (error) {
         console.error("Error fetching product detail:", error);
         setProductDetail(null);
         setPromptValues({});
+        setIsInitialLoad(false);
       } finally {
         setIsLoadingProduct(false);
       }
     };
 
     fetchProductDetail();
-  }, [productId]);
+  }, [productId, products, excelFiles]);
 
-  // Fetch pricing data when prompts change OR when productDetail loads (initial load)
+  // Fetch pricing data ONLY when user modifies prompts (not on initial load)
   const { data: pricing, isLoading: pricingLoading, refetch: refetchPricing } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues],
-    enabled: !!sessionStorage.getItem("easyquote_token") && !!productId,
+    enabled: !!sessionStorage.getItem("easyquote_token") && !!productId && !isInitialLoad && hasUserModifiedPrompts,
     refetchOnWindowFocus: false,
     retry: 1,
     queryFn: async () => {
@@ -376,6 +380,7 @@ export default function ProductTestPage() {
   };
 
   const handlePromptChange = (id: string, value: any) => {
+    setHasUserModifiedPrompts(true);
     setPromptValues(prev => ({
       ...prev,
       [id]: value
