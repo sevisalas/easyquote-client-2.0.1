@@ -482,7 +482,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         setIsNewProduct(false);
       }
       
-      // Logging adicional para PATCH: mostrar qué prompts devuelve el API después de cambios
+      // ACTUALIZAR promptValues con los prompts más recientes después de PATCH
       if (!isNewProduct && data?.prompts) {
         console.log("🔄 Prompts recibidos del API (después de PATCH):", {
           productId,
@@ -512,6 +512,22 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             totalAfter: newPromptIds.length
           });
         }
+        
+        // REEMPLAZAR promptValues con SOLO los prompts más recientes del API
+        const newPromptValues: Record<string, any> = {};
+        data.prompts.forEach((p: any) => {
+          const promptId = String(p.id);
+          newPromptValues[promptId] = {
+            id: promptId,
+            label: p.promptText || p.label || promptId,
+            value: p.currentValue ?? "",
+            order: p.promptSequence ?? 0,
+          };
+        });
+        
+        console.log("✅ Reemplazando promptValues con prompts actuales del PATCH");
+        setPromptValues(newPromptValues);
+        setIsInitializing(false);
       }
       
       // Si obtuvimos nuevos outputs, desactivar hasInitialOutputs para que se usen los nuevos
