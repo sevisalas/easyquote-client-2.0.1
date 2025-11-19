@@ -187,6 +187,11 @@ export default function SalesOrderEdit() {
         .insert({
           sales_order_id: id,
           product_name: "Nuevo producto",
+          product_id: null,
+          prompts: {},
+          outputs: [],
+          multi: null,
+          description: null,
           price: 0,
           quantity: 1,
         })
@@ -196,7 +201,7 @@ export default function SalesOrderEdit() {
       if (error) throw error;
 
       await loadOrderData();
-      toast.success("Artículo añadido");
+      toast.success("Artículo añadido. Selecciona un producto para configurarlo.");
     } catch (error) {
       console.error("Error adding item:", error);
       toast.error("Error al añadir el artículo");
