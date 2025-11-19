@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import AppLayout from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -199,17 +198,16 @@ export default function SettingsNumberingFormats() {
 
   if (loading || subscriptionLoading) {
     return (
-      <AppLayout>
-        <div className="flex items-center justify-center min-h-screen">
+      <div className="container mx-auto py-10">
+        <div className="flex items-center justify-center min-h-[400px]">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
-      </AppLayout>
+      </div>
     );
   }
 
   return (
-    <AppLayout>
-      <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto py-10 space-y-8">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Formatos de numeración</h1>
@@ -399,7 +397,6 @@ export default function SettingsNumberingFormats() {
             <strong>Nota:</strong> El número secuencial se genera automáticamente según los dígitos configurados.
           </p>
         </div>
-      </div>
-    </AppLayout>
+    </div>
   );
 }
