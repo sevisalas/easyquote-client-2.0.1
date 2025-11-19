@@ -298,6 +298,70 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     },
   });
 
+  // Query para obtener la configuración del producto desde easyquote-master-files
+  // Se ejecuta SOLO si hay productId pero NO hay prompts guardados
+  const { data: masterData, isLoading: isMasterLoading } = useQuery({
+    queryKey: ["easyquote-master-files", productId],
+    enabled: !!hasToken && !!productId && Object.keys(promptValues).length === 0 && !isInitializing,
+    retry: false,
+    queryFn: async () => {
+      const token = sessionStorage.getItem("easyquote_token");
+      if (!token) throw new Error("Falta token de EasyQuote");
+
+      console.log("📥 Fetching master files for product:", productId);
+      
+      // Necesitamos obtener el excelfileId del producto
+      const { data: productData } = await supabase
+        .from('excel_files')
+        .select('*')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (!productData) {
+        throw new Error("No se encontró archivo Excel asociado");
+      }
+
+      const { data, error } = await invokeEasyQuoteFunction("easyquote-master-files", {
+        token,
+        subscriberId: productData.file_id,
+        fileId: productData.file_id,
+        fileName: productData.filename,
+        productId
+      });
+
+      if (error) throw error;
+      console.log("✅ Master files fetched:", data);
+      return data;
+    },
+  });
+
+  // Inicializar prompts desde masterData cuando no hay prompts guardados
+  useEffect(() => {
+    if (!masterData || Object.keys(promptValues).length > 0) return;
+    
+    console.log("📥 Inicializando prompts desde master files:", masterData);
+    
+    // Extraer prompts con valores por defecto
+    const defaultPrompts: Record<string, any> = {};
+    if (masterData.prompts && Array.isArray(masterData.prompts)) {
+      masterData.prompts.forEach((prompt: any) => {
+        if (prompt.id && prompt.defaultValue !== undefined && prompt.defaultValue !== null) {
+          defaultPrompts[prompt.id] = prompt.defaultValue;
+          console.log(`  📌 Default prompt ${prompt.id} = ${prompt.defaultValue}`);
+        }
+      });
+    }
+    
+    if (Object.keys(defaultPrompts).length > 0) {
+      console.log("✅ Setting default prompts from master files:", defaultPrompts);
+      setPromptValues(defaultPrompts);
+      setDebouncedPromptValues(defaultPrompts);
+      setIsNewProduct(true); // Es un producto nuevo que se va a configurar
+    }
+  }, [masterData, promptValues]);
+
+  // Query principal de pricing
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct],
     enabled: (() => {
