@@ -97,37 +97,44 @@ export default function ProductTestPage() {
   useEffect(() => {
     const fetchProductDetail = async () => {
       if (!productId) {
+        console.log("🔴 No productId selected");
         setProductDetail(null);
         setIsLoadingProduct(false);
         return;
       }
 
+      console.log("🟢 Starting to fetch product detail for:", productId);
       setIsLoadingProduct(true);
       setIsInitialLoad(true);
       setHasUserModifiedPrompts(false);
 
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) {
+        console.error("🔴 No EasyQuote token found in sessionStorage");
         setIsLoadingProduct(false);
         return;
       }
+      console.log("✅ EasyQuote token found");
 
       try {
         // Get product details to extract excelfileId
         const selectedProduct = products.find((p: any) => p.id === productId);
         if (!selectedProduct) {
+          console.error("🔴 Product not found in products list:", productId);
           return;
         }
+        console.log("✅ Selected product:", selectedProduct.productName || selectedProduct.name);
 
         // Decode token to get subscriberId
         const tokenParts = token.split(".");
         const payload = JSON.parse(atob(tokenParts[1]));
         const subscriberId = payload.SubscriberID || payload.subscriberId || payload.sub;
+        console.log("✅ SubscriberID:", subscriberId);
 
         // Find the Excel file for this product
         const excelFile = excelFiles.find((f: any) => f.id === selectedProduct.excelfileId);
         if (!excelFile) {
-          console.error("Excel file not found for product");
+          console.error("🔴 Excel file not found for product, using pricing fallback");
           // Fallback to pricing only
           const { data: pricingData, error: pricingError } = await invokeEasyQuoteFunction("easyquote-pricing", {
             token,
@@ -135,7 +142,12 @@ export default function ProductTestPage() {
             inputs: [],
           });
 
-          if (pricingError) throw pricingError;
+          if (pricingError) {
+            console.error("🔴 Pricing error:", pricingError);
+            throw pricingError;
+          }
+          console.log("✅ Pricing data (fallback):", pricingData);
+          console.log("📋 Prompts from pricing:", pricingData?.prompts?.length || 0);
 
           setProductDetail(pricingData);
 
@@ -148,8 +160,10 @@ export default function ProductTestPage() {
           setIsInitialLoad(false);
           return;
         }
+        console.log("✅ Excel file found:", excelFile.filename || excelFile.fileName);
 
         // First, get ALL prompts from master-files
+        console.log("📡 Calling easyquote-master-files...");
         const { data: masterData, error: masterError } = await invokeEasyQuoteFunction("easyquote-master-files", {
           token,
           subscriberId,
@@ -158,22 +172,31 @@ export default function ProductTestPage() {
         });
 
         if (masterError) {
-          console.error("Master files error:", masterError);
+          console.error("🔴 Master files error:", masterError);
           throw masterError;
         }
+        console.log("✅ Master data received:", masterData);
+        console.log("📋 Prompts from master-files:", masterData?.prompts?.length || 0);
 
         // Then get initial pricing to get current values
+        console.log("📡 Calling easyquote-pricing...");
         const { data: pricingData, error: pricingError } = await invokeEasyQuoteFunction("easyquote-pricing", {
           token,
           productId: productId,
           inputs: [],
         });
 
-        if (pricingError) throw pricingError;
+        if (pricingError) {
+          console.error("🔴 Pricing error:", pricingError);
+          throw pricingError;
+        }
+        console.log("✅ Pricing data received:", pricingData);
+        console.log("📋 Prompts from pricing:", pricingData?.prompts?.length || 0);
 
         // Combine: use ALL prompts from master-files, with current values from pricing
         const allPrompts = masterData?.prompts || [];
         const pricingPrompts = pricingData?.prompts || [];
+        console.log("🔄 Combining prompts - Master:", allPrompts.length, "Pricing:", pricingPrompts.length);
 
         // Map current values from pricing to master prompts
         const enrichedPrompts = allPrompts.map((masterPrompt: any) => {
@@ -183,11 +206,14 @@ export default function ProductTestPage() {
             currentValue: pricingPrompt?.currentValue ?? masterPrompt.currentValue,
           };
         });
+        console.log("✅ Enriched prompts created:", enrichedPrompts.length);
 
-        setProductDetail({
+        const finalProductDetail = {
           ...pricingData,
           prompts: enrichedPrompts,
-        });
+        };
+        console.log("✅ Final product detail:", finalProductDetail);
+        setProductDetail(finalProductDetail);
 
         // Reset prompt values with current values from pricing
         const currentValues: Record<string, any> = {};
@@ -196,13 +222,17 @@ export default function ProductTestPage() {
             currentValues[prompt.id] = prompt.currentValue;
           }
         });
+        console.log("📋 Initial prompt values:", currentValues);
         setPromptValues(currentValues);
         setDebouncedPromptValues(currentValues);
 
         // Mark initial load as complete after a short delay to prevent immediate refetch
-        setTimeout(() => setIsInitialLoad(false), 1000);
+        setTimeout(() => {
+          console.log("✅ Initial load complete");
+          setIsInitialLoad(false);
+        }, 1000);
       } catch (error) {
-        console.error("Error fetching product detail:", error);
+        console.error("🔴 Error fetching product detail:", error);
         setProductDetail(null);
         setPromptValues({});
         setIsInitialLoad(false);
