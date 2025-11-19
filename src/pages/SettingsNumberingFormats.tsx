@@ -209,7 +209,7 @@ export default function SettingsNumberingFormats() {
 
   return (
     <AppLayout>
-      <div className="max-w-6xl mx-auto py-4 space-y-4 px-6">
+      <div className="container mx-auto py-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Formatos de numeración</h1>
