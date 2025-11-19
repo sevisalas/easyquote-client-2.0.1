@@ -441,6 +441,17 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       // Solo cambiar isNewProduct a false si obtuvimos datos válidos
       if (isNewProduct && data?.prompts) {
         console.log("✅ GET exitoso con prompts, marcando producto como cargado");
+        console.log("📦 Prompts recibidos del API:", {
+          productId,
+          promptsCount: data.prompts.length,
+          prompts: data.prompts.map((p: any) => ({
+            id: p.id,
+            label: p.promptText || p.label,
+            type: p.promptType,
+            currentValue: p.currentValue,
+            order: p.promptSequence
+          }))
+        });
         setIsNewProduct(false);
       }
       
