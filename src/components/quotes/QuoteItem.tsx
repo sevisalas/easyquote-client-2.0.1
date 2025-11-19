@@ -298,119 +298,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     },
   });
 
-  // Query para obtener la configuración completa del producto (incluyendo reglas de visibilidad)
-  // Necesitamos esto SIEMPRE para:
-  // 1. Saber qué prompts mostrar/ocultar según las reglas hiddenWhen/visibility
-  // 2. Obtener valores por defecto si no hay prompts guardados
-  const { data: masterData, isLoading: isMasterLoading } = useQuery({
-    queryKey: ["easyquote-master-files", productId],
-    enabled: !!hasToken && !!productId && !isInitializing && !!products,
-    retry: false,
-    queryFn: async () => {
-      const token = sessionStorage.getItem("easyquote_token");
-      if (!token) throw new Error("Falta token de EasyQuote");
-
-      console.log("📥 Fetching master files for product:", productId);
-      
-      // 1. Buscar el producto en la lista de productos de EasyQuote para obtener su excelfileId
-      const selectedProduct = products?.find((p: any) => String(p.id) === String(productId));
-      if (!selectedProduct || !selectedProduct.excelfileId) {
-        throw new Error(`No se encontró el producto ${productId} o no tiene excelfileId`);
-      }
-      
-      console.log("📄 Product excelfileId:", selectedProduct.excelfileId);
-      
-      // 2. Buscar el archivo Excel correspondiente usando el excelfileId del producto
-      const { data: productData } = await supabase
-        .from('excel_files')
-        .select('*')
-        .eq('file_id', selectedProduct.excelfileId)
-        .limit(1)
-        .maybeSingle();
-
-      if (!productData) {
-        throw new Error(`No se encontró archivo Excel con id ${selectedProduct.excelfileId}`);
-      }
-
-      console.log("📂 Excel file found:", productData.filename);
-      console.log("📊 Excel file data:", {
-        file_id: productData.file_id,
-        filename: productData.filename,
-        original_filename: productData.original_filename,
-        is_master: productData.is_master
-      });
-
-      // Extraer el subscriberId del token JWT
-      let subscriberId: string;
-      try {
-        const tokenParts = token.split('.');
-        if (tokenParts.length === 3) {
-          const payload = JSON.parse(atob(tokenParts[1]));
-          subscriberId = payload.SubscriberID;
-          console.log("📝 SubscriberID from token:", subscriberId);
-        } else {
-          throw new Error("Token JWT inválido");
-        }
-      } catch (tokenError) {
-        console.error("❌ Error al extraer SubscriberID del token:", tokenError);
-        throw new Error("No se pudo extraer el SubscriberID del token");
-      }
-
-      const masterFilesPayload = {
-        token,
-        subscriberId, // SubscriberID del token JWT
-        fileId: productData.file_id, // ID del archivo Excel en EasyQuote
-        fileName: productData.filename, // Nombre del archivo
-        productId
-      };
-      
-      console.log("🚀 Calling easyquote-master-files with:", masterFilesPayload);
-
-      const { data, error } = await invokeEasyQuoteFunction("easyquote-master-files", masterFilesPayload);
-
-      if (error) {
-        console.error("❌ Error from easyquote-master-files:", error);
-        throw error;
-      }
-      console.log("✅ Master files fetched:", data);
-      return data;
-    },
-  });
-
-  // Inicializar prompts desde masterData si NO hay prompts guardados en la BD
-  useEffect(() => {
-    if (!masterData) return;
-    
-    const currentPromptsCount = Object.keys(promptValues).length;
-    console.log("📥 Evaluando master files - currentPromptsCount:", currentPromptsCount);
-    
-    // Si ya hay prompts cargados, no sobrescribir
-    if (currentPromptsCount > 0) {
-      console.log("ℹ️ Ya hay prompts cargados desde BD, usando esos valores");
-      return;
-    }
-    
-    console.log("⚠️ No hay prompts guardados, usando valores por defecto de master files");
-    
-    // Extraer prompts con valores por defecto
-    const defaultPrompts: Record<string, any> = {};
-    if (masterData.prompts && Array.isArray(masterData.prompts)) {
-      masterData.prompts.forEach((prompt: any) => {
-        if (prompt.id && prompt.defaultValue !== undefined && prompt.defaultValue !== null) {
-          defaultPrompts[prompt.id] = prompt.defaultValue;
-          console.log(`  📌 Default prompt ${prompt.id} = ${prompt.defaultValue}`);
-        }
-      });
-    }
-    
-    if (Object.keys(defaultPrompts).length > 0) {
-      console.log("✅ Setting default prompts from master files:", defaultPrompts);
-      setPromptValues(defaultPrompts);
-      setDebouncedPromptValues(defaultPrompts);
-      setIsNewProduct(false);
-      setUserHasChangedCurrentProduct(false);
-    }
-  }, [masterData]);
+  // Los prompts siempre vienen de easyquote-pricing (ya no usamos master-files)
 
   // Query principal de pricing
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError } = useQuery({
@@ -1094,8 +982,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                     <p className="font-semibold">Por favor, selecciona otro producto o contacta al administrador.</p>
                   </AlertDescription>
                 </Alert>
-              ) : masterData ? (
-                <PromptsForm product={masterData} values={promptValues} onChange={handlePromptChange} />
+              ) : pricing ? (
+                <PromptsForm product={pricing} values={promptValues} onChange={handlePromptChange} />
               ) : (
                 <p className="text-sm text-muted-foreground">Cargando prompts…</p>
               )}
