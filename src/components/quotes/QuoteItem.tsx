@@ -1089,6 +1089,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 onClick={() => {
                   // Sincronizar cambios antes de finalizar
                   syncToParent();
+                  // Colapsar el item
+                  setIsExpanded(false);
                   if (onFinishEdit) {
                     onFinishEdit(id);
                   }
