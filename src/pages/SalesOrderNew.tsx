@@ -15,6 +15,7 @@ import { CustomerSelector } from "@/components/quotes/CustomerSelector";
 import QuoteItem from "@/components/quotes/QuoteItem";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 import { getEasyQuoteToken } from "@/lib/easyquoteApi";
+import { useNumberingFormat, generateDocumentNumber } from "@/hooks/useNumberingFormat";
 
 type ItemSnapshot = {
   productId: string;
@@ -53,6 +54,9 @@ export default function SalesOrderNew() {
   const { isHoldedActive } = useHoldedIntegration();
   const { organization, membership, canAccessProduccion } = useSubscription();
   const currentOrganization = organization || membership?.organization;
+
+  // Numbering format
+  const { data: orderFormat } = useNumberingFormat('order');
 
   // Check access
   useEffect(() => {
@@ -105,20 +109,55 @@ export default function SalesOrderNew() {
     validateToken();
   }, []);
 
-  // Generate order number using atomic database function
+  // Generate order number using configured format
   const generateOrderNumber = async (): Promise<string> => {
-    const { data, error } = await (supabase.rpc as any)('generate_sales_order_number');
-    
-    if (error) {
-      console.error('Error generating order number:', error);
-      throw new Error('No se pudo generar el número de pedido');
+    if (!orderFormat) {
+      throw new Error("No se pudo obtener el formato de numeración");
     }
-    
-    if (!data || typeof data !== 'string') {
-      throw new Error('Número de pedido inválido recibido');
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Usuario no autenticado");
+
+    // Get organization members
+    const { data: orgMembers } = await supabase
+      .from("organization_members")
+      .select("user_id, organization_id")
+      .eq("user_id", user.id)
+      .single();
+
+    if (!orgMembers) {
+      throw new Error("Usuario no pertenece a ninguna organización");
     }
+
+    // Get all user_ids from the same organization
+    const { data: allOrgMembers } = await supabase
+      .from("organization_members")
+      .select("user_id")
+      .eq("organization_id", orgMembers.organization_id);
+
+    const userIds = allOrgMembers?.map(m => m.user_id) || [];
+
+    // Build pattern for counting based on format
+    const year = new Date().getFullYear();
+    const yearStr = orderFormat.year_format === 'YY' 
+      ? year.toString().slice(-2) 
+      : year.toString();
     
-    return data;
+    let countPattern = orderFormat.prefix;
+    if (orderFormat.use_year) {
+      countPattern += yearStr;
+    }
+    countPattern += '-%';
+
+    // Count existing orders matching this pattern
+    const { count } = await supabase
+      .from("sales_orders")
+      .select("*", { count: "exact", head: true })
+      .in("user_id", userIds)
+      .like("order_number", countPattern);
+    
+    const nextNumber = (count || 0) + 1;
+    return generateDocumentNumber(orderFormat, nextNumber);
   };
 
   // Calculate totals
