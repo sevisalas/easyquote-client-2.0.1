@@ -353,18 +353,27 @@ export function AppSidebar() {
                              </SidebarMenuSubButton>
                            </SidebarMenuSubItem>
                          )}
-                         {/* Formatos de Numeración - Solo admins */}
-                         {(isSuperAdmin || isOrgAdmin) && (
-                           <SidebarMenuSubItem>
-                              <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/formatos-numeracion"} className="h-6 px-2">
-                                <NavLink to="/configuracion/formatos-numeracion" end className={getNavCls}>
-                                  <Hash className="mr-2 h-4 w-4" />
-                                  {!isCollapsed && <span>Numeraciones</span>}
-                                </NavLink>
-                              </SidebarMenuSubButton>
-                           </SidebarMenuSubItem>
-                         )}
-                         {/* Integraciones - Solo admins */}
+                          {/* Formatos de Numeración - Solo admins */}
+                          {(isSuperAdmin || isOrgAdmin) && (
+                            <SidebarMenuSubItem>
+                               <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/formatos-numeracion"} className="h-6 px-2">
+                                 <NavLink to="/configuracion/formatos-numeracion" end className={getNavCls}>
+                                   <Hash className="mr-2 h-4 w-4" />
+                                   {!isCollapsed && <span>Numeraciones</span>}
+                                 </NavLink>
+                               </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          )}
+                          {/* Tema */}
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/tema"} className="h-6 px-2">
+                              <NavLink to="/configuracion/tema" end className={getNavCls}>
+                                <Palette className="mr-2 h-4 w-4" />
+                                {!isCollapsed && <span>Tema</span>}
+                              </NavLink>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                          {/* Integraciones - Solo admins */}
                         {(isSuperAdmin || isOrgAdmin) && (
                           <>
                             <SidebarMenuSubItem>
