@@ -191,7 +191,25 @@ export default function SettingsTheme() {
   const handleThemeSelect = (themeId: string | null) => {
     setSelectedTheme(themeId);
     
-    // Aplicar vista previa inmediata
+    // Si es el tema original, limpiar la vista previa para mantener los colores originales
+    if (themeId === null) {
+      setPreviewColors(null);
+      // Remover las propiedades CSS para volver a los valores originales del index.css
+      document.documentElement.style.removeProperty('--primary');
+      document.documentElement.style.removeProperty('--secondary');
+      document.documentElement.style.removeProperty('--background');
+      document.documentElement.style.removeProperty('--foreground');
+      document.documentElement.style.removeProperty('--sidebar-background');
+      document.documentElement.style.removeProperty('--sidebar-foreground');
+      document.documentElement.style.removeProperty('--sidebar-primary');
+      document.documentElement.style.removeProperty('--sidebar-primary-foreground');
+      document.documentElement.style.removeProperty('--sidebar-accent');
+      document.documentElement.style.removeProperty('--sidebar-accent-foreground');
+      document.documentElement.style.removeProperty('--sidebar-border');
+      return;
+    }
+    
+    // Para otros temas, aplicar vista previa inmediata
     const theme = themes.find(t => t.id === themeId);
     if (theme) {
       const colors = themeId === 'custom' ? customColors : theme.preview;
