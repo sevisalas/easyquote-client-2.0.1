@@ -4,9 +4,9 @@ import { Theme, useTheme } from "@/hooks/useTheme";
 
 const themes: { name: Theme; label: string; description: string; colors: string[] }[] = [
   {
-    name: "default",
-    label: "Predeterminado",
-    description: "Tema clásico azul",
+    name: null,
+    label: "Original",
+    description: "Diseño predeterminado",
     colors: ["hsl(221.2, 83.2%, 53.3%)", "hsl(210, 40%, 96.1%)", "hsl(222.2, 84%, 4.9%)"],
   },
   {
