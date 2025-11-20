@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-export type Theme = "default" | "ocean" | "forest" | "sunset" | "midnight";
+export type Theme = "default" | "ocean" | "forest" | "sunset" | "midnight" | null;
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>("default");
+  const [theme, setTheme] = useState<Theme>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -40,7 +40,11 @@ export function useTheme() {
   };
 
   const applyTheme = (newTheme: Theme) => {
-    document.documentElement.setAttribute("data-theme", newTheme);
+    if (newTheme && newTheme !== "default") {
+      document.documentElement.setAttribute("data-theme", newTheme);
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+    }
   };
 
   const updateTheme = async (newTheme: Theme) => {
