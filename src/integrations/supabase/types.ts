@@ -1471,7 +1471,7 @@ export type Database = {
       validate_api_key: { Args: { p_api_key: string }; Returns: string }
     }
     Enums: {
-      app_role: "superadmin" | "admin" | "user" | "comercial" | "operador"
+      app_role: "superadmin" | "admin" | "comercial" | "operador"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1599,7 +1599,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["superadmin", "admin", "user", "comercial", "operador"],
+      app_role: ["superadmin", "admin", "comercial", "operador"],
     },
   },
 } as const
