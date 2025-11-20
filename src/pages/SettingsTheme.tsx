@@ -63,7 +63,7 @@ const themes: Theme[] = [
       primary: "#0ea5e9",
       secondary: "#1e40af",
       background: "#f8fafc",
-      foreground: "#0f172a"
+      foreground: "#ffffff"
     }
   },
   {
@@ -74,7 +74,7 @@ const themes: Theme[] = [
       primary: "#10b981",
       secondary: "#065f46",
       background: "#f0fdf4",
-      foreground: "#064e3b"
+      foreground: "#ffffff"
     }
   },
   {
