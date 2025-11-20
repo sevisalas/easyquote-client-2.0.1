@@ -1,20 +1,24 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Check } from "lucide-react";
+import { Check, Palette } from "lucide-react";
+
+interface ThemeColors {
+  primary: string;
+  secondary: string;
+  background: string;
+  foreground: string;
+}
 
 interface Theme {
   id: string | null;
   name: string;
   description: string;
-  preview: {
-    primary: string;
-    secondary: string;
-    background: string;
-    foreground: string;
-  };
+  preview: ThemeColors;
 }
 
 const themes: Theme[] = [
@@ -72,12 +76,30 @@ const themes: Theme[] = [
       background: "#f0fdf4",
       foreground: "#064e3b"
     }
+  },
+  {
+    id: "custom",
+    name: "Personalizado",
+    description: "Crea tu propio tema con colores personalizados",
+    preview: {
+      primary: "#c83077",
+      secondary: "#250353",
+      background: "#ffffff",
+      foreground: "#09090b"
+    }
   }
 ];
 
 export default function SettingsTheme() {
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
   const [currentTheme, setCurrentTheme] = useState<string | null>(null);
+  const [customColors, setCustomColors] = useState<ThemeColors>({
+    primary: "#c83077",
+    secondary: "#250353",
+    background: "#ffffff",
+    foreground: "#09090b"
+  });
+  const [previewColors, setPreviewColors] = useState<ThemeColors | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -86,6 +108,15 @@ export default function SettingsTheme() {
     document.title = "Configuración | Tema";
     loadCurrentTheme();
   }, []);
+
+  // Vista previa en tiempo real
+  useEffect(() => {
+    if (previewColors) {
+      Object.entries(previewColors).forEach(([key, value]) => {
+        document.documentElement.style.setProperty(`--${key}`, value);
+      });
+    }
+  }, [previewColors]);
 
   const loadCurrentTheme = async () => {
     try {
@@ -101,10 +132,35 @@ export default function SettingsTheme() {
       const theme = profile?.selected_theme || null;
       setSelectedTheme(theme);
       setCurrentTheme(theme);
+      
+      // Si es tema custom, cargar los colores guardados
+      if (theme === 'custom' && profile?.custom_colors) {
+        const colors = profile.custom_colors as ThemeColors;
+        setCustomColors(colors);
+      }
     } catch (error) {
       console.error('Error loading theme:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleThemeSelect = (themeId: string | null) => {
+    setSelectedTheme(themeId);
+    
+    // Aplicar vista previa inmediata
+    const theme = themes.find(t => t.id === themeId);
+    if (theme) {
+      const colors = themeId === 'custom' ? customColors : theme.preview;
+      setPreviewColors(colors);
+    }
+  };
+
+  const handleCustomColorChange = (key: keyof ThemeColors, value: string) => {
+    const newColors = { ...customColors, [key]: value };
+    setCustomColors(newColors);
+    if (selectedTheme === 'custom') {
+      setPreviewColors(newColors);
     }
   };
 
@@ -114,9 +170,16 @@ export default function SettingsTheme() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      const updateData: any = { selected_theme: selectedTheme };
+      
+      // Si es tema custom, guardar también los colores
+      if (selectedTheme === 'custom') {
+        updateData.custom_colors = customColors;
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .update({ selected_theme: selectedTheme })
+        .update(updateData)
         .eq('user_id', user.id);
 
       if (error) throw error;
@@ -165,7 +228,7 @@ export default function SettingsTheme() {
             {themes.map((theme) => (
               <button
                 key={theme.id || 'original'}
-                onClick={() => setSelectedTheme(theme.id)}
+                onClick={() => handleThemeSelect(theme.id)}
                 className={`relative transition-all rounded-lg border-2 overflow-hidden ${
                   selectedTheme === theme.id
                     ? 'ring-4 ring-primary scale-105 border-primary'
@@ -212,6 +275,97 @@ export default function SettingsTheme() {
               </button>
             ))}
           </div>
+
+          {/* Editor de colores personalizados */}
+          {selectedTheme === 'custom' && (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette className="h-5 w-5" />
+                  Personaliza tus colores
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="primary">Color Primario</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        id="primary"
+                        type="color"
+                        value={customColors.primary}
+                        onChange={(e) => handleCustomColorChange('primary', e.target.value)}
+                        className="w-16 h-10 p-1"
+                      />
+                      <Input
+                        type="text"
+                        value={customColors.primary}
+                        onChange={(e) => handleCustomColorChange('primary', e.target.value)}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="secondary">Color Secundario</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        id="secondary"
+                        type="color"
+                        value={customColors.secondary}
+                        onChange={(e) => handleCustomColorChange('secondary', e.target.value)}
+                        className="w-16 h-10 p-1"
+                      />
+                      <Input
+                        type="text"
+                        value={customColors.secondary}
+                        onChange={(e) => handleCustomColorChange('secondary', e.target.value)}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="background">Color de Fondo</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        id="background"
+                        type="color"
+                        value={customColors.background}
+                        onChange={(e) => handleCustomColorChange('background', e.target.value)}
+                        className="w-16 h-10 p-1"
+                      />
+                      <Input
+                        type="text"
+                        value={customColors.background}
+                        onChange={(e) => handleCustomColorChange('background', e.target.value)}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="foreground">Color de Texto</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        id="foreground"
+                        type="color"
+                        value={customColors.foreground}
+                        onChange={(e) => handleCustomColorChange('foreground', e.target.value)}
+                        className="w-16 h-10 p-1"
+                      />
+                      <Input
+                        type="text"
+                        value={customColors.foreground}
+                        onChange={(e) => handleCustomColorChange('foreground', e.target.value)}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {hasChanges && (
             <div className="flex justify-end mt-6">
