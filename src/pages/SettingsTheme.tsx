@@ -311,23 +311,36 @@ export default function SettingsTheme() {
                 <div className="p-4 space-y-3">
                   <div className="flex gap-2 h-16">
                     <div 
-                      className="flex-1 rounded" 
-                      style={{ backgroundColor: theme.preview.primary }}
-                    />
+                      className="flex-1 rounded flex items-center justify-center text-xs font-medium" 
+                      style={{ 
+                        backgroundColor: theme.preview.primary,
+                        color: '#ffffff'
+                      }}
+                    >
+                      Texto
+                    </div>
                     <div 
-                      className="flex-1 rounded" 
-                      style={{ backgroundColor: theme.preview.secondary }}
-                    />
+                      className="flex-1 rounded flex items-center justify-center text-xs font-medium" 
+                      style={{ 
+                        backgroundColor: theme.preview.secondary,
+                        color: '#ffffff'
+                      }}
+                    >
+                      Texto
+                    </div>
                   </div>
                   
                   <div className="flex gap-2 h-8">
                     <div 
-                      className="flex-1 rounded border" 
+                      className="flex-1 rounded border flex items-center justify-center text-xs" 
                       style={{ 
                         backgroundColor: theme.preview.background,
-                        borderColor: theme.preview.foreground + '20'
+                        borderColor: theme.preview.foreground + '20',
+                        color: theme.preview.foreground
                       }}
-                    />
+                    >
+                      Texto
+                    </div>
                     <div 
                       className="flex-1 rounded" 
                       style={{ backgroundColor: theme.preview.foreground }}
