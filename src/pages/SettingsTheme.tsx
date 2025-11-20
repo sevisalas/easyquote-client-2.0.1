@@ -63,7 +63,7 @@ const themes: Theme[] = [
       primary: "#0ea5e9",
       secondary: "#1e40af",
       background: "#f8fafc",
-      foreground: "#ffffff"
+      foreground: "#0f172a"
     }
   },
   {
@@ -74,7 +74,7 @@ const themes: Theme[] = [
       primary: "#10b981",
       secondary: "#065f46",
       background: "#f0fdf4",
-      foreground: "#ffffff"
+      foreground: "#064e3b"
     }
   },
   {
@@ -148,11 +148,15 @@ export default function SettingsTheme() {
       document.documentElement.style.setProperty('--background', hexToHSL(previewColors.background));
       document.documentElement.style.setProperty('--foreground', hexToHSL(previewColors.foreground));
       
+      // Texto sobre colores primario y secundario debe ser blanco para buen contraste
+      document.documentElement.style.setProperty('--primary-foreground', '0 0% 100%'); // Blanco
+      document.documentElement.style.setProperty('--secondary-foreground', '0 0% 100%'); // Blanco
+      
       // Variables del sidebar (usar los mismos colores)
       document.documentElement.style.setProperty('--sidebar-background', hexToHSL(previewColors.background));
       document.documentElement.style.setProperty('--sidebar-foreground', hexToHSL(previewColors.foreground));
       document.documentElement.style.setProperty('--sidebar-primary', hexToHSL(previewColors.primary));
-      document.documentElement.style.setProperty('--sidebar-primary-foreground', hexToHSL(previewColors.background));
+      document.documentElement.style.setProperty('--sidebar-primary-foreground', '0 0% 100%'); // Blanco
       document.documentElement.style.setProperty('--sidebar-accent', hexToHSL(previewColors.secondary));
       document.documentElement.style.setProperty('--sidebar-accent-foreground', hexToHSL(previewColors.foreground));
       document.documentElement.style.setProperty('--sidebar-border', hexToHSL(previewColors.secondary));
@@ -199,6 +203,8 @@ export default function SettingsTheme() {
       document.documentElement.style.removeProperty('--secondary');
       document.documentElement.style.removeProperty('--background');
       document.documentElement.style.removeProperty('--foreground');
+      document.documentElement.style.removeProperty('--primary-foreground');
+      document.documentElement.style.removeProperty('--secondary-foreground');
       document.documentElement.style.removeProperty('--sidebar-background');
       document.documentElement.style.removeProperty('--sidebar-foreground');
       document.documentElement.style.removeProperty('--sidebar-primary');
