@@ -41,7 +41,7 @@ const themes: Theme[] = [
       primary: "#7c3aed",
       secondary: "#1e293b",
       background: "#0f172a",
-      foreground: "#09090b"
+      foreground: "#f8fafc"
     }
   },
   {
@@ -52,7 +52,7 @@ const themes: Theme[] = [
       primary: "#3b82f6",
       secondary: "#e2e8f0",
       background: "#ffffff",
-      foreground: "#09090b"
+      foreground: "#1e293b"
     }
   },
   {
@@ -60,10 +60,10 @@ const themes: Theme[] = [
     name: "Azul Corporativo",
     description: "Tema corporativo con tonos azules",
     preview: {
-      primary: "#1e40af",
-      secondary: "#0ea5e9",
+      primary: "#0ea5e9",
+      secondary: "#1e40af",
       background: "#f8fafc",
-      foreground: "#09090b"
+      foreground: "#0f172a"
     }
   },
   {
@@ -71,10 +71,10 @@ const themes: Theme[] = [
     name: "Verde Natural",
     description: "Tema con tonos verdes naturales",
     preview: {
-      primary: "#065f46",
-      secondary: "#10b981",
+      primary: "#10b981",
+      secondary: "#065f46",
       background: "#f0fdf4",
-      foreground: "#09090b"
+      foreground: "#064e3b"
     }
   },
   {
