@@ -232,7 +232,12 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   };
 
   const canAccessProduccion = () => {
-    // Requiere módulo Production (solo ERP)
+    // Requiere módulo Production (solo ERP) y NO ser comercial
+    // Solo admins y operadores pueden acceder
+    const userRole = membership?.role;
+    if (userRole === 'comercial') {
+      return false;
+    }
     return hasModule('Production');
   };
 
