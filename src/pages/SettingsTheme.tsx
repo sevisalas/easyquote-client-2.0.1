@@ -142,10 +142,20 @@ export default function SettingsTheme() {
   // Vista previa en tiempo real
   useEffect(() => {
     if (previewColors) {
+      // Variables principales
       document.documentElement.style.setProperty('--primary', hexToHSL(previewColors.primary));
       document.documentElement.style.setProperty('--secondary', hexToHSL(previewColors.secondary));
       document.documentElement.style.setProperty('--background', hexToHSL(previewColors.background));
       document.documentElement.style.setProperty('--foreground', hexToHSL(previewColors.foreground));
+      
+      // Variables del sidebar (usar los mismos colores)
+      document.documentElement.style.setProperty('--sidebar-background', hexToHSL(previewColors.background));
+      document.documentElement.style.setProperty('--sidebar-foreground', hexToHSL(previewColors.foreground));
+      document.documentElement.style.setProperty('--sidebar-primary', hexToHSL(previewColors.primary));
+      document.documentElement.style.setProperty('--sidebar-primary-foreground', hexToHSL(previewColors.background));
+      document.documentElement.style.setProperty('--sidebar-accent', hexToHSL(previewColors.secondary));
+      document.documentElement.style.setProperty('--sidebar-accent-foreground', hexToHSL(previewColors.foreground));
+      document.documentElement.style.setProperty('--sidebar-border', hexToHSL(previewColors.secondary));
     }
   }, [previewColors]);
 
