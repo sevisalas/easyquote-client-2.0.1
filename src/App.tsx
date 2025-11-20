@@ -15,7 +15,6 @@ import QuoteEdit from "./pages/QuoteEdit";
 import QuotesList from "./pages/QuotesList";
 import SettingsPdfTemplate from "./pages/SettingsPdfTemplate";
 import SettingsNumberingFormats from "./pages/SettingsNumberingFormats";
-import SettingsTheme from "./pages/SettingsTheme";
 import Additionals from "./pages/Additionals";
 import QuoteDetail from "./pages/QuoteDetail";
 import EditarSuscriptor from "./pages/SubscriberEdit";
@@ -47,13 +46,11 @@ import SalesOrderNew from "./pages/SalesOrderNew";
 import SalesOrderEdit from "./pages/SalesOrderEdit";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { useSessionMonitor } from "./hooks/useSessionMonitor";
-import { useTheme } from "./hooks/useTheme";
 
 const queryClient = new QueryClient();
 
 const AppContent = () => {
   useSessionMonitor();
-  useTheme(); // Cargar tema del usuario
   
   return (
     <Routes>
@@ -164,16 +161,6 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <SettingsNumberingFormats />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/configuracion/tema"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <SettingsTheme />
             </AppLayout>
           </ProtectedRoute>
         }
