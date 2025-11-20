@@ -321,7 +321,17 @@ export function AppSidebar() {
                      </SidebarMenuItem>
                    )}
 
-                    {/* Configuración - Solo si tiene acceso a algo */}
+                   {/* Tema - Disponible para todos los usuarios */}
+                   <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={currentPath === "/configuracion/tema"} className="h-7 px-2">
+                        <NavLink to="/configuracion/tema" end className={getNavCls}>
+                          <Palette className="mr-2 h-4 w-4" />
+                          {!isCollapsed && <span>Tema</span>}
+                        </NavLink>
+                      </SidebarMenuButton>
+                   </SidebarMenuItem>
+
+                    {/* Configuración - Solo si tiene acceso a algo (admin) */}
                    {((isSuperAdmin || isOrgAdmin) || hasPdfAccess || canAccessExcel() || canAccessProductos() || canAccessCategorias()) && (
                    <SidebarMenuItem>
                      <SidebarMenuButton asChild isActive={currentPath.startsWith("/configuracion")} className="h-7 px-2">
@@ -363,17 +373,8 @@ export function AppSidebar() {
                                  </NavLink>
                                </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
-                          )}
-                          {/* Tema */}
-                          <SidebarMenuSubItem>
-                            <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/tema"} className="h-6 px-2">
-                              <NavLink to="/configuracion/tema" end className={getNavCls}>
-                                <Palette className="mr-2 h-4 w-4" />
-                                {!isCollapsed && <span>Tema</span>}
-                              </NavLink>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                          {/* Integraciones - Solo admins */}
+                           )}
+                           {/* Integraciones - Solo admins */}
                         {(isSuperAdmin || isOrgAdmin) && (
                           <>
                             <SidebarMenuSubItem>
