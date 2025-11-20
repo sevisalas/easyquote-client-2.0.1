@@ -13,7 +13,7 @@ const Index = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
-  const { isSuperAdmin, isERPSubscription } = useSubscription();
+  const { isSuperAdmin, isERPSubscription, canAccessProduccion } = useSubscription();
 
   // Obtener estadísticas rápidas de presupuestos
   const { data: stats } = useQuery({
@@ -38,7 +38,7 @@ const Index = () => {
     },
   });
 
-  // Obtener estadísticas de pedidos (solo para ERP)
+  // Obtener estadísticas de pedidos (solo para usuarios con acceso a producción)
   const { data: orderStats } = useQuery({
     queryKey: ["orders-quick-stats"],
     queryFn: async () => {
@@ -59,7 +59,7 @@ const Index = () => {
         completed: data?.filter((o) => o.status === "completed").length ?? 0,
       };
     },
-    enabled: isERPSubscription(),
+    enabled: canAccessProduccion(),
   });
 
   useEffect(() => {
@@ -213,8 +213,8 @@ const Index = () => {
           </Card>
         </div>
 
-        {/* Stats Cards - Pedidos (solo para ERP) */}
-        {isERPSubscription() && (
+        {/* Stats Cards - Pedidos (solo para usuarios con acceso a producción) */}
+        {canAccessProduccion() && (
           <>
             <div className="mb-6">
               <h2 className="text-xl font-semibold text-foreground mb-4">Pedidos</h2>
@@ -294,7 +294,7 @@ const Index = () => {
         )}
 
         {/* Quick Actions */}
-        <div className={`grid gap-6 ${isERPSubscription() ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+        <div className={`grid gap-6 ${canAccessProduccion() ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
           <Card
             className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer"
             onClick={() => navigate("/clientes")}
@@ -327,8 +327,8 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          {/* Gestionar Pedidos - Solo mostrar si tienen módulo ERP */}
-          {isERPSubscription() && (
+          {/* Gestionar Pedidos - Solo para usuarios con acceso a producción */}
+          {canAccessProduccion() && (
             <Card
               className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer"
               onClick={() => navigate("/pedidos")}
