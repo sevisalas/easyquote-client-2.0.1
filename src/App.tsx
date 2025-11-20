@@ -166,7 +166,8 @@ const AppContent = () => {
           </ProtectedRoute>
         }
       />
-      <Route
+      {/* Ruta de tema temporalmente desactivada */}
+      {/* <Route
         path="/configuracion/tema"
         element={
           <ProtectedRoute>
@@ -175,7 +176,7 @@ const AppContent = () => {
             </AppLayout>
           </ProtectedRoute>
         }
-      />
+      /> */}
       <Route
         path="/usuarios"
         element={

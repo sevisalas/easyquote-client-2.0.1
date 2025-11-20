@@ -321,15 +321,15 @@ export function AppSidebar() {
                      </SidebarMenuItem>
                    )}
 
-                   {/* Tema - Disponible para todos los usuarios */}
-                   <SidebarMenuItem>
+                   {/* Tema - Temporalmente desactivado */}
+                   {/* <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={currentPath === "/configuracion/tema"} className="h-7 px-2">
                         <NavLink to="/configuracion/tema" end className={getNavCls}>
                           <Palette className="mr-2 h-4 w-4" />
                           {!isCollapsed && <span>Tema</span>}
                         </NavLink>
                       </SidebarMenuButton>
-                   </SidebarMenuItem>
+                   </SidebarMenuItem> */}
 
                     {/* Configuración - Solo si tiene acceso a algo (admin) */}
                    {((isSuperAdmin || isOrgAdmin) || hasPdfAccess || canAccessExcel() || canAccessProductos() || canAccessCategorias()) && (
