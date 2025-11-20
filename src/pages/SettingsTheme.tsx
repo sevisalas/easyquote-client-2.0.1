@@ -134,9 +134,11 @@ export default function SettingsTheme() {
       setCurrentTheme(theme);
       
       // Si es tema custom, cargar los colores guardados
-      if (theme === 'custom' && profile?.custom_colors) {
-        const colors = profile.custom_colors as ThemeColors;
-        setCustomColors(colors);
+      if (theme === 'custom' && profile) {
+        const customColorsData = (profile as any).custom_colors;
+        if (customColorsData) {
+          setCustomColors(customColorsData as ThemeColors);
+        }
       }
     } catch (error) {
       console.error('Error loading theme:', error);
