@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, Paintbrush } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -363,20 +363,30 @@ export function AppSidebar() {
                                 </NavLink>
                               </SidebarMenuSubButton>
                            </SidebarMenuSubItem>
+                          )}
+                          {/* Integraciones - Solo admins */}
+                         {(isSuperAdmin || isOrgAdmin) && (
+                           <>
+                             <SidebarMenuSubItem>
+                               <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/integraciones"} className="h-6 px-2">
+                                 <NavLink to="/configuracion/integraciones" end className={getNavCls}>
+                                   <Plug className="mr-2 h-4 w-4" />
+                                   {!isCollapsed && <span>Integraciones</span>}
+                                 </NavLink>
+                               </SidebarMenuSubButton>
+                             </SidebarMenuSubItem>
+                           </>
                          )}
-                         {/* Integraciones - Solo admins */}
-                        {(isSuperAdmin || isOrgAdmin) && (
-                          <>
-                            <SidebarMenuSubItem>
-                              <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/integraciones"} className="h-6 px-2">
-                                <NavLink to="/configuracion/integraciones" end className={getNavCls}>
-                                  <Plug className="mr-2 h-4 w-4" />
-                                  {!isCollapsed && <span>Integraciones</span>}
-                                </NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          </>
-                        )}
+                        
+                        {/* Tema - Todos los usuarios */}
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/tema"} className="h-6 px-2">
+                            <NavLink to="/configuracion/tema" end className={getNavCls}>
+                              <Paintbrush className="mr-2 h-4 w-4" />
+                              {!isCollapsed && <span>Tema</span>}
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
                        
                        {/* Archivos Excel - Solo API suscriptions o Client admins */}
                        {canAccessExcel() && (
