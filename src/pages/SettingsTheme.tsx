@@ -41,7 +41,7 @@ const themes: Theme[] = [
       primary: "#7c3aed",
       secondary: "#1e293b",
       background: "#0f172a",
-      foreground: "#f8fafc"
+      foreground: "#ffffff"
     }
   },
   {
