@@ -1483,6 +1483,10 @@ export type Database = {
         Args: { p_password: string; p_user_id: string; p_username: string }
         Returns: string
       }
+      update_last_sequential_number: {
+        Args: { p_document_type: string; p_user_id: string }
+        Returns: number
+      }
       validate_api_key: { Args: { p_api_key: string }; Returns: string }
     }
     Enums: {

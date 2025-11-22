@@ -35,6 +35,12 @@ export const useNumberingFormat = (documentType: 'quote' | 'order') => {
 
       const organizationId = ownedOrg?.id || orgMember?.organization_id;
 
+      // Update last sequential number from database before returning format
+      await supabase.rpc('update_last_sequential_number', {
+        p_user_id: user.id,
+        p_document_type: documentType
+      });
+
       // If user belongs to an organization, get format for that organization
       if (organizationId) {
         const { data: orgFormat, error: orgError } = await supabase
