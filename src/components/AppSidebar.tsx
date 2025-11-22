@@ -203,11 +203,11 @@ export function AppSidebar() {
                         <CollapsibleTrigger asChild>
                           <SidebarMenuButton
                             isActive={currentPath.startsWith("/clientes")}
-                            className="h-7 px-2 group"
+                            className="h-7 px-2"
                           >
                             <Users className="mr-2 h-4 w-4" />
                             {!isCollapsed && <span>Clientes</span>}
-                            {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />}
+                            {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />}
                           </SidebarMenuButton>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
@@ -249,11 +249,11 @@ export function AppSidebar() {
                         <CollapsibleTrigger asChild>
                           <SidebarMenuButton
                             isActive={currentPath.startsWith("/presupuestos")}
-                            className="h-7 px-2 group"
+                            className="h-7 px-2"
                           >
                             <FileText className="mr-2 h-4 w-4" />
                             {!isCollapsed && <span>Presupuestos</span>}
-                            {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />}
+                            {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />}
                           </SidebarMenuButton>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
@@ -295,11 +295,11 @@ export function AppSidebar() {
                          <CollapsibleTrigger asChild>
                            <SidebarMenuButton
                              isActive={currentPath.startsWith("/pedidos")}
-                             className="h-7 px-2 group"
+                             className="h-7 px-2"
                            >
                              <Package className="mr-2 h-4 w-4" />
                              {!isCollapsed && <span>Pedidos</span>}
-                             {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />}
+                             {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />}
                            </SidebarMenuButton>
                          </CollapsibleTrigger>
                          <CollapsibleContent>
@@ -349,10 +349,10 @@ export function AppSidebar() {
                    <Collapsible asChild defaultOpen={false}>
                      <SidebarMenuItem>
                        <CollapsibleTrigger asChild>
-                         <SidebarMenuButton isActive={currentPath.startsWith("/configuracion")} className="h-7 px-2 group">
+                         <SidebarMenuButton isActive={currentPath.startsWith("/configuracion")} className="h-7 px-2">
                            <Palette className="mr-2 h-4 w-4" />
                            {!isCollapsed && <span>Configuración</span>}
-                           {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />}
+                           {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />}
                          </SidebarMenuButton>
                        </CollapsibleTrigger>
                        <CollapsibleContent>
