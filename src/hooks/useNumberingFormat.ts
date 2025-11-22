@@ -90,7 +90,7 @@ export const generateDocumentNumber = (
     number += yearStr;
   }
   
-  number += '-' + sequentialNumber.toString().padStart(format.sequential_digits, '0');
+  number += sequentialNumber.toString().padStart(format.sequential_digits, '0');
   
   if (format.suffix) {
     number += format.suffix;

@@ -120,7 +120,7 @@ export default function SettingsNumberingFormats() {
       example += yearStr;
     }
     
-    example += '-' + sequential.toString().padStart(format.sequential_digits, '0');
+    example += sequential.toString().padStart(format.sequential_digits, '0');
     
     if (format.suffix) {
       example += format.suffix;
