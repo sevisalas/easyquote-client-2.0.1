@@ -24,7 +24,9 @@ const Index = () => {
       } = await supabase.auth.getUser();
       if (!user) return { total: 0, draft: 0, sent: 0, approved: 0, rejected: 0 };
 
-      const { data, error } = await supabase.from("quotes").select("status").eq("user_id", user.id);
+      // Las políticas RLS se encargan de filtrar según el rol
+      // Los admins verán todos los presupuestos de la organización
+      const { data, error } = await supabase.from("quotes").select("status");
 
       if (error) throw error;
 
@@ -47,7 +49,9 @@ const Index = () => {
       } = await supabase.auth.getUser();
       if (!user) return { total: 0, draft: 0, pending: 0, production: 0, completed: 0 };
 
-      const { data, error } = await supabase.from("sales_orders").select("status").eq("user_id", user.id);
+      // Las políticas RLS se encargan de filtrar según el rol
+      // Los admins verán todos los pedidos de la organización
+      const { data, error } = await supabase.from("sales_orders").select("status");
 
       if (error) throw error;
 
