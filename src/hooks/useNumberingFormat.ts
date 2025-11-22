@@ -9,6 +9,7 @@ export interface NumberingFormat {
   use_year: boolean;
   year_format: 'YY' | 'YYYY';
   sequential_digits: number;
+  last_sequential_number: number;
 }
 
 export const useNumberingFormat = (documentType: 'quote' | 'order') => {
@@ -65,7 +66,8 @@ export const useNumberingFormat = (documentType: 'quote' | 'order') => {
           suffix: '',
           use_year: true,
           year_format: documentType === 'quote' ? 'YY' : 'YYYY',
-          sequential_digits: 4
+          sequential_digits: 4,
+          last_sequential_number: 0
         } as Omit<NumberingFormat, 'id' | 'document_type'>;
       }
 

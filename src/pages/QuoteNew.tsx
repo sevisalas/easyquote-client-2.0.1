@@ -198,48 +198,7 @@ export default function QuoteNew() {
       throw new Error("No se pudo obtener el formato de numeración");
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Usuario no autenticado");
-
-    // Get organization members
-    const { data: orgMembers } = await supabase
-      .from("organization_members")
-      .select("user_id, organization_id")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!orgMembers) {
-      throw new Error("Usuario no pertenece a ninguna organización");
-    }
-
-    // Get all user_ids from the same organization
-    const { data: allOrgMembers } = await supabase
-      .from("organization_members")
-      .select("user_id")
-      .eq("organization_id", orgMembers.organization_id);
-
-    const userIds = allOrgMembers?.map(m => m.user_id) || [];
-
-    // Build pattern for counting based on format
-    const year = new Date().getFullYear();
-    const yearStr = quoteFormat.year_format === 'YY' 
-      ? year.toString().slice(-2) 
-      : year.toString();
-    
-    let countPattern = quoteFormat.prefix;
-    if (quoteFormat.use_year) {
-      countPattern += yearStr;
-    }
-    countPattern += '-%';
-
-    // Count existing quotes matching this pattern
-    const { count } = await supabase
-      .from("quotes")
-      .select("*", { count: "exact", head: true })
-      .in("user_id", userIds)
-      .like("quote_number", countPattern);
-    
-    const nextNumber = (count || 0) + 1;
+    const nextNumber = quoteFormat.last_sequential_number + 1;
     return generateDocumentNumber(quoteFormat, nextNumber);
   };
 
@@ -453,6 +412,15 @@ export default function QuoteNew() {
         .insert(quoteItemsData);
 
       if (itemsError) throw itemsError;
+
+      // Update last_sequential_number in numbering_formats
+      if (quoteFormat && 'id' in quoteFormat && quoteFormat.id) {
+        const nextSequential = quoteFormat.last_sequential_number + 1;
+        await supabase
+          .from('numbering_formats')
+          .update({ last_sequential_number: nextSequential })
+          .eq('id', quoteFormat.id as string);
+      }
 
       // Si el estado es "sent" y Holded está activo, exportar a Holded automáticamente
       if (status === 'sent' && isHoldedActive) {
