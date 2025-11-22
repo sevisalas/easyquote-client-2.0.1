@@ -60,6 +60,18 @@ export default function SettingsNumberingFormats() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Actualizar automáticamente los últimos números usados desde la base de datos
+      await Promise.all([
+        supabase.rpc('update_last_sequential_number', {
+          p_user_id: user.id,
+          p_document_type: 'quote'
+        }),
+        supabase.rpc('update_last_sequential_number', {
+          p_user_id: user.id,
+          p_document_type: 'order'
+        })
+      ]);
+
       const { data, error } = await supabase
         .from('numbering_formats')
         .select('*')
