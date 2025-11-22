@@ -39,6 +39,7 @@ import { useNavigate } from "react-router-dom";
 import { BulkPromptsDialog } from "@/components/quotes/BulkPromptsDialog";
 import { BulkOutputsDialog } from "@/components/quotes/BulkOutputsDialog";
 import { useSearchParams } from "react-router-dom";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Interface para productos del API de EasyQuote
 interface EasyQuoteProduct {
@@ -1252,8 +1253,9 @@ export default function ProductManagement() {
                     <p className="text-muted-foreground">No hay datos de entrada configurados</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {productPrompts.map((prompt, index) => (
+                  <ScrollArea className="h-[500px] pr-4">
+                    <div className="space-y-3">
+                      {productPrompts.map((prompt, index) => (
                       <div key={prompt.id} className="p-4 border rounded-lg">
                         <div className="mb-4">
                           <h4 className="font-medium">Campo nº {index + 1}</h4>
@@ -1424,7 +1426,8 @@ export default function ProductManagement() {
                         })()}
                       </div>
                     ))}
-                  </div>
+                    </div>
+                  </ScrollArea>
                 )}
               </TabsContent>
 
@@ -1459,8 +1462,9 @@ export default function ProductManagement() {
                     <p className="text-muted-foreground">No hay datos de salida configurados</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {productOutputs.map((output, index) => (
+                  <ScrollArea className="h-[500px] pr-4">
+                    <div className="space-y-3">
+                      {productOutputs.map((output, index) => (
                       <div key={output.id} className="p-4 border rounded-lg">
                         <div className="flex justify-between items-start mb-4">
                           <h4 className="font-medium">Campo nº {index + 1}</h4>
@@ -1530,7 +1534,8 @@ export default function ProductManagement() {
                         </div>
                       </div>
                     ))}
-                  </div>
+                    </div>
+                  </ScrollArea>
                 )}
               </TabsContent>
             </Tabs>
