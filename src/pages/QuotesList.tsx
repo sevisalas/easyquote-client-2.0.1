@@ -33,11 +33,22 @@ const fmtEUR = (n: any) => {
 };
 
 const fetchQuotes = async () => {
+  console.log('[DEBUG] Fetching quotes...');
+  
   const { data, error } = await supabase
     .from("quotes")
     .select("id, created_at, quote_number, customer_id, product_name, final_price, status, selections, description, holded_estimate_number, holded_estimate_id, user_id")
     .order("created_at", { ascending: false });
-  if (error) throw error;
+  
+  console.log('[DEBUG] Quotes query result:', { data, error });
+  console.log('[DEBUG] Total quotes returned:', data?.length || 0);
+  console.log('[DEBUG] Unique user_ids:', [...new Set(data?.map((q: any) => q.user_id) || [])]);
+  
+  if (error) {
+    console.error('[DEBUG] Error fetching quotes:', error);
+    throw error;
+  }
+  
   return data || [];
 };
 
