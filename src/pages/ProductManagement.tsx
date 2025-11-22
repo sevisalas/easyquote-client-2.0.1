@@ -388,13 +388,23 @@ export default function ProductManagement() {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
+      // Solo incluir campos numéricos si el tipo de prompt es 4 (número)
+      const isNumericType = updatedPrompt.promptType === 4;
+      
+      const promptToSend = {
+        ...updatedPrompt,
+        valueQuantityAllowedDecimals: isNumericType ? updatedPrompt.valueQuantityAllowedDecimals : null,
+        valueQuantityMin: isNumericType ? updatedPrompt.valueQuantityMin : null,
+        valueQuantityMax: isNumericType ? updatedPrompt.valueQuantityMax : null
+      };
+
       const response = await fetch("https://api.easyquote.cloud/api/v1/products/prompts", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify(updatedPrompt)
+        body: JSON.stringify(promptToSend)
       });
 
       if (!response.ok) throw new Error("Error updating prompt");
