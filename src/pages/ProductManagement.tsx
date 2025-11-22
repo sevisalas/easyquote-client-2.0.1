@@ -228,12 +228,15 @@ export default function ProductManagement() {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
-      const response = await fetch(`https://api.easyquote.cloud/api/v1/products/prompts/list/${selectedProduct.id}`, {
-        headers: { "Authorization": `Bearer ${token}` }
+      const { data, error } = await supabase.functions.invoke("easyquote-prompts", {
+        body: { token, productId: selectedProduct.id }
       });
 
-      if (!response.ok) throw new Error("Error fetching product prompts");
-      const data = await response.json();
+      if (error) {
+        console.error("Error fetching prompts:", error);
+        throw new Error("Error fetching product prompts");
+      }
+
       console.log("Product prompts received:", data);
       return data;
     },
@@ -249,12 +252,15 @@ export default function ProductManagement() {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
-      const response = await fetch(`https://api.easyquote.cloud/api/v1/products/outputs/list/${selectedProduct.id}`, {
-        headers: { "Authorization": `Bearer ${token}` }
+      const { data, error } = await supabase.functions.invoke("easyquote-outputs", {
+        body: { token, productId: selectedProduct.id }
       });
 
-      if (!response.ok) throw new Error("Error fetching product outputs");
-      const data = await response.json();
+      if (error) {
+        console.error("Error fetching outputs:", error);
+        throw new Error("Error fetching product outputs");
+      }
+
       console.log("Product outputs received:", data);
       return data;
     },
