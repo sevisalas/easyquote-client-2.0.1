@@ -696,6 +696,9 @@ export default function ProductManagement() {
     // Calculate next sequence number to avoid duplicates
     const nextSeq = productPrompts.length === 0 ? 1 : Math.max(...productPrompts.map(p => p.promptSeq || 0)) + 1;
 
+    // Solo incluir campos numéricos si el tipo de prompt es 4 (número)
+    const isNumericType = newPromptData.promptType === 4;
+
     const newPrompt = {
       productId: selectedProduct.id,
       promptSeq: newPromptData.promptSeq,
@@ -707,9 +710,9 @@ export default function ProductManagement() {
       valueOptionSheet: newPromptData.valueOptionSheet,
       valueOptionRange: newPromptData.valueOptionRange,
       valueRequired: newPromptData.valueRequired,
-      valueQuantityAllowedDecimals: newPromptData.valueQuantityAllowedDecimals,
-      valueQuantityMin: newPromptData.valueQuantityMin,
-      valueQuantityMax: newPromptData.valueQuantityMax
+      valueQuantityAllowedDecimals: isNumericType ? newPromptData.valueQuantityAllowedDecimals : null,
+      valueQuantityMin: isNumericType ? newPromptData.valueQuantityMin : null,
+      valueQuantityMax: isNumericType ? newPromptData.valueQuantityMax : null
     };
 
     createPromptMutation.mutate(newPrompt);
