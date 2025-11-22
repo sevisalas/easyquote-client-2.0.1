@@ -161,6 +161,8 @@ export default function ExcelFiles() {
     queryKey: ["easyquote-excel-files"],
     queryFn: async () => {
       const token = sessionStorage.getItem("easyquote_token");
+      console.log('[ExcelFiles] Fetching files from EasyQuote, token exists:', !!token);
+      
       if (!token) {
         throw new Error("No hay token de EasyQuote disponible");
       }
@@ -173,11 +175,16 @@ export default function ExcelFiles() {
         }
       });
 
+      console.log('[ExcelFiles] EasyQuote API response status:', response.status);
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[ExcelFiles] EasyQuote API error:', errorText);
         throw new Error("Error al obtener archivos Excel de EasyQuote");
       }
 
       const data = await response.json();
+      console.log('[ExcelFiles] Files received from EasyQuote:', data?.length || 0, 'files');
       return data;
     },
     enabled: !!hasToken,
@@ -236,6 +243,13 @@ export default function ExcelFiles() {
   const filteredFiles = includeInactive 
     ? filesWithMeta 
     : filesWithMeta.filter(file => file.isActive);
+  
+  console.log('[ExcelFiles] Filtered files:', {
+    totalFiles: files.length,
+    filesWithMeta: filesWithMeta.length,
+    filteredFiles: filteredFiles.length,
+    includeInactive
+  });
 
   // Auto-sync files when they are loaded
   useEffect(() => {
