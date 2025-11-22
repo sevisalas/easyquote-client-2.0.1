@@ -19,6 +19,7 @@ interface NumberingFormat {
   use_year: boolean;
   year_format: 'YY' | 'YYYY';
   sequential_digits: number;
+  last_sequential_number: number;
 }
 
 export default function SettingsNumberingFormats() {
@@ -32,7 +33,8 @@ export default function SettingsNumberingFormats() {
     suffix: '',
     use_year: true,
     year_format: 'YY',
-    sequential_digits: 4
+    sequential_digits: 4,
+    last_sequential_number: 0
   });
   const [orderFormat, setOrderFormat] = useState<NumberingFormat>({
     document_type: 'order',
@@ -40,7 +42,8 @@ export default function SettingsNumberingFormats() {
     suffix: '',
     use_year: true,
     year_format: 'YYYY',
-    sequential_digits: 4
+    sequential_digits: 4,
+    last_sequential_number: 0
   });
 
   useEffect(() => {
@@ -76,7 +79,8 @@ export default function SettingsNumberingFormats() {
             suffix: quoteData.suffix || '',
             use_year: quoteData.use_year,
             year_format: quoteData.year_format as 'YY' | 'YYYY',
-            sequential_digits: quoteData.sequential_digits || 4
+            sequential_digits: quoteData.sequential_digits || 4,
+            last_sequential_number: quoteData.last_sequential_number || 0
           });
         }
 
@@ -88,7 +92,8 @@ export default function SettingsNumberingFormats() {
             suffix: orderData.suffix || '',
             use_year: orderData.use_year,
             year_format: orderData.year_format as 'YY' | 'YYYY',
-            sequential_digits: orderData.sequential_digits || 4
+            sequential_digits: orderData.sequential_digits || 4,
+            last_sequential_number: orderData.last_sequential_number || 0
           });
         }
       }
@@ -144,6 +149,8 @@ export default function SettingsNumberingFormats() {
         suffix: format.suffix || '',
         use_year: format.use_year,
         year_format: format.year_format,
+        sequential_digits: format.sequential_digits,
+        last_sequential_number: format.last_sequential_number
       };
 
       if (format.id) {
@@ -303,9 +310,25 @@ export default function SettingsNumberingFormats() {
                 )}
               </div>
 
-              <div className="pt-2 border-t">
-                <p className="text-xs text-muted-foreground mb-1">Vista previa:</p>
-                <p className="text-sm font-mono font-semibold">{generateExample(quoteFormat)}</p>
+              <div className="pt-2 space-y-2">
+                <div>
+                  <Label htmlFor="quote-last-number" className="text-xs">Último número usado</Label>
+                  <Input
+                    id="quote-last-number"
+                    type="number"
+                    min="0"
+                    className="h-8 text-sm"
+                    value={quoteFormat.last_sequential_number}
+                    onChange={(e) => setQuoteFormat({ ...quoteFormat, last_sequential_number: parseInt(e.target.value) || 0 })}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Próximo número: {generateExample(quoteFormat, quoteFormat.last_sequential_number + 1)}
+                  </p>
+                </div>
+                <div className="border-t pt-2">
+                  <p className="text-xs text-muted-foreground mb-1">Vista previa:</p>
+                  <p className="text-sm font-mono font-semibold">{generateExample(quoteFormat, quoteFormat.last_sequential_number + 1)}</p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -384,9 +407,25 @@ export default function SettingsNumberingFormats() {
                 )}
               </div>
 
-              <div className="pt-2 border-t">
-                <p className="text-xs text-muted-foreground mb-1">Vista previa:</p>
-                <p className="text-sm font-mono font-semibold">{generateExample(orderFormat)}</p>
+              <div className="pt-2 space-y-2">
+                <div>
+                  <Label htmlFor="order-last-number" className="text-xs">Último número usado</Label>
+                  <Input
+                    id="order-last-number"
+                    type="number"
+                    min="0"
+                    className="h-8 text-sm"
+                    value={orderFormat.last_sequential_number}
+                    onChange={(e) => setOrderFormat({ ...orderFormat, last_sequential_number: parseInt(e.target.value) || 0 })}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Próximo número: {generateExample(orderFormat, orderFormat.last_sequential_number + 1)}
+                  </p>
+                </div>
+                <div className="border-t pt-2">
+                  <p className="text-xs text-muted-foreground mb-1">Vista previa:</p>
+                  <p className="text-sm font-mono font-semibold">{generateExample(orderFormat, orderFormat.last_sequential_number + 1)}</p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -394,7 +433,8 @@ export default function SettingsNumberingFormats() {
 
         <div className="bg-muted/50 p-3 rounded-lg">
           <p className="text-xs text-muted-foreground">
-            <strong>Nota:</strong> El número secuencial se genera automáticamente según los dígitos configurados.
+            <strong>Nota:</strong> El siguiente número se generará como <strong>último número usado + 1</strong>. 
+            Puedes editar manualmente el "Último número usado" para ajustar la secuencia.
           </p>
         </div>
     </div>

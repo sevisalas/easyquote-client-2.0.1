@@ -375,6 +375,7 @@ export type Database = {
           created_at: string
           document_type: string
           id: string
+          last_sequential_number: number
           organization_id: string | null
           prefix: string
           sequential_digits: number
@@ -388,6 +389,7 @@ export type Database = {
           created_at?: string
           document_type: string
           id?: string
+          last_sequential_number?: number
           organization_id?: string | null
           prefix?: string
           sequential_digits?: number
@@ -401,6 +403,7 @@ export type Database = {
           created_at?: string
           document_type?: string
           id?: string
+          last_sequential_number?: number
           organization_id?: string | null
           prefix?: string
           sequential_digits?: number
