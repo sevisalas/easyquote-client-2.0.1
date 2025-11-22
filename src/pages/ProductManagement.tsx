@@ -115,7 +115,6 @@ export default function ProductManagement() {
   const [includeInactive, setIncludeInactive] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<EasyQuoteProduct | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [hasToken, setHasToken] = useState<boolean | null>(null);
   const [tokenChecking, setTokenChecking] = useState(true);
   
@@ -1262,7 +1261,7 @@ export default function ProductManagement() {
                   </div>
                 </div>
 
-                {isLoadingDetails ? (
+                {promptsLoading ? (
                   <div className="text-center py-4">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                     <p className="text-sm text-muted-foreground mt-2">Cargando datos entrada...</p>
@@ -1471,7 +1470,7 @@ export default function ProductManagement() {
                   </div>
                 </div>
 
-                {isLoadingDetails ? (
+                {outputsLoading ? (
                   <div className="text-center py-4">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                     <p className="text-sm text-muted-foreground mt-2">Cargando datos de salida...</p>
