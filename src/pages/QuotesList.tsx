@@ -36,7 +36,7 @@ const fetchQuotes = async () => {
   const { data, error } = await supabase
     .from("quotes")
     .select("id, created_at, quote_number, customer_id, product_name, final_price, status, selections, description, holded_estimate_number, holded_estimate_id, user_id")
-    .order("created_at", { ascending: false });
+    .order("quote_number", { ascending: false });
   if (error) throw error;
   return data || [];
 };
