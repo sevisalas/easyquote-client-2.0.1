@@ -55,6 +55,15 @@ Deno.serve(async (req) => {
 
     console.log('Fetching data for organization:', org.name, 'with api_user_id:', org.api_user_id);
 
+    // Get all user_ids in the organization
+    const { data: members } = await supabaseAdmin
+      .from('organization_members')
+      .select('user_id')
+      .eq('organization_id', organizationId);
+
+    const userIds = members ? members.map(m => m.user_id) : [org.api_user_id];
+    console.log('User IDs in organization:', userIds);
+
     // Fetch numbering formats
     const { data: formats, error: formatsError } = await supabaseAdmin
       .from('numbering_formats')
@@ -68,11 +77,11 @@ Deno.serve(async (req) => {
 
     console.log('Formats found:', formats);
 
-    // Fetch document counts
+    // Fetch document counts for all organization members
     const { count: quotesCount, error: quotesError } = await supabaseAdmin
       .from('quotes')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', org.api_user_id);
+      .in('user_id', userIds);
 
     if (quotesError) {
       console.error('Error counting quotes:', quotesError);
@@ -84,7 +93,7 @@ Deno.serve(async (req) => {
     const { count: ordersCount, error: ordersError } = await supabaseAdmin
       .from('sales_orders')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', org.api_user_id);
+      .in('user_id', userIds);
 
     if (ordersError) {
       console.error('Error counting orders:', ordersError);
