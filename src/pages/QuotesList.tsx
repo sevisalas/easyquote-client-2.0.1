@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { CustomerName } from "@/components/quotes/CustomerName";
+import { UserName } from "@/components/quotes/UserName";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 
 const statusOptions = ["draft", "sent", "approved", "rejected"] as const;
@@ -81,13 +82,8 @@ const QuotesList = () => {
     queryKey: ["customers"], 
     queryFn: fetchCustomers
   });
-  const { data: orgMembers = [] } = useQuery({
-    queryKey: ["org-members"],
-    queryFn: fetchOrgMembers
-  });
 
   const getCustomerName = (id?: string | null) => customers.find((c: any) => c.id === id)?.name || "—";
-  const getUserName = (userId?: string | null) => orgMembers.find((m: any) => m.user_id === userId)?.display_name || "—";
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -123,7 +119,7 @@ const QuotesList = () => {
       
       return true;
     });
-  }, [quotes, customerFilter, statusFilter, quoteNumberFilter, dateFromFilter, dateToFilter, customers, orgMembers]);
+  }, [quotes, customerFilter, statusFilter, quoteNumberFilter, dateFromFilter, dateToFilter, customers]);
 
   // Paginated quotes
   const paginatedQuotes = useMemo(() => {
@@ -361,7 +357,9 @@ const QuotesList = () => {
                     <TableCell className="py-1.5 px-3 text-sm">
                       <CustomerName customerId={q.customer_id} />
                     </TableCell>
-                    <TableCell className="py-1.5 px-3 text-sm text-muted-foreground">{getUserName(q.user_id)}</TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm text-muted-foreground">
+                      <UserName userId={q.user_id} />
+                    </TableCell>
                     <TableCell className="py-1.5 px-3 text-sm">{q.description || ""}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm text-right font-medium">{fmtEUR(q.final_price)}</TableCell>
                     {isHoldedActive && (
