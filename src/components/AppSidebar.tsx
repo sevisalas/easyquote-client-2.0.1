@@ -198,44 +198,48 @@ export function AppSidebar() {
 
                   {/* Clientes - Solo para suscripciones Client */}
                   {canAccessClientes() && (
-                    <SidebarMenuItem>
-                       <SidebarMenuButton
-                         asChild
-                         isActive={currentPath.startsWith("/clientes")}
-                         className="h-7 px-2"
-                       >
-                         <NavLink to="/clientes" end className={getNavCls}>
-                           <Users className="mr-2 h-4 w-4" />
-                           {!isCollapsed && <span>Clientes</span>}
-                         </NavLink>
-                       </SidebarMenuButton>
-                       <SidebarMenuSub className="ml-2">
-                         <SidebarMenuSubItem>
-                           <SidebarMenuSubButton
-                             asChild
-                             isActive={currentPath === "/clientes"}
-                             className="h-6 px-2"
-                           >
-                             <NavLink to="/clientes" end className={getNavCls}>
-                               <Users className="mr-2 h-4 w-4" />
-                               {!isCollapsed && <span>Listado</span>}
-                             </NavLink>
-                           </SidebarMenuSubButton>
-                         </SidebarMenuSubItem>
-                         <SidebarMenuSubItem>
-                           <SidebarMenuSubButton
-                             asChild
-                             isActive={currentPath === "/clientes/nuevo"}
-                             className="h-6 px-2"
-                           >
-                             <NavLink to="/clientes/nuevo" className={getNavCls}>
-                               <PlusCircle className="mr-2 h-4 w-4" />
-                               {!isCollapsed && <span>Nuevo</span>}
-                             </NavLink>
-                           </SidebarMenuSubButton>
-                         </SidebarMenuSubItem>
-                       </SidebarMenuSub>
-                    </SidebarMenuItem>
+                    <Collapsible asChild defaultOpen={false}>
+                      <SidebarMenuItem>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton
+                            isActive={currentPath.startsWith("/clientes")}
+                            className="h-7 px-2"
+                          >
+                            <Users className="mr-2 h-4 w-4" />
+                            {!isCollapsed && <span>Clientes</span>}
+                            {!isCollapsed && <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />}
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <SidebarMenuSub className="ml-2">
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSubButton
+                                asChild
+                                isActive={currentPath === "/clientes"}
+                                className="h-6 px-2"
+                              >
+                                <NavLink to="/clientes" end className={getNavCls}>
+                                  <Users className="mr-2 h-4 w-4" />
+                                  {!isCollapsed && <span>Listado</span>}
+                                </NavLink>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSubButton
+                                asChild
+                                isActive={currentPath === "/clientes/nuevo"}
+                                className="h-6 px-2"
+                              >
+                                <NavLink to="/clientes/nuevo" className={getNavCls}>
+                                  <PlusCircle className="mr-2 h-4 w-4" />
+                                  {!isCollapsed && <span>Nuevo</span>}
+                                </NavLink>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          </SidebarMenuSub>
+                        </CollapsibleContent>
+                      </SidebarMenuItem>
+                    </Collapsible>
                   )}
 
                   {/* Presupuestos - Solo para suscripciones Client */}
@@ -286,44 +290,48 @@ export function AppSidebar() {
 
                    {/* Pedidos - Solo para suscripciones con módulo Production (ERP) */}
                    {canAccessProduccion() && (
-                     <SidebarMenuItem>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={currentPath.startsWith("/pedidos")}
-                          className="h-7 px-2"
-                        >
-                          <NavLink to="/pedidos" end className={getNavCls}>
-                            <Package className="mr-2 h-4 w-4" />
-                            {!isCollapsed && <span>Pedidos</span>}
-                          </NavLink>
-                        </SidebarMenuButton>
-                        <SidebarMenuSub className="ml-2">
-                          <SidebarMenuSubItem>
-                            <SidebarMenuSubButton
-                              asChild
-                              isActive={currentPath === "/pedidos"}
-                              className="h-6 px-2"
-                            >
-                              <NavLink to="/pedidos" end className={getNavCls}>
-                                <Package className="mr-2 h-4 w-4" />
-                                {!isCollapsed && <span>Listado</span>}
-                              </NavLink>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                          <SidebarMenuSubItem>
-                            <SidebarMenuSubButton
-                              asChild
-                              isActive={currentPath === "/pedidos/nuevo"}
-                              className="h-6 px-2"
-                            >
-                              <NavLink to="/pedidos/nuevo" className={getNavCls}>
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                {!isCollapsed && <span>Nuevo</span>}
-                              </NavLink>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        </SidebarMenuSub>
-                     </SidebarMenuItem>
+                     <Collapsible asChild defaultOpen={false}>
+                       <SidebarMenuItem>
+                         <CollapsibleTrigger asChild>
+                           <SidebarMenuButton
+                             isActive={currentPath.startsWith("/pedidos")}
+                             className="h-7 px-2"
+                           >
+                             <Package className="mr-2 h-4 w-4" />
+                             {!isCollapsed && <span>Pedidos</span>}
+                             {!isCollapsed && <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />}
+                           </SidebarMenuButton>
+                         </CollapsibleTrigger>
+                         <CollapsibleContent>
+                           <SidebarMenuSub className="ml-2">
+                             <SidebarMenuSubItem>
+                               <SidebarMenuSubButton
+                                 asChild
+                                 isActive={currentPath === "/pedidos"}
+                                 className="h-6 px-2"
+                               >
+                                 <NavLink to="/pedidos" end className={getNavCls}>
+                                   <Package className="mr-2 h-4 w-4" />
+                                   {!isCollapsed && <span>Listado</span>}
+                                 </NavLink>
+                               </SidebarMenuSubButton>
+                             </SidebarMenuSubItem>
+                             <SidebarMenuSubItem>
+                               <SidebarMenuSubButton
+                                 asChild
+                                 isActive={currentPath === "/pedidos/nuevo"}
+                                 className="h-6 px-2"
+                               >
+                                 <NavLink to="/pedidos/nuevo" className={getNavCls}>
+                                   <PlusCircle className="mr-2 h-4 w-4" />
+                                   {!isCollapsed && <span>Nuevo</span>}
+                                 </NavLink>
+                               </SidebarMenuSubButton>
+                             </SidebarMenuSubItem>
+                           </SidebarMenuSub>
+                         </CollapsibleContent>
+                       </SidebarMenuItem>
+                     </Collapsible>
                    )}
 
                    {/* Tema - Temporalmente desactivado */}
@@ -338,113 +346,116 @@ export function AppSidebar() {
 
                     {/* Configuración - Solo si tiene acceso a algo (admin) */}
                    {((isSuperAdmin || isOrgAdmin) || hasPdfAccess || canAccessExcel() || canAccessProductos() || canAccessCategorias()) && (
-                   <SidebarMenuItem>
-                     <SidebarMenuButton asChild isActive={currentPath.startsWith("/configuracion")} className="h-7 px-2">
-                       <NavLink to={hasPdfAccess ? "/configuracion/plantilla-pdf" : "/configuracion/ajustes"} end className={getNavCls}>
-                         <Palette className="mr-2 h-4 w-4" />
-                         {!isCollapsed && <span>Configuración</span>}
-                       </NavLink>
-                     </SidebarMenuButton>
-                     <SidebarMenuSub className="ml-2">
-                       {/* Ajustes - Solo para admins */}
-                       {(isSuperAdmin || isOrgAdmin) && (
-                         <SidebarMenuSubItem>
-                           <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/ajustes"} className="h-6 px-2">
-                             <NavLink to="/configuracion/ajustes" end className={getNavCls}>
-                               <Plus className="mr-2 h-4 w-4" />
-                               {!isCollapsed && <span>Ajustes</span>}
-                             </NavLink>
-                           </SidebarMenuSubButton>
-                         </SidebarMenuSubItem>
-                       )}
-                         {/* Plantilla PDF - Solo si tienen acceso a generación de PDFs */}
-                         {hasPdfAccess && (
-                           <SidebarMenuSubItem>
-                             <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/plantilla-pdf"} className="h-6 px-2">
-                               <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
-                                 <FileText className="mr-2 h-4 w-4" />
-                                 {!isCollapsed && <span>Plantilla PDF</span>}
-                               </NavLink>
-                             </SidebarMenuSubButton>
-                           </SidebarMenuSubItem>
-                         )}
-                          {/* Formatos de Numeración - Solo admins */}
-                          {(isSuperAdmin || isOrgAdmin) && (
-                            <SidebarMenuSubItem>
-                               <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/formatos-numeracion"} className="h-6 px-2">
-                                 <NavLink to="/configuracion/formatos-numeracion" end className={getNavCls}>
-                                   <Hash className="mr-2 h-4 w-4" />
-                                   {!isCollapsed && <span>Numeraciones</span>}
+                   <Collapsible asChild defaultOpen={false}>
+                     <SidebarMenuItem>
+                       <CollapsibleTrigger asChild>
+                         <SidebarMenuButton isActive={currentPath.startsWith("/configuracion")} className="h-7 px-2">
+                           <Palette className="mr-2 h-4 w-4" />
+                           {!isCollapsed && <span>Configuración</span>}
+                           {!isCollapsed && <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />}
+                         </SidebarMenuButton>
+                       </CollapsibleTrigger>
+                       <CollapsibleContent>
+                         <SidebarMenuSub className="ml-2">
+                           {/* Ajustes - Solo para admins */}
+                           {(isSuperAdmin || isOrgAdmin) && (
+                             <SidebarMenuSubItem>
+                               <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/ajustes"} className="h-6 px-2">
+                                 <NavLink to="/configuracion/ajustes" end className={getNavCls}>
+                                   <Plus className="mr-2 h-4 w-4" />
+                                   {!isCollapsed && <span>Ajustes</span>}
                                  </NavLink>
                                </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
+                             </SidebarMenuSubItem>
                            )}
-                           {/* Integraciones - Solo admins */}
-                        {(isSuperAdmin || isOrgAdmin) && (
-                          <>
-                            <SidebarMenuSubItem>
-                              <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/integraciones"} className="h-6 px-2">
-                                <NavLink to="/configuracion/integraciones" end className={getNavCls}>
-                                  <Plug className="mr-2 h-4 w-4" />
-                                  {!isCollapsed && <span>Integraciones</span>}
-                                </NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          </>
-                        )}
-                       
-                       {/* Archivos Excel - Solo API suscriptions o Client admins */}
-                       {canAccessExcel() && (
-                         <SidebarMenuSubItem>
-                           <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/archivos-excel"} className="h-6 px-2">
-                             <NavLink to="/configuracion/archivos-excel" end className={getNavCls}>
-                               <FileSpreadsheet className="mr-2 h-4 w-4" />
-                               {!isCollapsed && <span>Archivos Excel</span>}
-                             </NavLink>
-                           </SidebarMenuSubButton>
-                         </SidebarMenuSubItem>
-                       )}
-                       
-                       {/* Productos - Solo API subscriptions o Client admins */}
-                       {canAccessProductos() && (
-                         <SidebarMenuSubItem>
-                           <SidebarMenuSubButton asChild isActive={currentPath === "/admin/productos"} className="h-6 px-2">
-                             <NavLink to="/admin/productos" end className={getNavCls}>
-                               <Package className="mr-2 h-4 w-4" />
-                               {!isCollapsed && <span>Productos</span>}
-                             </NavLink>
-                           </SidebarMenuSubButton>
-                         </SidebarMenuSubItem>
-                       )}
-                       
-                       {/* Categorías - Solo API subscriptions o Client admins */}
-                       {canAccessCategorias() && (
-                         <SidebarMenuSubItem>
-                           <SidebarMenuSubButton asChild isActive={currentPath === "/admin/categorias"} className="h-6 px-2">
-                             <NavLink to="/admin/categorias" end className={getNavCls}>
-                               <Tags className="mr-2 h-4 w-4" />
-                               {!isCollapsed && <span>Categorías</span>}
-                             </NavLink>
-                           </SidebarMenuSubButton>
-                         </SidebarMenuSubItem>
-                       )}
-                       
-                       {/* Gestión de imágenes - Solo API subscriptions o Client admins */}
-                       {canAccessProductos() && (
-                         <SidebarMenuSubItem>
-                           <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/imagenes"} className="h-6 px-2">
-                             <NavLink to="/configuracion/imagenes" end className={getNavCls}>
-                               <Image className="mr-2 h-4 w-4" />
-                               {!isCollapsed && <span>Imágenes</span>}
-                             </NavLink>
-                           </SidebarMenuSubButton>
-                         </SidebarMenuSubItem>
-                       )}
-                      </SidebarMenuSub>
-                    </SidebarMenuItem>
+                             {/* Plantilla PDF - Solo si tienen acceso a generación de PDFs */}
+                             {hasPdfAccess && (
+                               <SidebarMenuSubItem>
+                                 <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/plantilla-pdf"} className="h-6 px-2">
+                                   <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
+                                     <FileText className="mr-2 h-4 w-4" />
+                                     {!isCollapsed && <span>Plantilla PDF</span>}
+                                   </NavLink>
+                                 </SidebarMenuSubButton>
+                               </SidebarMenuSubItem>
+                             )}
+                              {/* Formatos de Numeración - Solo admins */}
+                              {(isSuperAdmin || isOrgAdmin) && (
+                                <SidebarMenuSubItem>
+                                   <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/formatos-numeracion"} className="h-6 px-2">
+                                     <NavLink to="/configuracion/formatos-numeracion" end className={getNavCls}>
+                                       <Hash className="mr-2 h-4 w-4" />
+                                       {!isCollapsed && <span>Numeraciones</span>}
+                                     </NavLink>
+                                   </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                               )}
+                               {/* Integraciones - Solo admins */}
+                            {(isSuperAdmin || isOrgAdmin) && (
+                              <>
+                                <SidebarMenuSubItem>
+                                  <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/integraciones"} className="h-6 px-2">
+                                    <NavLink to="/configuracion/integraciones" end className={getNavCls}>
+                                      <Plug className="mr-2 h-4 w-4" />
+                                      {!isCollapsed && <span>Integraciones</span>}
+                                    </NavLink>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              </>
+                            )}
+                           
+                           {/* Archivos Excel - Solo API suscriptions o Client admins */}
+                           {canAccessExcel() && (
+                             <SidebarMenuSubItem>
+                               <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/archivos-excel"} className="h-6 px-2">
+                                 <NavLink to="/configuracion/archivos-excel" end className={getNavCls}>
+                                   <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                   {!isCollapsed && <span>Archivos Excel</span>}
+                                 </NavLink>
+                               </SidebarMenuSubButton>
+                             </SidebarMenuSubItem>
+                           )}
+                           
+                           {/* Productos - Solo API subscriptions o Client admins */}
+                           {canAccessProductos() && (
+                             <SidebarMenuSubItem>
+                               <SidebarMenuSubButton asChild isActive={currentPath === "/admin/productos"} className="h-6 px-2">
+                                 <NavLink to="/admin/productos" end className={getNavCls}>
+                                   <Package className="mr-2 h-4 w-4" />
+                                   {!isCollapsed && <span>Productos</span>}
+                                 </NavLink>
+                               </SidebarMenuSubButton>
+                             </SidebarMenuSubItem>
+                           )}
+                           
+                           {/* Categorías - Solo API subscriptions o Client admins */}
+                           {canAccessCategorias() && (
+                             <SidebarMenuSubItem>
+                               <SidebarMenuSubButton asChild isActive={currentPath === "/admin/categorias"} className="h-6 px-2">
+                                 <NavLink to="/admin/categorias" end className={getNavCls}>
+                                   <Tags className="mr-2 h-4 w-4" />
+                                   {!isCollapsed && <span>Categorías</span>}
+                                 </NavLink>
+                               </SidebarMenuSubButton>
+                             </SidebarMenuSubItem>
+                           )}
+                           
+                           {/* Gestión de imágenes - Solo API subscriptions o Client admins */}
+                           {canAccessProductos() && (
+                             <SidebarMenuSubItem>
+                               <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/imagenes"} className="h-6 px-2">
+                                 <NavLink to="/configuracion/imagenes" end className={getNavCls}>
+                                   <Image className="mr-2 h-4 w-4" />
+                                   {!isCollapsed && <span>Imágenes</span>}
+                                 </NavLink>
+                               </SidebarMenuSubButton>
+                             </SidebarMenuSubItem>
+                           )}
+                         </SidebarMenuSub>
+                       </CollapsibleContent>
+                     </SidebarMenuItem>
+                   </Collapsible>
                    )}
-                </>
-              )}
 
               {/* Gestión de usuarios - solo para org admin (no superadmin, ya está arriba) */}
                {!isSuperAdmin && isOrgAdmin && (
@@ -457,6 +468,8 @@ export function AppSidebar() {
                    </SidebarMenuButton>
                  </SidebarMenuItem>
                )}
+                </>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
