@@ -378,10 +378,31 @@ export default function ProductManagement() {
     }
   });
 
+  // Helper to sanitize prompt data based on type
+  const sanitizePromptData = (prompt: any) => {
+    const promptType = promptTypes.find(t => t.id === prompt.promptType);
+    const isNumericType = promptType?.promptType === "Number" || promptType?.promptType === "Quantity";
+    
+    // If not numeric, set numeric fields to null
+    if (!isNumericType) {
+      return {
+        ...prompt,
+        valueQuantityAllowedDecimals: null,
+        valueQuantityMin: null,
+        valueQuantityMax: null
+      };
+    }
+    
+    return prompt;
+  };
+
   const updatePromptMutation = useMutation({
     mutationFn: async (updatedPrompt: ProductPrompt) => {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
+
+      // Sanitize data before sending
+      const sanitizedPrompt = sanitizePromptData(updatedPrompt);
 
       const response = await fetch("https://api.easyquote.cloud/api/v1/products/prompts", {
         method: "PUT",
@@ -389,7 +410,7 @@ export default function ProductManagement() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify(updatedPrompt)
+        body: JSON.stringify(sanitizedPrompt)
       });
 
       if (!response.ok) throw new Error("Error updating prompt");
@@ -707,7 +728,9 @@ export default function ProductManagement() {
       valueQuantityMax: newPromptData.valueQuantityMax
     };
 
-    createPromptMutation.mutate(newPrompt);
+    // Sanitize before sending
+    const sanitizedPrompt = sanitizePromptData(newPrompt);
+    createPromptMutation.mutate(sanitizedPrompt);
     setIsNewPromptDialogOpen(false);
   };
 
@@ -787,7 +810,9 @@ export default function ProductManagement() {
           valueQuantityMax: promptData.valueQuantityMax
         };
         
-        await createPromptMutation.mutateAsync(newPrompt);
+        // Sanitize before sending
+        const sanitizedPrompt = sanitizePromptData(newPrompt);
+        await createPromptMutation.mutateAsync(sanitizedPrompt);
       }
       
       setIsBulkPromptsDialogOpen(false);
