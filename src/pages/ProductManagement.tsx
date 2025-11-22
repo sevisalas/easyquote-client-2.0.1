@@ -115,6 +115,7 @@ export default function ProductManagement() {
   const [includeInactive, setIncludeInactive] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<EasyQuoteProduct | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [hasToken, setHasToken] = useState<boolean | null>(null);
   const [tokenChecking, setTokenChecking] = useState(true);
   
@@ -377,31 +378,10 @@ export default function ProductManagement() {
     }
   });
 
-  // Helper to sanitize prompt data based on type
-  const sanitizePromptData = (prompt: any) => {
-    const promptType = promptTypes.find(t => t.id === prompt.promptType);
-    const isNumericType = promptType?.promptType === "Number" || promptType?.promptType === "Quantity";
-    
-    // If not numeric, set numeric fields to null
-    if (!isNumericType) {
-      return {
-        ...prompt,
-        valueQuantityAllowedDecimals: null,
-        valueQuantityMin: null,
-        valueQuantityMax: null
-      };
-    }
-    
-    return prompt;
-  };
-
   const updatePromptMutation = useMutation({
     mutationFn: async (updatedPrompt: ProductPrompt) => {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
-
-      // Sanitize data before sending
-      const sanitizedPrompt = sanitizePromptData(updatedPrompt);
 
       const response = await fetch("https://api.easyquote.cloud/api/v1/products/prompts", {
         method: "PUT",
@@ -409,7 +389,7 @@ export default function ProductManagement() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify(sanitizedPrompt)
+        body: JSON.stringify(updatedPrompt)
       });
 
       if (!response.ok) throw new Error("Error updating prompt");
@@ -727,9 +707,7 @@ export default function ProductManagement() {
       valueQuantityMax: newPromptData.valueQuantityMax
     };
 
-    // Sanitize before sending
-    const sanitizedPrompt = sanitizePromptData(newPrompt);
-    createPromptMutation.mutate(sanitizedPrompt);
+    createPromptMutation.mutate(newPrompt);
     setIsNewPromptDialogOpen(false);
   };
 
@@ -809,9 +787,7 @@ export default function ProductManagement() {
           valueQuantityMax: promptData.valueQuantityMax
         };
         
-        // Sanitize before sending
-        const sanitizedPrompt = sanitizePromptData(newPrompt);
-        await createPromptMutation.mutateAsync(sanitizedPrompt);
+        await createPromptMutation.mutateAsync(newPrompt);
       }
       
       setIsBulkPromptsDialogOpen(false);
@@ -1261,7 +1237,7 @@ export default function ProductManagement() {
                   </div>
                 </div>
 
-                {promptsLoading ? (
+                {isLoadingDetails ? (
                   <div className="text-center py-4">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                     <p className="text-sm text-muted-foreground mt-2">Cargando datos entrada...</p>
@@ -1470,7 +1446,7 @@ export default function ProductManagement() {
                   </div>
                 </div>
 
-                {outputsLoading ? (
+                {isLoadingDetails ? (
                   <div className="text-center py-4">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                     <p className="text-sm text-muted-foreground mt-2">Cargando datos de salida...</p>
