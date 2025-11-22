@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronDown } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -203,11 +203,11 @@ export function AppSidebar() {
                         <CollapsibleTrigger asChild>
                           <SidebarMenuButton
                             isActive={currentPath.startsWith("/clientes")}
-                            className="h-7 px-2"
+                            className="h-7 px-2 group"
                           >
                             <Users className="mr-2 h-4 w-4" />
                             {!isCollapsed && <span>Clientes</span>}
-                            {!isCollapsed && <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />}
+                            {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />}
                           </SidebarMenuButton>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
@@ -249,11 +249,11 @@ export function AppSidebar() {
                         <CollapsibleTrigger asChild>
                           <SidebarMenuButton
                             isActive={currentPath.startsWith("/presupuestos")}
-                            className="h-7 px-2"
+                            className="h-7 px-2 group"
                           >
                             <FileText className="mr-2 h-4 w-4" />
                             {!isCollapsed && <span>Presupuestos</span>}
-                            {!isCollapsed && <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />}
+                            {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />}
                           </SidebarMenuButton>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
@@ -295,11 +295,11 @@ export function AppSidebar() {
                          <CollapsibleTrigger asChild>
                            <SidebarMenuButton
                              isActive={currentPath.startsWith("/pedidos")}
-                             className="h-7 px-2"
+                             className="h-7 px-2 group"
                            >
                              <Package className="mr-2 h-4 w-4" />
                              {!isCollapsed && <span>Pedidos</span>}
-                             {!isCollapsed && <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />}
+                             {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />}
                            </SidebarMenuButton>
                          </CollapsibleTrigger>
                          <CollapsibleContent>
@@ -349,10 +349,10 @@ export function AppSidebar() {
                    <Collapsible asChild defaultOpen={false}>
                      <SidebarMenuItem>
                        <CollapsibleTrigger asChild>
-                         <SidebarMenuButton isActive={currentPath.startsWith("/configuracion")} className="h-7 px-2">
+                         <SidebarMenuButton isActive={currentPath.startsWith("/configuracion")} className="h-7 px-2 group">
                            <Palette className="mr-2 h-4 w-4" />
                            {!isCollapsed && <span>Configuración</span>}
-                           {!isCollapsed && <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />}
+                           {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />}
                          </SidebarMenuButton>
                        </CollapsibleTrigger>
                        <CollapsibleContent>
