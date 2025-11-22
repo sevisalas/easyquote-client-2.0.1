@@ -59,6 +59,28 @@ serve(async (req) => {
       throw new Error("At least one document type must be selected");
     }
 
+    // Get organization_id for the user
+    const { data: orgData } = await supabaseAdmin
+      .from("organization_members")
+      .select("organization_id")
+      .eq("user_id", userId)
+      .single();
+
+    const organizationId = orgData?.organization_id;
+
+    // Get all user_ids in the organization
+    let userIds = [userId];
+    if (organizationId) {
+      const { data: members } = await supabaseAdmin
+        .from("organization_members")
+        .select("user_id")
+        .eq("organization_id", organizationId);
+      
+      if (members && members.length > 0) {
+        userIds = members.map(m => m.user_id);
+      }
+    }
+
     let quotesUpdated = 0;
     let ordersUpdated = 0;
 
@@ -73,11 +95,11 @@ serve(async (req) => {
       const prefix = format.prefix + (format.use_year ? yearStr + '-' : '');
       const suffix = format.suffix || '';
 
-      // Fetch all quotes ordered by created_at
+      // Fetch all quotes from organization ordered by created_at
       const { data: quotes, error: quotesError } = await supabaseAdmin
         .from("quotes")
         .select("id, created_at")
-        .eq("user_id", userId)
+        .in("user_id", userIds)
         .order("created_at", { ascending: true });
 
       if (quotesError) throw quotesError;
@@ -111,11 +133,11 @@ serve(async (req) => {
       const prefix = format.prefix + (format.use_year ? yearStr + '-' : '');
       const suffix = format.suffix || '';
 
-      // Fetch all orders ordered by created_at
+      // Fetch all orders from organization ordered by created_at
       const { data: orders, error: ordersError } = await supabaseAdmin
         .from("sales_orders")
         .select("id, created_at")
-        .eq("user_id", userId)
+        .in("user_id", userIds)
         .order("created_at", { ascending: true });
 
       if (ordersError) throw ordersError;
