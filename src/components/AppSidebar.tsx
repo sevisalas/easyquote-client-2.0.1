@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronDown } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -18,6 +18,7 @@ import {
   useSidebar,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -239,45 +240,49 @@ export function AppSidebar() {
 
                   {/* Presupuestos - Solo para suscripciones Client */}
                   {canAccessPresupuestos() && (
-                    <SidebarMenuItem>
-                       <SidebarMenuButton
-                         asChild
-                         isActive={currentPath.startsWith("/presupuestos")}
-                         className="h-7 px-2"
-                       >
-                         <NavLink to="/presupuestos" end className={getNavCls}>
-                           <FileText className="mr-2 h-4 w-4" />
-                           {!isCollapsed && <span>Presupuestos</span>}
-                         </NavLink>
-                       </SidebarMenuButton>
-                       <SidebarMenuSub className="ml-2">
-                         <SidebarMenuSubItem>
-                           <SidebarMenuSubButton
-                             asChild
-                             isActive={currentPath === "/presupuestos"}
-                             className="h-6 px-2"
-                           >
-                             <NavLink to="/presupuestos" end className={getNavCls}>
-                               <FileText className="mr-2 h-4 w-4" />
-                               {!isCollapsed && <span>Listado</span>}
-                             </NavLink>
-                           </SidebarMenuSubButton>
-                         </SidebarMenuSubItem>
-                         <SidebarMenuSubItem>
-                           <SidebarMenuSubButton
-                             asChild
-                             isActive={currentPath === "/presupuestos/nuevo"}
-                             className="h-6 px-2"
-                           >
-                             <NavLink to="/presupuestos/nuevo" className={getNavCls}>
-                               <PlusCircle className="mr-2 h-4 w-4" />
-                               {!isCollapsed && <span>Nuevo</span>}
-                             </NavLink>
-                           </SidebarMenuSubButton>
-                         </SidebarMenuSubItem>
-                        </SidebarMenuSub>
-                     </SidebarMenuItem>
-                   )}
+                    <Collapsible asChild defaultOpen={false}>
+                      <SidebarMenuItem>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton
+                            isActive={currentPath.startsWith("/presupuestos")}
+                            className="h-7 px-2"
+                          >
+                            <FileText className="mr-2 h-4 w-4" />
+                            {!isCollapsed && <span>Presupuestos</span>}
+                            {!isCollapsed && <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />}
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <SidebarMenuSub className="ml-2">
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSubButton
+                                asChild
+                                isActive={currentPath === "/presupuestos"}
+                                className="h-6 px-2"
+                              >
+                                <NavLink to="/presupuestos" end className={getNavCls}>
+                                  <FileText className="mr-2 h-4 w-4" />
+                                  {!isCollapsed && <span>Listado</span>}
+                                </NavLink>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSubButton
+                                asChild
+                                isActive={currentPath === "/presupuestos/nuevo"}
+                                className="h-6 px-2"
+                              >
+                                <NavLink to="/presupuestos/nuevo" className={getNavCls}>
+                                  <PlusCircle className="mr-2 h-4 w-4" />
+                                  {!isCollapsed && <span>Nuevo</span>}
+                                </NavLink>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          </SidebarMenuSub>
+                        </CollapsibleContent>
+                      </SidebarMenuItem>
+                    </Collapsible>
+                  )}
 
                    {/* Pedidos - Solo para suscripciones con módulo Production (ERP) */}
                    {canAccessProduccion() && (
