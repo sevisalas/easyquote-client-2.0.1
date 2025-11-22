@@ -115,7 +115,7 @@ export default function SalesOrderNew() {
       throw new Error("No se pudo obtener el formato de numeración");
     }
 
-    const nextNumber = orderFormat.last_sequential_number + 1;
+    const nextNumber = Math.max(1, (orderFormat.last_sequential_number || 0) + 1);
     return generateDocumentNumber(orderFormat, nextNumber);
   };
 

@@ -34,7 +34,7 @@ export default function SettingsNumberingFormats() {
     use_year: true,
     year_format: 'YY',
     sequential_digits: 4,
-    last_sequential_number: 0
+    last_sequential_number: 1
   });
   const [orderFormat, setOrderFormat] = useState<NumberingFormat>({
     document_type: 'order',
@@ -43,7 +43,7 @@ export default function SettingsNumberingFormats() {
     use_year: true,
     year_format: 'YYYY',
     sequential_digits: 4,
-    last_sequential_number: 0
+    last_sequential_number: 1
   });
 
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function SettingsNumberingFormats() {
             use_year: quoteData.use_year,
             year_format: quoteData.year_format as 'YY' | 'YYYY',
             sequential_digits: quoteData.sequential_digits || 4,
-            last_sequential_number: quoteData.last_sequential_number || 0
+            last_sequential_number: quoteData.last_sequential_number || 1
           });
         }
 
@@ -93,7 +93,7 @@ export default function SettingsNumberingFormats() {
             use_year: orderData.use_year,
             year_format: orderData.year_format as 'YY' | 'YYYY',
             sequential_digits: orderData.sequential_digits || 4,
-            last_sequential_number: orderData.last_sequential_number || 0
+            last_sequential_number: orderData.last_sequential_number || 1
           });
         }
       }
@@ -316,10 +316,10 @@ export default function SettingsNumberingFormats() {
                   <Input
                     id="quote-last-number"
                     type="number"
-                    min="0"
+                    min="1"
                     className="h-8 text-sm"
                     value={quoteFormat.last_sequential_number}
-                    onChange={(e) => setQuoteFormat({ ...quoteFormat, last_sequential_number: parseInt(e.target.value) || 0 })}
+                    onChange={(e) => setQuoteFormat({ ...quoteFormat, last_sequential_number: Math.max(1, parseInt(e.target.value) || 1) })}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Próximo número: {generateExample(quoteFormat, quoteFormat.last_sequential_number + 1)}
@@ -413,10 +413,10 @@ export default function SettingsNumberingFormats() {
                   <Input
                     id="order-last-number"
                     type="number"
-                    min="0"
+                    min="1"
                     className="h-8 text-sm"
                     value={orderFormat.last_sequential_number}
-                    onChange={(e) => setOrderFormat({ ...orderFormat, last_sequential_number: parseInt(e.target.value) || 0 })}
+                    onChange={(e) => setOrderFormat({ ...orderFormat, last_sequential_number: Math.max(1, parseInt(e.target.value) || 1) })}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Próximo número: {generateExample(orderFormat, orderFormat.last_sequential_number + 1)}
