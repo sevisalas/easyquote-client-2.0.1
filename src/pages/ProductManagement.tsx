@@ -161,9 +161,9 @@ export default function ProductManagement() {
     valueOptionRange: "",
     promptType: 0,
     valueRequired: false,
-    valueQuantityAllowedDecimals: 0,
-    valueQuantityMin: 1,
-    valueQuantityMax: 9999,
+    valueQuantityAllowedDecimals: null,
+    valueQuantityMin: null,
+    valueQuantityMax: null,
     promptSeq: 1
   });
   const [newOutputData, setNewOutputData] = useState({
@@ -682,9 +682,9 @@ export default function ProductManagement() {
       valueOptionRange: "",
       promptType: promptTypes[0]?.id || 0,
       valueRequired: false,
-      valueQuantityAllowedDecimals: 0,
-      valueQuantityMin: 1,
-      valueQuantityMax: 9999,
+      valueQuantityAllowedDecimals: null,
+      valueQuantityMin: null,
+      valueQuantityMax: null,
       promptSeq: nextSeq
     });
     setIsNewPromptDialogOpen(true);
