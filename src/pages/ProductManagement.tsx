@@ -711,10 +711,10 @@ export default function ProductManagement() {
       valueOptionSheet: newPromptData.valueOptionSheet,
       valueOptionRange: newPromptData.valueOptionRange,
       valueRequired: newPromptData.valueRequired,
-      // Solo incluir estos campos si el tipo es numérico, de lo contrario null
-      valueQuantityAllowedDecimals: isNumericType ? newPromptData.valueQuantityAllowedDecimals : null,
-      valueQuantityMin: isNumericType ? newPromptData.valueQuantityMin : null,
-      valueQuantityMax: isNumericType ? newPromptData.valueQuantityMax : null
+      // Solo incluir estos campos si el tipo es numérico con valores por defecto
+      valueQuantityAllowedDecimals: isNumericType ? (newPromptData.valueQuantityAllowedDecimals ?? 0) : null,
+      valueQuantityMin: isNumericType ? (newPromptData.valueQuantityMin ?? 1) : null,
+      valueQuantityMax: isNumericType ? (newPromptData.valueQuantityMax ?? 9999) : null
     };
 
     createPromptMutation.mutate(newPrompt);
@@ -796,10 +796,10 @@ export default function ProductManagement() {
           valueOptionSheet: promptData.sheet,  // Same sheet
           valueOptionRange: promptData.valueOptionRange,
           valueRequired: promptData.valueRequired,
-          // Solo incluir estos campos si el tipo es numérico
-          valueQuantityAllowedDecimals: isNumericType ? promptData.valueQuantityAllowedDecimals : null,
-          valueQuantityMin: isNumericType ? promptData.valueQuantityMin : null,
-          valueQuantityMax: isNumericType ? promptData.valueQuantityMax : null
+          // Solo incluir estos campos si el tipo es numérico con valores por defecto
+          valueQuantityAllowedDecimals: isNumericType ? (promptData.valueQuantityAllowedDecimals ?? 0) : null,
+          valueQuantityMin: isNumericType ? (promptData.valueQuantityMin ?? 1) : null,
+          valueQuantityMax: isNumericType ? (promptData.valueQuantityMax ?? 9999) : null
         };
         
         await createPromptMutation.mutateAsync(newPrompt);
@@ -1428,11 +1428,14 @@ export default function ProductManagement() {
                                     <Label>Decs.</Label>
                                     <Input
                                       type="number"
-                                      defaultValue={prompt.valueQuantityAllowedDecimals || 0}
+                                      defaultValue={prompt.valueQuantityAllowedDecimals ?? 0}
                                       onBlur={(e) => {
+                                        const value = e.target.value === '' ? 0 : parseInt(e.target.value);
                                         const updatedPrompt = { 
                                           ...prompt, 
-                                          valueQuantityAllowedDecimals: parseInt(e.target.value)
+                                          valueQuantityAllowedDecimals: value,
+                                          valueQuantityMin: prompt.valueQuantityMin ?? 1,
+                                          valueQuantityMax: prompt.valueQuantityMax ?? 9999
                                         };
                                         updatePromptMutation.mutate(updatedPrompt);
                                       }}
@@ -1442,11 +1445,14 @@ export default function ProductManagement() {
                                      <Label>Mínimo</Label>
                                      <Input
                                        type="number"
-                                       defaultValue={prompt.valueQuantityMin || 1}
+                                       defaultValue={prompt.valueQuantityMin ?? 1}
                                        onBlur={(e) => {
+                                         const value = e.target.value === '' ? 1 : parseInt(e.target.value);
                                          const updatedPrompt = { 
                                            ...prompt, 
-                                           valueQuantityMin: parseInt(e.target.value)
+                                           valueQuantityMin: value,
+                                           valueQuantityAllowedDecimals: prompt.valueQuantityAllowedDecimals ?? 0,
+                                           valueQuantityMax: prompt.valueQuantityMax ?? 9999
                                          };
                                          updatePromptMutation.mutate(updatedPrompt);
                                        }}
@@ -1456,11 +1462,14 @@ export default function ProductManagement() {
                                      <Label>Máximo</Label>
                                      <Input
                                        type="number"
-                                       defaultValue={prompt.valueQuantityMax || 9999}
+                                       defaultValue={prompt.valueQuantityMax ?? 9999}
                                        onBlur={(e) => {
+                                         const value = e.target.value === '' ? 9999 : parseInt(e.target.value);
                                          const updatedPrompt = { 
                                            ...prompt, 
-                                           valueQuantityMax: parseInt(e.target.value)
+                                           valueQuantityMax: value,
+                                           valueQuantityAllowedDecimals: prompt.valueQuantityAllowedDecimals ?? 0,
+                                           valueQuantityMin: prompt.valueQuantityMin ?? 1
                                          };
                                          updatePromptMutation.mutate(updatedPrompt);
                                        }}
@@ -1478,16 +1487,16 @@ export default function ProductManagement() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => {
-                                      // Al guardar manualmente, asegurar que los valores numéricos sean null si no es tipo numérico
-                                      const updatedPrompt = {
-                                        ...prompt,
-                                        valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
-                                        valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
-                                        valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null
-                                      };
-                                      updatePromptMutation.mutate(updatedPrompt);
-                                    }}
+                                     onClick={() => {
+                                       // Al guardar manualmente, asegurar que los valores numéricos tengan defaults o sean null
+                                       const updatedPrompt = {
+                                         ...prompt,
+                                         valueQuantityAllowedDecimals: isNumericType ? (prompt.valueQuantityAllowedDecimals ?? 0) : null,
+                                         valueQuantityMin: isNumericType ? (prompt.valueQuantityMin ?? 1) : null,
+                                         valueQuantityMax: isNumericType ? (prompt.valueQuantityMax ?? 9999) : null
+                                       };
+                                       updatePromptMutation.mutate(updatedPrompt);
+                                     }}
                                   >
                                     <Save className="h-4 w-4" />
                                   </Button>
