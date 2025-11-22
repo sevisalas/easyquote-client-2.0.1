@@ -179,7 +179,6 @@ export default function SalesOrderNew() {
     const nextNumber = (count || 0) + 1;
     return generateDocumentNumber(orderFormat, nextNumber);
   };
-  };
 
   // Calculate totals
   const totals = useMemo(() => {
