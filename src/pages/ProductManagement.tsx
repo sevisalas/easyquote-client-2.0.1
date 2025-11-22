@@ -1283,7 +1283,14 @@ export default function ProductManagement() {
                                 <Input
                                   defaultValue={prompt.promptSheet || "Main"}
                                   onBlur={(e) => {
-                                    const updatedPrompt = { ...prompt, promptSheet: e.target.value };
+                                    const updatedPrompt = { 
+                                      ...prompt, 
+                                      promptSheet: e.target.value,
+                                      // Asegurar que los campos numéricos sean null si no es tipo numérico
+                                      valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
+                                      valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
+                                      valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null
+                                    };
                                     updatePromptMutation.mutate(updatedPrompt);
                                   }}
                                 />
@@ -1293,7 +1300,14 @@ export default function ProductManagement() {
                                 <Input
                                   defaultValue={prompt.promptCell}
                                   onBlur={(e) => {
-                                    const updatedPrompt = { ...prompt, promptCell: e.target.value };
+                                    const updatedPrompt = { 
+                                      ...prompt, 
+                                      promptCell: e.target.value,
+                                      // Asegurar que los campos numéricos sean null si no es tipo numérico
+                                      valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
+                                      valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
+                                      valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null
+                                    };
                                     updatePromptMutation.mutate(updatedPrompt);
                                   }}
                                 />
@@ -1303,7 +1317,14 @@ export default function ProductManagement() {
                                 <Input
                                   defaultValue={prompt.valueCell || ""}
                                   onBlur={(e) => {
-                                    const updatedPrompt = { ...prompt, valueCell: e.target.value };
+                                    const updatedPrompt = { 
+                                      ...prompt, 
+                                      valueCell: e.target.value,
+                                      // Asegurar que los campos numéricos sean null si no es tipo numérico
+                                      valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
+                                      valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
+                                      valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null
+                                    };
                                     updatePromptMutation.mutate(updatedPrompt);
                                   }}
                                 />
@@ -1314,7 +1335,14 @@ export default function ProductManagement() {
                                   type="number"
                                   defaultValue={prompt.promptSeq}
                                   onBlur={(e) => {
-                                    const updatedPrompt = { ...prompt, promptSeq: parseInt(e.target.value) };
+                                    const updatedPrompt = { 
+                                      ...prompt, 
+                                      promptSeq: parseInt(e.target.value),
+                                      // Asegurar que los campos numéricos sean null si no es tipo numérico
+                                      valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
+                                      valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
+                                      valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null
+                                    };
                                     updatePromptMutation.mutate(updatedPrompt);
                                   }}
                                 />
@@ -1328,7 +1356,14 @@ export default function ProductManagement() {
                                     defaultValue={prompt.valueOptionRange || ""}
                                     placeholder="$E$2:$E$3"
                                     onBlur={(e) => {
-                                      const updatedPrompt = { ...prompt, valueOptionRange: e.target.value };
+                                      const updatedPrompt = { 
+                                        ...prompt, 
+                                        valueOptionRange: e.target.value,
+                                        // Asegurar que los campos numéricos sean null para tipos no numéricos
+                                        valueQuantityAllowedDecimals: null,
+                                        valueQuantityMin: null,
+                                        valueQuantityMax: null
+                                      };
                                       updatePromptMutation.mutate(updatedPrompt);
                                     }}
                                   />
@@ -1373,7 +1408,14 @@ export default function ProductManagement() {
                                 <Switch
                                   checked={prompt.valueRequired}
                                   onCheckedChange={(checked) => {
-                                    const updatedPrompt = { ...prompt, valueRequired: checked };
+                                    const updatedPrompt = { 
+                                      ...prompt, 
+                                      valueRequired: checked,
+                                      // Asegurar que los campos numéricos sean null si no es tipo numérico
+                                      valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
+                                      valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
+                                      valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null
+                                    };
                                     updatePromptMutation.mutate(updatedPrompt);
                                   }}
                                 />
@@ -1390,10 +1432,7 @@ export default function ProductManagement() {
                                       onBlur={(e) => {
                                         const updatedPrompt = { 
                                           ...prompt, 
-                                          valueQuantityAllowedDecimals: parseInt(e.target.value),
-                                          // Asegurar que min y max también estén presentes para tipos numéricos
-                                          valueQuantityMin: prompt.valueQuantityMin ?? 1,
-                                          valueQuantityMax: prompt.valueQuantityMax ?? 9999
+                                          valueQuantityAllowedDecimals: parseInt(e.target.value)
                                         };
                                         updatePromptMutation.mutate(updatedPrompt);
                                       }}
@@ -1407,10 +1446,7 @@ export default function ProductManagement() {
                                        onBlur={(e) => {
                                          const updatedPrompt = { 
                                            ...prompt, 
-                                           valueQuantityMin: parseInt(e.target.value),
-                                           // Asegurar que decimals y max también estén presentes
-                                           valueQuantityAllowedDecimals: prompt.valueQuantityAllowedDecimals ?? 0,
-                                           valueQuantityMax: prompt.valueQuantityMax ?? 9999
+                                           valueQuantityMin: parseInt(e.target.value)
                                          };
                                          updatePromptMutation.mutate(updatedPrompt);
                                        }}
@@ -1424,10 +1460,7 @@ export default function ProductManagement() {
                                        onBlur={(e) => {
                                          const updatedPrompt = { 
                                            ...prompt, 
-                                           valueQuantityMax: parseInt(e.target.value),
-                                           // Asegurar que decimals y min también estén presentes
-                                           valueQuantityAllowedDecimals: prompt.valueQuantityAllowedDecimals ?? 0,
-                                           valueQuantityMin: prompt.valueQuantityMin ?? 1
+                                           valueQuantityMax: parseInt(e.target.value)
                                          };
                                          updatePromptMutation.mutate(updatedPrompt);
                                        }}
