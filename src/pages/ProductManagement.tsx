@@ -1702,31 +1702,31 @@ export default function ProductManagement() {
             {newPromptData.promptType === 0 && (
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="valueQuantityAllowedDecimals">Decimales</Label>
+                   <Label htmlFor="valueQuantityAllowedDecimals">Decimales</Label>
                   <Input
                     id="valueQuantityAllowedDecimals"
                     type="number"
-                    value={newPromptData.valueQuantityAllowedDecimals}
+                    value={newPromptData.valueQuantityAllowedDecimals ?? 0}
                     onChange={(e) => setNewPromptData({...newPromptData, valueQuantityAllowedDecimals: parseInt(e.target.value) || 0})}
                     placeholder="0"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="valueQuantityMin">Mínimo</Label>
+                   <Label htmlFor="valueQuantityMin">Mínimo</Label>
                   <Input
                     id="valueQuantityMin"
                     type="number"
-                    value={newPromptData.valueQuantityMin}
+                    value={newPromptData.valueQuantityMin ?? 1}
                     onChange={(e) => setNewPromptData({...newPromptData, valueQuantityMin: parseFloat(e.target.value) || 1})}
                     placeholder="1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="valueQuantityMax">Máximo</Label>
+                   <Label htmlFor="valueQuantityMax">Máximo</Label>
                   <Input
                     id="valueQuantityMax"
                     type="number"
-                    value={newPromptData.valueQuantityMax}
+                    value={newPromptData.valueQuantityMax ?? 9999}
                     onChange={(e) => setNewPromptData({...newPromptData, valueQuantityMax: parseFloat(e.target.value) || 9999})}
                     placeholder="9999"
                   />
