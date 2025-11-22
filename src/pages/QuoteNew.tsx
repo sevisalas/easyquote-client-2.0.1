@@ -198,7 +198,7 @@ export default function QuoteNew() {
       throw new Error("No se pudo obtener el formato de numeración");
     }
 
-    const nextNumber = quoteFormat.last_sequential_number + 1;
+    const nextNumber = (quoteFormat.last_sequential_number || 0) + 1;
     return generateDocumentNumber(quoteFormat, nextNumber);
   };
 
