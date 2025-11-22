@@ -161,29 +161,21 @@ export default function ExcelFiles() {
     queryKey: ["easyquote-excel-files"],
     queryFn: async () => {
       const token = sessionStorage.getItem("easyquote_token");
-      console.log('[ExcelFiles] Fetching files from EasyQuote, token exists:', !!token);
+      console.log('[ExcelFiles] Fetching files from EasyQuote via edge function, token exists:', !!token);
       
       if (!token) {
         throw new Error("No hay token de EasyQuote disponible");
       }
 
-      const response = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
+      const { data, error } = await supabase.functions.invoke("easyquote-excel-files", {
+        body: { token }
       });
 
-      console.log('[ExcelFiles] EasyQuote API response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[ExcelFiles] EasyQuote API error:', errorText);
+      if (error) {
+        console.error('[ExcelFiles] Edge function error:', error);
         throw new Error("Error al obtener archivos Excel de EasyQuote");
       }
 
-      const data = await response.json();
       console.log('[ExcelFiles] Files received from EasyQuote:', data?.length || 0, 'files');
       return data;
     },
