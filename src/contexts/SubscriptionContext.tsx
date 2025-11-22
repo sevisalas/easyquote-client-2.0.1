@@ -240,11 +240,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   };
 
   const canAccessProduccion = () => {
-    // Admin y Operador pueden ver pedidos (NO comercial)
-    const userRole = membership?.role;
-    if (userRole === 'comercial') {
-      return false;
-    }
+    // Todos los roles (admin, operador, comercial) pueden ver pedidos
     return hasModule('Production');
   };
 
