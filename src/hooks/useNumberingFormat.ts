@@ -18,11 +18,29 @@ export const useNumberingFormat = (documentType: 'quote' | 'order') => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      const { data, error } = await supabase
+      // First, try to get the organization_id if user is a member
+      const { data: orgMember } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      // Query with both user_id and organization_id to get the most specific format
+      let query = supabase
         .from('numbering_formats')
         .select('*')
-        .eq('document_type', documentType)
-        .eq('user_id', user.id)
+        .eq('document_type', documentType);
+
+      if (orgMember?.organization_id) {
+        // If user is in an organization, prioritize org format
+        query = query.or(`organization_id.eq.${orgMember.organization_id},and(user_id.eq.${user.id},organization_id.is.null)`);
+      } else {
+        // Otherwise just use user_id
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data, error } = await query
+        .order('created_at', { ascending: false })
         .maybeSingle();
 
       if (error) throw error;
@@ -30,10 +48,10 @@ export const useNumberingFormat = (documentType: 'quote' | 'order') => {
       // Return default format if none configured
       if (!data) {
         return {
-          prefix: documentType === 'quote' ? '' : 'SO-',
+          prefix: documentType === 'quote' ? 'PRES-' : 'SO-',
           suffix: '',
           use_year: true,
-          year_format: documentType === 'quote' ? 'YY' : 'YYYY',
+          year_format: 'YYYY',
           sequential_digits: 4
         } as Omit<NumberingFormat, 'id' | 'document_type'>;
       }
