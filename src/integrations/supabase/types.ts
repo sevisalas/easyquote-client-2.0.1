@@ -1400,6 +1400,15 @@ export type Database = {
       generate_api_key: { Args: never; Returns: string }
       generate_api_secret: { Args: never; Returns: string }
       generate_sales_order_number: { Args: never; Returns: string }
+      get_current_user_role: {
+        Args: never
+        Returns: {
+          organization_id: string
+          organization_name: string
+          role: string
+          user_id: string
+        }[]
+      }
       get_customer_audit_trail: {
         Args: { p_customer_id: string; p_limit?: number }
         Returns: {
