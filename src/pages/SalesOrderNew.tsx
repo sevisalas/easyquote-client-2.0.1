@@ -118,24 +118,44 @@ export default function SalesOrderNew() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Usuario no autenticado");
 
-    // Get organization members
-    const { data: orgMembers } = await supabase
-      .from("organization_members")
-      .select("user_id, organization_id")
-      .eq("user_id", user.id)
-      .single();
+    // Check if user is organization owner
+    const { data: ownedOrg } = await supabase
+      .from("organizations")
+      .select("id, api_user_id")
+      .eq("api_user_id", user.id)
+      .maybeSingle();
 
-    if (!orgMembers) {
+    // Check if user is organization member
+    const { data: orgMember } = await supabase
+      .from("organization_members")
+      .select("organization_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const organizationId = ownedOrg?.id || orgMember?.organization_id;
+
+    if (!organizationId) {
       throw new Error("Usuario no pertenece a ninguna organización");
     }
 
-    // Get all user_ids from the same organization
+    // Get organization owner
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("api_user_id")
+      .eq("id", organizationId)
+      .single();
+
+    // Get all organization members
     const { data: allOrgMembers } = await supabase
       .from("organization_members")
       .select("user_id")
-      .eq("organization_id", orgMembers.organization_id);
+      .eq("organization_id", organizationId);
 
-    const userIds = allOrgMembers?.map(m => m.user_id) || [];
+    // Combine owner and members
+    const userIds = [
+      ...(org?.api_user_id ? [org.api_user_id] : []),
+      ...(allOrgMembers?.map(m => m.user_id) || [])
+    ];
 
     // Build pattern for counting based on format
     const year = new Date().getFullYear();
@@ -149,7 +169,7 @@ export default function SalesOrderNew() {
     }
     countPattern += '-%';
 
-    // Count existing orders matching this pattern
+    // Count existing orders matching this pattern for ALL organization users
     const { count } = await supabase
       .from("sales_orders")
       .select("*", { count: "exact", head: true })
@@ -158,6 +178,7 @@ export default function SalesOrderNew() {
     
     const nextNumber = (count || 0) + 1;
     return generateDocumentNumber(orderFormat, nextNumber);
+  };
   };
 
   // Calculate totals
