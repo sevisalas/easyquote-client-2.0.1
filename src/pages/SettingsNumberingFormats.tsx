@@ -117,7 +117,7 @@ export default function SettingsNumberingFormats() {
       const yearStr = format.year_format === 'YY' 
         ? year.toString().slice(-2) 
         : year.toString();
-      example += yearStr;
+      example += yearStr + '-';
     }
     
     example += sequential.toString().padStart(format.sequential_digits, '0');

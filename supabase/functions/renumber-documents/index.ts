@@ -70,7 +70,7 @@ serve(async (req) => {
         ? (format.year_format === 'YY' ? year.toString().slice(-2) : year.toString())
         : '';
       
-      const prefix = format.prefix + (format.use_year ? yearStr : '');
+      const prefix = format.prefix + (format.use_year ? yearStr + '-' : '');
       const suffix = format.suffix || '';
 
       // Fetch all quotes ordered by created_at
@@ -85,7 +85,7 @@ serve(async (req) => {
       // Update each quote with new number
       for (let i = 0; i < (quotes?.length || 0); i++) {
         const sequentialNum = (i + 1).toString().padStart(format.sequential_digits, '0');
-        const newNumber = `${prefix}-${sequentialNum}${suffix}`;
+        const newNumber = `${prefix}${sequentialNum}${suffix}`;
 
         const { error: updateError } = await supabaseAdmin
           .from("quotes")
@@ -108,7 +108,7 @@ serve(async (req) => {
         ? (format.year_format === 'YY' ? year.toString().slice(-2) : year.toString())
         : '';
       
-      const prefix = format.prefix + (format.use_year ? yearStr : '');
+      const prefix = format.prefix + (format.use_year ? yearStr + '-' : '');
       const suffix = format.suffix || '';
 
       // Fetch all orders ordered by created_at
@@ -123,7 +123,7 @@ serve(async (req) => {
       // Update each order with new number
       for (let i = 0; i < (orders?.length || 0); i++) {
         const sequentialNum = (i + 1).toString().padStart(format.sequential_digits, '0');
-        const newNumber = `${prefix}-${sequentialNum}${suffix}`;
+        const newNumber = `${prefix}${sequentialNum}${suffix}`;
 
         const { error: updateError } = await supabaseAdmin
           .from("sales_orders")
