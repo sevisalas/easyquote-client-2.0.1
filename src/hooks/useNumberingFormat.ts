@@ -67,7 +67,7 @@ export const useNumberingFormat = (documentType: 'quote' | 'order') => {
           use_year: true,
           year_format: documentType === 'quote' ? 'YY' : 'YYYY',
           sequential_digits: 4,
-          last_sequential_number: 0
+          last_sequential_number: 1
         } as Omit<NumberingFormat, 'id' | 'document_type'>;
       }
 
