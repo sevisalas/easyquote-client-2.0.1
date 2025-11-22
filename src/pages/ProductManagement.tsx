@@ -39,7 +39,6 @@ import { useNavigate } from "react-router-dom";
 import { BulkPromptsDialog } from "@/components/quotes/BulkPromptsDialog";
 import { BulkOutputsDialog } from "@/components/quotes/BulkOutputsDialog";
 import { useSearchParams } from "react-router-dom";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Interface para productos del API de EasyQuote
 interface EasyQuoteProduct {
@@ -1248,181 +1247,179 @@ export default function ProductManagement() {
                     <p className="text-muted-foreground">No hay datos de entrada configurados</p>
                   </div>
                 ) : (
-                  <ScrollArea className="h-[60vh] pr-4">
-                    <div className="space-y-3">
-                      {productPrompts.map((prompt, index) => (
-                        <div key={prompt.id} className="p-4 border rounded-lg">
-                          <div className="mb-4">
-                            <h4 className="font-medium">Campo nº {index + 1}</h4>
-                          </div>
+                  <div className="space-y-3">
+                    {productPrompts.map((prompt, index) => (
+                      <div key={prompt.id} className="p-4 border rounded-lg">
+                        <div className="mb-4">
+                          <h4 className="font-medium">Campo nº {index + 1}</h4>
+                        </div>
+                        
+                        {(() => {
+                          const currentPromptType = promptTypes.find(type => type.id === prompt.promptType);
+                          const isNumericType = currentPromptType?.promptType === "Number" || currentPromptType?.promptType === "Quantity";
+                          const isDropdownType = currentPromptType?.promptType === "DropDown";
                           
-                          {(() => {
-                            const currentPromptType = promptTypes.find(type => type.id === prompt.promptType);
-                            const isNumericType = currentPromptType?.promptType === "Number" || currentPromptType?.promptType === "Quantity";
-                            const isDropdownType = currentPromptType?.promptType === "DropDown";
-                            
-                            return (
-                              <div className="grid grid-cols-12 gap-2 items-end">
-                                <div className="col-span-1">
-                                  <Label>Hoja</Label>
+                          return (
+                            <div className="grid grid-cols-12 gap-2 items-end">
+                              <div className="col-span-1">
+                                <Label>Hoja</Label>
+                                <Input
+                                  defaultValue={prompt.promptSheet || "Main"}
+                                  onBlur={(e) => {
+                                    const updatedPrompt = { ...prompt, promptSheet: e.target.value };
+                                    updatePromptMutation.mutate(updatedPrompt);
+                                  }}
+                                />
+                              </div>
+                              <div className="col-span-1">
+                                <Label>Rótulo</Label>
+                                <Input
+                                  defaultValue={prompt.promptCell}
+                                  onBlur={(e) => {
+                                    const updatedPrompt = { ...prompt, promptCell: e.target.value };
+                                    updatePromptMutation.mutate(updatedPrompt);
+                                  }}
+                                />
+                              </div>
+                              <div className="col-span-1">
+                                <Label>Valor</Label>
+                                <Input
+                                  defaultValue={prompt.valueCell || ""}
+                                  onBlur={(e) => {
+                                    const updatedPrompt = { ...prompt, valueCell: e.target.value };
+                                    updatePromptMutation.mutate(updatedPrompt);
+                                  }}
+                                />
+                              </div>
+                              <div className="col-span-1">
+                                <Label>Orden</Label>
+                                <Input
+                                  type="number"
+                                  defaultValue={prompt.promptSeq}
+                                  onBlur={(e) => {
+                                    const updatedPrompt = { ...prompt, promptSeq: parseInt(e.target.value) };
+                                    updatePromptMutation.mutate(updatedPrompt);
+                                  }}
+                                />
+                              </div>
+                              
+                              {/* Rango - Solo para tipos no numéricos */}
+                              {!isNumericType && (
+                                <div className="col-span-2">
+                                  <Label>Rango</Label>
                                   <Input
-                                    defaultValue={prompt.promptSheet || "Main"}
+                                    defaultValue={prompt.valueOptionRange || ""}
+                                    placeholder="$E$2:$E$3"
                                     onBlur={(e) => {
-                                      const updatedPrompt = { ...prompt, promptSheet: e.target.value };
+                                      const updatedPrompt = { ...prompt, valueOptionRange: e.target.value };
                                       updatePromptMutation.mutate(updatedPrompt);
                                     }}
                                   />
                                 </div>
-                                <div className="col-span-1">
-                                  <Label>Rótulo</Label>
-                                  <Input
-                                    defaultValue={prompt.promptCell}
-                                    onBlur={(e) => {
-                                      const updatedPrompt = { ...prompt, promptCell: e.target.value };
-                                      updatePromptMutation.mutate(updatedPrompt);
-                                    }}
-                                  />
-                                </div>
-                                <div className="col-span-1">
-                                  <Label>Valor</Label>
-                                  <Input
-                                    defaultValue={prompt.valueCell || ""}
-                                    onBlur={(e) => {
-                                      const updatedPrompt = { ...prompt, valueCell: e.target.value };
-                                      updatePromptMutation.mutate(updatedPrompt);
-                                    }}
-                                  />
-                                </div>
-                                <div className="col-span-1">
-                                  <Label>Orden</Label>
-                                  <Input
-                                    type="number"
-                                    defaultValue={prompt.promptSeq}
-                                    onBlur={(e) => {
-                                      const updatedPrompt = { ...prompt, promptSeq: parseInt(e.target.value) };
-                                      updatePromptMutation.mutate(updatedPrompt);
-                                    }}
-                                  />
-                                </div>
-                                
-                                {/* Rango - Solo para tipos no numéricos */}
-                                {!isNumericType && (
-                                  <div className="col-span-2">
-                                    <Label>Rango</Label>
+                              )}
+
+                               <div className="col-span-2">
+                                 <Label>Typo</Label>
+                                 <Select
+                                   value={prompt.promptType?.toString() || ""}
+                                   onValueChange={(value) => {
+                                     const updatedPrompt = { ...prompt, promptType: parseInt(value) };
+                                     updatePromptMutation.mutate(updatedPrompt);
+                                   }}
+                                 >
+                                   <SelectTrigger>
+                                     <SelectValue />
+                                   </SelectTrigger>
+                                    <SelectContent className="bg-background border shadow-lg z-50">
+                                      {promptTypes.map((type) => (
+                                        <SelectItem key={type.id} value={type.id?.toString() || "0"}>
+                                          {type.promptType}
+                                        </SelectItem>
+                                      ))}
+                                   </SelectContent>
+                                 </Select>
+                               </div>
+
+                              <div className="col-span-1">
+                                <Label>Requerido</Label>
+                                <Switch
+                                  checked={prompt.valueRequired}
+                                  onCheckedChange={(checked) => {
+                                    const updatedPrompt = { ...prompt, valueRequired: checked };
+                                    updatePromptMutation.mutate(updatedPrompt);
+                                  }}
+                                />
+                              </div>
+
+                              {/* Campos numéricos - Solo para tipos Number/Quantity */}
+                              {isNumericType && (
+                                <>
+                                  <div className="col-span-1">
+                                    <Label>Decs.</Label>
                                     <Input
-                                      defaultValue={prompt.valueOptionRange || ""}
-                                      placeholder="$E$2:$E$3"
+                                      type="number"
+                                      defaultValue={prompt.valueQuantityAllowedDecimals || 0}
                                       onBlur={(e) => {
-                                        const updatedPrompt = { ...prompt, valueOptionRange: e.target.value };
+                                        const updatedPrompt = { ...prompt, valueQuantityAllowedDecimals: parseInt(e.target.value) };
                                         updatePromptMutation.mutate(updatedPrompt);
                                       }}
                                     />
                                   </div>
-                                )}
+                                   <div className="col-span-1">
+                                     <Label>Mínimo</Label>
+                                     <Input
+                                       type="number"
+                                       defaultValue={prompt.valueQuantityMin || 1}
+                                       onBlur={(e) => {
+                                         const updatedPrompt = { ...prompt, valueQuantityMin: parseInt(e.target.value) };
+                                         updatePromptMutation.mutate(updatedPrompt);
+                                       }}
+                                     />
+                                   </div>
+                                   <div className="col-span-2">
+                                     <Label>Máximo</Label>
+                                     <Input
+                                       type="number"
+                                       defaultValue={prompt.valueQuantityMax || 9999}
+                                       onBlur={(e) => {
+                                         const updatedPrompt = { ...prompt, valueQuantityMax: parseInt(e.target.value) };
+                                         updatePromptMutation.mutate(updatedPrompt);
+                                       }}
+                                     />
+                                   </div>
+                                 </>
+                               )}
 
-                                 <div className="col-span-2">
-                                   <Label>Typo</Label>
-                                   <Select
-                                     value={prompt.promptType?.toString() || ""}
-                                     onValueChange={(value) => {
-                                       const updatedPrompt = { ...prompt, promptType: parseInt(value) };
-                                       updatePromptMutation.mutate(updatedPrompt);
-                                     }}
-                                   >
-                                     <SelectTrigger>
-                                       <SelectValue />
-                                     </SelectTrigger>
-                                      <SelectContent className="bg-background border shadow-lg z-50">
-                                        {promptTypes.map((type) => (
-                                          <SelectItem key={type.id} value={type.id?.toString() || "0"}>
-                                            {type.promptType}
-                                          </SelectItem>
-                                        ))}
-                                     </SelectContent>
-                                   </Select>
-                                 </div>
+                               {/* Espacios vacíos para mantener alineación cuando no hay campos numéricos */}
+                               {!isNumericType && <div className="col-span-2"></div>}
 
-                                <div className="col-span-1">
-                                  <Label>Requerido</Label>
-                                  <Switch
-                                    checked={prompt.valueRequired}
-                                    onCheckedChange={(checked) => {
-                                      const updatedPrompt = { ...prompt, valueRequired: checked };
-                                      updatePromptMutation.mutate(updatedPrompt);
+                              <div className="col-span-1">
+                                <Label>Acción</Label>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      updatePromptMutation.mutate(prompt);
                                     }}
-                                  />
-                                </div>
-
-                                {/* Campos numéricos - Solo para tipos Number/Quantity */}
-                                {isNumericType && (
-                                  <>
-                                    <div className="col-span-1">
-                                      <Label>Decs.</Label>
-                                      <Input
-                                        type="number"
-                                        defaultValue={prompt.valueQuantityAllowedDecimals || 0}
-                                        onBlur={(e) => {
-                                          const updatedPrompt = { ...prompt, valueQuantityAllowedDecimals: parseInt(e.target.value) };
-                                          updatePromptMutation.mutate(updatedPrompt);
-                                        }}
-                                      />
-                                    </div>
-                                     <div className="col-span-1">
-                                       <Label>Mínimo</Label>
-                                       <Input
-                                         type="number"
-                                         defaultValue={prompt.valueQuantityMin || 1}
-                                         onBlur={(e) => {
-                                           const updatedPrompt = { ...prompt, valueQuantityMin: parseInt(e.target.value) };
-                                           updatePromptMutation.mutate(updatedPrompt);
-                                         }}
-                                       />
-                                     </div>
-                                     <div className="col-span-2">
-                                       <Label>Máximo</Label>
-                                       <Input
-                                         type="number"
-                                         defaultValue={prompt.valueQuantityMax || 9999}
-                                         onBlur={(e) => {
-                                           const updatedPrompt = { ...prompt, valueQuantityMax: parseInt(e.target.value) };
-                                           updatePromptMutation.mutate(updatedPrompt);
-                                         }}
-                                       />
-                                     </div>
-                                   </>
-                                 )}
-
-                                 {/* Espacios vacíos para mantener alineación cuando no hay campos numéricos */}
-                                 {!isNumericType && <div className="col-span-2"></div>}
-
-                                <div className="col-span-1">
-                                  <Label>Acción</Label>
-                                  <div className="flex gap-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        updatePromptMutation.mutate(prompt);
-                                      }}
-                                    >
-                                      <Save className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => deletePrompt(prompt.id)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
+                                  >
+                                    <Save className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => deletePrompt(prompt.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
                                 </div>
                               </div>
-                            );
-                          })()}
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </TabsContent>
 
@@ -1457,80 +1454,78 @@ export default function ProductManagement() {
                     <p className="text-muted-foreground">No hay datos de salida configurados</p>
                   </div>
                 ) : (
-                  <ScrollArea className="h-[60vh] pr-4">
-                    <div className="space-y-3">
-                      {productOutputs.map((output, index) => (
-                        <div key={output.id} className="p-4 border rounded-lg">
-                          <div className="flex justify-between items-start mb-4">
-                            <h4 className="font-medium">Campo nº {index + 1}</h4>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteOutput(output.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                  <div className="space-y-3">
+                    {productOutputs.map((output, index) => (
+                      <div key={output.id} className="p-4 border rounded-lg">
+                        <div className="flex justify-between items-start mb-4">
+                          <h4 className="font-medium">Campo nº {index + 1}</h4>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteOutput(output.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        
+                        <div className="grid grid-cols-4 gap-4">
+                          <div>
+                            <Label>Hoja</Label>
+                            <Input
+                              value={output.sheet || "Main"}
+                              onChange={(e) => {
+                                const updatedOutput = { ...output, sheet: e.target.value };
+                                updateOutputMutation.mutate(updatedOutput);
+                              }}
+                            />
                           </div>
-                          
-                          <div className="grid grid-cols-4 gap-4">
-                            <div>
-                              <Label>Hoja</Label>
-                              <Input
-                                value={output.sheet || "Main"}
-                                onChange={(e) => {
-                                  const updatedOutput = { ...output, sheet: e.target.value };
-                                  updateOutputMutation.mutate(updatedOutput);
-                                }}
-                              />
-                            </div>
-                            <div>
-                              <Label>Rótulo</Label>
-                              <Input
-                                value={output.nameCell || ""}
-                                placeholder="ej: A25"
-                                onChange={(e) => {
-                                  const updatedOutput = { ...output, nameCell: e.target.value };
-                                  updateOutputMutation.mutate(updatedOutput);
-                                }}
-                              />
-                            </div>
-                            <div>
-                              <Label>Valor por defecto</Label>
-                              <Input
-                                value={output.valueCell || ""}
-                                placeholder="ej: B25"
-                                onChange={(e) => {
-                                  const updatedOutput = { ...output, valueCell: e.target.value };
-                                  updateOutputMutation.mutate(updatedOutput);
-                                }}
-                              />
-                            </div>
-                            <div>
-                              <Label>Tipo</Label>
-                              <Select
-                                value={output.outputTypeId?.toString() || ""}
-                                onValueChange={(value) => {
-                                  const updatedOutput = { ...output, outputTypeId: parseInt(value) };
-                                  updateOutputMutation.mutate(updatedOutput);
-                                }}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="bg-background border shadow-lg z-50">
-                                  {outputTypes.map((type) => (
-                                    <SelectItem key={type.id} value={type.id?.toString() || "0"}>
-                                      {type.outputType}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
+                          <div>
+                            <Label>Rótulo</Label>
+                            <Input
+                              value={output.nameCell || ""}
+                              placeholder="ej: A25"
+                              onChange={(e) => {
+                                const updatedOutput = { ...output, nameCell: e.target.value };
+                                updateOutputMutation.mutate(updatedOutput);
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <Label>Valor por defecto</Label>
+                            <Input
+                              value={output.valueCell || ""}
+                              placeholder="ej: B25"
+                              onChange={(e) => {
+                                const updatedOutput = { ...output, valueCell: e.target.value };
+                                updateOutputMutation.mutate(updatedOutput);
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <Label>Tipo</Label>
+                            <Select
+                              value={output.outputTypeId?.toString() || ""}
+                              onValueChange={(value) => {
+                                const updatedOutput = { ...output, outputTypeId: parseInt(value) };
+                                updateOutputMutation.mutate(updatedOutput);
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border shadow-lg z-50">
+                                {outputTypes.map((type) => (
+                                  <SelectItem key={type.id} value={type.id?.toString() || "0"}>
+                                    {type.outputType}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </TabsContent>
             </Tabs>
