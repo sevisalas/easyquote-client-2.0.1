@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, X, Search, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { CalendarIcon, X, Search, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MoreVertical } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,8 +35,16 @@ const fmtEUR = (n: any) => {
 const fetchQuotes = async () => {
   const { data, error } = await supabase
     .from("quotes")
-    .select("id, created_at, quote_number, customer_id, product_name, final_price, status, selections, description, holded_estimate_number, holded_estimate_id")
+    .select("id, created_at, quote_number, customer_id, product_name, final_price, status, selections, description, holded_estimate_number, holded_estimate_id, user_id")
     .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+};
+
+const fetchOrgMembers = async () => {
+  const { data, error } = await supabase
+    .from("organization_members")
+    .select("user_id, display_name");
   if (error) throw error;
   return data || [];
 };
@@ -72,8 +81,13 @@ const QuotesList = () => {
     queryKey: ["customers"], 
     queryFn: fetchCustomers
   });
+  const { data: orgMembers = [] } = useQuery({
+    queryKey: ["org-members"],
+    queryFn: fetchOrgMembers
+  });
 
   const getCustomerName = (id?: string | null) => customers.find((c: any) => c.id === id)?.name || "—";
+  const getUserName = (userId?: string | null) => orgMembers.find((m: any) => m.user_id === userId)?.display_name || "—";
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -109,7 +123,7 @@ const QuotesList = () => {
       
       return true;
     });
-  }, [quotes, customerFilter, statusFilter, quoteNumberFilter, dateFromFilter, dateToFilter, customers]);
+  }, [quotes, customerFilter, statusFilter, quoteNumberFilter, dateFromFilter, dateToFilter, customers, orgMembers]);
 
   // Paginated quotes
   const paginatedQuotes = useMemo(() => {
@@ -326,6 +340,7 @@ const QuotesList = () => {
                   <TableHead className="py-2 text-xs font-semibold">Fecha</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Nº</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Cliente</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Usuario</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Descripción</TableHead>
                   <TableHead className="py-2 text-right text-xs font-semibold">Total</TableHead>
                   {isHoldedActive && (
@@ -335,7 +350,7 @@ const QuotesList = () => {
                     </>
                   )}
                   <TableHead className="py-2 text-xs font-semibold">Estado</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold">Acciones</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -346,6 +361,7 @@ const QuotesList = () => {
                     <TableCell className="py-1.5 px-3 text-sm">
                       <CustomerName customerId={q.customer_id} />
                     </TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm text-muted-foreground">{getUserName(q.user_id)}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm">{q.description || ""}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm text-right font-medium">{fmtEUR(q.final_price)}</TableCell>
                     {isHoldedActive && (
@@ -375,35 +391,40 @@ const QuotesList = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="py-1.5 px-3">
-                      <div className="flex items-center gap-1">
-                        <Button size="sm" variant="secondary" className="h-7 px-2 text-xs" onClick={() => navigate(`/presupuestos/${q.id}`)}>
-                          Ver
-                        </Button>
-                        <Button size="sm" variant="default" className="h-7 px-2 text-xs" onClick={() => navigate(`/presupuestos/nuevo?from=${q.id}`)}>
-                          Duplicar
-                        </Button>
-                        {q.status === 'draft' && (
-                          <Button 
-                            size="sm" 
-                            variant="destructive" 
-                            className="h-7 px-2 text-xs" 
-                            onClick={async () => {
-                              if (confirm('¿Estás seguro de que quieres eliminar este presupuesto?')) {
-                                try {
-                                  const { error } = await supabase.from('quotes').delete().eq('id', q.id);
-                                  if (error) throw error;
-                                  toast({ title: 'Presupuesto eliminado' });
-                                  refetch();
-                                } catch (e: any) {
-                                  toast({ title: 'Error al eliminar', description: e?.message, variant: 'destructive' });
-                                }
-                              }
-                            }}
-                          >
-                            Eliminar
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                            <MoreVertical className="h-4 w-4" />
                           </Button>
-                        )}
-                      </div>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40 bg-popover z-50">
+                          <DropdownMenuItem onClick={() => navigate(`/presupuestos/${q.id}`)} className="cursor-pointer">
+                            Ver
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate(`/presupuestos/nuevo?from=${q.id}`)} className="cursor-pointer">
+                            Duplicar
+                          </DropdownMenuItem>
+                          {q.status === 'draft' && (
+                            <DropdownMenuItem 
+                              onClick={async () => {
+                                if (confirm('¿Estás seguro de que quieres eliminar este presupuesto?')) {
+                                  try {
+                                    const { error } = await supabase.from('quotes').delete().eq('id', q.id);
+                                    if (error) throw error;
+                                    toast({ title: 'Presupuesto eliminado' });
+                                    refetch();
+                                  } catch (e: any) {
+                                    toast({ title: 'Error al eliminar', description: e?.message, variant: 'destructive' });
+                                  }
+                                }
+                              }}
+                              className="cursor-pointer text-destructive focus:text-destructive"
+                            >
+                              Eliminar
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
