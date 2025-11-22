@@ -53,9 +53,19 @@ const fetchQuotes = async () => {
 };
 
 const fetchOrgMembers = async () => {
+  console.log('[DEBUG] Fetching organization members...');
+  
+  // Verificar el usuario actual
+  const { data: { user } } = await supabase.auth.getUser();
+  console.log('[DEBUG] Current user:', user?.id, user?.email);
+  
   const { data, error } = await supabase
     .from("organization_members")
     .select("user_id, display_name");
+  
+  console.log('[DEBUG] Organization members result:', { data, error });
+  console.log('[DEBUG] Total members:', data?.length || 0);
+  
   if (error) throw error;
   return data || [];
 };
