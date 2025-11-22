@@ -81,32 +81,13 @@ const Index = () => {
           .from("organization_members")
           .select("display_name")
           .eq("user_id", user.id)
-          .maybeSingle();
+          .single();
 
         if (member?.display_name) {
           setUserName(member.display_name);
         } else {
-          // Si no hay display_name, intentar obtener de profiles
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("first_name, last_name")
-            .eq("user_id", user.id)
-            .maybeSingle();
-
-          if (profile) {
-            const fullName = [profile.first_name, profile.last_name]
-              .filter(Boolean)
-              .join(" ");
-            if (fullName) {
-              setUserName(fullName);
-            } else {
-              // Fallback final a email
-              setUserName(user.email?.split("@")[0] || "Usuario");
-            }
-          } else {
-            // Fallback a email si no hay perfil
-            setUserName(user.email?.split("@")[0] || "Usuario");
-          }
+          // Fallback a email si no hay display_name
+          setUserName(user.email?.split("@")[0] || "Usuario");
         }
       }
     };
