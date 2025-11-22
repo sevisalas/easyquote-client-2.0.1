@@ -18,29 +18,42 @@ export const useNumberingFormat = (documentType: 'quote' | 'order') => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      // First, try to get the organization_id if user is a member
+      // First, check if user is organization owner
+      const { data: ownedOrg } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('api_user_id', user.id)
+        .maybeSingle();
+
+      // Then check if user is organization member
       const { data: orgMember } = await supabase
         .from('organization_members')
         .select('organization_id')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      // Query with both user_id and organization_id to get the most specific format
-      let query = supabase
-        .from('numbering_formats')
-        .select('*')
-        .eq('document_type', documentType);
+      const organizationId = ownedOrg?.id || orgMember?.organization_id;
 
-      if (orgMember?.organization_id) {
-        // If user is in an organization, prioritize org format
-        query = query.or(`organization_id.eq.${orgMember.organization_id},and(user_id.eq.${user.id},organization_id.is.null)`);
-      } else {
-        // Otherwise just use user_id
-        query = query.eq('user_id', user.id);
+      // If user belongs to an organization, get format for that organization
+      if (organizationId) {
+        const { data: orgFormat, error: orgError } = await supabase
+          .from('numbering_formats')
+          .select('*')
+          .eq('document_type', documentType)
+          .eq('organization_id', organizationId)
+          .maybeSingle();
+
+        if (orgError) throw orgError;
+        if (orgFormat) return orgFormat as NumberingFormat;
       }
 
-      const { data, error } = await query
-        .order('created_at', { ascending: false })
+      // Otherwise, get user-specific format
+      const { data, error } = await supabase
+        .from('numbering_formats')
+        .select('*')
+        .eq('document_type', documentType)
+        .eq('user_id', user.id)
+        .is('organization_id', null)
         .maybeSingle();
 
       if (error) throw error;
@@ -48,10 +61,10 @@ export const useNumberingFormat = (documentType: 'quote' | 'order') => {
       // Return default format if none configured
       if (!data) {
         return {
-          prefix: documentType === 'quote' ? 'PRES-' : 'SO-',
+          prefix: documentType === 'quote' ? '' : 'SO-',
           suffix: '',
           use_year: true,
-          year_format: 'YYYY',
+          year_format: documentType === 'quote' ? 'YY' : 'YYYY',
           sequential_digits: 4
         } as Omit<NumberingFormat, 'id' | 'document_type'>;
       }
