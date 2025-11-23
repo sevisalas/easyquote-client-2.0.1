@@ -148,7 +148,7 @@ const Auth = () => {
             </div>
 
             {/* Right Side - Brand Panel */}
-            <div className="hidden md:flex relative bg-secondary/70 items-center justify-center p-12 overflow-hidden">
+            <div className="hidden md:flex relative bg-secondary/75 items-center justify-center p-12 overflow-hidden">
               <img
                 src="/lovable-uploads/easyquote-calculator-icon.png"
                 alt=""
