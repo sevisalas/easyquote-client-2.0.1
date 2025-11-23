@@ -148,29 +148,12 @@ const Auth = () => {
             </div>
 
             {/* Right Side - Brand Panel */}
-            <div className="hidden md:flex relative bg-gradient-to-br from-secondary via-secondary to-secondary/80 items-center justify-center p-12">
-              <div className="absolute inset-0 bg-[url('/lovable-uploads/easyquote%201.png')] bg-cover bg-center opacity-10"></div>
-              <div className="relative z-10 text-center space-y-6">
-                <img
-                  src="/lovable-uploads/logo_transparente-removebg-preview.png"
-                  alt="EasyQuote Logo"
-                  className="h-32 w-auto mx-auto drop-shadow-2xl"
-                  onError={(e) => {
-                    const img = e.currentTarget;
-                    if (img.dataset.fallbackApplied) {
-                      img.style.display = 'none';
-                      return;
-                    }
-                    img.src = '/lovable-uploads/logo_transparente.png';
-                    img.dataset.fallbackApplied = 'true';
-                  }}
-                />
-                <div className="text-secondary-foreground">
-                  <p className="text-xl font-light">
-                    Sistema de Gestión de Presupuestos
-                  </p>
-                </div>
-              </div>
+            <div className="hidden md:flex relative bg-transparent items-center justify-center p-12">
+              <img
+                src="/lovable-uploads/easyquote-calculator-icon.png"
+                alt="EasyQuote"
+                className="w-full h-auto max-w-md object-contain"
+              />
             </div>
           </div>
         </Card>
