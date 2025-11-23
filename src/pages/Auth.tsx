@@ -152,7 +152,7 @@ const Auth = () => {
               <img
                 src="/lovable-uploads/easyquote-calculator-icon.png"
                 alt=""
-                className="w-full h-auto max-w-2xl object-cover scale-150 translate-y-32"
+                className="w-full h-auto max-w-2xl object-cover scale-150 translate-y-52"
               />
             </div>
           </div>
