@@ -131,10 +131,26 @@ const UsuariosSuscriptor = () => {
       // Mostrar TODOS los usuarios de organization_members
       if (usersResponse?.users && usersResponse.users.length > 0) {
         for (const usuario of usersResponse.users) {
+          // Mapear roles correctamente
+          let rolDisplay = 'Usuario';
+          switch(usuario.role) {
+            case 'admin':
+              rolDisplay = 'Administrador';
+              break;
+            case 'gestor':
+              rolDisplay = 'Gestor';
+              break;
+            case 'operador':
+              rolDisplay = 'Operador';
+              break;
+            default:
+              rolDisplay = 'Usuario';
+          }
+          
           usuariosFormateados.push({
             id: usuario.id,
             email: usuario.email || 'Sin email',
-            rol: usuario.role === 'admin' ? 'Administrador' : 'Usuario',
+            rol: rolDisplay,
             isPrincipal: false,
             display_name: usuario.display_name,
             cuenta_holded: usuario.cuenta_holded
