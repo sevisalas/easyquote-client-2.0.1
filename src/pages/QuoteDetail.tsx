@@ -298,7 +298,7 @@ export default function QuoteDetail() {
   });
 
   const isEditable = quote?.status === 'draft' || quote?.status === 'pending';
-  const canApprove = membership?.role === 'admin' || membership?.role === 'comercial';
+  const canApprove = membership?.role === 'admin' || membership?.role === 'gestor';
   const isApprovable = quote?.status === 'sent' && canApprove;
 
   const handleEditOrDuplicate = () => {

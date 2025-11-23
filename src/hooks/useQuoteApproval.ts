@@ -20,7 +20,7 @@ export const useQuoteApproval = () => {
 
       // Check user role
       const userRole = membership?.role;
-      if (!userRole || !['admin', 'comercial'].includes(userRole)) {
+      if (!userRole || !['admin', 'gestor'].includes(userRole)) {
         throw new Error('No tienes permisos para aprobar presupuestos');
       }
 
@@ -38,8 +38,8 @@ export const useQuoteApproval = () => {
       if (quoteError) throw quoteError;
       if (!quote) throw new Error('Presupuesto no encontrado');
 
-      // Check permissions: comercial can only approve their own quotes
-      if (userRole === 'comercial' && quote.user_id !== user.id) {
+      // Check permissions: gestor can only approve their own quotes
+      if (userRole === 'gestor' && quote.user_id !== user.id) {
         throw new Error('Solo puedes aprobar tus propios presupuestos');
       }
 

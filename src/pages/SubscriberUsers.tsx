@@ -134,7 +134,7 @@ const UsuariosSuscriptor = () => {
           usuariosFormateados.push({
             id: usuario.id,
             email: usuario.email || 'Sin email',
-            rol: usuario.role === 'admin' ? 'Administrador' : 'Usuario',
+            rol: usuario.role === 'admin' ? 'Administrador' : usuario.role === 'gestor' ? 'Gestor' : 'Operador',
             isPrincipal: false,
             display_name: usuario.display_name,
             cuenta_holded: usuario.cuenta_holded

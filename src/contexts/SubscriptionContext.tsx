@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 type SubscriptionPlan = 'api' | 'client' | 'erp' | 'custom' | 'api_base' | 'api_pro' | 'client_base' | 'client_pro';
-type OrganizationRole = 'admin' | 'comercial' | 'operador';
+type OrganizationRole = 'admin' | 'gestor' | 'operador';
 
 interface Organization {
   id: string;
@@ -204,7 +204,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
 
   // Funciones para acceso a funcionalidades específicas basadas en módulos
   const canAccessClientes = () => {
-    // Admin y Comercial pueden ver clientes (NO operador)
+    // Admin y Gestor pueden ver clientes (NO operador)
     const userRole = membership?.role;
     if (userRole === 'operador') {
       return false;
@@ -213,7 +213,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   };
 
   const canAccessPresupuestos = () => {
-    // Admin y Comercial pueden ver presupuestos (NO operador)
+    // Admin y Gestor pueden ver presupuestos (NO operador)
     const userRole = membership?.role;
     if (userRole === 'operador') {
       return false;
@@ -240,7 +240,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   };
 
   const canAccessProduccion = () => {
-    // Todos los roles (admin, operador, comercial) pueden ver pedidos
+    // Todos los roles (admin, operador, gestor) pueden ver pedidos
     return hasModule('Production');
   };
 
