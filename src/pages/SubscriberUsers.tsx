@@ -42,7 +42,7 @@ const UsuariosSuscriptor = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [hasHoldedIntegration, setHasHoldedIntegration] = useState(false);
   const [emailNuevoUsuario, setEmailNuevoUsuario] = useState("");
-  const [rolNuevoUsuario, setRolNuevoUsuario] = useState<"admin" | "user">("user");
+  const [rolNuevoUsuario, setRolNuevoUsuario] = useState<"admin" | "gestor" | "comercial" | "operador">("operador");
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   
   // Estados para credenciales API
@@ -140,6 +140,9 @@ const UsuariosSuscriptor = () => {
               break;
             case 'gestor':
               rolDisplay = 'Gestor';
+              break;
+            case 'comercial':
+              rolDisplay = 'Comercial';
               break;
             case 'operador':
               rolDisplay = 'Operador';
@@ -254,7 +257,7 @@ const UsuariosSuscriptor = () => {
 
       // Limpiar formulario
       setEmailNuevoUsuario("");
-      setRolNuevoUsuario("user");
+      setRolNuevoUsuario("operador");
       setMostrarFormulario(false);
       obtenerDatos();
     } catch (error: any) {
@@ -385,6 +388,7 @@ const UsuariosSuscriptor = () => {
     let dbRole = 'operador'; // valor por defecto
     if (usuario.rol === 'Administrador') dbRole = 'admin';
     else if (usuario.rol === 'Gestor') dbRole = 'gestor';
+    else if (usuario.rol === 'Comercial') dbRole = 'comercial';
     else if (usuario.rol === 'Operador') dbRole = 'operador';
     setEditRole(dbRole);
     setShowEditDialog(true);
@@ -707,13 +711,15 @@ const UsuariosSuscriptor = () => {
               
               <div>
                 <Label htmlFor="role">Rol</Label>
-                <Select value={rolNuevoUsuario} onValueChange={(value: "admin" | "user") => setRolNuevoUsuario(value)}>
+                <Select value={rolNuevoUsuario} onValueChange={(value: "admin" | "gestor" | "comercial" | "operador") => setRolNuevoUsuario(value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="admin">Administrador</SelectItem>
-                    <SelectItem value="user">Usuario</SelectItem>
+                    <SelectItem value="gestor">Gestor</SelectItem>
+                    <SelectItem value="comercial">Comercial</SelectItem>
+                    <SelectItem value="operador">Operador</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1024,6 +1030,7 @@ const UsuariosSuscriptor = () => {
                 <SelectContent className="bg-background">
                   <SelectItem value="admin">Administrador</SelectItem>
                   <SelectItem value="gestor">Gestor</SelectItem>
+                  <SelectItem value="comercial">Comercial</SelectItem>
                   <SelectItem value="operador">Operador</SelectItem>
                 </SelectContent>
               </Select>
