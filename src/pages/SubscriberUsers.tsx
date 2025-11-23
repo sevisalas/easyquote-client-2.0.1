@@ -69,6 +69,7 @@ const UsuariosSuscriptor = () => {
   const [editDisplayName, setEditDisplayName] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editCuentaHolded, setEditCuentaHolded] = useState("");
+  const [editRole, setEditRole] = useState<string>("");
   const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
@@ -380,6 +381,12 @@ const UsuariosSuscriptor = () => {
     setEditDisplayName(usuario.display_name || '');
     setEditEmail(usuario.email);
     setEditCuentaHolded(usuario.cuenta_holded || 'none');
+    // Convertir el rol mostrado a su valor de base de datos
+    let dbRole = 'operador'; // valor por defecto
+    if (usuario.rol === 'Administrador') dbRole = 'admin';
+    else if (usuario.rol === 'Gestor') dbRole = 'gestor';
+    else if (usuario.rol === 'Operador') dbRole = 'operador';
+    setEditRole(dbRole);
     setShowEditDialog(true);
   };
 
@@ -413,7 +420,8 @@ const UsuariosSuscriptor = () => {
         .from('organization_members')
         .update({
           display_name: editDisplayName || null,
-          cuenta_holded: editCuentaHolded === 'none' ? null : (editCuentaHolded || null)
+          cuenta_holded: editCuentaHolded === 'none' ? null : (editCuentaHolded || null),
+          role: editRole
         })
         .eq('user_id', editingUser.id)
         .eq('organization_id', id);
@@ -430,6 +438,7 @@ const UsuariosSuscriptor = () => {
       setEditDisplayName("");
       setEditEmail("");
       setEditCuentaHolded("");
+      setEditRole("");
       obtenerDatos();
     } catch (error: any) {
       console.error('Error al guardar usuario:', error);
@@ -1002,6 +1011,26 @@ const UsuariosSuscriptor = () => {
                 Este será el nombre que se muestra en la aplicación
               </p>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-role">Rol</Label>
+              <Select
+                value={editRole}
+                onValueChange={setEditRole}
+              >
+                <SelectTrigger id="edit-role">
+                  <SelectValue placeholder="Seleccionar rol" />
+                </SelectTrigger>
+                <SelectContent className="bg-background">
+                  <SelectItem value="admin">Administrador</SelectItem>
+                  <SelectItem value="gestor">Gestor</SelectItem>
+                  <SelectItem value="operador">Operador</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">
+                Define los permisos del usuario en la aplicación
+              </p>
+            </div>
             
             {hasHoldedIntegration && (
               <div className="space-y-2">
@@ -1046,6 +1075,7 @@ const UsuariosSuscriptor = () => {
                 setEditDisplayName("");
                 setEditEmail("");
                 setEditCuentaHolded("");
+                setEditRole("");
               }}
             >
               Cancelar
