@@ -148,11 +148,11 @@ const Auth = () => {
             </div>
 
             {/* Right Side - Brand Panel */}
-            <div className="hidden md:flex relative bg-secondary items-center justify-center p-12 overflow-hidden">
+            <div className="hidden md:flex relative bg-secondary items-center justify-center overflow-hidden">
               <img
-                src="/lovable-uploads/calculator-icon.png"
+                src="/lovable-uploads/login-calculator.png"
                 alt=""
-                className="w-full h-auto max-w-2xl object-contain opacity-75"
+                className="w-full h-full object-cover"
               />
             </div>
           </div>
