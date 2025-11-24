@@ -359,7 +359,7 @@ const Index = () => {
         {/* EasyQuote Brand Image */}
         <div className="mt-4 flex justify-center">
           <img
-            src="/lovable-uploads/easyquote1.png"
+            src="/lovable-uploads/easyquote-calculator-icon.png"
             alt="EasyQuote"
             className="h-24 w-auto opacity-80"
           />
