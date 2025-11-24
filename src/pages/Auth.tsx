@@ -152,7 +152,7 @@ const Auth = () => {
               <img
                 src="/lovable-uploads/login-calculator.png"
                 alt=""
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
             </div>
           </div>
