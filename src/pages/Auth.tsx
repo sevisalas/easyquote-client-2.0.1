@@ -152,7 +152,7 @@ const Auth = () => {
               <img
                 src="/lovable-uploads/calculator-icon.png"
                 alt=""
-                className="w-full h-auto max-w-2xl object-cover scale-150 opacity-50"
+                className="w-full h-auto max-w-2xl object-cover opacity-75"
               />
             </div>
           </div>
