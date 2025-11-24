@@ -150,7 +150,7 @@ const Auth = () => {
             {/* Right Side - Brand Panel */}
             <div className="hidden md:flex relative bg-secondary/75 items-center justify-center p-12 overflow-hidden">
               <img
-                src="/lovable-uploads/easyquote-calculator-icon.png"
+                src="/lovable-uploads/calculator-icon.png"
                 alt=""
                 className="w-full h-auto max-w-2xl object-cover scale-150 translate-y-20 opacity-50"
               />
