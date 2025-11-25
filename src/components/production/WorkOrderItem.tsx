@@ -55,141 +55,124 @@ export const WorkOrderItem = ({
   };
 
   return (
-    <div className="work-order-item page-break bg-background p-8">
-      <div className="max-w-5xl mx-auto space-y-4">
-        {/* Header */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
+    <div className="work-order-item bg-background">
+      <div className="p-6 space-y-6 print:p-8">
+        {/* Print-only Header */}
+        <div className="hidden print:block mb-6">
+          <div className="flex items-center justify-between border-b pb-4">
+            <div>
+              <h1 className="text-2xl font-bold">
+                Orden de Trabajo #{orderNumber}-{itemIndex + 1}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Pedido: {orderNumber}
+              </p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-4 mt-4">
+            {customerName && (
               <div>
-                <CardTitle className="text-lg">
-                  Orden de Trabajo #{orderNumber}-{itemIndex + 1}
-                </CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Pedido: {orderNumber}
-                </p>
+                <label className="text-xs font-medium text-muted-foreground">Cliente</label>
+                <p className="text-sm font-semibold mt-1">{customerName}</p>
               </div>
-              <div className="text-sm font-medium text-muted-foreground">
-                Artículo {itemIndex + 1}
-              </div>
-            </div>
-          </CardHeader>
-        </Card>
-
-        {/* Order Info */}
-        <Card>
-          <CardContent className="pt-4">
-            <div className="grid grid-cols-2 gap-4">
-              {customerName && (
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">Cliente:</label>
-                  <p className="text-sm font-medium mt-1">{customerName}</p>
-                </div>
-              )}
-              {orderDate && (
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">Fecha Pedido:</label>
-                  <p className="text-sm font-medium mt-1">{orderDate}</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Product */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Producto</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-sm font-medium">{item.product_name}</p>
-            {item.description && (
-              <p className="text-sm text-muted-foreground">{item.description}</p>
             )}
-          </CardContent>
-        </Card>
+            {orderDate && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Fecha Pedido</label>
+                <p className="text-sm font-semibold mt-1">{orderDate}</p>
+              </div>
+            )}
+            {deliveryDate && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Fecha Entrega</label>
+                <p className="text-sm font-semibold mt-1">{deliveryDate}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Product Info */}
+        <div className="space-y-1">
+          <h3 className="text-sm font-medium text-muted-foreground">Producto</h3>
+          <p className="text-base font-semibold">{item.product_name}</p>
+          {item.description && (
+            <p className="text-sm text-muted-foreground">{item.description}</p>
+          )}
+          <p className="text-sm">
+            <span className="font-medium">Cantidad:</span> {item.quantity}
+          </p>
+        </div>
 
         {/* Product Configuration */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Configuración del Producto</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              {sortedPrompts.map((prompt) => {
-                const value = formatValue(prompt.value);
-                const isImage = typeof prompt.value === 'string' && 
-                  (prompt.value.startsWith('http://') || prompt.value.startsWith('https://'));
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold">Configuración del Producto</h3>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+            {sortedPrompts.map((prompt) => {
+              const value = formatValue(prompt.value);
+              const isImage = typeof prompt.value === 'string' && 
+                (prompt.value.startsWith('http://') || prompt.value.startsWith('https://'));
+              
+              return (
+                <div key={prompt.id} className="space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground uppercase">
+                    {prompt.label}
+                  </label>
+                  {isImage ? (
+                    <img 
+                      src={prompt.value} 
+                      alt={prompt.label}
+                      className="max-w-[200px] max-h-[200px] object-contain border rounded"
+                    />
+                  ) : (
+                    <p className="text-sm">{value}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Technical Specifications */}
+        {relevantOutputs.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold">Especificaciones Técnicas</h3>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+              {relevantOutputs.map((output, idx) => {
+                const value = formatValue(output.value);
+                const isImage = output.type === 'ProductImage';
                 
                 return (
-                  <div key={prompt.id}>
+                  <div key={idx} className="space-y-1">
                     <label className="text-xs font-medium text-muted-foreground uppercase">
-                      {prompt.label}
+                      {output.name}
                     </label>
-                    {isImage ? (
+                    {isImage && typeof output.value === 'string' && 
+                     (output.value.startsWith('http://') || output.value.startsWith('https://')) ? (
                       <img 
-                        src={prompt.value} 
-                        alt={prompt.label}
-                        className="mt-1 max-w-[200px] max-h-[200px] object-contain border rounded"
+                        src={output.value} 
+                        alt={output.name}
+                        className="max-w-[200px] max-h-[200px] object-contain border rounded"
                       />
                     ) : (
-                      <p className="text-sm font-medium mt-1">{value}</p>
+                      <p className="text-sm">{value}</p>
                     )}
                   </div>
                 );
               })}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Technical Specifications */}
-        {relevantOutputs.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Especificaciones Técnicas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                {relevantOutputs.map((output, idx) => {
-                  const value = formatValue(output.value);
-                  const isImage = output.type === 'ProductImage';
-                  
-                  return (
-                    <div key={idx}>
-                      <label className="text-xs font-medium text-muted-foreground uppercase">
-                        {output.name}
-                      </label>
-                      {isImage && typeof output.value === 'string' && 
-                       (output.value.startsWith('http://') || output.value.startsWith('https://')) ? (
-                        <img 
-                          src={output.value} 
-                          alt={output.name}
-                          className="mt-1 max-w-[200px] max-h-[200px] object-contain border rounded"
-                        />
-                      ) : (
-                        <p className="text-sm font-medium mt-1">{value}</p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          </div>
         )}
 
         {/* Operator Notes */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Notas del Operador</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="border rounded-md p-4 min-h-[100px] bg-muted/5">
-              <p className="text-xs text-muted-foreground italic">
-                Espacio para anotaciones del operador durante la producción...
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold">Notas del Operador</h3>
+          <div className="border rounded-md p-4 min-h-[100px] bg-muted/10">
+            <p className="text-xs text-muted-foreground italic">
+              Espacio para anotaciones del operador durante la producción...
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
