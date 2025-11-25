@@ -597,6 +597,20 @@ const SalesOrderDetail = () => {
                               }`}
                             />
                             <h3 className="font-semibold text-lg">{item.description || item.product_name}</h3>
+                            {/* Mini barra de estados del artículo */}
+                            {order.status === 'in_production' && (
+                              <div className="flex items-center gap-1 ml-3">
+                                <div className={`w-5 h-1.5 rounded-full transition-all ${
+                                  item.production_status === 'pending' || item.production_status === 'in_progress' || item.production_status === 'completed' ? 'bg-orange-500' : 'bg-muted'
+                                }`} title="Pendiente" />
+                                <div className={`w-5 h-1.5 rounded-full transition-all ${
+                                  item.production_status === 'in_progress' || item.production_status === 'completed' ? 'bg-green-500' : 'bg-muted'
+                                }`} title="En proceso" />
+                                <div className={`w-5 h-1.5 rounded-full transition-all ${
+                                  item.production_status === 'completed' ? 'bg-blue-500' : 'bg-muted'
+                                }`} title="Completado" />
+                              </div>
+                            )}
                           </div>
                           <div className="text-right ml-4">
                             <p className="text-xl font-bold text-primary">{item.price.toFixed(2)} €</p>
