@@ -572,8 +572,6 @@ const SalesOrderDetail = () => {
                 const itemPrompts = item.prompts && Array.isArray(item.prompts) ? item.prompts : [];
                 const isExpanded = expandedItems.has(item.id);
                 
-                console.log('Item production_status:', item.product_name, item.production_status);
-                
                 return (
                   <Collapsible
                     key={item.id}
