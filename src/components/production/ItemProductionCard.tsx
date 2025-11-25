@@ -36,7 +36,7 @@ export function ItemProductionCard({ item }: ItemProductionCardProps) {
           {/* Mini status bar */}
           <div className="flex items-center gap-1">
             <div className={`w-6 h-1.5 rounded-full transition-all ${
-              item.production_status === 'pending' || item.production_status === 'in_progress' || item.production_status === 'completed' ? 'bg-primary' : 'bg-muted'
+              item.production_status === 'pending' || item.production_status === 'in_progress' || item.production_status === 'completed' ? 'bg-orange-500' : 'bg-muted'
             }`} title="Pendiente" />
             <div className={`w-6 h-1.5 rounded-full transition-all ${
               item.production_status === 'in_progress' || item.production_status === 'completed' ? 'bg-green-500' : 'bg-muted'
