@@ -55,123 +55,100 @@ export const WorkOrderItem = ({
   };
 
   return (
-    <div className="work-order-item bg-background">
-      <div className="p-6 space-y-6 print:p-8">
-        {/* Print-only Header */}
-        <div className="hidden print:block mb-6">
-          <div className="flex items-center justify-between border-b pb-4">
-            <div>
-              <h1 className="text-2xl font-bold">
-                Orden de Trabajo #{orderNumber}-{itemIndex + 1}
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Pedido: {orderNumber}
-              </p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-4 mt-4">
-            {customerName && (
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Cliente</label>
-                <p className="text-sm font-semibold mt-1">{customerName}</p>
-              </div>
-            )}
-            {orderDate && (
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Fecha Pedido</label>
-                <p className="text-sm font-semibold mt-1">{orderDate}</p>
-              </div>
-            )}
-            {deliveryDate && (
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Fecha Entrega</label>
-                <p className="text-sm font-semibold mt-1">{deliveryDate}</p>
-              </div>
-            )}
-          </div>
+    <div className="space-y-3">
+      {/* Compact Product Info */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+        <div>
+          <p className="text-muted-foreground">Producto</p>
+          <p className="font-medium">{item.product_name}</p>
         </div>
-
-        {/* Product Info */}
-        <div className="space-y-1">
-          <h3 className="text-sm font-medium text-muted-foreground">Producto</h3>
-          <p className="text-base font-semibold">{item.product_name}</p>
-          {item.description && (
-            <p className="text-sm text-muted-foreground">{item.description}</p>
-          )}
-          <p className="text-sm">
-            <span className="font-medium">Cantidad:</span> {item.quantity}
-          </p>
+        <div>
+          <p className="text-muted-foreground">Cantidad</p>
+          <p className="font-medium">{item.quantity}</p>
         </div>
+        {orderDate && (
+          <div>
+            <p className="text-muted-foreground">F. Pedido</p>
+            <p className="font-medium">{orderDate}</p>
+          </div>
+        )}
+        {deliveryDate && (
+          <div>
+            <p className="text-muted-foreground">F. Entrega</p>
+            <p className="font-medium">{deliveryDate}</p>
+          </div>
+        )}
+      </div>
 
-        {/* Product Configuration */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold">Configuración del Producto</h3>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+      {/* Compact Prompts */}
+      {sortedPrompts.length > 0 && (
+        <div className="p-2 bg-muted/30 rounded border">
+          <p className="text-xs font-semibold mb-2">Configuración</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
             {sortedPrompts.map((prompt) => {
               const value = formatValue(prompt.value);
               const isImage = typeof prompt.value === 'string' && 
                 (prompt.value.startsWith('http://') || prompt.value.startsWith('https://'));
               
               return (
-                <div key={prompt.id} className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground uppercase">
-                    {prompt.label}
-                  </label>
-                  {isImage ? (
-                    <img 
-                      src={prompt.value} 
-                      alt={prompt.label}
-                      className="max-w-[200px] max-h-[200px] object-contain border rounded"
-                    />
-                  ) : (
-                    <p className="text-sm">{value}</p>
-                  )}
+                <div key={prompt.id}>
+                  <p className="text-muted-foreground">{prompt.label}</p>
+                  <div>
+                    {isImage ? (
+                      <img 
+                        src={prompt.value} 
+                        alt={prompt.label}
+                        className="max-w-[100px] h-auto rounded"
+                      />
+                    ) : (
+                      <p className="font-medium truncate">{value}</p>
+                    )}
+                  </div>
                 </div>
               );
             })}
           </div>
         </div>
+      )}
 
-        {/* Technical Specifications */}
-        {relevantOutputs.length > 0 && (
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold">Especificaciones Técnicas</h3>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-              {relevantOutputs.map((output, idx) => {
-                const value = formatValue(output.value);
-                const isImage = output.type === 'ProductImage';
-                
-                return (
-                  <div key={idx} className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground uppercase">
-                      {output.name}
-                    </label>
+      {/* Compact Technical Specs */}
+      {relevantOutputs.length > 0 && (
+        <div className="p-2 bg-muted/30 rounded border">
+          <p className="text-xs font-semibold mb-2">Especificaciones Técnicas</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+            {relevantOutputs.map((output, idx) => {
+              const value = formatValue(output.value);
+              const isImage = output.type === 'ProductImage';
+              
+              return (
+                <div key={idx}>
+                  <p className="text-muted-foreground">{output.name}</p>
+                  <div>
                     {isImage && typeof output.value === 'string' && 
                      (output.value.startsWith('http://') || output.value.startsWith('https://')) ? (
                       <img 
                         src={output.value} 
                         alt={output.name}
-                        className="max-w-[200px] max-h-[200px] object-contain border rounded"
+                        className="max-w-[100px] h-auto rounded"
                       />
                     ) : (
-                      <p className="text-sm">{value}</p>
+                      <p className="font-medium truncate">{value}</p>
                     )}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Operator Notes */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold">Notas del Operador</h3>
-          <div className="border rounded-md p-4 min-h-[100px] bg-muted/10">
-            <p className="text-xs text-muted-foreground italic">
-              Espacio para anotaciones del operador durante la producción...
-            </p>
-          </div>
+      {/* Highlighted Observations */}
+      <div className="p-3 bg-primary/5 border-l-4 border-primary rounded">
+        <p className="text-xs font-semibold text-primary mb-2">OBSERVACIONES</p>
+        <div className="bg-background/50 p-3 rounded min-h-[60px]">
+          <p className="text-xs text-muted-foreground italic">
+            Espacio para notas y observaciones durante la producción...
+          </p>
         </div>
       </div>
     </div>
