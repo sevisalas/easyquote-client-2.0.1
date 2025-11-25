@@ -108,7 +108,7 @@ const WorkOrder = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => navigate(`/sales-orders/${id}`)}
+                onClick={() => navigate(`/pedidos/${id}`)}
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
