@@ -491,7 +491,7 @@ const SalesOrderDetail = () => {
                 order.status === 'in_production' || order.status === 'completed' ? 'bg-green-500' : 'bg-muted'
               }`} title="En producción" />
               <div className={`flex-1 h-2 rounded-full transition-all ${
-                order.status === 'completed' ? 'bg-secondary' : 'bg-muted'
+                order.status === 'completed' ? 'bg-blue-500' : 'bg-muted'
               }`} title="Terminado" />
             </div>
             <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
