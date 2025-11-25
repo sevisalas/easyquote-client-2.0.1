@@ -29,9 +29,7 @@ export function ItemProductionCard({ item }: ItemProductionCardProps) {
       <div className="flex items-center justify-between gap-4">
         <div className="flex-1">
           <p className="text-xs font-medium text-muted-foreground">Producto</p>
-          <p className="text-sm font-semibold">
-            {item.product_name} <span className="font-normal text-muted-foreground">× {item.quantity}</span>
-          </p>
+          <p className="text-sm font-semibold">{item.product_name}</p>
         </div>
         {!showTaskForm && (
           <Button
