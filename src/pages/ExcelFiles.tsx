@@ -724,7 +724,7 @@ export default function ExcelFiles() {
     }
   };
 
-  // Download file from EasyQuote API (with CORS fallback)
+  // Download file from EasyQuote API via proxy
   const downloadFile = async (fileId: string, fileName: string) => {
     const token = sessionStorage.getItem("easyquote_token");
     if (!token) {
@@ -746,47 +746,42 @@ export default function ExcelFiles() {
     }
 
     try {
-      const downloadUrl = `https://sheets.easyquote.cloud/${subscriberId}/${fileId}/${fileName}`;
-      console.log('📥 Descargando desde:', downloadUrl);
+      console.log('📥 Descargando archivo:', fileName);
 
-      // Try direct download first (works when in same domain/no CORS)
-      const response = await fetch(downloadUrl, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
+      const response = await supabase.functions.invoke('easyquote-download-file', {
+        body: { token, subscriberId, fileId, fileName }
       });
 
-      if (response.ok) {
-        const blob = await response.blob();
-        
-        if (blob.size === 0) {
-          throw new Error("El archivo está vacío");
-        }
-
-        console.log('✅ Descarga directa exitosa, tamaño:', blob.size);
-
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        
-        setTimeout(() => {
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(link);
-        }, 100);
-
-        toast({
-          title: "Archivo descargado",
-          description: `${fileName} descargado correctamente`,
-        });
-        return;
+      if (response.error) {
+        console.error('❌ Error del proxy:', response.error);
+        throw new Error(response.error.message || "No se pudo descargar el archivo");
       }
 
-      // Si la respuesta no es OK, mostrar error
-      throw new Error("No se pudo descargar el archivo. Intenta nuevamente.");
+      // The response.data is already a Blob from the edge function
+      const blob = response.data;
+      
+      if (!blob || blob.size === 0) {
+        throw new Error("El archivo está vacío");
+      }
+
+      console.log('✅ Descarga exitosa, tamaño:', blob.size);
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(link);
+      }, 100);
+
+      toast({
+        title: "Archivo descargado",
+        description: `${fileName} descargado correctamente`,
+      });
     } catch (error) {
       console.error("❌ Error de descarga:", error);
       toast({
