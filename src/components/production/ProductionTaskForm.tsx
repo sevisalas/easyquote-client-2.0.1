@@ -65,46 +65,50 @@ export function ProductionTaskForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-4 border rounded-lg bg-card">
-      <div className="space-y-2">
-        <Label htmlFor="taskName">Nombre de la tarea</Label>
-        <Input
-          id="taskName"
-          value={taskName}
-          onChange={(e) => setTaskName(e.target.value)}
-          placeholder="Ej: Revisión de archivo"
-          required
-        />
-      </div>
+    <form onSubmit={handleSubmit} className="space-y-3 p-3 border rounded-lg bg-muted/30">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label htmlFor="taskName" className="text-xs">Nombre de la tarea</Label>
+          <Input
+            id="taskName"
+            value={taskName}
+            onChange={(e) => setTaskName(e.target.value)}
+            placeholder="Ej: Revisión de archivo"
+            className="h-8 text-sm"
+            required
+          />
+        </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="phase">Fase de producción</Label>
-        <Select value={selectedPhaseId} onValueChange={setSelectedPhaseId} required>
-          <SelectTrigger id="phase">
-            <SelectValue placeholder="Selecciona una fase" />
-          </SelectTrigger>
-          <SelectContent>
-            {phases.map((phase) => (
-              <SelectItem key={phase.id} value={phase.id}>
-                <span className="flex items-center gap-2">
-                  <span
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: phase.color }}
-                  />
-                  {phase.display_name}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="space-y-1">
+          <Label htmlFor="phase" className="text-xs">Fase de producción</Label>
+          <Select value={selectedPhaseId} onValueChange={setSelectedPhaseId} required>
+            <SelectTrigger id="phase" className="h-8 text-sm">
+              <SelectValue placeholder="Selecciona una fase" />
+            </SelectTrigger>
+            <SelectContent>
+              {phases.map((phase) => (
+                <SelectItem key={phase.id} value={phase.id}>
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ backgroundColor: phase.color }}
+                    />
+                    {phase.display_name}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="flex gap-2 justify-end">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
           Cancelar
         </Button>
         <Button
           type="submit"
+          size="sm"
           disabled={isSubmitting || phasesLoading || !taskName.trim() || !selectedPhaseId}
         >
           {isSubmitting ? "Creando..." : "Crear Tarea"}

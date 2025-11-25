@@ -32,25 +32,26 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
 
   if (tasks.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
+      <div className="text-center py-4 text-xs text-muted-foreground">
         No hay tareas de producción para este artículo
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {tasks.map((task) => {
         const phaseDisplay = getPhaseDisplay(task.phase_id);
 
         return (
-          <div key={task.id} className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <h4 className="font-semibold">{task.task_name}</h4>
+          <div key={task.id} className="p-3 border rounded-lg bg-card space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <h4 className="font-medium text-sm truncate">{task.task_name}</h4>
                 {phaseDisplay && (
                   <Badge
                     variant="outline"
+                    className="text-xs shrink-0"
                     style={{
                       borderColor: phaseDisplay.color,
                       color: phaseDisplay.color,
@@ -65,10 +66,10 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
                   onClick={() => deleteTask(task.id)}
-                  className="text-destructive hover:text-destructive"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               )}
             </div>
