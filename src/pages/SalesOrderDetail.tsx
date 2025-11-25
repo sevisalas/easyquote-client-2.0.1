@@ -21,6 +21,8 @@ import { isVisiblePrompt, type PromptDef } from "@/utils/promptVisibility";
 import { ItemProductionCard } from "@/components/production/ItemProductionCard";
 import { WorkOrderItem } from "@/components/production/WorkOrderItem";
 import { generateWorkOrderPDF } from "@/utils/workOrderGenerator";
+import { useProductionTasks } from "@/hooks/useProductionTasks";
+import { Progress } from "@/components/ui/progress";
 
 const statusColors = {
   draft: "outline",
@@ -56,6 +58,24 @@ const SalesOrderDetail = () => {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const { isHoldedActive } = useHoldedIntegration();
+  
+  // Fetch all tasks for progress calculation
+  const { tasks: allTasks } = useProductionTasks();
+  
+  // Calculate global production progress
+  const calculateProgress = () => {
+    if (order?.status !== 'in_production' || items.length === 0) return 0;
+    
+    const itemIds = items.map(item => item.id);
+    const orderTasks = allTasks.filter(task => itemIds.includes(task.sales_order_item_id));
+    
+    if (orderTasks.length === 0) return 0;
+    
+    const completedTasks = orderTasks.filter(task => task.status === 'completed').length;
+    return Math.round((completedTasks / orderTasks.length) * 100);
+  };
+  
+  const progressPercentage = calculateProgress();
 
   useEffect(() => {
     if (!canAccessProduccion()) {
@@ -477,6 +497,17 @@ const SalesOrderDetail = () => {
               </p>
             </div>
           </div>
+          
+          {/* Production Progress Bar */}
+          {order.status === 'in_production' && (
+            <div className="pt-3">
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-muted-foreground">Progreso de producción</label>
+                <span className="text-xs font-semibold">{progressPercentage}%</span>
+              </div>
+              <Progress value={progressPercentage} className="h-2" />
+            </div>
+          )}
           
           {/* Número de documento Holded */}
           {isHoldedActive && order.holded_document_id && (
