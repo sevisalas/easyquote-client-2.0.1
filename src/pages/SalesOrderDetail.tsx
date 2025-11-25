@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Download, ChevronDown, Edit } from "lucide-react";
+import { ArrowLeft, Trash2, Download, ChevronDown, Edit, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CustomerName } from "@/components/quotes/CustomerName";
 import { isVisiblePrompt, type PromptDef } from "@/utils/promptVisibility";
+import { ItemProductionCard } from "@/components/production/ItemProductionCard";
 
 const statusColors = {
   draft: "outline",
@@ -334,6 +335,15 @@ const SalesOrderDetail = () => {
                   PDF Holded
                 </Button>
               )}
+              <Button 
+                onClick={() => navigate(`/work-order/${id}`)}
+                size="sm"
+                variant="outline"
+                className="gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                Orden de Trabajo
+              </Button>
               {order.status === 'draft' && (
                 <Button 
                   onClick={() => navigate(`/pedidos/${id}/editar`)}
@@ -669,6 +679,23 @@ const SalesOrderDetail = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Panel de Producción - Solo visible cuando el pedido está en producción */}
+      {order.status === 'in_production' && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Gestión de Producción</CardTitle>
+            <CardDescription>
+              Crea y gestiona tareas de producción para cada artículo del pedido
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-2 space-y-3">
+            {items.map((item) => (
+              <ItemProductionCard key={item.id} item={item} />
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
