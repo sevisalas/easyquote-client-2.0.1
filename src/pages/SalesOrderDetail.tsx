@@ -572,6 +572,8 @@ const SalesOrderDetail = () => {
                 const itemPrompts = item.prompts && Array.isArray(item.prompts) ? item.prompts : [];
                 const isExpanded = expandedItems.has(item.id);
                 
+                console.log('Item production_status:', item.product_name, item.production_status);
+                
                 return (
                   <Collapsible
                     key={item.id}
@@ -600,10 +602,10 @@ const SalesOrderDetail = () => {
                             {/* Mini barra de estados del artículo */}
                             <div className="flex items-center gap-1 ml-3">
                               <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                item.production_status === 'pending' || item.production_status === 'in_progress' || item.production_status === 'completed' ? 'bg-orange-500' : 'bg-muted'
+                                ['pending', 'in_progress', 'completed'].includes(item.production_status || '') ? 'bg-orange-500' : 'bg-muted'
                               }`} title="Pendiente" />
                               <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                item.production_status === 'in_progress' || item.production_status === 'completed' ? 'bg-green-500' : 'bg-muted'
+                                ['in_progress', 'completed'].includes(item.production_status || '') ? 'bg-green-500' : 'bg-muted'
                               }`} title="En proceso" />
                               <div className={`w-5 h-1.5 rounded-full transition-all ${
                                 item.production_status === 'completed' ? 'bg-blue-500' : 'bg-muted'
