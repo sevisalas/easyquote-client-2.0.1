@@ -1,6 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 
 interface WorkOrderItemProps {
   item: {
@@ -57,141 +55,142 @@ export const WorkOrderItem = ({
   };
 
   return (
-    <div className="work-order-item min-h-screen bg-background p-8 page-break">
-      <Card className="max-w-5xl mx-auto">
-        <CardHeader>
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <CardTitle className="text-2xl mb-2">
-                Orden de Trabajo #{orderNumber}-{itemIndex + 1}
-              </CardTitle>
-              <p className="text-muted-foreground">
-                Pedido: {orderNumber}
-              </p>
+    <div className="work-order-item page-break bg-background p-8">
+      <div className="max-w-5xl mx-auto space-y-4">
+        {/* Header */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg">
+                  Orden de Trabajo #{orderNumber}-{itemIndex + 1}
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Pedido: {orderNumber}
+                </p>
+              </div>
+              <div className="text-sm font-medium text-muted-foreground">
+                Artículo {itemIndex + 1}
+              </div>
             </div>
-            <Badge variant="outline" className="text-lg px-4 py-2">
-              Artículo {itemIndex + 1}
-            </Badge>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            {customerName && (
-              <div>
-                <span className="text-muted-foreground">Cliente:</span>
-                <p className="font-medium">{customerName}</p>
-              </div>
-            )}
-            {orderDate && (
-              <div>
-                <span className="text-muted-foreground">Fecha Pedido:</span>
-                <p className="font-medium">{orderDate}</p>
-              </div>
-            )}
-            {deliveryDate && (
-              <div>
-                <span className="text-muted-foreground">Fecha Entrega:</span>
-                <p className="font-medium">{deliveryDate}</p>
-              </div>
-            )}
-          </div>
-        </CardHeader>
+          </CardHeader>
+        </Card>
 
-        <Separator />
+        {/* Order Info */}
+        <Card>
+          <CardContent className="pt-4">
+            <div className="grid grid-cols-2 gap-4">
+              {customerName && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Cliente:</label>
+                  <p className="text-sm font-medium mt-1">{customerName}</p>
+                </div>
+              )}
+              {orderDate && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Fecha Pedido:</label>
+                  <p className="text-sm font-medium mt-1">{orderDate}</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-        <CardContent className="space-y-6 pt-6">
-          {/* Product Info */}
-          <div>
-            <h3 className="text-lg font-semibold mb-2">Producto</h3>
-            <p className="text-xl">{item.product_name}</p>
+        {/* Product */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Producto</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p className="text-sm font-medium">{item.product_name}</p>
             {item.description && (
-              <p className="text-muted-foreground mt-1">{item.description}</p>
+              <p className="text-sm text-muted-foreground">{item.description}</p>
             )}
-          </div>
+          </CardContent>
+        </Card>
 
-          <Separator />
-
-          {/* Product Configuration (Prompts) */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">
-              Configuración del Producto
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
+        {/* Product Configuration */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Configuración del Producto</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
               {sortedPrompts.map((prompt) => {
                 const value = formatValue(prompt.value);
                 const isImage = typeof prompt.value === 'string' && 
                   (prompt.value.startsWith('http://') || prompt.value.startsWith('https://'));
                 
                 return (
-                  <div key={prompt.id} className="space-y-1">
-                    <p className="text-sm text-muted-foreground">
+                  <div key={prompt.id}>
+                    <label className="text-xs font-medium text-muted-foreground uppercase">
                       {prompt.label}
-                    </p>
+                    </label>
                     {isImage ? (
                       <img 
                         src={prompt.value} 
                         alt={prompt.label}
-                        className="max-w-[200px] max-h-[200px] object-contain border rounded"
+                        className="mt-1 max-w-[200px] max-h-[200px] object-contain border rounded"
                       />
                     ) : (
-                      <p className="font-medium">{value}</p>
+                      <p className="text-sm font-medium mt-1">{value}</p>
                     )}
                   </div>
                 );
               })}
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Technical Specifications (Relevant Outputs) */}
-          {relevantOutputs.length > 0 && (
-            <>
-              <Separator />
-              <div>
-                <h3 className="text-lg font-semibold mb-3">
-                  Especificaciones Técnicas
-                </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {relevantOutputs.map((output, idx) => {
-                    const value = formatValue(output.value);
-                    const isImage = output.type === 'ProductImage';
-                    
-                    return (
-                      <div key={idx} className="space-y-1">
-                        <p className="text-sm text-muted-foreground">
-                          {output.name}
-                        </p>
-                        {isImage && typeof output.value === 'string' && 
-                         (output.value.startsWith('http://') || output.value.startsWith('https://')) ? (
-                          <img 
-                            src={output.value} 
-                            alt={output.name}
-                            className="max-w-[200px] max-h-[200px] object-contain border rounded"
-                          />
-                        ) : (
-                          <p className="font-medium">{value}</p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+        {/* Technical Specifications */}
+        {relevantOutputs.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Especificaciones Técnicas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                {relevantOutputs.map((output, idx) => {
+                  const value = formatValue(output.value);
+                  const isImage = output.type === 'ProductImage';
+                  
+                  return (
+                    <div key={idx}>
+                      <label className="text-xs font-medium text-muted-foreground uppercase">
+                        {output.name}
+                      </label>
+                      {isImage && typeof output.value === 'string' && 
+                       (output.value.startsWith('http://') || output.value.startsWith('https://')) ? (
+                        <img 
+                          src={output.value} 
+                          alt={output.name}
+                          className="mt-1 max-w-[200px] max-h-[200px] object-contain border rounded"
+                        />
+                      ) : (
+                        <p className="text-sm font-medium mt-1">{value}</p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            </>
-          )}
+            </CardContent>
+          </Card>
+        )}
 
-          <Separator />
-
-          {/* Operator Notes */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">
-              Notas del Operador
-            </h3>
-            <div className="border rounded-md p-4 min-h-[120px] bg-muted/10">
-              <p className="text-sm text-muted-foreground italic">
+        {/* Operator Notes */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Notas del Operador</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="border rounded-md p-4 min-h-[100px] bg-muted/5">
+              <p className="text-xs text-muted-foreground italic">
                 Espacio para anotaciones del operador durante la producción...
               </p>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

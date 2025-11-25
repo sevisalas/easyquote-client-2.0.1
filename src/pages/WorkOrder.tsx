@@ -99,21 +99,21 @@ const WorkOrder = () => {
     : undefined;
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-background">
       {/* Header - Only visible on screen, not in print */}
       <div className="sticky top-0 z-10 bg-background border-b print:hidden">
-        <div className="max-w-7xl mx-auto px-8 py-4">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => navigate(`/sales-orders/${id}`)}
+                onClick={() => navigate(`/pedidos/${id}`)}
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-4 w-4" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold">
+                <h1 className="text-xl font-semibold">
                   Orden de Trabajo - {order.order_number}
                 </h1>
                 <p className="text-sm text-muted-foreground">
@@ -125,16 +125,17 @@ const WorkOrder = () => {
             <Button
               onClick={handleGeneratePDF}
               disabled={isGeneratingPDF}
+              size="sm"
             >
               <Download className="h-4 w-4 mr-2" />
-              {isGeneratingPDF ? 'Generando PDF...' : 'Descargar PDF'}
+              Descargar PDF
             </Button>
           </div>
         </div>
       </div>
 
       {/* Work Order Items */}
-      <div className="space-y-8 py-8">
+      <div className="space-y-12 py-6">
         {items.map((item, index) => (
           <WorkOrderItem
             key={item.id}
