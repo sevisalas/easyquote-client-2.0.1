@@ -872,6 +872,102 @@ export type Database = {
           },
         ]
       }
+      production_phases: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          display_name: string
+          display_order: number
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          display_name: string
+          display_order: number
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          display_name?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      production_tasks: {
+        Row: {
+          comments: string | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          operator_id: string
+          paused_at: string | null
+          phase_id: string
+          sales_order_item_id: string
+          started_at: string | null
+          status: string | null
+          task_name: string
+          total_time_seconds: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          comments?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          operator_id: string
+          paused_at?: string | null
+          phase_id: string
+          sales_order_item_id: string
+          started_at?: string | null
+          status?: string | null
+          task_name: string
+          total_time_seconds?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          comments?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          operator_id?: string
+          paused_at?: string | null
+          phase_id?: string
+          sales_order_item_id?: string
+          started_at?: string | null
+          status?: string | null
+          task_name?: string
+          total_time_seconds?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_tasks_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "production_phases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_tasks_sales_order_item_id_fkey"
+            columns: ["sales_order_item_id"]
+            isOneToOne: false
+            referencedRelation: "sales_order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1170,6 +1266,7 @@ export type Database = {
           price: number
           product_id: string | null
           product_name: string
+          production_status: string | null
           prompts: Json | null
           quantity: number
           sales_order_id: string
@@ -1185,6 +1282,7 @@ export type Database = {
           price?: number
           product_id?: string | null
           product_name: string
+          production_status?: string | null
           prompts?: Json | null
           quantity?: number
           sales_order_id: string
@@ -1200,6 +1298,7 @@ export type Database = {
           price?: number
           product_id?: string | null
           product_name?: string
+          production_status?: string | null
           prompts?: Json | null
           quantity?: number
           sales_order_id?: string
@@ -1230,6 +1329,7 @@ export type Database = {
           notes: string | null
           order_date: string
           order_number: string
+          production_progress: Json | null
           quote_id: string | null
           status: string
           subtotal: number
@@ -1254,6 +1354,7 @@ export type Database = {
           notes?: string | null
           order_date?: string
           order_number: string
+          production_progress?: Json | null
           quote_id?: string | null
           status?: string
           subtotal?: number
@@ -1278,6 +1379,7 @@ export type Database = {
           notes?: string | null
           order_date?: string
           order_number?: string
+          production_progress?: Json | null
           quote_id?: string | null
           status?: string
           subtotal?: number
