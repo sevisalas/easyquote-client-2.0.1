@@ -47,12 +47,10 @@ import SalesOrderNew from "./pages/SalesOrderNew";
 import SalesOrderEdit from "./pages/SalesOrderEdit";
 import WorkOrder from "./pages/WorkOrder";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
-import { useSessionMonitor } from "./hooks/useSessionMonitor";
 
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  useSessionMonitor();
   
   return (
     <Routes>
