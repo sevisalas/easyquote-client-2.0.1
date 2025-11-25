@@ -19,6 +19,8 @@ import { es } from "date-fns/locale";
 import { CustomerName } from "@/components/quotes/CustomerName";
 import { isVisiblePrompt, type PromptDef } from "@/utils/promptVisibility";
 import { ItemProductionCard } from "@/components/production/ItemProductionCard";
+import { WorkOrderItem } from "@/components/production/WorkOrderItem";
+import { generateWorkOrderPDF } from "@/utils/workOrderGenerator";
 
 const statusColors = {
   draft: "outline",
@@ -52,6 +54,7 @@ const SalesOrderDetail = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const { isHoldedActive } = useHoldedIntegration();
 
   useEffect(() => {
@@ -288,6 +291,49 @@ const SalesOrderDetail = () => {
     }
   };
 
+  const handleGeneratePDF = async () => {
+    if (!order || items.length === 0) return;
+
+    setIsGeneratingPDF(true);
+    try {
+      // Get customer name
+      let customerName = 'Sin cliente';
+      if (order.customer_id) {
+        const { data: customer } = await supabase
+          .from('customers')
+          .select('name')
+          .eq('id', order.customer_id)
+          .single();
+        if (customer) customerName = customer.name;
+      }
+
+      await generateWorkOrderPDF({
+        orderId: order.id,
+        orderNumber: order.order_number,
+        customerName,
+        orderDate: format(new Date(order.order_date), 'dd/MM/yyyy', { locale: es }),
+        deliveryDate: order.delivery_date 
+          ? format(new Date(order.delivery_date), 'dd/MM/yyyy', { locale: es })
+          : undefined,
+        items: items.map((item, index) => ({
+          id: item.id,
+          product_name: item.product_name,
+          quantity: item.quantity,
+          prompts: item.prompts as any,
+          outputs: item.outputs as any,
+          description: item.description || undefined,
+        })),
+      });
+      
+      toast.success('PDF de Orden de Trabajo generado correctamente');
+    } catch (error) {
+      console.error('Error generating work order PDF:', error);
+      toast.error('Error al generar el PDF de Orden de Trabajo');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
   if (!canAccessProduccion()) {
     return null;
   }
@@ -336,13 +382,14 @@ const SalesOrderDetail = () => {
                 </Button>
               )}
               <Button 
-                onClick={() => navigate(`/work-order/${id}`)}
+                onClick={handleGeneratePDF}
                 size="sm"
                 variant="outline"
                 className="gap-2"
+                disabled={isGeneratingPDF}
               >
-                <FileText className="h-4 w-4" />
-                Orden de Trabajo
+                <Download className="h-4 w-4" />
+                Descargar OT PDF
               </Button>
               {order.status === 'draft' && (
                 <Button 
@@ -534,89 +581,32 @@ const SalesOrderDetail = () => {
                       </CollapsibleTrigger>
 
                       <CollapsibleContent>
-                        <div className="px-4 pb-4 pt-2 space-y-3">
-                          {/* Outputs */}
-                          {itemOutputs.length > 0 && (
-                            <div className="space-y-2">
-                              {itemOutputs.map((output: any, idx: number) => {
-                                  if (output.type === 'ProductImage') {
-                                    return (
-                                      <div key={idx}>
-                                        <img 
-                                          src={output.value} 
-                                          alt={output.name}
-                                          className="w-48 h-48 object-contain rounded border"
-                                        />
-                                      </div>
-                                    );
-                                  }
-                                  return (
-                                    <div key={idx} className="text-sm">
-                                      <span className="font-medium">{output.name}:</span>{' '}
-                                      <span>{output.value}</span>
-                                    </div>
-                                  );
-                              })}
+                        <div className="px-4 pb-4 pt-2 space-y-4">
+                          <WorkOrderItem
+                            item={{
+                              id: item.id,
+                              product_name: item.product_name,
+                              quantity: item.quantity,
+                              prompts: itemPrompts,
+                              outputs: itemOutputs,
+                              description: item.description || undefined,
+                            }}
+                            orderNumber={order.order_number}
+                            customerName={order.customer_id ? undefined : 'Sin cliente'}
+                            orderDate={format(new Date(order.order_date), 'dd/MM/yyyy', { locale: es })}
+                            deliveryDate={order.delivery_date 
+                              ? format(new Date(order.delivery_date), 'dd/MM/yyyy', { locale: es })
+                              : undefined
+                            }
+                            itemIndex={index}
+                          />
+                          
+                          {/* Gestión de Producción integrada */}
+                          {order.status === 'in_production' && (
+                            <div className="pt-2 border-t">
+                              <ItemProductionCard item={item} />
                             </div>
                           )}
-
-                          {/* Prompts */}
-                          {itemPrompts.length > 0 && (() => {
-                            // Mostrar TODOS los prompts sin ningún filtro
-                            const visiblePrompts = itemPrompts
-                              .sort((a: any, b: any) => (a.order ?? 999) - (b.order ?? 999));
-
-                            if (visiblePrompts.length === 0) return null;
-
-                            return (
-                              <div className="space-y-1 pl-2 border-l-2 border-muted">
-                                <p className="text-xs font-semibold text-muted-foreground uppercase">Detalles</p>
-                                {visiblePrompts.map((prompt: any, idx: number) => {
-                                  const label = prompt.label || prompt.id || 'Desconocido';
-                                  const value = prompt.value ?? '';
-                                  const valueStr = String(value);
-                                  
-                                  // Handle image URLs
-                                  if (valueStr && valueStr.startsWith('http')) {
-                                    return (
-                                      <div key={idx} className="text-sm">
-                                        <span className="font-medium text-muted-foreground">{label}:</span>
-                                        <img 
-                                          src={valueStr} 
-                                          alt={label}
-                                          className="mt-1 w-32 h-32 object-contain rounded border"
-                                        />
-                                      </div>
-                                    );
-                                  }
-                                  
-                                  // Handle hex colors
-                                  if (valueStr && valueStr.startsWith('#')) {
-                                    return (
-                                      <div key={idx} className="text-sm flex items-center gap-2">
-                                        <span className="font-medium text-muted-foreground">{label}:</span>
-                                        <div className="flex items-center gap-2">
-                                          <div 
-                                            className="w-6 h-6 rounded border shadow-sm"
-                                            style={{ backgroundColor: valueStr }}
-                                          />
-                                          <span className="text-foreground">{valueStr}</span>
-                                        </div>
-                                      </div>
-                                    );
-                                  }
-                                  
-                                  // Handle all other values
-                                  return (
-                                    <div key={idx} className="text-sm">
-                                      <span className="font-medium text-muted-foreground">{label}:</span>{' '}
-                                      <span className="text-foreground">{valueStr || '(vacío)'}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            );
-                          })()}
                         </div>
                       </CollapsibleContent>
                     </div>
@@ -680,22 +670,7 @@ const SalesOrderDetail = () => {
         </CardContent>
       </Card>
 
-      {/* Panel de Producción - Solo visible cuando el pedido está en producción */}
-      {order.status === 'in_production' && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Gestión de Producción</CardTitle>
-            <CardDescription>
-              Crea y gestiona tareas de producción para cada artículo del pedido
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-2 space-y-3">
-            {items.map((item) => (
-              <ItemProductionCard key={item.id} item={item} />
-            ))}
-          </CardContent>
-        </Card>
-      )}
+      {/* Panel de Producción eliminado - ahora integrado en cada artículo */}
     </div>
   );
 };
