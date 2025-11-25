@@ -478,6 +478,30 @@ const SalesOrderDetail = () => {
             </div>
           </div>
           
+          {/* Barra de estados del pedido */}
+          <div className="pt-3">
+            <div className="flex items-center gap-2">
+              <div className={`flex-1 h-2 rounded-full transition-all ${
+                order.status === 'draft' ? 'bg-primary' : 'bg-muted'
+              }`} title="Borrador" />
+              <div className={`flex-1 h-2 rounded-full transition-all ${
+                order.status === 'pending' ? 'bg-primary' : 'bg-muted'
+              }`} title="Pendiente" />
+              <div className={`flex-1 h-2 rounded-full transition-all ${
+                order.status === 'in_production' ? 'bg-green-500' : 'bg-muted'
+              }`} title="En producción" />
+              <div className={`flex-1 h-2 rounded-full transition-all ${
+                order.status === 'completed' ? 'bg-secondary' : 'bg-muted'
+              }`} title="Terminado" />
+            </div>
+            <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
+              <span>Borrador</span>
+              <span>Pendiente</span>
+              <span>En producción</span>
+              <span>Terminado</span>
+            </div>
+          </div>
+          
           {/* Número de documento Holded */}
           {isHoldedActive && order.holded_document_id && (
             <div className="pt-2">
