@@ -22,7 +22,6 @@ export interface SalesOrder {
   notes?: string;
   holded_document_id?: string;
   holded_document_number?: string;
-  production_progress?: Record<string, any>;
   created_at: string;
   updated_at: string;
   created_from_scratch?: boolean;
@@ -50,7 +49,6 @@ export interface SalesOrderItem {
   multi?: Record<string, any>;
   description?: string;
   position: number;
-  production_status?: 'pending' | 'in_progress' | 'completed';
 }
 
 export const useSalesOrders = () => {

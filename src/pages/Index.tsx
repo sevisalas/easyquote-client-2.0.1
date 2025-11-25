@@ -355,15 +355,6 @@ const Index = () => {
         <div className="mt-8 flex justify-end">
           <p className="text-xs text-muted-foreground">EasyQuote ver 1.1.7</p>
         </div>
-
-        {/* EasyQuote Brand Image */}
-        <div className="mt-4 flex justify-center">
-          <img
-            src="/lovable-uploads/calculator-icon.png"
-            alt="EasyQuote"
-            className="h-24 w-auto opacity-80"
-          />
-        </div>
       </div>
     </div>
   );
