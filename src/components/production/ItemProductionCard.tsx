@@ -4,6 +4,9 @@ import { Plus } from "lucide-react";
 import { ProductionTaskForm } from "./ProductionTaskForm";
 import { ProductionTaskList } from "./ProductionTaskList";
 import { useProductionTasks } from "@/hooks/useProductionTasks";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ItemProductionCardProps {
   item: {
@@ -17,11 +20,32 @@ interface ItemProductionCardProps {
 
 export function ItemProductionCard({ item }: ItemProductionCardProps) {
   const [showTaskForm, setShowTaskForm] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const { refetch } = useProductionTasks(item.id);
 
   const handleTaskCreated = () => {
     setShowTaskForm(false);
     refetch();
+  };
+
+  const handleStatusChange = async (newStatus: string) => {
+    setIsUpdatingStatus(true);
+    try {
+      const { error } = await supabase
+        .from('sales_order_items')
+        .update({ production_status: newStatus })
+        .eq('id', item.id);
+
+      if (error) throw error;
+
+      toast.success('Estado actualizado correctamente');
+      window.location.reload(); // Recargar para actualizar la vista
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Error al actualizar el estado');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
   };
 
   return (
@@ -33,18 +57,21 @@ export function ItemProductionCard({ item }: ItemProductionCardProps) {
             <p className="text-xs font-medium text-muted-foreground">Producto</p>
             <p className="text-sm font-semibold">{item.product_name}</p>
           </div>
-          {/* Mini status bar */}
-          <div className="flex items-center gap-1">
-            <div className={`w-6 h-1.5 rounded-full transition-all ${
-              item.production_status === 'pending' || item.production_status === 'in_progress' || item.production_status === 'completed' ? 'bg-orange-500' : 'bg-muted'
-            }`} title="Pendiente" />
-            <div className={`w-6 h-1.5 rounded-full transition-all ${
-              item.production_status === 'in_progress' || item.production_status === 'completed' ? 'bg-green-500' : 'bg-muted'
-            }`} title="En proceso" />
-            <div className={`w-6 h-1.5 rounded-full transition-all ${
-              item.production_status === 'completed' ? 'bg-blue-500' : 'bg-muted'
-            }`} title="Completado" />
-          </div>
+          {/* Estado selector */}
+          <Select
+            value={item.production_status || 'pending'}
+            onValueChange={handleStatusChange}
+            disabled={isUpdatingStatus}
+          >
+            <SelectTrigger className="w-[140px] h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="pending">Pendiente</SelectItem>
+              <SelectItem value="in_progress">En proceso</SelectItem>
+              <SelectItem value="completed">Completado</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         {!showTaskForm && (
           <Button
