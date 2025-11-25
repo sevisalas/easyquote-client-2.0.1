@@ -137,3 +137,20 @@ All colors MUST be HSL.
     padding-right: env(safe-area-inset-right);
   }
 }
+
+/* Print styles for Work Order PDF generation */
+@media print {
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  
+  .page-break {
+    page-break-after: always;
+    break-after: page;
+  }
+  
+  .print\:hidden {
+    display: none !important;
+  }
+}
