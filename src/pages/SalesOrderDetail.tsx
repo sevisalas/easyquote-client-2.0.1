@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Download, ChevronDown, Edit, FileText } from "lucide-react";
+import { ArrowLeft, Trash2, Download, ChevronDown, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -335,15 +335,6 @@ const SalesOrderDetail = () => {
                   PDF Holded
                 </Button>
               )}
-              <Button 
-                onClick={() => navigate(`/work-order/${id}`)}
-                size="sm"
-                variant="outline"
-                className="gap-2"
-              >
-                <FileText className="h-4 w-4" />
-                Orden de Trabajo
-              </Button>
               {order.status === 'draft' && (
                 <Button 
                   onClick={() => navigate(`/pedidos/${id}/editar`)}
