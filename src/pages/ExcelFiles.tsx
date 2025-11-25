@@ -748,17 +748,28 @@ export default function ExcelFiles() {
     try {
       console.log('📥 Descargando archivo:', fileName);
 
-      const response = await supabase.functions.invoke('easyquote-download-file', {
-        body: { token, subscriberId, fileId, fileName }
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Call edge function directly to get blob response
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/easyquote-download-file`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ token, subscriberId, fileId, fileName })
+        }
+      );
 
-      if (response.error) {
-        console.error('❌ Error del proxy:', response.error);
-        throw new Error(response.error.message || "No se pudo descargar el archivo");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "No se pudo descargar el archivo");
       }
 
-      // The response.data is already a Blob from the edge function
-      const blob = response.data;
+      const blob = await response.blob();
       
       if (!blob || blob.size === 0) {
         throw new Error("El archivo está vacío");
