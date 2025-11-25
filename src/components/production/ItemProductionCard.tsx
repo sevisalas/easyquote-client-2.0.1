@@ -11,6 +11,7 @@ interface ItemProductionCardProps {
     product_name: string;
     quantity: number;
     description?: string | null;
+    production_status?: string | null;
   };
 }
 
@@ -27,9 +28,23 @@ export function ItemProductionCard({ item }: ItemProductionCardProps) {
     <div className="space-y-3">
       {/* Compact Product Info */}
       <div className="flex items-center justify-between gap-4">
-        <div className="flex-1">
-          <p className="text-xs font-medium text-muted-foreground">Producto</p>
-          <p className="text-sm font-semibold">{item.product_name}</p>
+        <div className="flex-1 flex items-center gap-3">
+          <div className="flex-1">
+            <p className="text-xs font-medium text-muted-foreground">Producto</p>
+            <p className="text-sm font-semibold">{item.product_name}</p>
+          </div>
+          {/* Mini status bar */}
+          <div className="flex items-center gap-1">
+            <div className={`w-6 h-1.5 rounded-full transition-all ${
+              item.production_status === 'pending' || item.production_status === 'in_progress' || item.production_status === 'completed' ? 'bg-primary' : 'bg-muted'
+            }`} title="Pendiente" />
+            <div className={`w-6 h-1.5 rounded-full transition-all ${
+              item.production_status === 'in_progress' || item.production_status === 'completed' ? 'bg-green-500' : 'bg-muted'
+            }`} title="En proceso" />
+            <div className={`w-6 h-1.5 rounded-full transition-all ${
+              item.production_status === 'completed' ? 'bg-secondary' : 'bg-muted'
+            }`} title="Completado" />
+          </div>
         </div>
         {!showTaskForm && (
           <Button
