@@ -57,14 +57,10 @@ export const WorkOrderItem = ({
   return (
     <div className="space-y-3">
       {/* Compact Product Info */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
         <div>
           <p className="text-muted-foreground">Producto</p>
           <p className="font-medium">{item.product_name}</p>
-        </div>
-        <div>
-          <p className="text-muted-foreground">Cantidad</p>
-          <p className="font-medium">{item.quantity}</p>
         </div>
         {orderDate && (
           <div>
