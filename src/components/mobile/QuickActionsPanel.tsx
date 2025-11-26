@@ -58,14 +58,6 @@ export function QuickActionsPanel() {
             color: "text-orange-600",
             bgColor: "bg-orange-50 dark:bg-orange-950/20",
           },
-          {
-            icon: Users,
-            label: "Añadir cliente",
-            description: "Nuevo cliente",
-            path: "/clientes/nuevo",
-            color: "text-purple-600",
-            bgColor: "bg-purple-50 dark:bg-purple-950/20",
-          },
         ];
       
       case 'gestor':
@@ -87,22 +79,6 @@ export function QuickActionsPanel() {
             path: "/pedidos?status=in_progress",
             color: "text-green-600",
             bgColor: "bg-green-50 dark:bg-green-950/20",
-          },
-          {
-            icon: Users,
-            label: "Añadir cliente",
-            description: "Nuevo cliente",
-            path: "/clientes/nuevo",
-            color: "text-purple-600",
-            bgColor: "bg-purple-50 dark:bg-purple-950/20",
-          },
-          {
-            icon: ListChecks,
-            label: "Pendientes",
-            description: "Presupuestos por revisar",
-            path: "/presupuestos?status=draft",
-            color: "text-orange-600",
-            bgColor: "bg-orange-50 dark:bg-orange-950/20",
           },
         ];
     }
