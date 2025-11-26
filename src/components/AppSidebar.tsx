@@ -476,7 +476,7 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="p-1">
         <SidebarMenu>
-          {isOrgAdmin && (
+          {isSuperAdmin && (
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Novedades" className="h-7 px-2">
                 <NavLink to="/novedades" className={getNavCls}>
