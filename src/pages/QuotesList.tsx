@@ -17,6 +17,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { CustomerName } from "@/components/quotes/CustomerName";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
+import { QuoteCard } from "@/components/quotes/QuoteCard";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const statusOptions = ["draft", "sent", "approved", "rejected"] as const;
 const statusLabel: Record<string, string> = {
@@ -60,6 +62,7 @@ const fetchCustomers = async () => {
 const QuotesList = () => {
   const navigate = useNavigate();
   const { isHoldedActive } = useHoldedIntegration();
+  const isMobile = useIsMobile();
   
   // Filter states
   const [customerFilter, setCustomerFilter] = useState("");
@@ -191,45 +194,45 @@ const QuotesList = () => {
   };
 
   return (
-    <main className="p-1 md:p-2">
+    <main className="p-0 md:p-2">
       <header className="sr-only">
         <h1>Listado de presupuestos</h1>
         <link rel="canonical" href={`${window.location.origin}/presupuestos`} />
         <meta name="description" content="Listado de presupuestos en la aplicación." />
       </header>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Listado de presupuestos</CardTitle>
+      <Card className="border-0 md:border shadow-none md:shadow-sm">
+        <CardHeader className="pb-2 px-3 md:px-6">
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="text-base md:text-lg">Presupuestos</CardTitle>
             <Button 
-              size="sm" 
+              size={isMobile ? "default" : "sm"}
               onClick={() => navigate('/presupuestos/nuevo')}
-              className="h-8 text-xs"
+              className="h-9 md:h-8 text-sm md:text-xs px-4 md:px-3"
             >
-              Nuevo Presupuesto
+              Nuevo
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="p-2">
+        <CardContent className="p-2 md:p-6">
           {/* Filters Section */}
-          <div className="mb-3 p-3 bg-muted/30 rounded border">
+          <div className="mb-3 p-2 md:p-3 bg-muted/30 rounded border">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
               {/* Customer Filter */}
               <div className="relative">
-                <Search className="absolute left-2 top-1.5 h-3 w-3 text-muted-foreground" />
+                <Search className="absolute left-2 top-2 md:top-1.5 h-3 w-3 text-muted-foreground" />
                 <Input
                   placeholder="Cliente..."
                   value={customerFilter}
                   onChange={(e) => setCustomerFilter(e.target.value)}
-                  className="h-7 text-xs pl-7"
+                  className="h-9 md:h-7 text-sm md:text-xs pl-7"
                 />
               </div>
 
               {/* Status Filter */}
               <div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="h-6 text-xs px-2">
+                  <SelectTrigger className="h-9 md:h-6 text-sm md:text-xs px-2">
                     <SelectValue placeholder="Estado..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -249,7 +252,7 @@ const QuotesList = () => {
                   placeholder="Nº..."
                   value={quoteNumberFilter}
                   onChange={(e) => setQuoteNumberFilter(e.target.value)}
-                  className="h-6 text-xs px-2"
+                  className="h-9 md:h-6 text-sm md:text-xs px-2"
                 />
               </div>
 
@@ -260,11 +263,11 @@ const QuotesList = () => {
                     <Button
                       variant="outline"
                       className={cn(
-                        "h-6 w-full justify-start text-left font-normal text-xs px-1",
+                        "h-9 md:h-6 w-full justify-start text-left font-normal text-sm md:text-xs px-2 md:px-1",
                         !dateFromFilter && "text-muted-foreground"
                       )}
                     >
-                      <CalendarIcon className="mr-1 h-2 w-2" />
+                      <CalendarIcon className="mr-1 h-3 md:h-2 w-3 md:w-2" />
                       {dateFromFilter ? format(dateFromFilter, "dd/MM") : "Desde"}
                     </Button>
                   </PopoverTrigger>
@@ -287,11 +290,11 @@ const QuotesList = () => {
                     <Button
                       variant="outline"
                       className={cn(
-                        "h-6 w-full justify-start text-left font-normal text-xs px-1",
+                        "h-9 md:h-6 w-full justify-start text-left font-normal text-sm md:text-xs px-2 md:px-1",
                         !dateToFilter && "text-muted-foreground"
                       )}
                     >
-                      <CalendarIcon className="mr-1 h-2 w-2" />
+                      <CalendarIcon className="mr-1 h-3 md:h-2 w-3 md:w-2" />
                       {dateToFilter ? format(dateToFilter, "dd/MM") : "Hasta"}
                     </Button>
                   </PopoverTrigger>
@@ -315,9 +318,9 @@ const QuotesList = () => {
                   variant="ghost"
                   size="sm"
                   onClick={clearAllFilters}
-                  className="h-6 text-xs px-2"
+                  className="h-8 md:h-6 text-sm md:text-xs px-3 md:px-2"
                 >
-                  <X className="w-3 h-3 mr-1" />
+                  <X className="w-4 md:w-3 h-4 md:h-3 mr-1" />
                   Limpiar
                 </Button>
               </div>
@@ -325,15 +328,33 @@ const QuotesList = () => {
           </div>
 
           {/* Results Summary */}
-          <div className="mb-2 text-xs text-muted-foreground">
+          <div className="mb-2 text-xs md:text-xs text-muted-foreground px-1">
             {filteredQuotes.length} de {quotes.length} presupuestos
           </div>
 
           {filteredQuotes.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground px-1">
               {quotes.length === 0 ? "Aún no hay presupuestos." : "No se encontraron presupuestos con los filtros aplicados."}
             </p>
+          ) : isMobile ? (
+            // Vista móvil con tarjetas
+            <div className="space-y-0">
+              {paginatedQuotes.map((q: any) => (
+                <QuoteCard
+                  key={q.id}
+                  quote={q}
+                  getUserName={getUserName}
+                  fmtEUR={fmtEUR}
+                  getStatusVariant={getStatusVariant}
+                  statusLabel={statusLabel}
+                  isHoldedActive={isHoldedActive}
+                  onRefetch={refetch}
+                  handleDownloadHoldedPdf={handleDownloadHoldedPdf}
+                />
+              ))}
+            </div>
           ) : (
+            // Vista desktop con tabla
             <Table>
               <TableHeader>
                 <TableRow className="h-9">
@@ -434,22 +455,24 @@ const QuotesList = () => {
 
           {/* Pagination */}
           {filteredQuotes.length > itemsPerPage && (
-            <div className="flex items-center justify-center gap-2 mt-4">
+            <div className="flex items-center justify-center gap-1 md:gap-2 mt-4 px-1">
               <Button
                 variant="outline"
-                size="sm"
+                size={isMobile ? "default" : "sm"}
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1}
                 title="Primera página"
+                className="h-9 md:h-8 w-9 md:w-auto p-0 md:px-3"
               >
                 <ChevronsLeft className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
-                size="sm"
+                size={isMobile ? "default" : "sm"}
                 onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
                 title="Anterior"
+                className="h-9 md:h-8 w-9 md:w-auto p-0 md:px-3"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -472,8 +495,9 @@ const QuotesList = () => {
                     <Button
                       key={1}
                       variant={currentPage === 1 ? "default" : "outline"}
-                      size="sm"
+                      size={isMobile ? "default" : "sm"}
                       onClick={() => setCurrentPage(1)}
+                      className="h-9 md:h-8 min-w-[36px] md:min-w-0"
                     >
                       1
                     </Button>
@@ -490,8 +514,9 @@ const QuotesList = () => {
                     <Button
                       key={i}
                       variant={currentPage === i ? "default" : "outline"}
-                      size="sm"
+                      size={isMobile ? "default" : "sm"}
                       onClick={() => setCurrentPage(i)}
+                      className="h-9 md:h-8 min-w-[36px] md:min-w-0"
                     >
                       {i}
                     </Button>
@@ -508,8 +533,9 @@ const QuotesList = () => {
                     <Button
                       key={totalPages}
                       variant={currentPage === totalPages ? "default" : "outline"}
-                      size="sm"
+                      size={isMobile ? "default" : "sm"}
                       onClick={() => setCurrentPage(totalPages)}
+                      className="h-9 md:h-8 min-w-[36px] md:min-w-0"
                     >
                       {totalPages}
                     </Button>
@@ -521,19 +547,21 @@ const QuotesList = () => {
               
               <Button
                 variant="outline"
-                size="sm"
+                size={isMobile ? "default" : "sm"}
                 onClick={() => setCurrentPage((prev) => prev + 1)}
                 disabled={currentPage >= Math.ceil(filteredQuotes.length / itemsPerPage)}
                 title="Siguiente"
+                className="h-9 md:h-8 w-9 md:w-auto p-0 md:px-3"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
-                size="sm"
+                size={isMobile ? "default" : "sm"}
                 onClick={() => setCurrentPage(Math.ceil(filteredQuotes.length / itemsPerPage))}
                 disabled={currentPage >= Math.ceil(filteredQuotes.length / itemsPerPage)}
                 title="Última página"
+                className="h-9 md:h-8 w-9 md:w-auto p-0 md:px-3"
               >
                 <ChevronsRight className="h-4 w-4" />
               </Button>
