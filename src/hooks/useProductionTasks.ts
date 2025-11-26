@@ -65,13 +65,23 @@ export function useProductionTasks(itemId?: string) {
       }
 
       // Mapear los datos para incluir el nombre del operador
-      return (data || []).map((task: any) => ({
-        ...task,
-        operator_name: task.profiles
-          ? `${task.profiles.first_name || ''} ${task.profiles.last_name || ''}`.trim() || 'Usuario'
-          : 'Usuario',
-        profiles: undefined, // Remover el objeto profiles anidado
-      })) as ProductionTask[];
+      return (data || []).map((task: any) => {
+        let operatorName = 'Usuario';
+        if (task.profiles) {
+          const firstName = task.profiles.first_name || '';
+          const lastName = task.profiles.last_name || '';
+          const fullName = `${firstName} ${lastName}`.trim();
+          if (fullName) {
+            operatorName = fullName;
+          }
+        }
+        
+        return {
+          ...task,
+          operator_name: operatorName,
+          profiles: undefined, // Remover el objeto profiles anidado
+        };
+      }) as ProductionTask[];
     },
     enabled: !!itemId,
   });
