@@ -92,6 +92,9 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
                       </Badge>
                     )}
                     {getStatusBadge(task.status)}
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {task.operator_name || 'Usuario'}
+                    </span>
                   </div>
                   {task.status !== "completed" && (
                     <Button

@@ -9,6 +9,7 @@ export interface ProductionTask {
   phase_id: string;
   task_name: string;
   operator_id: string;
+  operator_name?: string; // Nombre del operador desde profiles
   status: "pending" | "in_progress" | "paused" | "completed";
   started_at: string | null;
   paused_at: string | null;
@@ -48,7 +49,13 @@ export function useProductionTasks(itemId?: string) {
 
       const { data, error } = await supabase
         .from("production_tasks")
-        .select("*")
+        .select(`
+          *,
+          profiles:operator_id (
+            first_name,
+            last_name
+          )
+        `)
         .eq("sales_order_item_id", itemId)
         .order("created_at", { ascending: false });
 
@@ -57,7 +64,14 @@ export function useProductionTasks(itemId?: string) {
         throw error;
       }
 
-      return data as ProductionTask[];
+      // Mapear los datos para incluir el nombre del operador
+      return (data || []).map((task: any) => ({
+        ...task,
+        operator_name: task.profiles
+          ? `${task.profiles.first_name || ''} ${task.profiles.last_name || ''}`.trim() || 'Usuario'
+          : 'Usuario',
+        profiles: undefined, // Remover el objeto profiles anidado
+      })) as ProductionTask[];
     },
     enabled: !!itemId,
   });
