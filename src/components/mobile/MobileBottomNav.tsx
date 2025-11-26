@@ -22,13 +22,13 @@ export function MobileBottomNav() {
       { icon: Home, label: "Inicio", path: "/" },
       { icon: FileText, label: "Presupuestos", path: "/presupuestos" },
       { icon: Package, label: "Pedidos", path: "/pedidos" },
-      { icon: Sparkles, label: "Novedades", path: "/novedades" },
+      { icon: Users, label: "Clientes", path: "/clientes" },
     ],
     gestor: [
       { icon: Home, label: "Inicio", path: "/" },
       { icon: FileText, label: "Presupuestos", path: "/presupuestos" },
       { icon: Package, label: "Pedidos", path: "/pedidos" },
-      { icon: Sparkles, label: "Novedades", path: "/novedades" },
+      { icon: Users, label: "Clientes", path: "/clientes" },
     ],
     comercial: [
       { icon: Home, label: "Inicio", path: "/" },
