@@ -139,8 +139,8 @@ export const WorkOrderItem = ({
       )}
 
       {/* Highlighted Observations */}
-      <div className="p-3 bg-secondary/5 border-l-4 border-secondary rounded">
-        <p className="text-xs font-semibold text-secondary mb-2">OBSERVACIONES</p>
+      <div className="p-3 bg-primary/5 border-l-4 border-primary rounded">
+        <p className="text-xs font-semibold text-primary mb-2">OBSERVACIONES</p>
         <div className="bg-background/50 p-3 rounded min-h-[60px]">
           <p className="text-xs text-muted-foreground italic">
             Espacio para notas y observaciones durante la producción...
