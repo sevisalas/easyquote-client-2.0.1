@@ -412,7 +412,7 @@ const SalesOrderDetail = () => {
                 <ArrowLeft className="h-4 w-4" />
                 Volver
               </Button>
-              {order.holded_document_id && (
+              {order.holded_document_id && viewMode === 'administrative' && (
                 <Button 
                   onClick={handleDownloadHoldedPdf}
                   size="sm"
