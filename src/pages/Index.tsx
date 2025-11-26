@@ -102,14 +102,14 @@ const Index = () => {
 
   return (
     <div className="w-full min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
         {/* Hero Section */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="mb-6 md:mb-12">
+          <div className="flex flex-col md:flex-row items-center md:justify-between gap-4 mb-6">
             <img
               src="/lovable-uploads/logo_transparente-removebg-preview.png"
               alt="EasyQuote"
-              className="h-20 w-auto"
+              className="h-16 md:h-20 w-auto"
               onError={(e) => {
                 const img = e.currentTarget;
                 if (!img.dataset.fallbackApplied) {
@@ -118,11 +118,11 @@ const Index = () => {
                 }
               }}
             />
-            <div className="text-right">
-              <h1 className="text-xl md:text-2xl font-bold text-foreground">
+            <div className="text-center md:text-right">
+              <h1 className="text-lg md:text-2xl font-bold text-foreground">
                 Hola, <span className="text-primary font-bold">{userName}</span>
               </h1>
-              <p className="text-muted-foreground mt-1">Gestiona tus presupuestos y pedidos de forma profesional</p>
+              <p className="text-sm md:text-base text-muted-foreground mt-1">Gestiona tus presupuestos y pedidos de forma profesional</p>
             </div>
           </div>
 
@@ -132,9 +132,9 @@ const Index = () => {
               <Button
                 size="lg"
                 onClick={() => navigate("/presupuestos/nuevo")}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 md:px-8 py-4 md:py-6 text-base md:text-lg shadow-lg hover:shadow-xl transition-all w-full md:w-auto"
               >
-                <Plus className="w-5 h-5 mr-2" />
+                <Plus className="w-4 md:w-5 h-4 md:h-5 mr-2" />
                 Crear nuevo presupuesto
               </Button>
             </div>
@@ -142,75 +142,75 @@ const Index = () => {
         </div>
 
         {/* Stats Cards - Presupuestos */}
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Presupuestos</h2>
+        <div className="mb-4">
+          <h2 className="text-lg md:text-xl font-semibold text-foreground mb-3">Presupuestos</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6 mb-6">
           <Card className="border-primary/20 hover:border-primary/40 transition-all">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+            <CardContent className="p-3 md:p-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Total</p>
-                  <p className="text-3xl font-bold text-foreground">{stats?.total ?? 0}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground mb-1">Total</p>
+                  <p className="text-2xl md:text-3xl font-bold text-foreground">{stats?.total ?? 0}</p>
                 </div>
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-primary" />
+                <div className="w-8 h-8 md:w-12 md:h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 md:w-6 md:h-6 text-primary" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-gray-500/20 hover:border-gray-500/40 transition-all">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+            <CardContent className="p-3 md:p-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Borrador</p>
-                  <p className="text-3xl font-bold text-foreground">{stats?.draft ?? 0}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground mb-1">Borrador</p>
+                  <p className="text-2xl md:text-3xl font-bold text-foreground">{stats?.draft ?? 0}</p>
                 </div>
-                <div className="w-12 h-12 bg-gray-500/10 rounded-full flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-gray-500" />
+                <div className="w-8 h-8 md:w-12 md:h-12 bg-gray-500/10 rounded-full flex items-center justify-center">
+                  <FileText className="w-4 h-4 md:w-6 md:h-6 text-gray-500" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-blue-500/20 hover:border-blue-500/40 transition-all">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+            <CardContent className="p-3 md:p-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Enviado</p>
-                  <p className="text-3xl font-bold text-foreground">{stats?.sent ?? 0}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground mb-1">Enviado</p>
+                  <p className="text-2xl md:text-3xl font-bold text-foreground">{stats?.sent ?? 0}</p>
                 </div>
-                <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-blue-500" />
+                <div className="w-8 h-8 md:w-12 md:h-12 bg-blue-500/10 rounded-full flex items-center justify-center">
+                  <Clock className="w-4 h-4 md:w-6 md:h-6 text-blue-500" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-green-500/20 hover:border-green-500/40 transition-all">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+            <CardContent className="p-3 md:p-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Aprobado</p>
-                  <p className="text-3xl font-bold text-foreground">{stats?.approved ?? 0}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground mb-1">Aprobado</p>
+                  <p className="text-2xl md:text-3xl font-bold text-foreground">{stats?.approved ?? 0}</p>
                 </div>
-                <div className="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6 text-green-500" />
+                <div className="w-8 h-8 md:w-12 md:h-12 bg-green-500/10 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 md:w-6 md:h-6 text-green-500" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-red-500/20 hover:border-red-500/40 transition-all">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+            <CardContent className="p-3 md:p-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Rechazado</p>
-                  <p className="text-3xl font-bold text-foreground">{stats?.rejected ?? 0}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground mb-1">Rechazado</p>
+                  <p className="text-2xl md:text-3xl font-bold text-foreground">{stats?.rejected ?? 0}</p>
                 </div>
-                <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-red-500" />
+                <div className="w-8 h-8 md:w-12 md:h-12 bg-red-500/10 rounded-full flex items-center justify-center">
+                  <FileText className="w-4 h-4 md:w-6 md:h-6 text-red-500" />
                 </div>
               </div>
             </CardContent>
@@ -220,75 +220,75 @@ const Index = () => {
         {/* Stats Cards - Pedidos (solo para usuarios con acceso a producción) */}
         {canAccessProduccion() && (
           <>
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-foreground mb-4">Pedidos</h2>
+            <div className="mb-4 mt-6">
+              <h2 className="text-lg md:text-xl font-semibold text-foreground mb-3">Pedidos</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6 mb-6">
               <Card className="border-primary/20 hover:border-primary/40 transition-all">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
+                <CardContent className="p-3 md:p-6">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                     <div>
-                      <p className="text-sm text-muted-foreground mb-1">Total</p>
-                      <p className="text-3xl font-bold text-foreground">{orderStats?.total ?? 0}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground mb-1">Total</p>
+                      <p className="text-2xl md:text-3xl font-bold text-foreground">{orderStats?.total ?? 0}</p>
                     </div>
-                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                      <Package className="w-6 h-6 text-primary" />
+                    <div className="w-8 h-8 md:w-12 md:h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                      <Package className="w-4 h-4 md:w-6 md:h-6 text-primary" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="border-gray-500/20 hover:border-gray-500/40 transition-all">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
+                <CardContent className="p-3 md:p-6">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                     <div>
-                      <p className="text-sm text-muted-foreground mb-1">Borrador</p>
-                      <p className="text-3xl font-bold text-foreground">{orderStats?.draft ?? 0}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground mb-1">Borrador</p>
+                      <p className="text-2xl md:text-3xl font-bold text-foreground">{orderStats?.draft ?? 0}</p>
                     </div>
-                    <div className="w-12 h-12 bg-gray-500/10 rounded-full flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-gray-500" />
+                    <div className="w-8 h-8 md:w-12 md:h-12 bg-gray-500/10 rounded-full flex items-center justify-center">
+                      <FileText className="w-4 h-4 md:w-6 md:h-6 text-gray-500" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="border-yellow-500/20 hover:border-yellow-500/40 transition-all">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
+                <CardContent className="p-3 md:p-6">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                     <div>
-                      <p className="text-sm text-muted-foreground mb-1">Pendiente</p>
-                      <p className="text-3xl font-bold text-foreground">{orderStats?.pending ?? 0}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground mb-1">Pendiente</p>
+                      <p className="text-2xl md:text-3xl font-bold text-foreground">{orderStats?.pending ?? 0}</p>
                     </div>
-                    <div className="w-12 h-12 bg-yellow-500/10 rounded-full flex items-center justify-center">
-                      <Clock className="w-6 h-6 text-yellow-500" />
+                    <div className="w-8 h-8 md:w-12 md:h-12 bg-yellow-500/10 rounded-full flex items-center justify-center">
+                      <Clock className="w-4 h-4 md:w-6 md:h-6 text-yellow-500" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="border-blue-500/20 hover:border-blue-500/40 transition-all">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
+                <CardContent className="p-3 md:p-6">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                     <div>
-                      <p className="text-sm text-muted-foreground mb-1">En producción</p>
-                      <p className="text-3xl font-bold text-foreground">{orderStats?.production ?? 0}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground mb-1">En producción</p>
+                      <p className="text-2xl md:text-3xl font-bold text-foreground">{orderStats?.production ?? 0}</p>
                     </div>
-                    <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center">
-                      <TrendingUp className="w-6 h-6 text-blue-500" />
+                    <div className="w-8 h-8 md:w-12 md:h-12 bg-blue-500/10 rounded-full flex items-center justify-center">
+                      <TrendingUp className="w-4 h-4 md:w-6 md:h-6 text-blue-500" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="border-green-500/20 hover:border-green-500/40 transition-all">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
+                <CardContent className="p-3 md:p-6">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                     <div>
-                      <p className="text-sm text-muted-foreground mb-1">Completado</p>
-                      <p className="text-3xl font-bold text-foreground">{orderStats?.completed ?? 0}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground mb-1">Completado</p>
+                      <p className="text-2xl md:text-3xl font-bold text-foreground">{orderStats?.completed ?? 0}</p>
                     </div>
-                    <div className="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center">
-                      <CheckCircle2 className="w-6 h-6 text-green-500" />
+                    <div className="w-8 h-8 md:w-12 md:h-12 bg-green-500/10 rounded-full flex items-center justify-center">
+                      <CheckCircle2 className="w-4 h-4 md:w-6 md:h-6 text-green-500" />
                     </div>
                   </div>
                 </CardContent>
@@ -298,20 +298,20 @@ const Index = () => {
         )}
 
         {/* Quick Actions */}
-        <div className={`grid gap-6 ${canAccessProduccion() ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+        <div className={`grid gap-3 md:gap-6 ${canAccessProduccion() ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2"}`}>
           <Card
             className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer"
             onClick={() => navigate("/clientes")}
           >
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Users className="w-6 h-6 text-primary" />
+            <CardContent className="p-4 md:p-6">
+              <div className="flex items-center justify-between mb-3 md:mb-4">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Users className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                 </div>
-                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
               </div>
-              <h3 className="text-lg font-semibold mb-2 text-foreground">Gestionar Clientes</h3>
-              <p className="text-sm text-muted-foreground">Administra tu cartera de clientes</p>
+              <h3 className="text-base md:text-lg font-semibold mb-1 md:mb-2 text-foreground">Gestionar Clientes</h3>
+              <p className="text-xs md:text-sm text-muted-foreground">Administra tu cartera de clientes</p>
             </CardContent>
           </Card>
 
@@ -319,15 +319,15 @@ const Index = () => {
             className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer"
             onClick={() => navigate("/presupuestos")}
           >
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <FileText className="w-6 h-6 text-primary" />
+            <CardContent className="p-4 md:p-6">
+              <div className="flex items-center justify-between mb-3 md:mb-4">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <FileText className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                 </div>
-                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
               </div>
-              <h3 className="text-lg font-semibold mb-2 text-foreground">Gestionar Presupuestos</h3>
-              <p className="text-sm text-muted-foreground">Ver, editar y administrar todos tus presupuestos</p>
+              <h3 className="text-base md:text-lg font-semibold mb-1 md:mb-2 text-foreground">Gestionar Presupuestos</h3>
+              <p className="text-xs md:text-sm text-muted-foreground">Ver, editar y administrar todos tus presupuestos</p>
             </CardContent>
           </Card>
 
@@ -337,22 +337,22 @@ const Index = () => {
               className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer"
               onClick={() => navigate("/pedidos")}
             >
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Package className="w-6 h-6 text-primary" />
+              <CardContent className="p-4 md:p-6">
+                <div className="flex items-center justify-between mb-3 md:mb-4">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Package className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                   </div>
-                  <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                  <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2 text-foreground">Gestionar Pedidos</h3>
-                <p className="text-sm text-muted-foreground">Accede a todos tus pedidos de venta</p>
+                <h3 className="text-base md:text-lg font-semibold mb-1 md:mb-2 text-foreground">Gestionar Pedidos</h3>
+                <p className="text-xs md:text-sm text-muted-foreground">Accede a todos tus pedidos de venta</p>
               </CardContent>
             </Card>
           )}
         </div>
 
         {/* Version Info */}
-        <div className="mt-8 flex justify-end">
+        <div className="mt-6 md:mt-8 flex justify-end">
           <p className="text-xs text-muted-foreground">EasyQuote ver 1.1.8</p>
         </div>
 
@@ -361,7 +361,7 @@ const Index = () => {
           <img
             src="/lovable-uploads/calculator-icon.png"
             alt="EasyQuote"
-            className="h-24 w-auto opacity-80"
+            className="h-16 md:h-24 w-auto opacity-80"
           />
         </div>
       </div>
