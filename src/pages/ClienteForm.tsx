@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Save } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ClienteData {
   name: string;
@@ -20,6 +21,7 @@ interface ClienteData {
 const ClienteForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const isEditing = !!id;
   
   const [formData, setFormData] = useState<ClienteData>({
@@ -135,21 +137,21 @@ const ClienteForm = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className={`min-h-screen bg-background ${isMobile ? 'p-3' : 'p-6'}`}>
       <div className="max-w-2xl mx-auto">
-        <header className="mb-8">
+        <header className={isMobile ? 'mb-4' : 'mb-8'}>
           <Button
             variant="ghost"
             onClick={() => navigate('/clientes')}
-            className="mb-4"
+            className={`mb-4 ${isMobile ? 'h-10' : ''}`}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Volver a Clientes
           </Button>
-          <h1 className="text-3xl font-bold text-foreground mb-2">
+          <h1 className={`font-bold text-foreground mb-2 ${isMobile ? 'text-2xl' : 'text-3xl'}`}>
             {isEditing ? 'Editar Cliente' : 'Nuevo Cliente'}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {isEditing ? 'Modifica la información del cliente' : 'Completa los datos del nuevo cliente'}
           </p>
         </header>
@@ -158,8 +160,8 @@ const ClienteForm = () => {
           <CardHeader>
             <CardTitle>Información del Cliente</CardTitle>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <CardContent className={isMobile ? 'p-4' : ''}>
+            <form onSubmit={handleSubmit} className={isMobile ? 'space-y-4' : 'space-y-6'}>
               <div className="space-y-2">
                 <Label htmlFor="name">Nombre *</Label>
                 <Input
@@ -169,6 +171,7 @@ const ClienteForm = () => {
                   onChange={handleChange}
                   placeholder="Nombre completo del cliente"
                   required
+                  className={isMobile ? 'h-11' : ''}
                 />
               </div>
 
@@ -181,6 +184,7 @@ const ClienteForm = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="correo@ejemplo.com"
+                  className={isMobile ? 'h-11' : ''}
                 />
               </div>
 
@@ -192,6 +196,7 @@ const ClienteForm = () => {
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="+34 600 000 000"
+                  className={isMobile ? 'h-11' : ''}
                 />
               </div>
 
@@ -203,6 +208,7 @@ const ClienteForm = () => {
                   value={formData.integration_id}
                   onChange={handleChange}
                   placeholder="ID de app integrada (opcional)"
+                  className={isMobile ? 'h-11' : ''}
                 />
               </div>
 
@@ -215,14 +221,15 @@ const ClienteForm = () => {
                   onChange={handleChange}
                   placeholder="Información adicional sobre el cliente..."
                   rows={4}
+                  className={isMobile ? 'min-h-[100px]' : ''}
                 />
               </div>
 
-              <div className="flex gap-4 pt-4">
+              <div className={`flex gap-4 pt-4 ${isMobile ? 'flex-col' : ''}`}>
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="bg-primary hover:bg-primary/90"
+                  className={`bg-primary hover:bg-primary/90 ${isMobile ? 'h-11 w-full' : ''}`}
                 >
                   <Save className="w-4 h-4 mr-2" />
                   {loading ? 'Guardando...' : 'Guardar Cliente'}
@@ -232,6 +239,7 @@ const ClienteForm = () => {
                   variant="outline"
                   onClick={() => navigate('/clientes')}
                   disabled={loading}
+                  className={isMobile ? 'h-11 w-full' : ''}
                 >
                   Cancelar
                 </Button>
