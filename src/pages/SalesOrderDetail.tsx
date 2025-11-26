@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Download, ChevronDown, Edit, FileText } from "lucide-react";
+import { ArrowLeft, Trash2, Download, ChevronDown, Edit, FileText, LayoutGrid, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ import { isVisiblePrompt, type PromptDef } from "@/utils/promptVisibility";
 import { ItemProductionCard } from "@/components/production/ItemProductionCard";
 import { WorkOrderItem } from "@/components/production/WorkOrderItem";
 import { generateWorkOrderPDF } from "@/utils/workOrderPdfGenerator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const statusColors = {
   draft: "outline",
@@ -55,6 +56,8 @@ const SalesOrderDetail = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [viewMode, setViewMode] = useState<'production' | 'administrative'>('production');
+  const [userRole, setUserRole] = useState<string | null>(null);
   const { isHoldedActive } = useHoldedIntegration();
 
   useEffect(() => {
@@ -62,10 +65,22 @@ const SalesOrderDetail = () => {
       navigate("/");
       return;
     }
+    loadUserRole();
     if (id) {
       loadOrderData();
     }
   }, [id, canAccessProduccion, navigate]);
+
+  const loadUserRole = async () => {
+    const { data: roleData } = await supabase.rpc('get_current_user_role').single();
+    if (roleData) {
+      setUserRole(roleData.role);
+      // Comercial solo ve vista administrativa
+      if (roleData.role === 'comercial') {
+        setViewMode('administrative');
+      }
+    }
+  };
 
   const loadOrderData = async () => {
     if (!id) return;
@@ -361,13 +376,31 @@ const SalesOrderDetail = () => {
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-lg">
-                Pedido {order.order_number}
-              </CardTitle>
-              <CardDescription className="mt-0.5">
-                Fecha: {format(new Date(order.order_date), 'dd/MM/yyyy', { locale: es })}
-              </CardDescription>
+            <div className="flex items-center gap-3">
+              <div>
+                <CardTitle className="text-lg">
+                  Pedido {order.order_number}
+                </CardTitle>
+                <CardDescription className="mt-0.5">
+                  Fecha: {format(new Date(order.order_date), 'dd/MM/yyyy', { locale: es })}
+                </CardDescription>
+              </div>
+              
+              {/* Toggle de vistas - oculto para comerciales */}
+              {userRole !== 'comercial' && (
+                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'production' | 'administrative')}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="production" className="gap-1.5">
+                      <Wrench className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Producción</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="administrative" className="gap-1.5">
+                      <LayoutGrid className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Admin</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              )}
             </div>
             <div className="flex gap-2">
               <Button 
@@ -446,46 +479,91 @@ const SalesOrderDetail = () => {
           <CardTitle className="text-base">Información del pedido</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">cliente</label>
-              <p className="text-sm font-medium mt-0.5">
-                <CustomerName 
-                  customerId={order.customer_id} 
-                  fallback="No asignado" 
-                />
-              </p>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">estado</label>
-              <div className="mt-0.5">
-                <Select value={order.status} onValueChange={handleStatusChange} disabled={isExporting}>
-                  <SelectTrigger className="h-7 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Borrador</SelectItem>
-                    <SelectItem value="pending">Pendiente</SelectItem>
-                    <SelectItem value="in_production">En Producción</SelectItem>
-                    <SelectItem value="completed">Completado</SelectItem>
-                  </SelectContent>
-                </Select>
+          {viewMode === 'administrative' ? (
+            /* Vista Administrativa - Con precios y detalles comerciales */
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">cliente</label>
+                  <p className="text-sm font-medium mt-0.5">
+                    <CustomerName 
+                      customerId={order.customer_id} 
+                      fallback="No asignado" 
+                    />
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">estado</label>
+                  <div className="mt-0.5">
+                    <Select value={order.status} onValueChange={handleStatusChange} disabled={isExporting}>
+                      <SelectTrigger className="h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Borrador</SelectItem>
+                        <SelectItem value="pending">Pendiente</SelectItem>
+                        <SelectItem value="in_production">En Producción</SelectItem>
+                        <SelectItem value="completed">Completado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">total</label>
+                  <p className="text-base font-semibold mt-0.5">{fmtEUR(order.final_price || 0)}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">entrega</label>
+                  <p className="text-sm mt-0.5">
+                    {order.delivery_date 
+                      ? format(new Date(order.delivery_date), 'dd/MM/yyyy', { locale: es })
+                      : 'No especificado'
+                    }
+                  </p>
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">total</label>
-              <p className="text-base font-semibold mt-0.5">{fmtEUR(order.final_price || 0)}</p>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">entrega</label>
-              <p className="text-sm mt-0.5">
-                {order.delivery_date 
-                  ? format(new Date(order.delivery_date), 'dd/MM/yyyy', { locale: es })
-                  : 'No especificado'
-                }
-              </p>
-            </div>
-          </div>
+            </>
+          ) : (
+            /* Vista Producción - Sin precios */
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">cliente</label>
+                  <p className="text-sm font-medium mt-0.5">
+                    <CustomerName 
+                      customerId={order.customer_id} 
+                      fallback="No asignado" 
+                    />
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">estado</label>
+                  <div className="mt-0.5">
+                    <Select value={order.status} onValueChange={handleStatusChange} disabled={isExporting}>
+                      <SelectTrigger className="h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Borrador</SelectItem>
+                        <SelectItem value="pending">Pendiente</SelectItem>
+                        <SelectItem value="in_production">En Producción</SelectItem>
+                        <SelectItem value="completed">Completado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">entrega</label>
+                  <p className="text-sm mt-0.5">
+                    {order.delivery_date 
+                      ? format(new Date(order.delivery_date), 'dd/MM/yyyy', { locale: es })
+                      : 'No especificado'
+                    }
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
           
           {/* Descripción y notas */}
           {(order.description || order.notes) && (
@@ -592,7 +670,9 @@ const SalesOrderDetail = () => {
                             </div>
                           </div>
                           <div className="text-right ml-4">
-                            <p className="text-xl font-bold text-primary">{item.price.toFixed(2)} €</p>
+                            {viewMode === 'administrative' && (
+                              <p className="text-xl font-bold text-primary">{item.price.toFixed(2)} €</p>
+                            )}
                           </div>
                         </div>
                       </CollapsibleTrigger>
@@ -631,57 +711,61 @@ const SalesOrderDetail = () => {
                 );
               })}
 
-              <Separator className="my-4" />
+              {/* Totals - Solo en vista administrativa */}
+              {viewMode === 'administrative' && (
+                <>
+                  <Separator className="my-4" />
 
-              {/* Totals */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-base">
-                  <span className="text-muted-foreground">Subtotal:</span>
-                  <span className="font-medium">{fmtEUR(order.subtotal)}</span>
-                </div>
-
-                {/* Additionals */}
-                {additionals.map((additional) => {
-                  // Remove "Ajuste sobre el presupuesto/pedido" from name if present
-                  const cleanName = additional.name
-                    .replace(/\s*Ajuste sobre el presupuesto\s*/gi, '')
-                    .replace(/\s*Ajuste sobre el pedido\s*/gi, '')
-                    .trim();
-                  
-                  return (
-                    <div key={additional.id} className="flex justify-between text-sm">
-                      <span className={additional.is_discount ? "text-green-600" : "text-muted-foreground"}>
-                        {cleanName}:
-                      </span>
-                      <span className={additional.is_discount ? "text-green-600 font-medium" : "font-medium"}>
-                        {additional.is_discount && "-"}
-                        {additional.type === 'percentage' ? `${additional.value}%` : fmtEUR(additional.value)}
-                      </span>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-base">
+                      <span className="text-muted-foreground">Subtotal:</span>
+                      <span className="font-medium">{fmtEUR(order.subtotal)}</span>
                     </div>
-                  );
-                })}
 
-                {order.discount_amount > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-green-600">Descuento:</span>
-                    <span className="text-green-600 font-medium">-{fmtEUR(order.discount_amount)}</span>
+                    {/* Additionals */}
+                    {additionals.map((additional) => {
+                      // Remove "Ajuste sobre el presupuesto/pedido" from name if present
+                      const cleanName = additional.name
+                        .replace(/\s*Ajuste sobre el presupuesto\s*/gi, '')
+                        .replace(/\s*Ajuste sobre el pedido\s*/gi, '')
+                        .trim();
+                      
+                      return (
+                        <div key={additional.id} className="flex justify-between text-sm">
+                          <span className={additional.is_discount ? "text-green-600" : "text-muted-foreground"}>
+                            {cleanName}:
+                          </span>
+                          <span className={additional.is_discount ? "text-green-600 font-medium" : "font-medium"}>
+                            {additional.is_discount && "-"}
+                            {additional.type === 'percentage' ? `${additional.value}%` : fmtEUR(additional.value)}
+                          </span>
+                        </div>
+                      );
+                    })}
+
+                    {order.discount_amount > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-green-600">Descuento:</span>
+                        <span className="text-green-600 font-medium">-{fmtEUR(order.discount_amount)}</span>
+                      </div>
+                    )}
+
+                    {order.tax_amount > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Impuestos:</span>
+                        <span className="font-medium">{fmtEUR(order.tax_amount)}</span>
+                      </div>
+                    )}
+
+                    <Separator className="my-2" />
+
+                    <div className="flex justify-between text-xl font-bold pt-2">
+                      <span>Total del pedido:</span>
+                      <span className="text-primary">{fmtEUR(order.final_price)}</span>
+                    </div>
                   </div>
-                )}
-
-                {order.tax_amount > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Impuestos:</span>
-                    <span className="font-medium">{fmtEUR(order.tax_amount)}</span>
-                  </div>
-                )}
-
-                <Separator className="my-2" />
-
-                <div className="flex justify-between text-xl font-bold pt-2">
-                  <span>Total del pedido:</span>
-                  <span className="text-primary">{fmtEUR(order.final_price)}</span>
-                </div>
-              </div>
+                </>
+              )}
             </div>
           )}
         </CardContent>
