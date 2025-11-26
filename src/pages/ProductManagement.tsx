@@ -1321,9 +1321,15 @@ export default function ProductManagement() {
                                   }}
                                 >
                                   <SelectTrigger>
-                                    <SelectValue />
+                                    <SelectValue placeholder={prompt.promptSheet || "Main"} />
                                   </SelectTrigger>
                                   <SelectContent className="bg-background border shadow-lg z-50">
+                                    {/* Siempre incluir el valor actual si existe */}
+                                    {prompt.promptSheet && !excelSheets.includes(prompt.promptSheet) && (
+                                      <SelectItem value={prompt.promptSheet}>
+                                        {prompt.promptSheet}
+                                      </SelectItem>
+                                    )}
                                     {excelSheets.length > 0 ? excelSheets.map((sheet) => (
                                       <SelectItem key={sheet} value={sheet}>
                                         {sheet}
