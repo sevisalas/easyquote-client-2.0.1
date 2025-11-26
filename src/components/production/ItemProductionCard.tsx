@@ -16,9 +16,10 @@ interface ItemProductionCardProps {
     description?: string | null;
     production_status?: string | null;
   };
+  onStatusUpdate?: () => void;
 }
 
-export function ItemProductionCard({ item }: ItemProductionCardProps) {
+export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardProps) {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const { refetch } = useProductionTasks(item.id);
@@ -39,7 +40,9 @@ export function ItemProductionCard({ item }: ItemProductionCardProps) {
       if (error) throw error;
 
       toast.success('Estado actualizado correctamente');
-      window.location.reload(); // Recargar para actualizar la vista
+      if (onStatusUpdate) {
+        onStatusUpdate();
+      }
     } catch (error) {
       console.error('Error updating status:', error);
       toast.error('Error al actualizar el estado');
