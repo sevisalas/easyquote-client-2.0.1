@@ -108,6 +108,9 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
                     <span className="text-xs text-muted-foreground shrink-0">
                       {task.operator_name || 'Usuario'}
                     </span>
+                    <span className="text-xs font-medium text-foreground shrink-0">
+                      {Math.floor(task.total_time_seconds / 3600)}h {Math.floor((task.total_time_seconds % 3600) / 60)}m
+                    </span>
                   </div>
                   {task.status !== "completed" && (
                     <Button
