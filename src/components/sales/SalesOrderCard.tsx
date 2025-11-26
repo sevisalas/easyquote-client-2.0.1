@@ -59,7 +59,7 @@ export function SalesOrderCard({
   };
 
   return (
-    <Card className="mb-3">
+    <Card className="mb-3 hover:shadow-md transition-shadow active:scale-[0.99] animate-fade-in">
       <CardContent className="p-4">
         {/* Header: Order Number + Status */}
         <div className="flex items-start justify-between mb-3">
