@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileBottomNav } from "@/components/mobile/MobileBottomNav";
+import { MobileHeader } from "@/components/mobile/MobileHeader";
 import { cn } from "@/lib/utils";
 
 function MainContent({ children }: PropsWithChildren) {
@@ -32,6 +33,8 @@ export default function AppLayout({ children }: PropsWithChildren) {
     <SidebarProvider>
       <div className="flex min-h-screen w-full relative">
         <AppSidebar />
+        
+        {isMobile && <MobileHeader showMenu={true} />}
         
         <div className="flex-1 w-full">
           <MainContent>{children}</MainContent>
