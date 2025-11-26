@@ -1621,9 +1621,14 @@ export default function ProductManagement() {
                               }}
                             >
                               <SelectTrigger>
-                                <SelectValue />
+                                <SelectValue placeholder={output.sheet || "Main"} />
                               </SelectTrigger>
                               <SelectContent className="bg-background border shadow-lg z-50">
+                                {output.sheet && !excelSheets.includes(output.sheet) && (
+                                  <SelectItem value={output.sheet}>
+                                    {output.sheet}
+                                  </SelectItem>
+                                )}
                                 {excelSheets.length > 0 ? excelSheets.map((sheet) => (
                                   <SelectItem key={sheet} value={sheet}>
                                     {sheet}
@@ -1730,9 +1735,14 @@ export default function ProductManagement() {
                   onValueChange={(value) => setNewPromptData({...newPromptData, promptSheet: value})}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar hoja" />
+                    <SelectValue placeholder={newPromptData.promptSheet || "Main"} />
                   </SelectTrigger>
                   <SelectContent className="bg-background border shadow-lg z-50">
+                    {newPromptData.promptSheet && !excelSheets.includes(newPromptData.promptSheet) && (
+                      <SelectItem value={newPromptData.promptSheet}>
+                        {newPromptData.promptSheet}
+                      </SelectItem>
+                    )}
                     {excelSheets.length > 0 ? excelSheets.map((sheet) => (
                       <SelectItem key={sheet} value={sheet}>
                         {sheet}
@@ -1874,9 +1884,14 @@ export default function ProductManagement() {
                   onValueChange={(value) => setNewOutputData({...newOutputData, sheet: value})}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar hoja" />
+                    <SelectValue placeholder={newOutputData.sheet || "Main"} />
                   </SelectTrigger>
                   <SelectContent className="bg-background border shadow-lg z-50">
+                    {newOutputData.sheet && !excelSheets.includes(newOutputData.sheet) && (
+                      <SelectItem value={newOutputData.sheet}>
+                        {newOutputData.sheet}
+                      </SelectItem>
+                    )}
                     {excelSheets.length > 0 ? excelSheets.map((sheet) => (
                       <SelectItem key={sheet} value={sheet}>
                         {sheet}
