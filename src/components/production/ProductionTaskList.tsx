@@ -16,13 +16,20 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
   const { phases } = useProductionPhases();
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
 
-  // Auto-expandir tareas en progreso o pausadas
+  // Auto-expandir tareas en progreso o pausadas solo cuando cambia la lista de IDs
   useEffect(() => {
-    const activeTaskIds = new Set(
-      tasks.filter(t => t.status === 'in_progress' || t.status === 'paused').map(t => t.id)
-    );
-    setExpandedTasks(activeTaskIds);
-  }, [tasks]);
+    const activeTaskIds = tasks
+      .filter(t => t.status === 'in_progress' || t.status === 'paused')
+      .map(t => t.id);
+    
+    // Solo actualizar si realmente cambió la lista de IDs activos
+    setExpandedTasks(prev => {
+      const prevIds = Array.from(prev).sort().join(',');
+      const newIds = activeTaskIds.sort().join(',');
+      if (prevIds === newIds) return prev;
+      return new Set(activeTaskIds);
+    });
+  }, [tasks.map(t => `${t.id}-${t.status}`).join(',')]);
 
   const getPhaseDisplay = (phaseId: string) => {
     const phase = phases.find((p) => p.id === phaseId);
