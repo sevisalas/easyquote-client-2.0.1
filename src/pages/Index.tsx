@@ -353,7 +353,7 @@ const Index = () => {
 
         {/* Version Info */}
         <div className="mt-6 md:mt-8 flex justify-end">
-          <p className="text-xs text-muted-foreground">EasyQuote ver 1.1.8</p>
+          <p className="text-xs text-muted-foreground">EasyQuote v2.0.0</p>
         </div>
 
         {/* EasyQuote Brand Image */}
