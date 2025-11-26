@@ -28,7 +28,7 @@ const statusColors = {
 const statusLabels = {
   draft: "Borrador",
   pending: "Pendiente",
-  in_production: "En Prod.",
+  in_production: "Producción",
   completed: "Completado",
 };
 
