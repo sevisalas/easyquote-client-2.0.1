@@ -1,11 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, FileText, Users, Package, ClipboardList, User, Sparkles } from "lucide-react";
+import { Home, FileText, Users, Package, ClipboardList, User, Sparkles, Menu } from "lucide-react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
 export function MobileBottomNav() {
   const location = useLocation();
   const { membership, isSuperAdmin } = useSubscription();
+  const { toggleSidebar } = useSidebar();
   
   const userRole = isSuperAdmin ? 'superadmin' : (membership?.role || 'admin');
   const isActive = (path: string) => location.pathname === path;
@@ -67,6 +69,15 @@ export function MobileBottomNav() {
             </Link>
           );
         })}
+        
+        {/* Botón Menú - Abre el sidebar */}
+        <button
+          onClick={toggleSidebar}
+          className="flex flex-col items-center justify-center gap-1 py-2 px-3 rounded-lg transition-colors min-w-[60px] text-muted-foreground hover:text-foreground hover:bg-muted/50 active:scale-95"
+        >
+          <Menu size={24} strokeWidth={2} />
+          <span className="text-[10px] font-medium">Menú</span>
+        </button>
       </div>
     </nav>
   );
