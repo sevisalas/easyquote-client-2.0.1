@@ -8,12 +8,32 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 ## [Sin Publicar]
 
 ### En Desarrollo
-- Optimizaciones continuas de la interfaz móvil
-- Mejoras en el sistema de producción
+- Continuación de optimizaciones móviles
 
 ---
 
-## [2.0.0] - 2025-01-26
+## [2.1.0] - 2025-11-26
+
+### Añadido
+- **Interfaz móvil simplificada**
+  - Accesos directos con diseño minimalista (solo texto, sin iconos)
+  - Solo 2 acciones principales: "Nuevo presupuesto" y "Pedidos en producción"
+  - Diseño con color secundario unificado
+
+### Cambiado
+- **Header móvil eliminado**: Mayor espacio vertical en dispositivos móviles
+- **"Acciones rápidas" renombrado a "Accesos directos"**
+- **Textos centrados** en accesos directos para mejor presentación
+- **Botones simplificados** en acciones eliminando iconos redundantes
+
+### Eliminado
+- Header móvil (MobileHeader) completamente removido
+- Iconos en tarjetas de accesos directos
+- Acciones secundarias: "Añadir cliente" y "Pendientes"
+
+---
+
+## [2.0.0] - 2024-11-25
 
 ### Añadido
 - **Interfaz móvil completa** para roles Comercial y Operador
@@ -54,7 +74,7 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ---
 
-## [1.5.0] - 2025-01-15
+## [1.5.0] - 2024-11-15
 
 ### Añadido
 - **Sistema de roles y permisos**
@@ -78,7 +98,7 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ---
 
-## [1.4.0] - 2025-01-10
+## [1.4.0] - 2024-11-10
 
 ### Añadido
 - **Integración con Holded ERP**
@@ -103,7 +123,7 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ---
 
-## [1.3.0] - 2025-01-05
+## [1.3.0] - 2024-11-05
 
 ### Añadido
 - **Gestión de clientes unificada**
