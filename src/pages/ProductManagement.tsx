@@ -172,6 +172,7 @@ export default function ProductManagement() {
     defaultValue: "",
     outputTypeId: 0
   });
+  const [excelSheets, setExcelSheets] = useState<string[]>([]);
   
   console.log('ProductManagement: About to call useSubscription hook');
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
@@ -539,13 +540,38 @@ export default function ProductManagement() {
   const activeProducts = allProductsForStats.filter(p => p.isActive);
   const inactiveProducts = allProductsForStats.filter(p => !p.isActive);
 
-  const handleEditProduct = (product: EasyQuoteProduct) => {
+  const handleEditProduct = async (product: EasyQuoteProduct) => {
     setSelectedProduct({ ...product });
     
     // Cargar categoría actual del producto
     const mapping = getProductMapping(product.id);
     setSelectedCategoryId(mapping?.category_id || "");
     setSelectedSubcategoryId(mapping?.subcategory_id || "");
+    
+    // Fetch Excel sheets if excelfileId exists
+    if (product.excelfileId) {
+      try {
+        const token = sessionStorage.getItem("easyquote_token");
+        if (token) {
+          const { data, error } = await supabase.functions.invoke("easyquote-excel-files", {
+            body: { token }
+          });
+          
+          if (!error && data) {
+            const excelFile = data.find((file: EasyQuoteExcelFile) => file.id === product.excelfileId);
+            if (excelFile?.excelfilesSheets) {
+              const sheetNames = excelFile.excelfilesSheets.map((sheet: any) => sheet.sheetName || "Main");
+              setExcelSheets(sheetNames);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching Excel sheets:", error);
+        setExcelSheets(["Main"]); // Fallback
+      }
+    } else {
+      setExcelSheets(["Main"]); // Default if no Excel file
+    }
     
     setIsEditDialogOpen(true);
   };
@@ -1280,12 +1306,12 @@ export default function ProductManagement() {
                             <div className="grid grid-cols-12 gap-2 items-end">
                               <div className="col-span-1">
                                 <Label>Hoja</Label>
-                                <Input
-                                  defaultValue={prompt.promptSheet || "Main"}
-                                  onBlur={(e) => {
+                                <Select
+                                  value={prompt.promptSheet || "Main"}
+                                  onValueChange={(value) => {
                                     const updatedPrompt = { 
                                       ...prompt, 
-                                      promptSheet: e.target.value,
+                                      promptSheet: value,
                                       // Asegurar que los campos numéricos sean null si no es tipo numérico
                                       valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
                                       valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
@@ -1293,7 +1319,20 @@ export default function ProductManagement() {
                                     };
                                     updatePromptMutation.mutate(updatedPrompt);
                                   }}
-                                />
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-background border shadow-lg z-50">
+                                    {excelSheets.length > 0 ? excelSheets.map((sheet) => (
+                                      <SelectItem key={sheet} value={sheet}>
+                                        {sheet}
+                                      </SelectItem>
+                                    )) : (
+                                      <SelectItem value="Main">Main</SelectItem>
+                                    )}
+                                  </SelectContent>
+                                </Select>
                               </div>
                               <div className="col-span-1">
                                 <Label>Rótulo</Label>
@@ -1568,13 +1607,26 @@ export default function ProductManagement() {
                         <div className="grid grid-cols-4 gap-4">
                           <div>
                             <Label>Hoja</Label>
-                            <Input
+                            <Select
                               value={output.sheet || "Main"}
-                              onChange={(e) => {
-                                const updatedOutput = { ...output, sheet: e.target.value };
+                              onValueChange={(value) => {
+                                const updatedOutput = { ...output, sheet: value };
                                 updateOutputMutation.mutate(updatedOutput);
                               }}
-                            />
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border shadow-lg z-50">
+                                {excelSheets.length > 0 ? excelSheets.map((sheet) => (
+                                  <SelectItem key={sheet} value={sheet}>
+                                    {sheet}
+                                  </SelectItem>
+                                )) : (
+                                  <SelectItem value="Main">Main</SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
                           </div>
                           <div>
                             <Label>Rótulo</Label>
@@ -1667,12 +1719,23 @@ export default function ProductManagement() {
             <div className="grid grid-cols-12 gap-4">
               <div className="col-span-3">
                 <Label htmlFor="promptSheet">Hoja</Label>
-                <Input
-                  id="promptSheet"
-                  value={newPromptData.promptSheet}
-                  onChange={(e) => setNewPromptData({...newPromptData, promptSheet: e.target.value})}
-                  placeholder=""
-                />
+                <Select
+                  value={newPromptData.promptSheet || "Main"}
+                  onValueChange={(value) => setNewPromptData({...newPromptData, promptSheet: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar hoja" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border shadow-lg z-50">
+                    {excelSheets.length > 0 ? excelSheets.map((sheet) => (
+                      <SelectItem key={sheet} value={sheet}>
+                        {sheet}
+                      </SelectItem>
+                    )) : (
+                      <SelectItem value="Main">Main</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="col-span-3">
                 <Label htmlFor="promptCell">Celda rótulo</Label>
@@ -1800,11 +1863,23 @@ export default function ProductManagement() {
             <div className="grid grid-cols-4 gap-4">
               <div>
                 <Label htmlFor="outputSheet">Hoja</Label>
-                <Input
-                  id="outputSheet"
-                  value={newOutputData.sheet}
-                  onChange={(e) => setNewOutputData({...newOutputData, sheet: e.target.value})}
-                />
+                <Select
+                  value={newOutputData.sheet || "Main"}
+                  onValueChange={(value) => setNewOutputData({...newOutputData, sheet: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar hoja" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border shadow-lg z-50">
+                    {excelSheets.length > 0 ? excelSheets.map((sheet) => (
+                      <SelectItem key={sheet} value={sheet}>
+                        {sheet}
+                      </SelectItem>
+                    )) : (
+                      <SelectItem value="Main">Main</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="outputPrompt">Rótulo</Label>
