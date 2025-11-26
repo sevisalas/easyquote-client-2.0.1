@@ -1304,7 +1304,7 @@ export default function ProductManagement() {
                           
                           return (
                             <div className="grid grid-cols-12 gap-2 items-end">
-                              <div className="col-span-1">
+                              <div className="col-span-2">
                                 <Label>Hoja</Label>
                                 <Select
                                   value={prompt.promptSheet || "Main"}
@@ -1497,7 +1497,7 @@ export default function ProductManagement() {
                                        }}
                                      />
                                    </div>
-                                   <div className="col-span-2">
+                                   <div className="col-span-1">
                                      <Label>Máximo</Label>
                                      <Input
                                        type="number"
@@ -1518,7 +1518,7 @@ export default function ProductManagement() {
                                )}
 
                                {/* Espacios vacíos para mantener alineación cuando no hay campos numéricos */}
-                               {!isNumericType && <div className="col-span-2"></div>}
+                               {!isNumericType && <div className="col-span-1"></div>}
 
                               <div className="col-span-1">
                                 <Label>Acción</Label>
@@ -1717,7 +1717,7 @@ export default function ProductManagement() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-12 gap-4">
-              <div className="col-span-3">
+              <div className="col-span-4">
                 <Label htmlFor="promptSheet">Hoja</Label>
                 <Select
                   value={newPromptData.promptSheet || "Main"}
@@ -1755,7 +1755,7 @@ export default function ProductManagement() {
                   placeholder="ej: B1"
                 />
               </div>
-              <div className="col-span-3">
+              <div className="col-span-2">
                 <Label htmlFor="promptSeq">Orden</Label>
                 <Input
                   id="promptSeq"
