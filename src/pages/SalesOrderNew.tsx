@@ -492,6 +492,17 @@ export default function SalesOrderNew() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-2">
+              <Label htmlFor="description">Descripción</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Descripción del pedido..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="notes">Notas internas</Label>
               <Textarea
                 id="notes"
@@ -501,17 +512,6 @@ export default function SalesOrderNew() {
                 rows={3}
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descripción del pedido..."
-              rows={3}
-            />
           </div>
 
           <Separator />
