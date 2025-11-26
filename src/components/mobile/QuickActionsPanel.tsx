@@ -127,21 +127,10 @@ export function QuickActionsPanel() {
               )}
               onClick={() => navigate(action.path)}
             >
-              <div className="p-3 flex flex-col items-center text-center gap-2">
-                <div className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center",
-                  action.bgColor
-                )}>
-                  <Icon className={cn("w-5 h-5", action.color)} />
-                </div>
-                <div>
-                  <p className={cn("font-semibold text-xs", action.color)}>
-                    {action.label}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {action.description}
-                  </p>
-                </div>
+              <div className="p-4 flex items-center justify-center">
+                <p className={cn("font-semibold text-sm", action.color)}>
+                  {action.label}
+                </p>
               </div>
             </Card>
           );
