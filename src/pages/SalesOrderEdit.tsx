@@ -35,6 +35,7 @@ export default function SalesOrderEdit() {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     customer_id: "",
+    title: "",
     description: "",
     notes: "",
     delivery_date: "",
@@ -68,6 +69,7 @@ export default function SalesOrderEdit() {
       setOrder(orderData);
       setFormData({
         customer_id: orderData.customer_id || "",
+        title: orderData.title || "",
         description: orderData.description || "",
         notes: orderData.notes || "",
         delivery_date: orderData.delivery_date || "",
@@ -94,6 +96,7 @@ export default function SalesOrderEdit() {
         .from("sales_orders")
         .update({
           customer_id: formData.customer_id || null,
+          title: formData.title || null,
           description: formData.description || null,
           notes: formData.notes || null,
           delivery_date: formData.delivery_date || null,
@@ -274,13 +277,25 @@ export default function SalesOrderEdit() {
       {/* Order Details - Compact Layout */}
       <Card>
         <CardContent className="space-y-2 pt-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <div className="space-y-1.5">
               <CustomerSelector
                 value={formData.customer_id}
                 onValueChange={(customerId) => setFormData({ ...formData, customer_id: customerId })}
                 label="cliente"
                 placeholder="Seleccionar cliente..."
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="title" className="text-xs">
+                Título
+              </Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Título del pedido"
               />
             </div>
 
@@ -294,6 +309,10 @@ export default function SalesOrderEdit() {
                 value={formData.delivery_date}
                 onChange={(e) => setFormData({ ...formData, delivery_date: e.target.value })}
               />
+            </div>
+
+            <div className="space-y-1.5">
+              {/* Empty space to maintain grid structure */}
             </div>
           </div>
 
