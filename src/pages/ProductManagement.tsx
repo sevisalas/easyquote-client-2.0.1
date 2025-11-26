@@ -575,7 +575,7 @@ export default function ProductManagement() {
             console.log("Has excelfilesSheets:", "excelfilesSheets" in data);
             
             if (data.excelfilesSheets && Array.isArray(data.excelfilesSheets)) {
-              const sheetNames = data.excelfilesSheets.map((sheet: any) => sheet.sheetName);
+              const sheetNames = data.excelfilesSheets.map((sheet: any) => sheet.sheetName).sort();
               console.log("Sheet names extracted:", sheetNames);
               console.log("Total sheets:", sheetNames.length);
               setExcelSheets(sheetNames);
