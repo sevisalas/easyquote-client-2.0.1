@@ -487,6 +487,24 @@ const SalesOrderDetail = () => {
             </div>
           </div>
           
+          {/* Descripción y notas */}
+          {(order.description || order.notes) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
+              {order.description && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">descripción</label>
+                  <p className="text-sm mt-0.5 whitespace-pre-wrap">{order.description}</p>
+                </div>
+              )}
+              {order.notes && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">notas</label>
+                  <p className="text-sm mt-0.5 whitespace-pre-wrap">{order.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+          
           {/* Barra de estados del pedido */}
           <div className="pt-3">
             <div className="flex items-center gap-2">
@@ -510,52 +528,6 @@ const SalesOrderDetail = () => {
               <span>Terminado</span>
             </div>
           </div>
-          
-          {/* Número de documento Holded */}
-          {isHoldedActive && order.holded_document_id && (
-            <div className="pt-2">
-              <label className="text-xs font-medium text-muted-foreground">Nº documento Holded</label>
-              <div className="flex items-center gap-2 mt-0.5">
-                <p className="text-sm font-mono">
-                  {order.holded_document_number || 'No sincronizado'}
-                </p>
-                {!order.holded_document_number && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleSyncHoldedNumber}
-                    disabled={isSyncing}
-                    className="h-6 text-xs"
-                  >
-                    Sincronizar
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-          
-          {(order.title || order.description || order.notes) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
-              {order.title && (
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">título</label>
-                  <p className="text-sm mt-0.5">{order.title}</p>
-                </div>
-              )}
-              {order.description && (
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">descripción</label>
-                  <p className="text-sm mt-0.5 whitespace-pre-wrap">{order.description}</p>
-                </div>
-              )}
-              {order.notes && (
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">notas</label>
-                  <p className="text-sm mt-0.5 whitespace-pre-wrap">{order.notes}</p>
-                </div>
-              )}
-            </div>
-          )}
 
           {order.status === 'draft' && order.created_from_scratch && isHoldedActive && (
             <div className="pt-1">
