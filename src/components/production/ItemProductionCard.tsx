@@ -7,6 +7,7 @@ import { useProductionTasks } from "@/hooks/useProductionTasks";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ItemProductionCardProps {
   item: {
@@ -22,6 +23,7 @@ interface ItemProductionCardProps {
 export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardProps) {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const isMobile = useIsMobile();
   const { tasks, refetch } = useProductionTasks(item.id);
   
   const totalTimeSeconds = tasks.reduce((acc, task) => acc + (task.total_time_seconds || 0), 0);
@@ -58,14 +60,14 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
   return (
     <div className="space-y-3">
       {/* Compact Product Info */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex-1 flex items-center gap-3">
+      <div className={`flex ${isMobile ? 'flex-col' : 'items-center justify-between'} gap-3`}>
+        <div className={`flex ${isMobile ? 'flex-col' : 'flex-1 items-center'} gap-3`}>
           <div className="flex-1">
             <p className="text-xs font-medium text-muted-foreground">Producto</p>
             <p className="text-sm font-semibold">{item.product_name}</p>
           </div>
           {/* Tiempo total */}
-          <div className="text-right">
+          <div className={isMobile ? '' : 'text-right'}>
             <p className="text-xs font-medium text-muted-foreground">Tiempo total</p>
             <p className="text-sm font-bold text-foreground">{totalHours}h {totalMinutes}m</p>
           </div>
@@ -75,7 +77,7 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
             onValueChange={handleStatusChange}
             disabled={isUpdatingStatus}
           >
-            <SelectTrigger className="w-[140px] h-8">
+            <SelectTrigger className={isMobile ? "w-full h-11" : "w-[140px] h-8"}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -87,9 +89,10 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
         </div>
         {!showTaskForm && (
           <Button
-            size="sm"
+            size={isMobile ? "default" : "sm"}
             variant="secondary"
             onClick={() => setShowTaskForm(true)}
+            className={isMobile ? "w-full h-11" : ""}
           >
             <Plus className="h-4 w-4 mr-1" />
             Nueva Tarea
