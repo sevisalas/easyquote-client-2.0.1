@@ -47,16 +47,16 @@ export function QuickActionsPanel() {
             label: "Nuevo presupuesto",
             description: "Crear presupuesto",
             path: "/presupuestos/nuevo",
-            color: "text-primary",
-            bgColor: "bg-primary/10",
+            color: "text-secondary",
+            bgColor: "bg-secondary/10",
           },
           {
             icon: FileText,
             label: "Mis presupuestos",
             description: "Ver mis presupuestos",
             path: "/presupuestos",
-            color: "text-orange-600",
-            bgColor: "bg-orange-50 dark:bg-orange-950/20",
+            color: "text-secondary",
+            bgColor: "bg-secondary/10",
           },
         ];
       
@@ -69,16 +69,16 @@ export function QuickActionsPanel() {
             label: "Nuevo presupuesto",
             description: "Crear presupuesto",
             path: "/presupuestos/nuevo",
-            color: "text-primary",
-            bgColor: "bg-primary/10",
+            color: "text-secondary",
+            bgColor: "bg-secondary/10",
           },
           {
             icon: Package,
             label: "En producción",
             description: "Ver pedidos activos",
             path: "/pedidos?status=in_progress",
-            color: "text-green-600",
-            bgColor: "bg-green-50 dark:bg-green-950/20",
+            color: "text-secondary",
+            bgColor: "bg-secondary/10",
           },
         ];
     }
@@ -88,7 +88,7 @@ export function QuickActionsPanel() {
 
   return (
     <div className="mb-4">
-      <h2 className="text-sm font-semibold text-foreground mb-2 px-1">
+      <h2 className="text-sm font-semibold text-foreground mb-2 px-1 text-center">
         Acciones rápidas
       </h2>
       <div className="grid grid-cols-2 gap-2">
