@@ -640,7 +640,7 @@ const SalesOrderDetail = () => {
                           {/* Gestión de Producción integrada */}
                           {order.status === 'in_production' && (
                             <div className="pt-2 border-t">
-                              <ItemProductionCard item={item} />
+                              <ItemProductionCard item={item} onStatusUpdate={loadOrderData} />
                             </div>
                           )}
                         </div>
