@@ -22,6 +22,7 @@ import { ItemProductionCard } from "@/components/production/ItemProductionCard";
 import { WorkOrderItem } from "@/components/production/WorkOrderItem";
 import { generateWorkOrderPDF } from "@/utils/workOrderPdfGenerator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const statusColors = {
   draft: "outline",
@@ -47,6 +48,7 @@ const fmtEUR = (amount: number) => {
 const SalesOrderDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { canAccessProduccion } = useSubscription();
   const { loading, fetchSalesOrderById, fetchSalesOrderItems, fetchSalesOrderAdditionals, updateSalesOrderStatus, deleteSalesOrder } = useSalesOrders();
   const [order, setOrder] = useState<SalesOrder | null>(null);
@@ -364,30 +366,30 @@ const SalesOrderDetail = () => {
 
   if (loading || !order) {
     return (
-      <div className="container mx-auto py-6">
+      <div className={isMobile ? "p-3" : "container mx-auto py-6"}>
         <div className="text-center py-8">Cargando pedido...</div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-2 space-y-3">
+    <div className={isMobile ? "p-0 md:p-2 space-y-3" : "container mx-auto py-2 space-y-3"}>
       {/* Header */}
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+      <Card className={isMobile ? "rounded-none" : ""}>
+        <CardHeader className={isMobile ? "p-3 pb-2" : "pb-2"}>
+          <div className={`flex ${isMobile ? 'flex-col' : 'items-center justify-between'} gap-3`}>
+            <div className="flex items-center gap-3 flex-1">
               <div>
-                <CardTitle className="text-lg">
+                <CardTitle className={isMobile ? "text-base" : "text-lg"}>
                   Pedido {order.order_number}
                 </CardTitle>
-                <CardDescription className="mt-0.5">
+                <CardDescription className="mt-0.5 text-xs">
                   Fecha: {format(new Date(order.order_date), 'dd/MM/yyyy', { locale: es })}
                 </CardDescription>
               </div>
               
               {/* Toggle de vistas - oculto para comerciales */}
-              {userRole !== 'comercial' && (
+              {userRole !== 'comercial' && !isMobile && (
                 <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'production' | 'administrative')}>
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="production" className="gap-1.5">
@@ -402,56 +404,62 @@ const SalesOrderDetail = () => {
                 </Tabs>
               )}
             </div>
-            <div className="flex gap-2">
+            
+            {/* Botones de acción - grid en móvil */}
+            <div className={`flex ${isMobile ? 'flex-wrap' : ''} gap-2`}>
               <Button 
                 onClick={() => navigate("/pedidos")}
-                size="sm"
+                size={isMobile ? "default" : "sm"}
                 variant="outline"
-                className="gap-2"
+                className={`gap-2 ${isMobile ? 'h-10 flex-1' : ''}`}
               >
                 <ArrowLeft className="h-4 w-4" />
-                Volver
+                {!isMobile && "Volver"}
               </Button>
               {order.holded_document_id && viewMode === 'administrative' && (
                 <Button 
                   onClick={handleDownloadHoldedPdf}
-                  size="sm"
+                  size={isMobile ? "default" : "sm"}
                   variant="outline"
-                  className="gap-2"
+                  className={`gap-2 ${isMobile ? 'h-10 flex-1' : ''}`}
                 >
                   <Download className="h-4 w-4" />
-                  PDF Holded
+                  {!isMobile && "PDF Holded"}
                 </Button>
               )}
               {viewMode === 'production' && (
                 <Button 
                   onClick={handleGeneratePDF}
-                  size="sm"
+                  size={isMobile ? "default" : "sm"}
                   variant="outline"
-                  className="gap-2"
+                  className={`gap-2 ${isMobile ? 'h-10 flex-1' : ''}`}
                   disabled={isGeneratingPDF}
                 >
                   <Download className="h-4 w-4" />
-                  Descargar OT PDF
+                  {!isMobile && "Descargar OT PDF"}
                 </Button>
               )}
               {order.status === 'draft' && (
                 <Button 
                   onClick={() => navigate(`/pedidos/${id}/editar`)}
-                  size="sm"
+                  size={isMobile ? "default" : "sm"}
                   variant="outline"
-                  className="gap-2"
+                  className={`gap-2 ${isMobile ? 'h-10 flex-1' : ''}`}
                 >
                   <Edit className="h-4 w-4" />
-                  Editar
+                  {!isMobile && "Editar"}
                 </Button>
               )}
               {order.status === 'draft' && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button size="sm" variant="destructive" className="gap-2">
+                    <Button 
+                      size={isMobile ? "default" : "sm"} 
+                      variant="destructive" 
+                      className={`gap-2 ${isMobile ? 'h-10 px-3' : ''}`}
+                    >
                       <Trash2 className="h-4 w-4" />
-                      Eliminar
+                      {!isMobile && "Eliminar"}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -470,21 +478,37 @@ const SalesOrderDetail = () => {
                   </AlertDialogContent>
                 </AlertDialog>
               )}
-            </div>
+            
+            {/* Toggle móvil de vistas - solo visible en móvil */}
+            {userRole !== 'comercial' && isMobile && (
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'production' | 'administrative')} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 h-11">
+                  <TabsTrigger value="production" className="gap-2">
+                    <Wrench className="h-4 w-4" />
+                    Producción
+                  </TabsTrigger>
+                  <TabsTrigger value="administrative" className="gap-2">
+                    <LayoutGrid className="h-4 w-4" />
+                    Admin
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
+          </div>
           </div>
         </CardHeader>
       </Card>
 
       {/* Información del Pedido */}
-      <Card>
-        <CardHeader className="pb-2">
+      <Card className={isMobile ? "rounded-none" : ""}>
+        <CardHeader className={isMobile ? "p-3 pb-2" : "pb-2"}>
           <CardTitle className="text-base">Información del pedido</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className={isMobile ? "p-3 pt-2 space-y-2" : "space-y-2"}>
           {viewMode === 'administrative' ? (
             /* Vista Administrativa - Con precios y detalles comerciales */
             <>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 md:grid-cols-4 gap-2'}`}>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">cliente</label>
                   <p className="text-sm font-medium mt-0.5">
@@ -498,7 +522,7 @@ const SalesOrderDetail = () => {
                   <label className="text-xs font-medium text-muted-foreground">estado</label>
                   <div className="mt-0.5">
                     <Select value={order.status} onValueChange={handleStatusChange} disabled={isExporting}>
-                      <SelectTrigger className="h-7 text-xs">
+                      <SelectTrigger className={isMobile ? "h-11 text-sm" : "h-7 text-xs"}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -528,7 +552,7 @@ const SalesOrderDetail = () => {
           ) : (
             /* Vista Producción - Sin precios */
             <>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 md:grid-cols-3 gap-2'}`}>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">cliente</label>
                   <p className="text-sm font-medium mt-0.5">
@@ -542,7 +566,7 @@ const SalesOrderDetail = () => {
                   <label className="text-xs font-medium text-muted-foreground">estado</label>
                   <div className="mt-0.5">
                     <Select value={order.status} onValueChange={handleStatusChange} disabled={isExporting}>
-                      <SelectTrigger className="h-7 text-xs">
+                      <SelectTrigger className={isMobile ? "h-11 text-sm" : "h-7 text-xs"}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -620,11 +644,11 @@ const SalesOrderDetail = () => {
       </Card>
 
       {/* Artículos del Pedido */}
-      <Card>
-        <CardHeader className="pb-2">
+      <Card className={isMobile ? "rounded-none" : ""}>
+        <CardHeader className={isMobile ? "p-3 pb-2" : "pb-2"}>
           <CardTitle className="text-base">Artículos del pedido</CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
+        <CardContent className={isMobile ? "p-3 pt-0" : "pt-0"}>
           {items.length === 0 ? (
             <p className="text-sm text-muted-foreground">No hay artículos en este pedido</p>
           ) : (
@@ -649,38 +673,40 @@ const SalesOrderDetail = () => {
                     }}
                   >
                     <div className="border rounded-lg">
-                      <CollapsibleTrigger className="w-full p-4 hover:bg-muted/50 transition-colors">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-3 flex-1 text-left">
+                      <CollapsibleTrigger className={`w-full hover:bg-muted/50 transition-colors ${isMobile ? 'p-3' : 'p-4'}`}>
+                        <div className="flex justify-between items-center gap-2">
+                          <div className="flex items-center gap-3 flex-1 text-left min-w-0">
                             <ChevronDown
-                              className={`h-5 w-5 transition-transform ${
+                              className={`h-5 w-5 transition-transform flex-shrink-0 ${
                                 isExpanded ? "transform rotate-180" : ""
                               }`}
                             />
-                            <h3 className="font-semibold text-lg">{item.description || item.product_name}</h3>
-                            {/* Mini barra de estados del artículo */}
-                            <div className="flex items-center gap-1 ml-3">
-                              <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                ['pending', 'in_progress', 'completed'].includes(item.production_status || '') ? 'bg-orange-500' : 'bg-muted'
-                              }`} title="Pendiente" />
-                              <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                ['in_progress', 'completed'].includes(item.production_status || '') ? 'bg-green-500' : 'bg-muted'
-                              }`} title="En proceso" />
-                              <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                item.production_status === 'completed' ? 'bg-blue-500' : 'bg-muted'
-                              }`} title="Completado" />
-                            </div>
+                            <h3 className={`font-semibold truncate ${isMobile ? 'text-base' : 'text-lg'}`}>{item.description || item.product_name}</h3>
+                            {/* Mini barra de estados del artículo - oculta en móvil */}
+                            {!isMobile && (
+                              <div className="flex items-center gap-1 ml-3">
+                                <div className={`w-5 h-1.5 rounded-full transition-all ${
+                                  ['pending', 'in_progress', 'completed'].includes(item.production_status || '') ? 'bg-orange-500' : 'bg-muted'
+                                }`} title="Pendiente" />
+                                <div className={`w-5 h-1.5 rounded-full transition-all ${
+                                  ['in_progress', 'completed'].includes(item.production_status || '') ? 'bg-green-500' : 'bg-muted'
+                                }`} title="En proceso" />
+                                <div className={`w-5 h-1.5 rounded-full transition-all ${
+                                  item.production_status === 'completed' ? 'bg-blue-500' : 'bg-muted'
+                                }`} title="Completado" />
+                              </div>
+                            )}
                           </div>
-                          <div className="text-right ml-4">
+                          <div className="text-right ml-4 flex-shrink-0">
                             {viewMode === 'administrative' && (
-                              <p className="text-xl font-bold text-primary">{item.price.toFixed(2)} €</p>
+                              <p className={`font-bold text-primary ${isMobile ? 'text-lg' : 'text-xl'}`}>{item.price.toFixed(2)} €</p>
                             )}
                           </div>
                         </div>
                       </CollapsibleTrigger>
 
                       <CollapsibleContent>
-                        <div className="px-4 pb-4 pt-2 space-y-4">
+                        <div className={`space-y-4 ${isMobile ? 'px-3 pb-3 pt-2' : 'px-4 pb-4 pt-2'}`}>
                           <WorkOrderItem
                             item={{
                               id: item.id,
