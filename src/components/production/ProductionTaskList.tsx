@@ -5,7 +5,7 @@ import { ProductionTask, useProductionTasks } from "@/hooks/useProductionTasks";
 import { useProductionPhases } from "@/hooks/useProductionPhases";
 import { ProductionTaskTimer } from "./ProductionTaskTimer";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 interface ProductionTaskListProps {
   itemId: string;
@@ -16,21 +16,26 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
   const { phases } = useProductionPhases();
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
 
-  // Auto-expandir tareas en progreso o pausadas solo cuando cambia la lista de IDs
-  useEffect(() => {
-    const activeTaskIds = tasks
+  // Memorizar el string de IDs activos para evitar bucles infinitos
+  const activeTasksKey = useMemo(
+    () => tasks
       .filter(t => t.status === 'in_progress' || t.status === 'paused')
-      .map(t => t.id);
+      .map(t => t.id)
+      .sort()
+      .join(','),
+    [tasks]
+  );
+
+  // Auto-expandir tareas en progreso o pausadas solo cuando cambia activeTasksKey
+  useEffect(() => {
+    if (!activeTasksKey) {
+      setExpandedTasks(new Set());
+      return;
+    }
     
-    // Solo actualizar si realmente cambió la lista de IDs activos
-    setExpandedTasks(prev => {
-      const prevIds = Array.from(prev).sort().join(',');
-      const newIds = activeTaskIds.sort().join(',');
-      if (prevIds === newIds) return prev;
-      return new Set(activeTaskIds);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasks]);
+    const activeTaskIds = activeTasksKey.split(',').filter(id => id);
+    setExpandedTasks(new Set(activeTaskIds));
+  }, [activeTasksKey]);
 
   const getPhaseDisplay = (phaseId: string) => {
     const phase = phases.find((p) => p.id === phaseId);
