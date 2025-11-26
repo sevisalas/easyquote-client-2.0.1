@@ -6,6 +6,7 @@ import { useProductionPhases } from "@/hooks/useProductionPhases";
 import { ProductionTaskTimer } from "./ProductionTaskTimer";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, useEffect, useMemo } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ProductionTaskListProps {
   itemId: string;
@@ -15,6 +16,7 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
   const { tasks, updateTask, deleteTask } = useProductionTasks(itemId);
   const { phases } = useProductionPhases();
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+  const isMobile = useIsMobile();
 
   // Memorizar el string de IDs activos para evitar bucles infinitos
   const activeTasksKey = useMemo(
@@ -83,49 +85,107 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
             }}
           >
             <div className="border rounded-lg bg-card">
-              <CollapsibleTrigger className="w-full p-3 hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <ChevronDown
-                      className={`h-4 w-4 transition-transform shrink-0 ${
-                        isExpanded ? "transform rotate-180" : ""
-                      }`}
-                    />
-                    <h4 className="font-medium text-sm truncate">{task.task_name}</h4>
-                    {phaseDisplay && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs shrink-0"
-                        style={{
-                          borderColor: phaseDisplay.color,
-                          color: phaseDisplay.color,
+              <CollapsibleTrigger className={`w-full hover:bg-muted/50 transition-colors ${isMobile ? 'p-3' : 'p-3'}`}>
+                {isMobile ? (
+                  // Layout móvil: 3 filas verticales
+                  <div className="space-y-2">
+                    {/* Fila 1: Chevron + Nombre de tarea */}
+                    <div className="flex items-center gap-2">
+                      <ChevronDown
+                        className={`h-4 w-4 transition-transform shrink-0 ${
+                          isExpanded ? "transform rotate-180" : ""
+                        }`}
+                      />
+                      <h4 className="font-medium text-sm flex-1">{task.task_name}</h4>
+                    </div>
+                    
+                    {/* Fila 2: Badges de fase y estado */}
+                    <div className="flex items-center gap-2 pl-6">
+                      {phaseDisplay && (
+                        <Badge
+                          variant="outline"
+                          className="text-xs"
+                          style={{
+                            borderColor: phaseDisplay.color,
+                            color: phaseDisplay.color,
+                          }}
+                        >
+                          {phaseDisplay.name}
+                        </Badge>
+                      )}
+                      {getStatusBadge(task.status)}
+                    </div>
+                    
+                    {/* Fila 3: Operador + Tiempo + Botón eliminar */}
+                    <div className="flex items-center justify-between pl-6">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-muted-foreground">
+                          {task.operator_name || 'Usuario'}
+                        </span>
+                        <span className="text-xs font-medium text-foreground">
+                          {Math.floor(task.total_time_seconds / 3600)}h {Math.floor((task.total_time_seconds % 3600) / 60)}m
+                        </span>
+                      </div>
+                      {task.status !== "completed" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 shrink-0 text-destructive hover:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteTask(task.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  // Layout desktop: 1 fila horizontal
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <ChevronDown
+                        className={`h-4 w-4 transition-transform shrink-0 ${
+                          isExpanded ? "transform rotate-180" : ""
+                        }`}
+                      />
+                      <h4 className="font-medium text-sm truncate">{task.task_name}</h4>
+                      {phaseDisplay && (
+                        <Badge
+                          variant="outline"
+                          className="text-xs shrink-0"
+                          style={{
+                            borderColor: phaseDisplay.color,
+                            color: phaseDisplay.color,
+                          }}
+                        >
+                          {phaseDisplay.name}
+                        </Badge>
+                      )}
+                      {getStatusBadge(task.status)}
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {task.operator_name || 'Usuario'}
+                      </span>
+                      <span className="text-xs font-medium text-foreground shrink-0">
+                        {Math.floor(task.total_time_seconds / 3600)}h {Math.floor((task.total_time_seconds % 3600) / 60)}m
+                      </span>
+                    </div>
+                    {task.status !== "completed" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteTask(task.id);
                         }}
                       >
-                        {phaseDisplay.name}
-                      </Badge>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     )}
-                    {getStatusBadge(task.status)}
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {task.operator_name || 'Usuario'}
-                    </span>
-                    <span className="text-xs font-medium text-foreground shrink-0">
-                      {Math.floor(task.total_time_seconds / 3600)}h {Math.floor((task.total_time_seconds % 3600) / 60)}m
-                    </span>
                   </div>
-                  {task.status !== "completed" && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteTask(task.id);
-                      }}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                </div>
+                )}
               </CollapsibleTrigger>
 
               <CollapsibleContent>
