@@ -22,24 +22,22 @@ export function MobileBottomNav() {
       { icon: Home, label: "Inicio", path: "/" },
       { icon: FileText, label: "Presupuestos", path: "/presupuestos" },
       { icon: Package, label: "Pedidos", path: "/pedidos" },
-      { icon: Users, label: "Clientes", path: "/clientes" },
+      { icon: Sparkles, label: "Novedades", path: "/novedades" },
     ],
     gestor: [
       { icon: Home, label: "Inicio", path: "/" },
       { icon: FileText, label: "Presupuestos", path: "/presupuestos" },
       { icon: Package, label: "Pedidos", path: "/pedidos" },
-      { icon: Users, label: "Clientes", path: "/clientes" },
+      { icon: Sparkles, label: "Novedades", path: "/novedades" },
     ],
     comercial: [
       { icon: Home, label: "Inicio", path: "/" },
       { icon: FileText, label: "Presupuestos", path: "/presupuestos" },
       { icon: Users, label: "Clientes", path: "/clientes" },
-      { icon: Sparkles, label: "Novedades", path: "/novedades" },
     ],
     operador: [
       { icon: Home, label: "Inicio", path: "/" },
       { icon: Package, label: "Pedidos", path: "/pedidos" },
-      { icon: Sparkles, label: "Novedades", path: "/novedades" },
       { icon: User, label: "Perfil", path: "/settings/theme" },
     ],
   };

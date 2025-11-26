@@ -476,14 +476,16 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="p-1">
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Novedades" className="h-7 px-2">
-              <NavLink to="/novedades" className={getNavCls}>
-                <Sparkles className="mr-2 h-4 w-4" />
-                {!isCollapsed && <span>Novedades</span>}
-              </NavLink>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {isOrgAdmin && (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Novedades" className="h-7 px-2">
+                <NavLink to="/novedades" className={getNavCls}>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  {!isCollapsed && <span>Novedades</span>}
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Contraer menú" className="h-7 px-2">
               <button onClick={toggleSidebar} className="w-full flex items-center justify-start">

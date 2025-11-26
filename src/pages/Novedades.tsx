@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CheckCircle2, Plus, Edit, Bug, Shield, Trash2, Clock } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import { Navigate } from "react-router-dom";
 
 interface ChangeItem {
   text: string;
@@ -174,6 +176,11 @@ const getChangeLabel = (type: string) => {
 
 const Novedades = () => {
   const isMobile = useIsMobile();
+  const { isOrgAdmin } = useSubscription();
+
+  if (!isOrgAdmin) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className={isMobile ? "p-3 space-y-4" : "container mx-auto py-6 space-y-6"}>
@@ -335,14 +342,6 @@ const Novedades = () => {
         ))}
       </div>
 
-      {/* Footer Note */}
-      <Card className="bg-muted/50">
-        <CardContent className={isMobile ? "p-4" : "p-6"}>
-          <p className="text-sm text-muted-foreground text-center">
-            Para más detalles técnicos, consulta el archivo <code className="bg-background px-1.5 py-0.5 rounded text-xs">CHANGELOG.md</code> en el repositorio del proyecto.
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 };
