@@ -20,7 +20,7 @@ import { CustomerName } from "@/components/quotes/CustomerName";
 import { isVisiblePrompt, type PromptDef } from "@/utils/promptVisibility";
 import { ItemProductionCard } from "@/components/production/ItemProductionCard";
 import { WorkOrderItem } from "@/components/production/WorkOrderItem";
-import { generateWorkOrderPDF } from "@/utils/workOrderGenerator";
+import { generateWorkOrderPDF } from "@/utils/workOrderPdfGenerator";
 
 const statusColors = {
   draft: "outline",
