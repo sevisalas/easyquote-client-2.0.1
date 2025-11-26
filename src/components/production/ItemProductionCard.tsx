@@ -88,6 +88,7 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
         {!showTaskForm && (
           <Button
             size="sm"
+            variant="secondary"
             onClick={() => setShowTaskForm(true)}
           >
             <Plus className="h-4 w-4 mr-1" />
