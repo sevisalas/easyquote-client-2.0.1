@@ -41,7 +41,6 @@ export default function SalesOrderNew() {
 
   // Form state
   const [customerId, setCustomerId] = useState<string>("");
-  const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [deliveryDate, setDeliveryDate] = useState<string>("");
@@ -284,7 +283,6 @@ export default function SalesOrderNew() {
         user_id: user.id,
         customer_id: finalCustomerId,
         order_number: orderNumber,
-        title: title || `Pedido ${orderNumber}`,
         description: description || itemsArray[0]?.itemDescription || "",
         status: 'draft' as const,
         order_date: new Date().toISOString(),
@@ -493,16 +491,6 @@ export default function SalesOrderNew() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="title">Título del pedido</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ej: Pedido Corporativo 2025"
-              />
-            </div>
-            
             <div className="space-y-2">
               <Label htmlFor="notes">Notas internas</Label>
               <Textarea
