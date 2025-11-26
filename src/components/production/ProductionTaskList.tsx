@@ -29,7 +29,8 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
       if (prevIds === newIds) return prev;
       return new Set(activeTaskIds);
     });
-  }, [tasks.map(t => `${t.id}-${t.status}`).join(',')]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks]);
 
   const getPhaseDisplay = (phaseId: string) => {
     const phase = phases.find((p) => p.id === phaseId);
