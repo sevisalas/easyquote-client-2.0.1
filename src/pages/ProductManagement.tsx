@@ -1307,7 +1307,7 @@ export default function ProductManagement() {
                               <div className="col-span-2">
                                 <Label>Hoja</Label>
                                 <Select
-                                  value={prompt.promptSheet || "Main"}
+                                  value={prompt.promptSheet || ""}
                                   onValueChange={(value) => {
                                     const updatedPrompt = { 
                                       ...prompt, 
@@ -1321,16 +1321,20 @@ export default function ProductManagement() {
                                   }}
                                 >
                                   <SelectTrigger>
-                                    <SelectValue />
+                                    <SelectValue placeholder={prompt.promptSheet || "Seleccionar hoja"} />
                                   </SelectTrigger>
                                   <SelectContent className="bg-background border shadow-lg z-50">
-                                    {excelSheets.length > 0 ? excelSheets.map((sheet) => (
+                                    {/* Mostrar valor actual si existe y no está en la lista */}
+                                    {prompt.promptSheet && !excelSheets.includes(prompt.promptSheet) && (
+                                      <SelectItem value={prompt.promptSheet}>
+                                        {prompt.promptSheet}
+                                      </SelectItem>
+                                    )}
+                                    {excelSheets.map((sheet) => (
                                       <SelectItem key={sheet} value={sheet}>
                                         {sheet}
                                       </SelectItem>
-                                    )) : (
-                                      <SelectItem value="Main">Main</SelectItem>
-                                    )}
+                                    ))}
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -1608,23 +1612,27 @@ export default function ProductManagement() {
                           <div>
                             <Label>Hoja</Label>
                             <Select
-                              value={output.sheet || "Main"}
+                              value={output.sheet || ""}
                               onValueChange={(value) => {
                                 const updatedOutput = { ...output, sheet: value };
                                 updateOutputMutation.mutate(updatedOutput);
                               }}
                             >
                               <SelectTrigger>
-                                <SelectValue />
+                                <SelectValue placeholder={output.sheet || "Seleccionar hoja"} />
                               </SelectTrigger>
                               <SelectContent className="bg-background border shadow-lg z-50">
-                                {excelSheets.length > 0 ? excelSheets.map((sheet) => (
+                                {/* Mostrar valor actual si existe y no está en la lista */}
+                                {output.sheet && !excelSheets.includes(output.sheet) && (
+                                  <SelectItem value={output.sheet}>
+                                    {output.sheet}
+                                  </SelectItem>
+                                )}
+                                {excelSheets.map((sheet) => (
                                   <SelectItem key={sheet} value={sheet}>
                                     {sheet}
                                   </SelectItem>
-                                )) : (
-                                  <SelectItem value="Main">Main</SelectItem>
-                                )}
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -1720,20 +1728,18 @@ export default function ProductManagement() {
               <div className="col-span-4">
                 <Label htmlFor="promptSheet">Hoja</Label>
                 <Select
-                  value={newPromptData.promptSheet || "Main"}
+                  value={newPromptData.promptSheet || ""}
                   onValueChange={(value) => setNewPromptData({...newPromptData, promptSheet: value})}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar hoja" />
                   </SelectTrigger>
                   <SelectContent className="bg-background border shadow-lg z-50">
-                    {excelSheets.length > 0 ? excelSheets.map((sheet) => (
+                    {excelSheets.map((sheet) => (
                       <SelectItem key={sheet} value={sheet}>
                         {sheet}
                       </SelectItem>
-                    )) : (
-                      <SelectItem value="Main">Main</SelectItem>
-                    )}
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -1864,20 +1870,18 @@ export default function ProductManagement() {
               <div>
                 <Label htmlFor="outputSheet">Hoja</Label>
                 <Select
-                  value={newOutputData.sheet || "Main"}
+                  value={newOutputData.sheet || ""}
                   onValueChange={(value) => setNewOutputData({...newOutputData, sheet: value})}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar hoja" />
                   </SelectTrigger>
                   <SelectContent className="bg-background border shadow-lg z-50">
-                    {excelSheets.length > 0 ? excelSheets.map((sheet) => (
+                    {excelSheets.map((sheet) => (
                       <SelectItem key={sheet} value={sheet}>
                         {sheet}
                       </SelectItem>
-                    )) : (
-                      <SelectItem value="Main">Main</SelectItem>
-                    )}
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
