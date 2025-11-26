@@ -32,7 +32,7 @@ export function QuickActionsPanel() {
           },
           {
             icon: PlayCircle,
-            label: "En producción",
+            label: "Pedidos en producción",
             description: "Pedidos activos",
             path: "/pedidos?status=in_progress",
             color: "text-green-600",
@@ -74,7 +74,7 @@ export function QuickActionsPanel() {
           },
           {
             icon: Package,
-            label: "En producción",
+            label: "Pedidos en producción",
             description: "Ver pedidos activos",
             path: "/pedidos?status=in_progress",
             color: "text-secondary",
@@ -104,7 +104,7 @@ export function QuickActionsPanel() {
               onClick={() => navigate(action.path)}
             >
               <div className="p-4 flex items-center justify-center">
-                <p className={cn("font-semibold text-sm", action.color)}>
+                <p className={cn("font-semibold text-sm text-center", action.color)}>
                   {action.label}
                 </p>
               </div>
