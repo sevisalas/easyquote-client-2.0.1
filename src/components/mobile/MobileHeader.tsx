@@ -1,4 +1,3 @@
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,6 @@ export function MobileHeader({ title, showBack = false, showMenu = true }: Mobil
             <ArrowLeft size={20} />
           </Button>
         )}
-        {showMenu && !showBack && <SidebarTrigger className="h-8 w-8" />}
       </div>
       
       {title && (

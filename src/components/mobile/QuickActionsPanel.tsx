@@ -24,7 +24,7 @@ export function QuickActionsPanel() {
         return [
           {
             icon: Package,
-            label: "Mis Tareas",
+            label: "Mis tareas",
             description: "Ver tareas asignadas",
             path: "/pedidos",
             color: "text-blue-600",
@@ -32,7 +32,7 @@ export function QuickActionsPanel() {
           },
           {
             icon: PlayCircle,
-            label: "En Producción",
+            label: "En producción",
             description: "Pedidos activos",
             path: "/pedidos?status=in_progress",
             color: "text-green-600",
@@ -44,7 +44,7 @@ export function QuickActionsPanel() {
         return [
           {
             icon: Plus,
-            label: "Nuevo Presupuesto",
+            label: "Nuevo presupuesto",
             description: "Crear presupuesto",
             path: "/presupuestos/nuevo",
             color: "text-primary",
@@ -52,7 +52,7 @@ export function QuickActionsPanel() {
           },
           {
             icon: FileText,
-            label: "Mis Presupuestos",
+            label: "Mis presupuestos",
             description: "Ver mis presupuestos",
             path: "/presupuestos",
             color: "text-orange-600",
@@ -60,7 +60,7 @@ export function QuickActionsPanel() {
           },
           {
             icon: Users,
-            label: "Añadir Cliente",
+            label: "Añadir cliente",
             description: "Nuevo cliente",
             path: "/clientes/nuevo",
             color: "text-purple-600",
@@ -74,7 +74,7 @@ export function QuickActionsPanel() {
         return [
           {
             icon: Plus,
-            label: "Nuevo Presupuesto",
+            label: "Nuevo presupuesto",
             description: "Crear presupuesto",
             path: "/presupuestos/nuevo",
             color: "text-primary",
@@ -82,7 +82,7 @@ export function QuickActionsPanel() {
           },
           {
             icon: Package,
-            label: "En Producción",
+            label: "En producción",
             description: "Ver pedidos activos",
             path: "/pedidos?status=in_progress",
             color: "text-green-600",
@@ -90,7 +90,7 @@ export function QuickActionsPanel() {
           },
           {
             icon: Users,
-            label: "Añadir Cliente",
+            label: "Añadir cliente",
             description: "Nuevo cliente",
             path: "/clientes/nuevo",
             color: "text-purple-600",
@@ -111,11 +111,11 @@ export function QuickActionsPanel() {
   const actions = getActionsForRole();
 
   return (
-    <div className="mb-6">
-      <h2 className="text-base font-semibold text-foreground mb-3 px-1">
-        Acciones Rápidas
+    <div className="mb-4">
+      <h2 className="text-sm font-semibold text-foreground mb-2 px-1">
+        Acciones rápidas
       </h2>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2">
         {actions.map((action, index) => {
           const Icon = action.icon;
           return (
@@ -127,18 +127,18 @@ export function QuickActionsPanel() {
               )}
               onClick={() => navigate(action.path)}
             >
-              <div className="p-4 flex flex-col items-center text-center gap-3">
+              <div className="p-3 flex flex-col items-center text-center gap-2">
                 <div className={cn(
-                  "w-12 h-12 rounded-full flex items-center justify-center",
+                  "w-10 h-10 rounded-full flex items-center justify-center",
                   action.bgColor
                 )}>
-                  <Icon className={cn("w-6 h-6", action.color)} />
+                  <Icon className={cn("w-5 h-5", action.color)} />
                 </div>
                 <div>
-                  <p className={cn("font-semibold text-sm", action.color)}>
+                  <p className={cn("font-semibold text-xs", action.color)}>
                     {action.label}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
                     {action.description}
                   </p>
                 </div>
