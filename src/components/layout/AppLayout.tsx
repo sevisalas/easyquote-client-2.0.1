@@ -34,7 +34,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
       <div className="flex min-h-screen w-full relative">
         <AppSidebar />
         
-        {isMobile && <MobileHeader showMenu={true} />}
+        {isMobile && <MobileHeader />}
         
         <div className="flex-1 w-full">
           <MainContent>{children}</MainContent>
