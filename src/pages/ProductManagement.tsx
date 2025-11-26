@@ -541,6 +541,11 @@ export default function ProductManagement() {
   const inactiveProducts = allProductsForStats.filter(p => !p.isActive);
 
   const handleEditProduct = async (product: EasyQuoteProduct) => {
+    console.log("=== handleEditProduct called ===");
+    console.log("Product ID:", product.id);
+    console.log("Product Name:", product.productName);
+    console.log("Excel File ID:", product.excelfileId);
+    
     setSelectedProduct({ ...product });
     
     // Cargar categoría actual del producto
@@ -550,33 +555,48 @@ export default function ProductManagement() {
     
     // Fetch Excel sheets if excelfileId exists
     if (product.excelfileId) {
+      console.log("Excel File ID exists, fetching sheets...");
       try {
         const token = sessionStorage.getItem("easyquote_token");
+        console.log("Token found:", token ? "YES" : "NO");
+        
         if (token) {
+          console.log("Calling easyquote-excel-files edge function with fileId:", product.excelfileId);
+          
           const { data, error } = await supabase.functions.invoke("easyquote-excel-files", {
             body: { token, fileId: product.excelfileId }
           });
           
+          console.log("Edge function response:", { data, error });
+          
           if (!error && data) {
             console.log("Excel file data received:", data);
+            console.log("Type of data:", typeof data);
+            console.log("Has excelfilesSheets:", "excelfilesSheets" in data);
+            
             if (data.excelfilesSheets && Array.isArray(data.excelfilesSheets)) {
               const sheetNames = data.excelfilesSheets.map((sheet: any) => sheet.sheetName);
               console.log("Sheet names extracted:", sheetNames);
+              console.log("Total sheets:", sheetNames.length);
               setExcelSheets(sheetNames);
             } else {
-              console.warn("No excelfilesSheets found in response");
+              console.warn("No excelfilesSheets found in response. Data structure:", Object.keys(data));
               setExcelSheets([]);
             }
           } else {
             console.error("Error from edge function:", error);
             setExcelSheets([]);
           }
+        } else {
+          console.warn("No token found in sessionStorage");
+          setExcelSheets([]);
         }
       } catch (error) {
         console.error("Error fetching Excel sheets:", error);
         setExcelSheets([]); // Fallback
       }
     } else {
+      console.log("No Excel File ID, skipping sheets fetch");
       setExcelSheets([]); // No Excel file associated
     }
     
