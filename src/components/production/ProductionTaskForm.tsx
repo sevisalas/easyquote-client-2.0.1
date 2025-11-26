@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { useProductionPhases } from "@/hooks/useProductionPhases";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ProductionTaskFormProps {
   itemId: string;
@@ -27,6 +28,7 @@ export function ProductionTaskForm({
   const [taskName, setTaskName] = useState("");
   const [selectedPhaseId, setSelectedPhaseId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,24 +67,24 @@ export function ProductionTaskForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 p-3 border rounded-lg bg-muted/30">
+    <form onSubmit={handleSubmit} className={`space-y-3 border rounded-lg bg-muted/30 ${isMobile ? 'p-4' : 'p-3'}`}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <Label htmlFor="taskName" className="text-xs">Nombre de la tarea</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor="taskName" className={isMobile ? "text-sm" : "text-xs"}>Nombre de la tarea</Label>
           <Input
             id="taskName"
             value={taskName}
             onChange={(e) => setTaskName(e.target.value)}
             placeholder="Ej: Revisión de archivo"
-            className="h-8 text-sm"
+            className={isMobile ? "h-11 text-base" : "h-8 text-sm"}
             required
           />
         </div>
 
-        <div className="space-y-1">
-          <Label htmlFor="phase" className="text-xs">Fase de producción</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor="phase" className={isMobile ? "text-sm" : "text-xs"}>Fase de producción</Label>
           <Select value={selectedPhaseId} onValueChange={setSelectedPhaseId} required>
-            <SelectTrigger id="phase" className="h-8 text-sm">
+            <SelectTrigger id="phase" className={isMobile ? "h-11 text-base" : "h-8 text-sm"}>
               <SelectValue placeholder="Selecciona una fase" />
             </SelectTrigger>
             <SelectContent>
@@ -102,14 +104,21 @@ export function ProductionTaskForm({
         </div>
       </div>
 
-      <div className="flex gap-2 justify-end">
-        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+      <div className={`flex gap-2 ${isMobile ? 'flex-col' : 'justify-end'}`}>
+        <Button 
+          type="button" 
+          variant="outline" 
+          size={isMobile ? "default" : "sm"} 
+          onClick={onCancel}
+          className={isMobile ? "h-11" : ""}
+        >
           Cancelar
         </Button>
         <Button
           type="submit"
-          size="sm"
+          size={isMobile ? "default" : "sm"}
           disabled={isSubmitting || phasesLoading || !taskName.trim() || !selectedPhaseId}
+          className={isMobile ? "h-11" : ""}
         >
           {isSubmitting ? "Creando..." : "Crear Tarea"}
         </Button>
