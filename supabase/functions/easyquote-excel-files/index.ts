@@ -19,7 +19,7 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const { token } = await req.json();
+    const { token, fileId } = await req.json();
     
     if (!token) {
       return new Response(JSON.stringify({ error: "Token required" }), {
@@ -28,9 +28,14 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log("easyquote-excel-files: Making request to EasyQuote API");
+    // Si se proporciona fileId, obtener detalles específicos del archivo con sus hojas
+    const url = fileId 
+      ? `https://api.easyquote.cloud/api/v1/excelfiles/${fileId}`
+      : "https://api.easyquote.cloud/api/v1/excelfiles";
 
-    const response = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
+    console.log("easyquote-excel-files: Making request to EasyQuote API", { url, fileId });
+
+    const response = await fetch(url, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${token}`,
