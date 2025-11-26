@@ -198,9 +198,9 @@ const getChangeLabel = (type: string) => {
 
 const Novedades = () => {
   const isMobile = useIsMobile();
-  const { isOrgAdmin } = useSubscription();
+  const { isSuperAdmin } = useSubscription();
 
-  if (!isOrgAdmin) {
+  if (!isSuperAdmin) {
     return <Navigate to="/" replace />;
   }
 

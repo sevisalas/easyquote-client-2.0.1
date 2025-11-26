@@ -363,7 +363,7 @@ const Index = () => {
             onClick={() => navigate("/novedades")}
             className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
-            EasyQuote v2.0.0
+            EasyQuote v2.1.0
           </button>
         </div>
 
