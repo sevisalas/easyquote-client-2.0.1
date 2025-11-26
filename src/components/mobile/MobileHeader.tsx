@@ -25,7 +25,7 @@ export function MobileHeader({ title, showBack = false, showMenu = true }: Mobil
             <ArrowLeft size={20} />
           </Button>
         )}
-        {showMenu && !showBack && <SidebarTrigger className="h-9 w-9" />}
+        {showMenu && !showBack && <SidebarTrigger className="h-8 w-8" />}
       </div>
       
       {title && (
