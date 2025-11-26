@@ -45,6 +45,7 @@ import SalesOrdersList from "./pages/SalesOrdersList";
 import SalesOrderDetail from "./pages/SalesOrderDetail";
 import SalesOrderNew from "./pages/SalesOrderNew";
 import SalesOrderEdit from "./pages/SalesOrderEdit";
+import Novedades from "./pages/Novedades";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { useSessionMonitor } from "./hooks/useSessionMonitor";
 
@@ -403,6 +404,16 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <SalesOrderDetail />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/novedades"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Novedades />
             </AppLayout>
           </ProtectedRoute>
         }

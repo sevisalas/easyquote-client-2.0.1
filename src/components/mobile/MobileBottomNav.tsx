@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, FileText, Users, Package, ClipboardList, User } from "lucide-react";
+import { Home, FileText, Users, Package, ClipboardList, User, Sparkles } from "lucide-react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { cn } from "@/lib/utils";
 
@@ -14,9 +14,9 @@ export function MobileBottomNav() {
   const navItems = {
     superadmin: [
       { icon: Home, label: "Inicio", path: "/" },
+      { icon: Sparkles, label: "Novedades", path: "/novedades" },
       { icon: Users, label: "Usuarios", path: "/superadmin/users" },
       { icon: ClipboardList, label: "Suscriptores", path: "/superadmin/subscribers" },
-      { icon: User, label: "Perfil", path: "/settings/theme" },
     ],
     admin: [
       { icon: Home, label: "Inicio", path: "/" },
@@ -34,11 +34,12 @@ export function MobileBottomNav() {
       { icon: Home, label: "Inicio", path: "/" },
       { icon: FileText, label: "Presupuestos", path: "/presupuestos" },
       { icon: Users, label: "Clientes", path: "/clientes" },
-      { icon: User, label: "Perfil", path: "/settings/theme" },
+      { icon: Sparkles, label: "Novedades", path: "/novedades" },
     ],
     operador: [
       { icon: Home, label: "Inicio", path: "/" },
       { icon: Package, label: "Pedidos", path: "/pedidos" },
+      { icon: Sparkles, label: "Novedades", path: "/novedades" },
       { icon: User, label: "Perfil", path: "/settings/theme" },
     ],
   };
