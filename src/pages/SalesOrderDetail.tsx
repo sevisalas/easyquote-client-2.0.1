@@ -126,6 +126,15 @@ const SalesOrderDetail = () => {
   const handleStatusChange = async (newStatus: SalesOrder['status']) => {
     if (!id || !order) return;
     
+    // Validar que todos los artículos estén completados antes de marcar el pedido como completado
+    if (newStatus === 'completed') {
+      const incompleteItems = items.filter(item => item.production_status !== 'completed');
+      if (incompleteItems.length > 0) {
+        toast.error(`No se puede completar el pedido. Hay ${incompleteItems.length} artículo(s) sin terminar.`);
+        return;
+      }
+    }
+    
     // If changing to pending, export to Holded automatically if integration is active
     if (newStatus === 'pending' && order.status !== 'pending' && isHoldedActive && !order.holded_document_id) {
       const success = await updateSalesOrderStatus(id, newStatus);
