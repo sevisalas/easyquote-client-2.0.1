@@ -554,23 +554,30 @@ export default function ProductManagement() {
         const token = sessionStorage.getItem("easyquote_token");
         if (token) {
           const { data, error } = await supabase.functions.invoke("easyquote-excel-files", {
-            body: { token }
+            body: { token, fileId: product.excelfileId }
           });
           
           if (!error && data) {
-            const excelFile = data.find((file: EasyQuoteExcelFile) => file.id === product.excelfileId);
-            if (excelFile?.excelfilesSheets) {
-              const sheetNames = excelFile.excelfilesSheets.map((sheet: any) => sheet.sheetName || "Main");
+            console.log("Excel file data received:", data);
+            if (data.excelfilesSheets && Array.isArray(data.excelfilesSheets)) {
+              const sheetNames = data.excelfilesSheets.map((sheet: any) => sheet.sheetName);
+              console.log("Sheet names extracted:", sheetNames);
               setExcelSheets(sheetNames);
+            } else {
+              console.warn("No excelfilesSheets found in response");
+              setExcelSheets([]);
             }
+          } else {
+            console.error("Error from edge function:", error);
+            setExcelSheets([]);
           }
         }
       } catch (error) {
         console.error("Error fetching Excel sheets:", error);
-        setExcelSheets(["Main"]); // Fallback
+        setExcelSheets([]); // Fallback
       }
     } else {
-      setExcelSheets(["Main"]); // Default if no Excel file
+      setExcelSheets([]); // No Excel file associated
     }
     
     setIsEditDialogOpen(true);
