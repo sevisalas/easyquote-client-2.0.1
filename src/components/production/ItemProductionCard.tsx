@@ -22,7 +22,11 @@ interface ItemProductionCardProps {
 export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardProps) {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const { refetch } = useProductionTasks(item.id);
+  const { tasks, refetch } = useProductionTasks(item.id);
+  
+  const totalTimeSeconds = tasks.reduce((acc, task) => acc + (task.total_time_seconds || 0), 0);
+  const totalHours = Math.floor(totalTimeSeconds / 3600);
+  const totalMinutes = Math.floor((totalTimeSeconds % 3600) / 60);
 
   const handleTaskCreated = () => {
     setShowTaskForm(false);
@@ -59,6 +63,11 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
           <div className="flex-1">
             <p className="text-xs font-medium text-muted-foreground">Producto</p>
             <p className="text-sm font-semibold">{item.product_name}</p>
+          </div>
+          {/* Tiempo total */}
+          <div className="text-right">
+            <p className="text-xs font-medium text-muted-foreground">Tiempo total</p>
+            <p className="text-sm font-bold text-foreground">{totalHours}h {totalMinutes}m</p>
           </div>
           {/* Estado selector */}
           <Select
