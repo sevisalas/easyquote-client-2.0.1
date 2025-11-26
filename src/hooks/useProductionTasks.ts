@@ -47,41 +47,42 @@ export function useProductionTasks(itemId?: string) {
     queryFn: async () => {
       if (!itemId) return [];
 
-      const { data, error } = await supabase
+      // Primero obtenemos las tareas
+      const { data: tasksData, error: tasksError } = await supabase
         .from("production_tasks")
-        .select(`
-          *,
-          profiles:operator_id (
-            first_name,
-            last_name
-          )
-        `)
+        .select("*")
         .eq("sales_order_item_id", itemId)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Error fetching production tasks:", error);
-        throw error;
+      if (tasksError) {
+        console.error("Error fetching production tasks:", tasksError);
+        throw tasksError;
       }
 
-      // Mapear los datos para incluir el nombre del operador
-      return (data || []).map((task: any) => {
-        let operatorName = 'Usuario';
-        if (task.profiles) {
-          const firstName = task.profiles.first_name || '';
-          const lastName = task.profiles.last_name || '';
-          const fullName = `${firstName} ${lastName}`.trim();
-          if (fullName) {
-            operatorName = fullName;
-          }
-        }
-        
-        return {
-          ...task,
-          operator_name: operatorName,
-          profiles: undefined, // Remover el objeto profiles anidado
-        };
-      }) as ProductionTask[];
+      if (!tasksData || tasksData.length === 0) {
+        return [];
+      }
+
+      // Luego obtenemos los perfiles de los operadores
+      const operatorIds = [...new Set(tasksData.map(t => t.operator_id))];
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("user_id, first_name, last_name")
+        .in("user_id", operatorIds);
+
+      // Crear un mapa de operadores
+      const operatorsMap = new Map(
+        (profilesData || []).map(p => [
+          p.user_id,
+          `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Usuario'
+        ])
+      );
+
+      // Combinar los datos
+      return tasksData.map((task: any) => ({
+        ...task,
+        operator_name: operatorsMap.get(task.operator_id) || 'Usuario',
+      })) as ProductionTask[];
     },
     enabled: !!itemId,
   });
