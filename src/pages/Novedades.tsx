@@ -25,8 +25,30 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.1.0",
+    date: "2025-11-26",
+    changes: {
+      added: [
+        "Accesos directos con diseño minimalista (solo texto, sin iconos)",
+        "Solo 2 acciones principales: 'Nuevo presupuesto' y 'Pedidos en producción'",
+        "Diseño con color secundario unificado",
+      ],
+      changed: [
+        "Header móvil eliminado para mayor espacio vertical",
+        "'Acciones rápidas' renombrado a 'Accesos directos'",
+        "Textos centrados en accesos directos",
+        "Botones simplificados eliminando iconos redundantes",
+      ],
+      removed: [
+        "Header móvil (MobileHeader) completamente removido",
+        "Iconos en tarjetas de accesos directos",
+        "Acciones secundarias: 'Añadir cliente' y 'Pendientes'",
+      ],
+    },
+  },
+  {
     version: "2.0.0",
-    date: "2025-01-26",
+    date: "2024-11-25",
     changes: {
       added: [
         "Interfaz móvil completa para roles Comercial y Operador",
@@ -61,7 +83,7 @@ const versions: Version[] = [
   },
   {
     version: "1.5.0",
-    date: "2025-01-15",
+    date: "2024-11-15",
     changes: {
       added: [
         "Sistema de roles y permisos completo",
@@ -83,7 +105,7 @@ const versions: Version[] = [
   },
   {
     version: "1.4.0",
-    date: "2025-01-10",
+    date: "2024-11-10",
     changes: {
       added: [
         "Integración con Holded ERP",
@@ -107,7 +129,7 @@ const versions: Version[] = [
   },
   {
     version: "1.3.0",
-    date: "2025-01-05",
+    date: "2024-11-05",
     changes: {
       added: [
         "Gestión de clientes unificada (locales y de Holded)",
