@@ -1,5 +1,5 @@
 import { PropsWithChildren } from "react";
-import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import { cn } from "@/lib/utils";
@@ -27,8 +27,16 @@ export default function AppLayout({ children }: PropsWithChildren) {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full relative">
+        {/* Header with menu trigger - always visible on mobile */}
+        <header className="fixed top-0 left-0 right-0 z-50 h-12 flex items-center border-b bg-background md:hidden">
+          <SidebarTrigger className="ml-2" />
+        </header>
+        
         <AppSidebar />
-        <MainContent>{children}</MainContent>
+        
+        <div className="flex-1 w-full pt-12 md:pt-0">
+          <MainContent>{children}</MainContent>
+        </div>
       </div>
     </SidebarProvider>
   );
