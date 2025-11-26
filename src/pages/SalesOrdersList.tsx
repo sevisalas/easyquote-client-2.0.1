@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerName } from "@/components/quotes/CustomerName";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { SalesOrderCard } from "@/components/sales/SalesOrderCard";
 
 const statusColors = {
   draft: "outline",
@@ -40,6 +42,7 @@ const fmtEUR = (n: any) => {
 
 const SalesOrdersList = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { canAccessProduccion } = useSubscription();
   const { loading, fetchSalesOrders } = useSalesOrders();
   const { isHoldedActive } = useHoldedIntegration();
@@ -327,7 +330,7 @@ const SalesOrdersList = () => {
   }
 
   return (
-    <main className="p-1 md:p-2">
+    <main className="p-0 md:p-2">
       <header className="sr-only">
         <h1>Listado de pedidos</h1>
         <link rel="canonical" href={`${window.location.origin}/pedidos`} />
@@ -335,37 +338,40 @@ const SalesOrdersList = () => {
       </header>
 
       <Card>
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-2 px-3 md:px-6">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Listado de pedidos</CardTitle>
+            <CardTitle className="text-base md:text-lg">Listado de pedidos</CardTitle>
             <Button 
-              size="sm" 
+              size={isMobile ? "default" : "sm"}
               onClick={() => navigate('/pedidos/nuevo')}
-              className="h-8 text-xs"
+              className={isMobile ? "h-10" : "h-8 text-xs"}
             >
               Nuevo Pedido
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="p-2">
+        <CardContent className="px-3 md:px-6 py-2">
           {/* Filters Section */}
           <div className="mb-3 p-3 bg-muted/30 rounded border">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-2">
               {/* Customer Filter */}
               <div className="relative">
-                <Search className="absolute left-2 top-1.5 h-3 w-3 text-muted-foreground" />
+                <Search className={cn(
+                  "absolute text-muted-foreground",
+                  isMobile ? "left-3 top-3 h-4 w-4" : "left-2 top-1.5 h-3 w-3"
+                )} />
                 <Input
                   placeholder="Cliente..."
                   value={customerFilter}
                   onChange={(e) => setCustomerFilter(e.target.value)}
-                  className="h-7 text-xs pl-7"
+                  className={isMobile ? "h-10 pl-9" : "h-7 text-xs pl-7"}
                 />
               </div>
 
               {/* Status Filter */}
               <div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="h-6 text-xs px-2">
+                  <SelectTrigger className={isMobile ? "h-10" : "h-6 text-xs px-2"}>
                     <SelectValue placeholder="Estado..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -383,7 +389,7 @@ const SalesOrdersList = () => {
                   placeholder="Nº..."
                   value={orderNumberFilter}
                   onChange={(e) => setOrderNumberFilter(e.target.value)}
-                  className="h-6 text-xs px-2"
+                  className={isMobile ? "h-10" : "h-6 text-xs px-2"}
                 />
               </div>
 
@@ -394,11 +400,12 @@ const SalesOrdersList = () => {
                     <Button
                       variant="outline"
                       className={cn(
-                        "h-6 w-full justify-start text-left font-normal text-xs px-1",
+                        "w-full justify-start text-left font-normal",
+                        isMobile ? "h-10" : "h-6 text-xs px-1",
                         !dateFromFilter && "text-muted-foreground"
                       )}
                     >
-                      <CalendarIcon className="mr-1 h-2 w-2" />
+                      <CalendarIcon className={isMobile ? "mr-2 h-4 w-4" : "mr-1 h-2 w-2"} />
                       {dateFromFilter ? format(dateFromFilter, "dd/MM") : "Desde"}
                     </Button>
                   </PopoverTrigger>
@@ -421,11 +428,12 @@ const SalesOrdersList = () => {
                     <Button
                       variant="outline"
                       className={cn(
-                        "h-6 w-full justify-start text-left font-normal text-xs px-1",
+                        "w-full justify-start text-left font-normal",
+                        isMobile ? "h-10" : "h-6 text-xs px-1",
                         !dateToFilter && "text-muted-foreground"
                       )}
                     >
-                      <CalendarIcon className="mr-1 h-2 w-2" />
+                      <CalendarIcon className={isMobile ? "mr-2 h-4 w-4" : "mr-1 h-2 w-2"} />
                       {dateToFilter ? format(dateToFilter, "dd/MM") : "Hasta"}
                     </Button>
                   </PopoverTrigger>
@@ -447,11 +455,11 @@ const SalesOrdersList = () => {
               <div className="mt-2 flex justify-end">
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size={isMobile ? "default" : "sm"}
                   onClick={clearAllFilters}
-                  className="h-6 text-xs px-2"
+                  className={isMobile ? "h-10" : "h-6 text-xs px-2"}
                 >
-                  <X className="w-3 h-3 mr-1" />
+                  <X className={isMobile ? "w-4 h-4 mr-2" : "w-3 h-3 mr-1"} />
                   Limpiar
                 </Button>
               </div>
@@ -469,6 +477,19 @@ const SalesOrdersList = () => {
             <p className="text-sm text-muted-foreground">
               {orders.length === 0 ? "Aún no hay pedidos." : "No se encontraron pedidos con los filtros aplicados."}
             </p>
+          ) : isMobile ? (
+            <div>
+              {paginatedOrders.map((order) => (
+                <SalesOrderCard
+                  key={order.id}
+                  order={order}
+                  isHoldedActive={isHoldedActive}
+                  onDuplicate={handleDuplicate}
+                  onDownloadHoldedPdf={handleDownloadHoldedPdf}
+                  onDelete={loadOrders}
+                />
+              ))}
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -566,21 +587,23 @@ const SalesOrdersList = () => {
             <div className="flex items-center justify-center gap-2 mt-4">
               <Button
                 variant="outline"
-                size="sm"
+                size={isMobile ? "default" : "sm"}
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1}
                 title="Primera página"
+                className={isMobile ? "h-10 w-10 p-0" : ""}
               >
-                <ChevronsLeft className="h-4 w-4" />
+                <ChevronsLeft className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
               </Button>
               <Button
                 variant="outline"
-                size="sm"
+                size={isMobile ? "default" : "sm"}
                 onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
                 title="Anterior"
+                className={isMobile ? "h-10 w-10 p-0" : ""}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
               </Button>
               
               {/* Números de página */}
@@ -601,8 +624,9 @@ const SalesOrdersList = () => {
                     <Button
                       key={1}
                       variant={currentPage === 1 ? "default" : "outline"}
-                      size="sm"
+                      size={isMobile ? "default" : "sm"}
                       onClick={() => setCurrentPage(1)}
+                      className={isMobile ? "h-10 w-10 p-0" : ""}
                     >
                       1
                     </Button>
@@ -619,8 +643,9 @@ const SalesOrdersList = () => {
                     <Button
                       key={i}
                       variant={currentPage === i ? "default" : "outline"}
-                      size="sm"
+                      size={isMobile ? "default" : "sm"}
                       onClick={() => setCurrentPage(i)}
+                      className={isMobile ? "h-10 w-10 p-0" : ""}
                     >
                       {i}
                     </Button>
@@ -637,8 +662,9 @@ const SalesOrdersList = () => {
                     <Button
                       key={totalPages}
                       variant={currentPage === totalPages ? "default" : "outline"}
-                      size="sm"
+                      size={isMobile ? "default" : "sm"}
                       onClick={() => setCurrentPage(totalPages)}
+                      className={isMobile ? "h-10 w-10 p-0" : ""}
                     >
                       {totalPages}
                     </Button>
@@ -650,21 +676,23 @@ const SalesOrdersList = () => {
               
               <Button
                 variant="outline"
-                size="sm"
+                size={isMobile ? "default" : "sm"}
                 onClick={() => setCurrentPage((prev) => prev + 1)}
                 disabled={currentPage >= Math.ceil(filteredOrders.length / itemsPerPage)}
                 title="Siguiente"
+                className={isMobile ? "h-10 w-10 p-0" : ""}
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
               </Button>
               <Button
                 variant="outline"
-                size="sm"
+                size={isMobile ? "default" : "sm"}
                 onClick={() => setCurrentPage(Math.ceil(filteredOrders.length / itemsPerPage))}
                 disabled={currentPage >= Math.ceil(filteredOrders.length / itemsPerPage)}
                 title="Última página"
+                className={isMobile ? "h-10 w-10 p-0" : ""}
               >
-                <ChevronsRight className="h-4 w-4" />
+                <ChevronsRight className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
               </Button>
             </div>
           )}
