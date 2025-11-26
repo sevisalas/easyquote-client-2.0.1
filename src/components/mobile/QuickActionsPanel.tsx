@@ -89,7 +89,7 @@ export function QuickActionsPanel() {
   return (
     <div className="mb-4">
       <h2 className="text-sm font-semibold text-foreground mb-2 px-1 text-center">
-        Acciones rápidas
+        Accesos directos
       </h2>
       <div className="grid grid-cols-2 gap-2">
         {actions.map((action, index) => {
