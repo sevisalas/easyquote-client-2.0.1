@@ -28,10 +28,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
   const isMobile = useIsMobile();
   useTokenRefresh();
 
+  console.log('🔍 AppLayout - isMobile:', isMobile, 'window.innerWidth:', typeof window !== 'undefined' ? window.innerWidth : 'SSR');
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full relative">
-        <AppSidebar />
+        {!isMobile && <AppSidebar />}
         
         <div className="flex-1 w-full">
           <MainContent>{children}</MainContent>
