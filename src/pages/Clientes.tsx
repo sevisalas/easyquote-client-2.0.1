@@ -8,6 +8,8 @@ import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, Ch
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ClientCard } from "@/components/clientes/ClientCard";
 
 interface LocalClient {
   id: string;
@@ -22,6 +24,7 @@ interface LocalClient {
 
 export default function Clientes() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { organization, membership } = useSubscription();
   const [clientes, setClientes] = useState<LocalClient[]>([]);
   const [loading, setLoading] = useState(true);
@@ -194,34 +197,56 @@ export default function Clientes() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div className={isMobile ? "p-0 md:p-2" : "container mx-auto p-6"}>
+      <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 ${isMobile ? 'px-3 py-4' : 'mb-6'}`}>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
-          <p className="text-muted-foreground">Gestiona tus clientes</p>
+          <h1 className={`font-bold tracking-tight ${isMobile ? 'text-2xl' : 'text-3xl'}`}>Clientes</h1>
+          <p className="text-muted-foreground text-sm">Gestiona tus clientes</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => navigate("/clientes/nuevo")} className="flex items-center gap-2">
+          <Button 
+            onClick={() => navigate("/clientes/nuevo")} 
+            className={`flex items-center gap-2 ${isMobile ? 'h-10' : ''}`}
+          >
             <Plus className="h-4 w-4" />
             Nuevo Cliente
           </Button>
         </div>
       </div>
 
-      <div className="flex items-center gap-4 mb-6">
+      <div className={`flex items-center gap-4 ${isMobile ? 'px-3 mb-4' : 'mb-6'}`}>
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Buscar clientes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className={`pl-10 ${isMobile ? 'h-10' : ''}`}
           />
         </div>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
+      {isMobile ? (
+        <div className="px-3">
+          {clientes.length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground">
+              {searchTerm
+                ? "No se encontraron clientes que coincidan con la búsqueda."
+                : "No hay clientes registrados."}
+            </div>
+          ) : (
+            clientes.map((cliente) => (
+              <ClientCard
+                key={`${cliente.source}-${cliente.id}`}
+                cliente={cliente}
+                onDelete={deleteCliente}
+              />
+            ))
+          )}
+        </div>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
           <TableHeader>
             <TableRow className="h-9">
               <TableHead className="py-2 text-xs font-semibold">Nombre</TableHead>
@@ -274,30 +299,33 @@ export default function Clientes() {
             )}
           </TableBody>
         </Table>
-      </div>
+        </div>
+      )}
 
       {/* Paginación */}
-      <div className="flex items-center justify-between mt-4">
-        <div className="text-sm text-muted-foreground">
+      <div className={`flex ${isMobile ? 'flex-col gap-3 px-3 mt-4' : 'flex-row items-center justify-between mt-4'}`}>
+        <div className={`text-sm text-muted-foreground ${isMobile ? 'text-center' : ''}`}>
           Mostrando {clientes.length > 0 ? ((currentPage - 1) * itemsPerPage + 1) : 0} -{" "}
           {Math.min(currentPage * itemsPerPage, totalClients)} de {totalClients} clientes
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 justify-center">
           <Button
             variant="outline"
-            size="sm"
+            size={isMobile ? "default" : "sm"}
             onClick={() => setCurrentPage(1)}
             disabled={currentPage === 1}
             title="Primera página"
+            className={isMobile ? "h-10" : ""}
           >
             <ChevronsLeft className="h-4 w-4" />
           </Button>
           <Button
             variant="outline"
-            size="sm"
+            size={isMobile ? "default" : "sm"}
             onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
             title="Anterior"
+            className={isMobile ? "h-10" : ""}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -320,8 +348,9 @@ export default function Clientes() {
                 <Button
                   key={1}
                   variant={currentPage === 1 ? "default" : "outline"}
-                  size="sm"
+                  size={isMobile ? "default" : "sm"}
                   onClick={() => setCurrentPage(1)}
+                  className={isMobile ? "h-10" : ""}
                 >
                   1
                 </Button>
@@ -338,8 +367,9 @@ export default function Clientes() {
                 <Button
                   key={i}
                   variant={currentPage === i ? "default" : "outline"}
-                  size="sm"
+                  size={isMobile ? "default" : "sm"}
                   onClick={() => setCurrentPage(i)}
+                  className={isMobile ? "h-10" : ""}
                 >
                   {i}
                 </Button>
@@ -356,8 +386,9 @@ export default function Clientes() {
                 <Button
                   key={totalPages}
                   variant={currentPage === totalPages ? "default" : "outline"}
-                  size="sm"
+                  size={isMobile ? "default" : "sm"}
                   onClick={() => setCurrentPage(totalPages)}
+                  className={isMobile ? "h-10" : ""}
                 >
                   {totalPages}
                 </Button>
@@ -369,19 +400,21 @@ export default function Clientes() {
           
           <Button
             variant="outline"
-            size="sm"
+            size={isMobile ? "default" : "sm"}
             onClick={() => setCurrentPage((prev) => prev + 1)}
             disabled={currentPage * itemsPerPage >= totalClients}
             title="Siguiente"
+            className={isMobile ? "h-10" : ""}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
           <Button
             variant="outline"
-            size="sm"
+            size={isMobile ? "default" : "sm"}
             onClick={() => setCurrentPage(Math.ceil(totalClients / itemsPerPage))}
             disabled={currentPage * itemsPerPage >= totalClients}
             title="Última página"
+            className={isMobile ? "h-10" : ""}
           >
             <ChevronsRight className="h-4 w-4" />
           </Button>
