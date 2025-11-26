@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -476,6 +476,14 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="p-1">
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Novedades" className="h-7 px-2">
+              <NavLink to="/novedades" className={getNavCls}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                {!isCollapsed && <span>Novedades</span>}
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Contraer menú" className="h-7 px-2">
               <button onClick={toggleSidebar} className="w-full flex items-center justify-start">
