@@ -8,12 +8,15 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import SuperAdminDashboard from "./SuperAdminDashboard";
 import { useQuery } from "@tanstack/react-query";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { QuickActionsPanel } from "@/components/mobile/QuickActionsPanel";
 
 const Index = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
   const { isSuperAdmin, isERPSubscription, canAccessProduccion } = useSubscription();
+  const isMobile = useIsMobile();
 
   // Obtener estadísticas rápidas de presupuestos
   const { data: stats } = useQuery({
@@ -140,6 +143,9 @@ const Index = () => {
             </div>
           )}
         </div>
+
+        {/* Atajos Rápidos - Solo móvil */}
+        {isMobile && <QuickActionsPanel />}
 
         {/* Stats Cards - Presupuestos */}
         <div className="mb-4">
