@@ -423,16 +423,18 @@ const SalesOrderDetail = () => {
                   PDF Holded
                 </Button>
               )}
-              <Button 
-                onClick={handleGeneratePDF}
-                size="sm"
-                variant="outline"
-                className="gap-2"
-                disabled={isGeneratingPDF}
-              >
-                <Download className="h-4 w-4" />
-                Descargar OT PDF
-              </Button>
+              {viewMode === 'production' && (
+                <Button 
+                  onClick={handleGeneratePDF}
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                  disabled={isGeneratingPDF}
+                >
+                  <Download className="h-4 w-4" />
+                  Descargar OT PDF
+                </Button>
+              )}
               {order.status === 'draft' && (
                 <Button 
                   onClick={() => navigate(`/pedidos/${id}/editar`)}
@@ -698,8 +700,8 @@ const SalesOrderDetail = () => {
                             itemIndex={index}
                           />
                           
-                          {/* Gestión de Producción integrada */}
-                          {order.status === 'in_production' && (
+                          {/* Gestión de Producción integrada - Solo en vista producción */}
+                          {order.status === 'in_production' && viewMode === 'production' && (
                             <div className="pt-2 border-t">
                               <ItemProductionCard item={item} onStatusUpdate={loadOrderData} />
                             </div>
