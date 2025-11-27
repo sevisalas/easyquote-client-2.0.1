@@ -49,13 +49,13 @@ export function calculateImposition(data: ImpositionData): CalculationResult {
   const productWithBleedH = productHeight + (bleed * 2);
   
   // Calcular repeticiones en orientación normal
-  const repsH_normal = Math.floor((validWidth + gutterH) / (productWithBleedW + gutterH));
-  const repsV_normal = Math.floor((validHeight + gutterV) / (productWithBleedH + gutterV));
+  const repsH_normal = Math.floor(validWidth / (productWithBleedW + gutterH));
+  const repsV_normal = Math.floor(validHeight / (productWithBleedH + gutterV));
   const total_normal = repsH_normal * repsV_normal;
   
   // Calcular repeticiones en orientación rotada (90°)
-  const repsH_rotated = Math.floor((validWidth + gutterH) / (productWithBleedH + gutterH));
-  const repsV_rotated = Math.floor((validHeight + gutterV) / (productWithBleedW + gutterV));
+  const repsH_rotated = Math.floor(validWidth / (productWithBleedH + gutterH));
+  const repsV_rotated = Math.floor(validHeight / (productWithBleedW + gutterV));
   const total_rotated = repsH_rotated * repsV_rotated;
   
   // Elegir la mejor orientación
