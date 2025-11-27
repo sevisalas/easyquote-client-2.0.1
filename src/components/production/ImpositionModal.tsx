@@ -22,12 +22,12 @@ export function ImpositionModal({ open, onOpenChange, initialData, onSave }: Imp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Configurar imposición</DialogTitle>
         </DialogHeader>
         
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-[350px_1fr] gap-6">
           {/* Formulario a la izquierda */}
           <div>
             <ImpositionForm data={data} onChange={setData} />

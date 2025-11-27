@@ -22,8 +22,8 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
   } = data;
 
   // SVG siempre horizontal (landscape)
-  const svgWidth = compact ? 140 : 500;
-  const svgHeight = compact ? 80 : 300;
+  const svgWidth = compact ? 140 : 700;
+  const svgHeight = compact ? 80 : 400;
   
   // Escala para que el pliego quepa en el SVG con margen
   const margin = compact ? 5 : 20;
