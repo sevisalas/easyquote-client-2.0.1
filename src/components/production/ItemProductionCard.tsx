@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Settings } from "lucide-react";
 import { ProductionTaskForm } from "./ProductionTaskForm";
 import { ProductionTaskList } from "./ProductionTaskList";
 import { useProductionTasks } from "@/hooks/useProductionTasks";
@@ -8,6 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ImpositionData } from "@/utils/impositionCalculator";
+import { ImpositionScheme } from "./ImpositionScheme";
+import { ImpositionModal } from "./ImpositionModal";
 
 interface ItemProductionCardProps {
   item: {
@@ -16,6 +19,7 @@ interface ItemProductionCardProps {
     quantity: number;
     description?: string | null;
     production_status?: string | null;
+    imposition_data?: any;
   };
   onStatusUpdate?: () => void;
 }
@@ -23,12 +27,26 @@ interface ItemProductionCardProps {
 export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardProps) {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [showImpositionModal, setShowImpositionModal] = useState(false);
   const isMobile = useIsMobile();
   const { tasks, refetch } = useProductionTasks(item.id);
   
   const totalTimeSeconds = tasks.reduce((acc, task) => acc + (task.total_time_seconds || 0), 0);
   const totalHours = Math.floor(totalTimeSeconds / 3600);
   const totalMinutes = Math.floor((totalTimeSeconds % 3600) / 60);
+
+  // Datos por defecto para imposición
+  const defaultImpositionData: ImpositionData = {
+    productWidth: 210,
+    productHeight: 297,
+    bleed: 3,
+    sheetWidth: 700,
+    sheetHeight: 1000,
+    validWidth: 680,
+    validHeight: 980,
+    gutterH: 5,
+    gutterV: 5,
+  };
 
   const handleTaskCreated = () => {
     setShowTaskForm(false);
@@ -54,6 +72,25 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
       toast.error('Error al actualizar el estado');
     } finally {
       setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleSaveImposition = async (data: ImpositionData) => {
+    try {
+      const { error } = await supabase
+        .from('sales_order_items')
+        .update({ imposition_data: data as any })
+        .eq('id', item.id);
+
+      if (error) throw error;
+
+      toast.success('Imposición guardada correctamente');
+      if (onStatusUpdate) {
+        onStatusUpdate();
+      }
+    } catch (error) {
+      console.error('Error saving imposition:', error);
+      toast.error('Error al guardar la imposición');
     }
   };
 
@@ -100,6 +137,44 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
         )}
       </div>
 
+      {/* Imposition Section */}
+      <div className="flex gap-3 items-start p-3 bg-muted/30 rounded-md">
+        <div className="flex-shrink-0">
+          {item.imposition_data ? (
+            <ImpositionScheme data={item.imposition_data} compact={true} />
+          ) : (
+            <div className="w-[120px] h-[80px] bg-muted rounded border border-border flex items-center justify-center">
+              <span className="text-xs text-muted-foreground">Sin imposición</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex-1 space-y-1">
+          {item.imposition_data ? (
+            <>
+              <p className="text-sm font-medium">Imposición</p>
+              <p className="text-xs text-muted-foreground">
+                {item.imposition_data.repetitionsH}×{item.imposition_data.repetitionsV} = {item.imposition_data.totalRepetitions} por pliego
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Aprovechamiento: {item.imposition_data.utilization?.toFixed(1)}%
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">Sin imposición configurada</p>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowImpositionModal(true)}
+            className="mt-2 h-8"
+          >
+            <Settings className="h-3 w-3 mr-1" />
+            {item.imposition_data ? 'Editar' : 'Configurar'}
+          </Button>
+        </div>
+      </div>
+
       {/* Task Form */}
       {showTaskForm && (
         <ProductionTaskForm
@@ -111,6 +186,14 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
 
       {/* Task List */}
       <ProductionTaskList itemId={item.id} />
+
+      {/* Imposition Modal */}
+      <ImpositionModal
+        open={showImpositionModal}
+        onOpenChange={setShowImpositionModal}
+        initialData={item.imposition_data || defaultImpositionData}
+        onSave={handleSaveImposition}
+      />
     </div>
   );
 }
