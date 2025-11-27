@@ -348,6 +348,7 @@ const SalesOrderDetail = () => {
           prompts: item.prompts as any,
           outputs: item.outputs as any,
           description: item.description || undefined,
+          imposition_data: item.imposition_data as any,
         })),
       });
       
