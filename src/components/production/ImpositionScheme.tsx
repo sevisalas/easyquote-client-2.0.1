@@ -21,7 +21,7 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
     orientation = 'horizontal'
   } = data;
 
-  // Dimensiones del SVG
+  // Dimensiones del SVG - la hoja siempre es horizontal
   const svgWidth = compact ? 120 : 400;
   const svgHeight = compact ? 80 : 300;
   
@@ -70,7 +70,8 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
             y={sy(y)}
             width={sw(prodW)}
             height={sh(prodH)}
-            className="fill-primary/30 stroke-primary"
+            fill="hsl(var(--primary) / 0.3)"
+            stroke="hsl(var(--primary))"
             strokeWidth={compact ? 0.5 : 1}
           />
           
@@ -81,7 +82,8 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
               y={sy(y + bleed)}
               width={sw(orientation === 'horizontal' ? productWidth : productHeight)}
               height={sh(orientation === 'horizontal' ? productHeight : productWidth)}
-              className="fill-primary/50 stroke-primary"
+              fill="hsl(var(--primary) / 0.5)"
+              stroke="hsl(var(--primary))"
               strokeWidth={0.5}
               strokeDasharray="2,2"
             />
@@ -95,7 +97,8 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
     <svg
       width={svgWidth}
       height={svgHeight}
-      className="border border-border rounded bg-background"
+      className="border border-border rounded"
+      style={{ backgroundColor: 'hsl(var(--background))' }}
       viewBox={`0 0 ${svgWidth} ${svgHeight}`}
     >
       {/* Pliego completo */}
@@ -104,7 +107,8 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
         y={sy(0)}
         width={sw(sheetWidth)}
         height={sh(sheetHeight)}
-        className="fill-muted stroke-border"
+        fill="hsl(var(--muted))"
+        stroke="hsl(var(--border))"
         strokeWidth={compact ? 1 : 2}
       />
       
@@ -114,7 +118,8 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
         y={sy(validOffsetY)}
         width={sw(validWidth)}
         height={sh(validHeight)}
-        className="fill-none stroke-muted-foreground/40"
+        fill="none"
+        stroke="hsl(var(--muted-foreground) / 0.4)"
         strokeWidth={compact ? 0.5 : 1}
         strokeDasharray={compact ? "2,2" : "4,4"}
       />
