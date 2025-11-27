@@ -21,8 +21,8 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
     orientation = 'horizontal'
   } = data;
 
-  // Dimensiones del SVG - la hoja siempre es horizontal
-  const svgWidth = compact ? 120 : 400;
+  // SVG siempre horizontal (landscape)
+  const svgWidth = compact ? 140 : 500;
   const svgHeight = compact ? 80 : 300;
   
   // Escala para que el pliego quepa en el SVG con margen
@@ -55,38 +55,123 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
   const prodW = orientation === 'horizontal' ? productWithBleedW : productWithBleedH;
   const prodH = orientation === 'horizontal' ? productWithBleedH : productWithBleedW;
   
-  // Renderizar productos
+  // Calcular espacio total usado por productos
+  const totalUsedWidth = repetitionsH * prodW + (repetitionsH - 1) * gutterH;
+  const totalUsedHeight = repetitionsV * prodH + (repetitionsV - 1) * gutterV;
+  
+  // Centrar la imposición dentro del área válida
+  const impositionOffsetX = validOffsetX + (validWidth - totalUsedWidth) / 2;
+  const impositionOffsetY = validOffsetY + (validHeight - totalUsedHeight) / 2;
+  
+  // Longitud de las marcas de corte
+  const cropMarkLength = compact ? 2 : 5;
+  
+  // Renderizar productos con marcas de corte
   const products = [];
   for (let row = 0; row < repetitionsV; row++) {
     for (let col = 0; col < repetitionsH; col++) {
-      const x = validOffsetX + col * (prodW + gutterH);
-      const y = validOffsetY + row * (prodH + gutterV);
+      const x = impositionOffsetX + col * (prodW + gutterH);
+      const y = impositionOffsetY + row * (prodH + gutterV);
       
       products.push(
         <g key={`${row}-${col}`}>
-          {/* Producto con sangrado */}
+          {/* Área de sangrado (gris claro) */}
           <rect
             x={sx(x)}
             y={sy(y)}
             width={sw(prodW)}
             height={sh(prodH)}
-            fill="hsl(var(--primary) / 0.3)"
-            stroke="hsl(var(--primary))"
+            fill="#e5e7eb"
+            stroke="#9ca3af"
+            strokeWidth={compact ? 0.3 : 0.5}
+          />
+          
+          {/* Área de producto sin sangrado (gris medio) */}
+          <rect
+            x={sx(x + bleed)}
+            y={sy(y + bleed)}
+            width={sw(orientation === 'horizontal' ? productWidth : productHeight)}
+            height={sh(orientation === 'horizontal' ? productHeight : productWidth)}
+            fill="#f3f4f6"
+            stroke="#6b7280"
             strokeWidth={compact ? 0.5 : 1}
           />
           
-          {/* Área de producto sin sangrado (interior) */}
+          {/* Marcas de corte en las esquinas del producto (sin sangrado) */}
           {!compact && (
-            <rect
-              x={sx(x + bleed)}
-              y={sy(y + bleed)}
-              width={sw(orientation === 'horizontal' ? productWidth : productHeight)}
-              height={sh(orientation === 'horizontal' ? productHeight : productWidth)}
-              fill="hsl(var(--primary) / 0.5)"
-              stroke="hsl(var(--primary))"
-              strokeWidth={0.5}
-              strokeDasharray="2,2"
-            />
+            <>
+              {/* Esquina superior izquierda */}
+              <line
+                x1={sx(x + bleed - cropMarkLength)}
+                y1={sy(y + bleed)}
+                x2={sx(x + bleed + cropMarkLength)}
+                y2={sy(y + bleed)}
+                stroke="#374151"
+                strokeWidth={0.5}
+              />
+              <line
+                x1={sx(x + bleed)}
+                y1={sy(y + bleed - cropMarkLength)}
+                x2={sx(x + bleed)}
+                y2={sy(y + bleed + cropMarkLength)}
+                stroke="#374151"
+                strokeWidth={0.5}
+              />
+              
+              {/* Esquina superior derecha */}
+              <line
+                x1={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight) - cropMarkLength)}
+                y1={sy(y + bleed)}
+                x2={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight) + cropMarkLength)}
+                y2={sy(y + bleed)}
+                stroke="#374151"
+                strokeWidth={0.5}
+              />
+              <line
+                x1={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight))}
+                y1={sy(y + bleed - cropMarkLength)}
+                x2={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight))}
+                y2={sy(y + bleed + cropMarkLength)}
+                stroke="#374151"
+                strokeWidth={0.5}
+              />
+              
+              {/* Esquina inferior izquierda */}
+              <line
+                x1={sx(x + bleed - cropMarkLength)}
+                y1={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth))}
+                x2={sx(x + bleed + cropMarkLength)}
+                y2={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth))}
+                stroke="#374151"
+                strokeWidth={0.5}
+              />
+              <line
+                x1={sx(x + bleed)}
+                y1={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth) - cropMarkLength)}
+                x2={sx(x + bleed)}
+                y2={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth) + cropMarkLength)}
+                stroke="#374151"
+                strokeWidth={0.5}
+              />
+              
+              {/* Esquina inferior derecha */}
+              <line
+                x1={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight) - cropMarkLength)}
+                y1={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth))}
+                x2={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight) + cropMarkLength)}
+                y2={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth))}
+                stroke="#374151"
+                strokeWidth={0.5}
+              />
+              <line
+                x1={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight))}
+                y1={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth) - cropMarkLength)}
+                x2={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight))}
+                y2={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth) + cropMarkLength)}
+                stroke="#374151"
+                strokeWidth={0.5}
+              />
+            </>
           )}
         </g>
       );
@@ -98,7 +183,7 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
       width={svgWidth}
       height={svgHeight}
       className="border border-border rounded"
-      style={{ backgroundColor: 'hsl(var(--background))' }}
+      style={{ backgroundColor: '#ffffff' }}
       viewBox={`0 0 ${svgWidth} ${svgHeight}`}
     >
       {/* Pliego completo */}
@@ -107,8 +192,8 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
         y={sy(0)}
         width={sw(sheetWidth)}
         height={sh(sheetHeight)}
-        fill="hsl(var(--muted))"
-        stroke="hsl(var(--border))"
+        fill="#fafafa"
+        stroke="#d1d5db"
         strokeWidth={compact ? 1 : 2}
       />
       
@@ -119,7 +204,7 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
         width={sw(validWidth)}
         height={sh(validHeight)}
         fill="none"
-        stroke="hsl(var(--muted-foreground) / 0.4)"
+        stroke="#9ca3af"
         strokeWidth={compact ? 0.5 : 1}
         strokeDasharray={compact ? "2,2" : "4,4"}
       />
