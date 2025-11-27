@@ -17,15 +17,17 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
     orientation = 'horizontal'
   } = data;
 
-  // La hoja SIEMPRE se dibuja horizontal (forzamos landscape)
-  const sheetWidth = Math.max(data.sheetWidth, data.sheetHeight);
-  const sheetHeight = Math.min(data.sheetWidth, data.sheetHeight);
-  const validWidth = Math.max(data.validWidth, data.validHeight);
-  const validHeight = Math.min(data.validWidth, data.validHeight);
+  // Respetar la orientación de la hoja configurada por el usuario
+  // Solo si el usuario pone alto > ancho, la hoja se dibuja vertical
+  const sheetWidth = data.sheetWidth;
+  const sheetHeight = data.sheetHeight;
+  const validWidth = data.validWidth;
+  const validHeight = data.validHeight;
 
-  // SVG horizontal
+  // SVG se adapta a la orientación real de la hoja
+  const isLandscape = sheetWidth >= sheetHeight;
   const svgWidth = compact ? 140 : 700;
-  const svgHeight = compact ? 80 : 400;
+  const svgHeight = compact ? 80 : (isLandscape ? 400 : 500);
   
   // Escala para que el pliego quepa en el SVG con margen
   const margin = compact ? 5 : 20;

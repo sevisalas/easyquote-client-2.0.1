@@ -34,26 +34,31 @@ export interface CalculationResult {
  * Calcula las repeticiones y aprovechamiento del pliego
  */
 export function calculateImposition(data: ImpositionData): CalculationResult {
-  // Forzamos la hoja a horizontal (landscape)
-  const sheetW = Math.max(data.sheetWidth, data.sheetHeight);
-  const sheetH = Math.min(data.sheetWidth, data.sheetHeight);
-  const validW = Math.max(data.validWidth, data.validHeight);
-  const validH = Math.min(data.validWidth, data.validHeight);
-  
-  const { productWidth, productHeight, bleed, gutterH, gutterV } = data;
+  // Respetar la orientación de la hoja que el usuario configuró
+  const { 
+    sheetWidth, 
+    sheetHeight,
+    validWidth,
+    validHeight,
+    productWidth, 
+    productHeight, 
+    bleed, 
+    gutterH, 
+    gutterV 
+  } = data;
   
   // Tamaño del producto con sangrado
   const productWithBleedW = productWidth + (bleed * 2);
   const productWithBleedH = productHeight + (bleed * 2);
   
   // Calcular repeticiones con PRODUCTO en horizontal
-  const repsH_prodHoriz = Math.floor(validW / (productWithBleedW + gutterH));
-  const repsV_prodHoriz = Math.floor(validH / (productWithBleedH + gutterV));
+  const repsH_prodHoriz = Math.floor(validWidth / (productWithBleedW + gutterH));
+  const repsV_prodHoriz = Math.floor(validHeight / (productWithBleedH + gutterV));
   const total_prodHoriz = repsH_prodHoriz * repsV_prodHoriz;
   
   // Calcular repeticiones con PRODUCTO en vertical (rotado 90°)
-  const repsH_prodVert = Math.floor(validW / (productWithBleedH + gutterH));
-  const repsV_prodVert = Math.floor(validH / (productWithBleedW + gutterV));
+  const repsH_prodVert = Math.floor(validWidth / (productWithBleedH + gutterH));
+  const repsV_prodVert = Math.floor(validHeight / (productWithBleedW + gutterV));
   const total_prodVert = repsH_prodVert * repsV_prodVert;
   
   // Elegir la mejor orientación DEL PRODUCTO
@@ -67,7 +72,7 @@ export function calculateImposition(data: ImpositionData): CalculationResult {
   const usedWidth = useVertical ? productWithBleedH : productWithBleedW;
   const usedHeight = useVertical ? productWithBleedW : productWithBleedH;
   const totalUsedArea = totalRepetitions * (usedWidth * usedHeight);
-  const totalValidArea = validW * validH;
+  const totalValidArea = validWidth * validHeight;
   const utilization = totalValidArea > 0 ? (totalUsedArea / totalValidArea) * 100 : 0;
   
   return {
