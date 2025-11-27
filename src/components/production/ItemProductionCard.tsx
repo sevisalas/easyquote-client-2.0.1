@@ -153,15 +153,42 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
             </p>
           </div>
           
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowImpositionModal(true)}
-            className="h-8 flex-shrink-0"
-          >
-            <Settings className="h-3 w-3 mr-1" />
-            Editar
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowImpositionModal(true)}
+              className="h-8 flex-shrink-0"
+            >
+              <Settings className="h-3 w-3 mr-1" />
+              Editar
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={async () => {
+                try {
+                  const { error } = await supabase
+                    .from('sales_order_items')
+                    .update({ imposition_data: null })
+                    .eq('id', item.id);
+
+                  if (error) throw error;
+
+                  toast.success('Imposición eliminada');
+                  if (onStatusUpdate) {
+                    onStatusUpdate();
+                  }
+                } catch (error) {
+                  console.error('Error deleting imposition:', error);
+                  toast.error('Error al eliminar la imposición');
+                }
+              }}
+              className="h-8 flex-shrink-0"
+            >
+              Eliminar
+            </Button>
+          </div>
         </div>
       ) : (
         <Button
