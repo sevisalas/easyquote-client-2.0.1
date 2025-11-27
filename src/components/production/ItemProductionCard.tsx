@@ -138,42 +138,42 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
       </div>
 
       {/* Imposition Section */}
-      <div className="flex gap-3 items-center p-3 bg-muted/30 rounded-md">
-        <div className="flex-shrink-0">
-          {item.imposition_data ? (
+      {item.imposition_data ? (
+        <div className="flex gap-3 items-center p-3 bg-muted/30 rounded-md">
+          <div className="flex-shrink-0">
             <ImpositionScheme data={item.imposition_data} compact={true} />
-          ) : (
-            <div className="w-[120px] h-[80px] bg-muted rounded border border-border flex items-center justify-center">
-              <span className="text-xs text-muted-foreground">Sin imposición</span>
-            </div>
-          )}
+          </div>
+          
+          <div className="flex-1 flex items-center gap-4">
+            <p className="text-sm font-medium text-muted-foreground">
+              {item.imposition_data.repetitionsH}×{item.imposition_data.repetitionsV} = {item.imposition_data.totalRepetitions} por pliego
+            </p>
+            <p className="text-sm font-medium text-muted-foreground">
+              Aprovechamiento: {item.imposition_data.utilization?.toFixed(1)}%
+            </p>
+          </div>
+          
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowImpositionModal(true)}
+            className="h-8 flex-shrink-0"
+          >
+            <Settings className="h-3 w-3 mr-1" />
+            Editar
+          </Button>
         </div>
-        
-        <div className="flex-1 flex items-center gap-4">
-          {item.imposition_data ? (
-            <>
-              <p className="text-sm font-medium text-muted-foreground">
-                {item.imposition_data.repetitionsH}×{item.imposition_data.repetitionsV} = {item.imposition_data.totalRepetitions} por pliego
-              </p>
-              <p className="text-sm font-medium text-muted-foreground">
-                Aprovechamiento: {item.imposition_data.utilization?.toFixed(1)}%
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">Sin imposición configurada</p>
-          )}
-        </div>
-        
+      ) : (
         <Button
           size="sm"
           variant="outline"
           onClick={() => setShowImpositionModal(true)}
-          className="h-8 flex-shrink-0"
+          className="w-fit"
         >
           <Settings className="h-3 w-3 mr-1" />
-          {item.imposition_data ? 'Editar' : 'Configurar'}
+          Activar imposición
         </Button>
-      </div>
+      )}
 
       {/* Task Form */}
       {showTaskForm && (
