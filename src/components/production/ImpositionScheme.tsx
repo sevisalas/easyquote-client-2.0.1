@@ -10,10 +10,6 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
     productWidth,
     productHeight,
     bleed,
-    sheetWidth,
-    sheetHeight,
-    validWidth,
-    validHeight,
     gutterH,
     gutterV,
     repetitionsH = 0,
@@ -21,7 +17,13 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
     orientation = 'horizontal'
   } = data;
 
-  // SVG siempre horizontal (landscape)
+  // La hoja SIEMPRE se dibuja horizontal (intercambiamos dimensiones si es necesario)
+  const sheetWidth = Math.max(data.sheetWidth, data.sheetHeight);
+  const sheetHeight = Math.min(data.sheetWidth, data.sheetHeight);
+  const validWidth = Math.max(data.validWidth, data.validHeight);
+  const validHeight = Math.min(data.validWidth, data.validHeight);
+
+  // SVG horizontal (landscape)
   const svgWidth = compact ? 140 : 700;
   const svgHeight = compact ? 80 : 400;
   
