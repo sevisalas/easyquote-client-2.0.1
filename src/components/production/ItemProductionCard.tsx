@@ -138,7 +138,7 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
       </div>
 
       {/* Imposition Section */}
-      <div className="flex gap-3 items-start p-3 bg-muted/30 rounded-md">
+      <div className="flex gap-3 items-center p-3 bg-muted/30 rounded-md">
         <div className="flex-shrink-0">
           {item.imposition_data ? (
             <ImpositionScheme data={item.imposition_data} compact={true} />
@@ -149,30 +149,30 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
           )}
         </div>
         
-        <div className="flex-1 space-y-1">
+        <div className="flex-1 flex items-center gap-4">
           {item.imposition_data ? (
             <>
-              <p className="text-sm font-medium">Imposición</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm font-medium text-muted-foreground">
                 {item.imposition_data.repetitionsH}×{item.imposition_data.repetitionsV} = {item.imposition_data.totalRepetitions} por pliego
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm font-medium text-muted-foreground">
                 Aprovechamiento: {item.imposition_data.utilization?.toFixed(1)}%
               </p>
             </>
           ) : (
             <p className="text-sm text-muted-foreground">Sin imposición configurada</p>
           )}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowImpositionModal(true)}
-            className="mt-2 h-8"
-          >
-            <Settings className="h-3 w-3 mr-1" />
-            {item.imposition_data ? 'Editar' : 'Configurar'}
-          </Button>
         </div>
+        
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setShowImpositionModal(true)}
+          className="h-8 flex-shrink-0"
+        >
+          <Settings className="h-3 w-3 mr-1" />
+          {item.imposition_data ? 'Editar' : 'Configurar'}
+        </Button>
       </div>
 
       {/* Task Form */}
