@@ -66,7 +66,7 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
   const impositionOffsetY = validOffsetY + (validHeight - totalUsedHeight) / 2;
   
   // Longitud de las marcas de corte
-  const cropMarkLength = compact ? 2 : 5;
+  const cropMarkLength = compact ? 3 : 10;
   
   // Renderizar productos con marcas de corte
   const products = [];
