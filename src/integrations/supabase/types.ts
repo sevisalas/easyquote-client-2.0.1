@@ -1260,6 +1260,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          imposition_data: Json | null
           multi: Json | null
           outputs: Json | null
           position: number | null
@@ -1276,6 +1277,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          imposition_data?: Json | null
           multi?: Json | null
           outputs?: Json | null
           position?: number | null
@@ -1292,6 +1294,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          imposition_data?: Json | null
           multi?: Json | null
           outputs?: Json | null
           position?: number | null
