@@ -34,50 +34,48 @@ export interface CalculationResult {
  * Calcula las repeticiones y aprovechamiento del pliego
  */
 export function calculateImposition(data: ImpositionData): CalculationResult {
-  const { 
-    productWidth, 
-    productHeight, 
-    bleed, 
-    validWidth, 
-    validHeight, 
-    gutterH, 
-    gutterV 
-  } = data;
+  // Forzamos la hoja a horizontal (landscape)
+  const sheetW = Math.max(data.sheetWidth, data.sheetHeight);
+  const sheetH = Math.min(data.sheetWidth, data.sheetHeight);
+  const validW = Math.max(data.validWidth, data.validHeight);
+  const validH = Math.min(data.validWidth, data.validHeight);
+  
+  const { productWidth, productHeight, bleed, gutterH, gutterV } = data;
   
   // Tamaño del producto con sangrado
   const productWithBleedW = productWidth + (bleed * 2);
   const productWithBleedH = productHeight + (bleed * 2);
   
-  // Calcular repeticiones en orientación normal
-  const repsH_normal = Math.floor(validWidth / (productWithBleedW + gutterH));
-  const repsV_normal = Math.floor(validHeight / (productWithBleedH + gutterV));
-  const total_normal = repsH_normal * repsV_normal;
+  // Calcular repeticiones con PRODUCTO en horizontal
+  const repsH_prodHoriz = Math.floor(validW / (productWithBleedW + gutterH));
+  const repsV_prodHoriz = Math.floor(validH / (productWithBleedH + gutterV));
+  const total_prodHoriz = repsH_prodHoriz * repsV_prodHoriz;
   
-  // Calcular repeticiones en orientación rotada (90°)
-  const repsH_rotated = Math.floor(validWidth / (productWithBleedH + gutterH));
-  const repsV_rotated = Math.floor(validHeight / (productWithBleedW + gutterV));
-  const total_rotated = repsH_rotated * repsV_rotated;
+  // Calcular repeticiones con PRODUCTO en vertical (rotado 90°)
+  const repsH_prodVert = Math.floor(validW / (productWithBleedH + gutterH));
+  const repsV_prodVert = Math.floor(validH / (productWithBleedW + gutterV));
+  const total_prodVert = repsH_prodVert * repsV_prodVert;
   
-  // Elegir la mejor orientación
-  const useRotated = total_rotated > total_normal;
+  // Elegir la mejor orientación DEL PRODUCTO
+  const useVertical = total_prodVert > total_prodHoriz;
   
-  const repetitionsH = useRotated ? repsH_rotated : repsH_normal;
-  const repetitionsV = useRotated ? repsV_rotated : repsV_normal;
+  const repetitionsH = useVertical ? repsH_prodVert : repsH_prodHoriz;
+  const repetitionsV = useVertical ? repsV_prodVert : repsV_prodHoriz;
   const totalRepetitions = repetitionsH * repetitionsV;
   
   // Calcular aprovechamiento
-  const usedWidth = useRotated ? productWithBleedH : productWithBleedW;
-  const usedHeight = useRotated ? productWithBleedW : productWithBleedH;
+  const usedWidth = useVertical ? productWithBleedH : productWithBleedW;
+  const usedHeight = useVertical ? productWithBleedW : productWithBleedH;
   const totalUsedArea = totalRepetitions * (usedWidth * usedHeight);
-  const totalValidArea = validWidth * validHeight;
+  const totalValidArea = validW * validH;
   const utilization = totalValidArea > 0 ? (totalUsedArea / totalValidArea) * 100 : 0;
   
   return {
     repetitionsH,
     repetitionsV,
     totalRepetitions,
-    utilization: Math.round(utilization * 10) / 10, // 1 decimal
-    orientation: useRotated ? 'vertical' : 'horizontal'
+    utilization: Math.round(utilization * 10) / 10,
+    orientation: useVertical ? 'vertical' : 'horizontal'
   };
 }
 
