@@ -25,6 +25,21 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.2.0",
+    date: "2025-11-28",
+    changes: {
+      added: [
+        "Sistema de imposición de productos por artículo de pedido",
+        "Cálculo automático de páginas por pliego según dimensiones",
+        "Configuración de sangre y calles horizontal/vertical",
+        "Visualización gráfica del esquema de imposición",
+        "Guardado de configuración de imposición en base de datos",
+        "Edición y eliminación de imposiciones configuradas",
+        "Valores por defecto preconfigurados (pliego 700x500mm, documento 210x297mm)",
+      ],
+    },
+  },
+  {
     version: "2.1.0",
     date: "2025-11-26",
     changes: {
