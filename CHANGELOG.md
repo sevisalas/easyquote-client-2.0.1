@@ -9,20 +9,7 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ### En Desarrollo
 - Continuación de optimizaciones móviles
-
----
-
-## [2.2.0] - 2025-11-28
-
-### Añadido
-- **Sistema de imposición de productos**
-  - Configuración de imposición por artículo de pedido
-  - Cálculo automático de páginas por pliego según dimensiones
-  - Configuración de sangre y calles horizontal/vertical
-  - Visualización gráfica del esquema de imposición
-  - Guardado de configuración de imposición en base de datos
-  - Edición y eliminación de imposiciones configuradas
-  - Valores por defecto preconfigurados (pliego 700x500mm, documento 210x297mm)
+- Sistema de imposición de productos (en desarrollo)
 
 ---
 
