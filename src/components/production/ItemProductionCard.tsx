@@ -41,11 +41,11 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
     productHeight: 297,
     bleed: 3,
     sheetWidth: 700,
-    sheetHeight: 1000,
+    sheetHeight: 500,
     validWidth: 680,
-    validHeight: 980,
-    gutterH: 5,
-    gutterV: 5,
+    validHeight: 480,
+    gutterH: 2,
+    gutterV: 2,
   };
 
   const handleTaskCreated = () => {
