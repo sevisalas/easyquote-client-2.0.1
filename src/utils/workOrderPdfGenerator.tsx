@@ -308,51 +308,16 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>IMPOSICIÓN</Text>
               <View style={styles.impositionBox}>
-                <View style={styles.impositionGrid}>
-                  <View style={styles.impositionItem}>
-                    <Text style={styles.impositionLabel}>Producto (sin sangrado):</Text>
-                    <Text style={styles.impositionValue}>
-                      {item.imposition_data.productWidth} × {item.imposition_data.productHeight} mm
-                    </Text>
-                  </View>
-                  <View style={styles.impositionItem}>
-                    <Text style={styles.impositionLabel}>Sangrado:</Text>
-                    <Text style={styles.impositionValue}>
-                      {item.imposition_data.bleed} mm
-                    </Text>
-                  </View>
-                  <View style={styles.impositionItem}>
-                    <Text style={styles.impositionLabel}>Pliego total:</Text>
-                    <Text style={styles.impositionValue}>
-                      {item.imposition_data.sheetWidth} × {item.imposition_data.sheetHeight} mm
-                    </Text>
-                  </View>
-                  <View style={styles.impositionItem}>
-                    <Text style={styles.impositionLabel}>Área válida:</Text>
-                    <Text style={styles.impositionValue}>
-                      {item.imposition_data.validWidth} × {item.imposition_data.validHeight} mm
-                    </Text>
-                  </View>
-                  <View style={styles.impositionItem}>
-                    <Text style={styles.impositionLabel}>Calles H/V:</Text>
-                    <Text style={styles.impositionValue}>
-                      {item.imposition_data.gutterH} / {item.imposition_data.gutterV} mm
-                    </Text>
-                  </View>
-                  <View style={styles.impositionItem}>
-                    <Text style={styles.impositionLabel}>Orientación producto:</Text>
-                    <Text style={styles.impositionValue}>
-                      {item.imposition_data.orientation === 'horizontal' ? 'Horizontal' : 'Vertical'}
-                    </Text>
-                  </View>
+                <View style={styles.row}>
+                  <Text style={styles.label}>Tamaño de hoja:</Text>
+                  <Text style={styles.value}>
+                    {item.imposition_data.sheetWidth} × {item.imposition_data.sheetHeight} mm
+                  </Text>
                 </View>
                 {item.imposition_data.repetitionsH && item.imposition_data.repetitionsV && (
-                  <View style={styles.impositionHighlight}>
-                    <Text style={styles.impositionHighlightText}>
+                  <View style={[styles.row, { marginTop: 8 }]}>
+                    <Text style={[styles.value, { fontSize: 12, fontFamily: 'Helvetica-Bold' }]}>
                       {item.imposition_data.repetitionsH} × {item.imposition_data.repetitionsV} = {item.imposition_data.totalRepetitions} unidades por pliego
-                    </Text>
-                    <Text style={[styles.impositionHighlightText, { marginTop: 3 }]}>
-                      Aprovechamiento: {item.imposition_data.utilization?.toFixed(1)}%
                     </Text>
                   </View>
                 )}
