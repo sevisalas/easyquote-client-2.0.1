@@ -417,16 +417,6 @@ const AppContent = () => {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <ProductionBoard />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/panel-produccion"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
               <ProductionBoardRedirect />
             </AppLayout>
           </ProtectedRoute>
