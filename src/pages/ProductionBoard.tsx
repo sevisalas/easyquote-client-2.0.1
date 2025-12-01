@@ -40,11 +40,11 @@ const itemStatusLabels = {
 
 const getDeadlineColor = (deliveryDate: string | null): string => {
   if (!deliveryDate) return "bg-slate-200";
-  
+
   const today = startOfDay(new Date());
   const delivery = startOfDay(new Date(deliveryDate));
   const daysUntil = differenceInDays(delivery, today);
-  
+
   if (daysUntil < 0) return "bg-red-500"; // Fuera de plazo
   if (daysUntil === 0) return "bg-orange-500"; // Hoy es el día de entrega
   if (daysUntil === 1) return "bg-yellow-500"; // Falta 1 día
@@ -53,11 +53,11 @@ const getDeadlineColor = (deliveryDate: string | null): string => {
 
 const getDeadlineLabel = (deliveryDate: string | null): string => {
   if (!deliveryDate) return "Sin fecha";
-  
+
   const today = startOfDay(new Date());
   const delivery = startOfDay(new Date(deliveryDate));
   const daysUntil = differenceInDays(delivery, today);
-  
+
   if (daysUntil < 0) return "FUERA DE PLAZO";
   if (daysUntil === 0) return "ENTREGA HOY";
   if (daysUntil === 1) return "ENTREGA MAÑANA";
@@ -70,7 +70,7 @@ export default function ProductionBoard() {
 
   useEffect(() => {
     loadOrders();
-    
+
     // Auto-refresh every 5 minutes
     const interval = setInterval(loadOrders, 5 * 60 * 1000);
     return () => clearInterval(interval);
@@ -79,7 +79,7 @@ export default function ProductionBoard() {
   const loadOrders = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch orders with status pending or in_production
       const { data: ordersData, error: ordersError } = await supabase
         .from("sales_orders")
@@ -104,7 +104,7 @@ export default function ProductionBoard() {
             ...order,
             items: items || [],
           };
-        })
+        }),
       );
 
       setOrders(ordersWithItems);
@@ -118,9 +118,7 @@ export default function ProductionBoard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-2xl font-semibold text-muted-foreground">
-          Cargando pedidos...
-        </div>
+        <div className="text-2xl font-semibold text-muted-foreground">Cargando pedidos...</div>
       </div>
     );
   }
@@ -128,26 +126,21 @@ export default function ProductionBoard() {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold">Panel de Producción</h1>
+        <h1 className="text-4xl font-bold">Panel de producción</h1>
       </div>
 
       <div className="space-y-2 max-w-7xl mx-auto">
         {orders.length === 0 ? (
           <Card className="p-12">
-            <div className="text-center text-2xl text-muted-foreground">
-              No hay pedidos en producción
-            </div>
+            <div className="text-center text-2xl text-muted-foreground">No hay pedidos en producción</div>
           </Card>
         ) : (
           orders.map((order) => {
             const deadlineColor = getDeadlineColor(order.delivery_date);
             const deadlineLabel = getDeadlineLabel(order.delivery_date);
-            
+
             return (
-              <Card 
-                key={order.id} 
-                className={`border-4 ${deadlineColor} shadow-lg`}
-              >
+              <Card key={order.id} className={`border-4 ${deadlineColor} shadow-lg`}>
                 <CardContent className="p-3">
                   {/* Header Section */}
                   <div className="grid grid-cols-4 gap-3 mb-2 pb-2 border-b border-border">
@@ -169,14 +162,14 @@ export default function ProductionBoard() {
                         <div className="text-sm text-muted-foreground mb-1">Pedido</div>
                         <div className="text-xl font-bold">{order.order_number}</div>
                       </div>
-                      
+
                       <div className="flex-1">
                         <div className="text-sm text-muted-foreground mb-1">Cliente</div>
                         <div className="text-lg font-semibold">
                           <CustomerName customerId={order.customer_id} />
                         </div>
                       </div>
-                      
+
                       <div className="w-[120px] text-right">
                         <div className="text-sm text-muted-foreground mb-1">Fecha pedido</div>
                         <div className="text-base">
@@ -196,18 +189,18 @@ export default function ProductionBoard() {
                           </span>
                         )}
                         {index > 0 && <span className="min-w-[100px]"></span>}
-                        
+
                         <span className="font-medium text-base">
                           {index + 1}. {item.product_name}
                         </span>
-                        
-                        <Badge 
+
+                        <Badge
                           variant={
-                            item.production_status === "completed" 
-                              ? "default" 
+                            item.production_status === "completed"
+                              ? "default"
                               : item.production_status === "in_production"
-                              ? "secondary"
-                              : "outline"
+                                ? "secondary"
+                                : "outline"
                           }
                           className="text-sm"
                         >
