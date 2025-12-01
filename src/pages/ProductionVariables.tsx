@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useProductionVariables } from "@/hooks/useProductionVariables";
 import type { ProductionVariable } from "@/hooks/useProductionVariables";
 
@@ -43,12 +44,14 @@ export default function ProductionVariables() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    has_implicit_task: false,
+    task_name: "",
   });
 
   const handleCreate = () => {
     createVariable(formData);
     setIsCreateDialogOpen(false);
-    setFormData({ name: "", description: "" });
+    setFormData({ name: "", description: "", has_implicit_task: false, task_name: "" });
   };
 
   const handleEdit = () => {
@@ -59,7 +62,7 @@ export default function ProductionVariables() {
     });
     setIsEditDialogOpen(false);
     setSelectedVariable(null);
-    setFormData({ name: "", description: "" });
+    setFormData({ name: "", description: "", has_implicit_task: false, task_name: "" });
   };
 
   const handleDelete = () => {
@@ -74,6 +77,8 @@ export default function ProductionVariables() {
     setFormData({
       name: variable.name,
       description: variable.description || "",
+      has_implicit_task: variable.has_implicit_task || false,
+      task_name: variable.task_name || "",
     });
     setIsEditDialogOpen(true);
   };
@@ -123,6 +128,7 @@ export default function ProductionVariables() {
               <TableHead>Nombre</TableHead>
               <TableHead>Descripción</TableHead>
               <TableHead>Tipo</TableHead>
+              <TableHead>Tarea implícita</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -132,6 +138,13 @@ export default function ProductionVariables() {
                 <TableCell className="font-medium">{variable.name}</TableCell>
                 <TableCell>{variable.description || "—"}</TableCell>
                 <TableCell className="capitalize">{variable.variable_type}</TableCell>
+                <TableCell>
+                  {variable.has_implicit_task ? (
+                    <span className="text-sm">{variable.task_name || "Sí"}</span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
                 <TableCell className="text-right">
                   <Button
                     variant="ghost"
@@ -184,6 +197,34 @@ export default function ProductionVariables() {
                 placeholder="Descripción de la variable"
               />
             </div>
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="has-implicit-task"
+                checked={formData.has_implicit_task}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, has_implicit_task: checked === true })
+                }
+              />
+              <div className="grid gap-1.5 leading-none flex-1">
+                <Label htmlFor="has-implicit-task" className="cursor-pointer">
+                  Crear tarea automáticamente
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Cuando un pedido incluya esta variable, se creará una tarea pendiente
+                </p>
+              </div>
+            </div>
+            {formData.has_implicit_task && (
+              <div>
+                <Label htmlFor="task-name">Nombre de la tarea</Label>
+                <Input
+                  id="task-name"
+                  value={formData.task_name}
+                  onChange={(e) => setFormData({ ...formData, task_name: e.target.value })}
+                  placeholder="Nombre de la tarea a crear"
+                />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
@@ -224,6 +265,34 @@ export default function ProductionVariables() {
                 }
               />
             </div>
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="edit-has-implicit-task"
+                checked={formData.has_implicit_task}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, has_implicit_task: checked === true })
+                }
+              />
+              <div className="grid gap-1.5 leading-none flex-1">
+                <Label htmlFor="edit-has-implicit-task" className="cursor-pointer">
+                  Crear tarea automáticamente
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Cuando un pedido incluya esta variable, se creará una tarea pendiente
+                </p>
+              </div>
+            </div>
+            {formData.has_implicit_task && (
+              <div>
+                <Label htmlFor="edit-task-name">Nombre de la tarea</Label>
+                <Input
+                  id="edit-task-name"
+                  value={formData.task_name}
+                  onChange={(e) => setFormData({ ...formData, task_name: e.target.value })}
+                  placeholder="Nombre de la tarea a crear"
+                />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>

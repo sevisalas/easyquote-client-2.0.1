@@ -336,11 +336,68 @@ export default function SalesOrderNew() {
         };
       });
 
-      const { error: itemsError } = await supabase
+      const { data: insertedItems, error: itemsError } = await supabase
         .from("sales_order_items")
-        .insert(orderItemsData);
+        .insert(orderItemsData)
+        .select();
 
       if (itemsError) throw itemsError;
+
+      // Create implicit tasks for items with mapped production variables
+      if (insertedItems && insertedItems.length > 0) {
+        for (const item of insertedItems) {
+          try {
+            // Get all mapped variables for this product
+            const { data: mappings } = await supabase
+              .from("product_variable_mappings")
+              .select(`
+                production_variable_id,
+                production_variables (
+                  has_implicit_task,
+                  task_name,
+                  name
+                )
+              `)
+              .eq("easyquote_product_id", item.product_id)
+              .eq("organization_id", currentOrganization.id);
+
+            if (mappings && mappings.length > 0) {
+              const tasksToCreate = [];
+
+              for (const mapping of mappings) {
+                const variable = mapping.production_variables as any;
+                if (variable && variable.has_implicit_task && variable.task_name) {
+                  // Get the first available phase (should be "Preimpresión")
+                  const { data: phases } = await supabase
+                    .from("production_phases")
+                    .select("id")
+                    .eq("is_active", true)
+                    .order("display_order")
+                    .limit(1);
+
+                  if (phases && phases.length > 0) {
+                    tasksToCreate.push({
+                      sales_order_item_id: item.id,
+                      phase_id: phases[0].id,
+                      task_name: variable.task_name,
+                      operator_id: user.id,
+                      status: "pending",
+                    });
+                  }
+                }
+              }
+
+              // Insert all tasks for this item at once
+              if (tasksToCreate.length > 0) {
+                await supabase.from("production_tasks").insert(tasksToCreate);
+              }
+            }
+          } catch (taskError) {
+            // Log error but don't fail the order creation
+            console.error("Error creating implicit tasks for item:", item.id, taskError);
+          }
+        }
+      }
 
       // Create order additionals
       if (orderAdditionals.length > 0) {

@@ -10,6 +10,8 @@ export interface ProductionVariable {
   description: string | null;
   variable_type: string;
   is_active: boolean;
+  has_implicit_task: boolean;
+  task_name: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -18,6 +20,8 @@ export interface CreateProductionVariableData {
   name: string;
   description?: string;
   variable_type?: string;
+  has_implicit_task?: boolean;
+  task_name?: string;
 }
 
 export interface UpdateProductionVariableData {
@@ -25,6 +29,8 @@ export interface UpdateProductionVariableData {
   description?: string;
   variable_type?: string;
   is_active?: boolean;
+  has_implicit_task?: boolean;
+  task_name?: string;
 }
 
 export function useProductionVariables() {
@@ -62,6 +68,8 @@ export function useProductionVariables() {
           name: newVariable.name,
           description: newVariable.description,
           variable_type: newVariable.variable_type || "alphanumeric",
+          has_implicit_task: newVariable.has_implicit_task || false,
+          task_name: newVariable.task_name || null,
         })
         .select()
         .single();
