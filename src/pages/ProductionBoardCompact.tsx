@@ -36,7 +36,7 @@ const statusLabels = {
 
 const itemStatusLabels = {
   pending: "Pendiente",
-  in_progress: "En producción",
+  in_progress: "En proceso",
   completed: "Completado"
 };
 const getDeadlineColor = (deliveryDate: string | null): string => {
