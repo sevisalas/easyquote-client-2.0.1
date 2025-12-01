@@ -151,15 +151,15 @@ export default function ProductionBoard() {
                 key={order.id} 
                 className={`border-4 ${deadlineColor} shadow-lg`}
               >
-                <CardContent className="p-3">
-                  {/* Header Section - Compacto */}
-                  <div className="grid grid-cols-4 gap-3 mb-3 pb-2 border-b border-border">
+                <CardContent className="p-4">
+                  {/* Header Section */}
+                  <div className="grid grid-cols-4 gap-4 mb-4 pb-3 border-b border-border">
                     {/* Deadline Status */}
                     <div className="flex items-center justify-center">
-                      <div className={`${deadlineColor} text-white rounded px-2 py-1 w-full text-center text-xs font-bold`}>
-                        <div className="mb-0.5">{deadlineLabel}</div>
+                      <div className={`${deadlineColor} text-white rounded px-3 py-2 w-full text-center font-bold`}>
+                        <div className="text-lg mb-1">{deadlineLabel}</div>
                         {order.delivery_date && (
-                          <div className="text-[10px] opacity-90">
+                          <div className="text-sm opacity-90">
                             {format(new Date(order.delivery_date), "dd/MM/yyyy", { locale: es })}
                           </div>
                         )}
@@ -167,22 +167,22 @@ export default function ProductionBoard() {
                     </div>
 
                     {/* Order Info */}
-                    <div className="col-span-3 grid grid-cols-3 gap-2 text-sm">
+                    <div className="col-span-3 grid grid-cols-3 gap-3">
                       <div>
-                        <div className="text-xs text-muted-foreground">Pedido</div>
-                        <div className="font-bold">{order.order_number}</div>
+                        <div className="text-sm text-muted-foreground mb-1">Pedido</div>
+                        <div className="text-xl font-bold">{order.order_number}</div>
                       </div>
                       
                       <div>
-                        <div className="text-xs text-muted-foreground">Cliente</div>
-                        <div className="font-semibold">
+                        <div className="text-sm text-muted-foreground mb-1">Cliente</div>
+                        <div className="text-lg font-semibold">
                           <CustomerName customerId={order.customer_id} />
                         </div>
                       </div>
                       
                       <div>
-                        <div className="text-xs text-muted-foreground">Fecha pedido</div>
-                        <div className="text-sm">
+                        <div className="text-sm text-muted-foreground mb-1">Fecha pedido</div>
+                        <div className="text-base">
                           {format(new Date(order.order_date), "dd/MM/yyyy", { locale: es })}
                         </div>
                       </div>
@@ -190,17 +190,17 @@ export default function ProductionBoard() {
                   </div>
 
                   {/* Items Section - Una línea por artículo */}
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     {order.items.map((item, index) => (
-                      <div key={item.id} className="flex items-center gap-2 text-sm py-1">
+                      <div key={item.id} className="flex items-center gap-3 py-1">
                         {index === 0 && (
-                          <span className="font-semibold text-xs mr-2">
+                          <span className="font-semibold text-sm mr-2 min-w-[100px]">
                             Artículos ({order.items.length}):
                           </span>
                         )}
-                        {index > 0 && <span className="w-[90px]"></span>}
+                        {index > 0 && <span className="min-w-[100px]"></span>}
                         
-                        <span className="font-medium">
+                        <span className="font-medium text-base">
                           {index + 1}. {item.product_name}
                         </span>
                         
@@ -212,12 +212,12 @@ export default function ProductionBoard() {
                               ? "secondary"
                               : "outline"
                           }
-                          className="text-xs py-0"
+                          className="text-sm"
                         >
                           {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                         </Badge>
                         
-                        <span className="text-xs text-muted-foreground ml-auto">
+                        <span className="text-sm text-muted-foreground ml-auto">
                           Cant: {item.quantity}
                         </span>
                       </div>
