@@ -57,7 +57,10 @@ export default function ProductionBoardCompact() {
   const [loading, setLoading] = useState(true);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
-  const { view, updateView } = useProductionBoardView();
+  const {
+    view,
+    updateView
+  } = useProductionBoardView();
   const toggleItemExpanded = (itemId: string) => {
     setExpandedItems(prev => {
       const newSet = new Set(prev);
@@ -112,37 +115,25 @@ export default function ProductionBoardCompact() {
       <div className="mb-8 flex justify-between items-center">
         <h1 className="text-4xl font-bold">Panel de producción - Compacta</h1>
         <div className="flex gap-2">
-          <Button 
-            variant={view === 'list' ? 'default' : 'outline'} 
-            onClick={() => {
-              updateView('list');
-              navigate("/panel-produccion-lista");
-            }} 
-            className="gap-2"
-          >
+          <Button variant={view === 'list' ? 'default' : 'outline'} onClick={() => {
+          updateView('list');
+          navigate("/panel-produccion-lista");
+        }} className="gap-2">
             {view === 'list' && <Check className="h-4 w-4" />}
             Vista Lista
           </Button>
-          <Button 
-            variant={view === 'compact' ? 'default' : 'outline'} 
-            onClick={() => {
-              updateView('compact');
-              navigate("/panel-produccion-compacta");
-            }} 
-            className="gap-2"
-          >
+          <Button variant={view === 'compact' ? 'default' : 'outline'} onClick={() => {
+          updateView('compact');
+          navigate("/panel-produccion-compacta");
+        }} className="gap-2">
             {view === 'compact' && <Check className="h-4 w-4" />}
             <LayoutGrid className="h-4 w-4" />
             Vista Compacta
           </Button>
-          <Button 
-            variant={view === 'kanban' ? 'default' : 'outline'} 
-            onClick={() => {
-              updateView('kanban');
-              navigate("/panel-produccion-tablero");
-            }} 
-            className="gap-2"
-          >
+          <Button variant={view === 'kanban' ? 'default' : 'outline'} onClick={() => {
+          updateView('kanban');
+          navigate("/panel-produccion-tablero");
+        }} className="gap-2">
             {view === 'kanban' && <Check className="h-4 w-4" />}
             <LayoutGrid className="h-4 w-4" />
             Vista Tablero
@@ -171,19 +162,19 @@ export default function ProductionBoardCompact() {
                   {/* Order Info */}
                   <div className="space-y-2 mb-3 pb-3 border-b border-border">
                     <div>
-                      <div className="text-xs text-muted-foreground">Pedido</div>
+                      <div className="text-xs text-secondary">Pedido</div>
                       <div className="text-lg font-bold">{order.order_number}</div>
                     </div>
 
                     <div>
-                      <div className="text-xs text-muted-foreground">Cliente</div>
+                      <div className="text-xs text-secondary">Cliente</div>
                       <div className="text-sm font-semibold">
                         <CustomerName customerId={order.customer_id} />
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-xs text-muted-foreground">Fecha pedido</div>
+                      <div className="text-xs text-secondary">Fecha pedido</div>
                       <div className="text-xs">{format(new Date(order.order_date), "dd/MM/yyyy", {
                     locale: es
                   })}</div>
