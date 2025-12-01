@@ -129,9 +129,42 @@ export default function ProductionBoard() {
   }
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="mb-8 flex justify-between items-center">
-        <h1 className="text-4xl font-bold">Panel de producción - Lista</h1>
+      {/* Mensaje para móvil */}
+      <div className="md:hidden flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+        <Package className="h-16 w-16 text-muted-foreground mb-4" />
+        <h2 className="text-xl font-bold mb-2">Vista no disponible en móvil</h2>
+        <p className="text-muted-foreground mb-6">
+          Por favor, utiliza la vista Compacta o Tablero en dispositivos móviles
+        </p>
         <div className="flex gap-2">
+          <Button 
+            variant="default"
+            onClick={() => {
+              updateView('compact');
+              navigate("/panel-produccion-compacta");
+            }}
+          >
+            <LayoutGrid className="h-4 w-4 mr-2" />
+            Vista Compacta
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={() => {
+              updateView('kanban');
+              navigate("/panel-produccion-tablero");
+            }}
+          >
+            <LayoutGrid className="h-4 w-4 mr-2" />
+            Vista Tablero
+          </Button>
+        </div>
+      </div>
+
+      {/* Contenido normal para desktop */}
+      <div className="hidden md:block">
+        <div className="mb-8 flex justify-between items-center">
+          <h1 className="text-4xl font-bold">Panel de producción - Lista</h1>
+          <div className="flex gap-2">
           <Button 
             variant={view === 'list' ? 'default' : 'outline'} 
             onClick={() => {
@@ -167,10 +200,10 @@ export default function ProductionBoard() {
             <LayoutGrid className="h-4 w-4" />
             Vista Tablero
           </Button>
+          </div>
         </div>
-      </div>
 
-      <div className="space-y-2 max-w-7xl mx-auto">
+        <div className="space-y-2 max-w-7xl mx-auto">
         {orders.length === 0 ? (
           <Card className="p-12">
             <div className="text-center text-2xl text-muted-foreground">No hay pedidos en producción</div>
@@ -293,6 +326,7 @@ export default function ProductionBoard() {
             );
           })
         )}
+        </div>
       </div>
     </div>
   );

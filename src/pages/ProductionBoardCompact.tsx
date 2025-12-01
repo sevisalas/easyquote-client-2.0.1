@@ -112,36 +112,39 @@ export default function ProductionBoardCompact() {
       </div>;
   }
   return <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="mb-8 flex justify-between items-center">
-        <h1 className="text-4xl font-bold">Panel de producción - Compacta</h1>
-        <div className="flex gap-2">
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-4xl font-bold mb-4">Panel de producción - Compacta</h1>
+        <div className="flex gap-2 overflow-x-auto pb-2">
           <Button variant={view === 'list' ? 'default' : 'outline'} onClick={() => {
           updateView('list');
           navigate("/panel-produccion-lista");
-        }} className="gap-2">
+        }} size="sm" className="gap-2">
             {view === 'list' && <Check className="h-4 w-4" />}
-            Vista Lista
+            <span className="hidden sm:inline">Vista Lista</span>
+            <span className="sm:hidden">Lista</span>
           </Button>
           <Button variant={view === 'compact' ? 'default' : 'outline'} onClick={() => {
           updateView('compact');
           navigate("/panel-produccion-compacta");
-        }} className="gap-2">
+        }} size="sm" className="gap-2">
             {view === 'compact' && <Check className="h-4 w-4" />}
             <LayoutGrid className="h-4 w-4" />
-            Vista Compacta
+            <span className="hidden sm:inline">Vista Compacta</span>
+            <span className="sm:hidden">Compacta</span>
           </Button>
           <Button variant={view === 'kanban' ? 'default' : 'outline'} onClick={() => {
           updateView('kanban');
           navigate("/panel-produccion-tablero");
-        }} className="gap-2">
+        }} size="sm" className="gap-2">
             {view === 'kanban' && <Check className="h-4 w-4" />}
             <LayoutGrid className="h-4 w-4" />
-            Vista Tablero
+            <span className="hidden sm:inline">Vista Tablero</span>
+            <span className="sm:hidden">Tablero</span>
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-w-full mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-w-full mx-auto">
         {orders.length === 0 ? <Card className="p-12 col-span-full">
             <div className="text-center text-2xl text-muted-foreground">No hay pedidos en producción</div>
           </Card> : orders.map(order => {
