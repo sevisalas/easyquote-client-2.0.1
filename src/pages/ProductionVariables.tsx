@@ -46,7 +46,6 @@ export default function ProductionVariables() {
     description: "",
     has_implicit_task: false,
     task_name: "",
-    task_trigger_values: "",
     task_exclude_values: "",
   });
 
@@ -56,9 +55,6 @@ export default function ProductionVariables() {
       description: formData.description,
       has_implicit_task: formData.has_implicit_task,
       task_name: formData.task_name,
-      task_trigger_values: formData.task_trigger_values
-        ? formData.task_trigger_values.split(",").map(v => v.trim()).filter(Boolean)
-        : [],
       task_exclude_values: formData.task_exclude_values
         ? formData.task_exclude_values.split(",").map(v => v.trim()).filter(Boolean)
         : [],
@@ -69,7 +65,6 @@ export default function ProductionVariables() {
       description: "", 
       has_implicit_task: false, 
       task_name: "",
-      task_trigger_values: "",
       task_exclude_values: "",
     });
   };
@@ -83,9 +78,6 @@ export default function ProductionVariables() {
         description: formData.description,
         has_implicit_task: formData.has_implicit_task,
         task_name: formData.task_name,
-        task_trigger_values: formData.task_trigger_values
-          ? formData.task_trigger_values.split(",").map(v => v.trim()).filter(Boolean)
-          : [],
         task_exclude_values: formData.task_exclude_values
           ? formData.task_exclude_values.split(",").map(v => v.trim()).filter(Boolean)
           : [],
@@ -98,7 +90,6 @@ export default function ProductionVariables() {
       description: "", 
       has_implicit_task: false, 
       task_name: "",
-      task_trigger_values: "",
       task_exclude_values: "",
     });
   };
@@ -117,7 +108,6 @@ export default function ProductionVariables() {
       description: variable.description || "",
       has_implicit_task: variable.has_implicit_task || false,
       task_name: variable.task_name || "",
-      task_trigger_values: variable.task_trigger_values?.join(", ") || "",
       task_exclude_values: variable.task_exclude_values?.join(", ") || "",
     });
     setIsEditDialogOpen(true);
@@ -266,24 +256,14 @@ export default function ProductionVariables() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="trigger-values">Valores que activan la tarea (separados por comas)</Label>
-                  <Input
-                    id="trigger-values"
-                    value={formData.task_trigger_values}
-                    onChange={(e) => setFormData({ ...formData, task_trigger_values: e.target.value })}
-                    placeholder="ej: Sí, Con plastificado, Brillo"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Si se especifican valores, solo se crea la tarea cuando el valor coincide</p>
-                </div>
-                <div>
-                  <Label htmlFor="exclude-values">Valores que NO activan la tarea (separados por comas)</Label>
+                  <Label htmlFor="exclude-values">Valores que NO crean la tarea (separados por comas)</Label>
                   <Input
                     id="exclude-values"
                     value={formData.task_exclude_values}
                     onChange={(e) => setFormData({ ...formData, task_exclude_values: e.target.value })}
                     placeholder="ej: No, Sin plastificado"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">La tarea NO se crea si el valor coincide con alguno de estos</p>
+                  <p className="text-xs text-muted-foreground mt-1">Por defecto la tarea siempre se crea. Solo se evita si el valor coincide con alguna de estas excepciones</p>
                 </div>
               </>
             )}
@@ -356,24 +336,14 @@ export default function ProductionVariables() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="edit-trigger-values">Valores que activan la tarea (separados por comas)</Label>
-                  <Input
-                    id="edit-trigger-values"
-                    value={formData.task_trigger_values}
-                    onChange={(e) => setFormData({ ...formData, task_trigger_values: e.target.value })}
-                    placeholder="ej: Sí, Con plastificado, Brillo"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Si se especifican valores, solo se crea la tarea cuando el valor coincide</p>
-                </div>
-                <div>
-                  <Label htmlFor="edit-exclude-values">Valores que NO activan la tarea (separados por comas)</Label>
+                  <Label htmlFor="edit-exclude-values">Valores que NO crean la tarea (separados por comas)</Label>
                   <Input
                     id="edit-exclude-values"
                     value={formData.task_exclude_values}
                     onChange={(e) => setFormData({ ...formData, task_exclude_values: e.target.value })}
                     placeholder="ej: No, Sin plastificado"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">La tarea NO se crea si el valor coincide con alguno de estos</p>
+                  <p className="text-xs text-muted-foreground mt-1">Por defecto la tarea siempre se crea. Solo se evita si el valor coincide con alguna de estas excepciones</p>
                 </div>
               </>
             )}

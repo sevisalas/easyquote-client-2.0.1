@@ -1027,7 +1027,6 @@ export type Database = {
           organization_id: string
           task_exclude_values: string[] | null
           task_name: string | null
-          task_trigger_values: string[] | null
           updated_at: string
           variable_type: string
         }
@@ -1041,7 +1040,6 @@ export type Database = {
           organization_id: string
           task_exclude_values?: string[] | null
           task_name?: string | null
-          task_trigger_values?: string[] | null
           updated_at?: string
           variable_type?: string
         }
@@ -1055,7 +1053,6 @@ export type Database = {
           organization_id?: string
           task_exclude_values?: string[] | null
           task_name?: string | null
-          task_trigger_values?: string[] | null
           updated_at?: string
           variable_type?: string
         }

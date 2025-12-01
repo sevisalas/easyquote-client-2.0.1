@@ -12,7 +12,6 @@ export interface ProductionVariable {
   is_active: boolean;
   has_implicit_task: boolean;
   task_name: string | null;
-  task_trigger_values: string[];
   task_exclude_values: string[];
   created_at: string;
   updated_at: string;
@@ -24,7 +23,6 @@ export interface CreateProductionVariableData {
   variable_type?: string;
   has_implicit_task?: boolean;
   task_name?: string;
-  task_trigger_values?: string[];
   task_exclude_values?: string[];
 }
 
@@ -35,7 +33,6 @@ export interface UpdateProductionVariableData {
   is_active?: boolean;
   has_implicit_task?: boolean;
   task_name?: string;
-  task_trigger_values?: string[];
   task_exclude_values?: string[];
 }
 
@@ -76,7 +73,6 @@ export function useProductionVariables() {
           variable_type: newVariable.variable_type || "alphanumeric",
           has_implicit_task: newVariable.has_implicit_task || false,
           task_name: newVariable.task_name || null,
-          task_trigger_values: newVariable.task_trigger_values || [],
           task_exclude_values: newVariable.task_exclude_values || [],
         })
         .select()

@@ -356,7 +356,6 @@ export default function SalesOrderNew() {
                 production_variables (
                   has_implicit_task,
                   task_name,
-                  task_trigger_values,
                   task_exclude_values,
                   name
                 )
@@ -379,27 +378,17 @@ export default function SalesOrderNew() {
                   const outputMatch = outputs.find(o => o.name === promptOrOutputName);
                   const actualValue = promptMatch?.value || outputMatch?.value;
 
-                  // Check if we should create the task based on trigger/exclude values
+                  // By default, always create the task
                   let shouldCreateTask = true;
 
-                  if (actualValue) {
+                  // Only check exclude values to prevent task creation
+                  if (actualValue && variable.task_exclude_values && variable.task_exclude_values.length > 0) {
                     const valueStr = actualValue.toString().toLowerCase();
-                    
-                    // If trigger values are specified, only create if value matches
-                    if (variable.task_trigger_values && variable.task_trigger_values.length > 0) {
-                      shouldCreateTask = variable.task_trigger_values.some((trigger: string) => 
-                        valueStr.includes(trigger.toLowerCase())
-                      );
-                    }
-
-                    // If exclude values are specified, don't create if value matches
-                    if (variable.task_exclude_values && variable.task_exclude_values.length > 0) {
-                      const isExcluded = variable.task_exclude_values.some((exclude: string) => 
-                        valueStr.includes(exclude.toLowerCase())
-                      );
-                      if (isExcluded) {
-                        shouldCreateTask = false;
-                      }
+                    const isExcluded = variable.task_exclude_values.some((exclude: string) => 
+                      valueStr.includes(exclude.toLowerCase())
+                    );
+                    if (isExcluded) {
+                      shouldCreateTask = false;
                     }
                   }
 
