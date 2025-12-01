@@ -35,7 +35,7 @@ const statusLabels = {
 };
 const itemStatusLabels = {
   pending: "Pendiente",
-  in_production: "En producción",
+  in_progress: "En producción",
   completed: "Completado",
 };
 const getDeadlineColor = (deliveryDate: string | null): string => {
@@ -301,7 +301,7 @@ export default function ProductionBoard() {
                             variant={
                               item.production_status === "completed"
                                 ? "default"
-                                : item.production_status === "in_production"
+                                : item.production_status === "in_progress"
                                   ? "secondary"
                                   : "outline"
                             }
