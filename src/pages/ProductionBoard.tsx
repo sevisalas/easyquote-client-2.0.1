@@ -9,7 +9,6 @@ import { es } from "date-fns/locale";
 import { Package, Calendar, Clock, LayoutGrid } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Json } from "@/integrations/supabase/types";
-
 interface SalesOrderItem {
   id: string;
   product_name: string;
@@ -110,11 +109,7 @@ export default function ProductionBoard() {
   return <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="mb-8 flex justify-between items-center">
         <h1 className="text-4xl font-bold">Panel de producción</h1>
-        <Button
-          variant="outline"
-          onClick={() => navigate("/panel-produccion-tablero")}
-          className="gap-2"
-        >
+        <Button variant="outline" onClick={() => navigate("/panel-produccion-tablero")} className="gap-2">
           <LayoutGrid className="h-4 w-4" />
           Vista tablero
         </Button>
@@ -169,8 +164,7 @@ export default function ProductionBoard() {
 
                   {/* Items Section - Una línea por artículo */}
                   <div className="space-y-2">
-                    {order.items.map((item, index) => (
-                      <div key={item.id} className="space-y-1">
+                    {order.items.map((item, index) => <div key={item.id} className="space-y-1">
                         <div className="flex items-center gap-3 py-0.5">
                           {index === 0 && <span className="font-semibold text-sm mr-2 min-w-[100px]">
                               Artículos ({order.items.length}):
@@ -186,20 +180,17 @@ export default function ProductionBoard() {
                           </Badge>
                         </div>
                         
-                        {item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
-                          <div className="text-xs text-muted-foreground pl-[116px] space-y-0.5">
-                            {(item.prompts as Array<{ label: string; value: string; order: number }>)
-                              .sort((a, b) => a.order - b.order)
-                              .map((prompt, pIdx) => (
-                                <div key={pIdx} className="flex gap-1">
+                        {item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && <div className="text-xs pl-[116px] space-y-0.5 text-muted">
+                            {(item.prompts as Array<{
+                    label: string;
+                    value: string;
+                    order: number;
+                  }>).sort((a, b) => a.order - b.order).map((prompt, pIdx) => <div key={pIdx} className="flex gap-1">
                                   <span className="font-medium">{prompt.label}:</span>
                                   <span>{prompt.value}</span>
-                                </div>
-                              ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                                </div>)}
+                          </div>}
+                      </div>)}
                   </div>
                 </CardContent>
               </Card>;
