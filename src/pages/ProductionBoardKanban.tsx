@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CustomerName } from "@/components/quotes/CustomerName";
 import { format, differenceInDays, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
-import { List, ChevronDown, ChevronRight } from "lucide-react";
+import { List, ChevronDown, ChevronRight, LayoutGrid } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -134,14 +134,16 @@ export default function ProductionBoardKanban() {
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="mb-8 flex justify-between items-center">
         <h1 className="text-4xl font-bold">Panel de producción - Tablero</h1>
-        <Button
-          variant="outline"
-          onClick={() => navigate("/panel-produccion")}
-          className="gap-2"
-        >
-          <List className="h-4 w-4" />
-          Vista lista
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate("/panel-produccion")} className="gap-2">
+            <List className="h-4 w-4" />
+            Vista lista
+          </Button>
+          <Button variant="outline" onClick={() => navigate("/panel-produccion-compacta")} className="gap-2">
+            <LayoutGrid className="h-4 w-4" />
+            Vista compacta
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-4 overflow-x-auto pb-4">
