@@ -167,13 +167,13 @@ export default function ProductionBoard() {
                     </div>
 
                     {/* Order Info */}
-                    <div className="col-span-3 grid grid-cols-3 gap-3">
+                    <div className="col-span-3 grid grid-cols-4 gap-3">
                       <div>
                         <div className="text-sm text-muted-foreground mb-1">Pedido</div>
                         <div className="text-xl font-bold">{order.order_number}</div>
                       </div>
                       
-                      <div>
+                      <div className="col-span-2">
                         <div className="text-sm text-muted-foreground mb-1">Cliente</div>
                         <div className="text-lg font-semibold">
                           <CustomerName customerId={order.customer_id} />
