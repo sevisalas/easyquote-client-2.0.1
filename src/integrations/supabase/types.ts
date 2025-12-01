@@ -1020,30 +1020,36 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          has_implicit_task: boolean
           id: string
           is_active: boolean
           name: string
           organization_id: string
+          task_name: string | null
           updated_at: string
           variable_type: string
         }
         Insert: {
           created_at?: string
           description?: string | null
+          has_implicit_task?: boolean
           id?: string
           is_active?: boolean
           name: string
           organization_id: string
+          task_name?: string | null
           updated_at?: string
           variable_type?: string
         }
         Update: {
           created_at?: string
           description?: string | null
+          has_implicit_task?: boolean
           id?: string
           is_active?: boolean
           name?: string
           organization_id?: string
+          task_name?: string | null
           updated_at?: string
           variable_type?: string
         }
