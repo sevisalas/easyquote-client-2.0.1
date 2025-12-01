@@ -36,7 +36,7 @@ const statusLabels = {
 
 const itemStatusLabels = {
   pending: "Pendiente",
-  in_production: "En producción",
+  in_progress: "En producción",
   completed: "Completado"
 };
 const getDeadlineColor = (deliveryDate: string | null): string => {
@@ -218,7 +218,7 @@ export default function ProductionBoardCompact() {
                             <div className="font-medium text-xs break-words">
                               {index + 1}. {item.product_name}
                             </div>
-                            <Badge variant={item.production_status === "completed" ? "default" : item.production_status === "in_production" ? "secondary" : "outline"} className="text-xs mt-1">
+                            <Badge variant={item.production_status === "completed" ? "default" : item.production_status === "in_progress" ? "secondary" : "outline"} className="text-xs mt-1">
                               Estado: {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
