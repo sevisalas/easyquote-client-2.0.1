@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CustomerName } from "@/components/quotes/CustomerName";
 import { format, differenceInDays, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
-import { List } from "lucide-react";
+import { List, ChevronDown, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -50,7 +50,20 @@ const getDeadlineCategory = (deliveryDate: string | null): string => {
 export default function ProductionBoardKanban() {
   const [orders, setOrders] = useState<SalesOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
+
+  const toggleItemExpanded = (itemId: string) => {
+    setExpandedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     loadOrders();
@@ -159,6 +172,16 @@ export default function ProductionBoardKanban() {
                       {order.items.map((item, idx) => (
                         <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
                           <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => toggleItemExpanded(item.id)}
+                              className="hover:bg-muted rounded p-0.5 transition-colors"
+                            >
+                              {expandedItems.has(item.id) ? (
+                                <ChevronDown className="h-3 w-3" />
+                              ) : (
+                                <ChevronRight className="h-3 w-3" />
+                              )}
+                            </button>
                             <span className="font-medium">{idx + 1}. {item.product_name}</span>
                             <Badge 
                               variant={
@@ -173,7 +196,7 @@ export default function ProductionBoardKanban() {
                               {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
-                          {item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
+                          {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
                             <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
                               {(item.prompts as Array<{ label: string; value: string; order: number }>)
                                 .sort((a, b) => a.order - b.order)
@@ -222,6 +245,16 @@ export default function ProductionBoardKanban() {
                       {order.items.map((item, idx) => (
                         <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
                           <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => toggleItemExpanded(item.id)}
+                              className="hover:bg-muted rounded p-0.5 transition-colors"
+                            >
+                              {expandedItems.has(item.id) ? (
+                                <ChevronDown className="h-3 w-3" />
+                              ) : (
+                                <ChevronRight className="h-3 w-3" />
+                              )}
+                            </button>
                             <span className="font-medium">{idx + 1}. {item.product_name}</span>
                             <Badge 
                               variant={
@@ -236,7 +269,7 @@ export default function ProductionBoardKanban() {
                               {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
-                          {item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
+                          {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
                             <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
                               {(item.prompts as Array<{ label: string; value: string; order: number }>)
                                 .sort((a, b) => a.order - b.order)
@@ -285,6 +318,16 @@ export default function ProductionBoardKanban() {
                       {order.items.map((item, idx) => (
                         <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
                           <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => toggleItemExpanded(item.id)}
+                              className="hover:bg-muted rounded p-0.5 transition-colors"
+                            >
+                              {expandedItems.has(item.id) ? (
+                                <ChevronDown className="h-3 w-3" />
+                              ) : (
+                                <ChevronRight className="h-3 w-3" />
+                              )}
+                            </button>
                             <span className="font-medium">{idx + 1}. {item.product_name}</span>
                             <Badge 
                               variant={
@@ -299,7 +342,7 @@ export default function ProductionBoardKanban() {
                               {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
-                          {item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
+                          {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
                             <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
                               {(item.prompts as Array<{ label: string; value: string; order: number }>)
                                 .sort((a, b) => a.order - b.order)
@@ -348,6 +391,16 @@ export default function ProductionBoardKanban() {
                       {order.items.map((item, idx) => (
                         <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
                           <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => toggleItemExpanded(item.id)}
+                              className="hover:bg-muted rounded p-0.5 transition-colors"
+                            >
+                              {expandedItems.has(item.id) ? (
+                                <ChevronDown className="h-3 w-3" />
+                              ) : (
+                                <ChevronRight className="h-3 w-3" />
+                              )}
+                            </button>
                             <span className="font-medium">{idx + 1}. {item.product_name}</span>
                             <Badge 
                               variant={
@@ -362,7 +415,7 @@ export default function ProductionBoardKanban() {
                               {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
-                          {item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
+                          {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
                             <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
                               {(item.prompts as Array<{ label: string; value: string; order: number }>)
                                 .sort((a, b) => a.order - b.order)
