@@ -89,7 +89,7 @@ const generateImpositionSvg = (data: any) => {
     </svg>
   `;
   
-  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
 };
 
 // Estilos para el PDF
