@@ -1341,6 +1341,7 @@ export default function ProductManagement() {
                           const isDropdownType = currentPromptType?.promptType === "DropDown";
                           
                           return (
+                            <>
                             <div className="grid grid-cols-12 gap-2 items-end">
                               <div className="col-span-2">
                                 <Label>Hoja</Label>
@@ -1502,44 +1503,6 @@ export default function ProductManagement() {
                                 />
                               </div>
 
-                              {/* Variable de producción */}
-                              <div className="col-span-2">
-                                <Label>Variable de producción</Label>
-                                <Select
-                                  value={getMappedVariableId(prompt.promptCell) || "none"}
-                                  onValueChange={(value) => {
-                                    if (selectedProduct) {
-                                      upsertVariableMapping({
-                                        easyquoteProductId: selectedProduct.id,
-                                        productName: selectedProduct.productName,
-                                        promptOrOutputName: prompt.promptCell,
-                                        variableId: value === "none" ? null : value,
-                                      });
-                                    }
-                                  }}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Sin variable asignada" />
-                                  </SelectTrigger>
-                                  <SelectContent className="bg-background border shadow-lg z-50">
-                                    <SelectItem value="none">Sin variable asignada</SelectItem>
-                                    {productionVariables
-                                      .filter(v => {
-                                        const mappedNames = getMappedNames();
-                                        const currentMapping = getMappedVariableId(prompt.promptCell);
-                                        // Mostrar: variables no asignadas O la variable actualmente asignada a este prompt
-                                        return !mappedNames.includes(prompt.promptCell) || 
-                                               (currentMapping && v.id === currentMapping);
-                                      })
-                                      .map((variable) => (
-                                        <SelectItem key={variable.id} value={variable.id}>
-                                          {variable.name}
-                                        </SelectItem>
-                                      ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
                               {/* Campos numéricos - Solo para tipos Number/Quantity */}
                               {isNumericType && (
                                 <>
@@ -1629,6 +1592,44 @@ export default function ProductManagement() {
                                 </div>
                               </div>
                             </div>
+
+                            {/* Variable de producción - Línea separada */}
+                            <div className="flex items-center gap-4 mt-4 pt-4 border-t">
+                              <Label className="w-48 text-sm font-medium">Variable de producción</Label>
+                              <Select
+                                value={getMappedVariableId(prompt.promptCell) || "none"}
+                                onValueChange={(value) => {
+                                  if (selectedProduct) {
+                                    upsertVariableMapping({
+                                      easyquoteProductId: selectedProduct.id,
+                                      productName: selectedProduct.productName,
+                                      promptOrOutputName: prompt.promptCell,
+                                      variableId: value === "none" ? null : value,
+                                    });
+                                  }
+                                }}
+                              >
+                                <SelectTrigger className="flex-1">
+                                  <SelectValue placeholder="Sin variable asignada" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-background border shadow-lg z-50">
+                                  <SelectItem value="none">Sin variable asignada</SelectItem>
+                                  {productionVariables
+                                    .filter(v => {
+                                      const mappedNames = getMappedNames();
+                                      const currentMapping = getMappedVariableId(prompt.promptCell);
+                                      return !mappedNames.includes(prompt.promptCell) || 
+                                             (currentMapping && v.id === currentMapping);
+                                    })
+                                    .map((variable) => (
+                                      <SelectItem key={variable.id} value={variable.id}>
+                                        {variable.name}
+                                      </SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            </>
                           );
                         })()}
                       </div>
@@ -1684,7 +1685,7 @@ export default function ProductManagement() {
                           </Button>
                         </div>
                         
-                        <div className="grid grid-cols-5 gap-4">
+                        <div className="grid grid-cols-4 gap-4">
                           <div>
                             <Label>Hoja</Label>
                             <Select
@@ -1755,41 +1756,43 @@ export default function ProductManagement() {
                               </SelectContent>
                             </Select>
                           </div>
-                          <div>
-                            <Label>Variable de producción</Label>
-                            <Select
-                              value={getMappedVariableId(output.nameCell) || "none"}
-                              onValueChange={(value) => {
-                                if (selectedProduct) {
-                                  upsertVariableMapping({
-                                    easyquoteProductId: selectedProduct.id,
-                                    productName: selectedProduct.productName,
-                                    promptOrOutputName: output.nameCell,
-                                    variableId: value === "none" ? null : value,
-                                  });
-                                }
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Sin variable" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-background border shadow-lg z-50">
-                                <SelectItem value="none">Sin variable asignada</SelectItem>
-                                {productionVariables
-                                  .filter(v => {
-                                    const mappedNames = getMappedNames();
-                                    const currentMapping = getMappedVariableId(output.nameCell);
-                                    return !mappedNames.includes(output.nameCell) || 
-                                           (currentMapping && v.id === currentMapping);
-                                  })
-                                  .map((variable) => (
-                                    <SelectItem key={variable.id} value={variable.id}>
-                                      {variable.name}
-                                    </SelectItem>
-                                  ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
+                        </div>
+
+                        {/* Variable de producción - Línea separada */}
+                        <div className="flex items-center gap-4 mt-4 pt-4 border-t">
+                          <Label className="w-48 text-sm font-medium">Variable de producción</Label>
+                          <Select
+                            value={getMappedVariableId(output.nameCell) || "none"}
+                            onValueChange={(value) => {
+                              if (selectedProduct) {
+                                upsertVariableMapping({
+                                  easyquoteProductId: selectedProduct.id,
+                                  productName: selectedProduct.productName,
+                                  promptOrOutputName: output.nameCell,
+                                  variableId: value === "none" ? null : value,
+                                });
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="flex-1">
+                              <SelectValue placeholder="Sin variable asignada" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background border shadow-lg z-50">
+                              <SelectItem value="none">Sin variable asignada</SelectItem>
+                              {productionVariables
+                                .filter(v => {
+                                  const mappedNames = getMappedNames();
+                                  const currentMapping = getMappedVariableId(output.nameCell);
+                                  return !mappedNames.includes(output.nameCell) || 
+                                         (currentMapping && v.id === currentMapping);
+                                })
+                                .map((variable) => (
+                                  <SelectItem key={variable.id} value={variable.id}>
+                                    {variable.name}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                     ))}
