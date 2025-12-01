@@ -133,7 +133,7 @@ export default function ProductionBoardKanban() {
 
       <div className="flex gap-4 overflow-x-auto pb-4">
         {/* Columna: Fuera de plazo */}
-        <div className="flex-shrink-0 w-80 bg-muted/30 rounded-lg p-4">
+        <div className="flex-shrink-0 w-96 bg-muted/30 rounded-lg p-4">
           <div className="mb-4 flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-red-500" />
             <h2 className="text-lg font-bold">Fuera de plazo</h2>
@@ -196,7 +196,7 @@ export default function ProductionBoardKanban() {
         </div>
 
         {/* Columna: Entrega hoy */}
-        <div className="flex-shrink-0 w-80 bg-muted/30 rounded-lg p-4">
+        <div className="flex-shrink-0 w-96 bg-muted/30 rounded-lg p-4">
           <div className="mb-4 flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-orange-500" />
             <h2 className="text-lg font-bold">Entrega hoy</h2>
@@ -259,7 +259,7 @@ export default function ProductionBoardKanban() {
         </div>
 
         {/* Columna: Entrega mañana */}
-        <div className="flex-shrink-0 w-80 bg-muted/30 rounded-lg p-4">
+        <div className="flex-shrink-0 w-96 bg-muted/30 rounded-lg p-4">
           <div className="mb-4 flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-yellow-500" />
             <h2 className="text-lg font-bold">Entrega mañana</h2>
@@ -322,7 +322,7 @@ export default function ProductionBoardKanban() {
         </div>
 
         {/* Columna: En plazo */}
-        <div className="flex-shrink-0 w-80 bg-muted/30 rounded-lg p-4">
+        <div className="flex-shrink-0 w-96 bg-muted/30 rounded-lg p-4">
           <div className="mb-4 flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-green-500" />
             <h2 className="text-lg font-bold">En plazo</h2>
