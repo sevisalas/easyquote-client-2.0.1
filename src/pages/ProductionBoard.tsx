@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CustomerName } from "@/components/quotes/CustomerName";
 import { format, differenceInDays, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
-import { Package, Calendar, Clock, LayoutGrid } from "lucide-react";
+import { Package, Calendar, Clock, LayoutGrid, ChevronDown, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Json } from "@/integrations/supabase/types";
 interface SalesOrderItem {
@@ -60,7 +60,20 @@ const getDeadlineLabel = (deliveryDate: string | null): string => {
 export default function ProductionBoard() {
   const [orders, setOrders] = useState<SalesOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
+
+  const toggleItemExpanded = (itemId: string) => {
+    setExpandedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
   useEffect(() => {
     loadOrders();
 
@@ -171,6 +184,17 @@ export default function ProductionBoard() {
                             </span>}
                           {index > 0 && <span className="min-w-[100px]"></span>}
 
+                          <button
+                            onClick={() => toggleItemExpanded(item.id)}
+                            className="hover:bg-muted rounded p-0.5 transition-colors"
+                          >
+                            {expandedItems.has(item.id) ? (
+                              <ChevronDown className="h-3 w-3" />
+                            ) : (
+                              <ChevronRight className="h-3 w-3" />
+                            )}
+                          </button>
+
                           <span className="font-medium text-base">
                             {index + 1}. {item.product_name}
                           </span>
@@ -180,7 +204,7 @@ export default function ProductionBoard() {
                           </Badge>
                         </div>
                         
-                        {item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && <div className="text-xs pl-[116px] space-y-0.5 text-muted">
+                        {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && <div className="text-xs pl-[116px] space-y-0.5 text-muted">
                             {(item.prompts as Array<{
                     label: string;
                     value: string;
