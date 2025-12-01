@@ -167,20 +167,20 @@ export default function ProductionBoard() {
                     </div>
 
                     {/* Order Info */}
-                    <div className="col-span-3 grid grid-cols-4 gap-3">
-                      <div>
+                    <div className="col-span-3 flex gap-6">
+                      <div className="w-[140px]">
                         <div className="text-sm text-muted-foreground mb-1">Pedido</div>
                         <div className="text-xl font-bold">{order.order_number}</div>
                       </div>
                       
-                      <div className="col-span-2">
+                      <div className="flex-1">
                         <div className="text-sm text-muted-foreground mb-1">Cliente</div>
                         <div className="text-lg font-semibold">
                           <CustomerName customerId={order.customer_id} />
                         </div>
                       </div>
                       
-                      <div>
+                      <div className="w-[120px] text-right">
                         <div className="text-sm text-muted-foreground mb-1">Fecha pedido</div>
                         <div className="text-base">
                           {format(new Date(order.order_date), "dd/MM/yyyy", { locale: es })}
