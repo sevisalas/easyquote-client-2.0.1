@@ -151,17 +151,15 @@ export default function ProductionBoard() {
                 key={order.id} 
                 className={`border-4 ${deadlineColor} shadow-lg`}
               >
-                <CardContent className="p-6">
-                  {/* Header Section */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 pb-6 border-b-2 border-border">
+                <CardContent className="p-3">
+                  {/* Header Section - Compacto */}
+                  <div className="grid grid-cols-4 gap-3 mb-3 pb-2 border-b border-border">
                     {/* Deadline Status */}
-                    <div className="md:col-span-1 flex items-center justify-center">
-                      <div className={`${deadlineColor} text-white rounded-lg p-4 w-full text-center`}>
-                        <div className="text-3xl font-bold mb-1">
-                          {deadlineLabel}
-                        </div>
+                    <div className="flex items-center justify-center">
+                      <div className={`${deadlineColor} text-white rounded px-2 py-1 w-full text-center text-xs font-bold`}>
+                        <div className="mb-0.5">{deadlineLabel}</div>
                         {order.delivery_date && (
-                          <div className="text-sm opacity-90">
+                          <div className="text-[10px] opacity-90">
                             {format(new Date(order.delivery_date), "dd/MM/yyyy", { locale: es })}
                           </div>
                         )}
@@ -169,71 +167,61 @@ export default function ProductionBoard() {
                     </div>
 
                     {/* Order Info */}
-                    <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="col-span-3 grid grid-cols-3 gap-2 text-sm">
                       <div>
-                        <div className="text-sm text-muted-foreground mb-1">Pedido</div>
-                        <div className="text-2xl font-bold">{order.order_number}</div>
+                        <div className="text-xs text-muted-foreground">Pedido</div>
+                        <div className="font-bold">{order.order_number}</div>
                       </div>
                       
                       <div>
-                        <div className="text-sm text-muted-foreground mb-1">Cliente</div>
-                        <div className="text-xl font-semibold">
+                        <div className="text-xs text-muted-foreground">Cliente</div>
+                        <div className="font-semibold">
                           <CustomerName customerId={order.customer_id} />
                         </div>
                       </div>
                       
                       <div>
-                        <div className="text-sm text-muted-foreground mb-1">Fecha pedido</div>
-                        <div className="text-lg flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
+                        <div className="text-xs text-muted-foreground">Fecha pedido</div>
+                        <div className="text-sm">
                           {format(new Date(order.order_date), "dd/MM/yyyy", { locale: es })}
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Items Section */}
-                  <div>
-                    <div className="text-lg font-semibold mb-4 flex items-center gap-2">
-                      <Package className="h-5 w-5" />
-                      Artículos ({order.items.length})
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {order.items.map((item, index) => (
-                        <Card key={item.id} className="bg-muted/30">
-                          <CardContent className="p-4">
-                            <div className="flex justify-between items-start mb-2">
-                              <div className="font-semibold text-lg">
-                                {index + 1}. {item.product_name}
-                              </div>
-                              <Badge 
-                                variant={
-                                  item.production_status === "completed" 
-                                    ? "default" 
-                                    : item.production_status === "in_production"
-                                    ? "secondary"
-                                    : "outline"
-                                }
-                                className="ml-2"
-                              >
-                                {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
-                              </Badge>
-                            </div>
-                            
-                            {item.description && (
-                              <div className="text-sm text-muted-foreground mb-2">
-                                {item.description}
-                              </div>
-                            )}
-                            
-                            <div className="text-sm font-medium">
-                              Cantidad: {item.quantity}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
+                  {/* Items Section - Una línea por artículo */}
+                  <div className="space-y-1">
+                    {order.items.map((item, index) => (
+                      <div key={item.id} className="flex items-center gap-2 text-sm py-1">
+                        {index === 0 && (
+                          <span className="font-semibold text-xs mr-2">
+                            Artículos ({order.items.length}):
+                          </span>
+                        )}
+                        {index > 0 && <span className="w-[90px]"></span>}
+                        
+                        <span className="font-medium">
+                          {index + 1}. {item.product_name}
+                        </span>
+                        
+                        <Badge 
+                          variant={
+                            item.production_status === "completed" 
+                              ? "default" 
+                              : item.production_status === "in_production"
+                              ? "secondary"
+                              : "outline"
+                          }
+                          className="text-xs py-0"
+                        >
+                          {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
+                        </Badge>
+                        
+                        <span className="text-xs text-muted-foreground ml-auto">
+                          Cant: {item.quantity}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
