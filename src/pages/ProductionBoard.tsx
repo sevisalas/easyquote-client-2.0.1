@@ -216,10 +216,6 @@ export default function ProductionBoard() {
                         >
                           {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                         </Badge>
-                        
-                        <span className="text-sm text-muted-foreground ml-auto">
-                          Cant: {item.quantity}
-                        </span>
                       </div>
                     ))}
                   </div>
