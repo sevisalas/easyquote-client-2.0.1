@@ -20,8 +20,8 @@ const ImpositionScheme: React.FC<{ data: any }> = ({ data }) => {
   } = data;
 
   const isLandscape = sheetWidth >= sheetHeight;
-  const svgWidth = 400;
-  const svgHeight = isLandscape ? 280 : 350;
+  const svgWidth = 300;
+  const svgHeight = isLandscape ? 180 : 220;
   
   const margin = 20;
   const scaleX = (svgWidth - margin * 2) / sheetWidth;
@@ -138,17 +138,17 @@ const ImpositionScheme: React.FC<{ data: any }> = ({ data }) => {
 // Estilos para el PDF
 const styles = StyleSheet.create({
   page: {
-    padding: 30,
-    fontSize: 10,
+    padding: 20,
+    fontSize: 8,
     fontFamily: 'Helvetica',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 20,
-    paddingBottom: 15,
-    borderBottomWidth: 2,
+    marginBottom: 10,
+    paddingBottom: 8,
+    borderBottomWidth: 1.5,
     borderBottomColor: '#000',
   },
   headerLeft: {
@@ -158,50 +158,50 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   logo: {
-    width: 80,
+    width: 60,
     height: 'auto',
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 18,
-    fontFamily: 'Helvetica-Bold',
     marginBottom: 4,
   },
+  title: {
+    fontSize: 14,
+    fontFamily: 'Helvetica-Bold',
+    marginBottom: 2,
+  },
   subtitle: {
-    fontSize: 12,
+    fontSize: 9,
     color: '#666',
   },
   section: {
-    marginBottom: 15,
+    marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: 'Helvetica-Bold',
-    marginBottom: 8,
-    paddingBottom: 4,
-    borderBottomWidth: 1,
+    marginBottom: 4,
+    paddingBottom: 2,
+    borderBottomWidth: 0.5,
     borderBottomColor: '#ddd',
   },
   row: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   label: {
     fontFamily: 'Helvetica-Bold',
-    marginRight: 5,
-    minWidth: 100,
+    marginRight: 4,
+    minWidth: 80,
   },
   value: {
     flex: 1,
   },
   table: {
-    marginTop: 8,
+    marginTop: 4,
   },
   tableRow: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
     borderBottomColor: '#eee',
-    paddingVertical: 6,
+    paddingVertical: 3,
   },
   tableHeader: {
     backgroundColor: '#f5f5f5',
@@ -209,57 +209,57 @@ const styles = StyleSheet.create({
   },
   tableCell: {
     flex: 1,
-    paddingHorizontal: 4,
+    paddingHorizontal: 3,
   },
   observationsBox: {
     border: '1px solid #ddd',
-    padding: 10,
-    minHeight: 100,
+    padding: 6,
+    minHeight: 40,
     backgroundColor: '#fafafa',
-    marginTop: 15,
+    marginTop: 6,
   },
   observationsTitle: {
-    fontSize: 11,
+    fontSize: 9,
     fontFamily: 'Helvetica-Bold',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   observationsText: {
-    fontSize: 9,
+    fontSize: 7,
     color: '#666',
     fontStyle: 'italic',
   },
   impositionBox: {
     border: '1px solid #ddd',
-    padding: 10,
+    padding: 6,
     backgroundColor: '#f9f9f9',
-    marginBottom: 10,
+    marginBottom: 6,
   },
   impositionGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 6,
+    marginTop: 3,
   },
   impositionItem: {
     width: '50%',
-    marginBottom: 6,
+    marginBottom: 3,
   },
   impositionLabel: {
-    fontSize: 9,
+    fontSize: 7,
     fontFamily: 'Helvetica-Bold',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   impositionValue: {
-    fontSize: 10,
+    fontSize: 8,
     color: '#333',
   },
   impositionHighlight: {
     backgroundColor: '#e8f5e9',
-    padding: 6,
-    borderRadius: 3,
-    marginTop: 6,
+    padding: 3,
+    borderRadius: 2,
+    marginTop: 3,
   },
   impositionHighlightText: {
-    fontSize: 11,
+    fontSize: 9,
     fontFamily: 'Helvetica-Bold',
     color: '#2e7d32',
   },
@@ -391,7 +391,7 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
           {/* Producto */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>PRODUCTO</Text>
-            <Text style={{ fontSize: 11, fontFamily: 'Helvetica-Bold', marginBottom: 8 }}>
+            <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold', marginBottom: 4 }}>
               {item.product_name}
             </Text>
           </View>
