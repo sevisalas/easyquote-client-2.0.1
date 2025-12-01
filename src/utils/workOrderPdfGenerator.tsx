@@ -1,19 +1,19 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, pdf, Image } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, pdf, Image, Svg, Rect, Line } from '@react-pdf/renderer';
 import { supabase } from '@/integrations/supabase/client';
 
-// Función para generar SVG de imposición como data URI
-const generateImpositionSvg = (data: any) => {
+// Componente para renderizar el esquema de imposición con componentes nativos
+const ImpositionScheme: React.FC<{ data: any }> = ({ data }) => {
   const {
     productWidth,
     productHeight,
-    bleed,
+    bleed = 0,
     sheetWidth,
     sheetHeight,
     validWidth,
     validHeight,
-    gutterH,
-    gutterV,
+    gutterH = 0,
+    gutterV = 0,
     repetitionsH = 0,
     repetitionsV = 0,
     orientation = 'horizontal'
@@ -54,25 +54,85 @@ const generateImpositionSvg = (data: any) => {
   const impositionOffsetY = validOffsetY + (validHeight - totalUsedHeight) / 2;
   
   const cropMarkLength = 8;
-  
-  let productsHtml = '';
-  for (let row = 0; row < repetitionsV; row++) {
-    for (let col = 0; col < repetitionsH; col++) {
-      const x = impositionOffsetX + col * (prodW + gutterH);
-      const y = impositionOffsetY + row * (prodH + gutterV);
+
+  return (
+    <Svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
+      {/* Sheet background */}
+      <Rect
+        x={sx(0)}
+        y={sy(0)}
+        width={sw(sheetWidth)}
+        height={sh(sheetHeight)}
+        fill="#fafafa"
+        stroke="#d1d5db"
+        strokeWidth={2}
+      />
       
-      productsHtml += `
-        <rect x="${sx(x).toFixed(2)}" y="${sy(y).toFixed(2)}" width="${sw(prodW).toFixed(2)}" height="${sh(prodH).toFixed(2)}" fill="#e5e7eb" stroke="#9ca3af" stroke-width="0.5"/>
-        <rect x="${sx(x + bleed).toFixed(2)}" y="${sy(y + bleed).toFixed(2)}" width="${sw(orientation === 'horizontal' ? productWidth : productHeight).toFixed(2)}" height="${sh(orientation === 'horizontal' ? productHeight : productWidth).toFixed(2)}" fill="#f3f4f6" stroke="#6b7280" stroke-width="1"/>
-        <line x1="${sx(x + bleed - cropMarkLength).toFixed(2)}" y1="${sy(y + bleed).toFixed(2)}" x2="${sx(x + bleed + cropMarkLength).toFixed(2)}" y2="${sy(y + bleed).toFixed(2)}" stroke="#374151" stroke-width="0.8"/>
-        <line x1="${sx(x + bleed).toFixed(2)}" y1="${sy(y + bleed - cropMarkLength).toFixed(2)}" x2="${sx(x + bleed).toFixed(2)}" y2="${sy(y + bleed + cropMarkLength).toFixed(2)}" stroke="#374151" stroke-width="0.8"/>
-      `;
-    }
-  }
-  
-  const svg = `<svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg"><rect x="${sx(0).toFixed(2)}" y="${sy(0).toFixed(2)}" width="${sw(sheetWidth).toFixed(2)}" height="${sh(sheetHeight).toFixed(2)}" fill="#fafafa" stroke="#d1d5db" stroke-width="2"/><rect x="${sx(validOffsetX).toFixed(2)}" y="${sy(validOffsetY).toFixed(2)}" width="${sw(validWidth).toFixed(2)}" height="${sh(validHeight).toFixed(2)}" fill="none" stroke="#9ca3af" stroke-width="1" stroke-dasharray="4,4"/>${productsHtml}</svg>`;
-  
-  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+      {/* Valid area */}
+      <Rect
+        x={sx(validOffsetX)}
+        y={sy(validOffsetY)}
+        width={sw(validWidth)}
+        height={sh(validHeight)}
+        fill="none"
+        stroke="#9ca3af"
+        strokeWidth={1}
+        strokeDasharray="4,4"
+      />
+      
+      {/* Products */}
+      {Array.from({ length: repetitionsV }).map((_, row) =>
+        Array.from({ length: repetitionsH }).map((_, col) => {
+          const x = impositionOffsetX + col * (prodW + gutterH);
+          const y = impositionOffsetY + row * (prodH + gutterV);
+          
+          return (
+            <React.Fragment key={`${row}-${col}`}>
+              {/* Product with bleed */}
+              <Rect
+                x={sx(x)}
+                y={sy(y)}
+                width={sw(prodW)}
+                height={sh(prodH)}
+                fill="#e5e7eb"
+                stroke="#9ca3af"
+                strokeWidth={0.5}
+              />
+              
+              {/* Product area */}
+              <Rect
+                x={sx(x + bleed)}
+                y={sy(y + bleed)}
+                width={sw(orientation === 'horizontal' ? productWidth : productHeight)}
+                height={sh(orientation === 'horizontal' ? productHeight : productWidth)}
+                fill="#f3f4f6"
+                stroke="#6b7280"
+                strokeWidth={1}
+              />
+              
+              {/* Crop marks */}
+              <Line
+                x1={sx(x + bleed - cropMarkLength)}
+                y1={sy(y + bleed)}
+                x2={sx(x + bleed + cropMarkLength)}
+                y2={sy(y + bleed)}
+                stroke="#374151"
+                strokeWidth={0.8}
+              />
+              <Line
+                x1={sx(x + bleed)}
+                y1={sy(y + bleed - cropMarkLength)}
+                x2={sx(x + bleed)}
+                y2={sy(y + bleed + cropMarkLength)}
+                stroke="#374151"
+                strokeWidth={0.8}
+              />
+            </React.Fragment>
+          );
+        })
+      )}
+    </Svg>
+  );
 };
 
 // Estilos para el PDF
@@ -381,10 +441,7 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>IMPOSICIÓN</Text>
               <View style={styles.impositionBox}>
-                <Image 
-                  src={generateImpositionSvg(item.imposition_data)} 
-                  style={{ width: 400, height: 280, marginBottom: 10 }}
-                />
+                <ImpositionScheme data={item.imposition_data} />
                 <View style={styles.row}>
                   <Text style={styles.label}>Tamaño de hoja:</Text>
                   <Text style={styles.value}>
