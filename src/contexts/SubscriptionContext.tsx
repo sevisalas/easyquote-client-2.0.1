@@ -15,6 +15,7 @@ interface Organization {
   client_user_extra: number;
   api_user_id: string;
   holded_external_customers?: boolean;
+  max_daily_orders?: number;
 }
 
 interface OrganizationMember {

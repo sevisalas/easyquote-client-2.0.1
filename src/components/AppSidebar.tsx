@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles, Monitor, ListChecks } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles, Monitor, ListChecks, TrendingUp } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -45,6 +45,7 @@ export function AppSidebar() {
   const { 
     isSuperAdmin, 
     isOrgAdmin, 
+    membership,
     canAccessClientes,
     canAccessPresupuestos,
     canAccessExcel,
@@ -55,6 +56,8 @@ export function AppSidebar() {
   } = useSubscription();
   const { isHoldedActive } = useHoldedIntegration();
   const { hasPdfAccess, loading: pdfAccessLoading } = usePdfAccess();
+  
+  const isComercial = membership?.role === 'comercial';
 
   const handleSignOut = async () => {
     try {
@@ -340,6 +343,21 @@ export function AppSidebar() {
                                   </NavLink>
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
+                              {/* Carga de trabajo - Todos excepto comerciales */}
+                              {!isComercial && (
+                                <SidebarMenuSubItem>
+                                  <SidebarMenuSubButton
+                                    asChild
+                                    isActive={currentPath === "/carga-trabajo"}
+                                    className="h-6 px-2"
+                                  >
+                                    <NavLink to="/carga-trabajo" className={getNavCls}>
+                                      <TrendingUp className="mr-2 h-4 w-4" />
+                                      {!isCollapsed && <span>Carga de trabajo</span>}
+                                    </NavLink>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              )}
                             </SidebarMenuSub>
                           </CollapsibleContent>
                        </SidebarMenuItem>

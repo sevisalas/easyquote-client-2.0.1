@@ -34,6 +34,7 @@ import ProductManagement from "./pages/ProductManagement";
 import ProductCategories from "./pages/ProductCategories";
 import ProductForm from "./pages/ProductForm";
 import ProductionVariables from "./pages/ProductionVariables";
+import WorkloadDashboard from "./pages/WorkloadDashboard";
 
 
 
@@ -339,6 +340,16 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <ProductionVariables />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/carga-trabajo"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <WorkloadDashboard />
             </AppLayout>
           </ProtectedRoute>
         }
