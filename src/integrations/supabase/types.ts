@@ -872,6 +872,54 @@ export type Database = {
           },
         ]
       }
+      product_variable_mappings: {
+        Row: {
+          created_at: string
+          easyquote_product_id: string
+          id: string
+          organization_id: string
+          product_name: string
+          production_variable_id: string
+          prompt_or_output_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          easyquote_product_id: string
+          id?: string
+          organization_id: string
+          product_name: string
+          production_variable_id: string
+          prompt_or_output_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          easyquote_product_id?: string
+          id?: string
+          organization_id?: string
+          product_name?: string
+          production_variable_id?: string
+          prompt_or_output_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variable_mappings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variable_mappings_production_variable_id_fkey"
+            columns: ["production_variable_id"]
+            isOneToOne: false
+            referencedRelation: "production_variables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       production_phases: {
         Row: {
           color: string | null
@@ -964,6 +1012,47 @@ export type Database = {
             columns: ["sales_order_item_id"]
             isOneToOne: false
             referencedRelation: "sales_order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_variables: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          updated_at: string
+          variable_type: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          updated_at?: string
+          variable_type?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          updated_at?: string
+          variable_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_variables_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]

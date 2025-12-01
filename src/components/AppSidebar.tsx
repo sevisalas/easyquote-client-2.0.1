@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles, Monitor } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles, Monitor, ListChecks } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -447,6 +447,18 @@ export function AppSidebar() {
                                  <NavLink to="/admin/categorias" end className={getNavCls}>
                                    <Tags className="mr-2 h-4 w-4" />
                                    {!isCollapsed && <span>Categorías</span>}
+                                 </NavLink>
+                               </SidebarMenuSubButton>
+                             </SidebarMenuSubItem>
+                           )}
+                           
+                           {/* Variables de producción - Solo API subscriptions o Client admins */}
+                           {canAccessProductos() && (
+                             <SidebarMenuSubItem>
+                               <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/variables-produccion"} className="h-6 px-2">
+                                 <NavLink to="/configuracion/variables-produccion" end className={getNavCls}>
+                                   <ListChecks className="mr-2 h-4 w-4" />
+                                   {!isCollapsed && <span>Variables de producción</span>}
                                  </NavLink>
                                </SidebarMenuSubButton>
                              </SidebarMenuSubItem>

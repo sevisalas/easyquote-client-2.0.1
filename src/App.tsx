@@ -33,6 +33,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ProductManagement from "./pages/ProductManagement";
 import ProductCategories from "./pages/ProductCategories";
 import ProductForm from "./pages/ProductForm";
+import ProductionVariables from "./pages/ProductionVariables";
 
 
 
@@ -328,6 +329,16 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <ProductCategories />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/configuracion/variables-produccion"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ProductionVariables />
             </AppLayout>
           </ProtectedRoute>
         }
