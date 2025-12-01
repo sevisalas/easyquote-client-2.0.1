@@ -584,6 +584,7 @@ export type Database = {
           excel_limit: number
           holded_external_customers: boolean
           id: string
+          max_daily_orders: number | null
           name: string
           subscription_plan: string
           updated_at: string
@@ -597,6 +598,7 @@ export type Database = {
           excel_limit?: number
           holded_external_customers?: boolean
           id?: string
+          max_daily_orders?: number | null
           name: string
           subscription_plan?: string
           updated_at?: string
@@ -610,6 +612,7 @@ export type Database = {
           excel_limit?: number
           holded_external_customers?: boolean
           id?: string
+          max_daily_orders?: number | null
           name?: string
           subscription_plan?: string
           updated_at?: string
