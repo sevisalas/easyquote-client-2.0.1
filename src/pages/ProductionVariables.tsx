@@ -12,13 +12,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -152,49 +151,54 @@ export default function ProductionVariables() {
           </Button>
         </div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Descripción</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Tarea implícita</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {variables.map((variable) => (
-              <TableRow key={variable.id}>
-                <TableCell className="font-medium">{variable.name}</TableCell>
-                <TableCell>{variable.description || "—"}</TableCell>
-                <TableCell className="capitalize">{variable.variable_type}</TableCell>
-                <TableCell>
-                  {variable.has_implicit_task ? (
-                    <span className="text-sm">{variable.task_name || "Sí"}</span>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openEditDialog(variable)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openDeleteDialog(variable)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {variables.map((variable) => (
+            <Card key={variable.id}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-lg">{variable.name}</CardTitle>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openEditDialog(variable)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openDeleteDialog(variable)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                {variable.description && (
+                  <CardDescription>{variable.description}</CardDescription>
+                )}
+              </CardHeader>
+              <CardContent>
+                {variable.has_implicit_task ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="text-sm">
+                      <span className="font-medium">Tarea implícita:</span>{' '}
+                      {variable.task_name}
+                    </div>
+                    {variable.task_exclude_values && variable.task_exclude_values.length > 0 && (
+                      <div className="text-xs text-muted-foreground">
+                        <span className="font-medium">Excluir valores:</span>{' '}
+                        {variable.task_exclude_values.join(', ')}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">Sin tarea implícita</div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
 
       {/* Create Dialog */}
