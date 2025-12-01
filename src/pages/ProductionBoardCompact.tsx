@@ -27,6 +27,13 @@ interface SalesOrder {
   status: string;
   items: SalesOrderItem[];
 }
+const statusLabels = {
+  draft: "Borrador",
+  pending: "Pendiente",
+  in_production: "En producción",
+  completed: "Completado"
+};
+
 const itemStatusLabels = {
   pending: "Pendiente",
   in_production: "En producción",
@@ -184,6 +191,13 @@ export default function ProductionBoardCompact() {
                     </div>
 
                     <div>
+                      <div className="text-xs text-secondary">Estado pedido</div>
+                      <Badge variant={order.status === "completed" ? "default" : order.status === "in_production" ? "secondary" : "outline"} className="text-xs">
+                        {statusLabels[order.status as keyof typeof statusLabels] || order.status}
+                      </Badge>
+                    </div>
+
+                    <div>
                       <div className="text-xs text-secondary">Fecha pedido</div>
                       <div className="text-xs">{format(new Date(order.order_date), "dd/MM/yyyy", {
                     locale: es
@@ -205,7 +219,7 @@ export default function ProductionBoardCompact() {
                               {index + 1}. {item.product_name}
                             </div>
                             <Badge variant={item.production_status === "completed" ? "default" : item.production_status === "in_production" ? "secondary" : "outline"} className="text-xs mt-1">
-                              {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
+                              Estado: {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
                         </div>

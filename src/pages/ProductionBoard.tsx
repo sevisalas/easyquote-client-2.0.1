@@ -252,6 +252,13 @@ export default function ProductionBoard() {
                         </div>
                       </div>
 
+                      <div className="flex-1">
+                        <div className="text-sm mb-1 text-secondary">Estado pedido</div>
+                        <Badge variant={order.status === "completed" ? "default" : order.status === "in_production" ? "secondary" : "outline"}>
+                          {statusLabels[order.status as keyof typeof statusLabels] || order.status}
+                        </Badge>
+                      </div>
+
                       <div className="w-[120px] text-right">
                         <div className="text-sm text-muted-foreground mb-1">Fecha pedido</div>
                         <div className="text-base">
@@ -300,7 +307,7 @@ export default function ProductionBoard() {
                             }
                             className="text-sm"
                           >
-                            {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
+                            Estado: {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                           </Badge>
                         </div>
 

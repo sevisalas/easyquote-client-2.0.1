@@ -30,6 +30,13 @@ interface SalesOrder {
   items: SalesOrderItem[];
 }
 
+const statusLabels = {
+  draft: "Borrador",
+  pending: "Pendiente",
+  in_production: "En producción",
+  completed: "Completado"
+};
+
 const itemStatusLabels = {
   pending: "Pendiente",
   in_production: "En producción",
@@ -212,6 +219,12 @@ export default function ProductionBoardKanban() {
                     <div className="text-sm font-medium">
                       <CustomerName customerId={order.customer_id} />
                     </div>
+                    <div className="mb-2">
+                      <div className="text-xs text-secondary mb-1">Estado pedido</div>
+                      <Badge variant={order.status === "completed" ? "default" : order.status === "in_production" ? "secondary" : "outline"} className="text-xs">
+                        {statusLabels[order.status as keyof typeof statusLabels] || order.status}
+                      </Badge>
+                    </div>
                     <div className="text-xs space-y-2">
                       {order.items.map((item, idx) => (
                         <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
@@ -237,7 +250,7 @@ export default function ProductionBoardKanban() {
                               }
                               className="text-xs"
                             >
-                              {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
+                              Estado: {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
                           {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
@@ -292,6 +305,12 @@ export default function ProductionBoardKanban() {
                     <div className="text-sm font-medium">
                       <CustomerName customerId={order.customer_id} />
                     </div>
+                    <div className="mb-2">
+                      <div className="text-xs text-secondary mb-1">Estado pedido</div>
+                      <Badge variant={order.status === "completed" ? "default" : order.status === "in_production" ? "secondary" : "outline"} className="text-xs">
+                        {statusLabels[order.status as keyof typeof statusLabels] || order.status}
+                      </Badge>
+                    </div>
                     <div className="text-xs space-y-2">
                       {order.items.map((item, idx) => (
                         <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
@@ -317,7 +336,7 @@ export default function ProductionBoardKanban() {
                               }
                               className="text-xs"
                             >
-                              {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
+                              Estado: {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
                           {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
@@ -372,6 +391,12 @@ export default function ProductionBoardKanban() {
                     <div className="text-sm font-medium">
                       <CustomerName customerId={order.customer_id} />
                     </div>
+                    <div className="mb-2">
+                      <div className="text-xs text-secondary mb-1">Estado pedido</div>
+                      <Badge variant={order.status === "completed" ? "default" : order.status === "in_production" ? "secondary" : "outline"} className="text-xs">
+                        {statusLabels[order.status as keyof typeof statusLabels] || order.status}
+                      </Badge>
+                    </div>
                     <div className="text-xs space-y-2">
                       {order.items.map((item, idx) => (
                         <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
@@ -397,7 +422,7 @@ export default function ProductionBoardKanban() {
                               }
                               className="text-xs"
                             >
-                              {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
+                              Estado: {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
                           {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
@@ -452,6 +477,12 @@ export default function ProductionBoardKanban() {
                     <div className="text-sm font-medium">
                       <CustomerName customerId={order.customer_id} />
                     </div>
+                    <div className="mb-2">
+                      <div className="text-xs text-secondary mb-1">Estado pedido</div>
+                      <Badge variant={order.status === "completed" ? "default" : order.status === "in_production" ? "secondary" : "outline"} className="text-xs">
+                        {statusLabels[order.status as keyof typeof statusLabels] || order.status}
+                      </Badge>
+                    </div>
                     <div className="text-xs space-y-2">
                       {order.items.map((item, idx) => (
                         <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
@@ -477,7 +508,7 @@ export default function ProductionBoardKanban() {
                               }
                               className="text-xs"
                             >
-                              {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
+                              Estado: {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
                           {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
