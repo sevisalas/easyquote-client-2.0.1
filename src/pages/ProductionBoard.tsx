@@ -131,7 +131,7 @@ export default function ProductionBoard() {
         <h1 className="text-4xl font-bold">Panel de Producción</h1>
       </div>
 
-      <div className="space-y-3 max-w-7xl mx-auto">
+      <div className="space-y-2 max-w-7xl mx-auto">
         {orders.length === 0 ? (
           <Card className="p-12">
             <div className="text-center text-2xl text-muted-foreground">
