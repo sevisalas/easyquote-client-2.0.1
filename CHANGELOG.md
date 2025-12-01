@@ -5,14 +5,13 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
-## [2.1.1] - En Desarrollo
+## [2.2.0] - En Desarrollo
 
 ### Añadido
-- Sistema de imposición de productos por artículo de pedido
-- Cálculo automático de páginas por pliego
-- Configuración de sangre y calles
-- Visualización gráfica del esquema de imposición
-- Valores por defecto preconfigurados
+
+### Cambiado
+
+### Corregido
 
 ---
 
