@@ -1025,7 +1025,9 @@ export type Database = {
           is_active: boolean
           name: string
           organization_id: string
+          task_exclude_values: string[] | null
           task_name: string | null
+          task_trigger_values: string[] | null
           updated_at: string
           variable_type: string
         }
@@ -1037,7 +1039,9 @@ export type Database = {
           is_active?: boolean
           name: string
           organization_id: string
+          task_exclude_values?: string[] | null
           task_name?: string | null
+          task_trigger_values?: string[] | null
           updated_at?: string
           variable_type?: string
         }
@@ -1049,7 +1053,9 @@ export type Database = {
           is_active?: boolean
           name?: string
           organization_id?: string
+          task_exclude_values?: string[] | null
           task_name?: string | null
+          task_trigger_values?: string[] | null
           updated_at?: string
           variable_type?: string
         }
