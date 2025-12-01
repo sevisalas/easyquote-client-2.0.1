@@ -2,6 +2,96 @@ import React from 'react';
 import { Document, Page, Text, View, StyleSheet, pdf, Image } from '@react-pdf/renderer';
 import { supabase } from '@/integrations/supabase/client';
 
+// Función para generar SVG de imposición como data URI
+const generateImpositionSvg = (data: any) => {
+  const {
+    productWidth,
+    productHeight,
+    bleed,
+    sheetWidth,
+    sheetHeight,
+    validWidth,
+    validHeight,
+    gutterH,
+    gutterV,
+    repetitionsH = 0,
+    repetitionsV = 0,
+    orientation = 'horizontal'
+  } = data;
+
+  const isLandscape = sheetWidth >= sheetHeight;
+  const svgWidth = 400;
+  const svgHeight = isLandscape ? 280 : 350;
+  
+  const margin = 20;
+  const scaleX = (svgWidth - margin * 2) / sheetWidth;
+  const scaleY = (svgHeight - margin * 2) / sheetHeight;
+  const scale = Math.min(scaleX, scaleY);
+  
+  const scaledSheetW = sheetWidth * scale;
+  const scaledSheetH = sheetHeight * scale;
+  const offsetX = (svgWidth - scaledSheetW) / 2;
+  const offsetY = (svgHeight - scaledSheetH) / 2;
+  
+  const sx = (x: number) => offsetX + x * scale;
+  const sy = (y: number) => offsetY + y * scale;
+  const sw = (w: number) => w * scale;
+  const sh = (h: number) => h * scale;
+  
+  const validOffsetX = (sheetWidth - validWidth) / 2;
+  const validOffsetY = (sheetHeight - validHeight) / 2;
+  
+  const productWithBleedW = productWidth + (bleed * 2);
+  const productWithBleedH = productHeight + (bleed * 2);
+  
+  const prodW = orientation === 'horizontal' ? productWithBleedW : productWithBleedH;
+  const prodH = orientation === 'horizontal' ? productWithBleedH : productWithBleedW;
+  
+  const totalUsedWidth = repetitionsH * prodW + (repetitionsH - 1) * gutterH;
+  const totalUsedHeight = repetitionsV * prodH + (repetitionsV - 1) * gutterV;
+  
+  const impositionOffsetX = validOffsetX + (validWidth - totalUsedWidth) / 2;
+  const impositionOffsetY = validOffsetY + (validHeight - totalUsedHeight) / 2;
+  
+  const cropMarkLength = 8;
+  
+  let productsHtml = '';
+  for (let row = 0; row < repetitionsV; row++) {
+    for (let col = 0; col < repetitionsH; col++) {
+      const x = impositionOffsetX + col * (prodW + gutterH);
+      const y = impositionOffsetY + row * (prodH + gutterV);
+      
+      productsHtml += `
+        <rect x="${sx(x)}" y="${sy(y)}" width="${sw(prodW)}" height="${sh(prodH)}" 
+          fill="#e5e7eb" stroke="#9ca3af" stroke-width="0.5"/>
+        <rect x="${sx(x + bleed)}" y="${sy(y + bleed)}" 
+          width="${sw(orientation === 'horizontal' ? productWidth : productHeight)}" 
+          height="${sh(orientation === 'horizontal' ? productHeight : productWidth)}" 
+          fill="#f3f4f6" stroke="#6b7280" stroke-width="1"/>
+        
+        <line x1="${sx(x + bleed - cropMarkLength)}" y1="${sy(y + bleed)}" 
+          x2="${sx(x + bleed + cropMarkLength)}" y2="${sy(y + bleed)}" 
+          stroke="#374151" stroke-width="0.8"/>
+        <line x1="${sx(x + bleed)}" y1="${sy(y + bleed - cropMarkLength)}" 
+          x2="${sx(x + bleed)}" y2="${sy(y + bleed + cropMarkLength)}" 
+          stroke="#374151" stroke-width="0.8"/>
+      `;
+    }
+  }
+  
+  const svg = `
+    <svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="${sx(0)}" y="${sy(0)}" width="${sw(sheetWidth)}" height="${sh(sheetHeight)}" 
+        fill="#fafafa" stroke="#d1d5db" stroke-width="2"/>
+      <rect x="${sx(validOffsetX)}" y="${sy(validOffsetY)}" width="${sw(validWidth)}" height="${sh(validHeight)}" 
+        fill="none" stroke="#9ca3af" stroke-width="1" stroke-dasharray="4,4"/>
+      ${productsHtml}
+    </svg>
+  `;
+  
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+};
+
 // Estilos para el PDF
 const styles = StyleSheet.create({
   page: {
@@ -308,6 +398,10 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>IMPOSICIÓN</Text>
               <View style={styles.impositionBox}>
+                <Image 
+                  src={generateImpositionSvg(item.imposition_data)} 
+                  style={{ width: 400, height: 280, marginBottom: 10 }}
+                />
                 <View style={styles.row}>
                   <Text style={styles.label}>Tamaño de hoja:</Text>
                   <Text style={styles.value}>
