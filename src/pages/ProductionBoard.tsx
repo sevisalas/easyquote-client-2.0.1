@@ -134,7 +134,7 @@ export default function ProductionBoard() {
         </p>
       </div>
 
-      <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="space-y-3 max-w-7xl mx-auto">
         {orders.length === 0 ? (
           <Card className="p-12">
             <div className="text-center text-2xl text-muted-foreground">
@@ -151,9 +151,9 @@ export default function ProductionBoard() {
                 key={order.id} 
                 className={`border-4 ${deadlineColor} shadow-lg`}
               >
-                <CardContent className="p-4">
+                <CardContent className="p-3">
                   {/* Header Section */}
-                  <div className="grid grid-cols-4 gap-4 mb-4 pb-3 border-b border-border">
+                  <div className="grid grid-cols-4 gap-3 mb-2 pb-2 border-b border-border">
                     {/* Deadline Status */}
                     <div className="flex items-center justify-center">
                       <div className={`${deadlineColor} text-white rounded px-3 py-2 w-full text-center font-bold`}>
@@ -167,7 +167,7 @@ export default function ProductionBoard() {
                     </div>
 
                     {/* Order Info */}
-                    <div className="col-span-3 flex gap-6">
+                    <div className="col-span-3 flex gap-4">
                       <div className="w-[140px]">
                         <div className="text-sm text-muted-foreground mb-1">Pedido</div>
                         <div className="text-xl font-bold">{order.order_number}</div>
@@ -190,9 +190,9 @@ export default function ProductionBoard() {
                   </div>
 
                   {/* Items Section - Una línea por artículo */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     {order.items.map((item, index) => (
-                      <div key={item.id} className="flex items-center gap-3 py-1">
+                      <div key={item.id} className="flex items-center gap-3 py-0.5">
                         {index === 0 && (
                           <span className="font-semibold text-sm mr-2 min-w-[100px]">
                             Artículos ({order.items.length}):
