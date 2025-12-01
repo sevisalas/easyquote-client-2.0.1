@@ -323,149 +323,191 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
     return outputs.filter(output => productionTypes.includes(output.type));
   };
 
+  // Agrupar items por página
+  const itemsPerPage = 3;
+  const pages: Array<typeof items> = [];
+  
+  for (let i = 0; i < items.length; i += itemsPerPage) {
+    pages.push(items.slice(i, i + itemsPerPage));
+  }
+
   return (
     <Document>
-      {items.map((item, index) => (
-        <Page key={index} size="A4" style={styles.page}>
-          {/* Cabecera */}
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              {logoUrl && (
-                <Image src={logoUrl} style={styles.logo} />
-              )}
-              {companyName && (
-                <Text style={styles.subtitle}>{companyName}</Text>
-              )}
-            </View>
-            <View style={styles.headerRight}>
-              <Text style={styles.title}>ORDEN DE TRABAJO</Text>
-              <Text style={styles.subtitle}>Pedido: {orderNumber}</Text>
-              {orderDate && (
-                <Text style={styles.subtitle}>Fecha: {orderDate}</Text>
-              )}
-            </View>
-          </View>
-
-          {/* Información del Cliente */}
-          {customerName && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>CLIENTE</Text>
-              <View style={styles.row}>
-                <Text style={styles.label}>Nombre:</Text>
-                <Text style={styles.value}>{customerName}</Text>
+      {pages.map((pageItems, pageIndex) => (
+        <Page key={pageIndex} size="A4" style={styles.page}>
+          {/* Cabecera - solo en primera página */}
+          {pageIndex === 0 && (
+            <>
+              <View style={styles.header}>
+                <View style={styles.headerLeft}>
+                  {logoUrl && (
+                    <Image src={logoUrl} style={styles.logo} />
+                  )}
+                  {companyName && (
+                    <Text style={styles.subtitle}>{companyName}</Text>
+                  )}
+                </View>
+                <View style={styles.headerRight}>
+                  <Text style={styles.title}>ORDEN DE TRABAJO</Text>
+                  <Text style={styles.subtitle}>Pedido: {orderNumber}</Text>
+                  {orderDate && (
+                    <Text style={styles.subtitle}>Fecha: {orderDate}</Text>
+                  )}
+                </View>
               </View>
-              {customerEmail && (
-                <View style={styles.row}>
-                  <Text style={styles.label}>Email:</Text>
-                  <Text style={styles.value}>{customerEmail}</Text>
+
+              {/* Información del Cliente */}
+              {customerName && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>CLIENTE</Text>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Nombre:</Text>
+                    <Text style={styles.value}>{customerName}</Text>
+                  </View>
+                  {customerEmail && (
+                    <View style={styles.row}>
+                      <Text style={styles.label}>Email:</Text>
+                      <Text style={styles.value}>{customerEmail}</Text>
+                    </View>
+                  )}
+                  {customerPhone && (
+                    <View style={styles.row}>
+                      <Text style={styles.label}>Teléfono:</Text>
+                      <Text style={styles.value}>{customerPhone}</Text>
+                    </View>
+                  )}
                 </View>
               )}
-              {customerPhone && (
-                <View style={styles.row}>
-                  <Text style={styles.label}>Teléfono:</Text>
-                  <Text style={styles.value}>{customerPhone}</Text>
+
+              {/* Fechas */}
+              {(orderDate || deliveryDate) && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>FECHAS</Text>
+                  {orderDate && (
+                    <View style={styles.row}>
+                      <Text style={styles.label}>Fecha Pedido:</Text>
+                      <Text style={styles.value}>{orderDate}</Text>
+                    </View>
+                  )}
+                  {deliveryDate && (
+                    <View style={styles.row}>
+                      <Text style={styles.label}>Fecha Entrega:</Text>
+                      <Text style={styles.value}>{deliveryDate}</Text>
+                    </View>
+                  )}
                 </View>
               )}
-            </View>
+            </>
           )}
 
-          {/* Fechas */}
-          {(orderDate || deliveryDate) && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>FECHAS</Text>
-              {orderDate && (
-                <View style={styles.row}>
-                  <Text style={styles.label}>Fecha Pedido:</Text>
-                  <Text style={styles.value}>{orderDate}</Text>
+          {/* Items de la página */}
+          {pageItems.map((item, itemIndex) => (
+            <View 
+              key={itemIndex} 
+              style={{
+                marginBottom: 12,
+                padding: 8,
+                backgroundColor: '#f8f9fa',
+                borderWidth: 1,
+                borderColor: '#dee2e6',
+                borderRadius: 4,
+              }}
+            >
+              {/* Producto */}
+              <View style={{ marginBottom: 6 }}>
+                <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#495057', marginBottom: 3 }}>
+                  ARTÍCULO {pageIndex * itemsPerPage + itemIndex + 1}
+                </Text>
+                <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold' }}>
+                  {item.product_name}
+                </Text>
+              </View>
+
+              {/* Configuración (Prompts) */}
+              {item.prompts && item.prompts.length > 0 && (
+                <View style={{ marginBottom: 6 }}>
+                  <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', marginBottom: 3, color: '#6c757d' }}>
+                    Configuración
+                  </Text>
+                  <View style={styles.table}>
+                    {item.prompts
+                      .sort((a, b) => (a.order || 0) - (b.order || 0))
+                      .map((prompt, idx) => (
+                        <View key={idx} style={styles.tableRow}>
+                          <Text style={[styles.tableCell, { fontFamily: 'Helvetica-Bold', fontSize: 7 }]}>
+                            {prompt.label}
+                          </Text>
+                          <Text style={[styles.tableCell, { fontSize: 7 }]}>
+                            {String(prompt.value)}
+                          </Text>
+                        </View>
+                      ))}
+                  </View>
                 </View>
               )}
-              {deliveryDate && (
-                <View style={styles.row}>
-                  <Text style={styles.label}>Fecha Entrega:</Text>
-                  <Text style={styles.value}>{deliveryDate}</Text>
+
+              {/* Datos Técnicos (Outputs) */}
+              {getProductionOutputs(item.outputs).length > 0 && (
+                <View style={{ marginBottom: 6 }}>
+                  <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', marginBottom: 3, color: '#6c757d' }}>
+                    Datos Técnicos
+                  </Text>
+                  <View style={styles.table}>
+                    {getProductionOutputs(item.outputs).map((output, idx) => (
+                      <View key={idx} style={styles.tableRow}>
+                        <Text style={[styles.tableCell, { fontFamily: 'Helvetica-Bold', fontSize: 7 }]}>
+                          {output.name}
+                        </Text>
+                        <Text style={[styles.tableCell, { fontSize: 7 }]}>
+                          {String(output.value)}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
               )}
-            </View>
-          )}
 
-          {/* Producto */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>PRODUCTO</Text>
-            <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold', marginBottom: 4 }}>
-              {item.product_name}
-            </Text>
-          </View>
-
-          {/* Configuración (Prompts) */}
-          {item.prompts && item.prompts.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>CONFIGURACIÓN</Text>
-              <View style={styles.table}>
-                {item.prompts
-                  .sort((a, b) => (a.order || 0) - (b.order || 0))
-                  .map((prompt, idx) => (
-                    <View key={idx} style={styles.tableRow}>
-                      <Text style={[styles.tableCell, { fontFamily: 'Helvetica-Bold' }]}>
-                        {prompt.label}
-                      </Text>
-                      <Text style={styles.tableCell}>
-                        {String(prompt.value)}
+              {/* Imposición */}
+              {item.imposition_data && (
+                <View style={{ marginBottom: 6 }}>
+                  <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', marginBottom: 3, color: '#6c757d' }}>
+                    Imposición
+                  </Text>
+                  <View style={styles.impositionBox}>
+                    <ImpositionScheme data={item.imposition_data} />
+                    <View style={styles.row}>
+                      <Text style={[styles.label, { fontSize: 7 }]}>Tamaño de hoja:</Text>
+                      <Text style={[styles.value, { fontSize: 7 }]}>
+                        {item.imposition_data.sheetWidth} × {item.imposition_data.sheetHeight} mm
                       </Text>
                     </View>
-                  ))}
-              </View>
-            </View>
-          )}
-
-          {/* Datos Técnicos (Outputs) */}
-          {getProductionOutputs(item.outputs).length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>DATOS TÉCNICOS</Text>
-              <View style={styles.table}>
-                {getProductionOutputs(item.outputs).map((output, idx) => (
-                  <View key={idx} style={styles.tableRow}>
-                    <Text style={[styles.tableCell, { fontFamily: 'Helvetica-Bold' }]}>
-                      {output.name}
-                    </Text>
-                    <Text style={styles.tableCell}>
-                      {String(output.value)}
-                    </Text>
+                    {item.imposition_data.repetitionsH && item.imposition_data.repetitionsV && (
+                      <View style={[styles.row, { marginTop: 4 }]}>
+                        <Text style={[styles.value, { fontSize: 8, fontFamily: 'Helvetica-Bold' }]}>
+                          {item.imposition_data.repetitionsH} × {item.imposition_data.repetitionsV} = {item.imposition_data.totalRepetitions} unidades por pliego
+                        </Text>
+                      </View>
+                    )}
                   </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {/* Imposición */}
-          {item.imposition_data && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>IMPOSICIÓN</Text>
-              <View style={styles.impositionBox}>
-                <ImpositionScheme data={item.imposition_data} />
-                <View style={styles.row}>
-                  <Text style={styles.label}>Tamaño de hoja:</Text>
-                  <Text style={styles.value}>
-                    {item.imposition_data.sheetWidth} × {item.imposition_data.sheetHeight} mm
-                  </Text>
                 </View>
-                {item.imposition_data.repetitionsH && item.imposition_data.repetitionsV && (
-                  <View style={[styles.row, { marginTop: 8 }]}>
-                    <Text style={[styles.value, { fontSize: 12, fontFamily: 'Helvetica-Bold' }]}>
-                      {item.imposition_data.repetitionsH} × {item.imposition_data.repetitionsV} = {item.imposition_data.totalRepetitions} unidades por pliego
-                    </Text>
-                  </View>
-                )}
+              )}
+
+              {/* Observaciones mini */}
+              <View style={{ 
+                border: '1px solid #ced4da', 
+                padding: 4, 
+                backgroundColor: '#ffffff',
+                marginTop: 4,
+              }}>
+                <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold', marginBottom: 2 }}>
+                  Observaciones:
+                </Text>
+                <Text style={{ fontSize: 6, color: '#6c757d', fontStyle: 'italic' }}>
+                  ...
+                </Text>
               </View>
             </View>
-          )}
-
-          {/* Observaciones */}
-          <View style={styles.observationsBox}>
-            <Text style={styles.observationsTitle}>OBSERVACIONES</Text>
-            <Text style={styles.observationsText}>
-              Espacio para notas y observaciones durante la producción...
-            </Text>
-          </View>
+          ))}
         </Page>
       ))}
     </Document>
