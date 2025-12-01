@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerName } from "@/components/quotes/CustomerName";
 import { format, differenceInDays, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
-import { Package, Calendar, Clock } from "lucide-react";
+import { Package, Calendar, Clock, LayoutGrid } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 interface SalesOrderItem {
   id: string;
   product_name: string;
@@ -56,6 +58,7 @@ const getDeadlineLabel = (deliveryDate: string | null): string => {
 export default function ProductionBoard() {
   const [orders, setOrders] = useState<SalesOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
   useEffect(() => {
     loadOrders();
 
@@ -102,8 +105,16 @@ export default function ProductionBoard() {
       </div>;
   }
   return <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="mb-8 text-center">
+      <div className="mb-8 flex justify-between items-center">
         <h1 className="text-4xl font-bold">Panel de producción</h1>
+        <Button
+          variant="outline"
+          onClick={() => navigate("/panel-produccion-tablero")}
+          className="gap-2"
+        >
+          <LayoutGrid className="h-4 w-4" />
+          Vista tablero
+        </Button>
       </div>
 
       <div className="space-y-2 max-w-7xl mx-auto">
