@@ -61,7 +61,7 @@ const getDeadlineLabel = (deliveryDate: string | null): string => {
   if (daysUntil < 0) return "FUERA DE PLAZO";
   if (daysUntil === 0) return "ENTREGA HOY";
   if (daysUntil === 1) return "ENTREGA MAÑANA";
-  return `${daysUntil} días`;
+  return `Entrega ${daysUntil} días`;
 };
 
 export default function ProductionBoard() {
