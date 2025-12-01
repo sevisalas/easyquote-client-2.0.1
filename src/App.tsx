@@ -45,6 +45,7 @@ import SalesOrdersList from "./pages/SalesOrdersList";
 import SalesOrderDetail from "./pages/SalesOrderDetail";
 import SalesOrderNew from "./pages/SalesOrderNew";
 import SalesOrderEdit from "./pages/SalesOrderEdit";
+import ProductionBoard from "./pages/ProductionBoard";
 import Novedades from "./pages/Novedades";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { useSessionMonitor } from "./hooks/useSessionMonitor";
@@ -404,6 +405,16 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <SalesOrderDetail />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/panel-produccion"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ProductionBoard />
             </AppLayout>
           </ProtectedRoute>
         }

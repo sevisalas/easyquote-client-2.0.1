@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles, Monitor } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -302,34 +302,46 @@ export function AppSidebar() {
                              {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />}
                            </SidebarMenuButton>
                          </CollapsibleTrigger>
-                         <CollapsibleContent>
-                           <SidebarMenuSub className="ml-2">
-                             <SidebarMenuSubItem>
-                               <SidebarMenuSubButton
-                                 asChild
-                                 isActive={currentPath === "/pedidos"}
-                                 className="h-6 px-2"
-                               >
-                                 <NavLink to="/pedidos" end className={getNavCls}>
-                                   <Package className="mr-2 h-4 w-4" />
-                                   {!isCollapsed && <span>Listado</span>}
-                                 </NavLink>
-                               </SidebarMenuSubButton>
-                             </SidebarMenuSubItem>
-                             <SidebarMenuSubItem>
-                               <SidebarMenuSubButton
-                                 asChild
-                                 isActive={currentPath === "/pedidos/nuevo"}
-                                 className="h-6 px-2"
-                               >
-                                 <NavLink to="/pedidos/nuevo" className={getNavCls}>
-                                   <PlusCircle className="mr-2 h-4 w-4" />
-                                   {!isCollapsed && <span>Nuevo</span>}
-                                 </NavLink>
-                               </SidebarMenuSubButton>
-                             </SidebarMenuSubItem>
-                           </SidebarMenuSub>
-                         </CollapsibleContent>
+                          <CollapsibleContent>
+                            <SidebarMenuSub className="ml-2">
+                              <SidebarMenuSubItem>
+                                <SidebarMenuSubButton
+                                  asChild
+                                  isActive={currentPath === "/pedidos"}
+                                  className="h-6 px-2"
+                                >
+                                  <NavLink to="/pedidos" end className={getNavCls}>
+                                    <Package className="mr-2 h-4 w-4" />
+                                    {!isCollapsed && <span>Listado</span>}
+                                  </NavLink>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                              <SidebarMenuSubItem>
+                                <SidebarMenuSubButton
+                                  asChild
+                                  isActive={currentPath === "/pedidos/nuevo"}
+                                  className="h-6 px-2"
+                                >
+                                  <NavLink to="/pedidos/nuevo" className={getNavCls}>
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    {!isCollapsed && <span>Nuevo</span>}
+                                  </NavLink>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                              <SidebarMenuSubItem>
+                                <SidebarMenuSubButton
+                                  asChild
+                                  isActive={currentPath === "/panel-produccion"}
+                                  className="h-6 px-2"
+                                >
+                                  <NavLink to="/panel-produccion" className={getNavCls}>
+                                    <Monitor className="mr-2 h-4 w-4" />
+                                    {!isCollapsed && <span>Panel Taller</span>}
+                                  </NavLink>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            </SidebarMenuSub>
+                          </CollapsibleContent>
                        </SidebarMenuItem>
                      </Collapsible>
                    )}
