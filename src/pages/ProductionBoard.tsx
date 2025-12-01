@@ -30,12 +30,12 @@ const statusLabels = {
   draft: "Borrador",
   pending: "Pendiente",
   in_production: "En producción",
-  completed: "Completado"
+  completed: "Completado",
 };
 const itemStatusLabels = {
   pending: "Pendiente",
   in_production: "En producción",
-  completed: "Completado"
+  completed: "Completado",
 };
 const getDeadlineColor = (deliveryDate: string | null): string => {
   if (!deliveryDate) return "bg-slate-200";
@@ -64,7 +64,7 @@ export default function ProductionBoard() {
   const navigate = useNavigate();
 
   const toggleItemExpanded = (itemId: string) => {
-    setExpandedItems(prev => {
+    setExpandedItems((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(itemId)) {
         newSet.delete(itemId);
@@ -86,27 +86,31 @@ export default function ProductionBoard() {
       setLoading(true);
 
       // Fetch orders with status pending or in_production
-      const {
-        data: ordersData,
-        error: ordersError
-      } = await supabase.from("sales_orders").select("*").in("status", ["pending", "in_production"]).order("delivery_date", {
-        ascending: true,
-        nullsFirst: false
-      });
+      const { data: ordersData, error: ordersError } = await supabase
+        .from("sales_orders")
+        .select("*")
+        .in("status", ["pending", "in_production"])
+        .order("delivery_date", {
+          ascending: true,
+          nullsFirst: false,
+        });
       if (ordersError) throw ordersError;
 
       // Fetch items for each order
-      const ordersWithItems = await Promise.all((ordersData || []).map(async order => {
-        const {
-          data: items,
-          error: itemsError
-        } = await supabase.from("sales_order_items").select("*").eq("sales_order_id", order.id).order("position");
-        if (itemsError) throw itemsError;
-        return {
-          ...order,
-          items: items || []
-        };
-      }));
+      const ordersWithItems = await Promise.all(
+        (ordersData || []).map(async (order) => {
+          const { data: items, error: itemsError } = await supabase
+            .from("sales_order_items")
+            .select("*")
+            .eq("sales_order_id", order.id)
+            .order("position");
+          if (itemsError) throw itemsError;
+          return {
+            ...order,
+            items: items || [],
+          };
+        }),
+      );
       setOrders(ordersWithItems);
     } catch (error) {
       console.error("Error loading orders:", error);
@@ -115,13 +119,16 @@ export default function ProductionBoard() {
     }
   };
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">
+    return (
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-2xl font-semibold text-muted-foreground">Cargando pedidos...</div>
-      </div>;
+      </div>
+    );
   }
-  return <div className="min-h-screen bg-background p-4 md:p-8">
+  return (
+    <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="mb-8 flex justify-between items-center">
-        <h1 className="text-4xl font-bold">Panel de producción</h1>
+        <h1 className="text-4xl font-bold">Panel de producción - Lista</h1>
         <Button variant="outline" onClick={() => navigate("/panel-produccion-tablero")} className="gap-2">
           <LayoutGrid className="h-4 w-4" />
           Vista tablero
@@ -129,12 +136,16 @@ export default function ProductionBoard() {
       </div>
 
       <div className="space-y-2 max-w-7xl mx-auto">
-        {orders.length === 0 ? <Card className="p-12">
+        {orders.length === 0 ? (
+          <Card className="p-12">
             <div className="text-center text-2xl text-muted-foreground">No hay pedidos en producción</div>
-          </Card> : orders.map(order => {
-        const deadlineColor = getDeadlineColor(order.delivery_date);
-        const deadlineLabel = getDeadlineLabel(order.delivery_date);
-        return <Card key={order.id} className={`border-4 ${deadlineColor} shadow-lg`}>
+          </Card>
+        ) : (
+          orders.map((order) => {
+            const deadlineColor = getDeadlineColor(order.delivery_date);
+            const deadlineLabel = getDeadlineLabel(order.delivery_date);
+            return (
+              <Card key={order.id} className={`border-4 ${deadlineColor} shadow-lg`}>
                 <CardContent className="p-3">
                   {/* Header Section */}
                   <div className="grid grid-cols-4 gap-3 mb-2 pb-2 border-b border-border">
@@ -142,11 +153,13 @@ export default function ProductionBoard() {
                     <div className="flex items-center justify-center">
                       <div className={`${deadlineColor} text-white rounded px-3 py-2 w-full text-center font-bold`}>
                         <div className="text-lg mb-1">{deadlineLabel}</div>
-                        {order.delivery_date && <div className="text-sm opacity-90">
+                        {order.delivery_date && (
+                          <div className="text-sm opacity-90">
                             {format(new Date(order.delivery_date), "dd/MM/yyyy", {
-                      locale: es
-                    })}
-                          </div>}
+                              locale: es,
+                            })}
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -168,8 +181,8 @@ export default function ProductionBoard() {
                         <div className="text-sm text-muted-foreground mb-1">Fecha pedido</div>
                         <div className="text-base">
                           {format(new Date(order.order_date), "dd/MM/yyyy", {
-                      locale: es
-                    })}
+                            locale: es,
+                          })}
                         </div>
                       </div>
                     </div>
@@ -177,11 +190,14 @@ export default function ProductionBoard() {
 
                   {/* Items Section - Una línea por artículo */}
                   <div className="space-y-2">
-                    {order.items.map((item, index) => <div key={item.id} className="space-y-1">
+                    {order.items.map((item, index) => (
+                      <div key={item.id} className="space-y-1">
                         <div className="flex items-center gap-3 py-0.5">
-                          {index === 0 && <span className="font-semibold text-sm mr-2 min-w-[100px]">
+                          {index === 0 && (
+                            <span className="font-semibold text-sm mr-2 min-w-[100px]">
                               Artículos ({order.items.length}):
-                            </span>}
+                            </span>
+                          )}
                           {index > 0 && <span className="min-w-[100px]"></span>}
 
                           <button
@@ -199,26 +215,50 @@ export default function ProductionBoard() {
                             {index + 1}. {item.product_name}
                           </span>
 
-                          <Badge variant={item.production_status === "completed" ? "default" : item.production_status === "in_production" ? "secondary" : "outline"} className="text-sm">
+                          <Badge
+                            variant={
+                              item.production_status === "completed"
+                                ? "default"
+                                : item.production_status === "in_production"
+                                  ? "secondary"
+                                  : "outline"
+                            }
+                            className="text-sm"
+                          >
                             {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                           </Badge>
                         </div>
-                        
-                        {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && <div className="text-xs pl-[116px] space-y-0.5 text-muted">
-                            {(item.prompts as Array<{
-                    label: string;
-                    value: string;
-                    order: number;
-                  }>).sort((a, b) => a.order - b.order).map((prompt, pIdx) => <div key={pIdx} className="flex gap-1">
-                                  <span className="font-medium">{prompt.label}:</span>
-                                  <span>{prompt.value}</span>
-                                </div>)}
-                          </div>}
-                      </div>)}
+
+                        {expandedItems.has(item.id) &&
+                          item.prompts &&
+                          Array.isArray(item.prompts) &&
+                          item.prompts.length > 0 && (
+                            <div className="text-xs pl-[116px] space-y-0.5 text-muted">
+                              {(
+                                item.prompts as Array<{
+                                  label: string;
+                                  value: string;
+                                  order: number;
+                                }>
+                              )
+                                .sort((a, b) => a.order - b.order)
+                                .map((prompt, pIdx) => (
+                                  <div key={pIdx} className="flex gap-1">
+                                    <span className="font-medium">{prompt.label}:</span>
+                                    <span>{prompt.value}</span>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
-              </Card>;
-      })}
+              </Card>
+            );
+          })
+        )}
       </div>
-    </div>;
+    </div>
+  );
 }
