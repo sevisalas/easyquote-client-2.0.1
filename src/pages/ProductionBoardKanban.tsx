@@ -39,7 +39,7 @@ const statusLabels = {
 
 const itemStatusLabels = {
   pending: "Pendiente",
-  in_progress: "En producción",
+  in_production: "En producción",
   completed: "Completado"
 };
 
@@ -244,7 +244,7 @@ export default function ProductionBoardKanban() {
                               variant={
                                 item.production_status === "completed" 
                                   ? "default" 
-                                  : item.production_status === "in_progress" 
+                                  : item.production_status === "in_production" 
                                   ? "secondary" 
                                   : "outline"
                               }
@@ -330,7 +330,7 @@ export default function ProductionBoardKanban() {
                               variant={
                                 item.production_status === "completed" 
                                   ? "default" 
-                                  : item.production_status === "in_progress" 
+                                  : item.production_status === "in_production" 
                                   ? "secondary" 
                                   : "outline"
                               }
@@ -416,7 +416,7 @@ export default function ProductionBoardKanban() {
                               variant={
                                 item.production_status === "completed" 
                                   ? "default" 
-                                  : item.production_status === "in_progress" 
+                                  : item.production_status === "in_production" 
                                   ? "secondary" 
                                   : "outline"
                               }
@@ -502,7 +502,7 @@ export default function ProductionBoardKanban() {
                               variant={
                                 item.production_status === "completed" 
                                   ? "default" 
-                                  : item.production_status === "in_progress" 
+                                  : item.production_status === "in_production" 
                                   ? "secondary" 
                                   : "outline"
                               }
