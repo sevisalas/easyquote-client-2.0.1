@@ -351,10 +351,13 @@ export default function SalesOrderNew() {
             const { data: mappings } = await supabase
               .from("product_variable_mappings")
               .select(`
+                prompt_or_output_name,
                 production_variable_id,
                 production_variables (
                   has_implicit_task,
                   task_name,
+                  task_trigger_values,
+                  task_exclude_values,
                   name
                 )
               `)
@@ -367,22 +370,57 @@ export default function SalesOrderNew() {
               for (const mapping of mappings) {
                 const variable = mapping.production_variables as any;
                 if (variable && variable.has_implicit_task && variable.task_name) {
-                  // Get the first available phase (should be "Preimpresión")
-                  const { data: phases } = await supabase
-                    .from("production_phases")
-                    .select("id")
-                    .eq("is_active", true)
-                    .order("display_order")
-                    .limit(1);
+                  // Get the actual value from prompts or outputs
+                  const promptOrOutputName = mapping.prompt_or_output_name;
+                  const prompts = item.prompts as any[] || [];
+                  const outputs = item.outputs as any[] || [];
+                  
+                  const promptMatch = prompts.find(p => p.label === promptOrOutputName);
+                  const outputMatch = outputs.find(o => o.name === promptOrOutputName);
+                  const actualValue = promptMatch?.value || outputMatch?.value;
 
-                  if (phases && phases.length > 0) {
-                    tasksToCreate.push({
-                      sales_order_item_id: item.id,
-                      phase_id: phases[0].id,
-                      task_name: variable.task_name,
-                      operator_id: user.id,
-                      status: "pending",
-                    });
+                  // Check if we should create the task based on trigger/exclude values
+                  let shouldCreateTask = true;
+
+                  if (actualValue) {
+                    const valueStr = actualValue.toString().toLowerCase();
+                    
+                    // If trigger values are specified, only create if value matches
+                    if (variable.task_trigger_values && variable.task_trigger_values.length > 0) {
+                      shouldCreateTask = variable.task_trigger_values.some((trigger: string) => 
+                        valueStr.includes(trigger.toLowerCase())
+                      );
+                    }
+
+                    // If exclude values are specified, don't create if value matches
+                    if (variable.task_exclude_values && variable.task_exclude_values.length > 0) {
+                      const isExcluded = variable.task_exclude_values.some((exclude: string) => 
+                        valueStr.includes(exclude.toLowerCase())
+                      );
+                      if (isExcluded) {
+                        shouldCreateTask = false;
+                      }
+                    }
+                  }
+
+                  if (shouldCreateTask) {
+                    // Get the first available phase (should be "Preimpresión")
+                    const { data: phases } = await supabase
+                      .from("production_phases")
+                      .select("id")
+                      .eq("is_active", true)
+                      .order("display_order")
+                      .limit(1);
+
+                    if (phases && phases.length > 0) {
+                      tasksToCreate.push({
+                        sales_order_item_id: item.id,
+                        phase_id: phases[0].id,
+                        task_name: variable.task_name,
+                        operator_id: user.id,
+                        status: "pending",
+                      });
+                    }
                   }
                 }
               }
