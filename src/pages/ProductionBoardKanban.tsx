@@ -6,8 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { CustomerName } from "@/components/quotes/CustomerName";
 import { format, differenceInDays, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
-import { List, ChevronDown, ChevronRight, LayoutGrid, Check } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { List, ChevronDown, ChevronRight, LayoutGrid, Check, Edit } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 import type { Json } from "@/integrations/supabase/types";
 import { useProductionBoardView } from "@/hooks/useProductionBoardView";
 
@@ -194,10 +194,17 @@ export default function ProductionBoardKanban() {
           <div className="space-y-3">
             {categorizedOrders.overdue.map((order) => (
               <Card key={order.id} className="border-l-4 border-l-red-500 shadow-sm hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
+                 <CardContent className="p-4">
                   <div className="space-y-2">
                     <div className="flex justify-between items-start">
-                      <span className="font-bold text-lg">{order.order_number}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-lg">{order.order_number}</span>
+                        <Link to={`/pedidos/${order.id}/editar`}>
+                          <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        </Link>
+                      </div>
                       <Badge variant="outline" className="text-xs">
                         {format(new Date(order.delivery_date!), "dd/MM", { locale: es })}
                       </Badge>
@@ -270,7 +277,14 @@ export default function ProductionBoardKanban() {
                 <CardContent className="p-4">
                   <div className="space-y-2">
                     <div className="flex justify-between items-start">
-                      <span className="font-bold text-lg">{order.order_number}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-lg">{order.order_number}</span>
+                        <Link to={`/pedidos/${order.id}/editar`}>
+                          <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        </Link>
+                      </div>
                       <Badge variant="outline" className="text-xs">
                         {format(new Date(order.delivery_date!), "dd/MM", { locale: es })}
                       </Badge>
@@ -343,7 +357,14 @@ export default function ProductionBoardKanban() {
                 <CardContent className="p-4">
                   <div className="space-y-2">
                     <div className="flex justify-between items-start">
-                      <span className="font-bold text-lg">{order.order_number}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-lg">{order.order_number}</span>
+                        <Link to={`/pedidos/${order.id}/editar`}>
+                          <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        </Link>
+                      </div>
                       <Badge variant="outline" className="text-xs">
                         {format(new Date(order.delivery_date!), "dd/MM", { locale: es })}
                       </Badge>
@@ -416,7 +437,14 @@ export default function ProductionBoardKanban() {
                 <CardContent className="p-4">
                   <div className="space-y-2">
                     <div className="flex justify-between items-start">
-                      <span className="font-bold text-lg">{order.order_number}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-lg">{order.order_number}</span>
+                        <Link to={`/pedidos/${order.id}/editar`}>
+                          <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        </Link>
+                      </div>
                       <Badge variant="outline" className="text-xs">
                         {format(new Date(order.delivery_date!), "dd/MM", { locale: es })}
                       </Badge>

@@ -6,8 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { CustomerName } from "@/components/quotes/CustomerName";
 import { format, differenceInDays, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
-import { LayoutGrid, List, ChevronDown, ChevronRight, Check } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { LayoutGrid, List, ChevronDown, ChevronRight, Check, Edit } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 import type { Json } from "@/integrations/supabase/types";
 import { useProductionBoardView } from "@/hooks/useProductionBoardView";
 interface SalesOrderItem {
@@ -166,7 +166,14 @@ export default function ProductionBoardCompact() {
                   <div className="space-y-2 mb-3 pb-3 border-b border-border">
                     <div>
                       <div className="text-xs text-secondary">Pedido</div>
-                      <div className="text-lg font-bold">{order.order_number}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-lg font-bold">{order.order_number}</div>
+                        <Link to={`/pedidos/${order.id}/editar`}>
+                          <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
 
                     <div>
