@@ -134,19 +134,21 @@ export default function ProductionBoardKanban() {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="mb-8 flex justify-between items-center">
-        <h1 className="text-4xl font-bold">Panel de producción - Tablero</h1>
-        <div className="flex gap-2">
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-4xl font-bold mb-4">Panel de producción - Tablero</h1>
+        <div className="flex flex-wrap gap-2">
           <Button 
             variant={view === 'list' ? 'default' : 'outline'} 
             onClick={() => {
               updateView('list');
               navigate("/panel-produccion-lista");
             }} 
+            size="sm"
             className="gap-2"
           >
             {view === 'list' && <Check className="h-4 w-4" />}
-            Vista Lista
+            <span className="hidden sm:inline">Vista Lista</span>
+            <span className="sm:hidden">Lista</span>
           </Button>
           <Button 
             variant={view === 'compact' ? 'default' : 'outline'} 
@@ -154,11 +156,13 @@ export default function ProductionBoardKanban() {
               updateView('compact');
               navigate("/panel-produccion-compacta");
             }} 
+            size="sm"
             className="gap-2"
           >
             {view === 'compact' && <Check className="h-4 w-4" />}
             <LayoutGrid className="h-4 w-4" />
-            Vista Compacta
+            <span className="hidden sm:inline">Vista Compacta</span>
+            <span className="sm:hidden">Compacta</span>
           </Button>
           <Button 
             variant={view === 'kanban' ? 'default' : 'outline'} 
@@ -166,18 +170,20 @@ export default function ProductionBoardKanban() {
               updateView('kanban');
               navigate("/panel-produccion-tablero");
             }} 
+            size="sm"
             className="gap-2"
           >
             {view === 'kanban' && <Check className="h-4 w-4" />}
             <LayoutGrid className="h-4 w-4" />
-            Vista Tablero
+            <span className="hidden sm:inline">Vista Tablero</span>
+            <span className="sm:hidden">Tablero</span>
           </Button>
         </div>
       </div>
 
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="flex flex-col md:flex-row gap-4 md:overflow-x-auto pb-4">
         {/* Columna: Fuera de plazo */}
-        <div className="flex-shrink-0 w-96 bg-muted/30 rounded-lg p-4">
+        <div className="flex-shrink-0 w-full md:w-96 bg-muted/30 rounded-lg p-4">
           <div className="mb-4 flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-red-500" />
             <h2 className="text-lg font-bold">Fuera de plazo</h2>
@@ -250,7 +256,7 @@ export default function ProductionBoardKanban() {
         </div>
 
         {/* Columna: Entrega hoy */}
-        <div className="flex-shrink-0 w-96 bg-muted/30 rounded-lg p-4">
+        <div className="flex-shrink-0 w-full md:w-96 bg-muted/30 rounded-lg p-4">
           <div className="mb-4 flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-orange-500" />
             <h2 className="text-lg font-bold">Entrega hoy</h2>
@@ -323,7 +329,7 @@ export default function ProductionBoardKanban() {
         </div>
 
         {/* Columna: Entrega mañana */}
-        <div className="flex-shrink-0 w-96 bg-muted/30 rounded-lg p-4">
+        <div className="flex-shrink-0 w-full md:w-96 bg-muted/30 rounded-lg p-4">
           <div className="mb-4 flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-yellow-500" />
             <h2 className="text-lg font-bold">Entrega mañana</h2>
@@ -396,7 +402,7 @@ export default function ProductionBoardKanban() {
         </div>
 
         {/* Columna: En plazo */}
-        <div className="flex-shrink-0 w-96 bg-muted/30 rounded-lg p-4">
+        <div className="flex-shrink-0 w-full md:w-96 bg-muted/30 rounded-lg p-4">
           <div className="mb-4 flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-green-500" />
             <h2 className="text-lg font-bold">En plazo</h2>
