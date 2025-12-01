@@ -136,7 +136,7 @@ export default function ProductionBoardKanban() {
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-4xl font-bold mb-4">Panel de producción - Tablero</h1>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-2 overflow-x-auto pb-2">
           <Button 
             variant={view === 'list' ? 'default' : 'outline'} 
             onClick={() => {
