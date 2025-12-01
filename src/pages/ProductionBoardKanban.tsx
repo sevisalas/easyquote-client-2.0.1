@@ -8,6 +8,7 @@ import { format, differenceInDays, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { List } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import type { Json } from "@/integrations/supabase/types";
 
 interface SalesOrderItem {
   id: string;
@@ -15,6 +16,7 @@ interface SalesOrderItem {
   quantity: number;
   production_status: string | null;
   description: string | null;
+  prompts: Json | null;
 }
 
 interface SalesOrder {
@@ -153,22 +155,36 @@ export default function ProductionBoardKanban() {
                     <div className="text-sm font-medium">
                       <CustomerName customerId={order.customer_id} />
                     </div>
-                    <div className="text-xs text-muted-foreground space-y-1">
+                    <div className="text-xs space-y-2">
                       {order.items.map((item, idx) => (
-                        <div key={item.id} className="flex items-center gap-2">
-                          <span>{idx + 1}. {item.product_name}</span>
-                          <Badge 
-                            variant={
-                              item.production_status === "completed" 
-                                ? "default" 
-                                : item.production_status === "in_production" 
-                                ? "secondary" 
-                                : "outline"
-                            }
-                            className="text-xs"
-                          >
-                            {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
-                          </Badge>
+                        <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{idx + 1}. {item.product_name}</span>
+                            <Badge 
+                              variant={
+                                item.production_status === "completed" 
+                                  ? "default" 
+                                  : item.production_status === "in_production" 
+                                  ? "secondary" 
+                                  : "outline"
+                              }
+                              className="text-xs"
+                            >
+                              {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
+                            </Badge>
+                          </div>
+                          {item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
+                            <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
+                              {(item.prompts as Array<{ label: string; value: string; order: number }>)
+                                .sort((a, b) => a.order - b.order)
+                                .map((prompt, pIdx) => (
+                                  <div key={pIdx} className="flex gap-1">
+                                    <span className="font-medium">{prompt.label}:</span>
+                                    <span>{prompt.value}</span>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -202,22 +218,36 @@ export default function ProductionBoardKanban() {
                     <div className="text-sm font-medium">
                       <CustomerName customerId={order.customer_id} />
                     </div>
-                    <div className="text-xs text-muted-foreground space-y-1">
+                    <div className="text-xs space-y-2">
                       {order.items.map((item, idx) => (
-                        <div key={item.id} className="flex items-center gap-2">
-                          <span>{idx + 1}. {item.product_name}</span>
-                          <Badge 
-                            variant={
-                              item.production_status === "completed" 
-                                ? "default" 
-                                : item.production_status === "in_production" 
-                                ? "secondary" 
-                                : "outline"
-                            }
-                            className="text-xs"
-                          >
-                            {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
-                          </Badge>
+                        <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{idx + 1}. {item.product_name}</span>
+                            <Badge 
+                              variant={
+                                item.production_status === "completed" 
+                                  ? "default" 
+                                  : item.production_status === "in_production" 
+                                  ? "secondary" 
+                                  : "outline"
+                              }
+                              className="text-xs"
+                            >
+                              {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
+                            </Badge>
+                          </div>
+                          {item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
+                            <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
+                              {(item.prompts as Array<{ label: string; value: string; order: number }>)
+                                .sort((a, b) => a.order - b.order)
+                                .map((prompt, pIdx) => (
+                                  <div key={pIdx} className="flex gap-1">
+                                    <span className="font-medium">{prompt.label}:</span>
+                                    <span>{prompt.value}</span>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -251,22 +281,36 @@ export default function ProductionBoardKanban() {
                     <div className="text-sm font-medium">
                       <CustomerName customerId={order.customer_id} />
                     </div>
-                    <div className="text-xs text-muted-foreground space-y-1">
+                    <div className="text-xs space-y-2">
                       {order.items.map((item, idx) => (
-                        <div key={item.id} className="flex items-center gap-2">
-                          <span>{idx + 1}. {item.product_name}</span>
-                          <Badge 
-                            variant={
-                              item.production_status === "completed" 
-                                ? "default" 
-                                : item.production_status === "in_production" 
-                                ? "secondary" 
-                                : "outline"
-                            }
-                            className="text-xs"
-                          >
-                            {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
-                          </Badge>
+                        <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{idx + 1}. {item.product_name}</span>
+                            <Badge 
+                              variant={
+                                item.production_status === "completed" 
+                                  ? "default" 
+                                  : item.production_status === "in_production" 
+                                  ? "secondary" 
+                                  : "outline"
+                              }
+                              className="text-xs"
+                            >
+                              {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
+                            </Badge>
+                          </div>
+                          {item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
+                            <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
+                              {(item.prompts as Array<{ label: string; value: string; order: number }>)
+                                .sort((a, b) => a.order - b.order)
+                                .map((prompt, pIdx) => (
+                                  <div key={pIdx} className="flex gap-1">
+                                    <span className="font-medium">{prompt.label}:</span>
+                                    <span>{prompt.value}</span>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -300,22 +344,36 @@ export default function ProductionBoardKanban() {
                     <div className="text-sm font-medium">
                       <CustomerName customerId={order.customer_id} />
                     </div>
-                    <div className="text-xs text-muted-foreground space-y-1">
+                    <div className="text-xs space-y-2">
                       {order.items.map((item, idx) => (
-                        <div key={item.id} className="flex items-center gap-2">
-                          <span>{idx + 1}. {item.product_name}</span>
-                          <Badge 
-                            variant={
-                              item.production_status === "completed" 
-                                ? "default" 
-                                : item.production_status === "in_production" 
-                                ? "secondary" 
-                                : "outline"
-                            }
-                            className="text-xs"
-                          >
-                            {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
-                          </Badge>
+                        <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{idx + 1}. {item.product_name}</span>
+                            <Badge 
+                              variant={
+                                item.production_status === "completed" 
+                                  ? "default" 
+                                  : item.production_status === "in_production" 
+                                  ? "secondary" 
+                                  : "outline"
+                              }
+                              className="text-xs"
+                            >
+                              {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
+                            </Badge>
+                          </div>
+                          {item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
+                            <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
+                              {(item.prompts as Array<{ label: string; value: string; order: number }>)
+                                .sort((a, b) => a.order - b.order)
+                                .map((prompt, pIdx) => (
+                                  <div key={pIdx} className="flex gap-1">
+                                    <span className="font-medium">{prompt.label}:</span>
+                                    <span>{prompt.value}</span>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
