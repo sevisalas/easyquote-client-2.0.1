@@ -48,6 +48,7 @@ import SalesOrderEdit from "./pages/SalesOrderEdit";
 import ProductionBoard from "./pages/ProductionBoard";
 import ProductionBoardKanban from "./pages/ProductionBoardKanban";
 import ProductionBoardCompact from "./pages/ProductionBoardCompact";
+import ProductionBoardRedirect from "./pages/ProductionBoardRedirect";
 import Novedades from "./pages/Novedades";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { useSessionMonitor } from "./hooks/useSessionMonitor";
@@ -413,6 +414,26 @@ const AppContent = () => {
       />
       <Route
         path="/panel-produccion"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ProductionBoard />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/panel-produccion"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ProductionBoardRedirect />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/panel-produccion-lista"
         element={
           <ProtectedRoute>
             <AppLayout>

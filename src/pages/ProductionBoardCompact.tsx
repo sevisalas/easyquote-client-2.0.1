@@ -6,9 +6,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { CustomerName } from "@/components/quotes/CustomerName";
 import { format, differenceInDays, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
-import { LayoutGrid, List, ChevronDown, ChevronRight } from "lucide-react";
+import { LayoutGrid, List, ChevronDown, ChevronRight, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Json } from "@/integrations/supabase/types";
+import { useProductionBoardView } from "@/hooks/useProductionBoardView";
 interface SalesOrderItem {
   id: string;
   product_name: string;
@@ -56,6 +57,7 @@ export default function ProductionBoardCompact() {
   const [loading, setLoading] = useState(true);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
+  const { view, updateView } = useProductionBoardView();
   const toggleItemExpanded = (itemId: string) => {
     setExpandedItems(prev => {
       const newSet = new Set(prev);
@@ -108,15 +110,42 @@ export default function ProductionBoardCompact() {
   }
   return <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="mb-8 flex justify-between items-center">
-        <h1 className="text-4xl font-bold">Panel de producción - Lista compacta</h1>
+        <h1 className="text-4xl font-bold">Panel de producción - Compacta</h1>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate("/panel-produccion")} className="gap-2">
-            <List className="h-4 w-4" />
-            Vista lista
+          <Button 
+            variant={view === 'list' ? 'default' : 'outline'} 
+            onClick={() => {
+              updateView('list');
+              navigate("/panel-produccion-lista");
+            }} 
+            className="gap-2"
+          >
+            {view === 'list' && <Check className="h-4 w-4" />}
+            Vista Lista
           </Button>
-          <Button variant="outline" onClick={() => navigate("/panel-produccion-tablero")} className="gap-2">
+          <Button 
+            variant={view === 'compact' ? 'default' : 'outline'} 
+            onClick={() => {
+              updateView('compact');
+              navigate("/panel-produccion-compacta");
+            }} 
+            className="gap-2"
+          >
+            {view === 'compact' && <Check className="h-4 w-4" />}
             <LayoutGrid className="h-4 w-4" />
-            Vista tablero
+            Vista Compacta
+          </Button>
+          <Button 
+            variant={view === 'kanban' ? 'default' : 'outline'} 
+            onClick={() => {
+              updateView('kanban');
+              navigate("/panel-produccion-tablero");
+            }} 
+            className="gap-2"
+          >
+            {view === 'kanban' && <Check className="h-4 w-4" />}
+            <LayoutGrid className="h-4 w-4" />
+            Vista Tablero
           </Button>
         </div>
       </div>
