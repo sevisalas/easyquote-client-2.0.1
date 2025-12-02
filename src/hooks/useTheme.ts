@@ -14,6 +14,9 @@ export interface OrganizationTheme {
   accent_foreground?: string;
   muted_color?: string;
   muted_foreground?: string;
+  sidebar_background?: string;
+  sidebar_foreground?: string;
+  sidebar_accent?: string;
   is_active: boolean;
 }
 
@@ -86,6 +89,17 @@ export const useTheme = () => {
       if (organizationTheme.muted_foreground) {
         root.style.setProperty('--muted-foreground', organizationTheme.muted_foreground);
       }
+      
+      // Sidebar
+      if (organizationTheme.sidebar_background) {
+        root.style.setProperty('--sidebar-background', organizationTheme.sidebar_background);
+      }
+      if (organizationTheme.sidebar_foreground) {
+        root.style.setProperty('--sidebar-foreground', organizationTheme.sidebar_foreground);
+      }
+      if (organizationTheme.sidebar_accent) {
+        root.style.setProperty('--sidebar-accent', organizationTheme.sidebar_accent);
+      }
     } else {
       // No corporate theme - remove custom properties so CSS defaults apply
       root.style.removeProperty('--primary');
@@ -96,6 +110,9 @@ export const useTheme = () => {
       root.style.removeProperty('--accent-foreground');
       root.style.removeProperty('--muted');
       root.style.removeProperty('--muted-foreground');
+      root.style.removeProperty('--sidebar-background');
+      root.style.removeProperty('--sidebar-foreground');
+      root.style.removeProperty('--sidebar-accent');
     }
   };
 
@@ -156,6 +173,9 @@ export const useTheme = () => {
       root.style.removeProperty('--accent-foreground');
       root.style.removeProperty('--muted');
       root.style.removeProperty('--muted-foreground');
+      root.style.removeProperty('--sidebar-background');
+      root.style.removeProperty('--sidebar-foreground');
+      root.style.removeProperty('--sidebar-accent');
     } catch (error) {
       console.error('Error resetting theme:', error);
       throw error;
