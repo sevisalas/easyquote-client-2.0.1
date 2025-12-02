@@ -191,18 +191,18 @@ export default function Additionals() {
   }
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="container mx-auto p-6">
+      <div className="flex justify-between items-center mb-4">
         <div>
-          <h1 className="text-2xl font-bold">Ajustes</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl font-bold">Ajustes</h1>
+          <p className="text-sm text-muted-foreground">
             Gestiona los ajustes de presupuesto que se pueden aplicar a artículos o al subtotal del presupuesto
           </p>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openCreateDialog}>
+            <Button onClick={openCreateDialog} size="sm">
               <Plus className="h-4 w-4 mr-2" />
               Crear nuevo
             </Button>
@@ -325,35 +325,37 @@ export default function Additionals() {
         </Dialog>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         {additionals.length === 0 ? (
           <Card>
-            <CardContent className="py-8">
+            <CardContent className="py-6">
               <div className="text-center text-muted-foreground">
-                <p>No hay ajustes configurados</p>
-                <p className="text-sm">Crea tu primer ajuste de presupuesto para empezar</p>
+                <p className="text-sm">No hay ajustes configurados</p>
+                <p className="text-xs">Crea tu primer ajuste de presupuesto para empezar</p>
               </div>
             </CardContent>
           </Card>
         ) : (
           additionals.map((additional) => (
             <Card key={additional.id}>
-              <CardHeader>
+              <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-lg">{additional.name}</CardTitle>
-                    <CardDescription>{additional.description}</CardDescription>
+                    <CardTitle className="text-base">{additional.name}</CardTitle>
+                    {additional.description && (
+                      <CardDescription className="text-xs mt-1">{additional.description}</CardDescription>
+                    )}
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex gap-1">
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       onClick={() => handleEdit(additional)}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       onClick={() => handleDelete(additional.id)}
                     >
@@ -362,16 +364,16 @@ export default function Additionals() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-3 gap-4 text-sm">
+              <CardContent className="pt-0">
+                <div className="space-y-2">
+                  <div className="grid grid-cols-3 gap-3 text-xs">
                     <div>
-                      <p className="font-medium">Asignar a:</p>
-                      <p>{additional.assignment_type === "article" ? "Artículo" : "Presupuesto"}</p>
+                      <p className="font-medium text-muted-foreground">Asignar a:</p>
+                      <p className="text-sm">{additional.assignment_type === "article" ? "Artículo" : "Presupuesto"}</p>
                     </div>
                     <div>
-                      <p className="font-medium">Tipo:</p>
-                       <p>
+                      <p className="font-medium text-muted-foreground">Tipo:</p>
+                       <p className="text-sm">
                          {additional.type === "net_amount" 
                            ? "Importe Neto" 
                            : additional.type === "quantity_multiplier" 
@@ -381,8 +383,8 @@ export default function Additionals() {
                        </p>
                     </div>
                     <div>
-                      <p className="font-medium">Valor por defecto:</p>
-                      <p>
+                      <p className="font-medium text-muted-foreground">Valor por defecto:</p>
+                      <p className="text-sm">
                         {additional.type === "percentage" 
                           ? `${additional.default_value}%` 
                           : `€${additional.default_value.toFixed(2)}`
@@ -391,7 +393,7 @@ export default function Additionals() {
                     </div>
                   </div>
                   {additional.is_discount && (
-                    <div className="flex items-center gap-2 text-sm text-primary">
+                    <div className="flex items-center gap-2 text-xs text-primary">
                       <span className="font-medium">✓ Marcado como descuento</span>
                     </div>
                   )}
