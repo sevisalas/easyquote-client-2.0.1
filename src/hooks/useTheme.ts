@@ -91,19 +91,16 @@ export const useTheme = () => {
         root.style.setProperty('--muted-foreground', organizationTheme.muted_foreground);
       }
       
-      // Sidebar
-      if (organizationTheme.sidebar_background) {
-        root.style.setProperty('--sidebar-background', organizationTheme.sidebar_background);
-      }
-      if (organizationTheme.sidebar_foreground) {
-        root.style.setProperty('--sidebar-foreground', organizationTheme.sidebar_foreground);
-      }
-      if (organizationTheme.sidebar_accent) {
-        root.style.setProperty('--sidebar-accent', organizationTheme.sidebar_accent);
-      }
-      if (organizationTheme.sidebar_accent_foreground) {
-        root.style.setProperty('--sidebar-accent-foreground', organizationTheme.sidebar_accent_foreground);
-      }
+      // Sidebar - siempre establecer valores con defaults para evitar texto invisible
+      const sidebarBg = organizationTheme.sidebar_background || '0 0% 98%';
+      const sidebarFg = organizationTheme.sidebar_foreground || '240 5% 26%';
+      const sidebarAccent = organizationTheme.sidebar_accent || '240 5% 96%';
+      const sidebarAccentFg = organizationTheme.sidebar_accent_foreground || '240 6% 10%';
+      
+      root.style.setProperty('--sidebar-background', sidebarBg);
+      root.style.setProperty('--sidebar-foreground', sidebarFg);
+      root.style.setProperty('--sidebar-accent', sidebarAccent);
+      root.style.setProperty('--sidebar-accent-foreground', sidebarAccentFg);
     } else {
       // No corporate theme - remove custom properties so CSS defaults apply
       root.style.removeProperty('--primary');
