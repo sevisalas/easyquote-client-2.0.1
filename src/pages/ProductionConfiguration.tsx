@@ -3,38 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Save, Plus, Pencil, Trash2, GripVertical } from "lucide-react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,25 +15,37 @@ import { useDefaultProductionTasks } from "@/hooks/useDefaultProductionTasks";
 import { useProductionPhases } from "@/hooks/useProductionPhases";
 import { useProductionVariables } from "@/hooks/useProductionVariables";
 import type { DefaultProductionTask } from "@/hooks/useDefaultProductionTasks";
-
 export default function ProductionConfiguration() {
-  const { organization } = useSubscription();
-  const { toast } = useToast();
-  
+  const {
+    organization
+  } = useSubscription();
+  const {
+    toast
+  } = useToast();
+
   // Workload Configuration
   const [maxDailyOrders, setMaxDailyOrders] = useState<number>(20);
   const [isSaving, setIsSaving] = useState(false);
 
   // Default Tasks
-  const { tasks, isLoading: tasksLoading, createTask, updateTask, deleteTask } = useDefaultProductionTasks();
-  const { phases, isLoading: phasesLoading } = useProductionPhases();
+  const {
+    tasks,
+    isLoading: tasksLoading,
+    createTask,
+    updateTask,
+    deleteTask
+  } = useDefaultProductionTasks();
+  const {
+    phases,
+    isLoading: phasesLoading
+  } = useProductionPhases();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<DefaultProductionTask | null>(null);
   const [taskFormData, setTaskFormData] = useState({
     task_name: "",
-    phase_id: "",
+    phase_id: ""
   });
 
   // Production Variables
@@ -70,7 +54,7 @@ export default function ProductionConfiguration() {
     isLoading: variablesLoading,
     createVariable,
     updateVariable,
-    deleteVariable,
+    deleteVariable
   } = useProductionVariables();
   const [isCreateVarDialogOpen, setIsCreateVarDialogOpen] = useState(false);
   const [isEditVarDialogOpen, setIsEditVarDialogOpen] = useState(false);
@@ -83,87 +67,83 @@ export default function ProductionConfiguration() {
     has_implicit_task: false,
     task_name: "",
     task_phase_id: "",
-    task_exclude_values: [] as string[],
+    task_exclude_values: [] as string[]
   });
-
   useEffect(() => {
     if (organization) {
       setMaxDailyOrders(organization.max_daily_orders || 20);
     }
   }, [organization]);
-
   const handleSaveWorkload = async () => {
     if (!organization) return;
-    
     try {
       setIsSaving(true);
-      const { error } = await supabase
-        .from("organizations")
-        .update({ max_daily_orders: maxDailyOrders })
-        .eq("id", organization.id);
-
+      const {
+        error
+      } = await supabase.from("organizations").update({
+        max_daily_orders: maxDailyOrders
+      }).eq("id", organization.id);
       if (error) throw error;
-
       toast({
         title: "Capacidad actualizada",
-        description: "La capacidad máxima diaria se ha guardado correctamente",
+        description: "La capacidad máxima diaria se ha guardado correctamente"
       });
     } catch (error) {
       console.error("Error updating capacity:", error);
       toast({
         title: "Error",
         description: "No se pudo actualizar la capacidad",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSaving(false);
     }
   };
-
   const handleCreateTask = () => {
     createTask({
       task_name: taskFormData.task_name,
-      phase_id: taskFormData.phase_id,
+      phase_id: taskFormData.phase_id
     });
     setIsCreateDialogOpen(false);
-    setTaskFormData({ task_name: "", phase_id: "" });
+    setTaskFormData({
+      task_name: "",
+      phase_id: ""
+    });
   };
-
   const handleEditTask = () => {
     if (!selectedTask) return;
     updateTask({
       id: selectedTask.id,
       updates: {
         task_name: taskFormData.task_name,
-        phase_id: taskFormData.phase_id,
-      },
+        phase_id: taskFormData.phase_id
+      }
     });
     setIsEditDialogOpen(false);
     setSelectedTask(null);
-    setTaskFormData({ task_name: "", phase_id: "" });
+    setTaskFormData({
+      task_name: "",
+      phase_id: ""
+    });
   };
-
   const handleDeleteTask = () => {
     if (!selectedTask) return;
     deleteTask(selectedTask.id);
     setIsDeleteDialogOpen(false);
     setSelectedTask(null);
   };
-
   const openEditTaskDialog = (task: DefaultProductionTask) => {
     setSelectedTask(task);
     setTaskFormData({
       task_name: task.task_name,
-      phase_id: task.phase_id,
+      phase_id: task.phase_id
     });
     setIsEditDialogOpen(true);
   };
-
   const openDeleteTaskDialog = (task: DefaultProductionTask) => {
     setSelectedTask(task);
     setIsDeleteDialogOpen(true);
   };
-
   const handleCreateVariable = () => {
     createVariable({
       name: varFormData.name,
@@ -172,7 +152,7 @@ export default function ProductionConfiguration() {
       has_implicit_task: varFormData.has_implicit_task,
       task_name: varFormData.has_implicit_task ? varFormData.task_name : null,
       task_phase_id: varFormData.has_implicit_task ? varFormData.task_phase_id : null,
-      task_exclude_values: varFormData.has_implicit_task ? varFormData.task_exclude_values : null,
+      task_exclude_values: varFormData.has_implicit_task ? varFormData.task_exclude_values : null
     });
     setIsCreateVarDialogOpen(false);
     setVarFormData({
@@ -182,10 +162,9 @@ export default function ProductionConfiguration() {
       has_implicit_task: false,
       task_name: "",
       task_phase_id: "",
-      task_exclude_values: [],
+      task_exclude_values: []
     });
   };
-
   const handleEditVariable = () => {
     if (!selectedVariable) return;
     updateVariable({
@@ -197,8 +176,8 @@ export default function ProductionConfiguration() {
         has_implicit_task: varFormData.has_implicit_task,
         task_name: varFormData.has_implicit_task ? varFormData.task_name : null,
         task_phase_id: varFormData.has_implicit_task ? varFormData.task_phase_id : null,
-        task_exclude_values: varFormData.has_implicit_task ? varFormData.task_exclude_values : null,
-      },
+        task_exclude_values: varFormData.has_implicit_task ? varFormData.task_exclude_values : null
+      }
     });
     setIsEditVarDialogOpen(false);
     setSelectedVariable(null);
@@ -209,17 +188,15 @@ export default function ProductionConfiguration() {
       has_implicit_task: false,
       task_name: "",
       task_phase_id: "",
-      task_exclude_values: [],
+      task_exclude_values: []
     });
   };
-
   const handleDeleteVariable = () => {
     if (!selectedVariable) return;
     deleteVariable(selectedVariable.id);
     setIsDeleteVarDialogOpen(false);
     setSelectedVariable(null);
   };
-
   const openEditVarDialog = (variable: any) => {
     setSelectedVariable(variable);
     setVarFormData({
@@ -229,26 +206,20 @@ export default function ProductionConfiguration() {
       has_implicit_task: variable.has_implicit_task,
       task_name: variable.task_name || "",
       task_phase_id: variable.task_phase_id || "",
-      task_exclude_values: variable.task_exclude_values || [],
+      task_exclude_values: variable.task_exclude_values || []
     });
     setIsEditVarDialogOpen(true);
   };
-
   const openDeleteVarDialog = (variable: any) => {
     setSelectedVariable(variable);
     setIsDeleteVarDialogOpen(true);
   };
-
   if (tasksLoading || phasesLoading || variablesLoading) {
-    return (
-      <div className="container mx-auto p-6">
+    return <div className="container mx-auto p-6">
         <p className="text-muted-foreground">Cargando configuración de producción...</p>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="container mx-auto p-6">
+  return <div className="container mx-auto p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Producción</h1>
         <p className="text-muted-foreground mt-2">
@@ -270,19 +241,9 @@ export default function ProductionConfiguration() {
             <div className="flex items-end gap-4">
               <div className="flex-1">
                 <Label htmlFor="max-capacity">Pedidos por día</Label>
-                <Input
-                  id="max-capacity"
-                  type="number"
-                  min="1"
-                  value={maxDailyOrders}
-                  onChange={(e) => setMaxDailyOrders(parseInt(e.target.value) || 1)}
-                  className="mt-2"
-                />
+                <Input id="max-capacity" type="number" min="1" value={maxDailyOrders} onChange={e => setMaxDailyOrders(parseInt(e.target.value) || 1)} className="mt-2" />
               </div>
-              <Button 
-                onClick={handleSaveWorkload} 
-                disabled={isSaving}
-              >
+              <Button onClick={handleSaveWorkload} disabled={isSaving}>
                 <Save className="h-4 w-4 mr-2" />
                 {isSaving ? "Guardando..." : "Guardar"}
               </Button>
@@ -302,59 +263,42 @@ export default function ProductionConfiguration() {
               </div>
               <Button onClick={() => setIsCreateDialogOpen(true)} size="sm">
                 <Plus className="h-4 w-4 mr-2" />
-                Nueva
+                Nueva tarea 
               </Button>
             </div>
           </CardHeader>
           <CardContent>
-            {tasks.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
+            {tasks.length === 0 ? <p className="text-sm text-muted-foreground text-center py-4">
                 No hay tareas configuradas
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {tasks.map((task) => {
-                  const phase = phases.find(p => p.id === task.phase_id);
-                  return (
-                    <div key={task.id} className="flex items-center justify-between p-2 border rounded-lg">
+              </p> : <div className="space-y-2">
+                {tasks.map(task => {
+              const phase = phases.find(p => p.id === task.phase_id);
+              return <div key={task.id} className="flex items-center justify-between p-2 border rounded-lg">
                       <div className="flex items-center gap-2 flex-1">
                         <GripVertical className="h-4 w-4 text-muted-foreground" />
                         <div className="flex-1">
                           <div className="text-sm font-medium">{task.task_name}</div>
-                          {phase && (
-                            <div className="flex items-center gap-1 mt-0.5">
-                              <span
-                                className="w-2 h-2 rounded-full"
-                                style={{ backgroundColor: phase.color }}
-                              />
+                          {phase && <div className="flex items-center gap-1 mt-0.5">
+                              <span className="w-2 h-2 rounded-full" style={{
+                        backgroundColor: phase.color
+                      }} />
                               <span className="text-xs text-muted-foreground">
                                 {phase.display_name}
                               </span>
-                            </div>
-                          )}
+                            </div>}
                         </div>
                       </div>
                       <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEditTaskDialog(task)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => openEditTaskDialog(task)}>
                           <Pencil className="h-3 w-3" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openDeleteTaskDialog(task)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => openDeleteTaskDialog(task)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    </div>;
+            })}
+              </div>}
           </CardContent>
         </Card>
       </div>
@@ -376,8 +320,7 @@ export default function ProductionConfiguration() {
           </div>
         </CardHeader>
         <CardContent>
-          {variables.length === 0 ? (
-            <div className="text-center py-12">
+          {variables.length === 0 ? <div className="text-center py-12">
               <p className="text-muted-foreground mb-4">
                 No hay variables de producción configuradas
               </p>
@@ -385,69 +328,48 @@ export default function ProductionConfiguration() {
                 <Plus className="h-4 w-4 mr-2" />
                 Crear primera variable
               </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {variables.map((variable) => (
-                <Card key={variable.id}>
+            </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {variables.map(variable => <Card key={variable.id}>
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <CardTitle className="text-base">{variable.name}</CardTitle>
-                        {variable.description && (
-                          <CardDescription className="mt-1">
+                        {variable.description && <CardDescription className="mt-1">
                             {variable.description}
-                          </CardDescription>
-                        )}
+                          </CardDescription>}
                       </div>
                       <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEditVarDialog(variable)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => openEditVarDialog(variable)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openDeleteVarDialog(variable)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => openDeleteVarDialog(variable)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {variable.has_implicit_task && variable.task_name && (
-                      <div className="space-y-2 text-sm">
+                    {variable.has_implicit_task && variable.task_name && <div className="space-y-2 text-sm">
                         <div>
                           <span className="text-muted-foreground">Tarea:</span>{" "}
                           <span className="font-medium">{variable.task_name}</span>
                         </div>
-                        {variable.task_phase_id && (
-                          <div>
+                        {variable.task_phase_id && <div>
                             <span className="text-muted-foreground">Fase:</span>{" "}
                             <span>
                               {phases.find(p => p.id === variable.task_phase_id)?.display_name || 'N/A'}
                             </span>
-                          </div>
-                        )}
-                        {variable.task_exclude_values && variable.task_exclude_values.length > 0 && (
-                          <div>
+                          </div>}
+                        {variable.task_exclude_values && variable.task_exclude_values.length > 0 && <div>
                             <span className="text-muted-foreground">Excepciones:</span>{" "}
                             <span className="text-xs">
                               {variable.task_exclude_values.join(', ')}
                             </span>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          </div>}
+                      </div>}
                   </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+                </Card>)}
+            </div>}
         </CardContent>
       </Card>
 
@@ -463,34 +385,29 @@ export default function ProductionConfiguration() {
           <div className="space-y-4">
             <div>
               <Label htmlFor="task-name">Nombre de la tarea</Label>
-              <Input
-                id="task-name"
-                value={taskFormData.task_name}
-                onChange={(e) => setTaskFormData({ ...taskFormData, task_name: e.target.value })}
-                placeholder="ej: Preparación, Impresión"
-              />
+              <Input id="task-name" value={taskFormData.task_name} onChange={e => setTaskFormData({
+              ...taskFormData,
+              task_name: e.target.value
+            })} placeholder="ej: Preparación, Impresión" />
             </div>
             <div>
               <Label htmlFor="phase">Fase de producción</Label>
-              <Select 
-                value={taskFormData.phase_id} 
-                onValueChange={(value) => setTaskFormData({ ...taskFormData, phase_id: value })}
-              >
+              <Select value={taskFormData.phase_id} onValueChange={value => setTaskFormData({
+              ...taskFormData,
+              phase_id: value
+            })}>
                 <SelectTrigger id="phase">
                   <SelectValue placeholder="Selecciona una fase" />
                 </SelectTrigger>
                 <SelectContent>
-                  {phases.map((phase) => (
-                    <SelectItem key={phase.id} value={phase.id}>
+                  {phases.map(phase => <SelectItem key={phase.id} value={phase.id}>
                       <span className="flex items-center gap-2">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full"
-                          style={{ backgroundColor: phase.color }}
-                        />
+                        <span className="w-2.5 h-2.5 rounded-full" style={{
+                      backgroundColor: phase.color
+                    }} />
                         {phase.display_name}
                       </span>
-                    </SelectItem>
-                  ))}
+                    </SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -499,10 +416,7 @@ export default function ProductionConfiguration() {
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button 
-              onClick={handleCreateTask} 
-              disabled={!taskFormData.task_name.trim() || !taskFormData.phase_id}
-            >
+            <Button onClick={handleCreateTask} disabled={!taskFormData.task_name.trim() || !taskFormData.phase_id}>
               Crear
             </Button>
           </DialogFooter>
@@ -518,33 +432,29 @@ export default function ProductionConfiguration() {
           <div className="space-y-4">
             <div>
               <Label htmlFor="edit-task-name">Nombre de la tarea</Label>
-              <Input
-                id="edit-task-name"
-                value={taskFormData.task_name}
-                onChange={(e) => setTaskFormData({ ...taskFormData, task_name: e.target.value })}
-              />
+              <Input id="edit-task-name" value={taskFormData.task_name} onChange={e => setTaskFormData({
+              ...taskFormData,
+              task_name: e.target.value
+            })} />
             </div>
             <div>
               <Label htmlFor="edit-phase">Fase de producción</Label>
-              <Select 
-                value={taskFormData.phase_id} 
-                onValueChange={(value) => setTaskFormData({ ...taskFormData, phase_id: value })}
-              >
+              <Select value={taskFormData.phase_id} onValueChange={value => setTaskFormData({
+              ...taskFormData,
+              phase_id: value
+            })}>
                 <SelectTrigger id="edit-phase">
                   <SelectValue placeholder="Selecciona una fase" />
                 </SelectTrigger>
                 <SelectContent>
-                  {phases.map((phase) => (
-                    <SelectItem key={phase.id} value={phase.id}>
+                  {phases.map(phase => <SelectItem key={phase.id} value={phase.id}>
                       <span className="flex items-center gap-2">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full"
-                          style={{ backgroundColor: phase.color }}
-                        />
+                        <span className="w-2.5 h-2.5 rounded-full" style={{
+                      backgroundColor: phase.color
+                    }} />
                         {phase.display_name}
                       </span>
-                    </SelectItem>
-                  ))}
+                    </SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -553,10 +463,7 @@ export default function ProductionConfiguration() {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button 
-              onClick={handleEditTask}
-              disabled={!taskFormData.task_name.trim() || !taskFormData.phase_id}
-            >
+            <Button onClick={handleEditTask} disabled={!taskFormData.task_name.trim() || !taskFormData.phase_id}>
               Guardar
             </Button>
           </DialogFooter>
@@ -591,92 +498,72 @@ export default function ProductionConfiguration() {
           <div className="space-y-4">
             <div>
               <Label htmlFor="var-name">Nombre</Label>
-              <Input
-                id="var-name"
-                value={varFormData.name}
-                onChange={(e) => setVarFormData({ ...varFormData, name: e.target.value })}
-                placeholder="ej: Cantidad de ejemplares"
-              />
+              <Input id="var-name" value={varFormData.name} onChange={e => setVarFormData({
+              ...varFormData,
+              name: e.target.value
+            })} placeholder="ej: Cantidad de ejemplares" />
             </div>
             <div>
               <Label htmlFor="var-desc">Descripción (opcional)</Label>
-              <Input
-                id="var-desc"
-                value={varFormData.description}
-                onChange={(e) => setVarFormData({ ...varFormData, description: e.target.value })}
-                placeholder="Describe el propósito de esta variable"
-              />
+              <Input id="var-desc" value={varFormData.description} onChange={e => setVarFormData({
+              ...varFormData,
+              description: e.target.value
+            })} placeholder="Describe el propósito de esta variable" />
             </div>
             
             <div className="flex items-center space-x-2">
-              <Checkbox
-                id="has-implicit-task"
-                checked={varFormData.has_implicit_task}
-                onCheckedChange={(checked) => setVarFormData({ ...varFormData, has_implicit_task: checked as boolean })}
-              />
+              <Checkbox id="has-implicit-task" checked={varFormData.has_implicit_task} onCheckedChange={checked => setVarFormData({
+              ...varFormData,
+              has_implicit_task: checked as boolean
+            })} />
               <Label htmlFor="has-implicit-task">Tiene tarea implícita</Label>
             </div>
             
-            {varFormData.has_implicit_task && (
-              <>
+            {varFormData.has_implicit_task && <>
                 <div>
                   <Label htmlFor="task-name">Nombre de la tarea</Label>
-                  <Input
-                    id="task-name"
-                    value={varFormData.task_name}
-                    onChange={(e) => setVarFormData({ ...varFormData, task_name: e.target.value })}
-                    placeholder="ej: Plastificar"
-                  />
+                  <Input id="task-name" value={varFormData.task_name} onChange={e => setVarFormData({
+                ...varFormData,
+                task_name: e.target.value
+              })} placeholder="ej: Plastificar" />
                 </div>
                 
                 <div>
                   <Label htmlFor="task-phase">Fase de producción</Label>
-                  <Select 
-                    value={varFormData.task_phase_id} 
-                    onValueChange={(value) => setVarFormData({ ...varFormData, task_phase_id: value })}
-                  >
+                  <Select value={varFormData.task_phase_id} onValueChange={value => setVarFormData({
+                ...varFormData,
+                task_phase_id: value
+              })}>
                     <SelectTrigger id="task-phase">
                       <SelectValue placeholder="Selecciona una fase" />
                     </SelectTrigger>
                     <SelectContent>
-                      {phases.map((phase) => (
-                        <SelectItem key={phase.id} value={phase.id}>
+                      {phases.map(phase => <SelectItem key={phase.id} value={phase.id}>
                           <span className="flex items-center gap-2">
-                            <span
-                              className="w-2.5 h-2.5 rounded-full"
-                              style={{ backgroundColor: phase.color }}
-                            />
+                            <span className="w-2.5 h-2.5 rounded-full" style={{
+                        backgroundColor: phase.color
+                      }} />
                             {phase.display_name}
                           </span>
-                        </SelectItem>
-                      ))}
+                        </SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div>
                   <Label htmlFor="exclude-values">Valores de exclusión (separados por comas)</Label>
-                  <Input
-                    id="exclude-values"
-                    value={varFormData.task_exclude_values.join(', ')}
-                    onChange={(e) => setVarFormData({ 
-                      ...varFormData, 
-                      task_exclude_values: e.target.value.split(',').map(v => v.trim()).filter(v => v) 
-                    })}
-                    placeholder="ej: No, Ninguno, Sin plastificar"
-                  />
+                  <Input id="exclude-values" value={varFormData.task_exclude_values.join(', ')} onChange={e => setVarFormData({
+                ...varFormData,
+                task_exclude_values: e.target.value.split(',').map(v => v.trim()).filter(v => v)
+              })} placeholder="ej: No, Ninguno, Sin plastificar" />
                 </div>
-              </>
-            )}
+              </>}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateVarDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button 
-              onClick={handleCreateVariable} 
-              disabled={!varFormData.name.trim()}
-            >
+            <Button onClick={handleCreateVariable} disabled={!varFormData.name.trim()}>
               Crear
             </Button>
           </DialogFooter>
@@ -692,90 +579,72 @@ export default function ProductionConfiguration() {
           <div className="space-y-4">
             <div>
               <Label htmlFor="edit-var-name">Nombre</Label>
-              <Input
-                id="edit-var-name"
-                value={varFormData.name}
-                onChange={(e) => setVarFormData({ ...varFormData, name: e.target.value })}
-              />
+              <Input id="edit-var-name" value={varFormData.name} onChange={e => setVarFormData({
+              ...varFormData,
+              name: e.target.value
+            })} />
             </div>
             <div>
               <Label htmlFor="edit-var-desc">Descripción (opcional)</Label>
-              <Input
-                id="edit-var-desc"
-                value={varFormData.description}
-                onChange={(e) => setVarFormData({ ...varFormData, description: e.target.value })}
-              />
+              <Input id="edit-var-desc" value={varFormData.description} onChange={e => setVarFormData({
+              ...varFormData,
+              description: e.target.value
+            })} />
             </div>
             
             <div className="flex items-center space-x-2">
-              <Checkbox
-                id="edit-has-implicit-task"
-                checked={varFormData.has_implicit_task}
-                onCheckedChange={(checked) => setVarFormData({ ...varFormData, has_implicit_task: checked as boolean })}
-              />
+              <Checkbox id="edit-has-implicit-task" checked={varFormData.has_implicit_task} onCheckedChange={checked => setVarFormData({
+              ...varFormData,
+              has_implicit_task: checked as boolean
+            })} />
               <Label htmlFor="edit-has-implicit-task">Tiene tarea implícita</Label>
             </div>
             
-            {varFormData.has_implicit_task && (
-              <>
+            {varFormData.has_implicit_task && <>
                 <div>
                   <Label htmlFor="edit-task-name">Nombre de la tarea</Label>
-                  <Input
-                    id="edit-task-name"
-                    value={varFormData.task_name}
-                    onChange={(e) => setVarFormData({ ...varFormData, task_name: e.target.value })}
-                    placeholder="ej: Plastificar"
-                  />
+                  <Input id="edit-task-name" value={varFormData.task_name} onChange={e => setVarFormData({
+                ...varFormData,
+                task_name: e.target.value
+              })} placeholder="ej: Plastificar" />
                 </div>
                 
                 <div>
                   <Label htmlFor="edit-task-phase">Fase de producción</Label>
-                  <Select 
-                    value={varFormData.task_phase_id} 
-                    onValueChange={(value) => setVarFormData({ ...varFormData, task_phase_id: value })}
-                  >
+                  <Select value={varFormData.task_phase_id} onValueChange={value => setVarFormData({
+                ...varFormData,
+                task_phase_id: value
+              })}>
                     <SelectTrigger id="edit-task-phase">
                       <SelectValue placeholder="Selecciona una fase" />
                     </SelectTrigger>
                     <SelectContent>
-                      {phases.map((phase) => (
-                        <SelectItem key={phase.id} value={phase.id}>
+                      {phases.map(phase => <SelectItem key={phase.id} value={phase.id}>
                           <span className="flex items-center gap-2">
-                            <span
-                              className="w-2.5 h-2.5 rounded-full"
-                              style={{ backgroundColor: phase.color }}
-                            />
+                            <span className="w-2.5 h-2.5 rounded-full" style={{
+                        backgroundColor: phase.color
+                      }} />
                             {phase.display_name}
                           </span>
-                        </SelectItem>
-                      ))}
+                        </SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div>
                   <Label htmlFor="edit-exclude-values">Valores de exclusión (separados por comas)</Label>
-                  <Input
-                    id="edit-exclude-values"
-                    value={varFormData.task_exclude_values.join(', ')}
-                    onChange={(e) => setVarFormData({ 
-                      ...varFormData, 
-                      task_exclude_values: e.target.value.split(',').map(v => v.trim()).filter(v => v) 
-                    })}
-                    placeholder="ej: No, Ninguno, Sin plastificar"
-                  />
+                  <Input id="edit-exclude-values" value={varFormData.task_exclude_values.join(', ')} onChange={e => setVarFormData({
+                ...varFormData,
+                task_exclude_values: e.target.value.split(',').map(v => v.trim()).filter(v => v)
+              })} placeholder="ej: No, Ninguno, Sin plastificar" />
                 </div>
-              </>
-            )}
+              </>}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditVarDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button 
-              onClick={handleEditVariable}
-              disabled={!varFormData.name.trim()}
-            >
+            <Button onClick={handleEditVariable} disabled={!varFormData.name.trim()}>
               Guardar
             </Button>
           </DialogFooter>
@@ -797,6 +666,5 @@ export default function ProductionConfiguration() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
+    </div>;
 }
