@@ -419,36 +419,30 @@ export default function ProductionConfiguration() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2 text-sm">
-                    {variable.has_implicit_task && variable.task_name ? (
-                      <>
-                        <div>
-                          <span className="text-muted-foreground">Tarea:</span>{" "}
-                          <span className="font-medium">{variable.task_name}</span>
-                        </div>
-                        {variable.task_phase_id && (
-                          <div>
-                            <span className="text-muted-foreground">Fase:</span>{" "}
-                            <span>
-                              {phases.find(p => p.id === variable.task_phase_id)?.display_name || 'N/A'}
-                            </span>
-                          </div>
-                        )}
-                        {variable.task_exclude_values && variable.task_exclude_values.length > 0 && (
-                          <div>
-                            <span className="text-muted-foreground">Excepciones:</span>{" "}
-                            <span className="text-xs">
-                              {variable.task_exclude_values.join(', ')}
-                            </span>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="text-muted-foreground italic">
-                        Sin tarea implícita configurada
+                  {variable.has_implicit_task && variable.task_name && (
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Tarea:</span>{" "}
+                        <span className="font-medium">{variable.task_name}</span>
                       </div>
-                    )}
-                  </div>
+                      {variable.task_phase_id && (
+                        <div>
+                          <span className="text-muted-foreground">Fase:</span>{" "}
+                          <span>
+                            {phases.find(p => p.id === variable.task_phase_id)?.display_name || 'N/A'}
+                          </span>
+                        </div>
+                      )}
+                      {variable.task_exclude_values && variable.task_exclude_values.length > 0 && (
+                        <div>
+                          <span className="text-muted-foreground">Excepciones:</span>{" "}
+                          <span className="text-xs">
+                            {variable.task_exclude_values.join(', ')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
