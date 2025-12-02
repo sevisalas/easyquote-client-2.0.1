@@ -69,17 +69,6 @@ export const useTheme = () => {
     }
   };
 
-  // Helper to parse and adjust HSL color
-  const adjustColorForDarkMode = (hslString: string, lightnessAdjust: number) => {
-    const parts = hslString.replace(/%/g, '').split(' ').map(v => parseFloat(v));
-    if (parts.length === 3) {
-      const [h, s, l] = parts;
-      const newLightness = Math.max(Math.min(l + lightnessAdjust, 80), 20);
-      return `${h} ${s}% ${newLightness}%`;
-    }
-    return hslString;
-  };
-
   const applyTheme = () => {
     const root = document.documentElement;
     
@@ -87,46 +76,25 @@ export const useTheme = () => {
     const isDark = userVariant === 'dark' || 
       (userVariant === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     
-    // First, remove any custom properties to let CSS defaults work
-    root.style.removeProperty('--primary');
-    root.style.removeProperty('--secondary');
-    root.style.removeProperty('--accent');
-    root.style.removeProperty('--muted');
-    root.style.removeProperty('--primary-foreground');
-    root.style.removeProperty('--secondary-foreground');
-    root.style.removeProperty('--accent-foreground');
-    
-    // Toggle dark class
+    // Toggle dark class first - this applies CSS dark mode variables
     root.classList.toggle('dark', isDark);
 
-    // Apply organization theme colors if available
+    // Apply organization theme colors if available - SAME colors for both modes
     if (organizationTheme) {
-      if (isDark) {
-        // For dark mode, lighten colors for better visibility on dark backgrounds
-        root.style.setProperty('--primary', adjustColorForDarkMode(organizationTheme.primary_color, 20));
-        root.style.setProperty('--primary-foreground', '0 0% 0%');
-        
-        // Adjust secondary - make it darker for dark mode backgrounds
-        root.style.setProperty('--secondary', adjustColorForDarkMode(organizationTheme.secondary_color, -30));
-        root.style.setProperty('--secondary-foreground', '0 0% 98%');
-        
-        // Adjust accent for dark mode
-        root.style.setProperty('--accent', adjustColorForDarkMode(organizationTheme.accent_color, 15));
-        root.style.setProperty('--accent-foreground', '0 0% 98%');
-        
-        if (organizationTheme.muted_color) {
-          root.style.setProperty('--muted', adjustColorForDarkMode(organizationTheme.muted_color, -20));
-        }
-      } else {
-        // Light mode - apply organization colors directly
-        root.style.setProperty('--primary', organizationTheme.primary_color);
-        root.style.setProperty('--secondary', organizationTheme.secondary_color);
-        root.style.setProperty('--accent', organizationTheme.accent_color);
-        
-        if (organizationTheme.muted_color) {
-          root.style.setProperty('--muted', organizationTheme.muted_color);
-        }
+      // Apply corporate colors exactly as configured
+      root.style.setProperty('--primary', organizationTheme.primary_color);
+      root.style.setProperty('--secondary', organizationTheme.secondary_color);
+      root.style.setProperty('--accent', organizationTheme.accent_color);
+      
+      if (organizationTheme.muted_color) {
+        root.style.setProperty('--muted', organizationTheme.muted_color);
       }
+    } else {
+      // No corporate theme - remove custom properties so CSS defaults apply
+      root.style.removeProperty('--primary');
+      root.style.removeProperty('--secondary');
+      root.style.removeProperty('--accent');
+      root.style.removeProperty('--muted');
     }
   };
 
