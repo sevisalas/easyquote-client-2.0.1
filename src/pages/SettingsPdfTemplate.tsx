@@ -129,7 +129,7 @@ export default function SettingsPdfTemplate() {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6 max-w-full">
+    <div className="space-y-4 max-w-full">
       <header className="sr-only">
         <h1>Configuración de plantilla PDF</h1>
         <link rel="canonical" href={`${window.location.origin}/configuracion/plantilla-pdf`} />
@@ -138,35 +138,35 @@ export default function SettingsPdfTemplate() {
 
       {/* Configuración de datos */}
       <Card>
-        <CardHeader>
-          <CardTitle>Datos de la Empresa</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Datos de la Empresa</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Nombre de empresa</Label>
-            <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Mi Empresa S.L." />
+        <CardContent className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label className="text-xs">Nombre de empresa</Label>
+            <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Mi Empresa S.L." className="h-8 text-sm mt-1" />
           </div>
-          <div className="space-y-2">
-            <Label>Color de marca</Label>
-            <Input type="color" value={brandColor} onChange={(e) => setBrandColor(e.target.value)} />
+          <div>
+            <Label className="text-xs">Color de marca</Label>
+            <Input type="color" value={brandColor} onChange={(e) => setBrandColor(e.target.value)} className="h-8 mt-1" />
           </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label>Logo (URL)</Label>
-            <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://.../logo.png" />
+          <div className="sm:col-span-2">
+            <Label className="text-xs">Logo (URL)</Label>
+            <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://.../logo.png" className="h-8 text-sm mt-1" />
           </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label>Texto de pie</Label>
-            <Input value={footerText} onChange={(e) => setFooterText(e.target.value)} placeholder="Condiciones, contacto, etc." />
+          <div className="sm:col-span-2">
+            <Label className="text-xs">Texto de pie</Label>
+            <Input value={footerText} onChange={(e) => setFooterText(e.target.value)} placeholder="Condiciones, contacto, etc." className="h-8 text-sm mt-1" />
           </div>
         </CardContent>
       </Card>
 
       {/* Selección de plantilla y Vista previa */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Selección de plantilla - 1/2 */}
         <Card>
-          <CardHeader>
-            <CardTitle>Selecciona tu Plantilla</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Selecciona tu Plantilla</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -218,8 +218,8 @@ export default function SettingsPdfTemplate() {
 
         {/* Vista previa - 1/3 */}
         <Card className="overflow-hidden h-fit">
-          <CardHeader>
-            <CardTitle>Vista Previa</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Vista Previa</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="bg-muted/30 p-3 overflow-x-auto">
@@ -245,7 +245,7 @@ export default function SettingsPdfTemplate() {
 
       {/* Botón guardar */}
       <div className="flex justify-end">
-        <Button onClick={handleSave} size="lg" disabled={isSaving}>
+        <Button onClick={handleSave} size="sm" disabled={isSaving}>
           {isSaving ? 'Guardando...' : 'Guardar Configuración'}
         </Button>
       </div>

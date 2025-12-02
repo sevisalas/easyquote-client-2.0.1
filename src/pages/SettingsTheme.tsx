@@ -279,7 +279,7 @@ export default function SettingsTheme() {
   const hasChanges = selectedTheme !== currentTheme;
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto p-6">
       <header className="sr-only">
         <h1>Configuración de tema</h1>
         <link rel="canonical" href={`${window.location.origin}/configuracion/tema`} />
@@ -287,10 +287,10 @@ export default function SettingsTheme() {
       </header>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Selecciona tu Tema</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Selecciona tu Tema</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {themes.map((theme) => (
               <button
@@ -358,10 +358,10 @@ export default function SettingsTheme() {
 
           {/* Editor de colores personalizados */}
           {selectedTheme === 'custom' && (
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Palette className="h-5 w-5" />
+            <Card className="mt-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Palette className="h-4 w-4" />
                   Personaliza tus colores
                 </CardTitle>
               </CardHeader>
@@ -448,11 +448,11 @@ export default function SettingsTheme() {
           )}
 
           {hasChanges && (
-            <div className="flex justify-end mt-6">
+            <div className="flex justify-end mt-4">
               <Button 
                 onClick={handleSaveTheme} 
                 disabled={saving}
-                size="lg"
+                size="sm"
               >
                 {saving ? 'Guardando...' : 'Guardar Tema'}
               </Button>
