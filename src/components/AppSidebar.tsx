@@ -345,7 +345,20 @@ export function AppSidebar() {
                                   </NavLink>
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
-                              {/* Carga de trabajo moved to Configuración section */}
+                              {!isComercial && (
+                                <SidebarMenuSubItem>
+                                  <SidebarMenuSubButton
+                                    asChild
+                                    isActive={currentPath === "/carga-trabajo"}
+                                    className="h-6 px-2"
+                                  >
+                                    <NavLink to="/carga-trabajo" className={getNavCls}>
+                                      <TrendingUp className="mr-2 h-4 w-4" />
+                                      {!isCollapsed && <span>Carga de trabajo</span>}
+                                    </NavLink>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              )}
                             </SidebarMenuSub>
                           </CollapsibleContent>
                        </SidebarMenuItem>
