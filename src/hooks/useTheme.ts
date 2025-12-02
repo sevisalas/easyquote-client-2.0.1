@@ -7,9 +7,13 @@ export interface OrganizationTheme {
   organization_id: string;
   name: string;
   primary_color: string;
+  primary_foreground?: string;
   secondary_color: string;
+  secondary_foreground?: string;
   accent_color: string;
+  accent_foreground?: string;
   muted_color?: string;
+  muted_foreground?: string;
   is_active: boolean;
 }
 
@@ -52,46 +56,46 @@ export const useTheme = () => {
     }
   };
 
-  // Helper to determine if a color is light or dark based on HSL lightness
-  const isLightColor = (hslString: string): boolean => {
-    const parts = hslString.replace(/%/g, '').split(' ').map(v => parseFloat(v));
-    if (parts.length === 3) {
-      return parts[2] > 50; // Lightness > 50% = light color
-    }
-    return false;
-  };
-
   const applyTheme = () => {
     const root = document.documentElement;
 
     // Apply organization theme colors if available
     if (organizationTheme) {
-      // Apply corporate colors exactly as configured
+      // Primary
       root.style.setProperty('--primary', organizationTheme.primary_color);
+      if (organizationTheme.primary_foreground) {
+        root.style.setProperty('--primary-foreground', organizationTheme.primary_foreground);
+      }
+      
+      // Secondary
       root.style.setProperty('--secondary', organizationTheme.secondary_color);
+      if (organizationTheme.secondary_foreground) {
+        root.style.setProperty('--secondary-foreground', organizationTheme.secondary_foreground);
+      }
+      
+      // Accent
       root.style.setProperty('--accent', organizationTheme.accent_color);
+      if (organizationTheme.accent_foreground) {
+        root.style.setProperty('--accent-foreground', organizationTheme.accent_foreground);
+      }
       
-      // Set appropriate foreground colors based on luminosity
-      const primaryFg = isLightColor(organizationTheme.primary_color) ? '0 0% 0%' : '0 0% 100%';
-      const secondaryFg = isLightColor(organizationTheme.secondary_color) ? '0 0% 0%' : '0 0% 100%';
-      const accentFg = isLightColor(organizationTheme.accent_color) ? '0 0% 0%' : '0 0% 100%';
-      
-      root.style.setProperty('--primary-foreground', primaryFg);
-      root.style.setProperty('--secondary-foreground', secondaryFg);
-      root.style.setProperty('--accent-foreground', accentFg);
-      
+      // Muted
       if (organizationTheme.muted_color) {
         root.style.setProperty('--muted', organizationTheme.muted_color);
+      }
+      if (organizationTheme.muted_foreground) {
+        root.style.setProperty('--muted-foreground', organizationTheme.muted_foreground);
       }
     } else {
       // No corporate theme - remove custom properties so CSS defaults apply
       root.style.removeProperty('--primary');
-      root.style.removeProperty('--secondary');
-      root.style.removeProperty('--accent');
-      root.style.removeProperty('--muted');
       root.style.removeProperty('--primary-foreground');
+      root.style.removeProperty('--secondary');
       root.style.removeProperty('--secondary-foreground');
+      root.style.removeProperty('--accent');
       root.style.removeProperty('--accent-foreground');
+      root.style.removeProperty('--muted');
+      root.style.removeProperty('--muted-foreground');
     }
   };
 
@@ -145,12 +149,13 @@ export const useTheme = () => {
       // Reset CSS variables to default
       const root = document.documentElement;
       root.style.removeProperty('--primary');
-      root.style.removeProperty('--secondary');
-      root.style.removeProperty('--accent');
-      root.style.removeProperty('--muted');
       root.style.removeProperty('--primary-foreground');
+      root.style.removeProperty('--secondary');
       root.style.removeProperty('--secondary-foreground');
+      root.style.removeProperty('--accent');
       root.style.removeProperty('--accent-foreground');
+      root.style.removeProperty('--muted');
+      root.style.removeProperty('--muted-foreground');
     } catch (error) {
       console.error('Error resetting theme:', error);
       throw error;

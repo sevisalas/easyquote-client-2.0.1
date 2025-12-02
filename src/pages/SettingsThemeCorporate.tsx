@@ -12,10 +12,15 @@ export default function SettingsThemeCorporate() {
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
   
-  const [primaryColor, setPrimaryColor] = useState("217 91% 60%");
-  const [secondaryColor, setSecondaryColor] = useState("210 40% 98%");
-  const [accentColor, setAccentColor] = useState("217 91% 60%");
   const [themeName, setThemeName] = useState("Tema corporativo");
+  const [primaryColor, setPrimaryColor] = useState("332 61% 49%");
+  const [primaryForeground, setPrimaryForeground] = useState("0 0% 100%");
+  const [secondaryColor, setSecondaryColor] = useState("266 93% 17%");
+  const [secondaryForeground, setSecondaryForeground] = useState("0 0% 98%");
+  const [accentColor, setAccentColor] = useState("210 40% 96%");
+  const [accentForeground, setAccentForeground] = useState("222 47% 11%");
+  const [mutedColor, setMutedColor] = useState("210 40% 96%");
+  const [mutedForeground, setMutedForeground] = useState("215 16% 47%");
 
   useEffect(() => {
     document.title = "Tema Corporativo - EasyQuote";
@@ -23,10 +28,15 @@ export default function SettingsThemeCorporate() {
 
   useEffect(() => {
     if (organizationTheme) {
-      setPrimaryColor(organizationTheme.primary_color);
-      setSecondaryColor(organizationTheme.secondary_color);
-      setAccentColor(organizationTheme.accent_color);
       setThemeName(organizationTheme.name);
+      setPrimaryColor(organizationTheme.primary_color);
+      setPrimaryForeground(organizationTheme.primary_foreground || "0 0% 100%");
+      setSecondaryColor(organizationTheme.secondary_color);
+      setSecondaryForeground(organizationTheme.secondary_foreground || "0 0% 98%");
+      setAccentColor(organizationTheme.accent_color);
+      setAccentForeground(organizationTheme.accent_foreground || "222 47% 11%");
+      if (organizationTheme.muted_color) setMutedColor(organizationTheme.muted_color);
+      if (organizationTheme.muted_foreground) setMutedForeground(organizationTheme.muted_foreground);
     }
   }, [organizationTheme]);
 
@@ -36,8 +46,13 @@ export default function SettingsThemeCorporate() {
       await updateOrganizationTheme({
         name: themeName,
         primary_color: primaryColor,
+        primary_foreground: primaryForeground,
         secondary_color: secondaryColor,
-        accent_color: accentColor
+        secondary_foreground: secondaryForeground,
+        accent_color: accentColor,
+        accent_foreground: accentForeground,
+        muted_color: mutedColor,
+        muted_foreground: mutedForeground
       });
       toast.success("Tema corporativo guardado correctamente");
     } catch (error) {
@@ -52,10 +67,15 @@ export default function SettingsThemeCorporate() {
     setResetting(true);
     try {
       await resetToOriginalTheme();
-      setPrimaryColor("217 91% 60%");
-      setSecondaryColor("210 40% 98%");
-      setAccentColor("217 91% 60%");
       setThemeName("Tema corporativo");
+      setPrimaryColor("332 61% 49%");
+      setPrimaryForeground("0 0% 100%");
+      setSecondaryColor("266 93% 17%");
+      setSecondaryForeground("0 0% 98%");
+      setAccentColor("210 40% 96%");
+      setAccentForeground("222 47% 11%");
+      setMutedColor("210 40% 96%");
+      setMutedForeground("215 16% 47%");
       toast.success("Tema restaurado al original de EasyQuote");
     } catch (error) {
       console.error('Error resetting theme:', error);
@@ -96,10 +116,11 @@ export default function SettingsThemeCorporate() {
   };
 
   const hslToHex = (hsl: string): string => {
-    const parts = hsl.split(' ');
-    const h = parseInt(parts[0]);
-    const s = parseInt(parts[1]) / 100;
-    const l = parseInt(parts[2]) / 100;
+    const parts = hsl.replace(/%/g, '').split(' ');
+    if (parts.length < 3) return "#000000";
+    const h = parseInt(parts[0]) || 0;
+    const s = (parseInt(parts[1]) || 0) / 100;
+    const l = (parseInt(parts[2]) || 0) / 100;
 
     const c = (1 - Math.abs(2 * l - 1)) * s;
     const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
@@ -120,6 +141,37 @@ export default function SettingsThemeCorporate() {
 
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
   };
+
+  const ColorInput = ({ 
+    label, 
+    description, 
+    value, 
+    onChange 
+  }: { 
+    label: string; 
+    description: string; 
+    value: string; 
+    onChange: (v: string) => void 
+  }) => (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <div className="flex gap-2">
+        <Input
+          type="color"
+          value={hslToHex(value)}
+          onChange={(e) => onChange(hexToHSL(e.target.value))}
+          className="w-14 h-10 cursor-pointer p-1"
+        />
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="0 0% 0%"
+          className="flex-1 font-mono text-sm"
+        />
+      </div>
+      <p className="text-xs text-muted-foreground">{description}</p>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -142,7 +194,7 @@ export default function SettingsThemeCorporate() {
         <CardHeader>
           <CardTitle>Configuración de Colores</CardTitle>
           <CardDescription>
-            Define los colores principales de tu marca. Los valores se guardan en formato HSL.
+            Define los colores principales de tu marca. Los valores se guardan en formato HSL (Hue Saturation% Lightness%).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -158,91 +210,90 @@ export default function SettingsThemeCorporate() {
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="primary-color">Color Primario</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="primary-color"
-                  type="color"
-                  value={hslToHex(primaryColor)}
-                  onChange={(e) => setPrimaryColor(hexToHSL(e.target.value))}
-                  className="w-20 h-10 cursor-pointer"
-                />
-                <Input
-                  value={primaryColor}
-                  onChange={(e) => setPrimaryColor(e.target.value)}
-                  placeholder="217 91% 60%"
-                  className="flex-1"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Color principal de botones, enlaces y elementos destacados
-              </p>
+          {/* Primary Colors */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Color Primario</h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              <ColorInput
+                label="Fondo Primario"
+                description="Botones principales, enlaces destacados"
+                value={primaryColor}
+                onChange={setPrimaryColor}
+              />
+              <ColorInput
+                label="Texto sobre Primario"
+                description="Color del texto en botones primarios"
+                value={primaryForeground}
+                onChange={setPrimaryForeground}
+              />
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="secondary-color">Color Secundario</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="secondary-color"
-                  type="color"
-                  value={hslToHex(secondaryColor)}
-                  onChange={(e) => setSecondaryColor(hexToHSL(e.target.value))}
-                  className="w-20 h-10 cursor-pointer"
-                />
-                <Input
-                  value={secondaryColor}
-                  onChange={(e) => setSecondaryColor(e.target.value)}
-                  placeholder="210 40% 98%"
-                  className="flex-1"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Color de fondos secundarios y elementos sutiles
-              </p>
+          {/* Secondary Colors */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Color Secundario</h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              <ColorInput
+                label="Fondo Secundario"
+                description="Fondos alternativos, badges"
+                value={secondaryColor}
+                onChange={setSecondaryColor}
+              />
+              <ColorInput
+                label="Texto sobre Secundario"
+                description="Color del texto sobre fondos secundarios"
+                value={secondaryForeground}
+                onChange={setSecondaryForeground}
+              />
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="accent-color">Color de Acento</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="accent-color"
-                  type="color"
-                  value={hslToHex(accentColor)}
-                  onChange={(e) => setAccentColor(hexToHSL(e.target.value))}
-                  className="w-20 h-10 cursor-pointer"
-                />
-                <Input
-                  value={accentColor}
-                  onChange={(e) => setAccentColor(e.target.value)}
-                  placeholder="217 91% 60%"
-                  className="flex-1"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Color para resaltar elementos especiales
-              </p>
+          {/* Accent Colors */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Color de Acento</h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              <ColorInput
+                label="Fondo de Acento"
+                description="Elementos destacados, hovers"
+                value={accentColor}
+                onChange={setAccentColor}
+              />
+              <ColorInput
+                label="Texto sobre Acento"
+                description="Color del texto sobre fondos de acento"
+                value={accentForeground}
+                onChange={setAccentForeground}
+              />
+            </div>
+          </div>
+
+          {/* Muted Colors */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Colores Atenuados</h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              <ColorInput
+                label="Fondo Atenuado"
+                description="Fondos sutiles, inputs deshabilitados"
+                value={mutedColor}
+                onChange={setMutedColor}
+              />
+              <ColorInput
+                label="Texto Atenuado"
+                description="Texto secundario, placeholders"
+                value={mutedForeground}
+                onChange={setMutedForeground}
+              />
             </div>
           </div>
 
           <div className="border-t pt-6 flex flex-col sm:flex-row gap-4">
-            <Button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex-1 sm:flex-initial"
-            >
+            <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Guardar Tema
             </Button>
             
             {organizationTheme && (
-              <Button
-                onClick={handleReset}
-                variant="outline"
-                disabled={resetting}
-                className="flex-1 sm:flex-initial"
-              >
+              <Button onClick={handleReset} variant="outline" disabled={resetting}>
                 {resetting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -265,20 +316,26 @@ export default function SettingsThemeCorporate() {
         <CardContent>
           <div className="space-y-4">
             <div className="flex gap-4 flex-wrap">
-              <Button style={{ background: `hsl(${primaryColor})`, color: 'white' }}>
+              <Button style={{ background: `hsl(${primaryColor})`, color: `hsl(${primaryForeground})` }}>
                 Botón Primario
               </Button>
-              <Button variant="secondary" style={{ background: `hsl(${secondaryColor})` }}>
+              <Button variant="secondary" style={{ background: `hsl(${secondaryColor})`, color: `hsl(${secondaryForeground})` }}>
                 Botón Secundario
               </Button>
               <Button variant="outline" style={{ borderColor: `hsl(${accentColor})`, color: `hsl(${accentColor})` }}>
-                Botón Acento
+                Botón Outline
               </Button>
             </div>
             
-            <div className="p-4 rounded-lg border" style={{ background: `hsl(${secondaryColor})` }}>
-              <p className="text-sm" style={{ color: `hsl(${primaryColor})` }}>
-                Texto con color primario sobre fondo secundario
+            <div className="p-4 rounded-lg border" style={{ background: `hsl(${mutedColor})` }}>
+              <p className="text-sm" style={{ color: `hsl(${mutedForeground})` }}>
+                Texto atenuado sobre fondo atenuado
+              </p>
+            </div>
+
+            <div className="p-4 rounded-lg" style={{ background: `hsl(${accentColor})` }}>
+              <p className="text-sm" style={{ color: `hsl(${accentForeground})` }}>
+                Texto sobre fondo de acento
               </p>
             </div>
           </div>
