@@ -144,24 +144,23 @@ export default function SettingsThemeCorporate() {
 
   const ColorInput = ({ 
     label, 
-    description, 
     value, 
-    onChange 
+    onChange,
+    large = false
   }: { 
     label: string; 
-    description: string; 
     value: string; 
-    onChange: (v: string) => void 
+    onChange: (v: string) => void;
+    large?: boolean;
   }) => (
-    <div className="space-y-2">
-      <Label>{label}</Label>
+    <div className="space-y-1">
+      <Label className="text-xs">{label}</Label>
       <Input
         type="color"
         value={hslToHex(value)}
         onChange={(e) => onChange(hexToHSL(e.target.value))}
-        className="w-20 h-20 cursor-pointer p-1 rounded-md"
+        className={`cursor-pointer p-1 rounded-md ${large ? 'w-24 h-24' : 'w-16 h-16'}`}
       />
-      <p className="text-xs text-muted-foreground">{description}</p>
     </div>
   );
 
@@ -178,100 +177,94 @@ export default function SettingsThemeCorporate() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Tema Corporativo</h1>
         <p className="text-muted-foreground mt-2">
-          Personaliza los colores de tu organización. Todos los usuarios verán estos colores.
+          Personaliza los colores de tu organización.
         </p>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Configuración de Colores</CardTitle>
-          <CardDescription>
-            Define los colores principales de tu marca. Los valores se guardan en formato HSL (Hue Saturation% Lightness%).
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
               <Label htmlFor="theme-name">Nombre del tema</Label>
               <Input
                 id="theme-name"
                 value={themeName}
                 onChange={(e) => setThemeName(e.target.value)}
                 placeholder="Tema corporativo"
+                className="mt-1 max-w-xs"
               />
             </div>
           </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Three columns: Primary, Secondary, Accent */}
+          <div className="grid gap-6 md:grid-cols-3">
+            {/* Primary Column */}
+            <div className="space-y-4 p-4 border rounded-lg">
+              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Primario</h3>
+              <div className="flex gap-4">
+                <ColorInput
+                  label="Fondo"
+                  value={primaryColor}
+                  onChange={setPrimaryColor}
+                  large
+                />
+                <ColorInput
+                  label="Texto"
+                  value={primaryForeground}
+                  onChange={setPrimaryForeground}
+                />
+              </div>
+            </div>
 
-          {/* Primary Colors */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Color Primario</h3>
-            <div className="grid gap-4 md:grid-cols-2">
-              <ColorInput
-                label="Fondo Primario"
-                description="Botones principales, enlaces destacados"
-                value={primaryColor}
-                onChange={setPrimaryColor}
-              />
-              <ColorInput
-                label="Texto sobre Primario"
-                description="Color del texto en botones primarios"
-                value={primaryForeground}
-                onChange={setPrimaryForeground}
-              />
+            {/* Secondary Column */}
+            <div className="space-y-4 p-4 border rounded-lg">
+              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Secundario</h3>
+              <div className="flex gap-4">
+                <ColorInput
+                  label="Fondo"
+                  value={secondaryColor}
+                  onChange={setSecondaryColor}
+                  large
+                />
+                <ColorInput
+                  label="Texto"
+                  value={secondaryForeground}
+                  onChange={setSecondaryForeground}
+                />
+              </div>
+            </div>
+
+            {/* Accent Column */}
+            <div className="space-y-4 p-4 border rounded-lg">
+              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Acento</h3>
+              <div className="flex gap-4">
+                <ColorInput
+                  label="Fondo"
+                  value={accentColor}
+                  onChange={setAccentColor}
+                  large
+                />
+                <ColorInput
+                  label="Texto"
+                  value={accentForeground}
+                  onChange={setAccentForeground}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Secondary Colors */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Color Secundario</h3>
-            <div className="grid gap-4 md:grid-cols-2">
+          {/* Muted Colors Row */}
+          <div className="p-4 border rounded-lg">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-4">Colores Atenuados</h3>
+            <div className="flex gap-4">
               <ColorInput
-                label="Fondo Secundario"
-                description="Fondos alternativos, badges"
-                value={secondaryColor}
-                onChange={setSecondaryColor}
-              />
-              <ColorInput
-                label="Texto sobre Secundario"
-                description="Color del texto sobre fondos secundarios"
-                value={secondaryForeground}
-                onChange={setSecondaryForeground}
-              />
-            </div>
-          </div>
-
-          {/* Accent Colors */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Color de Acento</h3>
-            <div className="grid gap-4 md:grid-cols-2">
-              <ColorInput
-                label="Fondo de Acento"
-                description="Elementos destacados, hovers"
-                value={accentColor}
-                onChange={setAccentColor}
-              />
-              <ColorInput
-                label="Texto sobre Acento"
-                description="Color del texto sobre fondos de acento"
-                value={accentForeground}
-                onChange={setAccentForeground}
-              />
-            </div>
-          </div>
-
-          {/* Muted Colors */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Colores Atenuados</h3>
-            <div className="grid gap-4 md:grid-cols-2">
-              <ColorInput
-                label="Fondo Atenuado"
-                description="Fondos sutiles, inputs deshabilitados"
+                label="Fondo atenuado"
                 value={mutedColor}
                 onChange={setMutedColor}
               />
               <ColorInput
-                label="Texto Atenuado"
-                description="Texto secundario, placeholders"
+                label="Texto atenuado"
                 value={mutedForeground}
                 onChange={setMutedForeground}
               />
@@ -301,9 +294,6 @@ export default function SettingsThemeCorporate() {
       <Card>
         <CardHeader>
           <CardTitle>Vista Previa</CardTitle>
-          <CardDescription>
-            Así se verán los colores en la interfaz
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
