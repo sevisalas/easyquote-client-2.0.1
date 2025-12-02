@@ -234,7 +234,8 @@ export default function ProductionConfiguration() {
           <CardHeader>
             <CardTitle>Capacidad máxima diaria</CardTitle>
             <CardDescription>
-              Pedidos máximos que tu equipo puede gestionar por día
+              Capacidad máxima que tus recursos pueden
+ gestionar por día
             </CardDescription>
           </CardHeader>
           <CardContent>
