@@ -458,35 +458,11 @@ export function AppSidebar() {
                               </SidebarMenuSubItem>
                             )}
                            
-                             {/* Carga de trabajo - Solo con producción, no comerciales */}
-                             {canAccessProduccion() && !isComercial && (
-                               <SidebarMenuSubItem>
-                                 <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/carga-trabajo"} className="h-6 px-2">
-                                   <NavLink to="/configuracion/carga-trabajo" end className={getNavCls}>
-                                     <TrendingUp className="mr-2 h-4 w-4" />
-                                     {!isCollapsed && <span>Carga de trabajo</span>}
-                                   </NavLink>
-                                 </SidebarMenuSubButton>
-                               </SidebarMenuSubItem>
-                             )}
-
-                             {/* Tareas por defecto - Solo con producción */}
+                             {/* Producción - Solo módulo Production (ERP) */}
                              {canAccessProduccion() && (
                                <SidebarMenuSubItem>
-                                 <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/tareas-defecto"} className="h-6 px-2">
-                                   <NavLink to="/configuracion/tareas-defecto" end className={getNavCls}>
-                                     <ListChecks className="mr-2 h-4 w-4" />
-                                     {!isCollapsed && <span>Tareas por defecto</span>}
-                                   </NavLink>
-                                 </SidebarMenuSubButton>
-                               </SidebarMenuSubItem>
-                             )}
-
-                             {/* Variables de producción - Solo módulo Production (ERP) */}
-                             {canAccessProduccion() && (
-                               <SidebarMenuSubItem>
-                                 <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/variables-produccion"} className="h-6 px-2">
-                                   <NavLink to="/configuracion/variables-produccion" end className={getNavCls}>
+                                 <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/produccion"} className="h-6 px-2">
+                                   <NavLink to="/configuracion/produccion" end className={getNavCls}>
                                      <Sparkles className="mr-2 h-4 w-4" />
                                      {!isCollapsed && <span>Producción</span>}
                                    </NavLink>
