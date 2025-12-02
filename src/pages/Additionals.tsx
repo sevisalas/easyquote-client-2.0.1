@@ -31,6 +31,10 @@ interface AdditionalForm {
   type: "net_amount" | "quantity_multiplier" | "percentage"
   default_value: number
   is_discount: boolean
+  has_implicit_task: boolean
+  task_name: string
+  task_phase_id: string
+  task_exclude_values: string[]
 }
 
 const fetchAdditionals = async (): Promise<Additional[]> => {
@@ -56,7 +60,11 @@ export default function Additionals() {
     assignment_type: "article",
     type: "net_amount",
     default_value: 0,
-    is_discount: false
+    is_discount: false,
+    has_implicit_task: false,
+    task_name: "",
+    task_phase_id: "",
+    task_exclude_values: []
   })
 
   const { toast } = useToast()
@@ -65,6 +73,20 @@ export default function Additionals() {
   const { data: additionals = [], isLoading } = useQuery({
     queryKey: ["additionals"],
     queryFn: fetchAdditionals
+  })
+
+  const { data: phases = [] } = useQuery({
+    queryKey: ["production-phases"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("production_phases")
+        .select("*")
+        .eq("is_active", true)
+        .order("display_order")
+      
+      if (error) throw error
+      return data || []
+    }
   })
 
   const createMutation = useMutation({
@@ -147,7 +169,11 @@ export default function Additionals() {
       assignment_type: "article",
       type: "net_amount",
       default_value: 0,
-      is_discount: false
+      is_discount: false,
+      has_implicit_task: false,
+      task_name: "",
+      task_phase_id: "",
+      task_exclude_values: []
     })
   }
 
@@ -169,7 +195,11 @@ export default function Additionals() {
       assignment_type: additional.assignment_type,
       type: additional.type,
       default_value: additional.default_value,
-      is_discount: additional.is_discount || false
+      is_discount: additional.is_discount || false,
+      has_implicit_task: (additional as any).has_implicit_task || false,
+      task_name: (additional as any).task_name || "",
+      task_phase_id: (additional as any).task_phase_id || "",
+      task_exclude_values: (additional as any).task_exclude_values || []
     })
     setIsDialogOpen(true)
   }
@@ -304,6 +334,87 @@ export default function Additionals() {
                   ¿Considerar este ajuste como "Descuento"?
                 </Label>
               </div>
+
+              {/* Tareas implícitas - solo para ajustes de artículo */}
+              {form.assignment_type === "article" && (
+                <>
+                  <div className="flex items-center space-x-2 pt-4 border-t">
+                    <Checkbox
+                      id="has_implicit_task"
+                      checked={form.has_implicit_task}
+                      onCheckedChange={(checked) => {
+                        setForm({ 
+                          ...form, 
+                          has_implicit_task: checked as boolean,
+                          task_name: checked ? form.task_name : "",
+                          task_phase_id: checked ? form.task_phase_id : ""
+                        })
+                      }}
+                    />
+                    <Label 
+                      htmlFor="has_implicit_task" 
+                      className="text-sm font-normal cursor-pointer"
+                    >
+                      Crear tarea de producción automáticamente
+                    </Label>
+                  </div>
+
+                  {form.has_implicit_task && (
+                    <>
+                      <div>
+                        <Label htmlFor="task_name">Nombre de la tarea</Label>
+                        <Input
+                          id="task_name"
+                          value={form.task_name}
+                          onChange={(e) => setForm({ ...form, task_name: e.target.value })}
+                          placeholder="Ej: Aplicar acabado especial"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="task_phase_id">Fase de producción</Label>
+                        <Select
+                          value={form.task_phase_id}
+                          onValueChange={(value) => setForm({ ...form, task_phase_id: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona una fase" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {phases.map((phase: any) => (
+                              <SelectItem key={phase.id} value={phase.id}>
+                                {phase.display_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="task_exclude_values">
+                          Valores que excluyen la tarea (opcional)
+                        </Label>
+                        <Textarea
+                          id="task_exclude_values"
+                          value={form.task_exclude_values.join(", ")}
+                          onChange={(e) => setForm({ 
+                            ...form, 
+                            task_exclude_values: e.target.value
+                              .split(",")
+                              .map(v => v.trim())
+                              .filter(v => v !== "")
+                          })}
+                          placeholder="Ej: Sin acabado, Normal (separados por comas)"
+                          rows={2}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Si el valor del ajuste coincide con alguno de estos, no se creará la tarea
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
             </form>
             
             <DialogFooter>

@@ -20,11 +20,15 @@ export type Database = {
           created_at: string
           default_value: number | null
           description: string | null
+          has_implicit_task: boolean
           id: string
           is_active: boolean
           is_discount: boolean
           name: string
           price: number
+          task_exclude_values: string[] | null
+          task_name: string | null
+          task_phase_id: string | null
           type: string | null
           updated_at: string
           user_id: string
@@ -34,11 +38,15 @@ export type Database = {
           created_at?: string
           default_value?: number | null
           description?: string | null
+          has_implicit_task?: boolean
           id?: string
           is_active?: boolean
           is_discount?: boolean
           name: string
           price?: number
+          task_exclude_values?: string[] | null
+          task_name?: string | null
+          task_phase_id?: string | null
           type?: string | null
           updated_at?: string
           user_id: string
@@ -48,16 +56,28 @@ export type Database = {
           created_at?: string
           default_value?: number | null
           description?: string | null
+          has_implicit_task?: boolean
           id?: string
           is_active?: boolean
           is_discount?: boolean
           name?: string
           price?: number
+          task_exclude_values?: string[] | null
+          task_name?: string | null
+          task_phase_id?: string | null
           type?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "additionals_task_phase_id_fkey"
+            columns: ["task_phase_id"]
+            isOneToOne: false
+            referencedRelation: "production_phases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customer_access_logs: {
         Row: {
