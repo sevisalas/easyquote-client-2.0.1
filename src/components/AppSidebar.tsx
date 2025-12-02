@@ -1,23 +1,6 @@
 import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles, Monitor, ListChecks, TrendingUp } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
-  SidebarRail,
-  useSidebar,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, SidebarRail, useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,26 +8,28 @@ import { toast } from "@/hooks/use-toast";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { usePdfAccess } from "@/hooks/usePdfAccess";
-
 interface Item {
   title: string;
   url: string;
   icon: LucideIcon;
 }
-
-const items: Item[] = [
-  { title: "Inicio", url: "/", icon: Home },
-];
-
+const items: Item[] = [{
+  title: "Inicio",
+  url: "/",
+  icon: Home
+}];
 export function AppSidebar() {
-  const { state, toggleSidebar } = useSidebar();
+  const {
+    state,
+    toggleSidebar
+  } = useSidebar();
   const isCollapsed = state === "collapsed";
   const location = useLocation();
   const currentPath = location.pathname;
   const navigate = useNavigate();
-  const { 
-    isSuperAdmin, 
-    isOrgAdmin, 
+  const {
+    isSuperAdmin,
+    isOrgAdmin,
     membership,
     canAccessClientes,
     canAccessPresupuestos,
@@ -56,72 +41,65 @@ export function AppSidebar() {
     isERPSubscription,
     loading
   } = useSubscription();
-  const { isHoldedActive } = useHoldedIntegration();
-  const { hasPdfAccess, loading: pdfAccessLoading } = usePdfAccess();
-  
+  const {
+    isHoldedActive
+  } = useHoldedIntegration();
+  const {
+    hasPdfAccess,
+    loading: pdfAccessLoading
+  } = usePdfAccess();
   const isComercial = membership?.role === 'comercial';
-
   const handleSignOut = async () => {
     try {
       // Limpiar token de EasyQuote
       sessionStorage.removeItem('easyquote_token');
-      
+
       // Intentar cerrar sesión en Supabase (scope local para evitar errores si la sesión del servidor no existe)
-      await supabase.auth.signOut({ scope: 'local' });
-      
-      toast({ title: "Sesión cerrada" });
+      await supabase.auth.signOut({
+        scope: 'local'
+      });
+      toast({
+        title: "Sesión cerrada"
+      });
       navigate("/auth");
     } catch (error) {
       // Incluso si hay error, limpiar sesión local y redirigir
       console.error('Error al cerrar sesión:', error);
-      toast({ title: "Sesión cerrada" });
+      toast({
+        title: "Sesión cerrada"
+      });
       navigate("/auth");
     }
   };
-  const getNavCls = ({ isActive }: { isActive: boolean }) =>
+  const getNavCls = ({
     isActive
-      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-      : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
-
-  return (
-    <Sidebar collapsible="icon">
+  }: {
+    isActive: boolean;
+  }) => isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
+  return <Sidebar collapsible="icon">
       <SidebarHeader className="p-2">
         <Link to="/" aria-label="Ir al inicio" className="flex items-center justify-center px-1 py-1">
-          {isCollapsed ? (
-            <img
-              src="/lovable-uploads/favicon.png"
-              alt="EQ Logo"
-              className="h-6 w-6 object-contain"
-              onError={(e) => {
-                const img = e.currentTarget;
-                if (img.dataset.fallbackApplied) {
-                  console.warn('Collapsed logo fallback also failed, hiding');
-                  img.style.display = 'none';
-                  return;
-                }
-                console.warn('Collapsed logo failed, switching to fallback');
-                img.src = '/lovable-uploads/logo_transparente.png';
-                img.dataset.fallbackApplied = 'true';
-              }}
-            />
-          ) : (
-            <img
-              src="/lovable-uploads/logo_transparente-removebg-preview.png"
-              alt="Logo EasyQuote"
-              className="h-6 w-auto max-w-full object-contain"
-              onError={(e) => {
-                const img = e.currentTarget;
-                if (img.dataset.fallbackApplied) {
-                  console.warn('Expanded logo fallback also failed, hiding');
-                  img.style.display = 'none';
-                  return;
-                }
-                console.warn('Expanded logo failed, switching to fallback');
-                img.src = '/lovable-uploads/logo_transparente.png';
-                img.dataset.fallbackApplied = 'true';
-              }}
-            />
-          )}
+          {isCollapsed ? <img src="/lovable-uploads/favicon.png" alt="EQ Logo" className="h-6 w-6 object-contain" onError={e => {
+          const img = e.currentTarget;
+          if (img.dataset.fallbackApplied) {
+            console.warn('Collapsed logo fallback also failed, hiding');
+            img.style.display = 'none';
+            return;
+          }
+          console.warn('Collapsed logo failed, switching to fallback');
+          img.src = '/lovable-uploads/logo_transparente.png';
+          img.dataset.fallbackApplied = 'true';
+        }} /> : <img src="/lovable-uploads/logo_transparente-removebg-preview.png" alt="Logo EasyQuote" className="h-6 w-auto max-w-full object-contain" onError={e => {
+          const img = e.currentTarget;
+          if (img.dataset.fallbackApplied) {
+            console.warn('Expanded logo fallback also failed, hiding');
+            img.style.display = 'none';
+            return;
+          }
+          console.warn('Expanded logo failed, switching to fallback');
+          img.src = '/lovable-uploads/logo_transparente.png';
+          img.dataset.fallbackApplied = 'true';
+        }} />}
         </Link>
       </SidebarHeader>
       <SidebarContent className="py-1">
@@ -129,8 +107,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="space-y-0">
               {/* Menú para SuperAdmin */}
-              {isSuperAdmin && (
-                <>
+              {isSuperAdmin && <>
                   <SidebarMenuItem>
                      <SidebarMenuButton asChild isActive={currentPath === "/"} className="h-7 px-2">
                        <NavLink to="/" end className={getNavCls}>
@@ -184,32 +161,24 @@ export function AppSidebar() {
                        </NavLink>
                      </SidebarMenuButton>
                   </SidebarMenuItem>
-                </>
-              )}
+                </>}
 
               {/* Menú para usuarios normales */}
-              {!isSuperAdmin && (
-                <>
-                   {items.map((item) => (
-                    <SidebarMenuItem key={item.title}>
+              {!isSuperAdmin && <>
+                   {items.map(item => <SidebarMenuItem key={item.title}>
                        <SidebarMenuButton asChild isActive={currentPath === item.url} className="h-7 px-2">
                          <NavLink to={item.url} end className={getNavCls}>
                            <item.icon className="mr-2 h-4 w-4" />
                            {!isCollapsed && <span>{item.title}</span>}
                          </NavLink>
                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
+                    </SidebarMenuItem>)}
 
                   {/* Clientes - Solo para suscripciones Client */}
-                  {canAccessClientes() && (
-                    <Collapsible asChild defaultOpen={false}>
+                  {canAccessClientes() && <Collapsible asChild defaultOpen={false}>
                       <SidebarMenuItem>
                         <CollapsibleTrigger asChild>
-                          <SidebarMenuButton
-                            isActive={currentPath.startsWith("/clientes")}
-                            className="h-7 px-2"
-                          >
+                          <SidebarMenuButton isActive={currentPath.startsWith("/clientes")} className="h-7 px-2">
                             <Users className="mr-2 h-4 w-4" />
                             {!isCollapsed && <span>Clientes</span>}
                             {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />}
@@ -218,11 +187,7 @@ export function AppSidebar() {
                         <CollapsibleContent>
                           <SidebarMenuSub className="ml-2">
                             <SidebarMenuSubItem>
-                              <SidebarMenuSubButton
-                                asChild
-                                isActive={currentPath === "/clientes"}
-                                className="h-6 px-2"
-                              >
+                              <SidebarMenuSubButton asChild isActive={currentPath === "/clientes"} className="h-6 px-2">
                                 <NavLink to="/clientes" end className={getNavCls}>
                                   <Users className="mr-2 h-4 w-4" />
                                   {!isCollapsed && <span>Listado</span>}
@@ -230,11 +195,7 @@ export function AppSidebar() {
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
                             <SidebarMenuSubItem>
-                              <SidebarMenuSubButton
-                                asChild
-                                isActive={currentPath === "/clientes/nuevo"}
-                                className="h-6 px-2"
-                              >
+                              <SidebarMenuSubButton asChild isActive={currentPath === "/clientes/nuevo"} className="h-6 px-2">
                                 <NavLink to="/clientes/nuevo" className={getNavCls}>
                                   <PlusCircle className="mr-2 h-4 w-4" />
                                   {!isCollapsed && <span>Nuevo</span>}
@@ -244,18 +205,13 @@ export function AppSidebar() {
                           </SidebarMenuSub>
                         </CollapsibleContent>
                       </SidebarMenuItem>
-                    </Collapsible>
-                  )}
+                    </Collapsible>}
 
                   {/* Presupuestos - Solo para suscripciones Client */}
-                  {canAccessPresupuestos() && (
-                    <Collapsible asChild defaultOpen={false}>
+                  {canAccessPresupuestos() && <Collapsible asChild defaultOpen={false}>
                       <SidebarMenuItem>
                         <CollapsibleTrigger asChild>
-                          <SidebarMenuButton
-                            isActive={currentPath.startsWith("/presupuestos")}
-                            className="h-7 px-2"
-                          >
+                          <SidebarMenuButton isActive={currentPath.startsWith("/presupuestos")} className="h-7 px-2">
                             <FileText className="mr-2 h-4 w-4" />
                             {!isCollapsed && <span>Presupuestos</span>}
                             {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />}
@@ -264,11 +220,7 @@ export function AppSidebar() {
                         <CollapsibleContent>
                           <SidebarMenuSub className="ml-2">
                             <SidebarMenuSubItem>
-                              <SidebarMenuSubButton
-                                asChild
-                                isActive={currentPath === "/presupuestos"}
-                                className="h-6 px-2"
-                              >
+                              <SidebarMenuSubButton asChild isActive={currentPath === "/presupuestos"} className="h-6 px-2">
                                 <NavLink to="/presupuestos" end className={getNavCls}>
                                   <FileText className="mr-2 h-4 w-4" />
                                   {!isCollapsed && <span>Listado</span>}
@@ -276,11 +228,7 @@ export function AppSidebar() {
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
                             <SidebarMenuSubItem>
-                              <SidebarMenuSubButton
-                                asChild
-                                isActive={currentPath === "/presupuestos/nuevo"}
-                                className="h-6 px-2"
-                              >
+                              <SidebarMenuSubButton asChild isActive={currentPath === "/presupuestos/nuevo"} className="h-6 px-2">
                                 <NavLink to="/presupuestos/nuevo" className={getNavCls}>
                                   <PlusCircle className="mr-2 h-4 w-4" />
                                   {!isCollapsed && <span>Nuevo</span>}
@@ -290,18 +238,13 @@ export function AppSidebar() {
                           </SidebarMenuSub>
                         </CollapsibleContent>
                       </SidebarMenuItem>
-                    </Collapsible>
-                  )}
+                    </Collapsible>}
 
                    {/* Pedidos - Solo para suscripciones con módulo Production (ERP) */}
-                   {canAccessProduccion() && (
-                     <Collapsible asChild defaultOpen={false}>
+                   {canAccessProduccion() && <Collapsible asChild defaultOpen={false}>
                        <SidebarMenuItem>
                          <CollapsibleTrigger asChild>
-                           <SidebarMenuButton
-                             isActive={currentPath.startsWith("/pedidos")}
-                             className="h-7 px-2"
-                           >
+                           <SidebarMenuButton isActive={currentPath.startsWith("/pedidos")} className="h-7 px-2">
                              <Package className="mr-2 h-4 w-4" />
                              {!isCollapsed && <span>Pedidos</span>}
                              {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />}
@@ -310,11 +253,7 @@ export function AppSidebar() {
                           <CollapsibleContent>
                             <SidebarMenuSub className="ml-2">
                               <SidebarMenuSubItem>
-                                <SidebarMenuSubButton
-                                  asChild
-                                  isActive={currentPath === "/pedidos"}
-                                  className="h-6 px-2"
-                                >
+                                <SidebarMenuSubButton asChild isActive={currentPath === "/pedidos"} className="h-6 px-2">
                                   <NavLink to="/pedidos" end className={getNavCls}>
                                     <Package className="mr-2 h-4 w-4" />
                                     {!isCollapsed && <span>Listado</span>}
@@ -322,11 +261,7 @@ export function AppSidebar() {
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
                               <SidebarMenuSubItem>
-                                <SidebarMenuSubButton
-                                  asChild
-                                  isActive={currentPath === "/pedidos/nuevo"}
-                                  className="h-6 px-2"
-                                >
+                                <SidebarMenuSubButton asChild isActive={currentPath === "/pedidos/nuevo"} className="h-6 px-2">
                                   <NavLink to="/pedidos/nuevo" className={getNavCls}>
                                     <PlusCircle className="mr-2 h-4 w-4" />
                                     {!isCollapsed && <span>Nuevo</span>}
@@ -334,36 +269,25 @@ export function AppSidebar() {
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
                               <SidebarMenuSubItem>
-                                <SidebarMenuSubButton
-                                  asChild
-                                  isActive={currentPath === "/panel-produccion"}
-                                  className="h-6 px-2"
-                                >
+                                <SidebarMenuSubButton asChild isActive={currentPath === "/panel-produccion"} className="h-6 px-2">
                                   <NavLink to="/panel-produccion" className={getNavCls}>
                                     <Monitor className="mr-2 h-4 w-4" />
-                                    {!isCollapsed && <span>Panel Taller</span>}
+                                    {!isCollapsed && <span>Panel taller</span>}
                                   </NavLink>
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
-                              {!isComercial && (
-                                <SidebarMenuSubItem>
-                                  <SidebarMenuSubButton
-                                    asChild
-                                    isActive={currentPath === "/carga-trabajo"}
-                                    className="h-6 px-2"
-                                  >
+                              {!isComercial && <SidebarMenuSubItem>
+                                  <SidebarMenuSubButton asChild isActive={currentPath === "/carga-trabajo"} className="h-6 px-2">
                                     <NavLink to="/carga-trabajo" className={getNavCls}>
                                       <TrendingUp className="mr-2 h-4 w-4" />
                                       {!isCollapsed && <span>Carga de trabajo</span>}
                                     </NavLink>
                                   </SidebarMenuSubButton>
-                                </SidebarMenuSubItem>
-                              )}
+                                </SidebarMenuSubItem>}
                             </SidebarMenuSub>
                           </CollapsibleContent>
                        </SidebarMenuItem>
-                     </Collapsible>
-                   )}
+                     </Collapsible>}
 
                    {/* Tema - Temporalmente desactivado */}
                    {/* <SidebarMenuItem>
@@ -373,11 +297,10 @@ export function AppSidebar() {
                           {!isCollapsed && <span>Tema</span>}
                         </NavLink>
                       </SidebarMenuButton>
-                   </SidebarMenuItem> */}
+                    </SidebarMenuItem> */}
 
                     {/* Configuración - Solo si tiene acceso a algo (admin) */}
-                   {((isSuperAdmin || isOrgAdmin) || hasPdfAccess || canAccessExcel() || canAccessProductos() || canAccessCategorias()) && (
-                   <Collapsible asChild defaultOpen={false}>
+                   {(isSuperAdmin || isOrgAdmin || hasPdfAccess || canAccessExcel() || canAccessProductos() || canAccessCategorias()) && <Collapsible asChild defaultOpen={false}>
                      <SidebarMenuItem>
                        <CollapsibleTrigger asChild>
                          <SidebarMenuButton isActive={currentPath.startsWith("/configuracion")} className="h-7 px-2">
@@ -389,41 +312,34 @@ export function AppSidebar() {
                        <CollapsibleContent>
                          <SidebarMenuSub className="ml-2">
                            {/* Ajustes - Solo para admins */}
-                           {(isSuperAdmin || isOrgAdmin) && (
-                             <SidebarMenuSubItem>
+                           {(isSuperAdmin || isOrgAdmin) && <SidebarMenuSubItem>
                                <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/ajustes"} className="h-6 px-2">
                                  <NavLink to="/configuracion/ajustes" end className={getNavCls}>
                                    <Plus className="mr-2 h-4 w-4" />
                                    {!isCollapsed && <span>Ajustes</span>}
                                  </NavLink>
                                </SidebarMenuSubButton>
-                             </SidebarMenuSubItem>
-                           )}
+                             </SidebarMenuSubItem>}
                              {/* Plantilla PDF - Solo si tienen acceso a generación de PDFs */}
-                             {hasPdfAccess && (
-                               <SidebarMenuSubItem>
+                             {hasPdfAccess && <SidebarMenuSubItem>
                                  <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/plantilla-pdf"} className="h-6 px-2">
                                    <NavLink to="/configuracion/plantilla-pdf" end className={getNavCls}>
                                      <FileText className="mr-2 h-4 w-4" />
                                      {!isCollapsed && <span>Plantilla PDF</span>}
                                    </NavLink>
                                  </SidebarMenuSubButton>
-                               </SidebarMenuSubItem>
-                             )}
+                               </SidebarMenuSubItem>}
                               {/* Formatos de Numeración - Solo admins */}
-                              {(isSuperAdmin || isOrgAdmin) && (
-                                <SidebarMenuSubItem>
+                              {(isSuperAdmin || isOrgAdmin) && <SidebarMenuSubItem>
                                    <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/formatos-numeracion"} className="h-6 px-2">
                                      <NavLink to="/configuracion/formatos-numeracion" end className={getNavCls}>
                                        <Hash className="mr-2 h-4 w-4" />
                                        {!isCollapsed && <span>Numeraciones</span>}
                                      </NavLink>
                                    </SidebarMenuSubButton>
-                                </SidebarMenuSubItem>
-                               )}
+                                </SidebarMenuSubItem>}
                                {/* Integraciones - Solo admins */}
-                            {(isSuperAdmin || isOrgAdmin) && (
-                              <>
+                            {(isSuperAdmin || isOrgAdmin) && <>
                                 <SidebarMenuSubItem>
                                   <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/integraciones"} className="h-6 px-2">
                                     <NavLink to="/configuracion/integraciones" end className={getNavCls}>
@@ -432,103 +348,86 @@ export function AppSidebar() {
                                     </NavLink>
                                   </SidebarMenuSubButton>
                                 </SidebarMenuSubItem>
-                              </>
-                            )}
+                              </>}
                            
                            {/* Archivos Excel - Solo API suscriptions o Client admins */}
-                           {canAccessExcel() && (
-                             <SidebarMenuSubItem>
+                           {canAccessExcel() && <SidebarMenuSubItem>
                                <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/archivos-excel"} className="h-6 px-2">
                                  <NavLink to="/configuracion/archivos-excel" end className={getNavCls}>
                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
                                    {!isCollapsed && <span>Archivos Excel</span>}
                                  </NavLink>
                                </SidebarMenuSubButton>
-                             </SidebarMenuSubItem>
-                           )}
+                             </SidebarMenuSubItem>}
                            
                            {/* Productos - Solo API subscriptions o Client admins */}
-                           {canAccessProductos() && (
-                             <SidebarMenuSubItem>
+                           {canAccessProductos() && <SidebarMenuSubItem>
                                <SidebarMenuSubButton asChild isActive={currentPath === "/admin/productos"} className="h-6 px-2">
                                  <NavLink to="/admin/productos" end className={getNavCls}>
                                    <Package className="mr-2 h-4 w-4" />
                                    {!isCollapsed && <span>Productos</span>}
                                  </NavLink>
                                </SidebarMenuSubButton>
-                             </SidebarMenuSubItem>
-                           )}
+                             </SidebarMenuSubItem>}
                            
                             {/* Categorías - Solo Client/ERP, NO API puro */}
-                            {canAccessCategorias() && (isClientSubscription() || isERPSubscription()) && (
-                              <SidebarMenuSubItem>
+                            {canAccessCategorias() && (isClientSubscription() || isERPSubscription()) && <SidebarMenuSubItem>
                                 <SidebarMenuSubButton asChild isActive={currentPath === "/admin/categorias"} className="h-6 px-2">
                                   <NavLink to="/admin/categorias" end className={getNavCls}>
                                     <Tags className="mr-2 h-4 w-4" />
                                     {!isCollapsed && <span>Categorías</span>}
                                   </NavLink>
                                 </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                            )}
+                              </SidebarMenuSubItem>}
                            
                              {/* Producción - Solo módulo Production (ERP) */}
-                             {canAccessProduccion() && (
-                               <SidebarMenuSubItem>
+                             {canAccessProduccion() && <SidebarMenuSubItem>
                                  <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/produccion"} className="h-6 px-2">
                                    <NavLink to="/configuracion/produccion" end className={getNavCls}>
                                      <Sparkles className="mr-2 h-4 w-4" />
                                      {!isCollapsed && <span>Producción</span>}
                                    </NavLink>
                                  </SidebarMenuSubButton>
-                               </SidebarMenuSubItem>
-                             )}
+                               </SidebarMenuSubItem>}
                            
                            {/* Gestión de imágenes - Solo API subscriptions o Client admins */}
-                           {canAccessProductos() && (
-                             <SidebarMenuSubItem>
+                           {canAccessProductos() && <SidebarMenuSubItem>
                                <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/imagenes"} className="h-6 px-2">
                                  <NavLink to="/configuracion/imagenes" end className={getNavCls}>
                                    <Image className="mr-2 h-4 w-4" />
                                    {!isCollapsed && <span>Imágenes</span>}
                                  </NavLink>
                                </SidebarMenuSubButton>
-                             </SidebarMenuSubItem>
-                           )}
+                             </SidebarMenuSubItem>}
                          </SidebarMenuSub>
                        </CollapsibleContent>
                      </SidebarMenuItem>
-                   </Collapsible>
-                   )}
+                   </Collapsible>}
 
               {/* Gestión de usuarios - solo para org admin con Client/ERP, NO API puro */}
-               {!isSuperAdmin && isOrgAdmin && (isClientSubscription() || isERPSubscription()) && (
-                 <SidebarMenuItem>
+               {!isSuperAdmin && isOrgAdmin && (isClientSubscription() || isERPSubscription()) && <SidebarMenuItem>
                    <SidebarMenuButton asChild isActive={currentPath === "/usuarios"} className="h-7 px-2">
                      <NavLink to="/usuarios" end className={getNavCls}>
                        <UserCog className="mr-2 h-4 w-4" />
                        {!isCollapsed && <span>Gestión de usuarios</span>}
                      </NavLink>
                    </SidebarMenuButton>
-                 </SidebarMenuItem>
-               )}
-                </>
-              )}
+                 </SidebarMenuItem>}
+                </>}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="p-1">
         <SidebarMenu>
-          {isSuperAdmin && (
-            <SidebarMenuItem>
+          {isSuperAdmin && <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Novedades" className="h-7 px-2">
                 <NavLink to="/novedades" className={getNavCls}>
                   <Sparkles className="mr-2 h-4 w-4" />
                   {!isCollapsed && <span>Novedades</span>}
                 </NavLink>
               </SidebarMenuButton>
-            </SidebarMenuItem>
-          )}
+            </SidebarMenuItem>}
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Contraer menú" className="h-7 px-2">
               <button onClick={toggleSidebar} className="w-full flex items-center justify-start">
@@ -548,6 +447,5 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarFooter>
       <SidebarRail />
-    </Sidebar>
-  );
+    </Sidebar>;
 }
