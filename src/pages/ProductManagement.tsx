@@ -1536,7 +1536,7 @@ export default function ProductManagement() {
                                )}
 
                                {/* Espacios vacíos para mantener alineación cuando no hay campos numéricos */}
-                               {!isNumericType && <div className="col-span-3"></div>}
+                               {!isNumericType && <div className="col-span-2"></div>}
 
                               <div className="col-span-1">
                                 <Label>Acción</Label>
