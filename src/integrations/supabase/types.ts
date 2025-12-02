@@ -645,38 +645,50 @@ export type Database = {
       organization_themes: {
         Row: {
           accent_color: string
+          accent_foreground: string
           created_at: string
           id: string
           is_active: boolean
           muted_color: string | null
+          muted_foreground: string | null
           name: string
           organization_id: string
           primary_color: string
+          primary_foreground: string
           secondary_color: string
+          secondary_foreground: string
           updated_at: string
         }
         Insert: {
           accent_color?: string
+          accent_foreground?: string
           created_at?: string
           id?: string
           is_active?: boolean
           muted_color?: string | null
+          muted_foreground?: string | null
           name?: string
           organization_id: string
           primary_color?: string
+          primary_foreground?: string
           secondary_color?: string
+          secondary_foreground?: string
           updated_at?: string
         }
         Update: {
           accent_color?: string
+          accent_foreground?: string
           created_at?: string
           id?: string
           is_active?: boolean
           muted_color?: string | null
+          muted_foreground?: string | null
           name?: string
           organization_id?: string
           primary_color?: string
+          primary_foreground?: string
           secondary_color?: string
+          secondary_foreground?: string
           updated_at?: string
         }
         Relationships: [
