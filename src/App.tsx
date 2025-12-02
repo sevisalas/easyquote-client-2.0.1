@@ -15,7 +15,6 @@ import QuoteEdit from "./pages/QuoteEdit";
 import QuotesList from "./pages/QuotesList";
 import SettingsPdfTemplate from "./pages/SettingsPdfTemplate";
 import SettingsNumberingFormats from "./pages/SettingsNumberingFormats";
-import SettingsTheme from "./pages/SettingsTheme";
 import SettingsThemeCorporate from "./pages/SettingsThemeCorporate";
 import Additionals from "./pages/Additionals";
 import QuoteDetail from "./pages/QuoteDetail";
@@ -171,16 +170,6 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <SettingsNumberingFormats />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/configuracion/tema"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <SettingsTheme />
             </AppLayout>
           </ProtectedRoute>
         }
