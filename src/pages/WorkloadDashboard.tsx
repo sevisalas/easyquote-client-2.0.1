@@ -36,9 +36,23 @@ export default function WorkloadDashboard() {
     try {
       setLoading(true);
       const today = startOfDay(new Date());
-      const endDate = addDays(today, 5);
+      
+      // Calculate 10 business days ahead
+      const businessDays: Date[] = [];
+      let currentDate = new Date(today);
+      
+      while (businessDays.length < 10) {
+        const dayOfWeek = currentDate.getDay();
+        // Skip weekends (0 = Sunday, 6 = Saturday)
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+          businessDays.push(new Date(currentDate));
+        }
+        currentDate = addDays(currentDate, 1);
+      }
+      
+      const endDate = addDays(businessDays[businessDays.length - 1], 1);
 
-      // Fetch sales orders with delivery dates in the next 5 days
+      // Fetch sales orders with delivery dates in the next 10 business days
       const { data: orders, error } = await supabase
         .from("sales_orders")
         .select(`
@@ -60,11 +74,10 @@ export default function WorkloadDashboard() {
 
       if (error) throw error;
 
-      // Group orders by delivery date
+      // Group orders by delivery date (only business days)
       const groupedByDate: Record<string, DayWorkload> = {};
       
-      for (let i = 0; i < 5; i++) {
-        const date = addDays(today, i);
+      businessDays.forEach((date) => {
         const dateKey = format(date, "yyyy-MM-dd");
         groupedByDate[dateKey] = {
           date,
@@ -72,7 +85,7 @@ export default function WorkloadDashboard() {
           count: 0,
           percentage: 0,
         };
-      }
+      });
 
       orders?.forEach((order: any) => {
         const dateKey = format(new Date(order.delivery_date), "yyyy-MM-dd");
@@ -125,15 +138,15 @@ export default function WorkloadDashboard() {
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Carga de trabajo</h1>
-          <p className="text-muted-foreground mt-2">
-            Distribución de pedidos para los próximos 5 días (Capacidad: {maxDailyOrders} pedidos/día)
-          </p>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold">Carga de trabajo</h1>
+        <p className="text-muted-foreground mt-2">
+          Distribución de pedidos para los próximos 10 días hábiles (Capacidad: {maxDailyOrders} pedidos/día)
+        </p>
+      </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 overflow-x-auto">
         {workloadData.map((day, index) => (
           <Card key={index} className="relative">
             <CardHeader className="pb-3">
@@ -210,7 +223,7 @@ export default function WorkloadDashboard() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <p className="text-sm text-muted-foreground">Total próximos 5 días</p>
+              <p className="text-sm text-muted-foreground">Total próximos 10 días hábiles</p>
               <p className="text-2xl font-bold">
                 {workloadData.reduce((sum, day) => sum + day.count, 0)} pedidos
               </p>
@@ -218,7 +231,7 @@ export default function WorkloadDashboard() {
             <div>
               <p className="text-sm text-muted-foreground">Promedio diario</p>
               <p className="text-2xl font-bold">
-                {Math.round(workloadData.reduce((sum, day) => sum + day.count, 0) / 5)} pedidos/día
+                {Math.round(workloadData.reduce((sum, day) => sum + day.count, 0) / 10)} pedidos/día
               </p>
             </div>
             <div>
