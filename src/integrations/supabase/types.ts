@@ -658,6 +658,7 @@ export type Database = {
           secondary_color: string
           secondary_foreground: string
           sidebar_accent: string | null
+          sidebar_accent_foreground: string | null
           sidebar_background: string | null
           sidebar_foreground: string | null
           updated_at: string
@@ -677,6 +678,7 @@ export type Database = {
           secondary_color?: string
           secondary_foreground?: string
           sidebar_accent?: string | null
+          sidebar_accent_foreground?: string | null
           sidebar_background?: string | null
           sidebar_foreground?: string | null
           updated_at?: string
@@ -696,6 +698,7 @@ export type Database = {
           secondary_color?: string
           secondary_foreground?: string
           sidebar_accent?: string | null
+          sidebar_accent_foreground?: string | null
           sidebar_background?: string | null
           sidebar_foreground?: string | null
           updated_at?: string

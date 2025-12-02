@@ -17,6 +17,7 @@ export interface OrganizationTheme {
   sidebar_background?: string;
   sidebar_foreground?: string;
   sidebar_accent?: string;
+  sidebar_accent_foreground?: string;
   is_active: boolean;
 }
 
@@ -100,6 +101,9 @@ export const useTheme = () => {
       if (organizationTheme.sidebar_accent) {
         root.style.setProperty('--sidebar-accent', organizationTheme.sidebar_accent);
       }
+      if (organizationTheme.sidebar_accent_foreground) {
+        root.style.setProperty('--sidebar-accent-foreground', organizationTheme.sidebar_accent_foreground);
+      }
     } else {
       // No corporate theme - remove custom properties so CSS defaults apply
       root.style.removeProperty('--primary');
@@ -113,6 +117,7 @@ export const useTheme = () => {
       root.style.removeProperty('--sidebar-background');
       root.style.removeProperty('--sidebar-foreground');
       root.style.removeProperty('--sidebar-accent');
+      root.style.removeProperty('--sidebar-accent-foreground');
     }
   };
 
@@ -176,6 +181,7 @@ export const useTheme = () => {
       root.style.removeProperty('--sidebar-background');
       root.style.removeProperty('--sidebar-foreground');
       root.style.removeProperty('--sidebar-accent');
+      root.style.removeProperty('--sidebar-accent-foreground');
     } catch (error) {
       console.error('Error resetting theme:', error);
       throw error;
