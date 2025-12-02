@@ -159,7 +159,7 @@ export default function SettingsThemeCorporate() {
         type="color"
         value={hslToHex(value)}
         onChange={(e) => onChange(hexToHSL(e.target.value))}
-        className="w-full h-12 cursor-pointer p-1 rounded-md"
+        className="w-14 h-14 cursor-pointer p-1 rounded-md"
       />
       <p className="text-xs text-muted-foreground">{description}</p>
     </div>
