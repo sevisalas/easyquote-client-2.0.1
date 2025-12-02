@@ -325,80 +325,152 @@ export default function Additionals() {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-        {additionals.length === 0 ? (
-          <Card className="col-span-full">
-            <CardContent className="py-6">
-              <div className="text-center text-muted-foreground">
-                <p className="text-sm">No hay ajustes configurados</p>
-                <p className="text-xs">Crea tu primer ajuste de presupuesto para empezar</p>
+      {additionals.length === 0 ? (
+        <Card>
+          <CardContent className="py-6">
+            <div className="text-center text-muted-foreground">
+              <p className="text-sm">No hay ajustes configurados</p>
+              <p className="text-xs">Crea tu primer ajuste de presupuesto para empezar</p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Ajustes de Artículo */}
+          {additionals.filter(a => a.assignment_type === "article").length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold text-muted-foreground">Ajustes de Artículo</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {additionals
+                  .filter(a => a.assignment_type === "article")
+                  .map((additional) => (
+                    <Card key={additional.id} className="overflow-hidden">
+                      <div className="p-3 border-b bg-muted/30">
+                        <div className="flex items-start justify-between mb-2">
+                          <h3 className="text-sm font-semibold line-clamp-2 flex-1 min-w-0 pr-2">{additional.name}</h3>
+                          <div className="flex gap-1 shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => handleEdit(additional)}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => handleDelete(additional.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        {additional.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-2">{additional.description}</p>
+                        )}
+                      </div>
+                      <div className="p-3 space-y-2">
+                        <div className="text-xs">
+                          <span className="text-muted-foreground">Tipo: </span>
+                          <span className="font-medium">
+                            {additional.type === "net_amount" 
+                              ? "Importe Neto" 
+                              : additional.type === "quantity_multiplier" 
+                              ? "Importe Unitario"
+                              : "Porcentaje"
+                            }
+                          </span>
+                        </div>
+                        <div className="text-xs">
+                          <span className="text-muted-foreground">Valor: </span>
+                          <span className="font-medium">
+                            {additional.type === "percentage" 
+                              ? `${additional.default_value}%` 
+                              : `€${additional.default_value.toFixed(2)}`
+                            }
+                          </span>
+                        </div>
+                        {additional.is_discount && (
+                          <div className="text-xs text-primary font-medium pt-1 border-t">
+                            ✓ Descuento
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  ))}
               </div>
-            </CardContent>
-          </Card>
-        ) : (
-          additionals.map((additional) => (
-            <Card key={additional.id} className="overflow-hidden">
-              <div className="p-3 border-b bg-muted/30">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-sm font-semibold line-clamp-2 flex-1 min-w-0 pr-2">{additional.name}</h3>
-                  <div className="flex gap-1 shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0"
-                      onClick={() => handleEdit(additional)}
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0"
-                      onClick={() => handleDelete(additional.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-                {additional.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-2">{additional.description}</p>
-                )}
+            </div>
+          )}
+
+          {/* Ajustes de Presupuesto */}
+          {additionals.filter(a => a.assignment_type === "quote").length > 0 && (
+            <div className="space-y-3 mt-6">
+              <h2 className="text-sm font-semibold text-muted-foreground">Ajustes de Presupuesto</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {additionals
+                  .filter(a => a.assignment_type === "quote")
+                  .map((additional) => (
+                    <Card key={additional.id} className="overflow-hidden">
+                      <div className="p-3 border-b bg-muted/30">
+                        <div className="flex items-start justify-between mb-2">
+                          <h3 className="text-sm font-semibold line-clamp-2 flex-1 min-w-0 pr-2">{additional.name}</h3>
+                          <div className="flex gap-1 shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => handleEdit(additional)}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => handleDelete(additional.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        {additional.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-2">{additional.description}</p>
+                        )}
+                      </div>
+                      <div className="p-3 space-y-2">
+                        <div className="text-xs">
+                          <span className="text-muted-foreground">Tipo: </span>
+                          <span className="font-medium">
+                            {additional.type === "net_amount" 
+                              ? "Importe Neto" 
+                              : "Porcentaje"
+                            }
+                          </span>
+                        </div>
+                        <div className="text-xs">
+                          <span className="text-muted-foreground">Valor: </span>
+                          <span className="font-medium">
+                            {additional.type === "percentage" 
+                              ? `${additional.default_value}%` 
+                              : `€${additional.default_value.toFixed(2)}`
+                            }
+                          </span>
+                        </div>
+                        {additional.is_discount && (
+                          <div className="text-xs text-primary font-medium pt-1 border-t">
+                            ✓ Descuento
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  ))}
               </div>
-              <div className="p-3 space-y-2">
-                <div className="text-xs">
-                  <span className="text-muted-foreground">Asignar a: </span>
-                  <span className="font-medium">{additional.assignment_type === "article" ? "Artículo" : "Presupuesto"}</span>
-                </div>
-                <div className="text-xs">
-                  <span className="text-muted-foreground">Tipo: </span>
-                  <span className="font-medium">
-                    {additional.type === "net_amount" 
-                      ? "Importe Neto" 
-                      : additional.type === "quantity_multiplier" 
-                      ? "Importe Unitario"
-                      : "Porcentaje"
-                    }
-                  </span>
-                </div>
-                <div className="text-xs">
-                  <span className="text-muted-foreground">Valor: </span>
-                  <span className="font-medium">
-                    {additional.type === "percentage" 
-                      ? `${additional.default_value}%` 
-                      : `€${additional.default_value.toFixed(2)}`
-                    }
-                  </span>
-                </div>
-                {additional.is_discount && (
-                  <div className="text-xs text-primary font-medium pt-1 border-t">
-                    ✓ Descuento
-                  </div>
-                )}
-              </div>
-            </Card>
-          ))
-        )}
-      </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
