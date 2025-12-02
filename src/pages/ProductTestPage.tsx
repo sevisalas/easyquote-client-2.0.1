@@ -256,8 +256,8 @@ export default function ProductTestPage() {
     const source = pricing || productDetail;
     if (!source) return [];
 
-    // EasyQuote API returns outputs in the 'outputs' field
-    const outputValues = source.outputs || source.outputValues || source.results || [];
+    // EasyQuote API returns outputs in 'outputValues' (GET) or 'outputs' (PATCH)
+    const outputValues = source.outputValues || source.outputs || source.results || [];
     console.log("Processing outputs:", outputValues);
 
     return Array.isArray(outputValues) ? outputValues : [];
@@ -268,8 +268,8 @@ export default function ProductTestPage() {
     const source = pricing || productDetail;
     if (!source) return [];
 
-    // EasyQuote API returns outputs in the 'outputs' field
-    const outputValues = source.outputs || source.outputValues || source.results || [];
+    // EasyQuote API returns outputs in 'outputValues' (GET) or 'outputs' (PATCH)
+    const outputValues = source.outputValues || source.outputs || source.results || [];
     console.log("Showing ALL raw outputs:", outputValues);
 
     return Array.isArray(outputValues) ? outputValues : [];
