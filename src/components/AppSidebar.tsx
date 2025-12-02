@@ -75,7 +75,7 @@ export function AppSidebar() {
     isActive
   }: {
     isActive: boolean;
-  }) => isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
+  }) => isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
   return <Sidebar collapsible="icon">
       <SidebarHeader className="p-2">
         <Link to="/" aria-label="Ir al inicio" className="flex items-center justify-center px-1 py-1">
