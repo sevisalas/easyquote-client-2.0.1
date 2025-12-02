@@ -642,6 +642,53 @@ export type Database = {
           },
         ]
       }
+      organization_themes: {
+        Row: {
+          accent_color: string
+          created_at: string
+          id: string
+          is_active: boolean
+          muted_color: string | null
+          name: string
+          organization_id: string
+          primary_color: string
+          secondary_color: string
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          muted_color?: string | null
+          name?: string
+          organization_id: string
+          primary_color?: string
+          secondary_color?: string
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          muted_color?: string | null
+          name?: string
+          organization_id?: string
+          primary_color?: string
+          secondary_color?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_themes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           api_user_id: string
