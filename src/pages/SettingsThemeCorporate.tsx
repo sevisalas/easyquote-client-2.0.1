@@ -142,25 +142,39 @@ export default function SettingsThemeCorporate() {
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
   };
 
-  const ColorInput = ({ 
-    label, 
-    value, 
-    onChange,
-    large = false
+  const ColorColumn = ({ 
+    title, 
+    bgValue, 
+    bgOnChange,
+    fgValue,
+    fgOnChange
   }: { 
-    label: string; 
-    value: string; 
-    onChange: (v: string) => void;
-    large?: boolean;
+    title: string;
+    bgValue: string; 
+    bgOnChange: (v: string) => void;
+    fgValue: string;
+    fgOnChange: (v: string) => void;
   }) => (
-    <div className="space-y-1">
-      <Label className="text-xs">{label}</Label>
-      <Input
-        type="color"
-        value={hslToHex(value)}
-        onChange={(e) => onChange(hexToHSL(e.target.value))}
-        className={`cursor-pointer p-1 rounded-md ${large ? 'w-24 h-24' : 'w-16 h-16'}`}
-      />
+    <div className="space-y-2 text-center">
+      <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{title}</h3>
+      <div className="space-y-1">
+        <Label className="text-xs">Fondo</Label>
+        <Input
+          type="color"
+          value={hslToHex(bgValue)}
+          onChange={(e) => bgOnChange(hexToHSL(e.target.value))}
+          className="w-20 h-20 cursor-pointer p-1 rounded-md mx-auto block"
+        />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Texto</Label>
+        <Input
+          type="color"
+          value={hslToHex(fgValue)}
+          onChange={(e) => fgOnChange(hexToHSL(e.target.value))}
+          className="w-20 h-8 cursor-pointer p-1 rounded-md mx-auto block"
+        />
+      </div>
     </div>
   );
 
@@ -197,78 +211,36 @@ export default function SettingsThemeCorporate() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Three columns: Primary, Secondary, Accent */}
-          <div className="grid gap-6 md:grid-cols-3">
-            {/* Primary Column */}
-            <div className="space-y-4 p-4 border rounded-lg">
-              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Primario</h3>
-              <div className="flex gap-4">
-                <ColorInput
-                  label="Fondo"
-                  value={primaryColor}
-                  onChange={setPrimaryColor}
-                  large
-                />
-                <ColorInput
-                  label="Texto"
-                  value={primaryForeground}
-                  onChange={setPrimaryForeground}
-                />
-              </div>
-            </div>
-
-            {/* Secondary Column */}
-            <div className="space-y-4 p-4 border rounded-lg">
-              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Secundario</h3>
-              <div className="flex gap-4">
-                <ColorInput
-                  label="Fondo"
-                  value={secondaryColor}
-                  onChange={setSecondaryColor}
-                  large
-                />
-                <ColorInput
-                  label="Texto"
-                  value={secondaryForeground}
-                  onChange={setSecondaryForeground}
-                />
-              </div>
-            </div>
-
-            {/* Accent Column */}
-            <div className="space-y-4 p-4 border rounded-lg">
-              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Acento</h3>
-              <div className="flex gap-4">
-                <ColorInput
-                  label="Fondo"
-                  value={accentColor}
-                  onChange={setAccentColor}
-                  large
-                />
-                <ColorInput
-                  label="Texto"
-                  value={accentForeground}
-                  onChange={setAccentForeground}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Muted Colors Row */}
-          <div className="p-4 border rounded-lg">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-4">Colores Atenuados</h3>
-            <div className="flex gap-4">
-              <ColorInput
-                label="Fondo atenuado"
-                value={mutedColor}
-                onChange={setMutedColor}
-              />
-              <ColorInput
-                label="Texto atenuado"
-                value={mutedForeground}
-                onChange={setMutedForeground}
-              />
-            </div>
+          {/* Four columns: Primary, Secondary, Accent, Muted */}
+          <div className="grid gap-6 grid-cols-2 md:grid-cols-4">
+            <ColorColumn
+              title="Primario"
+              bgValue={primaryColor}
+              bgOnChange={setPrimaryColor}
+              fgValue={primaryForeground}
+              fgOnChange={setPrimaryForeground}
+            />
+            <ColorColumn
+              title="Secundario"
+              bgValue={secondaryColor}
+              bgOnChange={setSecondaryColor}
+              fgValue={secondaryForeground}
+              fgOnChange={setSecondaryForeground}
+            />
+            <ColorColumn
+              title="Acento"
+              bgValue={accentColor}
+              bgOnChange={setAccentColor}
+              fgValue={accentForeground}
+              fgOnChange={setAccentForeground}
+            />
+            <ColorColumn
+              title="Atenuado"
+              bgValue={mutedColor}
+              bgOnChange={setMutedColor}
+              fgValue={mutedForeground}
+              fgOnChange={setMutedForeground}
+            />
           </div>
 
           <div className="border-t pt-6 flex flex-col sm:flex-row gap-4">
