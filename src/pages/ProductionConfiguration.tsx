@@ -311,7 +311,7 @@ export default function ProductionConfiguration() {
             <div>
               <CardTitle>Variables de producción</CardTitle>
               <CardDescription>
-                Variables reutilizables para mapear a prompts y outputs de productos
+                Variables reutilizables para mapear a datos de entrada y salida de productos
               </CardDescription>
             </div>
             <Button onClick={() => setIsCreateVarDialogOpen(true)}>
