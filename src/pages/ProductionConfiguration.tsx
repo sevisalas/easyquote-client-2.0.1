@@ -79,7 +79,7 @@ export default function ProductionConfiguration() {
   const [varFormData, setVarFormData] = useState({
     name: "",
     description: "",
-    variable_type: "",
+    variable_type: "alphanumeric",
     has_implicit_task: false,
     task_name: "",
     task_phase_id: "",
@@ -612,15 +612,6 @@ export default function ProductionConfiguration() {
                 placeholder="Describe el propósito de esta variable"
               />
             </div>
-            <div>
-              <Label htmlFor="var-type">Tipo</Label>
-              <Input
-                id="var-type"
-                value={varFormData.variable_type}
-                onChange={(e) => setVarFormData({ ...varFormData, variable_type: e.target.value })}
-                placeholder="ej: quantity, material, finish"
-              />
-            </div>
             
             <div className="flex items-center space-x-2">
               <Checkbox
@@ -689,7 +680,7 @@ export default function ProductionConfiguration() {
             </Button>
             <Button 
               onClick={handleCreateVariable} 
-              disabled={!varFormData.name.trim() || !varFormData.variable_type.trim()}
+              disabled={!varFormData.name.trim()}
             >
               Crear
             </Button>
@@ -718,14 +709,6 @@ export default function ProductionConfiguration() {
                 id="edit-var-desc"
                 value={varFormData.description}
                 onChange={(e) => setVarFormData({ ...varFormData, description: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-var-type">Tipo</Label>
-              <Input
-                id="edit-var-type"
-                value={varFormData.variable_type}
-                onChange={(e) => setVarFormData({ ...varFormData, variable_type: e.target.value })}
               />
             </div>
             
@@ -796,7 +779,7 @@ export default function ProductionConfiguration() {
             </Button>
             <Button 
               onClick={handleEditVariable}
-              disabled={!varFormData.name.trim() || !varFormData.variable_type.trim()}
+              disabled={!varFormData.name.trim()}
             >
               Guardar
             </Button>
