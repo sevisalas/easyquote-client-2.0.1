@@ -223,7 +223,7 @@ export default function ProductionConfiguration() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Producción</h1>
         <p className="text-muted-foreground mt-2">
-          Configura la capacidad, tareas por defecto y variables de producción
+          Configura los concpetos para medir y automatizar las tareas       
         </p>
       </div>
 
