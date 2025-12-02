@@ -10,7 +10,6 @@ import { List, ChevronDown, ChevronRight, LayoutGrid, Check, Edit } from "lucide
 import { useNavigate, Link } from "react-router-dom";
 import type { Json } from "@/integrations/supabase/types";
 import { useProductionBoardView } from "@/hooks/useProductionBoardView";
-
 interface SalesOrderItem {
   id: string;
   product_name: string;
@@ -19,7 +18,6 @@ interface SalesOrderItem {
   description: string | null;
   prompts: Json | null;
 }
-
 interface SalesOrder {
   id: string;
   order_number: string;
@@ -29,39 +27,36 @@ interface SalesOrder {
   status: string;
   items: SalesOrderItem[];
 }
-
 const statusLabels = {
   draft: "Borrador",
   pending: "Pendiente",
   in_production: "En producción",
   completed: "Completado"
 };
-
 const itemStatusLabels = {
   pending: "Pendiente",
   in_progress: "En proceso",
   completed: "Completado"
 };
-
 const getDeadlineCategory = (deliveryDate: string | null): string => {
   if (!deliveryDate) return "no-date";
   const today = startOfDay(new Date());
   const delivery = startOfDay(new Date(deliveryDate));
   const daysUntil = differenceInDays(delivery, today);
-  
   if (daysUntil < 0) return "overdue"; // Fuera de plazo
   if (daysUntil === 0) return "today"; // Entrega hoy
   if (daysUntil === 1) return "tomorrow"; // Entrega mañana
   return "on-time"; // En plazo
 };
-
 export default function ProductionBoardKanban() {
   const [orders, setOrders] = useState<SalesOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
-  const { view, updateView } = useProductionBoardView();
-
+  const {
+    view,
+    updateView
+  } = useProductionBoardView();
   const toggleItemExpanded = (itemId: string) => {
     setExpandedItems(prev => {
       const newSet = new Set(prev);
@@ -73,7 +68,6 @@ export default function ProductionBoardKanban() {
       return newSet;
     });
   };
-
   useEffect(() => {
     loadOrders();
 
@@ -81,39 +75,28 @@ export default function ProductionBoardKanban() {
     const interval = setInterval(loadOrders, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
-
   const loadOrders = async () => {
     try {
       setLoading(true);
-
       const {
         data: ordersData,
         error: ordersError
-      } = await supabase
-        .from("sales_orders")
-        .select("*")
-        .in("status", ["pending", "in_production"])
-        .order("delivery_date", { ascending: true, nullsFirst: false });
-
+      } = await supabase.from("sales_orders").select("*").in("status", ["pending", "in_production"]).order("delivery_date", {
+        ascending: true,
+        nullsFirst: false
+      });
       if (ordersError) throw ordersError;
-
-      const ordersWithItems = await Promise.all(
-        (ordersData || []).map(async (order) => {
-          const { data: items, error: itemsError } = await supabase
-            .from("sales_order_items")
-            .select("*")
-            .eq("sales_order_id", order.id)
-            .order("position");
-
-          if (itemsError) throw itemsError;
-
-          return {
-            ...order,
-            items: items || []
-          };
-        })
-      );
-
+      const ordersWithItems = await Promise.all((ordersData || []).map(async order => {
+        const {
+          data: items,
+          error: itemsError
+        } = await supabase.from("sales_order_items").select("*").eq("sales_order_id", order.id).order("position");
+        if (itemsError) throw itemsError;
+        return {
+          ...order,
+          items: items || []
+        };
+      }));
       setOrders(ordersWithItems);
     } catch (error) {
       console.error("Error loading orders:", error);
@@ -121,68 +104,47 @@ export default function ProductionBoardKanban() {
       setLoading(false);
     }
   };
-
   const categorizedOrders = {
-    overdue: orders.filter((o) => getDeadlineCategory(o.delivery_date) === "overdue"),
-    today: orders.filter((o) => getDeadlineCategory(o.delivery_date) === "today"),
-    tomorrow: orders.filter((o) => getDeadlineCategory(o.delivery_date) === "tomorrow"),
-    "on-time": orders.filter((o) => getDeadlineCategory(o.delivery_date) === "on-time")
+    overdue: orders.filter(o => getDeadlineCategory(o.delivery_date) === "overdue"),
+    today: orders.filter(o => getDeadlineCategory(o.delivery_date) === "today"),
+    tomorrow: orders.filter(o => getDeadlineCategory(o.delivery_date) === "tomorrow"),
+    "on-time": orders.filter(o => getDeadlineCategory(o.delivery_date) === "on-time")
   };
-
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
+    return <div className="flex items-center justify-center min-h-screen">
         <div className="text-2xl font-semibold text-muted-foreground">
           Cargando pedidos...
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
+  return <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-4xl font-bold mb-4">Panel de producción - Tablero</h1>
         <div className="flex gap-2 overflow-x-auto pb-2">
-          <Button 
-            variant={view === 'list' ? 'default' : 'outline'} 
-            onClick={() => {
-              updateView('list');
-              navigate("/panel-produccion-lista");
-            }} 
-            size="sm"
-            className="gap-2"
-          >
+          <Button variant={view === 'list' ? 'default' : 'outline'} onClick={() => {
+          updateView('list');
+          navigate("/panel-produccion-lista");
+        }} size="sm" className="gap-2">
             {view === 'list' && <Check className="h-4 w-4" />}
-            <span className="hidden sm:inline">Vista Lista</span>
+            <span className="hidden sm:inline">Vista lista</span>
             <span className="sm:hidden">Lista</span>
           </Button>
-          <Button 
-            variant={view === 'compact' ? 'default' : 'outline'} 
-            onClick={() => {
-              updateView('compact');
-              navigate("/panel-produccion-compacta");
-            }} 
-            size="sm"
-            className="gap-2"
-          >
+          <Button variant={view === 'compact' ? 'default' : 'outline'} onClick={() => {
+          updateView('compact');
+          navigate("/panel-produccion-compacta");
+        }} size="sm" className="gap-2">
             {view === 'compact' && <Check className="h-4 w-4" />}
             <LayoutGrid className="h-4 w-4" />
-            <span className="hidden sm:inline">Vista Compacta</span>
+            <span className="hidden sm:inline">Vista compacta</span>
             <span className="sm:hidden">Compacta</span>
           </Button>
-          <Button 
-            variant={view === 'kanban' ? 'default' : 'outline'} 
-            onClick={() => {
-              updateView('kanban');
-              navigate("/panel-produccion-tablero");
-            }} 
-            size="sm"
-            className="gap-2"
-          >
+          <Button variant={view === 'kanban' ? 'default' : 'outline'} onClick={() => {
+          updateView('kanban');
+          navigate("/panel-produccion-tablero");
+        }} size="sm" className="gap-2">
             {view === 'kanban' && <Check className="h-4 w-4" />}
             <LayoutGrid className="h-4 w-4" />
-            <span className="hidden sm:inline">Vista Tablero</span>
+            <span className="hidden sm:inline">Vista tablero</span>
             <span className="sm:hidden">Tablero</span>
           </Button>
         </div>
@@ -199,8 +161,7 @@ export default function ProductionBoardKanban() {
             </Badge>
           </div>
           <div className="space-y-3">
-            {categorizedOrders.overdue.map((order) => (
-              <Card key={order.id} className="border-l-4 border-l-red-500 shadow-sm hover:shadow-md transition-shadow">
+            {categorizedOrders.overdue.map(order => <Card key={order.id} className="border-l-4 border-l-red-500 shadow-sm hover:shadow-md transition-shadow">
                  <CardContent className="p-4">
                   <div className="space-y-2">
                     <div className="flex justify-between items-start">
@@ -213,7 +174,9 @@ export default function ProductionBoardKanban() {
                         </Link>
                       </div>
                       <Badge variant="outline" className="text-xs">
-                        {format(new Date(order.delivery_date!), "dd/MM", { locale: es })}
+                        {format(new Date(order.delivery_date!), "dd/MM", {
+                      locale: es
+                    })}
                       </Badge>
                     </div>
                     <div className="text-sm font-medium">
@@ -226,52 +189,31 @@ export default function ProductionBoardKanban() {
                       </Badge>
                     </div>
                     <div className="text-xs space-y-2">
-                      {order.items.map((item, idx) => (
-                        <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
+                      {order.items.map((item, idx) => <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
                           <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => toggleItemExpanded(item.id)}
-                              className="hover:bg-muted rounded p-0.5 transition-colors"
-                            >
-                              {expandedItems.has(item.id) ? (
-                                <ChevronDown className="h-3 w-3" />
-                              ) : (
-                                <ChevronRight className="h-3 w-3" />
-                              )}
+                            <button onClick={() => toggleItemExpanded(item.id)} className="hover:bg-muted rounded p-0.5 transition-colors">
+                              {expandedItems.has(item.id) ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                             </button>
                             <span className="font-medium">{idx + 1}. {item.product_name}</span>
-                            <Badge 
-                              variant={
-                                item.production_status === "completed" 
-                                  ? "default" 
-                                  : item.production_status === "in_progress" 
-                                  ? "secondary" 
-                                  : "outline"
-                              }
-                              className="text-xs"
-                            >
+                            <Badge variant={item.production_status === "completed" ? "default" : item.production_status === "in_progress" ? "secondary" : "outline"} className="text-xs">
                               Estado: {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
-                          {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
-                            <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
-                              {(item.prompts as Array<{ label: string; value: string; order: number }>)
-                                .sort((a, b) => a.order - b.order)
-                                .map((prompt, pIdx) => (
-                                  <div key={pIdx} className="flex gap-1">
+                          {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
+                              {(item.prompts as Array<{
+                        label: string;
+                        value: string;
+                        order: number;
+                      }>).sort((a, b) => a.order - b.order).map((prompt, pIdx) => <div key={pIdx} className="flex gap-1">
                                     <span className="font-medium">{prompt.label}:</span>
                                     <span>{prompt.value}</span>
-                                  </div>
-                                ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                                  </div>)}
+                            </div>}
+                        </div>)}
                     </div>
                   </div>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
 
@@ -285,8 +227,7 @@ export default function ProductionBoardKanban() {
             </Badge>
           </div>
           <div className="space-y-3">
-            {categorizedOrders.today.map((order) => (
-              <Card key={order.id} className="border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
+            {categorizedOrders.today.map(order => <Card key={order.id} className="border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="space-y-2">
                     <div className="flex justify-between items-start">
@@ -299,7 +240,9 @@ export default function ProductionBoardKanban() {
                         </Link>
                       </div>
                       <Badge variant="outline" className="text-xs">
-                        {format(new Date(order.delivery_date!), "dd/MM", { locale: es })}
+                        {format(new Date(order.delivery_date!), "dd/MM", {
+                      locale: es
+                    })}
                       </Badge>
                     </div>
                     <div className="text-sm font-medium">
@@ -312,52 +255,31 @@ export default function ProductionBoardKanban() {
                       </Badge>
                     </div>
                     <div className="text-xs space-y-2">
-                      {order.items.map((item, idx) => (
-                        <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
+                      {order.items.map((item, idx) => <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
                           <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => toggleItemExpanded(item.id)}
-                              className="hover:bg-muted rounded p-0.5 transition-colors"
-                            >
-                              {expandedItems.has(item.id) ? (
-                                <ChevronDown className="h-3 w-3" />
-                              ) : (
-                                <ChevronRight className="h-3 w-3" />
-                              )}
+                            <button onClick={() => toggleItemExpanded(item.id)} className="hover:bg-muted rounded p-0.5 transition-colors">
+                              {expandedItems.has(item.id) ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                             </button>
                             <span className="font-medium">{idx + 1}. {item.product_name}</span>
-                            <Badge 
-                              variant={
-                                item.production_status === "completed" 
-                                  ? "default" 
-                                  : item.production_status === "in_progress" 
-                                  ? "secondary" 
-                                  : "outline"
-                              }
-                              className="text-xs"
-                            >
+                            <Badge variant={item.production_status === "completed" ? "default" : item.production_status === "in_progress" ? "secondary" : "outline"} className="text-xs">
                               Estado: {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
-                          {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
-                            <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
-                              {(item.prompts as Array<{ label: string; value: string; order: number }>)
-                                .sort((a, b) => a.order - b.order)
-                                .map((prompt, pIdx) => (
-                                  <div key={pIdx} className="flex gap-1">
+                          {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
+                              {(item.prompts as Array<{
+                        label: string;
+                        value: string;
+                        order: number;
+                      }>).sort((a, b) => a.order - b.order).map((prompt, pIdx) => <div key={pIdx} className="flex gap-1">
                                     <span className="font-medium">{prompt.label}:</span>
                                     <span>{prompt.value}</span>
-                                  </div>
-                                ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                                  </div>)}
+                            </div>}
+                        </div>)}
                     </div>
                   </div>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
 
@@ -371,8 +293,7 @@ export default function ProductionBoardKanban() {
             </Badge>
           </div>
           <div className="space-y-3">
-            {categorizedOrders.tomorrow.map((order) => (
-              <Card key={order.id} className="border-l-4 border-l-yellow-500 shadow-sm hover:shadow-md transition-shadow">
+            {categorizedOrders.tomorrow.map(order => <Card key={order.id} className="border-l-4 border-l-yellow-500 shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="space-y-2">
                     <div className="flex justify-between items-start">
@@ -385,7 +306,9 @@ export default function ProductionBoardKanban() {
                         </Link>
                       </div>
                       <Badge variant="outline" className="text-xs">
-                        {format(new Date(order.delivery_date!), "dd/MM", { locale: es })}
+                        {format(new Date(order.delivery_date!), "dd/MM", {
+                      locale: es
+                    })}
                       </Badge>
                     </div>
                     <div className="text-sm font-medium">
@@ -398,52 +321,31 @@ export default function ProductionBoardKanban() {
                       </Badge>
                     </div>
                     <div className="text-xs space-y-2">
-                      {order.items.map((item, idx) => (
-                        <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
+                      {order.items.map((item, idx) => <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
                           <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => toggleItemExpanded(item.id)}
-                              className="hover:bg-muted rounded p-0.5 transition-colors"
-                            >
-                              {expandedItems.has(item.id) ? (
-                                <ChevronDown className="h-3 w-3" />
-                              ) : (
-                                <ChevronRight className="h-3 w-3" />
-                              )}
+                            <button onClick={() => toggleItemExpanded(item.id)} className="hover:bg-muted rounded p-0.5 transition-colors">
+                              {expandedItems.has(item.id) ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                             </button>
                             <span className="font-medium">{idx + 1}. {item.product_name}</span>
-                            <Badge 
-                              variant={
-                                item.production_status === "completed" 
-                                  ? "default" 
-                                  : item.production_status === "in_progress" 
-                                  ? "secondary" 
-                                  : "outline"
-                              }
-                              className="text-xs"
-                            >
+                            <Badge variant={item.production_status === "completed" ? "default" : item.production_status === "in_progress" ? "secondary" : "outline"} className="text-xs">
                               Estado: {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
-                          {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
-                            <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
-                              {(item.prompts as Array<{ label: string; value: string; order: number }>)
-                                .sort((a, b) => a.order - b.order)
-                                .map((prompt, pIdx) => (
-                                  <div key={pIdx} className="flex gap-1">
+                          {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
+                              {(item.prompts as Array<{
+                        label: string;
+                        value: string;
+                        order: number;
+                      }>).sort((a, b) => a.order - b.order).map((prompt, pIdx) => <div key={pIdx} className="flex gap-1">
                                     <span className="font-medium">{prompt.label}:</span>
                                     <span>{prompt.value}</span>
-                                  </div>
-                                ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                                  </div>)}
+                            </div>}
+                        </div>)}
                     </div>
                   </div>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
 
@@ -457,8 +359,7 @@ export default function ProductionBoardKanban() {
             </Badge>
           </div>
           <div className="space-y-3">
-            {categorizedOrders["on-time"].map((order) => (
-              <Card key={order.id} className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow">
+            {categorizedOrders["on-time"].map(order => <Card key={order.id} className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="space-y-2">
                     <div className="flex justify-between items-start">
@@ -471,7 +372,9 @@ export default function ProductionBoardKanban() {
                         </Link>
                       </div>
                       <Badge variant="outline" className="text-xs">
-                        {format(new Date(order.delivery_date!), "dd/MM", { locale: es })}
+                        {format(new Date(order.delivery_date!), "dd/MM", {
+                      locale: es
+                    })}
                       </Badge>
                     </div>
                     <div className="text-sm font-medium">
@@ -484,55 +387,33 @@ export default function ProductionBoardKanban() {
                       </Badge>
                     </div>
                     <div className="text-xs space-y-2">
-                      {order.items.map((item, idx) => (
-                        <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
+                      {order.items.map((item, idx) => <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
                           <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => toggleItemExpanded(item.id)}
-                              className="hover:bg-muted rounded p-0.5 transition-colors"
-                            >
-                              {expandedItems.has(item.id) ? (
-                                <ChevronDown className="h-3 w-3" />
-                              ) : (
-                                <ChevronRight className="h-3 w-3" />
-                              )}
+                            <button onClick={() => toggleItemExpanded(item.id)} className="hover:bg-muted rounded p-0.5 transition-colors">
+                              {expandedItems.has(item.id) ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                             </button>
                             <span className="font-medium">{idx + 1}. {item.product_name}</span>
-                            <Badge 
-                              variant={
-                                item.production_status === "completed" 
-                                  ? "default" 
-                                  : item.production_status === "in_progress" 
-                                  ? "secondary" 
-                                  : "outline"
-                              }
-                              className="text-xs"
-                            >
+                            <Badge variant={item.production_status === "completed" ? "default" : item.production_status === "in_progress" ? "secondary" : "outline"} className="text-xs">
                               Estado: {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
-                          {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && (
-                            <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
-                              {(item.prompts as Array<{ label: string; value: string; order: number }>)
-                                .sort((a, b) => a.order - b.order)
-                                .map((prompt, pIdx) => (
-                                  <div key={pIdx} className="flex gap-1">
+                          {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
+                              {(item.prompts as Array<{
+                        label: string;
+                        value: string;
+                        order: number;
+                      }>).sort((a, b) => a.order - b.order).map((prompt, pIdx) => <div key={pIdx} className="flex gap-1">
                                     <span className="font-medium">{prompt.label}:</span>
                                     <span>{prompt.value}</span>
-                                  </div>
-                                ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                                  </div>)}
+                            </div>}
+                        </div>)}
                     </div>
                   </div>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
