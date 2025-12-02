@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { Plus, Edit, Trash2 } from "lucide-react"
 
@@ -250,174 +251,189 @@ export default function Additionals() {
               </DialogDescription>
             </DialogHeader>
             
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Nombre</Label>
-                <Input
-                  id="name"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="description">Descripción</Label>
-                <Textarea
-                  id="description"
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="assignment_type">Asignar a</Label>
-                <Select
-                  value={form.assignment_type}
-                  onValueChange={(value: "article" | "quote") => 
-                    setForm({ ...form, assignment_type: value, type: "net_amount" })
-                  }
+            <Tabs defaultValue="basic" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="basic">Configuración básica</TabsTrigger>
+                <TabsTrigger 
+                  value="tasks" 
+                  disabled={form.assignment_type !== "article"}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="article">Artículo</SelectItem>
-                    <SelectItem value="quote">Presupuesto</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="type">Tipo</Label>
-                <Select
-                  value={form.type}
-                  onValueChange={(value: "net_amount" | "quantity_multiplier" | "percentage") => 
-                    setForm({ ...form, type: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                     <SelectItem value="net_amount">Importe neto</SelectItem>
-                     {form.assignment_type === "article" ? (
-                       <SelectItem value="quantity_multiplier">Importe unitario (por cantidad)</SelectItem>
-                     ) : (
-                       <SelectItem value="percentage">Porcentaje sobre subtotal</SelectItem>
-                     )}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="default_value">Valor por defecto</Label>
-                <Input
-                  id="default_value"
-                  type="number"
-                  step="0.01"
-                  value={form.default_value}
-                  onChange={(e) => setForm({ ...form, default_value: parseFloat(e.target.value) || 0 })}
-                />
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="is_discount"
-                  checked={form.is_discount}
-                  onCheckedChange={(checked) => setForm({ ...form, is_discount: checked as boolean })}
-                />
-                <Label 
-                  htmlFor="is_discount" 
-                  className="text-sm font-normal cursor-pointer"
-                >
-                  ¿Considerar este ajuste como "Descuento"?
-                </Label>
-              </div>
+                  Tareas automáticas
+                </TabsTrigger>
+              </TabsList>
 
-              {/* Tareas implícitas - solo para ajustes de artículo */}
-              {form.assignment_type === "article" && (
-                <>
-                  <div className="flex items-center space-x-2 pt-4 border-t">
-                    <Checkbox
-                      id="has_implicit_task"
-                      checked={form.has_implicit_task}
-                      onCheckedChange={(checked) => {
-                        setForm({ 
+              <TabsContent value="basic" className="space-y-4 mt-4">
+                <div>
+                  <Label htmlFor="name">Nombre</Label>
+                  <Input
+                    id="name"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="description">Descripción</Label>
+                  <Textarea
+                    id="description"
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="assignment_type">Asignar a</Label>
+                  <Select
+                    value={form.assignment_type}
+                    onValueChange={(value: "article" | "quote") => 
+                      setForm({ ...form, assignment_type: value, type: "net_amount" })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="article">Artículo</SelectItem>
+                      <SelectItem value="quote">Presupuesto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="type">Tipo</Label>
+                  <Select
+                    value={form.type}
+                    onValueChange={(value: "net_amount" | "quantity_multiplier" | "percentage") => 
+                      setForm({ ...form, type: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                       <SelectItem value="net_amount">Importe neto</SelectItem>
+                       {form.assignment_type === "article" ? (
+                         <SelectItem value="quantity_multiplier">Importe unitario (por cantidad)</SelectItem>
+                       ) : (
+                         <SelectItem value="percentage">Porcentaje sobre subtotal</SelectItem>
+                       )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="default_value">Valor por defecto</Label>
+                  <Input
+                    id="default_value"
+                    type="number"
+                    step="0.01"
+                    value={form.default_value}
+                    onChange={(e) => setForm({ ...form, default_value: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="is_discount"
+                    checked={form.is_discount}
+                    onCheckedChange={(checked) => setForm({ ...form, is_discount: checked as boolean })}
+                  />
+                  <Label 
+                    htmlFor="is_discount" 
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    ¿Considerar este ajuste como "Descuento"?
+                  </Label>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="tasks" className="space-y-4 mt-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="has_implicit_task"
+                    checked={form.has_implicit_task}
+                    onCheckedChange={(checked) => {
+                      setForm({ 
+                        ...form, 
+                        has_implicit_task: checked as boolean,
+                        task_name: checked ? form.task_name : "",
+                        task_phase_id: checked ? form.task_phase_id : ""
+                      })
+                    }}
+                  />
+                  <Label 
+                    htmlFor="has_implicit_task" 
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    Crear tarea de producción automáticamente
+                  </Label>
+                </div>
+
+                {form.has_implicit_task && (
+                  <>
+                    <div>
+                      <Label htmlFor="task_name">Nombre de la tarea</Label>
+                      <Input
+                        id="task_name"
+                        value={form.task_name}
+                        onChange={(e) => setForm({ ...form, task_name: e.target.value })}
+                        placeholder="Ej: Aplicar acabado especial"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="task_phase_id">Fase de producción</Label>
+                      <Select
+                        value={form.task_phase_id}
+                        onValueChange={(value) => setForm({ ...form, task_phase_id: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona una fase" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {phases.map((phase: any) => (
+                            <SelectItem key={phase.id} value={phase.id}>
+                              {phase.display_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="task_exclude_values">
+                        Valores que excluyen la tarea (opcional)
+                      </Label>
+                      <Textarea
+                        id="task_exclude_values"
+                        value={form.task_exclude_values.join(", ")}
+                        onChange={(e) => setForm({ 
                           ...form, 
-                          has_implicit_task: checked as boolean,
-                          task_name: checked ? form.task_name : "",
-                          task_phase_id: checked ? form.task_phase_id : ""
-                        })
-                      }}
-                    />
-                    <Label 
-                      htmlFor="has_implicit_task" 
-                      className="text-sm font-normal cursor-pointer"
-                    >
-                      Crear tarea de producción automáticamente
-                    </Label>
-                  </div>
+                          task_exclude_values: e.target.value
+                            .split(",")
+                            .map(v => v.trim())
+                            .filter(v => v !== "")
+                        })}
+                        placeholder="Ej: Sin acabado, Normal (separados por comas)"
+                        rows={2}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Si el valor del ajuste coincide con alguno de estos, no se creará la tarea
+                      </p>
+                    </div>
+                  </>
+                )}
 
-                  {form.has_implicit_task && (
-                    <>
-                      <div>
-                        <Label htmlFor="task_name">Nombre de la tarea</Label>
-                        <Input
-                          id="task_name"
-                          value={form.task_name}
-                          onChange={(e) => setForm({ ...form, task_name: e.target.value })}
-                          placeholder="Ej: Aplicar acabado especial"
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="task_phase_id">Fase de producción</Label>
-                        <Select
-                          value={form.task_phase_id}
-                          onValueChange={(value) => setForm({ ...form, task_phase_id: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una fase" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {phases.map((phase: any) => (
-                              <SelectItem key={phase.id} value={phase.id}>
-                                {phase.display_name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="task_exclude_values">
-                          Valores que excluyen la tarea (opcional)
-                        </Label>
-                        <Textarea
-                          id="task_exclude_values"
-                          value={form.task_exclude_values.join(", ")}
-                          onChange={(e) => setForm({ 
-                            ...form, 
-                            task_exclude_values: e.target.value
-                              .split(",")
-                              .map(v => v.trim())
-                              .filter(v => v !== "")
-                          })}
-                          placeholder="Ej: Sin acabado, Normal (separados por comas)"
-                          rows={2}
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Si el valor del ajuste coincide con alguno de estos, no se creará la tarea
-                        </p>
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
-            </form>
+                {!form.has_implicit_task && (
+                  <p className="text-sm text-muted-foreground">
+                    Activa la opción para configurar una tarea que se creará automáticamente cuando este ajuste se aplique a un artículo.
+                  </p>
+                )}
+              </TabsContent>
+            </Tabs>
             
-            <DialogFooter>
+            <DialogFooter className="mt-6">
               <Button
                 type="button"
                 variant="outline"
