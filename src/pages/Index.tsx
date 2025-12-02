@@ -15,8 +15,15 @@ const Index = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
-  const { isSuperAdmin, isERPSubscription, canAccessProduccion } = useSubscription();
+  const { isSuperAdmin, isERPSubscription, canAccessProduccion, isAPISubscription, canAccessPresupuestos } = useSubscription();
   const isMobile = useIsMobile();
+
+  // Redirigir a usuarios API puros a su página específica
+  useEffect(() => {
+    if (isAPISubscription() && !canAccessPresupuestos()) {
+      navigate("/api-home", { replace: true });
+    }
+  }, [isAPISubscription, canAccessPresupuestos, navigate]);
 
   // Obtener estadísticas rápidas de presupuestos
   const { data: stats } = useQuery({

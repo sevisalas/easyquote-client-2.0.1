@@ -52,6 +52,7 @@ import ProductionBoardKanban from "./pages/ProductionBoardKanban";
 import ProductionBoardCompact from "./pages/ProductionBoardCompact";
 import ProductionBoardRedirect from "./pages/ProductionBoardRedirect";
 import Novedades from "./pages/Novedades";
+import ApiHome from "./pages/ApiHome";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { useSessionMonitor } from "./hooks/useSessionMonitor";
 
@@ -480,6 +481,16 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <Novedades />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/api-home"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ApiHome />
             </AppLayout>
           </ProtectedRoute>
         }
