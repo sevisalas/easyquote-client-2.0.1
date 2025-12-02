@@ -52,6 +52,8 @@ export function AppSidebar() {
     canAccessProductos,
     canAccessCategorias,
     canAccessProduccion,
+    isClientSubscription,
+    isERPSubscription,
     loading
   } = useSubscription();
   const { isHoldedActive } = useHoldedIntegration();
@@ -458,29 +460,29 @@ export function AppSidebar() {
                              </SidebarMenuSubItem>
                            )}
                            
-                           {/* Categorías - Solo API subscriptions o Client admins */}
-                           {canAccessCategorias() && (
-                             <SidebarMenuSubItem>
-                               <SidebarMenuSubButton asChild isActive={currentPath === "/admin/categorias"} className="h-6 px-2">
-                                 <NavLink to="/admin/categorias" end className={getNavCls}>
-                                   <Tags className="mr-2 h-4 w-4" />
-                                   {!isCollapsed && <span>Categorías</span>}
-                                 </NavLink>
-                               </SidebarMenuSubButton>
-                             </SidebarMenuSubItem>
-                           )}
+                            {/* Categorías - Solo Client/ERP, NO API puro */}
+                            {canAccessCategorias() && (isClientSubscription() || isERPSubscription()) && (
+                              <SidebarMenuSubItem>
+                                <SidebarMenuSubButton asChild isActive={currentPath === "/admin/categorias"} className="h-6 px-2">
+                                  <NavLink to="/admin/categorias" end className={getNavCls}>
+                                    <Tags className="mr-2 h-4 w-4" />
+                                    {!isCollapsed && <span>Categorías</span>}
+                                  </NavLink>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            )}
                            
-                           {/* Variables de producción - Solo API subscriptions o Client admins */}
-                           {canAccessProductos() && (
-                             <SidebarMenuSubItem>
-                               <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/variables-produccion"} className="h-6 px-2">
-                                 <NavLink to="/configuracion/variables-produccion" end className={getNavCls}>
-                                   <ListChecks className="mr-2 h-4 w-4" />
-                                   {!isCollapsed && <span>Variables de producción</span>}
-                                 </NavLink>
-                               </SidebarMenuSubButton>
-                             </SidebarMenuSubItem>
-                           )}
+                            {/* Variables de producción - Solo módulo Production (ERP) */}
+                            {canAccessProduccion() && (
+                              <SidebarMenuSubItem>
+                                <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/variables-produccion"} className="h-6 px-2">
+                                  <NavLink to="/configuracion/variables-produccion" end className={getNavCls}>
+                                    <ListChecks className="mr-2 h-4 w-4" />
+                                    {!isCollapsed && <span>Variables de producción</span>}
+                                  </NavLink>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            )}
                            
                            {/* Gestión de imágenes - Solo API subscriptions o Client admins */}
                            {canAccessProductos() && (
@@ -499,8 +501,8 @@ export function AppSidebar() {
                    </Collapsible>
                    )}
 
-              {/* Gestión de usuarios - solo para org admin (no superadmin, ya está arriba) */}
-               {!isSuperAdmin && isOrgAdmin && (
+              {/* Gestión de usuarios - solo para org admin con Client/ERP, NO API puro */}
+               {!isSuperAdmin && isOrgAdmin && (isClientSubscription() || isERPSubscription()) && (
                  <SidebarMenuItem>
                    <SidebarMenuButton asChild isActive={currentPath === "/usuarios"} className="h-7 px-2">
                      <NavLink to="/usuarios" end className={getNavCls}>
