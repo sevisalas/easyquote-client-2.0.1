@@ -1351,7 +1351,6 @@ export default function ProductManagement() {
                                     const updatedPrompt = { 
                                       ...prompt, 
                                       promptSheet: value,
-                                      // Asegurar que los campos numéricos sean null si no es tipo numérico
                                       valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
                                       valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
                                       valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null
@@ -1363,7 +1362,6 @@ export default function ProductManagement() {
                                     <SelectValue placeholder={prompt.promptSheet || "Seleccionar hoja"} />
                                   </SelectTrigger>
                                   <SelectContent className="bg-background border shadow-lg z-50">
-                                    {/* Mostrar valor actual si existe y no está en la lista */}
                                     {prompt.promptSheet && !excelSheets.includes(prompt.promptSheet) && (
                                       <SelectItem value={prompt.promptSheet}>
                                         {prompt.promptSheet}
@@ -1385,7 +1383,6 @@ export default function ProductManagement() {
                                     const updatedPrompt = { 
                                       ...prompt, 
                                       promptCell: e.target.value,
-                                      // Asegurar que los campos numéricos sean null si no es tipo numérico
                                       valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
                                       valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
                                       valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null
@@ -1402,7 +1399,6 @@ export default function ProductManagement() {
                                     const updatedPrompt = { 
                                       ...prompt, 
                                       valueCell: e.target.value,
-                                      // Asegurar que los campos numéricos sean null si no es tipo numérico
                                       valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
                                       valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
                                       valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null
@@ -1420,7 +1416,6 @@ export default function ProductManagement() {
                                     const updatedPrompt = { 
                                       ...prompt, 
                                       promptSeq: parseInt(e.target.value),
-                                      // Asegurar que los campos numéricos sean null si no es tipo numérico
                                       valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
                                       valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
                                       valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null
@@ -1441,7 +1436,6 @@ export default function ProductManagement() {
                                       const updatedPrompt = { 
                                         ...prompt, 
                                         valueOptionRange: e.target.value,
-                                        // Asegurar que los campos numéricos sean null para tipos no numéricos
                                         valueQuantityAllowedDecimals: null,
                                         valueQuantityMin: null,
                                         valueQuantityMax: null
@@ -1464,7 +1458,6 @@ export default function ProductManagement() {
                                      const updatedPrompt = { 
                                        ...prompt, 
                                        promptType: newType,
-                                       // Si el nuevo tipo NO es numérico, establecer los campos numéricos como null
                                        valueQuantityAllowedDecimals: isNewTypeNumeric ? prompt.valueQuantityAllowedDecimals : null,
                                        valueQuantityMin: isNewTypeNumeric ? prompt.valueQuantityMin : null,
                                        valueQuantityMax: isNewTypeNumeric ? prompt.valueQuantityMax : null
@@ -1484,24 +1477,6 @@ export default function ProductManagement() {
                                    </SelectContent>
                                  </Select>
                                </div>
-
-                              <div className="col-span-1">
-                                <Label>Requerido</Label>
-                                <Switch
-                                  checked={prompt.valueRequired}
-                                  onCheckedChange={(checked) => {
-                                    const updatedPrompt = { 
-                                      ...prompt, 
-                                      valueRequired: checked,
-                                      // Asegurar que los campos numéricos sean null si no es tipo numérico
-                                      valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
-                                      valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
-                                      valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null
-                                    };
-                                    updatePromptMutation.mutate(updatedPrompt);
-                                  }}
-                                />
-                              </div>
 
                               {/* Campos numéricos - Solo para tipos Number/Quantity */}
                               {isNumericType && (
@@ -1540,7 +1515,7 @@ export default function ProductManagement() {
                                        }}
                                      />
                                    </div>
-                                   <div className="col-span-1">
+                                   <div className="col-span-2">
                                      <Label>Máximo</Label>
                                      <Input
                                        type="number"
@@ -1561,7 +1536,7 @@ export default function ProductManagement() {
                                )}
 
                                {/* Espacios vacíos para mantener alineación cuando no hay campos numéricos */}
-                               {!isNumericType && <div className="col-span-1"></div>}
+                               {!isNumericType && <div className="col-span-3"></div>}
 
                               <div className="col-span-1">
                                 <Label>Acción</Label>
@@ -1570,7 +1545,6 @@ export default function ProductManagement() {
                                     variant="ghost"
                                     size="sm"
                                      onClick={() => {
-                                       // Al guardar manualmente, asegurar que los valores numéricos tengan defaults o sean null
                                        const updatedPrompt = {
                                          ...prompt,
                                          valueQuantityAllowedDecimals: isNumericType ? (prompt.valueQuantityAllowedDecimals ?? 0) : null,
@@ -1593,41 +1567,59 @@ export default function ProductManagement() {
                               </div>
                             </div>
 
-                            {/* Variable de producción - Línea separada */}
-                            <div className="flex items-center gap-4 mt-4 pt-4 border-t">
-                              <Label className="w-48 text-sm font-medium">Variable de producción</Label>
-                              <Select
-                                value={getMappedVariableId(prompt.promptCell) || "none"}
-                                onValueChange={(value) => {
-                                  if (selectedProduct) {
-                                    upsertVariableMapping({
-                                      easyquoteProductId: selectedProduct.id,
-                                      productName: selectedProduct.productName,
-                                      promptOrOutputName: prompt.promptCell,
-                                      variableId: value === "none" ? null : value,
-                                    });
-                                  }
-                                }}
-                              >
-                                <SelectTrigger className="flex-1">
-                                  <SelectValue placeholder="Sin variable asignada" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-background border shadow-lg z-50">
-                                  <SelectItem value="none">Sin variable asignada</SelectItem>
-                                  {productionVariables
-                                    .filter(v => {
-                                      const mappedNames = getMappedNames();
-                                      const currentMapping = getMappedVariableId(prompt.promptCell);
-                                      return !mappedNames.includes(prompt.promptCell) || 
-                                             (currentMapping && v.id === currentMapping);
-                                    })
-                                    .map((variable) => (
-                                      <SelectItem key={variable.id} value={variable.id}>
-                                        {variable.name}
-                                      </SelectItem>
-                                    ))}
-                                </SelectContent>
-                              </Select>
+                            {/* Requerido + Variable de producción - Línea separada */}
+                            <div className="flex items-center gap-6 mt-4 pt-4 border-t">
+                              <div className="flex items-center gap-2">
+                                <Label className="text-sm font-medium">Requerido</Label>
+                                <Switch
+                                  checked={prompt.valueRequired}
+                                  onCheckedChange={(checked) => {
+                                    const updatedPrompt = { 
+                                      ...prompt, 
+                                      valueRequired: checked,
+                                      valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
+                                      valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
+                                      valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null
+                                    };
+                                    updatePromptMutation.mutate(updatedPrompt);
+                                  }}
+                                />
+                              </div>
+                              <div className="flex items-center gap-2 flex-1">
+                                <Label className="text-sm font-medium whitespace-nowrap">Variable de producción</Label>
+                                <Select
+                                  value={getMappedVariableId(prompt.promptCell) || "none"}
+                                  onValueChange={(value) => {
+                                    if (selectedProduct) {
+                                      upsertVariableMapping({
+                                        easyquoteProductId: selectedProduct.id,
+                                        productName: selectedProduct.productName,
+                                        promptOrOutputName: prompt.promptCell,
+                                        variableId: value === "none" ? null : value,
+                                      });
+                                    }
+                                  }}
+                                >
+                                  <SelectTrigger className="flex-1">
+                                    <SelectValue placeholder="Sin variable asignada" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-background border shadow-lg z-50">
+                                    <SelectItem value="none">Sin variable asignada</SelectItem>
+                                    {productionVariables
+                                      .filter(v => {
+                                        const mappedNames = getMappedNames();
+                                        const currentMapping = getMappedVariableId(prompt.promptCell);
+                                        return !mappedNames.includes(prompt.promptCell) || 
+                                               (currentMapping && v.id === currentMapping);
+                                      })
+                                      .map((variable) => (
+                                        <SelectItem key={variable.id} value={variable.id}>
+                                          {variable.name}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </div>
                             </>
                           );
