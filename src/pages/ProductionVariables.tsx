@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,7 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Save } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
@@ -40,16 +40,11 @@ import {
 import { useProductionVariables } from "@/hooks/useProductionVariables";
 import type { ProductionVariable } from "@/hooks/useProductionVariables";
 import { useProductionPhases } from "@/hooks/useProductionPhases";
-import { useSubscription } from "@/contexts/SubscriptionContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 export default function ProductionVariables() {
   const { variables, isLoading, createVariable, updateVariable, deleteVariable } =
     useProductionVariables();
   const { phases, isLoading: phasesLoading } = useProductionPhases();
-  const { organization } = useSubscription();
-  const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -62,42 +57,7 @@ export default function ProductionVariables() {
     task_phase_id: "",
     task_exclude_values: "",
   });
-  const [maxDailyOrders, setMaxDailyOrders] = useState<number>(20);
-  const [isSavingCapacity, setIsSavingCapacity] = useState(false);
-
-  useEffect(() => {
-    if (organization) {
-      setMaxDailyOrders(organization.max_daily_orders || 20);
-    }
-  }, [organization]);
-
-  const handleSaveCapacity = async () => {
-    if (!organization) return;
-    
-    try {
-      setIsSavingCapacity(true);
-      const { error } = await supabase
-        .from("organizations")
-        .update({ max_daily_orders: maxDailyOrders })
-        .eq("id", organization.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Capacidad actualizada",
-        description: "La capacidad máxima diaria se ha guardado correctamente",
-      });
-    } catch (error) {
-      console.error("Error updating capacity:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar la capacidad",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSavingCapacity(false);
-    }
-  };
+  // Removed workload capacity state and handlers - now in WorkloadConfiguration page
 
   const handleCreate = () => {
     createVariable({
@@ -196,38 +156,7 @@ export default function ProductionVariables() {
         </Button>
       </div>
 
-      {/* Capacidad máxima de pedidos diarios */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Configuración de carga de trabajo</CardTitle>
-          <CardDescription>
-            Define la capacidad máxima de pedidos que tu equipo puede gestionar por día
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-end gap-4">
-            <div className="flex-1 max-w-xs">
-              <Label htmlFor="max-capacity">Pedidos máximos por día</Label>
-              <Input
-                id="max-capacity"
-                type="number"
-                min="1"
-                value={maxDailyOrders}
-                onChange={(e) => setMaxDailyOrders(parseInt(e.target.value) || 1)}
-                className="mt-2"
-              />
-            </div>
-            <Button 
-              onClick={handleSaveCapacity} 
-              disabled={isSavingCapacity}
-              className="mb-0"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {isSavingCapacity ? "Guardando..." : "Guardar"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Workload capacity configuration moved to WorkloadConfiguration page */}
 
       {variables.length === 0 ? (
         <div className="text-center py-12">
