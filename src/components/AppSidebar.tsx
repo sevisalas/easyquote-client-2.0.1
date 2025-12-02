@@ -390,15 +390,35 @@ export function AppSidebar() {
                                  </SidebarMenuSubButton>
                                </SidebarMenuSubItem>}
                            
-                           {/* Gestión de imágenes - Solo API subscriptions o Client admins */}
-                           {canAccessProductos() && <SidebarMenuSubItem>
-                               <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/imagenes"} className="h-6 px-2">
-                                 <NavLink to="/configuracion/imagenes" end className={getNavCls}>
-                                   <Image className="mr-2 h-4 w-4" />
-                                   {!isCollapsed && <span>Imágenes</span>}
-                                 </NavLink>
-                               </SidebarMenuSubButton>
-                             </SidebarMenuSubItem>}
+                            {/* Gestión de imágenes - Solo API subscriptions o Client admins */}
+                            {canAccessProductos() && <SidebarMenuSubItem>
+                                <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/imagenes"} className="h-6 px-2">
+                                  <NavLink to="/configuracion/imagenes" end className={getNavCls}>
+                                    <Image className="mr-2 h-4 w-4" />
+                                    {!isCollapsed && <span>Imágenes</span>}
+                                  </NavLink>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>}
+                            
+                            {/* Tema corporativo - Solo admins */}
+                            {(isSuperAdmin || isOrgAdmin) && <SidebarMenuSubItem>
+                                <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/tema-corporativo"} className="h-6 px-2">
+                                  <NavLink to="/configuracion/tema-corporativo" end className={getNavCls}>
+                                    <Palette className="mr-2 h-4 w-4" />
+                                    {!isCollapsed && <span>Tema corporativo</span>}
+                                  </NavLink>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>}
+                            
+                            {/* Tema personal - Para todos */}
+                            <SidebarMenuSubItem>
+                                <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/tema"} className="h-6 px-2">
+                                  <NavLink to="/configuracion/tema" end className={getNavCls}>
+                                    <Settings className="mr-2 h-4 w-4" />
+                                    {!isCollapsed && <span>Tema</span>}
+                                  </NavLink>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
                          </SidebarMenuSub>
                        </CollapsibleContent>
                      </SidebarMenuItem>

@@ -16,6 +16,7 @@ import QuotesList from "./pages/QuotesList";
 import SettingsPdfTemplate from "./pages/SettingsPdfTemplate";
 import SettingsNumberingFormats from "./pages/SettingsNumberingFormats";
 import SettingsTheme from "./pages/SettingsTheme";
+import SettingsThemeCorporate from "./pages/SettingsThemeCorporate";
 import Additionals from "./pages/Additionals";
 import QuoteDetail from "./pages/QuoteDetail";
 import EditarSuscriptor from "./pages/SubscriberEdit";
@@ -174,8 +175,7 @@ const AppContent = () => {
           </ProtectedRoute>
         }
       />
-      {/* Ruta de tema temporalmente desactivada */}
-      {/* <Route
+      <Route
         path="/configuracion/tema"
         element={
           <ProtectedRoute>
@@ -184,7 +184,17 @@ const AppContent = () => {
             </AppLayout>
           </ProtectedRoute>
         }
-      /> */}
+      />
+      <Route
+        path="/configuracion/tema-corporativo"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SettingsThemeCorporate />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/usuarios"
         element={

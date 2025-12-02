@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileBottomNav } from "@/components/mobile/MobileBottomNav";
+import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
 
 function MainContent({ children }: PropsWithChildren) {
@@ -27,6 +28,7 @@ function MainContent({ children }: PropsWithChildren) {
 export default function AppLayout({ children }: PropsWithChildren) {
   const isMobile = useIsMobile();
   useTokenRefresh();
+  useTheme(); // Apply theme automatically
 
   return (
     <SidebarProvider>

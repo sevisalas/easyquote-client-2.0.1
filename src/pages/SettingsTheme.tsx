@@ -1,268 +1,25 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { Check, Palette } from "lucide-react";
-
-interface ThemeColors {
-  primary: string;
-  secondary: string;
-  background: string;
-  foreground: string;
-}
-
-interface Theme {
-  id: string | null;
-  name: string;
-  description: string;
-  preview: ThemeColors;
-}
-
-const themes: Theme[] = [
-  {
-    id: null,
-    name: "Original",
-    description: "Tema predeterminado de la aplicación",
-    preview: {
-      primary: "#c83077",
-      secondary: "#250353",
-      background: "#ffffff",
-      foreground: "#09090b"
-    }
-  },
-  {
-    id: "dark-pro",
-    name: "Oscuro Profesional",
-    description: "Tema oscuro con contraste profesional",
-    preview: {
-      primary: "#7c3aed",
-      secondary: "#1e293b",
-      background: "#0f172a",
-      foreground: "#f8fafc"
-    }
-  },
-  {
-    id: "light-minimal",
-    name: "Claro Minimalista",
-    description: "Tema claro con diseño minimalista",
-    preview: {
-      primary: "#3b82f6",
-      secondary: "#e2e8f0",
-      background: "#ffffff",
-      foreground: "#1e293b"
-    }
-  },
-  {
-    id: "blue-corporate",
-    name: "Azul Corporativo",
-    description: "Tema corporativo con tonos azules",
-    preview: {
-      primary: "#0ea5e9",
-      secondary: "#1e40af",
-      background: "#f8fafc",
-      foreground: "#0f172a"
-    }
-  },
-  {
-    id: "green-nature",
-    name: "Verde Natural",
-    description: "Tema con tonos verdes naturales",
-    preview: {
-      primary: "#10b981",
-      secondary: "#065f46",
-      background: "#f0fdf4",
-      foreground: "#064e3b"
-    }
-  },
-  {
-    id: "custom",
-    name: "Personalizado",
-    description: "Crea tu propio tema con colores personalizados",
-    preview: {
-      primary: "#c83077",
-      secondary: "#250353",
-      background: "#ffffff",
-      foreground: "#09090b"
-    }
-  }
-];
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTheme } from "@/hooks/useTheme";
+import { toast } from "sonner";
+import { Loader2, CheckCircle2 } from "lucide-react";
 
 export default function SettingsTheme() {
-  const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
-  const [currentTheme, setCurrentTheme] = useState<string | null>(null);
-  const [customColors, setCustomColors] = useState<ThemeColors>({
-    primary: "#c83077",
-    secondary: "#250353",
-    background: "#ffffff",
-    foreground: "#09090b"
-  });
-  const [previewColors, setPreviewColors] = useState<ThemeColors | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { userVariant, updateUserVariant, loading } = useTheme();
   const [saving, setSaving] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
-    document.title = "Configuración | Tema";
-    loadCurrentTheme();
+    document.title = "Tema - EasyQuote";
   }, []);
 
-  // Convertir HEX a HSL
-  const hexToHSL = (hex: string) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (!result) return hex;
-    
-    let r = parseInt(result[1], 16) / 255;
-    let g = parseInt(result[2], 16) / 255;
-    let b = parseInt(result[3], 16) / 255;
-    
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let h = 0, s = 0, l = (max + min) / 2;
-
-    if (max !== min) {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      switch (max) {
-        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-        case g: h = ((b - r) / d + 2) / 6; break;
-        case b: h = ((r - g) / d + 4) / 6; break;
-      }
-    }
-    
-    h = Math.round(h * 360);
-    s = Math.round(s * 100);
-    l = Math.round(l * 100);
-    
-    return `${h} ${s}% ${l}%`;
-  };
-
-  // Vista previa en tiempo real
-  useEffect(() => {
-    if (previewColors) {
-      // Variables principales
-      document.documentElement.style.setProperty('--primary', hexToHSL(previewColors.primary));
-      document.documentElement.style.setProperty('--secondary', hexToHSL(previewColors.secondary));
-      document.documentElement.style.setProperty('--background', hexToHSL(previewColors.background));
-      document.documentElement.style.setProperty('--foreground', hexToHSL(previewColors.foreground));
-      
-      // Texto sobre colores primario y secundario debe ser blanco para buen contraste
-      document.documentElement.style.setProperty('--primary-foreground', '0 0% 100%'); // Blanco
-      document.documentElement.style.setProperty('--secondary-foreground', '0 0% 100%'); // Blanco
-      
-      // Variables del sidebar (usar los mismos colores)
-      document.documentElement.style.setProperty('--sidebar-background', hexToHSL(previewColors.background));
-      document.documentElement.style.setProperty('--sidebar-foreground', hexToHSL(previewColors.foreground));
-      document.documentElement.style.setProperty('--sidebar-primary', hexToHSL(previewColors.primary));
-      document.documentElement.style.setProperty('--sidebar-primary-foreground', '0 0% 100%'); // Blanco
-      document.documentElement.style.setProperty('--sidebar-accent', hexToHSL(previewColors.secondary));
-      document.documentElement.style.setProperty('--sidebar-accent-foreground', hexToHSL(previewColors.foreground));
-      document.documentElement.style.setProperty('--sidebar-border', hexToHSL(previewColors.secondary));
-    }
-  }, [previewColors]);
-
-  const loadCurrentTheme = async () => {
+  const handleSaveVariant = async (variant: 'light' | 'dark' | 'system') => {
+    setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('selected_theme')
-        .eq('user_id', user.id)
-        .single();
-
-      const theme = profile?.selected_theme || null;
-      setSelectedTheme(theme);
-      setCurrentTheme(theme);
-      
-      // Si es tema custom, cargar los colores guardados
-      if (theme === 'custom' && profile) {
-        const customColorsData = (profile as any).custom_colors;
-        if (customColorsData) {
-          setCustomColors(customColorsData as ThemeColors);
-        }
-      }
+      await updateUserVariant(variant);
+      toast.success("Preferencia de tema guardada");
     } catch (error) {
-      console.error('Error loading theme:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleThemeSelect = (themeId: string | null) => {
-    setSelectedTheme(themeId);
-    
-    // Si es el tema original, limpiar la vista previa para mantener los colores originales
-    if (themeId === null) {
-      setPreviewColors(null);
-      // Remover las propiedades CSS para volver a los valores originales del index.css
-      document.documentElement.style.removeProperty('--primary');
-      document.documentElement.style.removeProperty('--secondary');
-      document.documentElement.style.removeProperty('--background');
-      document.documentElement.style.removeProperty('--foreground');
-      document.documentElement.style.removeProperty('--primary-foreground');
-      document.documentElement.style.removeProperty('--secondary-foreground');
-      document.documentElement.style.removeProperty('--sidebar-background');
-      document.documentElement.style.removeProperty('--sidebar-foreground');
-      document.documentElement.style.removeProperty('--sidebar-primary');
-      document.documentElement.style.removeProperty('--sidebar-primary-foreground');
-      document.documentElement.style.removeProperty('--sidebar-accent');
-      document.documentElement.style.removeProperty('--sidebar-accent-foreground');
-      document.documentElement.style.removeProperty('--sidebar-border');
-      return;
-    }
-    
-    // Para otros temas, aplicar vista previa inmediata
-    const theme = themes.find(t => t.id === themeId);
-    if (theme) {
-      const colors = themeId === 'custom' ? customColors : theme.preview;
-      setPreviewColors(colors);
-    }
-  };
-
-  const handleCustomColorChange = (key: keyof ThemeColors, value: string) => {
-    const newColors = { ...customColors, [key]: value };
-    setCustomColors(newColors);
-    if (selectedTheme === 'custom') {
-      setPreviewColors(newColors);
-    }
-  };
-
-  const handleSaveTheme = async () => {
-    try {
-      setSaving(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const updateData: any = { selected_theme: selectedTheme };
-      
-      // Si es tema custom, guardar también los colores
-      if (selectedTheme === 'custom') {
-        updateData.custom_colors = customColors;
-      }
-
-      const { error } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      setCurrentTheme(selectedTheme);
-      toast({
-        title: "Tema guardado",
-        description: "El tema se ha actualizado correctamente. Recarga la página para ver los cambios.",
-      });
-    } catch (error) {
-      console.error('Error saving theme:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo guardar el tema",
-        variant: "destructive",
-      });
+      console.error('Error saving variant:', error);
+      toast.error("Error al guardar tu preferencia");
     } finally {
       setSaving(false);
     }
@@ -270,194 +27,99 @@ export default function SettingsTheme() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-10">
-        <p className="text-muted-foreground text-center">Cargando...</p>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  const hasChanges = selectedTheme !== currentTheme;
-
   return (
-    <div className="container mx-auto p-6">
-      <header className="sr-only">
-        <h1>Configuración de tema</h1>
-        <link rel="canonical" href={`${window.location.origin}/configuracion/tema`} />
-        <meta name="description" content="Personaliza el tema visual de la aplicación." />
-      </header>
+    <div className="container mx-auto py-6 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Modo de Visualización</h1>
+        <p className="text-muted-foreground mt-2">
+          Elige tu preferencia de modo claro u oscuro
+        </p>
+      </div>
 
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Selecciona tu Tema</CardTitle>
+        <CardHeader>
+          <CardTitle>Preferencia de Tema</CardTitle>
+          <CardDescription>
+            Los colores corporativos se aplican automáticamente según tu organización
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {themes.map((theme) => (
-              <button
-                key={theme.id || 'original'}
-                onClick={() => handleThemeSelect(theme.id)}
-                className={`relative transition-all rounded-lg border-2 overflow-hidden ${
-                  selectedTheme === theme.id
-                    ? 'ring-4 ring-primary scale-105 border-primary'
-                    : 'border-border hover:border-primary/50'
-                }`}
-              >
-                {selectedTheme === theme.id && (
-                  <div className="absolute top-2 right-2 z-10 bg-primary text-primary-foreground rounded-full p-1">
-                    <Check className="h-4 w-4" />
-                  </div>
-                )}
-                
-                <div className="p-4 space-y-3">
-                  <div className="flex gap-2 h-16">
-                    <div 
-                      className="flex-1 rounded flex items-center justify-center text-xs font-medium" 
-                      style={{ 
-                        backgroundColor: theme.preview.primary,
-                        color: '#ffffff'
-                      }}
-                    >
-                      Texto
-                    </div>
-                    <div 
-                      className="flex-1 rounded flex items-center justify-center text-xs font-medium" 
-                      style={{ 
-                        backgroundColor: theme.preview.secondary,
-                        color: '#ffffff'
-                      }}
-                    >
-                      Texto
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2 h-8">
-                    <div 
-                      className="flex-1 rounded border flex items-center justify-center text-xs" 
-                      style={{ 
-                        backgroundColor: theme.preview.background,
-                        borderColor: theme.preview.foreground + '20',
-                        color: theme.preview.foreground
-                      }}
-                    >
-                      Texto
-                    </div>
-                    <div 
-                      className="flex-1 rounded" 
-                      style={{ backgroundColor: theme.preview.foreground }}
-                    />
-                  </div>
-                  
-                  <div className="text-left pt-2">
-                    <h3 className="font-semibold text-sm">{theme.name}</h3>
-                    <p className="text-xs text-muted-foreground">{theme.description}</p>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {/* Editor de colores personalizados */}
-          {selectedTheme === 'custom' && (
-            <Card className="mt-4">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Palette className="h-4 w-4" />
-                  Personaliza tus colores
+        <CardContent className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card
+              className={`cursor-pointer transition-all hover:shadow-lg ${
+                userVariant === 'light' ? "ring-2 ring-primary" : ""
+              }`}
+              onClick={() => handleSaveVariant('light')}
+            >
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between text-base">
+                  Modo Claro
+                  {userVariant === 'light' && (
+                    <CheckCircle2 className="h-5 w-5 text-primary" />
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="primary">Color Primario</Label>
-                    <div className="flex gap-2 mt-2">
-                      <Input
-                        id="primary"
-                        type="color"
-                        value={customColors.primary}
-                        onChange={(e) => handleCustomColorChange('primary', e.target.value)}
-                        className="w-16 h-10 p-1"
-                      />
-                      <Input
-                        type="text"
-                        value={customColors.primary}
-                        onChange={(e) => handleCustomColorChange('primary', e.target.value)}
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="secondary">Color Secundario</Label>
-                    <div className="flex gap-2 mt-2">
-                      <Input
-                        id="secondary"
-                        type="color"
-                        value={customColors.secondary}
-                        onChange={(e) => handleCustomColorChange('secondary', e.target.value)}
-                        className="w-16 h-10 p-1"
-                      />
-                      <Input
-                        type="text"
-                        value={customColors.secondary}
-                        onChange={(e) => handleCustomColorChange('secondary', e.target.value)}
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="background">Color de Fondo</Label>
-                    <div className="flex gap-2 mt-2">
-                      <Input
-                        id="background"
-                        type="color"
-                        value={customColors.background}
-                        onChange={(e) => handleCustomColorChange('background', e.target.value)}
-                        className="w-16 h-10 p-1"
-                      />
-                      <Input
-                        type="text"
-                        value={customColors.background}
-                        onChange={(e) => handleCustomColorChange('background', e.target.value)}
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="foreground">Color de Texto</Label>
-                    <div className="flex gap-2 mt-2">
-                      <Input
-                        id="foreground"
-                        type="color"
-                        value={customColors.foreground}
-                        onChange={(e) => handleCustomColorChange('foreground', e.target.value)}
-                        className="w-16 h-10 p-1"
-                      />
-                      <Input
-                        type="text"
-                        value={customColors.foreground}
-                        onChange={(e) => handleCustomColorChange('foreground', e.target.value)}
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
+                <div className="h-24 rounded-md bg-background border flex items-center justify-center">
+                  <p className="text-sm text-foreground">Vista previa clara</p>
                 </div>
               </CardContent>
             </Card>
-          )}
 
-          {hasChanges && (
-            <div className="flex justify-end mt-4">
-              <Button 
-                onClick={handleSaveTheme} 
-                disabled={saving}
-                size="sm"
-              >
-                {saving ? 'Guardando...' : 'Guardar Tema'}
-              </Button>
-            </div>
-          )}
+            <Card
+              className={`cursor-pointer transition-all hover:shadow-lg ${
+                userVariant === 'dark' ? "ring-2 ring-primary" : ""
+              }`}
+              onClick={() => handleSaveVariant('dark')}
+            >
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between text-base">
+                  Modo Oscuro
+                  {userVariant === 'dark' && (
+                    <CheckCircle2 className="h-5 w-5 text-primary" />
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-24 rounded-md bg-slate-900 border flex items-center justify-center">
+                  <p className="text-sm text-slate-100">Vista previa oscura</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card
+              className={`cursor-pointer transition-all hover:shadow-lg ${
+                userVariant === 'system' ? "ring-2 ring-primary" : ""
+              }`}
+              onClick={() => handleSaveVariant('system')}
+            >
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between text-base">
+                  Automático
+                  {userVariant === 'system' && (
+                    <CheckCircle2 className="h-5 w-5 text-primary" />
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-24 rounded-md bg-gradient-to-r from-background to-slate-900 border flex items-center justify-center">
+                  <p className="text-sm">Según sistema</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p>• <strong>Modo Claro:</strong> Interfaz con fondos claros</p>
+            <p>• <strong>Modo Oscuro:</strong> Interfaz con fondos oscuros</p>
+            <p>• <strong>Automático:</strong> Sigue la preferencia de tu sistema operativo</p>
+          </div>
         </CardContent>
       </Card>
     </div>
