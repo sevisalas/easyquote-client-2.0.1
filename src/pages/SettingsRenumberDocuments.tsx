@@ -200,31 +200,31 @@ const SettingsRenumberDocuments = () => {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Hash className="h-8 w-8" />
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Hash className="h-6 w-6" />
             Renumerar Documentos
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Renumerar presupuestos y pedidos según el formato configurado
           </p>
         </div>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Seleccionar Suscriptor</CardTitle>
-          <CardDescription>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Seleccionar Suscriptor</CardTitle>
+          <CardDescription className="text-xs">
             Elige el suscriptor cuyos documentos deseas renumerar
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label>Suscriptor</Label>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="text-xs">Suscriptor</Label>
             <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
-              <SelectTrigger>
+              <SelectTrigger className="h-8 text-sm mt-1">
                 <SelectValue placeholder="Selecciona un suscriptor" />
               </SelectTrigger>
               <SelectContent>

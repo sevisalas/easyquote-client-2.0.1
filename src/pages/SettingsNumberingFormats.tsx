@@ -226,7 +226,7 @@ export default function SettingsNumberingFormats() {
   }
 
   return (
-    <div className="container mx-auto py-10 space-y-8">
+    <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Formatos de numeración</h1>
@@ -443,7 +443,7 @@ export default function SettingsNumberingFormats() {
           </Card>
         </div>
 
-        <div className="bg-muted/50 p-3 rounded-lg">
+        <div className="bg-muted/50 p-2 rounded-lg">
           <p className="text-xs text-muted-foreground">
             <strong>Nota:</strong> El siguiente número se generará como <strong>último número usado + 1</strong>. 
             Puedes editar manualmente el "Último número usado" para ajustar la secuencia.
