@@ -260,7 +260,15 @@ export default function ProductTestPage() {
     const outputValues = source.outputValues || source.outputs || source.results || [];
     console.log("Processing outputs:", outputValues);
 
-    return Array.isArray(outputValues) ? outputValues : [];
+    // Normalize output structure
+    const normalized = Array.isArray(outputValues) ? outputValues.map((o: any) => ({
+      label: o.label || o.name || o.outputText || o.text || o.outputName || 'Output',
+      name: o.name || o.label || o.outputName || '',
+      value: o.value ?? o.currentValue ?? o.outputValue ?? o.result ?? '',
+      outputType: o.outputType || o.type || '',
+    })) : [];
+    
+    return normalized;
   }, [pricing, productDetail]);
 
   // Show ALL outputs exactly as they come from the API - no filtering, no modifications
@@ -271,8 +279,18 @@ export default function ProductTestPage() {
     // EasyQuote API returns outputs in 'outputValues' (GET) or 'outputs' (PATCH)
     const outputValues = source.outputValues || source.outputs || source.results || [];
     console.log("Showing ALL raw outputs:", outputValues);
+    console.log("Raw outputs structure sample:", outputValues.slice(0, 2));
 
-    return Array.isArray(outputValues) ? outputValues : [];
+    // Normalize output structure - handle different API response formats
+    const normalized = Array.isArray(outputValues) ? outputValues.map((o: any) => ({
+      label: o.label || o.name || o.outputText || o.text || o.outputName || 'Output',
+      name: o.name || o.label || o.outputName || '',
+      value: o.value ?? o.currentValue ?? o.outputValue ?? o.result ?? '',
+      outputType: o.outputType || o.type || '',
+    })) : [];
+    
+    console.log("Normalized outputs:", normalized);
+    return normalized;
   }, [pricing, productDetail]);
 
   // Separate text outputs from image outputs
@@ -492,7 +510,7 @@ export default function ProductTestPage() {
                     </div>
                   )}
 
-                  {!pricingLoading && !pricing && !isLoadingProduct && productDetail && (
+                  {!pricingLoading && !pricing && !isLoadingProduct && productDetail && textOutputs.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>Configura los parámetros para ver los resultados</p>
                     </div>
