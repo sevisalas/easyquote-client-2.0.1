@@ -52,11 +52,11 @@ export default function ProductTestPage() {
 
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
 
-  // Debounce prompt values
+  // Debounce prompt values - increased to reduce API calls
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedPromptValues(promptValues);
-    }, 800);
+    }, 1200);
     return () => clearTimeout(timer);
   }, [promptValues]);
 
