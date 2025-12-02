@@ -1,11 +1,111 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/hooks/useTheme";
 import { toast } from "sonner";
 import { Loader2, RefreshCw } from "lucide-react";
+
+// Utility functions outside component to prevent recreation
+const hexToHSL = (hex: string): string => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return "0 0% 0%";
+  
+  let r = parseInt(result[1], 16) / 255;
+  let g = parseInt(result[2], 16) / 255;
+  let b = parseInt(result[3], 16) / 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0, s = 0, l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+      case g: h = ((b - r) / d + 2) / 6; break;
+      case b: h = ((r - g) / d + 4) / 6; break;
+    }
+  }
+
+  h = Math.round(h * 360);
+  s = Math.round(s * 100);
+  l = Math.round(l * 100);
+
+  return `${h} ${s}% ${l}%`;
+};
+
+const hslToHex = (hsl: string): string => {
+  const parts = hsl.replace(/%/g, '').split(' ');
+  if (parts.length < 3) return "#000000";
+  const h = parseInt(parts[0]) || 0;
+  const s = (parseInt(parts[1]) || 0) / 100;
+  const l = (parseInt(parts[2]) || 0) / 100;
+
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+
+  let r = 0, g = 0, b = 0;
+  if (h < 60) { r = c; g = x; b = 0; }
+  else if (h < 120) { r = x; g = c; b = 0; }
+  else if (h < 180) { r = 0; g = c; b = x; }
+  else if (h < 240) { r = 0; g = x; b = c; }
+  else if (h < 300) { r = x; g = 0; b = c; }
+  else { r = c; g = 0; b = x; }
+
+  const toHex = (n: number) => {
+    const hex = Math.round((n + m) * 255).toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
+  };
+
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+};
+
+// ColorColumn component outside main component
+interface ColorColumnProps {
+  title: string;
+  bgValue: string;
+  bgOnChange: (v: string) => void;
+  fgValue: string;
+  fgOnChange: (v: string) => void;
+}
+
+const ColorColumn = ({ title, bgValue, bgOnChange, fgValue, fgOnChange }: ColorColumnProps) => (
+  <div className="space-y-3 text-center">
+    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{title}</h3>
+    <div className="space-y-1">
+      <Label className="text-xs">Fondo</Label>
+      <input
+        type="color"
+        value={hslToHex(bgValue)}
+        onChange={(e) => bgOnChange(hexToHSL(e.target.value))}
+        className="w-28 h-28 cursor-pointer p-1 rounded-md mx-auto block border"
+      />
+    </div>
+    <div className="space-y-1">
+      <Label className="text-xs">Texto</Label>
+      <input
+        type="color"
+        value={hslToHex(fgValue)}
+        onChange={(e) => fgOnChange(hexToHSL(e.target.value))}
+        className="w-28 h-10 cursor-pointer p-1 rounded-md mx-auto block border"
+      />
+    </div>
+    {/* Preview */}
+    <div 
+      className="w-28 mx-auto p-3 rounded-md"
+      style={{ background: `hsl(${bgValue})` }}
+    >
+      <span className="text-sm font-medium" style={{ color: `hsl(${fgValue})` }}>
+        Muestra
+      </span>
+    </div>
+  </div>
+);
 
 export default function SettingsThemeCorporate() {
   const { organizationTheme, updateOrganizationTheme, resetToOriginalTheme, loading } = useTheme();
@@ -81,108 +181,6 @@ export default function SettingsThemeCorporate() {
       setResetting(false);
     }
   };
-
-  const hexToHSL = (hex: string): string => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (!result) return "0 0% 0%";
-    
-    let r = parseInt(result[1], 16) / 255;
-    let g = parseInt(result[2], 16) / 255;
-    let b = parseInt(result[3], 16) / 255;
-
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let h = 0, s = 0, l = (max + min) / 2;
-
-    if (max !== min) {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      
-      switch (max) {
-        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-        case g: h = ((b - r) / d + 2) / 6; break;
-        case b: h = ((r - g) / d + 4) / 6; break;
-      }
-    }
-
-    h = Math.round(h * 360);
-    s = Math.round(s * 100);
-    l = Math.round(l * 100);
-
-    return `${h} ${s}% ${l}%`;
-  };
-
-  const hslToHex = (hsl: string): string => {
-    const parts = hsl.replace(/%/g, '').split(' ');
-    if (parts.length < 3) return "#000000";
-    const h = parseInt(parts[0]) || 0;
-    const s = (parseInt(parts[1]) || 0) / 100;
-    const l = (parseInt(parts[2]) || 0) / 100;
-
-    const c = (1 - Math.abs(2 * l - 1)) * s;
-    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-    const m = l - c / 2;
-
-    let r = 0, g = 0, b = 0;
-    if (h < 60) { r = c; g = x; b = 0; }
-    else if (h < 120) { r = x; g = c; b = 0; }
-    else if (h < 180) { r = 0; g = c; b = x; }
-    else if (h < 240) { r = 0; g = x; b = c; }
-    else if (h < 300) { r = x; g = 0; b = c; }
-    else { r = c; g = 0; b = x; }
-
-    const toHex = (n: number) => {
-      const hex = Math.round((n + m) * 255).toString(16);
-      return hex.length === 1 ? '0' + hex : hex;
-    };
-
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-  };
-
-  const ColorColumn = ({ 
-    title, 
-    bgValue, 
-    bgOnChange,
-    fgValue,
-    fgOnChange
-  }: { 
-    title: string;
-    bgValue: string; 
-    bgOnChange: (v: string) => void;
-    fgValue: string;
-    fgOnChange: (v: string) => void;
-  }) => (
-    <div className="space-y-3 text-center">
-      <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{title}</h3>
-      <div className="space-y-1">
-        <Label className="text-xs">Fondo</Label>
-        <Input
-          type="color"
-          value={hslToHex(bgValue)}
-          onChange={(e) => bgOnChange(hexToHSL(e.target.value))}
-          className="w-28 h-28 cursor-pointer p-1 rounded-md mx-auto block"
-        />
-      </div>
-      <div className="space-y-1">
-        <Label className="text-xs">Texto</Label>
-        <Input
-          type="color"
-          value={hslToHex(fgValue)}
-          onChange={(e) => fgOnChange(hexToHSL(e.target.value))}
-          className="w-28 h-10 cursor-pointer p-1 rounded-md mx-auto block"
-        />
-      </div>
-      {/* Preview */}
-      <div 
-        className="w-28 mx-auto p-3 rounded-md"
-        style={{ background: `hsl(${bgValue})` }}
-      >
-        <span className="text-sm font-medium" style={{ color: `hsl(${fgValue})` }}>
-          Muestra
-        </span>
-      </div>
-    </div>
-  );
 
   if (loading) {
     return (
