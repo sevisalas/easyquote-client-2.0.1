@@ -30,8 +30,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2, Save } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useProductionVariables } from "@/hooks/useProductionVariables";
 import type { ProductionVariable } from "@/hooks/useProductionVariables";
+import { useProductionPhases } from "@/hooks/useProductionPhases";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +47,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function ProductionVariables() {
   const { variables, isLoading, createVariable, updateVariable, deleteVariable } =
     useProductionVariables();
+  const { phases, isLoading: phasesLoading } = useProductionPhases();
   const { organization } = useSubscription();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -50,6 +59,7 @@ export default function ProductionVariables() {
     description: "",
     has_implicit_task: false,
     task_name: "",
+    task_phase_id: "",
     task_exclude_values: "",
   });
   const [maxDailyOrders, setMaxDailyOrders] = useState<number>(20);
@@ -95,6 +105,7 @@ export default function ProductionVariables() {
       description: formData.description,
       has_implicit_task: formData.has_implicit_task,
       task_name: formData.task_name,
+      task_phase_id: formData.task_phase_id || undefined,
       task_exclude_values: formData.task_exclude_values
         ? formData.task_exclude_values.split(",").map(v => v.trim()).filter(Boolean)
         : [],
@@ -105,6 +116,7 @@ export default function ProductionVariables() {
       description: "", 
       has_implicit_task: false, 
       task_name: "",
+      task_phase_id: "",
       task_exclude_values: "",
     });
   };
@@ -118,6 +130,7 @@ export default function ProductionVariables() {
         description: formData.description,
         has_implicit_task: formData.has_implicit_task,
         task_name: formData.task_name,
+        task_phase_id: formData.task_phase_id || undefined,
         task_exclude_values: formData.task_exclude_values
           ? formData.task_exclude_values.split(",").map(v => v.trim()).filter(Boolean)
           : [],
@@ -130,6 +143,7 @@ export default function ProductionVariables() {
       description: "", 
       has_implicit_task: false, 
       task_name: "",
+      task_phase_id: "",
       task_exclude_values: "",
     });
   };
@@ -148,6 +162,7 @@ export default function ProductionVariables() {
       description: variable.description || "",
       has_implicit_task: variable.has_implicit_task || false,
       task_name: variable.task_name || "",
+      task_phase_id: variable.task_phase_id || "",
       task_exclude_values: variable.task_exclude_values?.join(", ") || "",
     });
     setIsEditDialogOpen(true);
@@ -259,6 +274,12 @@ export default function ProductionVariables() {
                       <span className="font-medium">Tarea implícita:</span>{' '}
                       {variable.task_name}
                     </div>
+                    {variable.task_phase_id && (
+                      <div className="text-sm">
+                        <span className="font-medium">Fase:</span>{' '}
+                        {phases.find(p => p.id === variable.task_phase_id)?.display_name || 'No especificada'}
+                      </div>
+                    )}
                     {variable.task_exclude_values && variable.task_exclude_values.length > 0 && (
                       <div className="text-xs text-muted-foreground">
                         <span className="font-medium">Excluir valores:</span>{' '}
@@ -332,6 +353,30 @@ export default function ProductionVariables() {
                     onChange={(e) => setFormData({ ...formData, task_name: e.target.value })}
                     placeholder="ej: Plastificado"
                   />
+                </div>
+                <div>
+                  <Label htmlFor="task-phase">Fase de producción</Label>
+                  <Select 
+                    value={formData.task_phase_id} 
+                    onValueChange={(value) => setFormData({ ...formData, task_phase_id: value })}
+                  >
+                    <SelectTrigger id="task-phase">
+                      <SelectValue placeholder="Selecciona una fase" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {phases.map((phase) => (
+                        <SelectItem key={phase.id} value={phase.id}>
+                          <span className="flex items-center gap-2">
+                            <span
+                              className="w-2.5 h-2.5 rounded-full"
+                              style={{ backgroundColor: phase.color }}
+                            />
+                            {phase.display_name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="exclude-values">Valores que NO crean la tarea (separados por comas)</Label>
@@ -412,6 +457,30 @@ export default function ProductionVariables() {
                     onChange={(e) => setFormData({ ...formData, task_name: e.target.value })}
                     placeholder="ej: Plastificado"
                   />
+                </div>
+                <div>
+                  <Label htmlFor="edit-task-phase">Fase de producción</Label>
+                  <Select 
+                    value={formData.task_phase_id} 
+                    onValueChange={(value) => setFormData({ ...formData, task_phase_id: value })}
+                  >
+                    <SelectTrigger id="edit-task-phase">
+                      <SelectValue placeholder="Selecciona una fase" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {phases.map((phase) => (
+                        <SelectItem key={phase.id} value={phase.id}>
+                          <span className="flex items-center gap-2">
+                            <span
+                              className="w-2.5 h-2.5 rounded-full"
+                              style={{ backgroundColor: phase.color }}
+                            />
+                            {phase.display_name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="edit-exclude-values">Valores que NO crean la tarea (separados por comas)</Label>
