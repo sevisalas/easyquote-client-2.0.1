@@ -438,15 +438,6 @@ export function AppSidebar() {
                 </NavLink>
               </SidebarMenuButton>
             </SidebarMenuItem>}
-          {/* Tema personal - Accesible para TODOS los usuarios */}
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Modo claro/oscuro" isActive={currentPath === "/configuracion/tema"} className="h-7 px-2">
-              <NavLink to="/configuracion/tema" className={getNavCls}>
-                <Palette className="mr-2 h-4 w-4" />
-                {!isCollapsed && <span>Tema</span>}
-              </NavLink>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Contraer menú" className="h-7 px-2">
               <button onClick={toggleSidebar} className="w-full flex items-center justify-start">
