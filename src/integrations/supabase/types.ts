@@ -1030,6 +1030,7 @@ export type Database = {
           organization_id: string
           task_exclude_values: string[] | null
           task_name: string | null
+          task_phase_id: string | null
           updated_at: string
           variable_type: string
         }
@@ -1043,6 +1044,7 @@ export type Database = {
           organization_id: string
           task_exclude_values?: string[] | null
           task_name?: string | null
+          task_phase_id?: string | null
           updated_at?: string
           variable_type?: string
         }
@@ -1056,6 +1058,7 @@ export type Database = {
           organization_id?: string
           task_exclude_values?: string[] | null
           task_name?: string | null
+          task_phase_id?: string | null
           updated_at?: string
           variable_type?: string
         }
@@ -1065,6 +1068,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_variables_task_phase_id_fkey"
+            columns: ["task_phase_id"]
+            isOneToOne: false
+            referencedRelation: "production_phases"
             referencedColumns: ["id"]
           },
         ]
