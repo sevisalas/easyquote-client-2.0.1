@@ -325,7 +325,7 @@ export default function Additionals() {
         </Dialog>
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid gap-2">
         {additionals.length === 0 ? (
           <Card>
             <CardContent className="py-6">
@@ -337,68 +337,66 @@ export default function Additionals() {
           </Card>
         ) : (
           additionals.map((additional) => (
-            <Card key={additional.id}>
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-base">{additional.name}</CardTitle>
-                    {additional.description && (
-                      <CardDescription className="text-xs mt-1">{additional.description}</CardDescription>
-                    )}
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(additional)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(additional.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+            <Card key={additional.id} className="overflow-hidden">
+              <div className="flex items-center justify-between p-3 border-b bg-muted/30">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold truncate">{additional.name}</h3>
+                  {additional.description && (
+                    <p className="text-xs text-muted-foreground truncate">{additional.description}</p>
+                  )}
                 </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-2">
-                  <div className="grid grid-cols-3 gap-3 text-xs">
-                    <div>
-                      <p className="font-medium text-muted-foreground">Asignar a:</p>
-                      <p className="text-sm">{additional.assignment_type === "article" ? "Artículo" : "Presupuesto"}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-muted-foreground">Tipo:</p>
-                       <p className="text-sm">
-                         {additional.type === "net_amount" 
-                           ? "Importe Neto" 
-                           : additional.type === "quantity_multiplier" 
-                           ? "Importe Unitario"
-                           : "Porcentaje del Subtotal"
-                         }
-                       </p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-muted-foreground">Valor por defecto:</p>
-                      <p className="text-sm">
-                        {additional.type === "percentage" 
-                          ? `${additional.default_value}%` 
-                          : `€${additional.default_value.toFixed(2)}`
-                        }
-                      </p>
-                    </div>
+                <div className="flex gap-1 ml-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => handleEdit(additional)}
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => handleDelete(additional.id)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              <div className="p-3">
+                <div className="flex items-center gap-4 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground">Asignar a:</span>
+                    <span className="font-medium">{additional.assignment_type === "article" ? "Artículo" : "Presupuesto"}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground">Tipo:</span>
+                    <span className="font-medium">
+                      {additional.type === "net_amount" 
+                        ? "Importe Neto" 
+                        : additional.type === "quantity_multiplier" 
+                        ? "Importe Unitario"
+                        : "Porcentaje del Subtotal"
+                      }
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground">Valor:</span>
+                    <span className="font-medium">
+                      {additional.type === "percentage" 
+                        ? `${additional.default_value}%` 
+                        : `€${additional.default_value.toFixed(2)}`
+                      }
+                    </span>
                   </div>
                   {additional.is_discount && (
-                    <div className="flex items-center gap-2 text-xs text-primary">
-                      <span className="font-medium">✓ Marcado como descuento</span>
+                    <div className="flex items-center gap-1 text-primary ml-auto">
+                      <span className="font-medium">✓ Descuento</span>
                     </div>
                   )}
                 </div>
-              </CardContent>
+              </div>
             </Card>
           ))
         )}
