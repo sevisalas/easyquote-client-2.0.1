@@ -148,14 +148,16 @@ serve(async (req: Request): Promise<Response> => {
         }
       }
     } else {
-      // No inputs, use simple GET
-      console.log("easyquote-pricing: no inputs, using simple GET");
+      // No inputs - use PATCH with empty array to get full outputs
+      console.log("easyquote-pricing: no inputs, using PATCH with empty array to get full response");
       res = await fetch(baseUrl, {
-        method: "GET",
+        method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify([]),
       });
     }
 
