@@ -76,23 +76,37 @@ export const useTheme = () => {
     const isDark = userVariant === 'dark' || 
       (userVariant === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     
+    // First, remove any custom properties to let CSS defaults work
+    root.style.removeProperty('--primary');
+    root.style.removeProperty('--secondary');
+    root.style.removeProperty('--accent');
+    root.style.removeProperty('--muted');
+    root.style.removeProperty('--primary-foreground');
+    
+    // Toggle dark class
     root.classList.toggle('dark', isDark);
 
-    // Apply organization theme colors if available
+    // Apply organization theme colors if available (only in light mode or with adjusted dark colors)
     if (organizationTheme) {
-      root.style.setProperty('--primary', organizationTheme.primary_color);
-      root.style.setProperty('--accent', organizationTheme.accent_color);
-      
-      // Adjust secondary color based on variant
       if (isDark) {
-        // Use a darker secondary for dark mode
-        root.style.setProperty('--secondary', '217 32.6% 17.5%');
+        // For dark mode, lighten the primary color and adjust others
+        const primaryHSL = organizationTheme.primary_color.split(' ').map(v => parseFloat(v));
+        if (primaryHSL.length === 3) {
+          // Increase lightness for dark mode visibility
+          const adjustedLightness = Math.min(primaryHSL[2] + 25, 75);
+          root.style.setProperty('--primary', `${primaryHSL[0]} ${primaryHSL[1]}% ${adjustedLightness}%`);
+          root.style.setProperty('--primary-foreground', '0 0% 0%');
+        }
+        // Keep default dark mode colors for secondary, accent, muted
       } else {
+        // Light mode - apply organization colors directly
+        root.style.setProperty('--primary', organizationTheme.primary_color);
         root.style.setProperty('--secondary', organizationTheme.secondary_color);
-      }
-      
-      if (organizationTheme.muted_color) {
-        root.style.setProperty('--muted', organizationTheme.muted_color);
+        root.style.setProperty('--accent', organizationTheme.accent_color);
+        
+        if (organizationTheme.muted_color) {
+          root.style.setProperty('--muted', organizationTheme.muted_color);
+        }
       }
     }
   };
