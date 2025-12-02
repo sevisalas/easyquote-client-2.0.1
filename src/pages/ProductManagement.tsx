@@ -1666,19 +1666,12 @@ export default function ProductManagement() {
                     <div className="space-y-3">
                       {productOutputs.map((output, index) => (
                       <div key={output.id} className="p-4 border rounded-lg">
-                        <div className="flex justify-between items-start mb-4">
+                        <div className="mb-4">
                           <h4 className="font-medium">Campo nº {index + 1}</h4>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteOutput(output.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
                         </div>
                         
-                        <div className="grid grid-cols-4 gap-4">
-                          <div>
+                        <div className="grid grid-cols-12 gap-2 items-end">
+                          <div className="col-span-2">
                             <Label>Hoja</Label>
                             <Select
                               value={output.sheet || ""}
@@ -1691,7 +1684,6 @@ export default function ProductManagement() {
                                 <SelectValue placeholder={output.sheet || "Seleccionar hoja"} />
                               </SelectTrigger>
                               <SelectContent className="bg-background border shadow-lg z-50">
-                                {/* Mostrar valor actual si existe y no está en la lista */}
                                 {output.sheet && !excelSheets.includes(output.sheet) && (
                                   <SelectItem value={output.sheet}>
                                     {output.sheet}
@@ -1705,29 +1697,29 @@ export default function ProductManagement() {
                               </SelectContent>
                             </Select>
                           </div>
-                          <div>
+                          <div className="col-span-2">
                             <Label>Rótulo</Label>
                             <Input
-                              value={output.nameCell || ""}
+                              defaultValue={output.nameCell || ""}
                               placeholder="ej: A25"
-                              onChange={(e) => {
+                              onBlur={(e) => {
                                 const updatedOutput = { ...output, nameCell: e.target.value };
                                 updateOutputMutation.mutate(updatedOutput);
                               }}
                             />
                           </div>
-                          <div>
+                          <div className="col-span-2">
                             <Label>Valor por defecto</Label>
                             <Input
-                              value={output.valueCell || ""}
+                              defaultValue={output.valueCell || ""}
                               placeholder="ej: B25"
-                              onChange={(e) => {
+                              onBlur={(e) => {
                                 const updatedOutput = { ...output, valueCell: e.target.value };
                                 updateOutputMutation.mutate(updatedOutput);
                               }}
                             />
                           </div>
-                          <div>
+                          <div className="col-span-2">
                             <Label>Tipo</Label>
                             <Select
                               value={output.outputTypeId?.toString() || ""}
@@ -1747,6 +1739,28 @@ export default function ProductManagement() {
                                 ))}
                               </SelectContent>
                             </Select>
+                          </div>
+                          <div className="col-span-3"></div>
+                          <div className="col-span-1">
+                            <Label>Acción</Label>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  updateOutputMutation.mutate(output);
+                                }}
+                              >
+                                <Save className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteOutput(output.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
 
