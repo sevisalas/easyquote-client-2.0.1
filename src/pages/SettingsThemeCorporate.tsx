@@ -123,6 +123,7 @@ export default function SettingsThemeCorporate() {
   const [sidebarBackground, setSidebarBackground] = useState("0 0% 98%");
   const [sidebarForeground, setSidebarForeground] = useState("240 5% 26%");
   const [sidebarAccent, setSidebarAccent] = useState("240 5% 96%");
+  const [sidebarAccentForeground, setSidebarAccentForeground] = useState("240 6% 10%");
 
   useEffect(() => {
     document.title = "Tema Corporativo - EasyQuote";
@@ -141,6 +142,7 @@ export default function SettingsThemeCorporate() {
       if (organizationTheme.sidebar_background) setSidebarBackground(organizationTheme.sidebar_background);
       if (organizationTheme.sidebar_foreground) setSidebarForeground(organizationTheme.sidebar_foreground);
       if (organizationTheme.sidebar_accent) setSidebarAccent(organizationTheme.sidebar_accent);
+      if (organizationTheme.sidebar_accent_foreground) setSidebarAccentForeground(organizationTheme.sidebar_accent_foreground);
     }
   }, [organizationTheme]);
 
@@ -159,7 +161,8 @@ export default function SettingsThemeCorporate() {
         muted_foreground: mutedForeground,
         sidebar_background: sidebarBackground,
         sidebar_foreground: sidebarForeground,
-        sidebar_accent: sidebarAccent
+        sidebar_accent: sidebarAccent,
+        sidebar_accent_foreground: sidebarAccentForeground
       });
       toast.success("Tema corporativo guardado correctamente");
     } catch (error) {
@@ -185,6 +188,7 @@ export default function SettingsThemeCorporate() {
       setSidebarBackground("0 0% 98%");
       setSidebarForeground("240 5% 26%");
       setSidebarAccent("240 5% 96%");
+      setSidebarAccentForeground("240 6% 10%");
       toast.success("Tema restaurado al original de EasyQuote");
     } catch (error) {
       console.error('Error resetting theme:', error);
@@ -248,7 +252,7 @@ export default function SettingsThemeCorporate() {
           {/* Sidebar colors */}
           <div className="border-t pt-6 mb-6">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-4">Sidebar</h3>
-            <div className="grid gap-8 grid-cols-2 md:grid-cols-3">
+            <div className="grid gap-8 grid-cols-2 md:grid-cols-4">
               <div className="space-y-3 text-center">
                 <h4 className="font-medium text-sm">Fondo</h4>
                 <input
@@ -268,11 +272,20 @@ export default function SettingsThemeCorporate() {
                 />
               </div>
               <div className="space-y-3 text-center">
-                <h4 className="font-medium text-sm">Destacado</h4>
+                <h4 className="font-medium text-sm">Fondo Destacado</h4>
                 <input
                   type="color"
                   value={hslToHex(sidebarAccent)}
                   onChange={(e) => setSidebarAccent(hexToHSL(e.target.value))}
+                  className="w-28 h-20 cursor-pointer p-1 rounded-md mx-auto block border"
+                />
+              </div>
+              <div className="space-y-3 text-center">
+                <h4 className="font-medium text-sm">Texto Destacado</h4>
+                <input
+                  type="color"
+                  value={hslToHex(sidebarAccentForeground)}
+                  onChange={(e) => setSidebarAccentForeground(hexToHSL(e.target.value))}
                   className="w-28 h-20 cursor-pointer p-1 rounded-md mx-auto block border"
                 />
               </div>
@@ -289,7 +302,7 @@ export default function SettingsThemeCorporate() {
                 className="mt-2 p-2 rounded"
                 style={{ background: `hsl(${sidebarAccent})` }}
               >
-                <span className="text-sm font-medium" style={{ color: `hsl(${sidebarForeground})` }}>
+                <span className="text-sm font-medium" style={{ color: `hsl(${sidebarAccentForeground})` }}>
                   Elemento destacado
                 </span>
               </div>
