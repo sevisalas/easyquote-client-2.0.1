@@ -12,7 +12,6 @@ export default function SettingsThemeCorporate() {
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
   
-  const [themeName, setThemeName] = useState("Tema corporativo");
   const [primaryColor, setPrimaryColor] = useState("332 61% 49%");
   const [primaryForeground, setPrimaryForeground] = useState("0 0% 100%");
   const [secondaryColor, setSecondaryColor] = useState("266 93% 17%");
@@ -28,7 +27,6 @@ export default function SettingsThemeCorporate() {
 
   useEffect(() => {
     if (organizationTheme) {
-      setThemeName(organizationTheme.name);
       setPrimaryColor(organizationTheme.primary_color);
       setPrimaryForeground(organizationTheme.primary_foreground || "0 0% 100%");
       setSecondaryColor(organizationTheme.secondary_color);
@@ -44,7 +42,7 @@ export default function SettingsThemeCorporate() {
     setSaving(true);
     try {
       await updateOrganizationTheme({
-        name: themeName,
+        name: "Tema corporativo",
         primary_color: primaryColor,
         primary_foreground: primaryForeground,
         secondary_color: secondaryColor,
@@ -67,7 +65,6 @@ export default function SettingsThemeCorporate() {
     setResetting(true);
     try {
       await resetToOriginalTheme();
-      setThemeName("Tema corporativo");
       setPrimaryColor("332 61% 49%");
       setPrimaryForeground("0 0% 100%");
       setSecondaryColor("266 93% 17%");
@@ -155,7 +152,7 @@ export default function SettingsThemeCorporate() {
     fgValue: string;
     fgOnChange: (v: string) => void;
   }) => (
-    <div className="space-y-2 text-center">
+    <div className="space-y-3 text-center">
       <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{title}</h3>
       <div className="space-y-1">
         <Label className="text-xs">Fondo</Label>
@@ -163,7 +160,7 @@ export default function SettingsThemeCorporate() {
           type="color"
           value={hslToHex(bgValue)}
           onChange={(e) => bgOnChange(hexToHSL(e.target.value))}
-          className="w-20 h-20 cursor-pointer p-1 rounded-md mx-auto block"
+          className="w-28 h-28 cursor-pointer p-1 rounded-md mx-auto block"
         />
       </div>
       <div className="space-y-1">
@@ -172,8 +169,17 @@ export default function SettingsThemeCorporate() {
           type="color"
           value={hslToHex(fgValue)}
           onChange={(e) => fgOnChange(hexToHSL(e.target.value))}
-          className="w-20 h-8 cursor-pointer p-1 rounded-md mx-auto block"
+          className="w-28 h-10 cursor-pointer p-1 rounded-md mx-auto block"
         />
+      </div>
+      {/* Preview */}
+      <div 
+        className="w-28 mx-auto p-3 rounded-md"
+        style={{ background: `hsl(${bgValue})` }}
+      >
+        <span className="text-sm font-medium" style={{ color: `hsl(${fgValue})` }}>
+          Muestra
+        </span>
       </div>
     </div>
   );
@@ -196,23 +202,9 @@ export default function SettingsThemeCorporate() {
       </div>
 
       <Card>
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <Label htmlFor="theme-name">Nombre del tema</Label>
-              <Input
-                id="theme-name"
-                value={themeName}
-                onChange={(e) => setThemeName(e.target.value)}
-                placeholder="Tema corporativo"
-                className="mt-1 max-w-xs"
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="pt-6">
           {/* Four columns: Primary, Secondary, Accent, Muted */}
-          <div className="grid gap-6 grid-cols-2 md:grid-cols-4">
+          <div className="grid gap-8 grid-cols-2 md:grid-cols-4 mb-6">
             <ColorColumn
               title="Primario"
               bgValue={primaryColor}
@@ -259,39 +251,6 @@ export default function SettingsThemeCorporate() {
                 Restaurar Original
               </Button>
             )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Vista Previa</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex gap-4 flex-wrap">
-              <Button style={{ background: `hsl(${primaryColor})`, color: `hsl(${primaryForeground})` }}>
-                Botón Primario
-              </Button>
-              <Button variant="secondary" style={{ background: `hsl(${secondaryColor})`, color: `hsl(${secondaryForeground})` }}>
-                Botón Secundario
-              </Button>
-              <Button variant="outline" style={{ borderColor: `hsl(${accentColor})`, color: `hsl(${accentColor})` }}>
-                Botón Outline
-              </Button>
-            </div>
-            
-            <div className="p-4 rounded-lg border" style={{ background: `hsl(${mutedColor})` }}>
-              <p className="text-sm" style={{ color: `hsl(${mutedForeground})` }}>
-                Texto atenuado sobre fondo atenuado
-              </p>
-            </div>
-
-            <div className="p-4 rounded-lg" style={{ background: `hsl(${accentColor})` }}>
-              <p className="text-sm" style={{ color: `hsl(${accentForeground})` }}>
-                Texto sobre fondo de acento
-              </p>
-            </div>
           </div>
         </CardContent>
       </Card>
