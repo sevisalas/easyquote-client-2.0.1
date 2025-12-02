@@ -657,6 +657,9 @@ export type Database = {
           primary_foreground: string
           secondary_color: string
           secondary_foreground: string
+          sidebar_accent: string | null
+          sidebar_background: string | null
+          sidebar_foreground: string | null
           updated_at: string
         }
         Insert: {
@@ -673,6 +676,9 @@ export type Database = {
           primary_foreground?: string
           secondary_color?: string
           secondary_foreground?: string
+          sidebar_accent?: string | null
+          sidebar_background?: string | null
+          sidebar_foreground?: string | null
           updated_at?: string
         }
         Update: {
@@ -689,6 +695,9 @@ export type Database = {
           primary_foreground?: string
           secondary_color?: string
           secondary_foreground?: string
+          sidebar_accent?: string | null
+          sidebar_background?: string | null
+          sidebar_foreground?: string | null
           updated_at?: string
         }
         Relationships: [

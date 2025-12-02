@@ -120,6 +120,9 @@ export default function SettingsThemeCorporate() {
   const [accentForeground, setAccentForeground] = useState("222 47% 11%");
   const [mutedColor, setMutedColor] = useState("210 40% 96%");
   const [mutedForeground, setMutedForeground] = useState("215 16% 47%");
+  const [sidebarBackground, setSidebarBackground] = useState("0 0% 98%");
+  const [sidebarForeground, setSidebarForeground] = useState("240 5% 26%");
+  const [sidebarAccent, setSidebarAccent] = useState("240 5% 96%");
 
   useEffect(() => {
     document.title = "Tema Corporativo - EasyQuote";
@@ -135,6 +138,9 @@ export default function SettingsThemeCorporate() {
       setAccentForeground(organizationTheme.accent_foreground || "222 47% 11%");
       if (organizationTheme.muted_color) setMutedColor(organizationTheme.muted_color);
       if (organizationTheme.muted_foreground) setMutedForeground(organizationTheme.muted_foreground);
+      if (organizationTheme.sidebar_background) setSidebarBackground(organizationTheme.sidebar_background);
+      if (organizationTheme.sidebar_foreground) setSidebarForeground(organizationTheme.sidebar_foreground);
+      if (organizationTheme.sidebar_accent) setSidebarAccent(organizationTheme.sidebar_accent);
     }
   }, [organizationTheme]);
 
@@ -150,7 +156,10 @@ export default function SettingsThemeCorporate() {
         accent_color: accentColor,
         accent_foreground: accentForeground,
         muted_color: mutedColor,
-        muted_foreground: mutedForeground
+        muted_foreground: mutedForeground,
+        sidebar_background: sidebarBackground,
+        sidebar_foreground: sidebarForeground,
+        sidebar_accent: sidebarAccent
       });
       toast.success("Tema corporativo guardado correctamente");
     } catch (error) {
@@ -173,6 +182,9 @@ export default function SettingsThemeCorporate() {
       setAccentForeground("222 47% 11%");
       setMutedColor("210 40% 96%");
       setMutedForeground("215 16% 47%");
+      setSidebarBackground("0 0% 98%");
+      setSidebarForeground("240 5% 26%");
+      setSidebarAccent("240 5% 96%");
       toast.success("Tema restaurado al original de EasyQuote");
     } catch (error) {
       console.error('Error resetting theme:', error);
@@ -201,8 +213,8 @@ export default function SettingsThemeCorporate() {
 
       <Card>
         <CardContent className="pt-6">
-          {/* Four columns: Primary, Secondary, Accent, Muted */}
-          <div className="grid gap-8 grid-cols-2 md:grid-cols-4 mb-6">
+          {/* Main colors: Primary, Secondary, Accent, Muted */}
+          <div className="grid gap-8 grid-cols-2 md:grid-cols-4 mb-8">
             <ColorColumn
               title="Primario"
               bgValue={primaryColor}
@@ -231,6 +243,57 @@ export default function SettingsThemeCorporate() {
               fgValue={mutedForeground}
               fgOnChange={setMutedForeground}
             />
+          </div>
+          
+          {/* Sidebar colors */}
+          <div className="border-t pt-6 mb-6">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-4">Sidebar</h3>
+            <div className="grid gap-8 grid-cols-2 md:grid-cols-3">
+              <div className="space-y-3 text-center">
+                <h4 className="font-medium text-sm">Fondo</h4>
+                <input
+                  type="color"
+                  value={hslToHex(sidebarBackground)}
+                  onChange={(e) => setSidebarBackground(hexToHSL(e.target.value))}
+                  className="w-28 h-20 cursor-pointer p-1 rounded-md mx-auto block border"
+                />
+              </div>
+              <div className="space-y-3 text-center">
+                <h4 className="font-medium text-sm">Texto</h4>
+                <input
+                  type="color"
+                  value={hslToHex(sidebarForeground)}
+                  onChange={(e) => setSidebarForeground(hexToHSL(e.target.value))}
+                  className="w-28 h-20 cursor-pointer p-1 rounded-md mx-auto block border"
+                />
+              </div>
+              <div className="space-y-3 text-center">
+                <h4 className="font-medium text-sm">Destacado</h4>
+                <input
+                  type="color"
+                  value={hslToHex(sidebarAccent)}
+                  onChange={(e) => setSidebarAccent(hexToHSL(e.target.value))}
+                  className="w-28 h-20 cursor-pointer p-1 rounded-md mx-auto block border"
+                />
+              </div>
+            </div>
+            {/* Sidebar preview */}
+            <div 
+              className="w-full max-w-xs mx-auto mt-4 p-4 rounded-md"
+              style={{ background: `hsl(${sidebarBackground})` }}
+            >
+              <span className="text-sm" style={{ color: `hsl(${sidebarForeground})` }}>
+                Elemento normal
+              </span>
+              <div 
+                className="mt-2 p-2 rounded"
+                style={{ background: `hsl(${sidebarAccent})` }}
+              >
+                <span className="text-sm font-medium" style={{ color: `hsl(${sidebarForeground})` }}>
+                  Elemento destacado
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="border-t pt-6 flex flex-col sm:flex-row gap-4">
