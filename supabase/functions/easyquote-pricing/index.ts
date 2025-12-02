@@ -164,6 +164,20 @@ serve(async (req: Request): Promise<Response> => {
     let data: any;
     try {
       data = text ? JSON.parse(text) : {};
+      // Log the structure of the response to understand outputs
+      console.log("easyquote-pricing: parsed response keys:", Object.keys(data));
+      if (data.outputs) {
+        console.log("easyquote-pricing: outputs count:", data.outputs.length, "sample:", JSON.stringify(data.outputs.slice(0, 2)));
+      }
+      if (data.outputValues) {
+        console.log("easyquote-pricing: outputValues count:", data.outputValues.length);
+      }
+      if (data.priceOutputs) {
+        console.log("easyquote-pricing: priceOutputs count:", data.priceOutputs.length);
+      }
+      if (data.price !== undefined) {
+        console.log("easyquote-pricing: price field:", data.price);
+      }
     } catch (e) {
       console.error("easyquote-pricing: JSON parse error", e, text);
       return new Response(JSON.stringify({ error: "Invalid response from EasyQuote" }), {
