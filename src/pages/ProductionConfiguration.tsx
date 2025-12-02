@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -585,7 +586,7 @@ export default function ProductionConfiguration() {
 
       {/* Variable Create Dialog */}
       <Dialog open={isCreateVarDialogOpen} onOpenChange={setIsCreateVarDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nueva variable de producción</DialogTitle>
             <DialogDescription>
@@ -620,6 +621,67 @@ export default function ProductionConfiguration() {
                 placeholder="ej: quantity, material, finish"
               />
             </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="has-implicit-task"
+                checked={varFormData.has_implicit_task}
+                onCheckedChange={(checked) => setVarFormData({ ...varFormData, has_implicit_task: checked as boolean })}
+              />
+              <Label htmlFor="has-implicit-task">Tiene tarea implícita</Label>
+            </div>
+            
+            {varFormData.has_implicit_task && (
+              <>
+                <div>
+                  <Label htmlFor="task-name">Nombre de la tarea</Label>
+                  <Input
+                    id="task-name"
+                    value={varFormData.task_name}
+                    onChange={(e) => setVarFormData({ ...varFormData, task_name: e.target.value })}
+                    placeholder="ej: Plastificar"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="task-phase">Fase de producción</Label>
+                  <Select 
+                    value={varFormData.task_phase_id} 
+                    onValueChange={(value) => setVarFormData({ ...varFormData, task_phase_id: value })}
+                  >
+                    <SelectTrigger id="task-phase">
+                      <SelectValue placeholder="Selecciona una fase" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {phases.map((phase) => (
+                        <SelectItem key={phase.id} value={phase.id}>
+                          <span className="flex items-center gap-2">
+                            <span
+                              className="w-2.5 h-2.5 rounded-full"
+                              style={{ backgroundColor: phase.color }}
+                            />
+                            {phase.display_name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="exclude-values">Valores de exclusión (separados por comas)</Label>
+                  <Input
+                    id="exclude-values"
+                    value={varFormData.task_exclude_values.join(', ')}
+                    onChange={(e) => setVarFormData({ 
+                      ...varFormData, 
+                      task_exclude_values: e.target.value.split(',').map(v => v.trim()).filter(v => v) 
+                    })}
+                    placeholder="ej: No, Ninguno, Sin plastificar"
+                  />
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateVarDialogOpen(false)}>
@@ -637,7 +699,7 @@ export default function ProductionConfiguration() {
 
       {/* Variable Edit Dialog */}
       <Dialog open={isEditVarDialogOpen} onOpenChange={setIsEditVarDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar variable de producción</DialogTitle>
           </DialogHeader>
@@ -666,6 +728,67 @@ export default function ProductionConfiguration() {
                 onChange={(e) => setVarFormData({ ...varFormData, variable_type: e.target.value })}
               />
             </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="edit-has-implicit-task"
+                checked={varFormData.has_implicit_task}
+                onCheckedChange={(checked) => setVarFormData({ ...varFormData, has_implicit_task: checked as boolean })}
+              />
+              <Label htmlFor="edit-has-implicit-task">Tiene tarea implícita</Label>
+            </div>
+            
+            {varFormData.has_implicit_task && (
+              <>
+                <div>
+                  <Label htmlFor="edit-task-name">Nombre de la tarea</Label>
+                  <Input
+                    id="edit-task-name"
+                    value={varFormData.task_name}
+                    onChange={(e) => setVarFormData({ ...varFormData, task_name: e.target.value })}
+                    placeholder="ej: Plastificar"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="edit-task-phase">Fase de producción</Label>
+                  <Select 
+                    value={varFormData.task_phase_id} 
+                    onValueChange={(value) => setVarFormData({ ...varFormData, task_phase_id: value })}
+                  >
+                    <SelectTrigger id="edit-task-phase">
+                      <SelectValue placeholder="Selecciona una fase" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {phases.map((phase) => (
+                        <SelectItem key={phase.id} value={phase.id}>
+                          <span className="flex items-center gap-2">
+                            <span
+                              className="w-2.5 h-2.5 rounded-full"
+                              style={{ backgroundColor: phase.color }}
+                            />
+                            {phase.display_name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="edit-exclude-values">Valores de exclusión (separados por comas)</Label>
+                  <Input
+                    id="edit-exclude-values"
+                    value={varFormData.task_exclude_values.join(', ')}
+                    onChange={(e) => setVarFormData({ 
+                      ...varFormData, 
+                      task_exclude_values: e.target.value.split(',').map(v => v.trim()).filter(v => v) 
+                    })}
+                    placeholder="ej: No, Ninguno, Sin plastificar"
+                  />
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditVarDialogOpen(false)}>
