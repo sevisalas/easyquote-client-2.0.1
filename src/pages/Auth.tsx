@@ -14,6 +14,17 @@ const Auth = () => {
   useEffect(() => {
     document.title = "Iniciar sesión | App";
 
+    // Reset to default EasyQuote colors on login page
+    const root = document.documentElement;
+    root.style.removeProperty('--primary');
+    root.style.removeProperty('--primary-foreground');
+    root.style.removeProperty('--secondary');
+    root.style.removeProperty('--secondary-foreground');
+    root.style.removeProperty('--accent');
+    root.style.removeProperty('--accent-foreground');
+    root.style.removeProperty('--muted');
+    root.style.removeProperty('--muted-foreground');
+
     // If already logged in, redirect to dashboard
     supabase.auth.getSession().then(({
       data: {

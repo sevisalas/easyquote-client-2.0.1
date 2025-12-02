@@ -155,20 +155,12 @@ export default function SettingsThemeCorporate() {
   }) => (
     <div className="space-y-2">
       <Label>{label}</Label>
-      <div className="flex gap-2">
-        <Input
-          type="color"
-          value={hslToHex(value)}
-          onChange={(e) => onChange(hexToHSL(e.target.value))}
-          className="w-14 h-10 cursor-pointer p-1"
-        />
-        <Input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="0 0% 0%"
-          className="flex-1 font-mono text-sm"
-        />
-      </div>
+      <Input
+        type="color"
+        value={hslToHex(value)}
+        onChange={(e) => onChange(hexToHSL(e.target.value))}
+        className="w-full h-12 cursor-pointer p-1 rounded-md"
+      />
       <p className="text-xs text-muted-foreground">{description}</p>
     </div>
   );
