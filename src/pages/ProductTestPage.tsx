@@ -162,9 +162,29 @@ export default function ProductTestPage() {
 
       console.log("Making pricing call with inputs:", debouncedPromptValues);
 
-      // Always prepare inputs, even if empty
-      const norm: Record<string, any> = {};
+      // CRITICAL: EasyQuote API PATCH requires ALL prompts to be sent, not just modified ones
+      // Start with all prompt values from productDetail (current values from API)
+      const allPromptValues: Record<string, any> = {};
+      
+      // First, collect all current values from the product prompts
+      (productDetail?.prompts || []).forEach((p: any) => {
+        if (p.currentValue !== undefined && p.currentValue !== null) {
+          allPromptValues[p.id] = p.currentValue;
+        }
+      });
+      
+      // Override with user-modified values
       Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) {
+          allPromptValues[k] = v;
+        }
+      });
+
+      console.log("All prompt values (merged):", allPromptValues);
+
+      // Now normalize all values for the API
+      const norm: Record<string, any> = {};
+      Object.entries(allPromptValues).forEach(([k, v]) => {
         if (v === "" || v === undefined || v === null) return;
 
         // Find the prompt to check its type
@@ -213,8 +233,7 @@ export default function ProductTestPage() {
 
       // Convert to array format for API
       const inputsArray = Object.entries(norm).map(([id, value]) => ({ id, value }));
-
-      console.log("Sending inputs to API:", inputsArray);
+      console.log("Sending ALL prompts to API:", inputsArray.length, "prompts", inputsArray);
 
       const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
         token,
