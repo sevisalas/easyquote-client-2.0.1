@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ClientCard } from "@/components/clientes/ClientCard";
+import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 
 interface LocalClient {
   id: string;
@@ -26,12 +27,14 @@ export default function Clientes() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { organization, membership } = useSubscription();
+  const { isHoldedActive } = useHoldedIntegration();
   const [clientes, setClientes] = useState<LocalClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [totalClients, setTotalClients] = useState(0);
+  const [isImportingContacts, setIsImportingContacts] = useState(false);
   const itemsPerPage = 25;
 
   const fetchClientes = async (isInitialLoad = false) => {
@@ -163,6 +166,50 @@ export default function Clientes() {
     return () => clearTimeout(timer);
   }, [searchTerm, organization, membership]);
 
+  const handleImportContacts = async () => {
+    const organizationId = organization?.id || membership?.organization?.id;
+    if (!organizationId) {
+      toast({
+        title: "Error",
+        description: "No se encontró la organización",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsImportingContacts(true);
+    
+    toast({
+      title: "Importando contactos...",
+      description: "Este proceso puede tardar aproximadamente 1 minuto.",
+    });
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('holded-import-customers', {
+        body: { organizationId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Contactos actualizados",
+        description: `Se importaron ${data?.imported || 0} nuevos clientes de ${data?.total || 0} totales`,
+      });
+      
+      // Recargar la lista
+      fetchClientes(true);
+    } catch (error: any) {
+      console.error('Error importing Holded contacts:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudieron importar los contactos",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImportingContacts(false);
+    }
+  };
+
   const deleteCliente = async (id: string) => {
     const confirmed = window.confirm("¿Estás seguro de que quieres eliminar este cliente?");
     if (!confirmed) return;
@@ -204,6 +251,18 @@ export default function Clientes() {
           <p className="text-muted-foreground text-sm">Gestiona tus clientes</p>
         </div>
         <div className="flex gap-2">
+          {isHoldedActive && (
+            <Button
+              onClick={handleImportContacts}
+              disabled={isImportingContacts}
+              variant="outline"
+              size="sm"
+              className="text-xs h-7"
+            >
+              <Download className="w-3 h-3 mr-1" />
+              {isImportingContacts ? "Importando..." : "Actualizar contactos"}
+            </Button>
+          )}
           <Button 
             onClick={() => navigate("/clientes/nuevo")} 
             className={`flex items-center gap-2 ${isMobile ? 'h-10' : ''}`}
