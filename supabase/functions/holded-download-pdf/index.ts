@@ -1,3 +1,4 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { corsHeaders } from '../_shared/cors.ts';
 
 Deno.serve(async (req) => {
@@ -6,6 +7,24 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Authenticate user
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header');
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      throw new Error('Unauthorized');
+    }
+
     const { holdedEstimateId, holdedDocumentId, documentType = 'estimate' } = await req.json();
     
     const documentId = holdedEstimateId || holdedDocumentId;
@@ -14,8 +33,67 @@ Deno.serve(async (req) => {
       throw new Error('holdedEstimateId or holdedDocumentId is required');
     }
 
-    // Use API key directly
-    const apiKey = '88610992d47b9783e7703c488a8c01cf';
+    // Get user's organization (either as owner or member)
+    let organizationId: string | null = null;
+    
+    const { data: ownedOrg } = await supabase
+      .from('organizations')
+      .select('id')
+      .eq('api_user_id', user.id)
+      .maybeSingle();
+    
+    if (ownedOrg) {
+      organizationId = ownedOrg.id;
+    } else {
+      const { data: memberOrg } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (memberOrg) {
+        organizationId = memberOrg.organization_id;
+      }
+    }
+    
+    if (!organizationId) {
+      throw new Error('No se encontró organización para este usuario');
+    }
+    
+    // Get Holded integration
+    const { data: holdedIntegration } = await supabase
+      .from('integrations')
+      .select('id')
+      .eq('name', 'Holded')
+      .maybeSingle();
+    
+    if (!holdedIntegration) {
+      throw new Error('Integración de Holded no encontrada');
+    }
+    
+    // Get organization's Holded API key
+    const { data: integrationAccess } = await supabase
+      .from('organization_integration_access')
+      .select('access_token_encrypted')
+      .eq('organization_id', organizationId)
+      .eq('integration_id', holdedIntegration.id)
+      .eq('is_active', true)
+      .maybeSingle();
+    
+    if (!integrationAccess?.access_token_encrypted) {
+      throw new Error('API Key de Holded no configurada para esta organización');
+    }
+    
+    // Decrypt the API key
+    const { data: decryptedKey, error: decryptError } = await supabase
+      .rpc('decrypt_credential', { encrypted_data: integrationAccess.access_token_encrypted });
+    
+    if (decryptError || !decryptedKey) {
+      console.error('Error decrypting Holded API key:', decryptError);
+      throw new Error('Error al descifrar la API Key de Holded');
+    }
+    
+    const apiKey = decryptedKey;
     
     // Determine the correct endpoint based on document type
     const endpoint = documentType === 'salesorder' 
@@ -25,7 +103,7 @@ Deno.serve(async (req) => {
     console.log('=== HOLDED PDF DOWNLOAD DEBUG ===');
     console.log('Document ID:', documentId);
     console.log('Document Type:', documentType);
-    console.log('API Key (first 10):', apiKey.substring(0, 10) + '...');
+    console.log('Organization ID:', organizationId);
     console.log('Full URL:', endpoint);
     console.log('================================');
 
@@ -63,31 +141,22 @@ Deno.serve(async (req) => {
       bytes[i] = binaryString.charCodeAt(i);
     }
     
-    console.log('PDF decoded successfully, size:', bytes.length);
-
-    // Return the PDF
-    const fileName = documentType === 'salesorder' 
-      ? `pedido-${documentId}.pdf`
-      : `presupuesto-${documentId}.pdf`;
-
+    // Return PDF
     return new Response(bytes, {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${fileName}"`
-      },
-      status: 200
+        'Content-Disposition': `attachment; filename="document-${documentId}.pdf"`
+      }
     });
 
   } catch (error) {
-    console.error('Error in holded-download-pdf:', error);
+    console.error('Error downloading PDF from Holded:', error);
     return new Response(
-      JSON.stringify({
-        error: error.message || 'Failed to download PDF from Holded'
-      }),
+      JSON.stringify({ error: error.message }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }

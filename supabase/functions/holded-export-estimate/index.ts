@@ -115,9 +115,70 @@ Deno.serve(async (req) => {
       console.log('Using sales account:', salesChannelId);
     }
 
-    // Use API key directly from environment
-    const apiKey = '88610992d47b9783e7703c488a8c01cf';
-    console.log('Using Holded API key');
+    // Get user's organization (either as owner or member)
+    let organizationId: string | null = null;
+    
+    // First check if user is an organization owner
+    const { data: ownedOrg } = await supabase
+      .from('organizations')
+      .select('id')
+      .eq('api_user_id', user.id)
+      .maybeSingle();
+    
+    if (ownedOrg) {
+      organizationId = ownedOrg.id;
+    } else {
+      // Check if user is a member of an organization
+      const { data: memberOrg } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (memberOrg) {
+        organizationId = memberOrg.organization_id;
+      }
+    }
+    
+    if (!organizationId) {
+      throw new Error('No se encontró organización para este usuario');
+    }
+    
+    // Get Holded integration
+    const { data: holdedIntegration } = await supabase
+      .from('integrations')
+      .select('id')
+      .eq('name', 'Holded')
+      .maybeSingle();
+    
+    if (!holdedIntegration) {
+      throw new Error('Integración de Holded no encontrada');
+    }
+    
+    // Get organization's Holded API key
+    const { data: integrationAccess } = await supabase
+      .from('organization_integration_access')
+      .select('access_token_encrypted')
+      .eq('organization_id', organizationId)
+      .eq('integration_id', holdedIntegration.id)
+      .eq('is_active', true)
+      .maybeSingle();
+    
+    if (!integrationAccess?.access_token_encrypted) {
+      throw new Error('API Key de Holded no configurada para esta organización');
+    }
+    
+    // Decrypt the API key
+    const { data: decryptedKey, error: decryptError } = await supabase
+      .rpc('decrypt_credential', { encrypted_data: integrationAccess.access_token_encrypted });
+    
+    if (decryptError || !decryptedKey) {
+      console.error('Error decrypting Holded API key:', decryptError);
+      throw new Error('Error al descifrar la API Key de Holded');
+    }
+    
+    const apiKey = decryptedKey;
+    console.log('Using Holded API key for organization:', organizationId);
 
     // Get EasyQuote credentials to fetch product definitions
     const { data: easyquoteCredsData } = await supabase
