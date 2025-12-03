@@ -144,16 +144,37 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         if (savedOrgId) {
           selectedOrg = allOrgs.find(org => org.id === savedOrgId) || null;
           console.log('🔍 Looking for saved org:', savedOrgId, 'Found:', !!selectedOrg);
+          
+          // If saved org not found in user's orgs, clear it
+          if (!selectedOrg && savedOrgId) {
+            console.log('⚠️ Saved org not found in user orgs, clearing...');
+            sessionStorage.removeItem('selected_organization_id');
+          }
         }
 
         // If no saved selection and NOT pending user selection, use the first organization
         // Don't auto-select if user is currently choosing from multiple orgs
-        if (!selectedOrg && allOrgs.length > 0 && !savedOrgId && !pendingSelection) {
-          selectedOrg = allOrgs[0];
-          sessionStorage.setItem('selected_organization_id', selectedOrg.id);
-          console.log('📌 Auto-selected first org:', selectedOrg.name);
-        } else if (pendingSelection) {
-          console.log('⏳ Waiting for user to select organization...');
+        // BUT if pending selection exists and we're not on the auth page, clear it and auto-select
+        if (!selectedOrg && allOrgs.length > 0) {
+          // Check if we're on the auth page - if not, clear pending and auto-select
+          const isOnAuthPage = window.location.pathname === '/auth';
+          
+          if (pendingSelection && !isOnAuthPage) {
+            // User has a session but pending flag exists and not on auth page
+            // This means they came back to the app - clear pending and auto-select
+            console.log('🔄 Clearing pending selection (not on auth page) and auto-selecting...');
+            sessionStorage.removeItem('pending_org_selection');
+          }
+          
+          const shouldAutoSelect = !savedOrgId && (!pendingSelection || !isOnAuthPage);
+          
+          if (shouldAutoSelect) {
+            selectedOrg = allOrgs[0];
+            sessionStorage.setItem('selected_organization_id', selectedOrg.id);
+            console.log('📌 Auto-selected first org:', selectedOrg.name);
+          } else if (pendingSelection && isOnAuthPage) {
+            console.log('⏳ Waiting for user to select organization...');
+          }
         }
 
         if (selectedOrg) {
