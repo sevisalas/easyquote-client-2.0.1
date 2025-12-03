@@ -199,6 +199,8 @@ const SalesOrdersList = () => {
         return;
       }
 
+      const organizationId = sessionStorage.getItem('selected_organization_id');
+      
       const response = await fetch(
         'https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/holded-download-pdf',
         {
@@ -209,7 +211,8 @@ const SalesOrdersList = () => {
           },
           body: JSON.stringify({ 
             holdedDocumentId: holdedDocumentId,
-            documentType: 'salesorder'
+            documentType: 'salesorder',
+            organization_id: organizationId
           })
         }
       );
