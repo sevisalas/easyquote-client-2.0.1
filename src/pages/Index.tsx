@@ -15,7 +15,8 @@ const Index = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
-  const { isSuperAdmin, isERPSubscription, canAccessProduccion, isAPISubscription, canAccessPresupuestos } = useSubscription();
+  const { isSuperAdmin, isERPSubscription, canAccessProduccion, isAPISubscription, canAccessPresupuestos } =
+    useSubscription();
   const isMobile = useIsMobile();
 
   // Redirigir a usuarios API puros a su página específica
@@ -132,7 +133,9 @@ const Index = () => {
               <h1 className="text-lg md:text-2xl font-bold text-foreground">
                 Hola, <span className="text-primary font-bold">{userName}</span>
               </h1>
-              <p className="text-sm md:text-base text-muted-foreground mt-1">Gestiona tus presupuestos y pedidos de forma profesional</p>
+              <p className="text-sm md:text-base text-muted-foreground mt-1">
+                Gestiona tus presupuestos y pedidos de forma profesional
+              </p>
             </div>
           </div>
 
@@ -311,7 +314,9 @@ const Index = () => {
         )}
 
         {/* Quick Actions */}
-        <div className={`grid gap-3 md:gap-6 ${canAccessProduccion() ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2"}`}>
+        <div
+          className={`grid gap-3 md:gap-6 ${canAccessProduccion() ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2"}`}
+        >
           <Card
             className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer"
             onClick={() => navigate("/clientes")}
@@ -339,8 +344,12 @@ const Index = () => {
                 </div>
                 <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
               </div>
-              <h3 className="text-base md:text-lg font-semibold mb-1 md:mb-2 text-foreground">Gestionar Presupuestos</h3>
-              <p className="text-xs md:text-sm text-muted-foreground">Ver, editar y administrar todos tus presupuestos</p>
+              <h3 className="text-base md:text-lg font-semibold mb-1 md:mb-2 text-foreground">
+                Gestionar Presupuestos
+              </h3>
+              <p className="text-xs md:text-sm text-muted-foreground">
+                Ver, editar y administrar todos tus presupuestos
+              </p>
             </CardContent>
           </Card>
 
@@ -370,17 +379,13 @@ const Index = () => {
             onClick={() => navigate("/novedades")}
             className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
-            EasyQuote v2.2.1 (desarrollo)
+            EasyQuote v2.2.1
           </button>
         </div>
 
         {/* EasyQuote Brand Image */}
         <div className="mt-4 flex justify-center">
-          <img
-            src="/lovable-uploads/calculator-icon.png"
-            alt="EasyQuote"
-            className="h-16 md:h-24 w-auto opacity-80"
-          />
+          <img src="/lovable-uploads/calculator-icon.png" alt="EasyQuote" className="h-16 md:h-24 w-auto opacity-80" />
         </div>
       </div>
     </div>
