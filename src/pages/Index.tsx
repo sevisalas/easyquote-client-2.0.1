@@ -90,22 +90,21 @@ const Index = () => {
         // Obtener display_name de la organización activa
         const selectedOrgId = sessionStorage.getItem('selected_organization_id');
         
-        let memberQuery = supabase
-          .from("organization_members")
-          .select("display_name")
-          .eq("user_id", user.id);
-        
-        // Si hay organización seleccionada, filtrar por ella
         if (selectedOrgId) {
-          memberQuery = memberQuery.eq("organization_id", selectedOrgId);
-        }
-        
-        const { data: member } = await memberQuery.maybeSingle();
+          const { data: member } = await supabase
+            .from("organization_members")
+            .select("display_name")
+            .eq("user_id", user.id)
+            .eq("organization_id", selectedOrgId)
+            .maybeSingle();
 
-        if (member?.display_name) {
-          setUserName(member.display_name);
+          if (member?.display_name) {
+            setUserName(member.display_name);
+          } else {
+            setUserName(user.email?.split("@")[0] || "Usuario");
+          }
         } else {
-          // Fallback a email si no hay display_name
+          // Sin organización seleccionada, usar email
           setUserName(user.email?.split("@")[0] || "Usuario");
         }
       }

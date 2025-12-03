@@ -65,15 +65,22 @@ const ApiHome = () => {
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        // Intentar obtener display_name de organization_members
-        const { data: member } = await supabase
-          .from("organization_members")
-          .select("display_name")
-          .eq("user_id", user.id)
-          .single();
+        // Obtener display_name de la organización activa
+        const selectedOrgId = sessionStorage.getItem('selected_organization_id');
+        
+        if (selectedOrgId) {
+          const { data: member } = await supabase
+            .from("organization_members")
+            .select("display_name")
+            .eq("user_id", user.id)
+            .eq("organization_id", selectedOrgId)
+            .maybeSingle();
 
-        if (member?.display_name) {
-          setUserName(member.display_name);
+          if (member?.display_name) {
+            setUserName(member.display_name);
+          } else {
+            setUserName(user.email?.split("@")[0] || "Usuario");
+          }
         } else {
           setUserName(user.email?.split("@")[0] || "Usuario");
         }
