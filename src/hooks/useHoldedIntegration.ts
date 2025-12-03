@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 
-
 export const useHoldedIntegration = () => {
+  const [hasHoldedAccess, setHasHoldedAccess] = useState(false);
   const [isHoldedActive, setIsHoldedActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const { organization, membership } = useSubscription();
@@ -29,6 +29,7 @@ export const useHoldedIntegration = () => {
         .maybeSingle();
 
       if (integrationError || !integrationData) {
+        setHasHoldedAccess(false);
         setIsHoldedActive(false);
         setLoading(false);
         return;
@@ -44,22 +45,26 @@ export const useHoldedIntegration = () => {
 
       if (accessError && accessError.code !== 'PGRST116') {
         console.error('Error checking Holded integration access:', accessError);
+        setHasHoldedAccess(false);
         setIsHoldedActive(false);
         setLoading(false);
         return;
       }
 
-      // If no access record exists, integration is not available
+      // If no access record exists, organization doesn't have access
       if (!accessData) {
+        setHasHoldedAccess(false);
         setIsHoldedActive(false);
         setLoading(false);
         return;
       }
 
-      // Check if access is active
+      // Organization has access to Holded
+      setHasHoldedAccess(true);
       setIsHoldedActive(accessData.is_active);
     } catch (error) {
       console.error('Error checking Holded integration:', error);
+      setHasHoldedAccess(false);
       setIsHoldedActive(false);
     } finally {
       setLoading(false);
@@ -67,6 +72,7 @@ export const useHoldedIntegration = () => {
   };
 
   return {
+    hasHoldedAccess,
     isHoldedActive,
     loading,
     refreshIntegration: checkHoldedIntegration
