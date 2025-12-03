@@ -5,13 +5,13 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
-## [2.2.0] - En Desarrollo
+## [2.2.1] - 2025-12-03
 
 ### Añadido
-
-### Cambiado
+- **Botón "Actualizar contactos"** en página de Clientes (igual que en Nuevo Presupuesto)
 
 ### Corregido
+- **Selector de organizaciones en login**: Usuarios con múltiples organizaciones ahora son redirigidos correctamente a la organización seleccionada
 
 ---
 
