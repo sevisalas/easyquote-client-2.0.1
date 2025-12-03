@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { holdedEstimateId, holdedDocumentId, documentType = 'estimate' } = await req.json();
+    const { holdedEstimateId, holdedDocumentId, documentType = 'estimate', organization_id: requestOrgId } = await req.json();
     
     const documentId = holdedEstimateId || holdedDocumentId;
     
@@ -33,32 +33,40 @@ Deno.serve(async (req) => {
       throw new Error('holdedEstimateId or holdedDocumentId is required');
     }
 
-    // Get user's organization (either as owner or member)
-    let organizationId: string | null = null;
+    // Get user's organization - prefer the one passed in the request
+    let organizationId: string | null = requestOrgId || null;
     
-    const { data: ownedOrg } = await supabase
-      .from('organizations')
-      .select('id')
-      .eq('api_user_id', user.id)
-      .maybeSingle();
-    
-    if (ownedOrg) {
-      organizationId = ownedOrg.id;
-    } else {
-      const { data: memberOrg } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
+    if (!organizationId) {
+      // Try to find organization as owner first
+      const { data: ownedOrg } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('api_user_id', user.id)
+        .limit(1)
+        .single();
       
-      if (memberOrg) {
-        organizationId = memberOrg.organization_id;
+      if (ownedOrg) {
+        organizationId = ownedOrg.id;
+      } else {
+        // Try to find organization as member
+        const { data: memberOrg } = await supabase
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', user.id)
+          .limit(1)
+          .single();
+        
+        if (memberOrg) {
+          organizationId = memberOrg.organization_id;
+        }
       }
     }
     
     if (!organizationId) {
       throw new Error('No se encontró organización para este usuario');
     }
+    
+    console.log('Using organization_id:', organizationId, 'from request:', !!requestOrgId);
     
     // Get Holded integration
     const { data: holdedIntegration } = await supabase

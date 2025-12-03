@@ -164,6 +164,8 @@ const QuotesList = () => {
     try {
       toast({ title: "Descargando PDF..." });
       
+      const organizationId = sessionStorage.getItem('selected_organization_id');
+      
       const response = await fetch(
         `https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/holded-download-pdf`,
         {
@@ -172,7 +174,7 @@ const QuotesList = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
           },
-          body: JSON.stringify({ holdedEstimateId })
+          body: JSON.stringify({ holdedEstimateId, organization_id: organizationId })
         }
       );
 
