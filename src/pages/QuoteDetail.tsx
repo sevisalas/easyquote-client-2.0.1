@@ -576,9 +576,8 @@ export default function QuoteDetail() {
                 {allItems.map((item: any, index: number) => {
                   const multi = item.multi as any;
                   const hasMultipleQuantities = multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1;
-                  const itemOutputs = item.outputs && Array.isArray(item.outputs) ? item.outputs : [];
                   const itemPrompts = item.prompts && typeof item.prompts === 'object' ? item.prompts : {};
-                  const hasDetails = itemOutputs.length > 0; // Solo mostrar botón expandir si hay outputs
+                  const hasDetails = Object.keys(itemPrompts).length > 0; // Solo mostrar botón expandir si hay prompts
                   const isExpanded = expandedItems.has(index);
                   
                   return (
@@ -672,87 +671,50 @@ export default function QuoteDetail() {
                               </div>
                             )}
                             
-                            {/* Prompts - siempre visibles en el resumen */}
-                            {Object.keys(itemPrompts).length > 0 && (() => {
-                              // Los prompts guardados ya son los correctos, solo mostrarlos
-                              const visiblePrompts = Object.entries(itemPrompts)
-                                .filter(([key, promptData]: [string, any]) => {
+                            {/* Collapsible details - solo prompts, outputs NO se muestran en resumen */}
+                            <CollapsibleContent className="mt-2 space-y-0.5">
+                              {Object.keys(itemPrompts).length > 0 && (() => {
+                                const visiblePrompts = Object.entries(itemPrompts)
+                                  .filter(([key, promptData]: [string, any]) => {
+                                    const value = typeof promptData === 'object' ? promptData.value : promptData;
+                                    
+                                    if (!value || value === '' || value === null) return false;
+                                    if (typeof value === 'object') return false;
+                                    if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('#'))) return false;
+                                    
+                                    const hasLabel = typeof promptData === 'object' && promptData.label && promptData.label.trim() !== '';
+                                    return hasLabel;
+                                  })
+                                  .sort(([, a]: [string, any], [, b]: [string, any]) => (a.order ?? 999) - (b.order ?? 999));
+
+                                if (visiblePrompts.length === 0) return null;
+
+                                return visiblePrompts.map(([key, promptData]: [string, any], idx: number) => {
                                   const label = typeof promptData === 'object' ? promptData.label : key;
                                   const value = typeof promptData === 'object' ? promptData.value : promptData;
+                                  const valueStr = String(value);
                                   
-                                  // Solo filtrar valores vacíos, null, URLs e imágenes
-                                  if (!value || value === '' || value === null) return false;
-                                  if (typeof value === 'object') return false;
-                                  if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('#'))) return false;
-                                  
-                                  // Debe tener label
-                                  const hasLabel = typeof promptData === 'object' && promptData.label && promptData.label.trim() !== '';
-                                  return hasLabel;
-                                })
-                                .sort(([, a]: [string, any], [, b]: [string, any]) => (a.order ?? 999) - (b.order ?? 999));
-
-                              if (visiblePrompts.length === 0) return null;
-
-                              return (
-                                <div className="mt-2 space-y-0.5">
-                                  {visiblePrompts.map(([key, promptData]: [string, any], idx: number) => {
-                                    const label = typeof promptData === 'object' ? promptData.label : key;
-                                    const value = typeof promptData === 'object' ? promptData.value : promptData;
-                                    const valueStr = String(value);
-                                    
-                                    // Handle hex colors
-                                    if (valueStr.startsWith('#')) {
-                                      return (
-                                        <div key={idx} className="text-xs flex items-center gap-1.5">
-                                          <span className="font-medium text-muted-foreground">{label}:</span>
-                                          <div 
-                                            className="w-4 h-4 rounded border shadow-sm"
-                                            style={{ backgroundColor: valueStr }}
-                                          />
-                                          <span className="text-foreground">{valueStr}</span>
-                                        </div>
-                                      );
-                                    }
-                                    
-                                    // Handle regular text/number values
+                                  if (valueStr.startsWith('#')) {
                                     return (
-                                      <div key={idx} className="text-xs">
-                                        <span className="font-medium text-muted-foreground">{label}:</span>{' '}
+                                      <div key={idx} className="text-xs flex items-center gap-1.5">
+                                        <span className="font-medium text-muted-foreground">{label}:</span>
+                                        <div 
+                                          className="w-4 h-4 rounded border shadow-sm"
+                                          style={{ backgroundColor: valueStr }}
+                                        />
                                         <span className="text-foreground">{valueStr}</span>
                                       </div>
                                     );
-                                  })}
-                                </div>
-                              );
-                            })()}
-                            
-                            {/* Collapsible details - solo outputs */}
-                            <CollapsibleContent className="mt-3 space-y-2">
-                              {/* Outputs */}
-                              {itemOutputs.length > 0 && (
-                                <div className="space-y-2 pl-2 border-l-2 border-muted">
-                                  <p className="text-xs font-semibold text-muted-foreground uppercase">Resultados</p>
-                                  {itemOutputs.map((output: any, idx: number) => {
-                                    if (output.type === 'ProductImage') {
-                                      return (
-                                        <div key={idx}>
-                                          <img 
-                                            src={output.value} 
-                                            alt={output.name}
-                                            className="w-48 h-48 object-contain rounded border"
-                                          />
-                                        </div>
-                                      );
-                                    }
-                                    return (
-                                      <div key={idx} className="text-sm">
-                                        <span className="font-medium text-muted-foreground">{output.name}:</span>{' '}
-                                        <span className="text-foreground">{output.value}</span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
+                                  }
+                                  
+                                  return (
+                                    <div key={idx} className="text-xs">
+                                      <span className="font-medium text-muted-foreground">{label}:</span>{' '}
+                                      <span className="text-foreground">{valueStr}</span>
+                                    </div>
+                                  );
+                                });
+                              })()}
                             </CollapsibleContent>
                           </div>
                           <div className="text-right">
