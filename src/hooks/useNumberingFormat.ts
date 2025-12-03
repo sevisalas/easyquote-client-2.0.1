@@ -10,6 +10,7 @@ export interface NumberingFormat {
   year_format: 'YY' | 'YYYY';
   sequential_digits: number;
   last_sequential_number: number;
+  organization_id?: string;
 }
 
 export const useNumberingFormat = (documentType: 'quote' | 'order') => {
@@ -19,21 +20,36 @@ export const useNumberingFormat = (documentType: 'quote' | 'order') => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      // First, check if user is organization owner
-      const { data: ownedOrg } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('api_user_id', user.id)
-        .maybeSingle();
+      // Use the selected organization from sessionStorage (same as SubscriptionContext)
+      const savedOrgId = sessionStorage.getItem('selected_organization_id');
+      let organizationId: string | null = savedOrgId;
 
-      // Then check if user is organization member
-      const { data: orgMember } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // If no saved org, try to determine it
+      if (!organizationId) {
+        // First check if user is organization owner (use limit 1 for multiple orgs)
+        const { data: ownedOrgs } = await supabase
+          .from('organizations')
+          .select('id')
+          .eq('api_user_id', user.id)
+          .limit(1);
 
-      const organizationId = ownedOrg?.id || orgMember?.organization_id;
+        if (ownedOrgs && ownedOrgs.length > 0) {
+          organizationId = ownedOrgs[0].id;
+        } else {
+          // Then check if user is organization member
+          const { data: orgMembers } = await supabase
+            .from('organization_members')
+            .select('organization_id')
+            .eq('user_id', user.id)
+            .limit(1);
+
+          if (orgMembers && orgMembers.length > 0) {
+            organizationId = orgMembers[0].organization_id;
+          }
+        }
+      }
+
+      console.log('📋 Numbering format - Organization ID:', organizationId, 'Document type:', documentType);
 
       // Update last sequential number from database before returning format
       await supabase.rpc('update_last_sequential_number', {
@@ -50,23 +66,27 @@ export const useNumberingFormat = (documentType: 'quote' | 'order') => {
           .eq('organization_id', organizationId)
           .maybeSingle();
 
+        console.log('📋 Org format found:', orgFormat, 'Error:', orgError);
+
         if (orgError) throw orgError;
         if (orgFormat) return orgFormat as NumberingFormat;
       }
 
-      // Otherwise, get user-specific format
+      // Try to get user-specific format (legacy support)
       const { data, error } = await supabase
         .from('numbering_formats')
         .select('*')
         .eq('document_type', documentType)
         .eq('user_id', user.id)
-        .is('organization_id', null)
         .maybeSingle();
+
+      console.log('📋 User format found:', data, 'Error:', error);
 
       if (error) throw error;
       
       // Return default format if none configured
       if (!data) {
+        console.warn('📋 No numbering format found, using defaults');
         return {
           prefix: documentType === 'quote' ? '' : 'SO-',
           suffix: '',
