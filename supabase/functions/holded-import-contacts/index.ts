@@ -302,7 +302,7 @@ serve(async (req) => {
     console.log(`Total contacts fetched: ${allContacts.length}`);
 
     // Get organization owner user_id first
-    const { data: orgData } = await supabaseAdmin
+    const { data: orgData } = await supabase
       .from('organizations')
       .select('api_user_id')
       .eq('id', organizationId)
@@ -330,7 +330,7 @@ serve(async (req) => {
     for (let i = 0; i < contactsToInsert.length; i += 100) {
       const batch = contactsToInsert.slice(i, i + 100);
       
-      const { data, error} = await supabaseAdmin
+      const { data, error } = await supabase
         .from('customers')
         .upsert(batch, { 
           onConflict: 'holded_id,organization_id',
