@@ -183,8 +183,8 @@ export default function ProductionBoardKanban() {
                     <div className="text-sm font-medium">
                       <CustomerName customerId={order.customer_id} />
                     </div>
-                    <div className="mb-2">
-                      <div className="text-xs text-secondary mb-1">Estado pedido</div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs text-secondary">Estado pedido:</span>
                       <Badge variant={order.status === "completed" ? "default" : order.status === "in_production" ? "secondary" : "outline"} className="text-xs">
                         {statusLabels[order.status as keyof typeof statusLabels] || order.status}
                       </Badge>
@@ -249,8 +249,8 @@ export default function ProductionBoardKanban() {
                     <div className="text-sm font-medium">
                       <CustomerName customerId={order.customer_id} />
                     </div>
-                    <div className="mb-2">
-                      <div className="text-xs text-secondary mb-1">Estado pedido</div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs text-secondary">Estado pedido:</span>
                       <Badge variant={order.status === "completed" ? "default" : order.status === "in_production" ? "secondary" : "outline"} className="text-xs">
                         {statusLabels[order.status as keyof typeof statusLabels] || order.status}
                       </Badge>
@@ -315,8 +315,8 @@ export default function ProductionBoardKanban() {
                     <div className="text-sm font-medium">
                       <CustomerName customerId={order.customer_id} />
                     </div>
-                    <div className="mb-2">
-                      <div className="text-xs text-secondary mb-1">Estado pedido</div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs text-secondary">Estado pedido:</span>
                       <Badge variant={order.status === "completed" ? "default" : order.status === "in_production" ? "secondary" : "outline"} className="text-xs">
                         {statusLabels[order.status as keyof typeof statusLabels] || order.status}
                       </Badge>
@@ -381,8 +381,8 @@ export default function ProductionBoardKanban() {
                     <div className="text-sm font-medium">
                       <CustomerName customerId={order.customer_id} />
                     </div>
-                    <div className="mb-2">
-                      <div className="text-xs text-secondary mb-1">Estado pedido</div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs text-secondary">Estado pedido:</span>
                       <Badge variant={order.status === "completed" ? "default" : order.status === "in_production" ? "secondary" : "outline"} className="text-xs">
                         {statusLabels[order.status as keyof typeof statusLabels] || order.status}
                       </Badge>
@@ -445,8 +445,8 @@ export default function ProductionBoardKanban() {
                     <div className="text-sm font-medium">
                       <CustomerName customerId={order.customer_id} />
                     </div>
-                    <div className="mb-2">
-                      <div className="text-xs text-secondary mb-1">Estado pedido</div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs text-secondary">Estado pedido:</span>
                       <Badge variant={order.status === "completed" ? "default" : order.status === "in_production" ? "secondary" : "outline"} className="text-xs">
                         {statusLabels[order.status as keyof typeof statusLabels] || order.status}
                       </Badge>
