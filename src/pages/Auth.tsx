@@ -106,6 +106,9 @@ const Auth = () => {
       setOrganizations(userOrgs);
 
       if (userOrgs.length > 1) {
+        // Clear any previous selection and set pending flag to prevent auto-selection
+        sessionStorage.removeItem('selected_organization_id');
+        sessionStorage.setItem('pending_org_selection', 'true');
         // Show organization selector
         setShowOrgSelector(true);
         setLoading(false);
@@ -174,6 +177,8 @@ const Auth = () => {
 
   const handleOrgSelect = async (orgId: string) => {
     setSelectedOrgId(orgId);
+    // Remove pending flag and set the selected organization
+    sessionStorage.removeItem('pending_org_selection');
     sessionStorage.setItem('selected_organization_id', orgId);
     
     setLoading(true);
