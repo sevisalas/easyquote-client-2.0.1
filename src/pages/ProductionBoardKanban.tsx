@@ -105,6 +105,7 @@ export default function ProductionBoardKanban() {
     }
   };
   const categorizedOrders = {
+    "no-date": orders.filter(o => getDeadlineCategory(o.delivery_date) === "no-date"),
     overdue: orders.filter(o => getDeadlineCategory(o.delivery_date) === "overdue"),
     today: orders.filter(o => getDeadlineCategory(o.delivery_date) === "today"),
     tomorrow: orders.filter(o => getDeadlineCategory(o.delivery_date) === "tomorrow"),
@@ -151,6 +152,70 @@ export default function ProductionBoardKanban() {
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 md:overflow-x-auto pb-4">
+        {/* Columna: Sin fecha */}
+        <div className="flex-shrink-0 w-full md:w-96 bg-muted/30 rounded-lg p-4">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-slate-400" />
+            <h2 className="text-lg font-bold">Sin fecha</h2>
+            <Badge variant="secondary" className="ml-auto">
+              {categorizedOrders["no-date"].length}
+            </Badge>
+          </div>
+          <div className="space-y-3">
+            {categorizedOrders["no-date"].map(order => <Card key={order.id} className="border-l-4 border-l-slate-400 shadow-sm hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-lg">{order.order_number}</span>
+                        <Link to={`/pedidos/${order.id}/editar`}>
+                          <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        </Link>
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        Sin fecha
+                      </Badge>
+                    </div>
+                    <div className="text-sm font-medium">
+                      <CustomerName customerId={order.customer_id} />
+                    </div>
+                    <div className="mb-2">
+                      <div className="text-xs text-secondary mb-1">Estado pedido</div>
+                      <Badge variant={order.status === "completed" ? "default" : order.status === "in_production" ? "secondary" : "outline"} className="text-xs">
+                        {statusLabels[order.status as keyof typeof statusLabels] || order.status}
+                      </Badge>
+                    </div>
+                    <div className="text-xs space-y-2">
+                      {order.items.map((item, idx) => <div key={item.id} className="space-y-1 pb-2 border-b last:border-b-0">
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => toggleItemExpanded(item.id)} className="hover:bg-muted rounded p-0.5 transition-colors">
+                              {expandedItems.has(item.id) ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                            </button>
+                            <span className="font-medium">{idx + 1}. {item.product_name}</span>
+                            <Badge variant={item.production_status === "completed" ? "default" : item.production_status === "in_progress" ? "secondary" : "outline"} className="text-xs">
+                              Estado: {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
+                            </Badge>
+                          </div>
+                          {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
+                              {(item.prompts as Array<{
+                        label: string;
+                        value: string;
+                        order: number;
+                      }>).sort((a, b) => a.order - b.order).map((prompt, pIdx) => <div key={pIdx} className="flex gap-1">
+                                    <span className="font-medium">{prompt.label}:</span>
+                                    <span>{prompt.value}</span>
+                                  </div>)}
+                            </div>}
+                        </div>)}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>)}
+          </div>
+        </div>
+
         {/* Columna: Fuera de plazo */}
         <div className="flex-shrink-0 w-full md:w-96 bg-muted/30 rounded-lg p-4">
           <div className="mb-4 flex items-center gap-2">
