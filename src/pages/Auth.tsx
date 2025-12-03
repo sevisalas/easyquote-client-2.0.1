@@ -104,8 +104,10 @@ const Auth = () => {
       // Check if user belongs to multiple organizations
       const userOrgs = await fetchUserOrganizations(userId);
       setOrganizations(userOrgs);
+      console.log('🏢 User organizations found:', userOrgs.length, userOrgs.map(o => o.name));
 
       if (userOrgs.length > 1) {
+        console.log('👥 Multiple orgs detected, showing selector...');
         // Clear any previous selection and set pending flag to prevent auto-selection
         sessionStorage.removeItem('selected_organization_id');
         sessionStorage.setItem('pending_org_selection', 'true');
@@ -115,9 +117,11 @@ const Auth = () => {
         return;
       }
 
+      console.log('📌 Single org or no org, proceeding directly...');
       // Single org or no org - proceed normally
       if (userOrgs.length === 1) {
         sessionStorage.setItem('selected_organization_id', userOrgs[0].id);
+        console.log('📌 Auto-selected single org:', userOrgs[0].name);
       }
 
       await completeLogin(userId);
@@ -172,7 +176,9 @@ const Auth = () => {
       title: "Bienvenido",
       description: "Sesión iniciada correctamente"
     });
-    navigate("/", { replace: true });
+    
+    // Force full page reload to ensure SubscriptionContext loads with the selected organization
+    window.location.href = "/";
   };
 
   const handleOrgSelect = async (orgId: string) => {

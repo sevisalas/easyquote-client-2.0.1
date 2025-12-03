@@ -57,9 +57,10 @@ export function AppSidebar() {
   const isComercial = membership?.role === 'comercial';
   const handleSignOut = async () => {
     try {
-      // Limpiar tokens
+      // Limpiar todos los tokens y datos de organización
       sessionStorage.removeItem('easyquote_token');
       sessionStorage.removeItem('selected_organization_id');
+      sessionStorage.removeItem('pending_org_selection');
 
       // Intentar cerrar sesión en Supabase (scope local para evitar errores si la sesión del servidor no existe)
       await supabase.auth.signOut({
