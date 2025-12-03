@@ -5,6 +5,22 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.2.4] - En desarrollo
+
+### Añadido
+- (En desarrollo)
+
+---
+
+## [2.2.3] - 2025-12-03
+
+### Corregido
+- **Filtro de prompts ocultos en Holded**: Los prompts marcados como "Ocultar en documentos" ahora se filtran correctamente al exportar presupuestos a Holded
+- **Limbo de organización en login**: Usuarios con múltiples organizaciones ya no se quedan sin organización seleccionada al iniciar sesión
+- **Limpieza de sesión al cerrar**: Se limpia `pending_org_selection` al hacer logout para evitar problemas de selección de organización
+
+---
+
 ## [2.2.1] - 2025-12-03
 
 ### Añadido
