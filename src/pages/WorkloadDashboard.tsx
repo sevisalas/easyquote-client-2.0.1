@@ -20,17 +20,20 @@ interface DayWorkload {
 }
 
 export default function WorkloadDashboard() {
-  const { organization } = useSubscription();
+  const { organization, membership } = useSubscription();
   const [workloadData, setWorkloadData] = useState<DayWorkload[]>([]);
   const [maxDailyOrders, setMaxDailyOrders] = useState<number>(20);
   const [loading, setLoading] = useState(true);
 
+  // Use organization from either owner or member context
+  const currentOrg = organization || membership?.organization;
+
   useEffect(() => {
-    if (organization) {
-      setMaxDailyOrders(organization.max_daily_orders || 20);
+    if (currentOrg) {
+      setMaxDailyOrders(currentOrg.max_daily_orders || 20);
       fetchWorkloadData();
     }
-  }, [organization]);
+  }, [currentOrg]);
 
   const fetchWorkloadData = async () => {
     try {
