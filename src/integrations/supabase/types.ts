@@ -973,6 +973,44 @@ export type Database = {
           },
         ]
       }
+      product_prompt_settings: {
+        Row: {
+          created_at: string
+          easyquote_product_id: string
+          hide_in_documents: boolean
+          id: string
+          organization_id: string
+          prompt_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          easyquote_product_id: string
+          hide_in_documents?: boolean
+          id?: string
+          organization_id: string
+          prompt_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          easyquote_product_id?: string
+          hide_in_documents?: boolean
+          id?: string
+          organization_id?: string
+          prompt_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_prompt_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_subcategories: {
         Row: {
           category_id: string
