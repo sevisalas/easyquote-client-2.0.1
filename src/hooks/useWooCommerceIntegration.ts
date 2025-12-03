@@ -6,12 +6,12 @@ export const useWooCommerceIntegration = () => {
   const { organization, membership } = useSubscription();
   const currentOrganization = organization || membership?.organization;
 
-  const { data: isWooCommerceActive = false, isLoading: loading, refetch } = useQuery({
+  const { data, isLoading: loading, refetch } = useQuery({
     queryKey: ['woocommerce-integration', currentOrganization?.id],
     queryFn: async () => {
       if (!currentOrganization?.id) {
         console.log("WooCommerce Integration: No organization ID");
-        return false;
+        return { hasAccess: false, isActive: false };
       }
 
       try {
@@ -22,11 +22,9 @@ export const useWooCommerceIntegration = () => {
           .eq('name', 'WooCommerce')
           .maybeSingle();
 
-        console.log("WooCommerce Integration Check:", { integrationData, integrationError });
-
         if (integrationError || !integrationData) {
           console.log("WooCommerce Integration: No integration found");
-          return false;
+          return { hasAccess: false, isActive: false };
         }
 
         // Then check if the organization has access to WooCommerce integration
@@ -37,20 +35,18 @@ export const useWooCommerceIntegration = () => {
           .eq('integration_id', integrationData.id)
           .maybeSingle();
 
-        console.log("WooCommerce Access Check:", { accessData, accessError });
-
         if (accessError && accessError.code !== 'PGRST116') {
           console.error('Error checking WooCommerce integration access:', accessError);
-          return false;
+          return { hasAccess: false, isActive: false };
         }
 
-        // If no access record exists, integration is not available
+        // If no access record exists, organization doesn't have access to this integration
         if (!accessData) {
           console.log("WooCommerce Integration: No access record");
-          return false;
+          return { hasAccess: false, isActive: false };
         }
 
-        // Check if organization has an API key
+        // Organization has access, now check if it's fully configured
         const { data: apiKeyData, error: apiKeyError } = await supabase
           .from('organization_api_credentials')
           .select('id')
@@ -59,32 +55,27 @@ export const useWooCommerceIntegration = () => {
           .limit(1)
           .single();
 
-        console.log("WooCommerce API Key Check:", { apiKeyData, apiKeyError });
-
         if (apiKeyError && apiKeyError.code !== 'PGRST116') {
           console.error('Error checking API key:', apiKeyError);
         }
 
-        // Integration is active only if access is active AND API key exists
+        // hasAccess = has record in organization_integration_access
+        // isActive = hasAccess AND is_active AND has API key
         const isActive = accessData.is_active && !!apiKeyData;
-        console.log("WooCommerce Integration Final Status:", { 
-          accessIsActive: accessData.is_active, 
-          hasApiKey: !!apiKeyData,
-          finalStatus: isActive 
-        });
         
-        return isActive;
+        return { hasAccess: true, isActive };
       } catch (error) {
         console.error('Error checking WooCommerce integration:', error);
-        return false;
+        return { hasAccess: false, isActive: false };
       }
     },
     enabled: !!currentOrganization?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
   return {
-    isWooCommerceActive,
+    hasWooCommerceAccess: data?.hasAccess ?? false,
+    isWooCommerceActive: data?.isActive ?? false,
     loading,
     refreshIntegration: refetch
   };

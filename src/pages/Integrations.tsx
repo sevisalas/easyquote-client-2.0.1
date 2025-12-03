@@ -16,8 +16,8 @@ import { WooCommerceCsvUpload } from "@/components/integrations/WooCommerceCsvUp
 
 export default function Integrations() {
   const { hasIntegrationAccess, loading } = useIntegrationAccess();
-  const { isHoldedActive, loading: holdedLoading, refreshIntegration: refreshHolded } = useHoldedIntegration();
-  const { isWooCommerceActive, loading: wooLoading, refreshIntegration: refreshWoo } = useWooCommerceIntegration();
+  const { hasHoldedAccess, isHoldedActive, loading: holdedLoading, refreshIntegration: refreshHolded } = useHoldedIntegration();
+  const { hasWooCommerceAccess, isWooCommerceActive, loading: wooLoading, refreshIntegration: refreshWoo } = useWooCommerceIntegration();
   const { organization, membership } = useSubscription();
   const [apiKey, setApiKey] = useState("");
   const [saving, setSaving] = useState(false);
@@ -413,6 +413,7 @@ export default function Integrations() {
         <h1 className="text-2xl font-bold mb-6">Integraciones</h1>
         
         {/* WooCommerce Integration Card */}
+        {hasWooCommerceAccess && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -475,8 +476,10 @@ export default function Integrations() {
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Holded Integration Card */}
+        {hasHoldedAccess && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -595,6 +598,18 @@ export default function Integrations() {
             )}
           </CardContent>
         </Card>
+        )}
+
+        {/* No integrations available message */}
+        {!hasWooCommerceAccess && !hasHoldedAccess && (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <p className="text-muted-foreground">
+                No hay integraciones disponibles para tu organización.
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
