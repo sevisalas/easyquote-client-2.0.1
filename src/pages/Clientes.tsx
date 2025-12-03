@@ -46,8 +46,10 @@ export default function Clientes() {
     try {
       console.log('🔍 Fetching customers with search term:', searchTerm);
 
-      // Get organization_id from either organization (owner) or membership (member)
-      const organizationId = organization?.id || membership?.organization?.id;
+      // Get the SELECTED organization from sessionStorage (for multi-org users)
+      const selectedOrgId = sessionStorage.getItem('selected_organization_id');
+      // Fallback to context if no selection
+      const organizationId = selectedOrgId || organization?.id || membership?.organization?.id;
 
       if (!organizationId) {
         console.log('⚠️ No organization found');
@@ -56,6 +58,8 @@ export default function Clientes() {
         setLoading(false);
         return;
       }
+      
+      console.log('🏢 Using organization:', organizationId, 'selected:', selectedOrgId);
 
       const startIndex = (currentPage - 1) * itemsPerPage;
       
@@ -76,12 +80,11 @@ export default function Clientes() {
         page: currentPage 
       });
 
-      // Fetch all customers from unified table with pagination
-      // Include both organization customers AND user's own customers
+      // Fetch customers filtered by SELECTED organization only
       let customersQuery = supabase
         .from("customers")
         .select("*", { count: "exact" })
-        .or(`organization_id.eq.${organizationId},user_id.eq.${user.id}`)
+        .eq("organization_id", organizationId)
         .order("name", { ascending: true })
         .range(startIndex, startIndex + itemsPerPage - 1);
 
