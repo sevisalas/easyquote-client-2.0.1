@@ -60,22 +60,35 @@ export default function SettingsNumberingFormats() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Obtener organization_id del sessionStorage para filtrar por tenant
+      const organizationId = sessionStorage.getItem('selected_organization_id');
+
       // Actualizar automáticamente los últimos números usados desde la base de datos
       await Promise.all([
         supabase.rpc('update_last_sequential_number', {
           p_user_id: user.id,
-          p_document_type: 'quote'
+          p_document_type: 'quote',
+          p_organization_id: organizationId
         }),
         supabase.rpc('update_last_sequential_number', {
           p_user_id: user.id,
-          p_document_type: 'order'
+          p_document_type: 'order',
+          p_organization_id: organizationId
         })
       ]);
 
-      const { data, error } = await supabase
+      // Filtrar por organization_id si existe, sino por user_id (legacy)
+      let query = supabase
         .from('numbering_formats')
-        .select('*')
-        .eq('user_id', user.id);
+        .select('*');
+      
+      if (organizationId) {
+        query = query.eq('organization_id', organizationId);
+      } else {
+        query = query.eq('user_id', user.id);
+      }
+      
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -146,16 +159,12 @@ export default function SettingsNumberingFormats() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      // Get organization_id if user is org owner
-      const { data: orgData } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('api_user_id', user.id)
-        .maybeSingle();
+      // Usar organization_id del sessionStorage (mismo que usa toda la app)
+      const organizationId = sessionStorage.getItem('selected_organization_id');
 
       const formatData = {
         user_id: user.id,
-        organization_id: orgData?.id || null,
+        organization_id: organizationId,
         document_type: format.document_type,
         prefix: format.prefix,
         suffix: format.suffix || '',
