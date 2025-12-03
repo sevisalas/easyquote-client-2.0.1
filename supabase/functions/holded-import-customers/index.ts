@@ -115,16 +115,19 @@ Deno.serve(async (req) => {
 
     const holdedContacts = await holdedResponse.json();
 
-    // Filter out contacts that already exist
+    // Filter only contacts that are clients (type === 'client') and don't exist yet
     const newContacts = holdedContacts.filter((contact: any) => 
-      !existingHoldedIds.has(contact.id)
+      contact.type === 'client' && !existingHoldedIds.has(contact.id)
     );
+
+    const totalClients = holdedContacts.filter((c: any) => c.type === 'client').length;
+    console.log(`Total contacts: ${holdedContacts.length}, Clients: ${totalClients}, New clients to import: ${newContacts.length}`);
 
     if (newContacts.length === 0) {
       return new Response(
         JSON.stringify({ 
-          message: 'No new contacts to import',
-          total: holdedContacts.length,
+          message: 'No hay nuevos clientes para importar',
+          total: totalClients,
           new: 0,
           imported: 0
         }),
@@ -165,8 +168,8 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
-        message: 'Import completed',
-        total: holdedContacts.length,
+        message: 'Importación completada',
+        total: totalClients,
         new: newContacts.length,
         imported: importedCount,
         errors: errors.length > 0 ? errors : undefined
