@@ -266,23 +266,40 @@ export default function PromptsForm({
           )}
 
           {/* Select (dropdown) */}
-          {p.type === "select" && (
-            <Select value={(effectiveValues[p.id] ?? undefined) as any} onValueChange={(v) => {
-              // Enviar el valor real (v), NO el label de la opción
-              onChange(p.id, v, p.label);
-            }}>
-              <SelectTrigger id={p.id}>
-                <SelectValue placeholder="Selecciona una opción" />
-              </SelectTrigger>
-              <SelectContent className="z-50 bg-popover">
-                {p.options?.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label ?? o.value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+          {p.type === "select" && (() => {
+            // Crear valores únicos cuando hay duplicados
+            const seenValues = new Map<string, number>();
+            const uniqueOptions = p.options?.map((o, idx) => {
+              const count = seenValues.get(o.value) || 0;
+              seenValues.set(o.value, count + 1);
+              const uniqueValue = count > 0 ? `${o.value}__dup${count}` : o.value;
+              return { ...o, uniqueValue, originalValue: o.value };
+            });
+            
+            // Encontrar el valor actual en las opciones únicas
+            const currentValue = effectiveValues[p.id];
+            const matchingOption = uniqueOptions?.find(o => o.originalValue === currentValue);
+            const displayValue = matchingOption?.uniqueValue ?? currentValue;
+            
+            return (
+              <Select value={displayValue as any} onValueChange={(v) => {
+                // Encontrar el valor original
+                const selected = uniqueOptions?.find(o => o.uniqueValue === v);
+                onChange(p.id, selected?.originalValue ?? v, p.label);
+              }}>
+                <SelectTrigger id={p.id}>
+                  <SelectValue placeholder="Selecciona una opción" />
+                </SelectTrigger>
+                <SelectContent className="z-50 bg-popover">
+                  {uniqueOptions?.map((o, idx) => (
+                    <SelectItem key={`${o.uniqueValue}-${idx}`} value={o.uniqueValue}>
+                      {o.label ?? o.originalValue}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            );
+          })()}
 
           {/* Image picker */}
           {p.type === "image" && (
