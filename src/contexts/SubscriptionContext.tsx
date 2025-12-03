@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 type SubscriptionPlan = 'api' | 'client' | 'erp' | 'custom' | 'api_base' | 'api_pro' | 'client_base' | 'client_pro';
 type OrganizationRole = 'admin' | 'gestor' | 'comercial' | 'operador';
 
-interface Organization {
+export interface Organization {
   id: string;
   name: string;
   subscription_plan: SubscriptionPlan;
@@ -29,10 +29,12 @@ interface OrganizationMember {
 interface SubscriptionContextType {
   organization: Organization | null;
   membership: OrganizationMember | null;
+  allOrganizations: Organization[];
   isSuperAdmin: boolean;
   isOrgAdmin: boolean;
   loading: boolean;
   refreshData: () => Promise<void>;
+  switchOrganization: (organizationId: string) => Promise<void>;
   hasClientAccess: () => boolean;
   getRemainingExcelLimit: () => number;
   getRemainingUserLimit: () => number;
@@ -68,9 +70,43 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   console.log('SubscriptionProvider rendering with children:', !!children);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [membership, setMembership] = useState<OrganizationMember | null>(null);
+  const [allOrganizations, setAllOrganizations] = useState<Organization[]>([]);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  const fetchAllUserOrganizations = async (userId: string): Promise<Organization[]> => {
+    // Get organizations where user is a member
+    const { data: memberOrgs } = await supabase
+      .from('organization_members')
+      .select(`
+        organization_id,
+        organization:organizations(id, name, subscription_plan, excel_limit, excel_extra, client_user_limit, client_user_extra, api_user_id, holded_external_customers, max_daily_orders)
+      `)
+      .eq('user_id', userId);
+
+    // Get organizations where user is the API owner
+    const { data: ownerOrgs } = await supabase
+      .from('organizations')
+      .select('*')
+      .eq('api_user_id', userId);
+
+    // Combine and deduplicate
+    const orgsMap = new Map<string, Organization>();
+
+    ownerOrgs?.forEach(org => {
+      orgsMap.set(org.id, org as Organization);
+    });
+
+    memberOrgs?.forEach(member => {
+      const org = member.organization as unknown as Organization;
+      if (org && !orgsMap.has(org.id)) {
+        orgsMap.set(org.id, org);
+      }
+    });
+
+    return Array.from(orgsMap.values());
+  };
 
   const refreshData = async () => {
     try {
@@ -95,32 +131,51 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
 
       // Get user's organization (as API user) - solo si no es superadmin
       if (!isSuperAdminUser) {
-        const { data: orgData, error: orgError } = await supabase
-          .from('organizations')
-          .select('*')
-          .eq('api_user_id', user.id)
-          .maybeSingle();
+        // Fetch all organizations the user belongs to
+        const allOrgs = await fetchAllUserOrganizations(user.id);
+        setAllOrganizations(allOrgs);
+        console.log('🏢 All user organizations:', allOrgs);
 
-        console.log('🏢 Organization as owner:', orgData, 'Error:', orgError);
-        setOrganization(orgData as Organization);
+        // Check if there's a selected organization in sessionStorage
+        const savedOrgId = sessionStorage.getItem('selected_organization_id');
+        let selectedOrg: Organization | null = null;
 
-        // Get user's membership (as client user)
-        const { data: memberData, error: memberError } = await supabase
-          .from('organization_members')
-          .select(`
-            *,
-            organization:organizations(*)
-          `)
-          .eq('user_id', user.id)
-          .maybeSingle();
+        if (savedOrgId) {
+          selectedOrg = allOrgs.find(org => org.id === savedOrgId) || null;
+        }
 
-        console.log('👤 Member data:', memberData, 'Error:', memberError);
-        console.log('📊 Member organization:', memberData?.organization);
-        setMembership(memberData as OrganizationMember);
+        // If no saved selection or invalid, use the first organization
+        if (!selectedOrg && allOrgs.length > 0) {
+          selectedOrg = allOrgs[0];
+          sessionStorage.setItem('selected_organization_id', selectedOrg.id);
+        }
+
+        if (selectedOrg) {
+          // Check if user is the owner or a member
+          if (selectedOrg.api_user_id === user.id) {
+            setOrganization(selectedOrg);
+            setMembership(null);
+          } else {
+            // Get membership for this specific organization
+            const { data: memberData } = await supabase
+              .from('organization_members')
+              .select(`*, organization:organizations(*)`)
+              .eq('user_id', user.id)
+              .eq('organization_id', selectedOrg.id)
+              .maybeSingle();
+
+            setOrganization(null);
+            setMembership(memberData as OrganizationMember);
+          }
+        } else {
+          setOrganization(null);
+          setMembership(null);
+        }
       } else {
         // Los superadmins no necesitan organization ni membership propios
         setOrganization(null);
         setMembership(null);
+        setAllOrganizations([]);
       }
 
     } catch (error) {
@@ -128,6 +183,67 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
     } finally {
       setLoading(false);
     }
+  };
+
+  const switchOrganization = async (organizationId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const selectedOrg = allOrganizations.find(org => org.id === organizationId);
+    if (!selectedOrg) return;
+
+    sessionStorage.setItem('selected_organization_id', organizationId);
+
+    // Clear EasyQuote token to force re-authentication with new org credentials
+    sessionStorage.removeItem('easyquote_token');
+
+    if (selectedOrg.api_user_id === user.id) {
+      setOrganization(selectedOrg);
+      setMembership(null);
+    } else {
+      const { data: memberData } = await supabase
+        .from('organization_members')
+        .select(`*, organization:organizations(*)`)
+        .eq('user_id', user.id)
+        .eq('organization_id', organizationId)
+        .maybeSingle();
+
+      setOrganization(null);
+      setMembership(memberData as OrganizationMember);
+    }
+
+    // Re-fetch EasyQuote token for the new organization
+    try {
+      const { data: credentials } = await supabase.rpc('get_organization_easyquote_credentials', {
+        p_user_id: user.id
+      });
+
+      if (credentials && credentials.length > 0) {
+        const userCredentials = credentials[0];
+        if (userCredentials.api_username && userCredentials.api_password) {
+          const { data } = await supabase.functions.invoke("easyquote-auth", {
+            body: {
+              email: userCredentials.api_username,
+              password: userCredentials.api_password
+            }
+          });
+          if ((data as any)?.token) {
+            sessionStorage.setItem("easyquote_token", (data as any).token);
+            window.dispatchEvent(new CustomEvent('easyquote-token-updated'));
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error refreshing EasyQuote token:", e);
+    }
+
+    toast({
+      title: "Organización cambiada",
+      description: `Ahora estás trabajando con ${selectedOrg.name}`,
+    });
+
+    // Reload the page to reset all data
+    window.location.reload();
   };
 
   useEffect(() => {
@@ -274,10 +390,12 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       value={{
         organization,
         membership,
+        allOrganizations,
         isSuperAdmin,
         isOrgAdmin,
         loading,
         refreshData,
+        switchOrganization,
         hasClientAccess,
         getRemainingExcelLimit,
         getRemainingUserLimit,

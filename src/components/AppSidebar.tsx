@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles, Monitor, ListChecks, TrendingUp } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles, Monitor, ListChecks, TrendingUp, Building2 } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, SidebarRail, useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -31,6 +31,9 @@ export function AppSidebar() {
     isSuperAdmin,
     isOrgAdmin,
     membership,
+    organization,
+    allOrganizations,
+    switchOrganization,
     canAccessClientes,
     canAccessPresupuestos,
     canAccessExcel,
@@ -41,6 +44,9 @@ export function AppSidebar() {
     isERPSubscription,
     loading
   } = useSubscription();
+  
+  const currentOrgId = organization?.id || membership?.organization_id;
+  const currentOrgName = organization?.name || membership?.organization?.name || "Organización";
   const {
     isHoldedActive
   } = useHoldedIntegration();
@@ -51,8 +57,9 @@ export function AppSidebar() {
   const isComercial = membership?.role === 'comercial';
   const handleSignOut = async () => {
     try {
-      // Limpiar token de EasyQuote
+      // Limpiar tokens
       sessionStorage.removeItem('easyquote_token');
+      sessionStorage.removeItem('selected_organization_id');
 
       // Intentar cerrar sesión en Supabase (scope local para evitar errores si la sesión del servidor no existe)
       await supabase.auth.signOut({
@@ -430,6 +437,29 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="p-1">
         <SidebarMenu>
+          {/* Selector de organización - Solo si hay múltiples organizaciones */}
+          {!isSuperAdmin && allOrganizations.length > 1 && (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip={currentOrgName} className="h-8 px-2">
+                <button 
+                  onClick={() => {
+                    // Mostrar un dropdown o dialog para seleccionar org
+                    const nextOrgIndex = (allOrganizations.findIndex(o => o.id === currentOrgId) + 1) % allOrganizations.length;
+                    switchOrganization(allOrganizations[nextOrgIndex].id);
+                  }}
+                  className="w-full flex items-center text-xs"
+                >
+                  <Building2 className="mr-2 h-4 w-4" />
+                  {!isCollapsed && (
+                    <div className="flex flex-col items-start truncate">
+                      <span className="truncate max-w-[120px] font-medium">{currentOrgName}</span>
+                      <span className="text-[10px] text-muted-foreground">Cambiar org.</span>
+                    </div>
+                  )}
+                </button>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           {isSuperAdmin && <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Novedades" className="h-7 px-2">
                 <NavLink to="/novedades" className={getNavCls}>
