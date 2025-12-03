@@ -257,6 +257,19 @@ Deno.serve(async (req) => {
       return true;
     };
 
+    // Get hidden prompt settings for the organization
+    const { data: hiddenPromptSettings } = await supabase
+      .from('product_prompt_settings')
+      .select('easyquote_product_id, prompt_name')
+      .eq('organization_id', organizationId)
+      .eq('hide_in_documents', true);
+    
+    // Create a set of hidden prompts for quick lookup: "productId:promptLabel"
+    const hiddenPromptsSet = new Set(
+      (hiddenPromptSettings || []).map(s => `${s.easyquote_product_id}:${s.prompt_name}`)
+    );
+    console.log('🙈 Hidden prompts set:', Array.from(hiddenPromptsSet));
+
     // Build complete payload with all quote data
     const items: any[] = [];
     const appliedDiscounts: string[] = [];
@@ -299,7 +312,18 @@ Deno.serve(async (req) => {
             
             if (promptsArray.length > 0) {
               description = promptsArray
-                .filter(prompt => prompt && prompt.label && isPromptVisible(prompt.id, promptsObj, item.product_id || ''))
+                .filter(prompt => {
+                  if (!prompt || !prompt.label) return false;
+                  if (!isPromptVisible(prompt.id, promptsObj, item.product_id || '')) return false;
+                  // Check if this prompt is hidden in documents
+                  const productId = item.product_id || '';
+                  const promptLabel = prompt.label;
+                  if (hiddenPromptsSet.has(`${productId}:${promptLabel}`)) {
+                    console.log(`🙈 Hiding prompt "${promptLabel}" for product ${productId}`);
+                    return false;
+                  }
+                  return true;
+                })
                 .sort((a, b) => (a.order || 999) - (b.order || 999))
                 .map((prompt) => {
                   // For the quantity prompt, use the value from this specific row
@@ -426,7 +450,18 @@ Deno.serve(async (req) => {
           
           if (promptsArray.length > 0) {
             description = promptsArray
-              .filter(prompt => prompt && prompt.label && isPromptVisible(prompt.id, promptsObj, item.product_id || ''))
+              .filter(prompt => {
+                if (!prompt || !prompt.label) return false;
+                if (!isPromptVisible(prompt.id, promptsObj, item.product_id || '')) return false;
+                // Check if this prompt is hidden in documents
+                const productId = item.product_id || '';
+                const promptLabel = prompt.label;
+                if (hiddenPromptsSet.has(`${productId}:${promptLabel}`)) {
+                  console.log(`🙈 Hiding prompt "${promptLabel}" for product ${productId}`);
+                  return false;
+                }
+                return true;
+              })
               .sort((a, b) => (a.order || 999) - (b.order || 999))
               .map((prompt) => {
                 return `${prompt.label}: ${prompt.value}`;
