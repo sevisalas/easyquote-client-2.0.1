@@ -198,6 +198,99 @@ export default function ProductManagement() {
     getMappedVariableId,
     getMappedNames
   } = useProductVariableMappings(selectedProduct?.id);
+
+  // Query for prompt settings (hide in documents)
+  const { data: promptSettings = [], refetch: refetchPromptSettings } = useQuery({
+    queryKey: ["product-prompt-settings", selectedProduct?.id],
+    queryFn: async () => {
+      if (!selectedProduct?.id) return [];
+      
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return [];
+      
+      // Get organization_id
+      const { data: orgData } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('api_user_id', userData.user.id)
+        .single();
+      
+      let orgId = orgData?.id;
+      if (!orgId) {
+        const { data: memberData } = await supabase
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', userData.user.id)
+          .single();
+        orgId = memberData?.organization_id;
+      }
+      
+      if (!orgId) return [];
+      
+      const { data, error } = await supabase
+        .from('product_prompt_settings')
+        .select('*')
+        .eq('organization_id', orgId)
+        .eq('easyquote_product_id', selectedProduct.id);
+        
+      if (error) {
+        console.error("Error fetching prompt settings:", error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!selectedProduct?.id
+  });
+
+  // Mutation for prompt settings
+  const upsertPromptSettingMutation = useMutation({
+    mutationFn: async ({ productId, promptName, hideInDocuments }: { productId: string; promptName: string; hideInDocuments: boolean }) => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("No user");
+      
+      // Get organization_id
+      const { data: orgData } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('api_user_id', userData.user.id)
+        .single();
+      
+      let orgId = orgData?.id;
+      if (!orgId) {
+        const { data: memberData } = await supabase
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', userData.user.id)
+          .single();
+        orgId = memberData?.organization_id;
+      }
+      
+      if (!orgId) throw new Error("No organization");
+      
+      const { error } = await supabase
+        .from('product_prompt_settings')
+        .upsert({
+          organization_id: orgId,
+          easyquote_product_id: productId,
+          prompt_name: promptName,
+          hide_in_documents: hideInDocuments,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'organization_id,easyquote_product_id,prompt_name'
+        });
+        
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetchPromptSettings();
+    }
+  });
+
+  // Helper to check if prompt is hidden in documents
+  const isPromptHiddenInDocuments = (promptName: string): boolean => {
+    const setting = promptSettings.find(s => s.prompt_name === promptName);
+    return setting?.hide_in_documents || false;
+  };
   
   // ALL HOOKS MUST BE DECLARED BEFORE ANY CONDITIONAL LOGIC
   // Queries para tipos de prompts y outputs
@@ -1567,7 +1660,7 @@ export default function ProductManagement() {
                               </div>
                             </div>
 
-                            {/* Requerido + Variable de producción - Línea separada */}
+                            {/* Requerido + Ocultar en documentos + Variable de producción - Línea separada */}
                             <div className="flex items-center gap-6 mt-4 pt-4 border-t">
                               <div className="flex items-center gap-2">
                                 <Label className="text-sm font-medium">Requerido</Label>
@@ -1582,6 +1675,21 @@ export default function ProductManagement() {
                                       valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null
                                     };
                                     updatePromptMutation.mutate(updatedPrompt);
+                                  }}
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Label className="text-sm font-medium whitespace-nowrap">Ocultar en documentos</Label>
+                                <Switch
+                                  checked={isPromptHiddenInDocuments(prompt.promptCell)}
+                                  onCheckedChange={(checked) => {
+                                    if (selectedProduct) {
+                                      upsertPromptSettingMutation.mutate({
+                                        productId: selectedProduct.id,
+                                        promptName: prompt.promptCell,
+                                        hideInDocuments: checked
+                                      });
+                                    }
                                   }}
                                 />
                               </div>

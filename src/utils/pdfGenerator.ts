@@ -40,6 +40,50 @@ const getTemplateConfig = async () => {
   };
 };
 
+// Get prompt settings for hiding in documents (quotes only)
+const getHiddenPromptSettings = async (): Promise<Map<string, Set<string>>> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return new Map();
+  
+  // Get organization_id
+  const { data: orgData } = await supabase
+    .from('organizations')
+    .select('id')
+    .eq('api_user_id', user.id)
+    .single();
+  
+  let orgId = orgData?.id;
+  if (!orgId) {
+    const { data: memberData } = await supabase
+      .from('organization_members')
+      .select('organization_id')
+      .eq('user_id', user.id)
+      .single();
+    orgId = memberData?.organization_id;
+  }
+  
+  if (!orgId) return new Map();
+  
+  const { data: settings, error } = await supabase
+    .from('product_prompt_settings')
+    .select('easyquote_product_id, prompt_name')
+    .eq('organization_id', orgId)
+    .eq('hide_in_documents', true);
+    
+  if (error || !settings) return new Map();
+  
+  // Map: productId -> Set of hidden prompt names
+  const hiddenMap = new Map<string, Set<string>>();
+  settings.forEach(s => {
+    if (!hiddenMap.has(s.easyquote_product_id)) {
+      hiddenMap.set(s.easyquote_product_id, new Set());
+    }
+    hiddenMap.get(s.easyquote_product_id)!.add(s.prompt_name);
+  });
+  
+  return hiddenMap;
+};
+
 // Generate PDF from a quote ID
 export const generateQuotePDF = async (
   quoteId: string,
@@ -80,10 +124,16 @@ export const generateQuotePDF = async (
     // Get template configuration
     const config = await getTemplateConfig();
 
-    // Format items - mantener orden original de prompts
+    // Get hidden prompt settings for quotes
+    const hiddenPromptSettings = await getHiddenPromptSettings();
+
+    // Format items - mantener orden original de prompts, filtrando los ocultos
     const formattedItems = (quote.items || []).map((item: any) => {
       const images: string[] = [];
       const promptsFormatted: Array<{label: string, value: string}> = [];
+      
+      // Get hidden prompts for this product
+      const hiddenPrompts = item.product_id ? hiddenPromptSettings.get(item.product_id) : null;
       
       // Extraer imágenes y prompts EN ORDEN
       if (item.prompts && Array.isArray(item.prompts)) {
@@ -95,6 +145,11 @@ export const generateQuotePDF = async (
           if (value.startsWith('http') || value.startsWith('https://')) {
             images.push(value);
             return; // No incluir URLs en la descripción
+          }
+          
+          // Skip hidden prompts (for quotes only)
+          if (hiddenPrompts && hiddenPrompts.has(label)) {
+            return;
           }
           
           // Incluir TODOS los prompts en orden (excepto valores vacíos o 0)

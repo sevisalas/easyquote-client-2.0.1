@@ -267,14 +267,9 @@ export default function QuoteEdit() {
             console.warn(`⚠️ Item ${idx}: No valid prompts found in DB`);
           }
 
-          // Asegurar que product_name nunca sea "undefined" como string
-          const productName = (item.product_name && item.product_name !== "undefined") 
-            ? item.product_name 
-            : (item.description && item.description !== "undefined" ? item.description : "");
-          
           const mappedItem = {
             id: item.id,
-            product_name: productName,
+            product_name: item.product_name || "",
             description: item.description || "",
             price: item.price || 0,
             // QuoteItem compatibility
@@ -285,7 +280,7 @@ export default function QuoteEdit() {
               item.multi && typeof item.multi === "object" && (item.multi.qtyInputs || item.multi.qtyPrompt)
                 ? item.multi
                 : undefined,
-            itemDescription: productName,
+            itemDescription: item.product_name || "",
             itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
           };
           console.log(`🔍 Mapped item ${idx}:`, {
