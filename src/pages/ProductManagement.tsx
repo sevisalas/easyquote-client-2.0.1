@@ -199,17 +199,45 @@ export default function ProductManagement() {
     getMappedNames
   } = useProductVariableMappings(selectedProduct?.id);
 
-  // Helper to get current organization ID from sessionStorage
-  const getCurrentOrganizationId = (): string | null => {
+  // Helper to get current organization ID from sessionStorage or fetch it
+  const getCurrentOrganizationIdAsync = async (): Promise<string | null> => {
+    // First try sessionStorage
     const stored = sessionStorage.getItem('selectedOrganization');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        return parsed.id || null;
+        if (parsed.id) return parsed.id;
       } catch {
-        return null;
+        // continue to fallback
       }
     }
+    
+    // Fallback: query from Supabase
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return null;
+    
+    // Check if user owns an organization
+    const { data: orgData } = await supabase
+      .from('organizations')
+      .select('id')
+      .eq('api_user_id', userData.user.id)
+      .limit(1);
+    
+    if (orgData && orgData.length > 0) {
+      return orgData[0].id;
+    }
+    
+    // Check if user is member of an organization
+    const { data: memberData } = await supabase
+      .from('organization_members')
+      .select('organization_id')
+      .eq('user_id', userData.user.id)
+      .limit(1);
+    
+    if (memberData && memberData.length > 0) {
+      return memberData[0].organization_id;
+    }
+    
     return null;
   };
 
@@ -219,7 +247,7 @@ export default function ProductManagement() {
     queryFn: async () => {
       if (!selectedProduct?.id) return [];
       
-      const orgId = getCurrentOrganizationId();
+      const orgId = await getCurrentOrganizationIdAsync();
       if (!orgId) return [];
       
       const { data, error } = await supabase
@@ -240,7 +268,7 @@ export default function ProductManagement() {
   // Mutation for prompt settings
   const upsertPromptSettingMutation = useMutation({
     mutationFn: async ({ productId, promptName, hideInDocuments }: { productId: string; promptName: string; hideInDocuments: boolean }) => {
-      const orgId = getCurrentOrganizationId();
+      const orgId = await getCurrentOrganizationIdAsync();
       console.log("Saving prompt setting:", { orgId, productId, promptName, hideInDocuments });
       if (!orgId) throw new Error("No organization selected");
       

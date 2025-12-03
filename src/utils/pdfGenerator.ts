@@ -42,7 +42,7 @@ const getTemplateConfig = async () => {
 
 // Get prompt settings for hiding in documents (quotes only)
 const getHiddenPromptSettings = async (): Promise<Map<string, Set<string>>> => {
-  // Get organization_id from sessionStorage
+  // Get organization_id from sessionStorage first
   let orgId: string | null = null;
   const stored = sessionStorage.getItem('selectedOrganization');
   if (stored) {
@@ -50,7 +50,33 @@ const getHiddenPromptSettings = async (): Promise<Map<string, Set<string>>> => {
       const parsed = JSON.parse(stored);
       orgId = parsed.id || null;
     } catch {
-      // ignore
+      // continue to fallback
+    }
+  }
+  
+  // Fallback: query from Supabase if not in sessionStorage
+  if (!orgId) {
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData.user) {
+      const { data: orgData } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('api_user_id', userData.user.id)
+        .limit(1);
+      
+      if (orgData && orgData.length > 0) {
+        orgId = orgData[0].id;
+      } else {
+        const { data: memberData } = await supabase
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', userData.user.id)
+          .limit(1);
+        
+        if (memberData && memberData.length > 0) {
+          orgId = memberData[0].organization_id;
+        }
+      }
     }
   }
   
