@@ -197,7 +197,7 @@ export default function ProductionBoardKanban() {
                             </button>
                             <span className="font-medium">{idx + 1}. {item.product_name}</span>
                             <Badge variant={item.production_status === "completed" ? "default" : item.production_status === "in_progress" ? "secondary" : "outline"} className="text-xs">
-                              Estado: {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
+                              {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
                           {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
@@ -263,7 +263,7 @@ export default function ProductionBoardKanban() {
                             </button>
                             <span className="font-medium">{idx + 1}. {item.product_name}</span>
                             <Badge variant={item.production_status === "completed" ? "default" : item.production_status === "in_progress" ? "secondary" : "outline"} className="text-xs">
-                              Estado: {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
+                              {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
                           {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
@@ -329,7 +329,7 @@ export default function ProductionBoardKanban() {
                             </button>
                             <span className="font-medium">{idx + 1}. {item.product_name}</span>
                             <Badge variant={item.production_status === "completed" ? "default" : item.production_status === "in_progress" ? "secondary" : "outline"} className="text-xs">
-                              Estado: {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
+                              {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
                           {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
@@ -395,7 +395,7 @@ export default function ProductionBoardKanban() {
                             </button>
                             <span className="font-medium">{idx + 1}. {item.product_name}</span>
                             <Badge variant={item.production_status === "completed" ? "default" : item.production_status === "in_progress" ? "secondary" : "outline"} className="text-xs">
-                              Estado: {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
+                              {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
                           {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
@@ -459,7 +459,7 @@ export default function ProductionBoardKanban() {
                             </button>
                             <span className="font-medium">{idx + 1}. {item.product_name}</span>
                             <Badge variant={item.production_status === "completed" ? "default" : item.production_status === "in_progress" ? "secondary" : "outline"} className="text-xs">
-                              Estado: {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
+                              {itemStatusLabels[item.production_status as keyof typeof itemStatusLabels] || "Pendiente"}
                             </Badge>
                           </div>
                           {expandedItems.has(item.id) && item.prompts && Array.isArray(item.prompts) && item.prompts.length > 0 && <div className="text-xs text-muted-foreground pl-4 space-y-0.5">
