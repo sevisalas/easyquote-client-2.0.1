@@ -57,14 +57,7 @@ const NuevoSuscriptor = () => {
       return;
     }
 
-    if (!formData.adminPassword || formData.adminPassword.length < 6) {
-      toast({
-        title: "Error",
-        description: "La contraseña debe tener al menos 6 caracteres",
-        variant: "destructive",
-      });
-      return;
-    }
+    // La contraseña solo es obligatoria para usuarios nuevos (se valida en el servidor)
 
     setSaving(true);
     try {
@@ -188,8 +181,11 @@ const NuevoSuscriptor = () => {
                   type="password"
                   value={formData.adminPassword}
                   onChange={(e) => setFormData({ ...formData, adminPassword: e.target.value })}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Solo para usuarios nuevos"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Si el email ya existe, se reutilizará el usuario (dejar contraseña vacía)
+                </p>
               </div>
             </div>
           </div>

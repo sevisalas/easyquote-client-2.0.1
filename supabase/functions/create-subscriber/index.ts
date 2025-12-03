@@ -60,33 +60,53 @@ serve(async (req) => {
     } = await req.json();
 
     // Validaciones
-    if (!organizationName || !adminEmail || !adminPassword) {
+    if (!organizationName || !adminEmail) {
       throw new Error('Missing required fields');
     }
 
-    if (adminPassword.length < 6) {
-      throw new Error('Password must be at least 6 characters');
-    }
+    // 1. Buscar si el usuario ya existe
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find(u => u.email === adminEmail);
+    
+    let userId: string;
+    let isNewUser = false;
 
-    // 1. Crear el usuario administrador
-    const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-      email: adminEmail,
-      password: adminPassword,
-      email_confirm: true,
-    });
+    if (existingUser) {
+      // Usuario ya existe - reutilizarlo
+      userId = existingUser.id;
+      console.log(`Using existing user: ${userId}`);
+    } else {
+      // Crear nuevo usuario
+      if (!adminPassword) {
+        throw new Error('Password is required for new users');
+      }
+      if (adminPassword.length < 6) {
+        throw new Error('Password must be at least 6 characters');
+      }
 
-    if (createUserError) {
-      throw new Error(`Error creating user: ${createUserError.message}`);
-    }
+      const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
+        email: adminEmail,
+        password: adminPassword,
+        email_confirm: true,
+      });
 
-    if (!newUser.user) {
-      throw new Error('User creation failed');
+      if (createUserError) {
+        throw new Error(`Error creating user: ${createUserError.message}`);
+      }
+
+      if (!newUser.user) {
+        throw new Error('User creation failed');
+      }
+
+      userId = newUser.user.id;
+      isNewUser = true;
+      console.log(`Created new user: ${userId}`);
     }
 
     // 2. Crear la organización
     const orgData: any = {
       name: organizationName,
-      api_user_id: newUser.user.id,
+      api_user_id: userId,
       subscription_plan: subscriptionPlan,
       excel_limit: excelLimit || 0,
       excel_extra: excelExtra || 0,
@@ -101,8 +121,10 @@ serve(async (req) => {
       .single();
 
     if (orgError) {
-      // Si falla la creación de la organización, eliminar el usuario creado
-      await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
+      // Si falla la creación de la organización y creamos un usuario nuevo, eliminarlo
+      if (isNewUser) {
+        await supabaseAdmin.auth.admin.deleteUser(userId);
+      }
       throw new Error(`Error creating organization: ${orgError.message}`);
     }
 
@@ -111,15 +133,17 @@ serve(async (req) => {
       .from('organization_members')
       .insert({
         organization_id: organization.id,
-        user_id: newUser.user.id,
+        user_id: userId,
         role: 'admin',
         display_name: adminEmail.split('@')[0],
       });
 
     if (memberError) {
-      // Si falla, hacer rollback eliminando la organización y el usuario
+      // Si falla, hacer rollback eliminando la organización
       await supabaseAdmin.from('organizations').delete().eq('id', organization.id);
-      await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
+      if (isNewUser) {
+        await supabaseAdmin.auth.admin.deleteUser(userId);
+      }
       throw new Error(`Error creating member: ${memberError.message}`);
     }
 
@@ -127,7 +151,8 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         organization: organization,
-        userId: newUser.user.id,
+        userId: userId,
+        isNewUser: isNewUser,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
