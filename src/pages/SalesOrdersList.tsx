@@ -263,6 +263,9 @@ const SalesOrdersList = () => {
         throw new Error('No se pudo generar el número de pedido');
       }
 
+      // Obtener organization_id del sessionStorage
+      const organizationId = sessionStorage.getItem('selected_organization_id');
+
       // Create new order
       const { data: newOrder, error: orderError } = await supabase
         .from('sales_orders')
@@ -278,7 +281,8 @@ const SalesOrdersList = () => {
           tax_amount: originalOrder.tax_amount,
           final_price: originalOrder.final_price,
           status: 'draft',
-          created_from_scratch: originalOrder.created_from_scratch
+          created_from_scratch: originalOrder.created_from_scratch,
+          organization_id: organizationId,
         })
         .select()
         .single();

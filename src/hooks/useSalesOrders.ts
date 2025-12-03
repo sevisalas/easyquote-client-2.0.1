@@ -61,10 +61,20 @@ export const useSalesOrders = () => {
   const fetchSalesOrders = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Filtrar por organization_id para separar datos por tenant
+      const organizationId = sessionStorage.getItem('selected_organization_id');
+      
+      let query = supabase
         .from('sales_orders')
         .select('*')
         .order('created_at', { ascending: false });
+      
+      if (organizationId) {
+        query = query.eq('organization_id', organizationId);
+      }
+      
+      const { data, error } = await query;
 
       if (error) throw error;
       return data as SalesOrder[];

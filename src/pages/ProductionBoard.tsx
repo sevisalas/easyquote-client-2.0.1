@@ -87,8 +87,10 @@ export default function ProductionBoard() {
     try {
       setLoading(true);
 
-      // Fetch orders with status pending or in_production
-      const { data: ordersData, error: ordersError } = await supabase
+      // Filtrar por organization_id para separar datos por tenant
+      const organizationId = sessionStorage.getItem('selected_organization_id');
+      
+      let query = supabase
         .from("sales_orders")
         .select("*")
         .in("status", ["pending", "in_production"])
@@ -96,6 +98,13 @@ export default function ProductionBoard() {
           ascending: true,
           nullsFirst: false,
         });
+      
+      if (organizationId) {
+        query = query.eq('organization_id', organizationId);
+      }
+      
+      // Fetch orders with status pending or in_production
+      const { data: ordersData, error: ordersError } = await query;
       if (ordersError) throw ordersError;
 
       // Fetch items for each order
