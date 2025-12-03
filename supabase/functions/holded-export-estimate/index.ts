@@ -313,21 +313,7 @@ Deno.serve(async (req) => {
             }
           }
           
-          // Add outputs from the specific row (excluding price fields)
-          if (row.outs && Array.isArray(row.outs) && row.outs.length > 0) {
-            const outputsText = row.outs
-              .filter((out: any) => {
-                const name = String(out.name || '').toLowerCase();
-                const type = String(out.type || '').toLowerCase();
-                return !type.includes('price') && !name.includes('precio') && !name.includes('price');
-              })
-              .map((out: any) => `${out.name}: ${out.value}`)
-              .join('\n');
-            
-            if (outputsText) {
-              description += (description ? '\n' : '') + outputsText;
-            }
-          }
+          // OUTPUTS SON DATOS INTERNOS - NO SE ENVÍAN A HOLDED
           
           // Add item additionals (ajustes sobre el artículo) at the end
           if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
@@ -450,21 +436,7 @@ Deno.serve(async (req) => {
           }
         }
         
-        // Add outputs to description (excluding price fields)
-        if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
-          const outputsText = item.outputs
-            .filter((out: any) => {
-              const name = String(out.name || '').toLowerCase();
-              const type = String(out.type || '').toLowerCase();
-              return !type.includes('price') && !name.includes('precio') && !name.includes('price');
-            })
-            .map((out: any) => `${out.name}: ${out.value}`)
-            .join('\n');
-          
-          if (outputsText) {
-            description += (description ? '\n' : '') + outputsText;
-          }
-        }
+        // OUTPUTS SON DATOS INTERNOS - NO SE ENVÍAN A HOLDED
         
         // Add item additionals (ajustes sobre el artículo) at the end
         if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
