@@ -127,10 +127,11 @@ const IntegrationAccess = () => {
         return;
       }
 
+      // Crear con is_active: false - se activará cuando el usuario configure su API key
       const { error } = await supabase.from("organization_integration_access").insert({
         organization_id: selectedOrg,
         integration_id: selectedIntegration,
-        is_active: true,
+        is_active: false,
       });
 
       if (error) throw error;
