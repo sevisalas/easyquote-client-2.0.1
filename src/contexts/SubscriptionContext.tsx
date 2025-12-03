@@ -138,6 +138,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
 
         // Check if there's a selected organization in sessionStorage
         const savedOrgId = sessionStorage.getItem('selected_organization_id');
+        const pendingSelection = sessionStorage.getItem('pending_org_selection');
         let selectedOrg: Organization | null = null;
 
         if (savedOrgId) {
@@ -145,12 +146,14 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
           console.log('🔍 Looking for saved org:', savedOrgId, 'Found:', !!selectedOrg);
         }
 
-        // If no saved selection, use the first organization
-        // BUT don't override if user already has a saved selection (even if not found yet)
-        if (!selectedOrg && allOrgs.length > 0 && !savedOrgId) {
+        // If no saved selection and NOT pending user selection, use the first organization
+        // Don't auto-select if user is currently choosing from multiple orgs
+        if (!selectedOrg && allOrgs.length > 0 && !savedOrgId && !pendingSelection) {
           selectedOrg = allOrgs[0];
           sessionStorage.setItem('selected_organization_id', selectedOrg.id);
           console.log('📌 Auto-selected first org:', selectedOrg.name);
+        } else if (pendingSelection) {
+          console.log('⏳ Waiting for user to select organization...');
         }
 
         if (selectedOrg) {
