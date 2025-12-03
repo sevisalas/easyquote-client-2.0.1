@@ -142,12 +142,15 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
 
         if (savedOrgId) {
           selectedOrg = allOrgs.find(org => org.id === savedOrgId) || null;
+          console.log('🔍 Looking for saved org:', savedOrgId, 'Found:', !!selectedOrg);
         }
 
-        // If no saved selection or invalid, use the first organization
-        if (!selectedOrg && allOrgs.length > 0) {
+        // If no saved selection, use the first organization
+        // BUT don't override if user already has a saved selection (even if not found yet)
+        if (!selectedOrg && allOrgs.length > 0 && !savedOrgId) {
           selectedOrg = allOrgs[0];
           sessionStorage.setItem('selected_organization_id', selectedOrg.id);
+          console.log('📌 Auto-selected first org:', selectedOrg.name);
         }
 
         if (selectedOrg) {
