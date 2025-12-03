@@ -87,12 +87,20 @@ const Index = () => {
       if (user) {
         setUserId(user.id);
 
-        // Primero intentar obtener display_name de organization_members
-        const { data: member } = await supabase
+        // Obtener display_name de la organización activa
+        const selectedOrgId = sessionStorage.getItem('selected_organization_id');
+        
+        let memberQuery = supabase
           .from("organization_members")
           .select("display_name")
-          .eq("user_id", user.id)
-          .single();
+          .eq("user_id", user.id);
+        
+        // Si hay organización seleccionada, filtrar por ella
+        if (selectedOrgId) {
+          memberQuery = memberQuery.eq("organization_id", selectedOrgId);
+        }
+        
+        const { data: member } = await memberQuery.maybeSingle();
 
         if (member?.display_name) {
           setUserName(member.display_name);
