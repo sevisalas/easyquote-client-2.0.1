@@ -38,7 +38,7 @@ export const useHoldedIntegration = () => {
       // Then check if the organization has access to Holded integration
       const { data: accessData, error: accessError } = await supabase
         .from('organization_integration_access')
-        .select('id, is_active')
+        .select('id, is_active, access_token_encrypted')
         .eq('organization_id', currentOrganization.id)
         .eq('integration_id', integrationData.id)
         .maybeSingle();
@@ -59,9 +59,9 @@ export const useHoldedIntegration = () => {
         return;
       }
 
-      // Organization has access to Holded
+      // Organization has access to Holded - but only active if token is configured
       setHasHoldedAccess(true);
-      setIsHoldedActive(accessData.is_active);
+      setIsHoldedActive(accessData.is_active && !!accessData.access_token_encrypted);
     } catch (error) {
       console.error('Error checking Holded integration:', error);
       setHasHoldedAccess(false);
