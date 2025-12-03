@@ -353,6 +353,9 @@ export default function QuoteNew() {
         ? customerId.replace('holded:', '') 
         : customerId;
 
+      // Obtener organization_id del sessionStorage
+      const organizationId = sessionStorage.getItem('selected_organization_id');
+      
       const quoteData = {
         user_id: user.id,
         customer_id: actualCustomerId,
@@ -369,6 +372,7 @@ export default function QuoteNew() {
         terms_conditions: "",
         selections: itemsArray,
         quote_additionals: quoteAdditionals,
+        organization_id: organizationId,
       };
 
       const { data: quote, error } = await supabase

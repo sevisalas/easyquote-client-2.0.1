@@ -1394,6 +1394,7 @@ export type Database = {
           holded_estimate_number: string | null
           id: string
           notes: string | null
+          organization_id: string | null
           product_name: string | null
           quote_additionals: Json | null
           quote_number: string
@@ -1418,6 +1419,7 @@ export type Database = {
           holded_estimate_number?: string | null
           id?: string
           notes?: string | null
+          organization_id?: string | null
           product_name?: string | null
           quote_additionals?: Json | null
           quote_number: string
@@ -1442,6 +1444,7 @@ export type Database = {
           holded_estimate_number?: string | null
           id?: string
           notes?: string | null
+          organization_id?: string | null
           product_name?: string | null
           quote_additionals?: Json | null
           quote_number?: string
@@ -1455,7 +1458,15 @@ export type Database = {
           user_id?: string
           valid_until?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "quotes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sales_order_additionals: {
         Row: {
@@ -1585,6 +1596,7 @@ export type Database = {
           notes: string | null
           order_date: string
           order_number: string
+          organization_id: string | null
           production_progress: Json | null
           quote_id: string | null
           status: string
@@ -1609,6 +1621,7 @@ export type Database = {
           notes?: string | null
           order_date?: string
           order_number: string
+          organization_id?: string | null
           production_progress?: Json | null
           quote_id?: string | null
           status?: string
@@ -1633,6 +1646,7 @@ export type Database = {
           notes?: string | null
           order_date?: string
           order_number?: string
+          organization_id?: string | null
           production_progress?: Json | null
           quote_id?: string | null
           status?: string
@@ -1649,6 +1663,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {

@@ -35,10 +35,19 @@ const fmtEUR = (n: any) => {
 };
 
 const fetchQuotes = async () => {
-  const { data, error } = await supabase
+  // Filtrar por organization_id para separar datos por tenant
+  const organizationId = sessionStorage.getItem('selected_organization_id');
+  
+  let query = supabase
     .from("quotes")
-    .select("id, created_at, quote_number, customer_id, product_name, final_price, status, selections, description, holded_estimate_number, holded_estimate_id, user_id")
+    .select("id, created_at, quote_number, customer_id, product_name, final_price, status, selections, description, holded_estimate_number, holded_estimate_id, user_id, organization_id")
     .order("created_at", { ascending: false });
+  
+  if (organizationId) {
+    query = query.eq('organization_id', organizationId);
+  }
+  
+  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 };

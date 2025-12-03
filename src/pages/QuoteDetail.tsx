@@ -167,6 +167,9 @@ export default function QuoteDetail() {
       const newNumber = `${year}-${String(nextNumber).padStart(4, '0')}`;
       console.log('Nuevo número de presupuesto:', newNumber);
 
+      // Obtener organization_id del sessionStorage
+      const organizationId = sessionStorage.getItem('selected_organization_id');
+
       // Crear nuevo presupuesto
       const { data: newQuote, error: insertError } = await supabase
         .from('quotes')
@@ -182,6 +185,7 @@ export default function QuoteDetail() {
           subtotal: originalQuote.subtotal,
           final_price: originalQuote.final_price,
           selections: originalQuote.selections,
+          organization_id: organizationId,
         })
         .select()
         .single();

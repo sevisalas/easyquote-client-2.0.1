@@ -78,13 +78,24 @@ export default function ProductionBoardKanban() {
   const loadOrders = async () => {
     try {
       setLoading(true);
-      const {
-        data: ordersData,
-        error: ordersError
-      } = await supabase.from("sales_orders").select("*").in("status", ["pending", "in_production"]).order("delivery_date", {
-        ascending: true,
-        nullsFirst: false
-      });
+      
+      // Filtrar por organization_id para separar datos por tenant
+      const organizationId = sessionStorage.getItem('selected_organization_id');
+      
+      let query = supabase
+        .from("sales_orders")
+        .select("*")
+        .in("status", ["pending", "in_production"])
+        .order("delivery_date", {
+          ascending: true,
+          nullsFirst: false
+        });
+      
+      if (organizationId) {
+        query = query.eq('organization_id', organizationId);
+      }
+      
+      const { data: ordersData, error: ordersError } = await query;
       if (ordersError) throw ordersError;
       const ordersWithItems = await Promise.all((ordersData || []).map(async order => {
         const {

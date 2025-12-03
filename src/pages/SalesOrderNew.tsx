@@ -279,6 +279,9 @@ export default function SalesOrderNew() {
       // Generate unique order number atomically
       const orderNumber = await generateOrderNumber();
       
+      // Obtener organization_id del sessionStorage
+      const organizationId = sessionStorage.getItem('selected_organization_id');
+      
       const orderData = {
         user_id: user.id,
         customer_id: finalCustomerId,
@@ -293,6 +296,7 @@ export default function SalesOrderNew() {
         final_price: totals.finalPrice,
         notes: notes || "",
         created_from_scratch: true,
+        organization_id: organizationId,
       };
 
       const { data: order, error: orderError } = await supabase
