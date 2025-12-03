@@ -241,24 +241,55 @@ export default function ProductManagement() {
   const upsertPromptSettingMutation = useMutation({
     mutationFn: async ({ productId, promptName, hideInDocuments }: { productId: string; promptName: string; hideInDocuments: boolean }) => {
       const orgId = getCurrentOrganizationId();
+      console.log("Saving prompt setting:", { orgId, productId, promptName, hideInDocuments });
       if (!orgId) throw new Error("No organization selected");
       
-      const { error } = await supabase
+      // First try to find existing record
+      const { data: existing } = await supabase
         .from('product_prompt_settings')
-        .upsert({
-          organization_id: orgId,
-          easyquote_product_id: productId,
-          prompt_name: promptName,
-          hide_in_documents: hideInDocuments,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'organization_id,easyquote_product_id,prompt_name'
-        });
-        
-      if (error) throw error;
+        .select('id')
+        .eq('organization_id', orgId)
+        .eq('easyquote_product_id', productId)
+        .eq('prompt_name', promptName)
+        .maybeSingle();
+      
+      if (existing) {
+        // Update existing record
+        const { error } = await supabase
+          .from('product_prompt_settings')
+          .update({
+            hide_in_documents: hideInDocuments,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        // Insert new record
+        const { error } = await supabase
+          .from('product_prompt_settings')
+          .insert({
+            organization_id: orgId,
+            easyquote_product_id: productId,
+            prompt_name: promptName,
+            hide_in_documents: hideInDocuments
+          });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       refetchPromptSettings();
+      toast({
+        title: "Configuración guardada",
+        description: "La configuración del prompt se ha actualizado"
+      });
+    },
+    onError: (error) => {
+      console.error("Error saving prompt setting:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar la configuración",
+        variant: "destructive"
+      });
     }
   });
 
