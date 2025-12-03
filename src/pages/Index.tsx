@@ -88,8 +88,8 @@ const Index = () => {
         setUserId(user.id);
 
         // Obtener display_name de la organización activa
-        const selectedOrgId = sessionStorage.getItem('selected_organization_id');
-        
+        const selectedOrgId = sessionStorage.getItem("selected_organization_id");
+
         if (selectedOrgId) {
           const { data: member } = await supabase
             .from("organization_members")
@@ -386,7 +386,7 @@ const Index = () => {
             onClick={() => navigate("/novedades")}
             className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
-            EasyQuote v2.2.1
+            EasyQuote v2.2.2
           </button>
         </div>
 
