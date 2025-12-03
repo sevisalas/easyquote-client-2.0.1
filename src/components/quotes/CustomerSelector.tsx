@@ -36,11 +36,43 @@ interface CustomerSelectorProps {
   placeholder?: string;
 }
 
-// Función para obtener clientes locales
-const fetchLocalCustomers = async (): Promise<LocalCustomer[]> => {
+// Helper to get selected organization ID
+const getSelectedOrganizationId = async (): Promise<string | null> => {
+  // First check sessionStorage for selected organization
+  const selectedOrgId = sessionStorage.getItem('selected_organization_id');
+  if (selectedOrgId) {
+    return selectedOrgId;
+  }
+  
+  // Fallback: get from user's organization
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  
+  // Try as owner first
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("id")
+    .eq("api_user_id", user.id)
+    .maybeSingle();
+  
+  if (org) return org.id;
+  
+  // Try as member
+  const { data: membership } = await supabase
+    .from("organization_members")
+    .select("organization_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  
+  return membership?.organization_id || null;
+};
+
+// Función para obtener clientes locales - filtered by organization
+const fetchLocalCustomers = async (organizationId: string): Promise<LocalCustomer[]> => {
   const { data, error } = await supabase
     .from("customers")
     .select("id, name, email, phone, source")
+    .eq("organization_id", organizationId)
     .or("source.eq.local,source.is.null")
     .order("created_at", { ascending: false })
     .limit(50000);
@@ -50,7 +82,7 @@ const fetchLocalCustomers = async (): Promise<LocalCustomer[]> => {
     throw error;
   }
   
-  console.log('✅ Local customers fetched:', data?.length);
+  console.log('✅ Local customers fetched:', data?.length, 'for org:', organizationId);
   
   return (data || []).map(customer => ({
     ...customer,
@@ -58,54 +90,18 @@ const fetchLocalCustomers = async (): Promise<LocalCustomer[]> => {
   }));
 };
 
-// Función para obtener contactos de Holded
-const fetchHoldedCustomers = async (): Promise<HoldedCustomer[]> => {
+// Función para obtener contactos de Holded - filtered by organization
+const fetchHoldedCustomers = async (organizationId: string): Promise<HoldedCustomer[]> => {
   try {
-    // Primero obtener el organization_id del usuario
-    const { data: { user } } = await supabase.auth.getUser();
-    console.log('🔍 Current user:', user?.id);
-    
-    if (!user) {
-      console.log('⚠️ No user found, skipping Holded customers');
-      return [];
-    }
-
-    // Intentar obtener la organización como owner
-    let { data: org, error: orgError } = await supabase
-      .from("organizations")
-      .select("id")
-      .eq("api_user_id", user.id)
-      .maybeSingle();
-
-    // Si no es owner, buscar como miembro
-    if (!org) {
-      const { data: membership } = await supabase
-        .from("organization_members")
-        .select("organization_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      
-      if (membership) {
-        org = { id: membership.organization_id };
-      }
-    }
-
-    console.log('🔍 Organization found:', org?.id, 'Error:', orgError);
-
-    if (!org) {
-      console.log('⚠️ No organization found, skipping Holded customers');
-      return [];
-    }
-
     const { data, error } = await supabase
       .from("customers")
       .select("id, holded_id, name, email, phone, source")
-      .eq("organization_id", org.id)
+      .eq("organization_id", organizationId)
       .eq("source", "holded")
       .order("created_at", { ascending: false })
       .limit(50000);
     
-    console.log('🔍 Holded contacts query result:', { count: data?.length, error });
+    console.log('🔍 Holded contacts query result:', { count: data?.length, error, orgId: organizationId });
     
     if (error) {
       console.error('❌ Error fetching Holded customers:', error);
@@ -127,10 +123,19 @@ const fetchHoldedCustomers = async (): Promise<HoldedCustomer[]> => {
 // Función principal para obtener todos los clientes
 const fetchAllCustomers = async (): Promise<Customer[]> => {
   try {
+    // Get selected organization
+    const organizationId = await getSelectedOrganizationId();
+    if (!organizationId) {
+      console.log('⚠️ No organization found, returning empty customers');
+      return [];
+    }
+    
+    console.log('🏢 Fetching customers for organization:', organizationId);
+    
     // Obtener clientes locales y de Holded
     const [localCustomers, holdedCustomers] = await Promise.all([
-      fetchLocalCustomers(),
-      fetchHoldedCustomers()
+      fetchLocalCustomers(organizationId),
+      fetchHoldedCustomers(organizationId)
     ]);
     
     const allCustomers = [...localCustomers, ...holdedCustomers];
