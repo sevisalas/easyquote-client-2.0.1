@@ -151,9 +151,9 @@ export default function ProductionBoardKanban() {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 md:overflow-x-auto pb-4">
+      <div className="flex flex-col md:flex-row gap-3 pb-4">
         {/* Columna: Sin fecha */}
-        <div className="flex-shrink-0 w-full md:w-96 bg-muted/30 rounded-lg p-4">
+        <div className="flex-1 min-w-0 bg-muted/30 rounded-lg p-3">
           <div className="mb-4 flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-slate-400" />
             <h2 className="text-lg font-bold">Sin fecha</h2>
@@ -217,7 +217,7 @@ export default function ProductionBoardKanban() {
         </div>
 
         {/* Columna: Fuera de plazo */}
-        <div className="flex-shrink-0 w-full md:w-96 bg-muted/30 rounded-lg p-4">
+        <div className="flex-1 min-w-0 bg-muted/30 rounded-lg p-3">
           <div className="mb-4 flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-red-500" />
             <h2 className="text-lg font-bold">Fuera de plazo</h2>
@@ -283,7 +283,7 @@ export default function ProductionBoardKanban() {
         </div>
 
         {/* Columna: Entrega hoy */}
-        <div className="flex-shrink-0 w-full md:w-96 bg-muted/30 rounded-lg p-4">
+        <div className="flex-1 min-w-0 bg-muted/30 rounded-lg p-3">
           <div className="mb-4 flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-orange-500" />
             <h2 className="text-lg font-bold">Entrega hoy</h2>
@@ -349,7 +349,7 @@ export default function ProductionBoardKanban() {
         </div>
 
         {/* Columna: Entrega mañana */}
-        <div className="flex-shrink-0 w-full md:w-96 bg-muted/30 rounded-lg p-4">
+        <div className="flex-1 min-w-0 bg-muted/30 rounded-lg p-3">
           <div className="mb-4 flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-yellow-500" />
             <h2 className="text-lg font-bold">Entrega mañana</h2>
@@ -415,7 +415,7 @@ export default function ProductionBoardKanban() {
         </div>
 
         {/* Columna: En plazo */}
-        <div className="flex-shrink-0 w-full md:w-96 bg-muted/30 rounded-lg p-4">
+        <div className="flex-1 min-w-0 bg-muted/30 rounded-lg p-3">
           <div className="mb-4 flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-green-500" />
             <h2 className="text-lg font-bold">En plazo</h2>
