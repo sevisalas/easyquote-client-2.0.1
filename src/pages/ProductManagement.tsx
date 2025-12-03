@@ -199,32 +199,27 @@ export default function ProductManagement() {
     getMappedNames
   } = useProductVariableMappings(selectedProduct?.id);
 
+  // Helper to get current organization ID from sessionStorage
+  const getCurrentOrganizationId = (): string | null => {
+    const stored = sessionStorage.getItem('selectedOrganization');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        return parsed.id || null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
   // Query for prompt settings (hide in documents)
   const { data: promptSettings = [], refetch: refetchPromptSettings } = useQuery({
     queryKey: ["product-prompt-settings", selectedProduct?.id],
     queryFn: async () => {
       if (!selectedProduct?.id) return [];
       
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) return [];
-      
-      // Get organization_id
-      const { data: orgData } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('api_user_id', userData.user.id)
-        .single();
-      
-      let orgId = orgData?.id;
-      if (!orgId) {
-        const { data: memberData } = await supabase
-          .from('organization_members')
-          .select('organization_id')
-          .eq('user_id', userData.user.id)
-          .single();
-        orgId = memberData?.organization_id;
-      }
-      
+      const orgId = getCurrentOrganizationId();
       if (!orgId) return [];
       
       const { data, error } = await supabase
@@ -245,27 +240,8 @@ export default function ProductManagement() {
   // Mutation for prompt settings
   const upsertPromptSettingMutation = useMutation({
     mutationFn: async ({ productId, promptName, hideInDocuments }: { productId: string; promptName: string; hideInDocuments: boolean }) => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error("No user");
-      
-      // Get organization_id
-      const { data: orgData } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('api_user_id', userData.user.id)
-        .single();
-      
-      let orgId = orgData?.id;
-      if (!orgId) {
-        const { data: memberData } = await supabase
-          .from('organization_members')
-          .select('organization_id')
-          .eq('user_id', userData.user.id)
-          .single();
-        orgId = memberData?.organization_id;
-      }
-      
-      if (!orgId) throw new Error("No organization");
+      const orgId = getCurrentOrganizationId();
+      if (!orgId) throw new Error("No organization selected");
       
       const { error } = await supabase
         .from('product_prompt_settings')

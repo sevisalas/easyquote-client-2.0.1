@@ -42,24 +42,16 @@ const getTemplateConfig = async () => {
 
 // Get prompt settings for hiding in documents (quotes only)
 const getHiddenPromptSettings = async (): Promise<Map<string, Set<string>>> => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return new Map();
-  
-  // Get organization_id
-  const { data: orgData } = await supabase
-    .from('organizations')
-    .select('id')
-    .eq('api_user_id', user.id)
-    .single();
-  
-  let orgId = orgData?.id;
-  if (!orgId) {
-    const { data: memberData } = await supabase
-      .from('organization_members')
-      .select('organization_id')
-      .eq('user_id', user.id)
-      .single();
-    orgId = memberData?.organization_id;
+  // Get organization_id from sessionStorage
+  let orgId: string | null = null;
+  const stored = sessionStorage.getItem('selectedOrganization');
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      orgId = parsed.id || null;
+    } catch {
+      // ignore
+    }
   }
   
   if (!orgId) return new Map();
