@@ -52,9 +52,11 @@ export const useNumberingFormat = (documentType: 'quote' | 'order') => {
       console.log('📋 Numbering format - Organization ID:', organizationId, 'Document type:', documentType);
 
       // Update last sequential number from database before returning format
+      // Pasar organization_id para filtrar correctamente por tenant
       await supabase.rpc('update_last_sequential_number', {
         p_user_id: user.id,
-        p_document_type: documentType
+        p_document_type: documentType,
+        p_organization_id: organizationId
       });
 
       // If user belongs to an organization, get format for that organization
