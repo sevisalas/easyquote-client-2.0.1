@@ -368,13 +368,36 @@ export default function SalesOrderNew() {
 
       if (itemsError) throw itemsError;
 
-      // Create implicit tasks for items with mapped production variables
+      // Create implicit tasks for items
       // Wrap entire task creation in try-catch to ensure additionals are always saved
       if (insertedItems && insertedItems.length > 0 && currentOrganization?.id) {
         try {
+          // Get default production tasks for the organization
+          const { data: defaultTasks } = await supabase
+            .from("default_production_tasks")
+            .select("task_name, phase_id")
+            .eq("organization_id", currentOrganization.id)
+            .eq("is_active", true)
+            .order("display_order");
+
           for (const item of insertedItems) {
+            const tasksToCreate: any[] = [];
+
             try {
-              // Get all mapped variables for this product
+              // 1. Create default production tasks for this item
+              if (defaultTasks && defaultTasks.length > 0) {
+                for (const defaultTask of defaultTasks) {
+                  tasksToCreate.push({
+                    sales_order_item_id: item.id,
+                    phase_id: defaultTask.phase_id,
+                    task_name: defaultTask.task_name,
+                    operator_id: user.id,
+                    status: "pending",
+                  });
+                }
+              }
+
+              // 2. Create tasks from mapped production variables
               const { data: mappings } = await supabase
                 .from("product_variable_mappings")
                 .select(`
@@ -383,6 +406,7 @@ export default function SalesOrderNew() {
                   production_variables (
                     has_implicit_task,
                     task_name,
+                    task_phase_id,
                     task_exclude_values,
                     name
                   )
@@ -391,8 +415,6 @@ export default function SalesOrderNew() {
                 .eq("organization_id", currentOrganization.id);
 
               if (mappings && mappings.length > 0) {
-                const tasksToCreate = [];
-
                 for (const mapping of mappings) {
                   const variable = mapping.production_variables as any;
                   if (variable && variable.has_implicit_task && variable.task_name) {
@@ -420,18 +442,22 @@ export default function SalesOrderNew() {
                     }
 
                     if (shouldCreateTask) {
-                      // Get the first available phase (should be "Preimpresión")
-                      const { data: phases } = await supabase
-                        .from("production_phases")
-                        .select("id")
-                        .eq("is_active", true)
-                        .order("display_order")
-                        .limit(1);
+                      // Use variable's configured phase or fall back to first phase
+                      let phaseId = variable.task_phase_id;
+                      if (!phaseId) {
+                        const { data: phases } = await supabase
+                          .from("production_phases")
+                          .select("id")
+                          .eq("is_active", true)
+                          .order("display_order")
+                          .limit(1);
+                        phaseId = phases?.[0]?.id;
+                      }
 
-                      if (phases && phases.length > 0) {
+                      if (phaseId) {
                         tasksToCreate.push({
                           sales_order_item_id: item.id,
-                          phase_id: phases[0].id,
+                          phase_id: phaseId,
                           task_name: variable.task_name,
                           operator_id: user.id,
                           status: "pending",
@@ -440,10 +466,13 @@ export default function SalesOrderNew() {
                     }
                   }
                 }
+              }
 
-                // Insert all tasks for this item at once
-                if (tasksToCreate.length > 0) {
-                  await supabase.from("production_tasks").insert(tasksToCreate);
+              // Insert all tasks for this item at once
+              if (tasksToCreate.length > 0) {
+                const { error: taskInsertError } = await supabase.from("production_tasks").insert(tasksToCreate);
+                if (taskInsertError) {
+                  console.error("Error inserting tasks for item:", item.id, taskInsertError);
                 }
               }
             } catch (taskError) {
