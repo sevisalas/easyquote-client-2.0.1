@@ -369,85 +369,91 @@ export default function SalesOrderNew() {
       if (itemsError) throw itemsError;
 
       // Create implicit tasks for items with mapped production variables
-      if (insertedItems && insertedItems.length > 0) {
-        for (const item of insertedItems) {
-          try {
-            // Get all mapped variables for this product
-            const { data: mappings } = await supabase
-              .from("product_variable_mappings")
-              .select(`
-                prompt_or_output_name,
-                production_variable_id,
-                production_variables (
-                  has_implicit_task,
-                  task_name,
-                  task_exclude_values,
-                  name
-                )
-              `)
-              .eq("easyquote_product_id", item.product_id)
-              .eq("organization_id", currentOrganization.id);
+      // Wrap entire task creation in try-catch to ensure additionals are always saved
+      if (insertedItems && insertedItems.length > 0 && currentOrganization?.id) {
+        try {
+          for (const item of insertedItems) {
+            try {
+              // Get all mapped variables for this product
+              const { data: mappings } = await supabase
+                .from("product_variable_mappings")
+                .select(`
+                  prompt_or_output_name,
+                  production_variable_id,
+                  production_variables (
+                    has_implicit_task,
+                    task_name,
+                    task_exclude_values,
+                    name
+                  )
+                `)
+                .eq("easyquote_product_id", item.product_id)
+                .eq("organization_id", currentOrganization.id);
 
-            if (mappings && mappings.length > 0) {
-              const tasksToCreate = [];
+              if (mappings && mappings.length > 0) {
+                const tasksToCreate = [];
 
-              for (const mapping of mappings) {
-                const variable = mapping.production_variables as any;
-                if (variable && variable.has_implicit_task && variable.task_name) {
-                  // Get the actual value from prompts or outputs
-                  const promptOrOutputName = mapping.prompt_or_output_name;
-                  const prompts = item.prompts as any[] || [];
-                  const outputs = item.outputs as any[] || [];
-                  
-                  const promptMatch = prompts.find(p => p.label === promptOrOutputName);
-                  const outputMatch = outputs.find(o => o.name === promptOrOutputName);
-                  const actualValue = promptMatch?.value || outputMatch?.value;
+                for (const mapping of mappings) {
+                  const variable = mapping.production_variables as any;
+                  if (variable && variable.has_implicit_task && variable.task_name) {
+                    // Get the actual value from prompts or outputs
+                    const promptOrOutputName = mapping.prompt_or_output_name;
+                    const prompts = item.prompts as any[] || [];
+                    const outputs = item.outputs as any[] || [];
+                    
+                    const promptMatch = prompts.find(p => p.label === promptOrOutputName);
+                    const outputMatch = outputs.find(o => o.name === promptOrOutputName);
+                    const actualValue = promptMatch?.value || outputMatch?.value;
 
-                  // By default, always create the task
-                  let shouldCreateTask = true;
+                    // By default, always create the task
+                    let shouldCreateTask = true;
 
-                  // Only check exclude values to prevent task creation
-                  if (actualValue && variable.task_exclude_values && variable.task_exclude_values.length > 0) {
-                    const valueStr = actualValue.toString().toLowerCase();
-                    const isExcluded = variable.task_exclude_values.some((exclude: string) => 
-                      valueStr.includes(exclude.toLowerCase())
-                    );
-                    if (isExcluded) {
-                      shouldCreateTask = false;
+                    // Only check exclude values to prevent task creation
+                    if (actualValue && variable.task_exclude_values && variable.task_exclude_values.length > 0) {
+                      const valueStr = actualValue.toString().toLowerCase();
+                      const isExcluded = variable.task_exclude_values.some((exclude: string) => 
+                        valueStr.includes(exclude.toLowerCase())
+                      );
+                      if (isExcluded) {
+                        shouldCreateTask = false;
+                      }
                     }
-                  }
 
-                  if (shouldCreateTask) {
-                    // Get the first available phase (should be "Preimpresión")
-                    const { data: phases } = await supabase
-                      .from("production_phases")
-                      .select("id")
-                      .eq("is_active", true)
-                      .order("display_order")
-                      .limit(1);
+                    if (shouldCreateTask) {
+                      // Get the first available phase (should be "Preimpresión")
+                      const { data: phases } = await supabase
+                        .from("production_phases")
+                        .select("id")
+                        .eq("is_active", true)
+                        .order("display_order")
+                        .limit(1);
 
-                    if (phases && phases.length > 0) {
-                      tasksToCreate.push({
-                        sales_order_item_id: item.id,
-                        phase_id: phases[0].id,
-                        task_name: variable.task_name,
-                        operator_id: user.id,
-                        status: "pending",
-                      });
+                      if (phases && phases.length > 0) {
+                        tasksToCreate.push({
+                          sales_order_item_id: item.id,
+                          phase_id: phases[0].id,
+                          task_name: variable.task_name,
+                          operator_id: user.id,
+                          status: "pending",
+                        });
+                      }
                     }
                   }
                 }
-              }
 
-              // Insert all tasks for this item at once
-              if (tasksToCreate.length > 0) {
-                await supabase.from("production_tasks").insert(tasksToCreate);
+                // Insert all tasks for this item at once
+                if (tasksToCreate.length > 0) {
+                  await supabase.from("production_tasks").insert(tasksToCreate);
+                }
               }
+            } catch (taskError) {
+              // Log error but don't fail the order creation
+              console.error("Error creating implicit tasks for item:", item.id, taskError);
             }
-          } catch (taskError) {
-            // Log error but don't fail the order creation
-            console.error("Error creating implicit tasks for item:", item.id, taskError);
           }
+        } catch (outerTaskError) {
+          // Log error but don't fail the order creation
+          console.error("Error in implicit tasks creation loop:", outerTaskError);
         }
       }
 
