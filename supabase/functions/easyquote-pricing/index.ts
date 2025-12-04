@@ -115,6 +115,7 @@ serve(async (req: Request): Promise<Response> => {
     });
 
     if (inputsList.length > 0) {
+      // API only supports PATCH for sending inputs (no POST exists for pricing)
       console.log("easyquote-pricing: using PATCH with inputs", { count: inputsList.length, inputs: inputsList });
       res = await fetch(baseUrl, {
         method: "PATCH",
@@ -127,29 +128,6 @@ serve(async (req: Request): Promise<Response> => {
         },
         body: JSON.stringify(inputsList),
       });
-
-      // Only fallback to other methods on client errors (4xx), not server errors (5xx)
-      if (!res.ok && res.status >= 400 && res.status < 500) {
-        console.log("easyquote-pricing: PATCH returned client error, trying POST", { status: res.status });
-        try {
-          res = await fetch(baseUrl, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: "application/json",
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(inputsList),
-          });
-          
-          if (!res.ok && res.status >= 400 && res.status < 500) {
-            console.log("easyquote-pricing: POST returned client error, status:", res.status);
-            // Don't try GET with query params as it returns 404 HTML from the server
-          }
-        } catch (e2) {
-          console.error("easyquote-pricing: POST attempt failed", e2);
-        }
-      }
     } else {
       // No inputs, use simple GET (faster for initial load)
       console.log("easyquote-pricing: no inputs, using simple GET");
