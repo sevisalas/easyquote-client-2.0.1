@@ -34,6 +34,7 @@ type SelectedAdditional = {
   type: "net_amount" | "quantity_multiplier" | "percentage" | "custom";
   value: number;
   isCustom?: boolean;
+  is_discount?: boolean;
 };
 
 export default function SalesOrderNew() {
@@ -490,11 +491,11 @@ export default function SalesOrderNew() {
       if (orderAdditionals.length > 0) {
         const additionalsData = orderAdditionals.map(additional => ({
           sales_order_id: order.id,
-          additional_id: additional.isCustom ? null : additional.id,
+          additional_id: additional.isCustom ? null : additional.id.split('_')[0], // Remove unique suffix from ID
           name: additional.name,
           type: additional.type,
           value: additional.value,
-          is_discount: false,
+          is_discount: additional.is_discount ?? false,
         }));
 
         const { error: additionalsError } = await supabase
