@@ -28,8 +28,9 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Build target URL
-    const baseUrl = `https://api.easyquote.cloud/api/v1/pricing/${productId}`;
+    // Build target URL with cache buster
+    const cacheBuster = `_t=${Date.now()}`;
+    const baseUrl = `https://api.easyquote.cloud/api/v1/pricing/${productId}?${cacheBuster}`;
 
     // Prefer POST with JSON body when inputs are provided; fallback to GET with query if POST fails
     let res: Response | null = null;
@@ -121,6 +122,8 @@ serve(async (req: Request): Promise<Response> => {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
           "Content-Type": "application/json",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Pragma": "no-cache",
         },
         body: JSON.stringify(inputsList),
       });
@@ -155,6 +158,8 @@ serve(async (req: Request): Promise<Response> => {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Pragma": "no-cache",
         },
       });
     }

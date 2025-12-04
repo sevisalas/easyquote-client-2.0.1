@@ -33,14 +33,18 @@ serve(async (req: Request): Promise<Response> => {
     console.log("easyquote-products: Making request to EasyQuote API", { includeInactive });
 
     // Si includeInactive es true, no filtramos por isActive
+    // Add timestamp to bust any caching
+    const cacheBuster = `_t=${Date.now()}`;
     const url = includeInactive 
-      ? `https://api.easyquote.cloud/api/v1/products`
-      : `https://api.easyquote.cloud/api/v1/products?isActive=true`;
+      ? `https://api.easyquote.cloud/api/v1/products?${cacheBuster}`
+      : `https://api.easyquote.cloud/api/v1/products?isActive=true&${cacheBuster}`;
     const res = await fetch(url, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${token}`,
         "Accept": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
       },
     });
 
