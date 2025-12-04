@@ -743,20 +743,13 @@ const SalesOrderDetail = () => {
                 );
               })}
 
-              {/* Totals - Solo en vista administrativa */}
-              {viewMode === 'administrative' && (
+              {/* Ajustes - Visible en ambas vistas */}
+              {additionals.length > 0 && (
                 <>
                   <Separator className="my-4" />
-
                   <div className="space-y-2">
-                    <div className="flex justify-between text-base">
-                      <span className="text-muted-foreground">Subtotal:</span>
-                      <span className="font-medium">{fmtEUR(order.subtotal)}</span>
-                    </div>
-
-                    {/* Additionals */}
+                    <h4 className="text-sm font-semibold text-muted-foreground">Ajustes del pedido</h4>
                     {additionals.map((additional) => {
-                      // Remove "Ajuste sobre el presupuesto/pedido" from name if present
                       const cleanName = additional.name
                         .replace(/\s*Ajuste sobre el presupuesto\s*/gi, '')
                         .replace(/\s*Ajuste sobre el pedido\s*/gi, '')
@@ -774,6 +767,20 @@ const SalesOrderDetail = () => {
                         </div>
                       );
                     })}
+                  </div>
+                </>
+              )}
+
+              {/* Totals - Solo en vista administrativa */}
+              {viewMode === 'administrative' && (
+                <>
+                  <Separator className="my-4" />
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-base">
+                      <span className="text-muted-foreground">Subtotal:</span>
+                      <span className="font-medium">{fmtEUR(order.subtotal)}</span>
+                    </div>
 
                     {order.discount_amount > 0 && (
                       <div className="flex justify-between text-sm">
@@ -781,7 +788,6 @@ const SalesOrderDetail = () => {
                         <span className="text-green-600 font-medium">-{fmtEUR(order.discount_amount)}</span>
                       </div>
                     )}
-
 
                     <Separator className="my-2" />
 
