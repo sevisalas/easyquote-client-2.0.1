@@ -228,11 +228,12 @@ const SalesOrderDetail = () => {
   const handleDownloadHoldedPdf = async () => {
     if (!order?.holded_document_id) return;
 
+    const toastId = toast.loading('Descargando PDF...');
+    
     try {
-      toast.loading('Descargando PDF...');
-      
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
+        toast.dismiss(toastId);
         toast.error('No hay sesión activa');
         return;
       }
@@ -269,9 +270,11 @@ const SalesOrderDetail = () => {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       
+      toast.dismiss(toastId);
       toast.success('PDF descargado correctamente');
     } catch (error: any) {
       console.error('Error downloading PDF:', error);
+      toast.dismiss(toastId);
       toast.error('Error al descargar el PDF');
     }
   };
