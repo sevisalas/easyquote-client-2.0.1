@@ -48,6 +48,7 @@ const SalesOrdersList = () => {
   const { isHoldedActive, hasHoldedAccess } = useHoldedIntegration();
   const [orders, setOrders] = useState<SalesOrder[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
+  const [orgMembers, setOrgMembers] = useState<any[]>([]);
   
   // Filter states
   const [customerFilter, setCustomerFilter] = useState("");
@@ -67,6 +68,7 @@ const SalesOrdersList = () => {
     }
     loadOrders();
     loadCustomers();
+    loadOrgMembers();
   }, [canAccessProduccion, navigate]);
 
   // Auto-sync missing Holded numbers
@@ -120,18 +122,22 @@ const SalesOrdersList = () => {
   };
 
   const loadCustomers = async () => {
-    // Fetch local customers
-    const { data: localCustomers } = await supabase
-      .from("customers")
-      .select("id, name");
-
-    // Fetch all customers from unified table
     const { data: allCustomers } = await supabase
       .from("customers")
       .select("id, name");
 
     setCustomers(allCustomers || []);
   };
+
+  const loadOrgMembers = async () => {
+    const { data } = await supabase
+      .from("organization_members")
+      .select("user_id, display_name");
+    setOrgMembers(data || []);
+  };
+
+  const getUserName = (userId?: string | null) => 
+    orgMembers.find((m: any) => m.user_id === userId)?.display_name || "—";
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -505,6 +511,7 @@ const SalesOrdersList = () => {
                   <TableHead className="py-2 text-xs font-semibold">Fecha</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Nº</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Cliente</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold">Usuario</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Descripción</TableHead>
                   <TableHead className="py-2 text-right text-xs font-semibold">Total</TableHead>
                   {hasHoldedAccess && (
@@ -525,6 +532,7 @@ const SalesOrdersList = () => {
                     <TableCell className="py-1.5 px-3 text-sm">
                       <CustomerName customerId={order.customer_id} />
                     </TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm text-muted-foreground">{getUserName(order.user_id)}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm">{order.description || order.title || ""}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm text-right font-medium">{fmtEUR(order.final_price)}</TableCell>
                     {hasHoldedAccess && (
