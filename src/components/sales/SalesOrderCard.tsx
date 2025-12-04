@@ -31,6 +31,7 @@ const fmtEUR = (n: any) => {
 interface SalesOrderCardProps {
   order: SalesOrder;
   isHoldedActive: boolean;
+  hasHoldedAccess?: boolean;
   onDuplicate: (orderId: string) => void;
   onDownloadHoldedPdf?: (holdedDocumentId: string, orderNumber: string) => void;
   onDelete?: () => void;
@@ -39,6 +40,7 @@ interface SalesOrderCardProps {
 export function SalesOrderCard({ 
   order, 
   isHoldedActive, 
+  hasHoldedAccess = false,
   onDuplicate, 
   onDownloadHoldedPdf,
   onDelete 
@@ -103,14 +105,14 @@ export function SalesOrderCard({
         </div>
 
         {/* Holded Info */}
-        {isHoldedActive && order.holded_document_number && (
+        {hasHoldedAccess && order.holded_document_number && (
           <div className="mb-3 pb-2 border-b">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">Nº Holded</p>
                 <p className="text-xs font-mono">{order.holded_document_number}</p>
               </div>
-              {order.holded_document_id && onDownloadHoldedPdf && (
+              {order.holded_document_id && onDownloadHoldedPdf && isHoldedActive && (
                 <Button
                   size="sm"
                   variant="ghost"
