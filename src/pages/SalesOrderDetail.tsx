@@ -782,12 +782,6 @@ const SalesOrderDetail = () => {
                       </div>
                     )}
 
-                    {order.tax_amount > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Impuestos:</span>
-                        <span className="font-medium">{fmtEUR(order.tax_amount)}</span>
-                      </div>
-                    )}
 
                     <Separator className="my-2" />
 
