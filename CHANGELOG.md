@@ -5,6 +5,14 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.2.7] - 2025-12-04
+
+### Corregido
+- **Ajustes en pedidos**: Campo `is_discount` ahora se guarda correctamente al exportar pedidos a Holded
+- **Edición de prompts numéricos**: Los valores ya no parpadean ni se sobrescriben al editar campos numéricos en productos
+
+---
+
 ## [2.2.5] - 2025-12-04
 
 ### Corregido
