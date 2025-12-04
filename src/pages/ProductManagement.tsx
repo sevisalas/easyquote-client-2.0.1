@@ -833,13 +833,23 @@ export default function ProductManagement() {
     }
   };
 
-  // Mutation para duplicar producto
+  // Mutation para duplicar producto (completo con prompts y outputs)
   const duplicateProductMutation = useMutation({
     mutationFn: async (sourceProduct: EasyQuoteProduct) => {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No hay token de EasyQuote disponible");
 
-      // Crear nuevo producto con el mismo excelfileId
+      // 1. Obtener prompts del producto original
+      const { data: sourcePrompts } = await supabase.functions.invoke("easyquote-prompts", {
+        body: { token, productId: sourceProduct.id }
+      });
+      
+      // 2. Obtener outputs del producto original
+      const { data: sourceOutputs } = await supabase.functions.invoke("easyquote-outputs", {
+        body: { token, productId: sourceProduct.id }
+      });
+
+      // 3. Crear nuevo producto con el mismo excelfileId
       const response = await fetch("https://api.easyquote.cloud/api/v1/products", {
         method: "POST",
         headers: {
@@ -856,23 +866,78 @@ export default function ProductManagement() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Error al duplicar producto: ${errorText}`);
+        throw new Error(`Error al crear producto: ${errorText}`);
       }
 
       const responseText = await response.text();
+      let newProductId: string;
       try {
-        return JSON.parse(responseText);
+        newProductId = JSON.parse(responseText);
       } catch {
-        return responseText.replace(/['"]/g, '').trim();
+        newProductId = responseText.replace(/['"]/g, '').trim();
       }
+
+      // 4. Duplicar prompts al nuevo producto
+      const promptsArray = Array.isArray(sourcePrompts) ? sourcePrompts : [];
+      for (const prompt of promptsArray) {
+        const newPrompt = {
+          productId: newProductId,
+          promptSeq: prompt.promptSeq,
+          promptType: prompt.promptType,
+          promptSheet: prompt.promptSheet,
+          promptCell: prompt.promptCell,
+          valueSheet: prompt.valueSheet,
+          valueCell: prompt.valueCell,
+          valueOptionSheet: prompt.valueOptionSheet,
+          valueOptionRange: prompt.valueOptionRange,
+          valueRequired: prompt.valueRequired,
+          valueQuantityAllowedDecimals: prompt.valueQuantityAllowedDecimals,
+          valueQuantityMin: prompt.valueQuantityMin,
+          valueQuantityMax: prompt.valueQuantityMax,
+          tooltipValueSheet: prompt.tooltipValueSheet,
+          tooltipValueCell: prompt.tooltipValueCell,
+          valueOptionLabelRange: prompt.valueOptionLabelRange,
+        };
+
+        await fetch("https://api.easyquote.cloud/api/v1/products/prompts", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(newPrompt),
+        });
+      }
+
+      // 5. Duplicar outputs al nuevo producto
+      const outputsArray = Array.isArray(sourceOutputs) ? sourceOutputs : [];
+      for (const output of outputsArray) {
+        const newOutput = {
+          productId: newProductId,
+          outputTypeId: output.outputTypeId,
+          sheet: output.sheet,
+          nameCell: output.nameCell,
+          valueCell: output.valueCell,
+        };
+
+        await fetch("https://api.easyquote.cloud/api/v1/products/outputs", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(newOutput),
+        });
+      }
+
+      return newProductId;
     },
     onSuccess: (newProductId) => {
       toast({
         title: "Producto duplicado",
-        description: "El producto se ha duplicado correctamente. Ahora puedes editar los detalles.",
+        description: "El producto se ha duplicado correctamente con todos sus prompts y outputs.",
       });
       queryClient.invalidateQueries({ queryKey: ["easyquote-products"] });
-      // Redirigir a editar el nuevo producto
       navigate(`/admin/productos?editProduct=${newProductId}`);
     },
     onError: (error: Error) => {
