@@ -573,51 +573,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         setIsNewProduct(false);
       }
       
-      // ACTUALIZAR promptValues con los prompts más recientes después de PATCH
+      // NO sobrescribir promptValues después de PATCH - el usuario ya tiene los valores correctos localmente
+      // Solo necesitamos la respuesta del API para outputs y precio, no para reemplazar los prompts
       if (!isNewProduct && data?.prompts) {
-        console.log("🔄 Prompts recibidos del API (después de PATCH):", {
+        console.log("🔄 Prompts recibidos del API (después de PATCH) - manteniendo valores locales del usuario:", {
           productId,
-          promptsCount: data.prompts.length,
-          prompts: data.prompts.map((p: any) => ({
-            id: p.id,
-            label: p.promptText || p.label,
-            type: p.promptType,
-            currentValue: p.currentValue,
-            order: p.promptSequence,
-            visible: p.visible !== false
-          }))
+          promptsCount: data.prompts.length
         });
-        
-        // Mostrar diferencias con los prompts actuales
-        const currentPromptIds = Object.keys(promptValues);
-        const newPromptIds = data.prompts.map((p: any) => String(p.id));
-        
-        const added = newPromptIds.filter(id => !currentPromptIds.includes(id));
-        const removed = currentPromptIds.filter(id => !newPromptIds.includes(id));
-        
-        if (added.length > 0 || removed.length > 0) {
-          console.log("⚡ Cambios en prompts después de PATCH:", {
-            added: added.length > 0 ? added : "ninguno",
-            removed: removed.length > 0 ? removed : "ninguno",
-            totalBefore: currentPromptIds.length,
-            totalAfter: newPromptIds.length
-          });
-        }
-        
-        // REEMPLAZAR promptValues con SOLO los prompts más recientes del API
-        const newPromptValues: Record<string, any> = {};
-        data.prompts.forEach((p: any) => {
-          const promptId = String(p.id);
-          newPromptValues[promptId] = {
-            id: promptId,
-            label: p.promptText || p.label || promptId,
-            value: p.currentValue ?? "",
-            order: p.promptSequence ?? 0,
-          };
-        });
-        
-        console.log("✅ Reemplazando promptValues con prompts actuales del PATCH");
-        setPromptValues(newPromptValues);
         setIsInitializing(false);
       }
       
