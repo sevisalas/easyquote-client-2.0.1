@@ -45,7 +45,7 @@ const SalesOrdersList = () => {
   const isMobile = useIsMobile();
   const { canAccessProduccion } = useSubscription();
   const { loading, fetchSalesOrders } = useSalesOrders();
-  const { isHoldedActive } = useHoldedIntegration();
+  const { isHoldedActive, hasHoldedAccess } = useHoldedIntegration();
   const [orders, setOrders] = useState<SalesOrder[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   
@@ -491,6 +491,7 @@ const SalesOrdersList = () => {
                   key={order.id}
                   order={order}
                   isHoldedActive={isHoldedActive}
+                  hasHoldedAccess={hasHoldedAccess}
                   onDuplicate={handleDuplicate}
                   onDownloadHoldedPdf={handleDownloadHoldedPdf}
                   onDelete={loadOrders}
@@ -506,7 +507,7 @@ const SalesOrdersList = () => {
                   <TableHead className="py-2 text-xs font-semibold">Cliente</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Descripción</TableHead>
                   <TableHead className="py-2 text-right text-xs font-semibold">Total</TableHead>
-                  {isHoldedActive && (
+                  {hasHoldedAccess && (
                     <>
                       <TableHead className="py-2 text-xs font-semibold">Nº Holded</TableHead>
                       <TableHead className="py-2 text-xs font-semibold">PDF</TableHead>
@@ -526,7 +527,7 @@ const SalesOrdersList = () => {
                     </TableCell>
                     <TableCell className="py-1.5 px-3 text-sm">{order.description || order.title || ""}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm text-right font-medium">{fmtEUR(order.final_price)}</TableCell>
-                    {isHoldedActive && (
+                    {hasHoldedAccess && (
                       <>
                         <TableCell className="py-1.5 px-3">
                           {order.holded_document_number ? (
@@ -536,7 +537,7 @@ const SalesOrdersList = () => {
                           )}
                         </TableCell>
                         <TableCell className="py-1.5 px-3">
-                          {order.holded_document_id && (
+                          {order.holded_document_id && isHoldedActive && (
                             <span title="Descargar PDF de Holded">
                               <Download 
                                 className="h-3.5 w-3.5 cursor-pointer text-muted-foreground hover:text-foreground transition-colors" 
