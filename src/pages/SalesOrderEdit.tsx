@@ -117,7 +117,52 @@ export default function SalesOrderEdit() {
 
     setSaving(true);
     try {
-      // Update order data
+      // First prepare additionals data to validate before making any updates
+      let additionalsData: any[] = [];
+      if (orderAdditionals.length > 0) {
+        additionalsData = orderAdditionals.map(additional => {
+          // Extract original UUID from composite ID (format: "uuid_timestamp")
+          let originalId = additional.id;
+          if (!additional.isCustom && additional.id.includes('_')) {
+            originalId = additional.id.split('_')[0];
+          }
+          
+          // Validate UUID format
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (!additional.isCustom && !uuidRegex.test(originalId)) {
+            console.warn(`Invalid additional_id format: ${originalId}, setting to null`);
+            originalId = null;
+          }
+          
+          return {
+            sales_order_id: id,
+            additional_id: additional.isCustom ? null : originalId,
+            name: additional.name,
+            type: additional.type,
+            value: additional.value,
+            is_discount: false,
+          };
+        });
+      }
+
+      // Delete existing additionals first
+      const { error: deleteError } = await supabase
+        .from("sales_order_additionals")
+        .delete()
+        .eq("sales_order_id", id);
+
+      if (deleteError) throw deleteError;
+
+      // Insert new additionals if any
+      if (additionalsData.length > 0) {
+        const { error: additionalsError } = await supabase
+          .from("sales_order_additionals")
+          .insert(additionalsData);
+
+        if (additionalsError) throw additionalsError;
+      }
+
+      // Only update order data after additionals are successfully saved
       const { error } = await supabase
         .from("sales_orders")
         .update({
@@ -130,37 +175,6 @@ export default function SalesOrderEdit() {
 
       if (error) throw error;
 
-      // Delete existing additionals and insert new ones
-      await supabase
-        .from("sales_order_additionals")
-        .delete()
-        .eq("sales_order_id", id);
-
-      if (orderAdditionals.length > 0) {
-        const additionalsData = orderAdditionals.map(additional => {
-          // Extract original UUID from composite ID (format: "uuid_timestamp")
-          let originalId = additional.id;
-          if (!additional.isCustom && additional.id.includes('_')) {
-            originalId = additional.id.split('_')[0];
-          }
-          
-          return {
-            sales_order_id: id,
-            additional_id: additional.isCustom ? null : originalId,
-            name: additional.name,
-            type: additional.type,
-            value: additional.value,
-            is_discount: false,
-          };
-        });
-
-        const { error: additionalsError } = await supabase
-          .from("sales_order_additionals")
-          .insert(additionalsData);
-
-        if (additionalsError) throw additionalsError;
-      }
-
       // Recalculate totals
       await recalculateSalesOrderTotals(id);
 
@@ -169,6 +183,8 @@ export default function SalesOrderEdit() {
     } catch (error) {
       console.error("Error saving order:", error);
       toast.error("Error al guardar el pedido");
+      // Reload data to restore original state after error
+      await loadOrderData();
     } finally {
       setSaving(false);
     }
