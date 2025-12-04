@@ -235,38 +235,41 @@ export const useSalesOrders = () => {
 
       if (additionalsError) throw additionalsError;
 
-      // Calculate subtotal
-      const subtotal = items?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
+      // Calculate items subtotal
+      const itemsSubtotal = items?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
 
-      // Calculate discount and tax from additionals
+      // Calculate additionals (same logic as quotes)
+      let additionalsTotal = 0;
       let discountAmount = 0;
-      let taxAmount = 0;
 
       additionals?.forEach((add) => {
         if (add.is_discount) {
+          // Discounts
           if (add.type === 'percentage') {
-            discountAmount += (subtotal * add.value) / 100;
+            discountAmount += (itemsSubtotal * add.value) / 100;
           } else {
             discountAmount += add.value;
           }
         } else {
+          // Non-discount additionals (like shipping) - add to subtotal
           if (add.type === 'percentage') {
-            taxAmount += (subtotal * add.value) / 100;
+            additionalsTotal += (itemsSubtotal * add.value) / 100;
           } else {
-            taxAmount += add.value;
+            additionalsTotal += add.value;
           }
         }
       });
 
-      const finalPrice = subtotal - discountAmount + taxAmount;
+      const subtotal = itemsSubtotal + additionalsTotal;
+      const finalPrice = subtotal - discountAmount;
 
-      // Update order totals
+      // Update order totals (tax_amount = 0, additionals are included in subtotal)
       const { error: updateError } = await supabase
         .from('sales_orders')
         .update({
           subtotal,
           discount_amount: discountAmount,
-          tax_amount: taxAmount,
+          tax_amount: 0,
           final_price: finalPrice,
         })
         .eq('id', orderId);
