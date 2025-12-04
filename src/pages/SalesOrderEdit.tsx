@@ -137,14 +137,22 @@ export default function SalesOrderEdit() {
         .eq("sales_order_id", id);
 
       if (orderAdditionals.length > 0) {
-        const additionalsData = orderAdditionals.map(additional => ({
-          sales_order_id: id,
-          additional_id: additional.isCustom ? null : additional.id,
-          name: additional.name,
-          type: additional.type,
-          value: additional.value,
-          is_discount: false,
-        }));
+        const additionalsData = orderAdditionals.map(additional => {
+          // Extract original UUID from composite ID (format: "uuid_timestamp")
+          let originalId = additional.id;
+          if (!additional.isCustom && additional.id.includes('_')) {
+            originalId = additional.id.split('_')[0];
+          }
+          
+          return {
+            sales_order_id: id,
+            additional_id: additional.isCustom ? null : originalId,
+            name: additional.name,
+            type: additional.type,
+            value: additional.value,
+            is_discount: false,
+          };
+        });
 
         const { error: additionalsError } = await supabase
           .from("sales_order_additionals")
