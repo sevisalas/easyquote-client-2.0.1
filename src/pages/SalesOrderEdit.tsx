@@ -3,12 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { useSalesOrders, SalesOrder, SalesOrderItem } from "@/hooks/useSalesOrders";
 import { CustomerSelector } from "@/components/quotes/CustomerSelector";
+import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 import { supabase } from "@/integrations/supabase/client";
 import QuoteItem from "@/components/quotes/QuoteItem";
 
@@ -19,18 +21,26 @@ const fmtEUR = (amount: number) => {
   }).format(amount);
 };
 
+type SelectedAdditional = {
+  id: string;
+  name: string;
+  type: "net_amount" | "quantity_multiplier" | "percentage" | "custom";
+  value: number;
+  isCustom?: boolean;
+};
+
 export default function SalesOrderEdit() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { 
     fetchSalesOrderById, 
     fetchSalesOrderItems,
-    updateSalesOrderItem,
     recalculateSalesOrderTotals 
   } = useSalesOrders();
 
   const [order, setOrder] = useState<SalesOrder | null>(null);
   const [items, setItems] = useState<SalesOrderItem[]>([]);
+  const [orderAdditionals, setOrderAdditionals] = useState<SelectedAdditional[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -39,7 +49,7 @@ export default function SalesOrderEdit() {
     notes: "",
     delivery_date: "",
   });
-  const [hasToken] = useState(true); // Assuming token exists for editing
+  const [hasToken] = useState(true);
 
   useEffect(() => {
     if (id) {
@@ -75,6 +85,25 @@ export default function SalesOrderEdit() {
 
       const itemsData = await fetchSalesOrderItems(id);
       setItems(itemsData);
+
+      // Load existing additionals
+      const { data: additionalsData, error: additionalsError } = await supabase
+        .from("sales_order_additionals")
+        .select("*")
+        .eq("sales_order_id", id);
+
+      if (additionalsError) {
+        console.error("Error loading additionals:", additionalsError);
+      } else if (additionalsData && additionalsData.length > 0) {
+        const mappedAdditionals: SelectedAdditional[] = additionalsData.map(a => ({
+          id: a.additional_id || a.id,
+          name: a.name,
+          type: a.type as SelectedAdditional["type"],
+          value: a.value,
+          isCustom: !a.additional_id,
+        }));
+        setOrderAdditionals(mappedAdditionals);
+      }
     } catch (error) {
       console.error("Error loading order:", error);
       toast.error("Error al cargar el pedido");
@@ -88,9 +117,8 @@ export default function SalesOrderEdit() {
 
     setSaving(true);
     try {
-      // El customer_id ya viene correctamente desde CustomerSelector
-      // (apunta directamente a la tabla customers que incluye clientes locales y de Holded)
-      const { data, error } = await supabase
+      // Update order data
+      const { error } = await supabase
         .from("sales_orders")
         .update({
           customer_id: formData.customer_id || null,
@@ -101,6 +129,32 @@ export default function SalesOrderEdit() {
         .eq("id", id);
 
       if (error) throw error;
+
+      // Delete existing additionals and insert new ones
+      await supabase
+        .from("sales_order_additionals")
+        .delete()
+        .eq("sales_order_id", id);
+
+      if (orderAdditionals.length > 0) {
+        const additionalsData = orderAdditionals.map(additional => ({
+          sales_order_id: id,
+          additional_id: additional.isCustom ? null : additional.id,
+          name: additional.name,
+          type: additional.type,
+          value: additional.value,
+          is_discount: false,
+        }));
+
+        const { error: additionalsError } = await supabase
+          .from("sales_order_additionals")
+          .insert(additionalsData);
+
+        if (additionalsError) throw additionalsError;
+      }
+
+      // Recalculate totals
+      await recalculateSalesOrderTotals(id);
 
       toast.success("Pedido actualizado correctamente");
       navigate(`/pedidos/${id}`);
@@ -134,7 +188,6 @@ export default function SalesOrderEdit() {
     const item = items.find((i) => i.id === itemId);
     if (!item || !id) return;
 
-    // Si no tiene product_id, no se puede guardar
     if (!item.product_id) {
       toast.error("Debe seleccionar un producto");
       return;
@@ -158,7 +211,6 @@ export default function SalesOrderEdit() {
 
       await recalculateSalesOrderTotals(id);
       
-      // Actualizar solo el total del pedido sin recargar todos los items
       const { data: updatedOrder } = await supabase
         .from("sales_orders")
         .select("final_price")
@@ -189,7 +241,6 @@ export default function SalesOrderEdit() {
 
       await recalculateSalesOrderTotals(id);
       
-      // Actualizar estado local sin recargar todos los datos
       setItems(items.filter(item => item.id !== itemId));
       
       const { data: updatedOrder } = await supabase
@@ -226,7 +277,6 @@ export default function SalesOrderEdit() {
 
       if (error) throw error;
 
-      // Añadir el nuevo item al estado local sin recargar
       if (data) {
         setItems([...items, data as SalesOrderItem]);
       }
@@ -361,6 +411,19 @@ export default function SalesOrderEdit() {
               onFinishEdit={handleItemFinish}
             />
           ))}
+
+          <Separator />
+
+          {/* Additionals Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Ajustes sobre el pedido</h3>
+            <QuoteAdditionalsSelector
+              selectedAdditionals={orderAdditionals}
+              onChange={setOrderAdditionals}
+            />
+          </div>
+
+          <Separator />
 
           <div className="mt-6 pt-4 border-t">
             <div className="flex justify-between text-lg font-bold">
