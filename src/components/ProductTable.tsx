@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Edit, TestTube, ShoppingCart, ExternalLink } from "lucide-react";
+import { Edit, TestTube, ShoppingCart, ExternalLink, Copy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useWooCommerceLink } from "@/hooks/useWooCommerceLink";
 import { useWooCommerceIntegration } from "@/hooks/useWooCommerceIntegration";
@@ -37,9 +37,10 @@ interface ProductTableProps {
   products: EasyQuoteProduct[];
   getProductMapping: (productId: string) => ProductMapping | undefined;
   onEditProduct: (product: EasyQuoteProduct) => void;
+  onDuplicateProduct?: (product: EasyQuoteProduct) => void;
 }
 
-export function ProductTable({ products, getProductMapping, onEditProduct }: ProductTableProps) {
+export function ProductTable({ products, getProductMapping, onEditProduct, onDuplicateProduct }: ProductTableProps) {
   const navigate = useNavigate();
   const { isWooCommerceActive, loading: wooIntegrationLoading } = useWooCommerceIntegration();
   const productIds = products.map((p) => p.id);
@@ -241,6 +242,17 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                       >
                         <Edit className="h-3.5 w-3.5" />
                       </Button>
+                      {onDuplicateProduct && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onDuplicateProduct(product)}
+                          title="Duplicar producto"
+                          className="h-7 w-7 p-0"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -394,6 +406,17 @@ export function ProductTable({ products, getProductMapping, onEditProduct }: Pro
                   <TestTube className="h-3 w-3 mr-2" />
                   Probar
                 </Button>
+                {onDuplicateProduct && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onDuplicateProduct(product)}
+                    className="flex-1 text-xs"
+                  >
+                    <Copy className="h-3 w-3 mr-2" />
+                    Duplicar
+                  </Button>
+                )}
               </div>
             </div>
           </Card>

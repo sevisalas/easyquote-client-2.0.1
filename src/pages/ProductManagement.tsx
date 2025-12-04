@@ -833,6 +833,69 @@ export default function ProductManagement() {
     }
   };
 
+  // Mutation para duplicar producto
+  const duplicateProductMutation = useMutation({
+    mutationFn: async (sourceProduct: EasyQuoteProduct) => {
+      const token = sessionStorage.getItem("easyquote_token");
+      if (!token) throw new Error("No hay token de EasyQuote disponible");
+
+      // Crear nuevo producto con el mismo excelfileId
+      const response = await fetch("https://api.easyquote.cloud/api/v1/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          productName: `Copia de ${sourceProduct.productName}`,
+          excelfileId: sourceProduct.excelfileId,
+          currency: sourceProduct.currency || "EUR",
+          isActive: true,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error al duplicar producto: ${errorText}`);
+      }
+
+      const responseText = await response.text();
+      try {
+        return JSON.parse(responseText);
+      } catch {
+        return responseText.replace(/['"]/g, '').trim();
+      }
+    },
+    onSuccess: (newProductId) => {
+      toast({
+        title: "Producto duplicado",
+        description: "El producto se ha duplicado correctamente. Ahora puedes editar los detalles.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["easyquote-products"] });
+      // Redirigir a editar el nuevo producto
+      navigate(`/admin/productos?editProduct=${newProductId}`);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDuplicateProduct = (product: EasyQuoteProduct) => {
+    if (!product.excelfileId) {
+      toast({
+        title: "Error",
+        description: "Este producto no tiene un archivo Excel asociado y no puede ser duplicado.",
+        variant: "destructive",
+      });
+      return;
+    }
+    duplicateProductMutation.mutate(product);
+  };
+
   // Handle category assignment - integrado en handleSaveProduct
 
   // Add new prompt
@@ -1304,6 +1367,7 @@ export default function ProductManagement() {
               products={filteredProducts}
               getProductMapping={getProductMapping}
               onEditProduct={handleEditProduct}
+              onDuplicateProduct={handleDuplicateProduct}
             />
           )}
         </CardContent>
