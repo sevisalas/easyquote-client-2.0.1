@@ -377,7 +377,7 @@ const Index = () => {
         {/* Version Info */}
         <div className="mt-6 md:mt-8 flex justify-end">
           <button onClick={() => navigate("/novedades")} className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-            EasyQuote v2.2.5
+            EasyQuote v2.2.6
           </button>
         </div>
 
