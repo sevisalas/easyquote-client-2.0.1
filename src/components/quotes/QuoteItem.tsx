@@ -376,6 +376,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       console.log("  - userHasChangedCurrentProduct:", userHasChangedCurrentProduct);
       console.log("  - debouncedPromptValues:", debouncedPromptValues);
 
+      // Helper para detectar si un ID es un GUID válido
+      const isValidGuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      
       const requestBody: any = {
         token,
         productId
@@ -385,7 +388,92 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       const hasPromptValues = debouncedPromptValues && Object.keys(debouncedPromptValues).length > 0;
       console.log("  - hasPromptValues:", hasPromptValues);
       
-      if (!isNewProduct && hasPromptValues) {
+      // Detectar si los IDs guardados son numéricos (corruptos) en lugar de GUIDs
+      const promptIds = Object.keys(debouncedPromptValues || {});
+      const hasInvalidIds = promptIds.length > 0 && promptIds.some(id => !isValidGuid(id));
+      
+      if (hasInvalidIds && hasPromptValues) {
+        console.log("⚠️ Detectados IDs de prompts inválidos (numéricos), necesita remapeo por label");
+        
+        // Hacer GET primero para obtener las definiciones con GUIDs correctos
+        const { data: definitions, error: defError } = await invokeEasyQuoteFunction("easyquote-pricing", {
+          token,
+          productId
+        });
+        
+        if (defError) throw defError;
+        
+        if (definitions?.prompts && Array.isArray(definitions.prompts)) {
+          console.log("📦 Definiciones de prompts obtenidas del GET:", definitions.prompts.length);
+          
+          // Crear mapa de label -> GUID
+          const labelToGuid: Record<string, string> = {};
+          definitions.prompts.forEach((p: any) => {
+            const label = p.promptText || p.label || "";
+            if (label && p.id) {
+              labelToGuid[label.toLowerCase().trim()] = p.id;
+            }
+          });
+          
+          console.log("🗺️ Mapa label->GUID:", labelToGuid);
+          
+          // Remapear los valores guardados usando labels
+          const remappedPrompts: Record<string, any> = {};
+          Object.entries(debouncedPromptValues).forEach(([oldId, promptData]) => {
+            const label = (promptData && typeof promptData === 'object' && promptData.label) 
+              ? promptData.label.toLowerCase().trim() 
+              : "";
+            const correctGuid = labelToGuid[label];
+            
+            if (correctGuid) {
+              remappedPrompts[correctGuid] = promptData;
+              console.log(`  ✅ Remapeado "${label}": ${oldId} -> ${correctGuid}`);
+            } else {
+              console.log(`  ⚠️ No se encontró GUID para label "${label}" (id original: ${oldId})`);
+            }
+          });
+          
+          // Actualizar promptValues con los IDs correctos
+          if (Object.keys(remappedPrompts).length > 0) {
+            console.log("✅ Actualizando promptValues con GUIDs correctos");
+            setPromptValues(remappedPrompts);
+            setDebouncedPromptValues(remappedPrompts);
+            
+            // Construir inputs con los GUIDs correctos
+            const norm: Record<string, any> = {};
+            Object.entries(remappedPrompts).forEach(([k, v]) => {
+              const actualValue = (v && typeof v === 'object' && 'value' in v) ? v.value : v;
+              if (actualValue === "" || actualValue === undefined || actualValue === null) return;
+              if (typeof actualValue === "string") {
+                const trimmed = actualValue.trim();
+                const isHex = /^#[0-9a-f]{6}$/i.test(trimmed);
+                if (isHex) {
+                  norm[k] = trimmed.slice(1).toUpperCase();
+                  return;
+                }
+                const num = Number(trimmed.replace(",", "."));
+                if (!Number.isNaN(num) && /^-?\d+([.,]\d+)?$/.test(trimmed)) {
+                  norm[k] = num;
+                  return;
+                }
+                norm[k] = trimmed;
+              } else {
+                norm[k] = actualValue;
+              }
+            });
+            
+            const inputsArray = Object.entries(norm).map(([id, value]) => ({ id, value }));
+            if (inputsArray.length > 0) {
+              requestBody.inputs = inputsArray;
+            }
+            console.log("  📤 Enviando PATCH con inputs remapeados:", inputsArray);
+          }
+        }
+        
+        if (!userHasChangedCurrentProduct) {
+          setUserHasChangedCurrentProduct(true);
+        }
+      } else if (!isNewProduct && hasPromptValues) {
         // SIEMPRE PATCH para artículos guardados, tanto en primera carga como en cambios
         console.log("💾 Artículo guardado - enviando PATCH con valores guardados");
         const norm: Record<string, any> = {};
