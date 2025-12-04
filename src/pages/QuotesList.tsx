@@ -70,7 +70,7 @@ const fetchCustomers = async () => {
 
 const QuotesList = () => {
   const navigate = useNavigate();
-  const { isHoldedActive } = useHoldedIntegration();
+  const { isHoldedActive, hasHoldedAccess } = useHoldedIntegration();
   const isMobile = useIsMobile();
   
   // Filter states
@@ -359,6 +359,7 @@ const QuotesList = () => {
                   getStatusVariant={getStatusVariant}
                   statusLabel={statusLabel}
                   isHoldedActive={isHoldedActive}
+                  hasHoldedAccess={hasHoldedAccess}
                   onRefetch={refetch}
                   handleDownloadHoldedPdf={handleDownloadHoldedPdf}
                 />
@@ -375,7 +376,7 @@ const QuotesList = () => {
                   <TableHead className="py-2 text-xs font-semibold">Usuario</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Descripción</TableHead>
                   <TableHead className="py-2 text-right text-xs font-semibold">Total</TableHead>
-                  {isHoldedActive && (
+                  {hasHoldedAccess && (
                     <>
                       <TableHead className="py-2 text-xs font-semibold">Nº Holded</TableHead>
                       <TableHead className="py-2 text-xs font-semibold">PDF</TableHead>
@@ -396,7 +397,7 @@ const QuotesList = () => {
                     <TableCell className="py-1.5 px-3 text-sm text-muted-foreground">{getUserName(q.user_id)}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm">{q.description || ""}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm text-right font-medium">{fmtEUR(q.final_price)}</TableCell>
-                    {isHoldedActive && (
+                    {hasHoldedAccess && (
                       <>
                         <TableCell className="py-1.5 px-3">
                           {q.holded_estimate_number ? (
@@ -406,7 +407,7 @@ const QuotesList = () => {
                           )}
                         </TableCell>
                         <TableCell className="py-1.5 px-3">
-                          {q.holded_estimate_id && (
+                          {q.holded_estimate_id && isHoldedActive && (
                             <span title="Descargar PDF de Holded">
                               <Download 
                                 className="h-3.5 w-3.5 cursor-pointer text-muted-foreground hover:text-foreground transition-colors" 

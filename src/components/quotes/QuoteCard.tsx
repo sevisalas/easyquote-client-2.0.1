@@ -14,6 +14,7 @@ interface QuoteCardProps {
   getStatusVariant: (s: string) => "success" | "destructive" | "secondary" | "outline";
   statusLabel: Record<string, string>;
   isHoldedActive: boolean;
+  hasHoldedAccess?: boolean;
   onRefetch: () => void;
   handleDownloadHoldedPdf: (holdedEstimateId: string, holdedEstimateNumber: string, customerId: string) => void;
 }
@@ -25,6 +26,7 @@ export function QuoteCard({
   getStatusVariant,
   statusLabel,
   isHoldedActive,
+  hasHoldedAccess = false,
   onRefetch,
   handleDownloadHoldedPdf
 }: QuoteCardProps) {
@@ -94,14 +96,14 @@ export function QuoteCard({
         </div>
 
         {/* Holded Info */}
-        {isHoldedActive && quote.holded_estimate_number && (
+        {hasHoldedAccess && quote.holded_estimate_number && (
           <div className="mb-3 pb-2 border-b">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">Nº Holded</p>
                 <p className="text-xs font-mono">{quote.holded_estimate_number}</p>
               </div>
-              {quote.holded_estimate_id && (
+              {quote.holded_estimate_id && isHoldedActive && (
                 <Button
                   size="sm"
                   variant="ghost"
