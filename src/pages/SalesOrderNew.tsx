@@ -276,38 +276,52 @@ export default function SalesOrderNew() {
 
       const itemsArray = Object.values(items);
 
-      // Generate unique order number atomically
-      const orderNumber = await generateOrderNumber();
-      
       // Obtener organization_id del sessionStorage
       const organizationId = sessionStorage.getItem('selected_organization_id');
       
-      const orderData = {
-        user_id: user.id,
-        customer_id: finalCustomerId,
-        order_number: orderNumber,
-        description: description || itemsArray[0]?.itemDescription || "",
-        status: status,
-        order_date: new Date().toISOString(),
-        delivery_date: deliveryDate || null,
-        subtotal: totals.subtotal,
-        tax_amount: totals.taxAmount,
-        discount_amount: totals.discountAmount,
-        final_price: totals.finalPrice,
-        notes: notes || "",
-        created_from_scratch: true,
-        organization_id: organizationId,
-      };
+      // Try to create order with retry on duplicate key
+      let order = null;
+      let attempts = 0;
+      const maxAttempts = 3;
+      
+      while (!order && attempts < maxAttempts) {
+        attempts++;
+        const orderNumber = await generateOrderNumber();
+        
+        const orderData = {
+          user_id: user.id,
+          customer_id: finalCustomerId,
+          order_number: orderNumber,
+          description: description || itemsArray[0]?.itemDescription || "",
+          status: status,
+          order_date: new Date().toISOString(),
+          delivery_date: deliveryDate || null,
+          subtotal: totals.subtotal,
+          tax_amount: totals.taxAmount,
+          discount_amount: totals.discountAmount,
+          final_price: totals.finalPrice,
+          notes: notes || "",
+          created_from_scratch: true,
+          organization_id: organizationId,
+        };
 
-      const { data: order, error: orderError } = await supabase
-        .from("sales_orders")
-        .insert(orderData)
-        .select()
-        .single();
+        const { data, error: orderError } = await supabase
+          .from("sales_orders")
+          .insert(orderData)
+          .select()
+          .single();
 
-      if (orderError) {
-        console.error("Error creating sales order:", orderError);
-        throw new Error(`Error al crear el pedido: ${orderError.message}`);
+        if (orderError) {
+          if (orderError.code === '23505' && attempts < maxAttempts) {
+            // Duplicate key, retry with new number
+            console.log(`Order number conflict, retrying (${attempts}/${maxAttempts})...`);
+            continue;
+          }
+          console.error("Error creating sales order:", orderError);
+          throw new Error(`Error al crear el pedido: ${orderError.message}`);
+        }
+        
+        order = data;
       }
 
       // Create order items
@@ -474,7 +488,7 @@ export default function SalesOrderNew() {
           } else {
             toast({
               title: "Pedido guardado y exportado",
-              description: `Pedido ${orderNumber} enviado y exportado a Holded correctamente`
+              description: `Pedido ${order.order_number} enviado y exportado a Holded correctamente`
             });
           }
         } catch (holdedError: any) {
@@ -488,7 +502,7 @@ export default function SalesOrderNew() {
       } else {
         toast({ 
           title: "Pedido guardado", 
-          description: `Pedido ${orderNumber} ${status === 'draft' ? 'guardado como borrador' : 'enviado'} correctamente` 
+          description: `Pedido ${order.order_number} ${status === 'draft' ? 'guardado como borrador' : 'enviado'} correctamente` 
         });
       }
       
