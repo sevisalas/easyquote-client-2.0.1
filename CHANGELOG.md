@@ -5,6 +5,14 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.2.5] - 2025-12-04
+
+### Corregido
+- **Presupuestos sin organization_id**: Migración de datos para asignar organization_id correcto a presupuestos de Reprotel y Tradsis
+- **Columnas de Holded visibles sin API key**: Las columnas de Nº Holded ahora se muestran si la organización tiene acceso a la integración, independientemente de si la API key está configurada (aplica a presupuestos y pedidos)
+
+---
+
 ## [2.2.4] - 2025-12-03
 
 ### Corregido
