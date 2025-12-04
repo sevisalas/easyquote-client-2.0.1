@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,7 @@ export default function SalesOrderNew() {
   const [orderAdditionals, setOrderAdditionals] = useState<SelectedAdditional[]>([]);
   const [loading, setSaving] = useState(false);
   const [isImportingContacts, setIsImportingContacts] = useState(false);
+  const isSavingRef = useRef(false); // Protection against double-click
 
   // Holded integration
   const { isHoldedActive } = useHoldedIntegration();
@@ -250,6 +251,12 @@ export default function SalesOrderNew() {
       return;
     }
 
+    // Double-click protection
+    if (isSavingRef.current) {
+      console.log('Already saving, ignoring duplicate click');
+      return;
+    }
+    isSavingRef.current = true;
     setSaving(true);
 
     try {
@@ -516,6 +523,7 @@ export default function SalesOrderNew() {
       });
     } finally {
       setSaving(false);
+      isSavingRef.current = false;
     }
   };
 
