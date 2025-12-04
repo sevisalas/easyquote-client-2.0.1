@@ -239,7 +239,7 @@ export default function SalesOrderNew() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (status: "draft" | "pending" = "draft") => {
     if (!customerId) {
       toast({ title: "Error", description: "Debes seleccionar un cliente", variant: "destructive" });
       return;
@@ -287,7 +287,7 @@ export default function SalesOrderNew() {
         customer_id: finalCustomerId,
         order_number: orderNumber,
         description: description || itemsArray[0]?.itemDescription || "",
-        status: 'draft' as const,
+        status: status,
         order_date: new Date().toISOString(),
         delivery_date: deliveryDate || null,
         subtotal: totals.subtotal,
@@ -457,10 +457,40 @@ export default function SalesOrderNew() {
           .eq('id', orderFormat.id as string);
       }
 
-      toast({ 
-        title: "Pedido creado como borrador", 
-        description: `Pedido ${orderNumber} creado. Cambia el estado a "Pendiente" para enviarlo a Holded.` 
-      });
+      // Si el estado es "pending" y Holded está activo, exportar a Holded automáticamente
+      if (status === 'pending' && isHoldedActive) {
+        try {
+          const { error: holdedError } = await supabase.functions.invoke('holded-export-order', {
+            body: { orderId: order.id }
+          });
+
+          if (holdedError) {
+            console.error('Error exporting to Holded:', holdedError);
+            toast({
+              title: "Advertencia",
+              description: "El pedido se guardó pero hubo un error al exportar a Holded",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Pedido guardado y exportado",
+              description: `Pedido ${orderNumber} enviado y exportado a Holded correctamente`
+            });
+          }
+        } catch (holdedError: any) {
+          console.error('Error exporting to Holded:', holdedError);
+          toast({
+            title: "Advertencia",
+            description: "El pedido se guardó pero hubo un error al exportar a Holded",
+            variant: "destructive"
+          });
+        }
+      } else {
+        toast({ 
+          title: "Pedido guardado", 
+          description: `Pedido ${orderNumber} ${status === 'draft' ? 'guardado como borrador' : 'enviado'} correctamente` 
+        });
+      }
       
       navigate(`/pedidos/${order.id}`);
     } catch (error: any) {
@@ -692,11 +722,19 @@ export default function SalesOrderNew() {
               Cancelar
             </Button>
             <Button
-              onClick={handleSave}
+              onClick={() => handleSave("draft")}
+              variant="outline"
               disabled={loading || !orderFormat || Object.keys(items).length === 0 || !allItemsComplete}
             >
               <Save className="w-4 h-4 mr-2" />
-              {loading ? "Guardando..." : "Crear pedido"}
+              {loading ? "Guardando..." : "Guardar borrador"}
+            </Button>
+            <Button
+              onClick={() => handleSave("pending")}
+              disabled={loading || !orderFormat || Object.keys(items).length === 0 || !allItemsComplete}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {loading ? "Guardando..." : "Guardar y enviar"}
             </Button>
           </div>
         </CardContent>
