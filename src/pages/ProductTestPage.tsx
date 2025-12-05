@@ -52,19 +52,21 @@ export default function ProductTestPage() {
 
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
 
-  // Debounce prompt values - increased to reduce API calls
+  // Debounce prompt values - reduced for faster response
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedPromptValues(promptValues);
-    }, 1200);
+    }, 600); // Reduced from 1200ms
     return () => clearTimeout(timer);
   }, [promptValues]);
 
-  // Fetch products
+  // Fetch products - with aggressive caching
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["easyquote-products"],
     queryFn: fetchProducts,
     enabled: !!sessionStorage.getItem("easyquote_token"),
+    staleTime: 5 * 60 * 1000, // 5 minutes - products rarely change
+    gcTime: 10 * 60 * 1000, // 10 minutes cache
   });
 
   // Fetch product detail when productId changes
@@ -128,11 +130,11 @@ export default function ProductTestPage() {
         setPromptValues(currentValues);
         setDebouncedPromptValues(currentValues);
 
-        // Mark initial load as complete after a short delay to prevent immediate refetch
+        // Mark initial load as complete after a brief delay to prevent immediate refetch
         setTimeout(() => {
           console.log("✅ Initial load complete");
           setIsInitialLoad(false);
-        }, 1000);
+        }, 300); // Reduced from 1000ms
       } catch (error) {
         console.error("🔴 Error fetching product detail:", error);
         setProductDetail(null);
@@ -156,6 +158,8 @@ export default function ProductTestPage() {
     enabled: !!sessionStorage.getItem("easyquote_token") && !!productId && !isInitialLoad && hasUserModifiedPrompts,
     refetchOnWindowFocus: false,
     retry: 1,
+    staleTime: 30 * 1000, // 30 seconds - pricing can be cached briefly
+    gcTime: 60 * 1000, // 1 minute cache
     queryFn: async () => {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
