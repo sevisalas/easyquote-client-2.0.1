@@ -42,11 +42,9 @@ export default function ProductTestPage() {
   const [searchParams] = useSearchParams();
   const [productId, setProductId] = useState<string>("");
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
-  const [debouncedPromptValues, setDebouncedPromptValues] = useState<Record<string, any>>({});
   const [productDetail, setProductDetail] = useState<any>(null);
   const [isLoadingProduct, setIsLoadingProduct] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [hasUserModifiedPrompts, setHasUserModifiedPrompts] = useState(false);
+  const [isPricingLoading, setIsPricingLoading] = useState(false);
   const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
   const [isDiagnosing, setIsDiagnosing] = useState(false);
 
@@ -68,49 +66,31 @@ export default function ProductTestPage() {
   useEffect(() => {
     const fetchProductDetail = async () => {
       if (!productId) {
-        console.log("🔴 No productId selected");
         setProductDetail(null);
         setIsLoadingProduct(false);
         return;
       }
 
-      console.log("🟢 Starting to fetch product detail for:", productId);
       setIsLoadingProduct(true);
-      setIsInitialLoad(true);
-      setHasUserModifiedPrompts(false);
       setDiagnosticResult(null);
 
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) {
-        console.error("🔴 No EasyQuote token found in sessionStorage");
         setIsLoadingProduct(false);
         return;
       }
-      console.log("✅ EasyQuote token found");
 
       try {
-        // Get product details
         const selectedProduct = products.find((p: any) => p.id === productId);
-        if (!selectedProduct) {
-          console.error("🔴 Product not found in products list:", productId);
-          return;
-        }
-        console.log("✅ Selected product:", selectedProduct.productName || selectedProduct.name);
+        if (!selectedProduct) return;
 
-        // Get pricing data (which includes prompts)
-        console.log("📡 Calling easyquote-pricing...");
         const { data: pricingData, error: pricingError } = await invokeEasyQuoteFunction("easyquote-pricing", {
           token,
           productId: productId,
           inputs: [],
         });
 
-        if (pricingError) {
-          console.error("🔴 Pricing error:", pricingError);
-          throw pricingError;
-        }
-        console.log("✅ Pricing data received:", pricingData);
-        console.log("📋 Prompts from pricing:", pricingData?.prompts?.length || 0);
+        if (pricingError) throw pricingError;
 
         setProductDetail(pricingData);
 
@@ -121,20 +101,11 @@ export default function ProductTestPage() {
             currentValues[prompt.id] = prompt.currentValue;
           }
         });
-        console.log("📋 Initial prompt values:", currentValues);
         setPromptValues(currentValues);
-        setDebouncedPromptValues(currentValues);
-
-        // Mark initial load as complete after a brief delay to prevent immediate refetch
-        setTimeout(() => {
-          console.log("✅ Initial load complete");
-          setIsInitialLoad(false);
-        }, 300); // Reduced from 1000ms
       } catch (error) {
-        console.error("🔴 Error fetching product detail:", error);
+        console.error("Error fetching product detail:", error);
         setProductDetail(null);
         setPromptValues({});
-        setIsInitialLoad(false);
       } finally {
         setIsLoadingProduct(false);
       }
@@ -143,96 +114,59 @@ export default function ProductTestPage() {
     fetchProductDetail();
   }, [productId, products]);
 
-  // Fetch pricing data ONLY when user modifies prompts (not on initial load)
-  const {
-    data: pricing,
-    isLoading: pricingLoading,
-    refetch: refetchPricing,
-  } = useQuery({
-    queryKey: ["easyquote-pricing", productId, debouncedPromptValues],
-    enabled: !!sessionStorage.getItem("easyquote_token") && !!productId && !isInitialLoad && hasUserModifiedPrompts,
-    refetchOnWindowFocus: false,
-    retry: 1,
-    staleTime: 30 * 1000, // 30 seconds - pricing can be cached briefly
-    gcTime: 60 * 1000, // 1 minute cache
-    queryFn: async () => {
-      const token = sessionStorage.getItem("easyquote_token");
-      if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
+  // Función para recalcular precio - llamada solo cuando el usuario hace commit
+  const recalculatePricing = async (newValues: Record<string, any>) => {
+    const token = sessionStorage.getItem("easyquote_token");
+    if (!token || !productId) return;
 
-      console.log("Making pricing call with inputs:", debouncedPromptValues);
+    setIsPricingLoading(true);
 
-      // CRITICAL: EasyQuote API PATCH requires ALL prompts to be sent, not just modified ones
-      // Start with all prompt values from productDetail (current values from API)
+    try {
+      // Merge all prompt values
       const allPromptValues: Record<string, any> = {};
-      
-      // First, collect all current values from the product prompts
       (productDetail?.prompts || []).forEach((p: any) => {
         if (p.currentValue !== undefined && p.currentValue !== null) {
           allPromptValues[p.id] = p.currentValue;
         }
       });
-      
-      // Override with user-modified values
-      Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
+      Object.entries(newValues).forEach(([k, v]) => {
         if (v !== undefined && v !== null) {
           allPromptValues[k] = v;
         }
       });
 
-      console.log("All prompt values (merged):", allPromptValues);
-
-      // Now normalize all values for the API
+      // Normalize values for API
       const norm: Record<string, any> = {};
       Object.entries(allPromptValues).forEach(([k, v]) => {
         if (v === "" || v === undefined || v === null) return;
-
-        // Find the prompt to check its type
         const prompt = productDetail?.prompts?.find((p: any) => p.id === k);
         const promptType = prompt?.promptType;
 
         if (typeof v === "string") {
           const trimmed = v.trim();
-
-          // Skip empty strings
           if (trimmed === "") return;
-
-          // Skip strings that are only special characters without meaningful content
-          // (e.g., "," or "." or "-" by themselves)
-          if (trimmed.length < 3 && /^[^\w\s]+$/.test(trimmed)) {
-            console.warn(`⚠️ Skipping invalid value for prompt ${k}:`, v);
-            return;
-          }
+          if (trimmed.length < 3 && /^[^\w\s]+$/.test(trimmed)) return;
 
           const isHex = /^#[0-9a-f]{6}$/i.test(trimmed);
           if (isHex) {
-            // Remove the # for color values as API expects without #
             norm[k] = trimmed.substring(1).toUpperCase();
           } else {
-            // Only convert to number if the prompt type is numeric (Number or Quantity)
             const isNumericType = promptType === "Number" || promptType === "Quantity";
             if (isNumericType) {
               const asNum = parseFloat(trimmed);
               norm[k] = Number.isNaN(asNum) ? trimmed : asNum;
             } else {
-              // For dropdown and other types, keep as string
               norm[k] = trimmed;
             }
           }
-        } else if (typeof v === "number") {
-          // Skip invalid numbers
-          if (!isFinite(v)) {
-            console.warn(`⚠️ Skipping invalid number for prompt ${k}:`, v);
-            return;
-          }
+        } else if (typeof v === "number" && isFinite(v)) {
           norm[k] = v;
         } else {
           norm[k] = v;
         }
       });
 
-      // Convert to array format for API
       const inputsArray = Object.entries(norm).map(([id, value]) => ({ id, value }));
-      console.log("Sending ALL prompts to API:", inputsArray.length, "prompts", inputsArray);
 
       const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
         token,
@@ -241,22 +175,14 @@ export default function ProductTestPage() {
       });
       if (error) throw error;
 
-      console.log("Pricing data received:", data);
-      console.log("Pricing outputValues:", data?.outputValues);
-      console.log("Pricing price field:", data?.price);
-      console.log("All pricing fields:", Object.keys(data || {}));
-
-      // Update product detail with new prompts structure (for updated options)
-      if (data?.prompts) {
-        setProductDetail((prevDetail) => ({
-          ...prevDetail,
-          prompts: data.prompts,
-        }));
-      }
-
-      return data;
-    },
-  });
+      // Update product detail with new data
+      setProductDetail(data);
+    } catch (error) {
+      console.error("Error recalculating pricing:", error);
+    } finally {
+      setIsPricingLoading(false);
+    }
+  };
 
   // Auto-select product if productId is in URL params
   useEffect(() => {
@@ -269,47 +195,17 @@ export default function ProductTestPage() {
     }
   }, [searchParams, products]);
 
-  // Derive outputs from pricing data - based on real API response structure
-  const outputs = useMemo(() => {
-    const source = pricing || productDetail;
-    if (!source) return [];
-
-    // EasyQuote API returns outputs in 'outputValues' (GET) or 'outputs' (PATCH)
-    const outputValues = source.outputValues || source.outputs || source.results || [];
-    console.log("Processing outputs:", outputValues);
-
-    // Normalize output structure
-    const normalized = Array.isArray(outputValues) ? outputValues.map((o: any) => ({
-      label: o.label || o.name || o.outputText || o.text || o.outputName || 'Output',
-      name: o.name || o.label || o.outputName || '',
-      value: o.value ?? o.currentValue ?? o.outputValue ?? o.result ?? '',
-      outputType: o.outputType || o.type || '',
-    })) : [];
-    
-    return normalized;
-  }, [pricing, productDetail]);
-
-  // Show ALL outputs exactly as they come from the API - no filtering, no modifications
+  // Derive outputs from product detail
   const allOutputs = useMemo(() => {
-    const source = pricing || productDetail;
-    if (!source) return [];
-
-    // EasyQuote API returns outputs in 'outputValues' (GET) or 'outputs' (PATCH)
-    const outputValues = source.outputValues || source.outputs || source.results || [];
-    console.log("Showing ALL raw outputs:", outputValues);
-    console.log("Raw outputs structure sample:", outputValues.slice(0, 2));
-
-    // Normalize output structure - handle different API response formats
-    const normalized = Array.isArray(outputValues) ? outputValues.map((o: any) => ({
+    if (!productDetail) return [];
+    const outputValues = productDetail.outputValues || productDetail.outputs || productDetail.results || [];
+    return Array.isArray(outputValues) ? outputValues.map((o: any) => ({
       label: o.label || o.name || o.outputText || o.text || o.outputName || 'Output',
       name: o.name || o.label || o.outputName || '',
       value: o.value ?? o.currentValue ?? o.outputValue ?? o.result ?? '',
       outputType: o.outputType || o.type || '',
     })) : [];
-    
-    console.log("Normalized outputs:", normalized);
-    return normalized;
-  }, [pricing, productDetail]);
+  }, [productDetail]);
 
   // Separate text outputs from image outputs
   const textOutputs = useMemo(() => {
@@ -359,12 +255,9 @@ export default function ProductTestPage() {
 
   // Llamado cuando el usuario termina de editar (blur/enter o selección)
   const handlePromptCommit = (id: string, value: any) => {
-    setHasUserModifiedPrompts(true);
-    // El valor ya está en promptValues, solo marcamos que hay cambios
-    setDebouncedPromptValues((prev) => ({
-      ...prev,
-      [id]: value,
-    }));
+    const newValues = { ...promptValues, [id]: value };
+    setPromptValues(newValues);
+    recalculatePricing(newValues);
   };
 
   const handleDiagnoseProduct = async () => {
@@ -537,19 +430,13 @@ export default function ProductTestPage() {
                   <CardTitle>Resultados</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {pricingLoading && (
+                  {isPricingLoading && (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>Calculando resultados...</p>
                     </div>
                   )}
 
-                  {!pricingLoading && !pricing && !isLoadingProduct && productDetail && textOutputs.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>Configura los parámetros para ver los resultados</p>
-                    </div>
-                  )}
-
-                  {!pricingLoading && pricing && textOutputs.length === 0 && imageOutputs.length === 0 && (
+                  {!isPricingLoading && !isLoadingProduct && productDetail && textOutputs.length === 0 && imageOutputs.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>No hay resultados disponibles para esta configuración</p>
                     </div>
