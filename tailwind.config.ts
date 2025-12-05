@@ -35,7 +35,7 @@ export default {
 		},
 		extend: {
 		fontFamily: {
-				sans: ['Source Sans 3', 'system-ui', 'sans-serif'],
+				sans: ['Manrope', 'system-ui', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
