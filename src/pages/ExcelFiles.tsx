@@ -273,35 +273,24 @@ export default function ExcelFiles() {
         reader.onerror = reject;
       });
 
-      const response = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
+      // Use proxy edge function to upload
+      const { data, error } = await supabase.functions.invoke('easyquote-upload-excel', {
+        body: {
+          token,
           fileName: file.name,
           fileContent: base64
-        })
+        }
       });
 
-      if (!response.ok) {
-        let errorMessage = "Error desconocido al subir el archivo";
-        try {
-          const errorData = await response.json();
-          // Extract meaningful error message from EasyQuote API response
-          if (errorData?.[""]?.errors?.[0]?.errorMessage) {
-            errorMessage = errorData[""].errors[0].errorMessage;
-          } else if (typeof errorData === 'string') {
-            errorMessage = errorData;
-          }
-        } catch {
-          errorMessage = `Error ${response.status}: ${response.statusText}`;
-        }
-        throw new Error(errorMessage);
+      if (error) {
+        throw new Error(error.message || "Error al subir el archivo");
       }
 
-      return response.json();
+      if (data?.error) {
+        throw new Error(data.message || data.error);
+      }
+
+      return data;
     },
     onSuccess: (data) => {
       toast({

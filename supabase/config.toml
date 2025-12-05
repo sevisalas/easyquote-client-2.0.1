@@ -74,3 +74,9 @@ verify_jwt = true
 
 [functions.delete-sales-order]
 verify_jwt = false
+
+[functions.easyquote-excel-files]
+verify_jwt = true
+
+[functions.easyquote-upload-excel]
+verify_jwt = true
