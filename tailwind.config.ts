@@ -34,8 +34,8 @@ export default {
 			'2xl': '1536px',
 		},
 		extend: {
-			fontFamily: {
-				sans: ['Carla', 'system-ui', 'sans-serif'],
+		fontFamily: {
+				sans: ['Inter', 'system-ui', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
