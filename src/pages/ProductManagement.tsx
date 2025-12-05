@@ -175,6 +175,7 @@ export default function ProductManagement() {
     outputTypeId: 0
   });
   const [excelSheets, setExcelSheets] = useState<string[]>([]);
+  const [availableExcelFiles, setAvailableExcelFiles] = useState<EasyQuoteExcelFile[]>([]);
   
   console.log('ProductManagement: About to call useSubscription hook');
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
@@ -692,11 +693,30 @@ export default function ProductManagement() {
     setSelectedCategoryId(mapping?.category_id || "");
     setSelectedSubcategoryId(mapping?.subcategory_id || "");
     
+    const token = sessionStorage.getItem("easyquote_token");
+    
+    // Fetch all available Excel files
+    if (token) {
+      try {
+        const { data: allFiles, error: filesError } = await supabase.functions.invoke("easyquote-excel-files", {
+          body: { token }
+        });
+        
+        if (!filesError && Array.isArray(allFiles)) {
+          setAvailableExcelFiles(allFiles.filter((f: EasyQuoteExcelFile) => f.isActive));
+        } else {
+          setAvailableExcelFiles([]);
+        }
+      } catch (error) {
+        console.error("Error fetching Excel files:", error);
+        setAvailableExcelFiles([]);
+      }
+    }
+    
     // Fetch Excel sheets if excelfileId exists
     if (product.excelfileId) {
       console.log("Excel File ID exists, fetching sheets...");
       try {
-        const token = sessionStorage.getItem("easyquote_token");
         console.log("Token found:", token ? "YES" : "NO");
         
         if (token) {
@@ -1471,16 +1491,64 @@ export default function ProductManagement() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="description">Descripción</Label>
-                    <Textarea
-                      id="description"
-                      value={selectedProduct.description || ""}
-                      onChange={(e) => setSelectedProduct({
-                        ...selectedProduct,
-                        description: e.target.value
-                      })}
-                    />
+                    <Label htmlFor="excelFile">Archivo Excel (Calculadora)</Label>
+                    <Select
+                      value={selectedProduct.excelfileId || "none"}
+                      onValueChange={async (value) => {
+                        const newExcelId = value === "none" ? undefined : value;
+                        setSelectedProduct({
+                          ...selectedProduct,
+                          excelfileId: newExcelId
+                        });
+                        
+                        // Recargar hojas del nuevo Excel
+                        if (newExcelId) {
+                          const token = sessionStorage.getItem("easyquote_token");
+                          if (token) {
+                            try {
+                              const { data, error } = await supabase.functions.invoke("easyquote-excel-files", {
+                                body: { token, fileId: newExcelId }
+                              });
+                              if (!error && data?.excelfilesSheets) {
+                                const sheetNames = data.excelfilesSheets.map((sheet: any) => sheet.sheetName).sort();
+                                setExcelSheets(sheetNames);
+                              } else {
+                                setExcelSheets([]);
+                              }
+                            } catch {
+                              setExcelSheets([]);
+                            }
+                          }
+                        } else {
+                          setExcelSheets([]);
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar archivo Excel..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sin archivo Excel</SelectItem>
+                        {availableExcelFiles.map((file) => (
+                          <SelectItem key={file.id} value={file.id}>
+                            {file.fileName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="description">Descripción</Label>
+                  <Textarea
+                    id="description"
+                    value={selectedProduct.description || ""}
+                    onChange={(e) => setSelectedProduct({
+                      ...selectedProduct,
+                      description: e.target.value
+                    })}
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
