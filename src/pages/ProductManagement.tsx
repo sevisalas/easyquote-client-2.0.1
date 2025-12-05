@@ -1608,6 +1608,8 @@ export default function ProductManagement() {
                                     const updatedPrompt = { 
                                       ...prompt, 
                                       promptSheet: value,
+                                      valueSheet: value, // Actualizar también valueSheet
+                                      valueOptionSheet: value, // Actualizar también valueOptionSheet
                                       valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
                                       valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
                                       valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null
