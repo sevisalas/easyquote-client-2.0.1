@@ -52,13 +52,8 @@ export default function ProductTestPage() {
 
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
 
-  // Debounce prompt values - reduced for faster response
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedPromptValues(promptValues);
-    }, 600); // Reduced from 1200ms
-    return () => clearTimeout(timer);
-  }, [promptValues]);
+  // No debounce needed - we use onCommit events now
+  // debouncedPromptValues is updated directly in handlePromptCommit
 
   // Fetch products - with aggressive caching
   const { data: products = [], isLoading } = useQuery({
@@ -355,8 +350,18 @@ export default function ProductTestPage() {
   };
 
   const handlePromptChange = (id: string, value: any) => {
-    setHasUserModifiedPrompts(true);
+    // Solo actualiza el estado local, sin disparar API
     setPromptValues((prev) => ({
+      ...prev,
+      [id]: value,
+    }));
+  };
+
+  // Llamado cuando el usuario termina de editar (blur/enter o selección)
+  const handlePromptCommit = (id: string, value: any) => {
+    setHasUserModifiedPrompts(true);
+    // El valor ya está en promptValues, solo marcamos que hay cambios
+    setDebouncedPromptValues((prev) => ({
       ...prev,
       [id]: value,
     }));
@@ -511,7 +516,12 @@ export default function ProductTestPage() {
                   <div className="space-y-4">
                     <div className="border-t pt-4">
                       <h3 className="font-medium mb-4">Configuración del Producto</h3>
-                      <PromptsForm product={productDetail} values={promptValues} onChange={handlePromptChange} />
+                      <PromptsForm 
+                        product={productDetail} 
+                        values={promptValues} 
+                        onChange={handlePromptChange}
+                        onCommit={handlePromptCommit}
+                      />
                     </div>
                   </div>
                 )}

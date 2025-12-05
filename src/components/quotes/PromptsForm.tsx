@@ -197,11 +197,13 @@ export default function PromptsForm({
   product,
   values,
   onChange,
+  onCommit,
   showAllPrompts = false,
 }: {
   product: any;
   values: Record<string, any>;
   onChange: (id: string, value: any, label: string) => void;
+  onCommit?: (id: string, value: any, label: string) => void; // Called on blur/enter for API calls
   showAllPrompts?: boolean;
 }) {
   const prompts = useMemo(() => extractPrompts(product), [product]);
@@ -227,6 +229,20 @@ export default function PromptsForm({
     return prompts;
   }, [prompts]);
 
+  // Handle commit (blur or enter) - triggers API call
+  const handleCommit = (id: string, value: any, label: string) => {
+    if (onCommit) {
+      onCommit(id, value, label);
+    }
+  };
+
+  // Handle key down for enter key
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, id: string, value: any, label: string) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur(); // This will trigger onBlur which calls handleCommit
+    }
+  };
+
   if (!product) return null;
   if (!prompts?.length) {
     return <p className="text-sm text-muted-foreground">Este producto no define opciones.</p>;
@@ -241,7 +257,7 @@ export default function PromptsForm({
             <p className="text-xs text-muted-foreground">{p.description}</p>
           )}
 
-          {/* Number / Integer */}
+          {/* Number / Integer - commits on blur/enter */}
           {(p.type === "number" || p.type === "integer") && (
             <Input
               id={p.id}
@@ -252,20 +268,24 @@ export default function PromptsForm({
               max={p.max}
               value={effectiveValues[p.id] ?? ""}
               onChange={(e) => onChange(p.id, e.target.value, p.label)}
+              onBlur={(e) => handleCommit(p.id, e.target.value, p.label)}
+              onKeyDown={(e) => handleKeyDown(e, p.id, (e.target as HTMLInputElement).value, p.label)}
             />
           )}
 
-          {/* Text */}
+          {/* Text - commits on blur/enter */}
           {p.type === "text" && (
             <Input
               id={p.id}
               type="text"
               value={effectiveValues[p.id] ?? ""}
               onChange={(e) => onChange(p.id, e.target.value, p.label)}
+              onBlur={(e) => handleCommit(p.id, e.target.value, p.label)}
+              onKeyDown={(e) => handleKeyDown(e, p.id, (e.target as HTMLInputElement).value, p.label)}
             />
           )}
 
-          {/* Select (dropdown) */}
+          {/* Select (dropdown) - commits immediately */}
           {p.type === "select" && (() => {
             // Crear valores únicos cuando hay duplicados
             const seenValues = new Map<string, number>();
@@ -285,7 +305,9 @@ export default function PromptsForm({
               <Select value={displayValue as any} onValueChange={(v) => {
                 // Encontrar el valor original
                 const selected = uniqueOptions?.find(o => o.uniqueValue === v);
-                onChange(p.id, selected?.originalValue ?? v, p.label);
+                const originalValue = selected?.originalValue ?? v;
+                onChange(p.id, originalValue, p.label);
+                handleCommit(p.id, originalValue, p.label); // Commit immediately for selects
               }}>
                 <SelectTrigger id={p.id}>
                   <SelectValue placeholder="Selecciona una opción" />
@@ -301,7 +323,7 @@ export default function PromptsForm({
             );
           })()}
 
-          {/* Image picker */}
+          {/* Image picker - commits immediately */}
           {p.type === "image" && (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {p.options?.map((o) => {
@@ -310,7 +332,10 @@ export default function PromptsForm({
                   <button
                     key={o.value}
                     type="button"
-                    onClick={() => onChange(p.id, o.value, p.label)}
+                    onClick={() => {
+                      onChange(p.id, o.value, p.label);
+                      handleCommit(p.id, o.value, p.label);
+                    }}
                     className={`relative overflow-hidden rounded-md border transition-shadow focus:outline-none focus:ring-2 focus:ring-primary w-30 h-30 ${selected ? "ring-2 ring-primary" : "hover:shadow"}`}
                     aria-pressed={selected}
                     aria-label={o.label ?? o.value}
@@ -333,7 +358,7 @@ export default function PromptsForm({
             </div>
           )}
 
-          {/* Color picker */}
+          {/* Color picker - commits immediately */}
           {p.type === "color" && (
             <div className="flex flex-wrap gap-2">
               {p.options?.map((o) => {
@@ -343,7 +368,10 @@ export default function PromptsForm({
                   <button
                     key={o.value}
                     type="button"
-                    onClick={() => onChange(p.id, o.value, p.label)}
+                    onClick={() => {
+                      onChange(p.id, o.value, p.label);
+                      handleCommit(p.id, o.value, p.label);
+                    }}
                     className={`h-9 w-9 rounded-md border shadow-sm transition focus:outline-none focus:ring-2 focus:ring-primary ${selected ? "ring-2 ring-primary" : "hover:brightness-105"}`}
                     aria-label={`Color ${o.label ?? o.value}`}
                     title={o.label ?? o.value}
