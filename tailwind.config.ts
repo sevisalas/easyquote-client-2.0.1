@@ -35,7 +35,7 @@ export default {
 		},
 		extend: {
 		fontFamily: {
-				sans: ['Barlow Semi Condensed', 'system-ui', 'sans-serif'],
+				sans: ['Work Sans', 'system-ui', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
