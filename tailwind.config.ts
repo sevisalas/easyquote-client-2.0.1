@@ -35,7 +35,7 @@ export default {
 		},
 		extend: {
 		fontFamily: {
-				sans: ['Signika', 'system-ui', 'sans-serif'],
+				sans: ['Gudea', 'system-ui', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
