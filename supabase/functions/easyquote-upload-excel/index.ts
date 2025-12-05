@@ -37,6 +37,7 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log("easyquote-upload-excel: Uploading file", { fileName, contentLength: fileContent.length });
 
+    // EasyQuote API expects "file" not "fileContent"
     const response = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
       method: "POST",
       headers: {
@@ -45,7 +46,7 @@ serve(async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         fileName,
-        fileContent
+        file: fileContent
       }),
     });
 
