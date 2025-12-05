@@ -19,7 +19,8 @@ const Index = () => {
     isERPSubscription,
     canAccessProduccion,
     isAPISubscription,
-    canAccessPresupuestos
+    canAccessPresupuestos,
+    membership
   } = useSubscription();
   const isMobile = useIsMobile();
 
@@ -114,26 +115,17 @@ const Index = () => {
       } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
-
-        // Obtener display_name de la organización activa
-        const selectedOrgId = sessionStorage.getItem("selected_organization_id");
-        if (selectedOrgId) {
-          const {
-            data: member
-          } = await supabase.from("organization_members").select("display_name").eq("user_id", user.id).eq("organization_id", selectedOrgId).maybeSingle();
-          if (member?.display_name) {
-            setUserName(member.display_name);
-          } else {
-            setUserName(user.email?.split("@")[0] || "Usuario");
-          }
+        
+        // Usar display_name del membership del context si existe
+        if (membership?.display_name) {
+          setUserName(membership.display_name);
         } else {
-          // Sin organización seleccionada, usar email
           setUserName(user.email?.split("@")[0] || "Usuario");
         }
       }
     };
     getUser();
-  }, []);
+  }, [membership]);
 
   // Si es superadmin, mostrar el dashboard específico de superadmin
   if (isSuperAdmin) {

@@ -23,6 +23,7 @@ interface OrganizationMember {
   organization_id: string;
   user_id: string;
   role: OrganizationRole;
+  display_name?: string | null;
   organization?: Organization;
 }
 
@@ -186,7 +187,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
             // Get membership for this specific organization
             const { data: memberData } = await supabase
               .from('organization_members')
-              .select(`*, organization:organizations(*)`)
+              .select(`id, organization_id, user_id, role, display_name, organization:organizations(*)`)
               .eq('user_id', user.id)
               .eq('organization_id', selectedOrg.id)
               .maybeSingle();
@@ -230,7 +231,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
     } else {
       const { data: memberData } = await supabase
         .from('organization_members')
-        .select(`*, organization:organizations(*)`)
+        .select(`id, organization_id, user_id, role, display_name, organization:organizations(*)`)
         .eq('user_id', user.id)
         .eq('organization_id', organizationId)
         .maybeSingle();

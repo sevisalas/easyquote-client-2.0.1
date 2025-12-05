@@ -5,8 +5,10 @@ import { FileSpreadsheet, Package, Image, ArrowRight, Database } from "lucide-re
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 const ApiHome = () => {
+  const { membership } = useSubscription();
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>("");
 
@@ -65,22 +67,9 @@ const ApiHome = () => {
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        // Obtener display_name de la organización activa
-        const selectedOrgId = sessionStorage.getItem('selected_organization_id');
-        
-        if (selectedOrgId) {
-          const { data: member } = await supabase
-            .from("organization_members")
-            .select("display_name")
-            .eq("user_id", user.id)
-            .eq("organization_id", selectedOrgId)
-            .maybeSingle();
-
-          if (member?.display_name) {
-            setUserName(member.display_name);
-          } else {
-            setUserName(user.email?.split("@")[0] || "Usuario");
-          }
+        // Usar display_name del membership del context si existe
+        if (membership?.display_name) {
+          setUserName(membership.display_name);
         } else {
           setUserName(user.email?.split("@")[0] || "Usuario");
         }
@@ -88,7 +77,7 @@ const ApiHome = () => {
     };
 
     getUser();
-  }, []);
+  }, [membership]);
 
   return (
     <div className="w-full min-h-screen bg-background">
