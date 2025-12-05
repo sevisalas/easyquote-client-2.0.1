@@ -179,19 +179,20 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         }
 
         if (selectedOrg) {
+          // Always get membership to retrieve display_name (even for owners)
+          const { data: memberData } = await supabase
+            .from('organization_members')
+            .select(`id, organization_id, user_id, role, display_name, organization:organizations(*)`)
+            .eq('user_id', user.id)
+            .eq('organization_id', selectedOrg.id)
+            .maybeSingle();
+
           // Check if user is the owner or a member
           if (selectedOrg.api_user_id === user.id) {
             setOrganization(selectedOrg);
-            setMembership(null);
+            // Also set membership for display_name access
+            setMembership(memberData as OrganizationMember);
           } else {
-            // Get membership for this specific organization
-            const { data: memberData } = await supabase
-              .from('organization_members')
-              .select(`id, organization_id, user_id, role, display_name, organization:organizations(*)`)
-              .eq('user_id', user.id)
-              .eq('organization_id', selectedOrg.id)
-              .maybeSingle();
-
             setOrganization(null);
             setMembership(memberData as OrganizationMember);
           }
@@ -225,17 +226,18 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
     // Clear EasyQuote token to force re-authentication with new org credentials
     sessionStorage.removeItem('easyquote_token');
 
+    // Always get membership to retrieve display_name (even for owners)
+    const { data: memberData } = await supabase
+      .from('organization_members')
+      .select(`id, organization_id, user_id, role, display_name, organization:organizations(*)`)
+      .eq('user_id', user.id)
+      .eq('organization_id', organizationId)
+      .maybeSingle();
+
     if (selectedOrg.api_user_id === user.id) {
       setOrganization(selectedOrg);
-      setMembership(null);
+      setMembership(memberData as OrganizationMember);
     } else {
-      const { data: memberData } = await supabase
-        .from('organization_members')
-        .select(`id, organization_id, user_id, role, display_name, organization:organizations(*)`)
-        .eq('user_id', user.id)
-        .eq('organization_id', organizationId)
-        .maybeSingle();
-
       setOrganization(null);
       setMembership(memberData as OrganizationMember);
     }
