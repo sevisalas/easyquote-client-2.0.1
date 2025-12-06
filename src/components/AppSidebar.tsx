@@ -470,7 +470,7 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>}
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Contraer menú" className="h-7 px-2">
+            <SidebarMenuButton asChild tooltip={isCollapsed ? "Expandir menú" : "Contraer menú"} className="h-7 px-2">
               <button onClick={toggleSidebar} className="w-full flex items-center justify-start">
                 <Menu className="mr-2 h-4 w-4" />
                 {!isCollapsed && <span>Contraer menú</span>}
