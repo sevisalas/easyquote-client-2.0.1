@@ -46,11 +46,39 @@ export default function SalesOrderNew() {
   const [description, setDescription] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [deliveryDate, setDeliveryDate] = useState<string>("");
+  const [deliveryDateManuallySet, setDeliveryDateManuallySet] = useState(false);
   const [items, setItems] = useState<Record<string | number, ItemSnapshot>>({});
   const [orderAdditionals, setOrderAdditionals] = useState<SelectedAdditional[]>([]);
   const [loading, setSaving] = useState(false);
   const [isImportingContacts, setIsImportingContacts] = useState(false);
   const isSavingRef = useRef(false); // Protection against double-click
+
+  // Auto-calculate delivery date from PRODUCCION prompt when items change
+  useEffect(() => {
+    if (deliveryDateManuallySet) return; // Don't override manual selection
+    
+    const itemsArray = Object.values(items);
+    if (itemsArray.length === 0) return;
+    
+    // Check first item's prompts for PRODUCCION
+    const firstItem = itemsArray[0];
+    if (firstItem?.prompts) {
+      const productionValue = findProductionPromptValue(firstItem.prompts);
+      if (productionValue) {
+        const calculatedDate = calculateDeliveryDateFromProduction(productionValue);
+        if (calculatedDate && calculatedDate !== deliveryDate) {
+          console.log('Auto-setting delivery date from PRODUCCION:', productionValue, '->', calculatedDate);
+          setDeliveryDate(calculatedDate);
+        }
+      }
+    }
+  }, [items, deliveryDateManuallySet]);
+
+  // Handler for manual delivery date changes
+  const handleDeliveryDateChange = (newDate: string) => {
+    setDeliveryDate(newDate);
+    setDeliveryDateManuallySet(true);
+  };
 
   // Holded integration
   const { isHoldedActive } = useHoldedIntegration();
@@ -676,7 +704,7 @@ export default function SalesOrderNew() {
                 id="deliveryDate"
                 type="date"
                 value={deliveryDate}
-                onChange={(e) => setDeliveryDate(e.target.value)}
+                onChange={(e) => handleDeliveryDateChange(e.target.value)}
               />
             </div>
           </div>
