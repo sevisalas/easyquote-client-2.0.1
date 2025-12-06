@@ -16,6 +16,7 @@ import QuoteItem from "@/components/quotes/QuoteItem";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 import { getEasyQuoteToken } from "@/lib/easyquoteApi";
 import { useNumberingFormat, generateDocumentNumber } from "@/hooks/useNumberingFormat";
+import { findProductionPromptValue, calculateDeliveryDateFromProduction } from "@/utils/businessDays";
 
 type ItemSnapshot = {
   productId: string;
@@ -287,6 +288,20 @@ export default function SalesOrderNew() {
       // Obtener organization_id del sessionStorage
       const organizationId = sessionStorage.getItem('selected_organization_id');
       
+      // Calculate delivery date from PRODUCCION prompt if not manually set
+      let calculatedDeliveryDate = deliveryDate || null;
+      if (!deliveryDate) {
+        // Check first item's prompts for PRODUCCION
+        const firstItem = itemsArray[0];
+        if (firstItem?.prompts) {
+          const productionValue = findProductionPromptValue(firstItem.prompts);
+          if (productionValue) {
+            calculatedDeliveryDate = calculateDeliveryDateFromProduction(productionValue);
+            console.log('Calculated delivery date from PRODUCCION prompt:', productionValue, '->', calculatedDeliveryDate);
+          }
+        }
+      }
+      
       // Try to create order with retry on duplicate key
       let order = null;
       let attempts = 0;
@@ -303,7 +318,7 @@ export default function SalesOrderNew() {
           description: description || itemsArray[0]?.itemDescription || "",
           status: status,
           order_date: new Date().toISOString(),
-          delivery_date: deliveryDate || null,
+          delivery_date: calculatedDeliveryDate,
           subtotal: totals.subtotal,
           tax_amount: totals.taxAmount,
           discount_amount: totals.discountAmount,
