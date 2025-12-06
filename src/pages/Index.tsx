@@ -14,108 +14,88 @@ const Index = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
-  const {
-    isSuperAdmin,
-    isERPSubscription,
-    canAccessProduccion,
-    isAPISubscription,
-    canAccessPresupuestos,
-    membership
-  } = useSubscription();
+  const { isSuperAdmin, isERPSubscription, canAccessProduccion, isAPISubscription, canAccessPresupuestos, membership } =
+    useSubscription();
   const isMobile = useIsMobile();
 
   // Redirigir a usuarios API puros a su página específica
   useEffect(() => {
     if (isAPISubscription() && !canAccessPresupuestos()) {
       navigate("/api-home", {
-        replace: true
+        replace: true,
       });
     }
   }, [isAPISubscription, canAccessPresupuestos, navigate]);
 
   // Obtener estadísticas rápidas de presupuestos
-  const {
-    data: stats
-  } = useQuery({
+  const { data: stats } = useQuery({
     queryKey: ["quick-stats"],
     queryFn: async () => {
       const {
-        data: {
-          user
-        }
+        data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return {
-        total: 0,
-        draft: 0,
-        sent: 0,
-        approved: 0,
-        rejected: 0
-      };
+      if (!user)
+        return {
+          total: 0,
+          draft: 0,
+          sent: 0,
+          approved: 0,
+          rejected: 0,
+        };
 
       // Las políticas RLS se encargan de filtrar según el rol
       // Los admins verán todos los presupuestos de la organización
-      const {
-        data,
-        error
-      } = await supabase.from("quotes").select("status");
+      const { data, error } = await supabase.from("quotes").select("status");
       if (error) throw error;
       return {
         total: data?.length ?? 0,
-        draft: data?.filter(q => q.status === "draft").length ?? 0,
-        sent: data?.filter(q => q.status === "sent").length ?? 0,
-        approved: data?.filter(q => q.status === "approved").length ?? 0,
-        rejected: data?.filter(q => q.status === "rejected").length ?? 0
+        draft: data?.filter((q) => q.status === "draft").length ?? 0,
+        sent: data?.filter((q) => q.status === "sent").length ?? 0,
+        approved: data?.filter((q) => q.status === "approved").length ?? 0,
+        rejected: data?.filter((q) => q.status === "rejected").length ?? 0,
       };
-    }
+    },
   });
 
   // Obtener estadísticas de pedidos (solo para usuarios con acceso a producción)
-  const {
-    data: orderStats
-  } = useQuery({
+  const { data: orderStats } = useQuery({
     queryKey: ["orders-quick-stats"],
     queryFn: async () => {
       const {
-        data: {
-          user
-        }
+        data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return {
-        total: 0,
-        draft: 0,
-        pending: 0,
-        production: 0,
-        completed: 0
-      };
+      if (!user)
+        return {
+          total: 0,
+          draft: 0,
+          pending: 0,
+          production: 0,
+          completed: 0,
+        };
 
       // Las políticas RLS se encargan de filtrar según el rol
       // Los admins verán todos los pedidos de la organización
-      const {
-        data,
-        error
-      } = await supabase.from("sales_orders").select("status");
+      const { data, error } = await supabase.from("sales_orders").select("status");
       if (error) throw error;
       return {
         total: data?.length ?? 0,
-        draft: data?.filter(o => o.status === "draft").length ?? 0,
-        pending: data?.filter(o => o.status === "pending").length ?? 0,
-        production: data?.filter(o => o.status === "in_production").length ?? 0,
-        completed: data?.filter(o => o.status === "completed").length ?? 0
+        draft: data?.filter((o) => o.status === "draft").length ?? 0,
+        pending: data?.filter((o) => o.status === "pending").length ?? 0,
+        production: data?.filter((o) => o.status === "in_production").length ?? 0,
+        completed: data?.filter((o) => o.status === "completed").length ?? 0,
       };
     },
-    enabled: canAccessProduccion()
+    enabled: canAccessProduccion(),
   });
   useEffect(() => {
     document.title = "Inicio | EasyQuote";
     const getUser = async () => {
       const {
-        data: {
-          user
-        }
+        data: { user },
       } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
-        
+
         // Usar display_name del membership del context si existe
         if (membership?.display_name) {
           setUserName(membership.display_name);
@@ -131,18 +111,24 @@ const Index = () => {
   if (isSuperAdmin) {
     return <SuperAdminDashboard />;
   }
-  return <div className="w-full min-h-screen bg-background">
+  return (
+    <div className="w-full min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
         {/* Hero Section */}
         <div className="mb-6 md:mb-12">
           <div className="flex flex-col md:flex-row items-center md:justify-between gap-4 mb-6">
-            <img src="/lovable-uploads/logo_transparente-removebg-preview.png" alt="EasyQuote" className="h-16 md:h-20 w-auto" onError={e => {
-            const img = e.currentTarget;
-            if (!img.dataset.fallbackApplied) {
-              img.src = "/lovable-uploads/logo_transparente.png";
-              img.dataset.fallbackApplied = "true";
-            }
-          }} />
+            <img
+              src="/lovable-uploads/logo_transparente-removebg-preview.png"
+              alt="EasyQuote"
+              className="h-16 md:h-20 w-auto"
+              onError={(e) => {
+                const img = e.currentTarget;
+                if (!img.dataset.fallbackApplied) {
+                  img.src = "/lovable-uploads/logo_transparente.png";
+                  img.dataset.fallbackApplied = "true";
+                }
+              }}
+            />
             <div className="text-center md:text-right">
               <h1 className="text-lg md:text-2xl font-bold text-foreground">
                 Hola, <span className="text-primary font-bold">{userName}</span>
@@ -154,12 +140,18 @@ const Index = () => {
           </div>
 
           {/* Acción Principal - Solo mostrar si NO tienen módulo ERP */}
-          {!isERPSubscription() && <div className="flex justify-center">
-              <Button size="lg" onClick={() => navigate("/presupuestos/nuevo")} className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 md:px-8 py-4 md:py-6 text-base md:text-lg shadow-lg hover:shadow-xl transition-all w-full md:w-auto">
+          {!isERPSubscription() && (
+            <div className="flex justify-center">
+              <Button
+                size="lg"
+                onClick={() => navigate("/presupuestos/nuevo")}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 md:px-8 py-4 md:py-6 text-base md:text-lg shadow-lg hover:shadow-xl transition-all w-full md:w-auto"
+              >
                 <Plus className="w-4 md:w-5 h-4 md:h-5 mr-2" />
                 Crear nuevo presupuesto
               </Button>
-            </div>}
+            </div>
+          )}
         </div>
 
         {/* Atajos Rápidos - Solo móvil */}
@@ -242,7 +234,8 @@ const Index = () => {
         </div>
 
         {/* Stats Cards - Pedidos (solo para usuarios con acceso a producción) */}
-        {canAccessProduccion() && <>
+        {canAccessProduccion() && (
+          <>
             <div className="mb-4 mt-6">
               <h2 className="text-lg md:text-xl font-semibold text-foreground mb-3">Pedidos</h2>
             </div>
@@ -317,11 +310,17 @@ const Index = () => {
                 </CardContent>
               </Card>
             </div>
-          </>}
+          </>
+        )}
 
         {/* Quick Actions */}
-        <div className={`grid gap-3 md:gap-6 ${canAccessProduccion() ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2"}`}>
-          <Card className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer" onClick={() => navigate("/clientes")}>
+        <div
+          className={`grid gap-3 md:gap-6 ${canAccessProduccion() ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2"}`}
+        >
+          <Card
+            className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer"
+            onClick={() => navigate("/clientes")}
+          >
             <CardContent className="p-4 md:p-6">
               <div className="flex items-center justify-between mb-3 md:mb-4">
                 <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -329,12 +328,15 @@ const Index = () => {
                 </div>
                 <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
               </div>
-              <h3 className="text-base md:text-lg font-semibold mb-1 md:mb-2 text-foreground">Gestionar Clientes</h3>
+              <h3 className="text-base md:text-lg font-semibold mb-1 md:mb-2 text-foreground">Gestionar clientes</h3>
               <p className="text-xs md:text-sm text-muted-foreground">Administra tu cartera de clientes</p>
             </CardContent>
           </Card>
 
-          <Card className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer" onClick={() => navigate("/presupuestos")}>
+          <Card
+            className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer"
+            onClick={() => navigate("/presupuestos")}
+          >
             <CardContent className="p-4 md:p-6">
               <div className="flex items-center justify-between mb-3 md:mb-4">
                 <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -343,7 +345,7 @@ const Index = () => {
                 <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
               </div>
               <h3 className="text-base md:text-lg font-semibold mb-1 md:mb-2 text-foreground">
-                Gestionar Presupuestos
+                Gestionar presupuestos
               </h3>
               <p className="text-xs md:text-sm text-muted-foreground">
                 Ver, editar y administrar todos tus presupuestos
@@ -352,7 +354,11 @@ const Index = () => {
           </Card>
 
           {/* Gestionar Pedidos - Solo para usuarios con acceso a producción */}
-          {canAccessProduccion() && <Card className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer" onClick={() => navigate("/pedidos")}>
+          {canAccessProduccion() && (
+            <Card
+              className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer"
+              onClick={() => navigate("/pedidos")}
+            >
               <CardContent className="p-4 md:p-6">
                 <div className="flex items-center justify-between mb-3 md:mb-4">
                   <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -360,15 +366,19 @@ const Index = () => {
                   </div>
                   <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                 </div>
-                <h3 className="text-base md:text-lg font-semibold mb-1 md:mb-2 text-foreground">Gestionar Pedidos</h3>
+                <h3 className="text-base md:text-lg font-semibold mb-1 md:mb-2 text-foreground">Gestionar pedidos</h3>
                 <p className="text-xs md:text-sm text-muted-foreground">Accede a todos tus pedidos de venta</p>
               </CardContent>
-            </Card>}
+            </Card>
+          )}
         </div>
 
         {/* Version Info */}
         <div className="mt-6 md:mt-8 flex justify-end">
-          <button onClick={() => navigate("/novedades")} className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+          <button
+            onClick={() => navigate("/novedades")}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          >
             EasyQuote v2.2.7
           </button>
         </div>
@@ -378,6 +388,7 @@ const Index = () => {
           <img src="/lovable-uploads/calculator-icon.png" alt="EasyQuote" className="h-16 md:h-24 w-auto opacity-80" />
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
 export default Index;
