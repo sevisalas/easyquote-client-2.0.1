@@ -1,0 +1,291 @@
+================================================================================
+PROMPT TÉCNICO: MODIFICACIÓN DEL PLUGIN WOOCOMMERCE EASYQUOTE
+================================================================================
+
+OBJETIVO:
+---------
+Modificar el plugin WooCommerce existente para que, cuando el usuario haga clic 
+en "Descargar Presupuesto", envíe los datos del producto configurado al endpoint 
+de EasyQuote Manager y reciba automáticamente el PDF del presupuesto generado 
+en Holded.
+
+================================================================================
+ENDPOINT DE DESTINO
+================================================================================
+
+URL: POST https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/woocommerce-create-quote
+
+Headers:
+  Content-Type: application/json
+
+================================================================================
+ESTRUCTURA JSON DE LA PETICIÓN
+================================================================================
+
+{
+  "api_key": "eq_XXXXXXXXXXXXXXXX",
+  "calculator_id": "abc123",
+  "product_name": "Tarjetas de visita",
+  "description": "Tarjetas de visita 85x55mm, papel estucado 350gr, 4+4 tintas",
+  "price": 45.50,
+  "prompts": [
+    {
+      "label": "Cantidad",
+      "value": "500",
+      "order": 1
+    },
+    {
+      "label": "Tamaño",
+      "value": "85x55 mm",
+      "order": 2
+    },
+    {
+      "label": "Papel",
+      "value": "Estucado 350gr",
+      "order": 3
+    },
+    {
+      "label": "Tintas",
+      "value": "4+4",
+      "order": 4
+    }
+  ],
+  "outputs": [
+    {
+      "name": "Quantity",
+      "value": "500"
+    },
+    {
+      "name": "Width",
+      "value": "85"
+    },
+    {
+      "name": "Height",
+      "value": "55"
+    }
+  ]
+}
+
+================================================================================
+ESTRUCTURA JSON DE RESPUESTA EXITOSA
+================================================================================
+
+{
+  "success": true,
+  "quote_id": "uuid-del-presupuesto",
+  "quote_number": "P25-0042",
+  "holded_estimate_id": "holded-id-123",
+  "holded_estimate_number": "E-2025-00042",
+  "pdf_base64": "JVBERi0xLjQKJeLjz9MKMyAwIG9iago8PC9GaWx0ZXIvRmxhdGVEZWNvZGUvTGVu..."
+}
+
+================================================================================
+ESTRUCTURA JSON DE RESPUESTA DE ERROR
+================================================================================
+
+{
+  "success": false,
+  "error": "Descripción del error"
+}
+
+Posibles errores:
+- "API key inválida o no encontrada"
+- "Faltan campos requeridos: calculator_id, prompts"
+- "Error al exportar a Holded"
+- "Error al descargar PDF de Holded"
+
+================================================================================
+IMPLEMENTACIÓN PHP RECOMENDADA
+================================================================================
+
+1. FUNCIÓN PRINCIPAL PARA CREAR PRESUPUESTO Y OBTENER PDF
+---------------------------------------------------------
+
+function easyquote_create_quote_and_get_pdf($calculator_id, $prompts, $outputs, $price, $product_name, $description) {
+    // Obtener API key guardada en opciones del plugin
+    $api_key = get_option('easyquote_api_key');
+    
+    if (empty($api_key)) {
+        return array('success' => false, 'error' => 'API key no configurada');
+    }
+    
+    $endpoint = 'https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/woocommerce-create-quote';
+    
+    $body = array(
+        'api_key' => $api_key,
+        'calculator_id' => $calculator_id,
+        'product_name' => $product_name,
+        'description' => $description,
+        'price' => floatval($price),
+        'prompts' => $prompts,
+        'outputs' => $outputs
+    );
+    
+    $response = wp_remote_post($endpoint, array(
+        'timeout' => 60, // Importante: timeout largo para esperar generación PDF
+        'headers' => array(
+            'Content-Type' => 'application/json'
+        ),
+        'body' => json_encode($body)
+    ));
+    
+    if (is_wp_error($response)) {
+        return array('success' => false, 'error' => $response->get_error_message());
+    }
+    
+    $response_body = json_decode(wp_remote_retrieve_body($response), true);
+    
+    return $response_body;
+}
+
+
+2. ENDPOINT AJAX PARA EL BOTÓN DE DESCARGA
+------------------------------------------
+
+add_action('wp_ajax_download_quote_pdf', 'handle_download_quote_pdf');
+add_action('wp_ajax_nopriv_download_quote_pdf', 'handle_download_quote_pdf');
+
+function handle_download_quote_pdf() {
+    // Verificar nonce de seguridad
+    check_ajax_referer('easyquote_nonce', 'nonce');
+    
+    // Obtener datos del producto configurado
+    $calculator_id = sanitize_text_field($_POST['calculator_id']);
+    $prompts = json_decode(stripslashes($_POST['prompts']), true);
+    $outputs = json_decode(stripslashes($_POST['outputs']), true);
+    $price = floatval($_POST['price']);
+    $product_name = sanitize_text_field($_POST['product_name']);
+    $description = sanitize_text_field($_POST['description']);
+    
+    // Llamar al endpoint
+    $result = easyquote_create_quote_and_get_pdf(
+        $calculator_id,
+        $prompts,
+        $outputs,
+        $price,
+        $product_name,
+        $description
+    );
+    
+    if ($result['success']) {
+        // Devolver PDF en base64 para descarga
+        wp_send_json_success(array(
+            'pdf_base64' => $result['pdf_base64'],
+            'filename' => 'Presupuesto_' . $result['quote_number'] . '.pdf'
+        ));
+    } else {
+        wp_send_json_error(array(
+            'message' => $result['error'] ?? 'Error desconocido al generar presupuesto'
+        ));
+    }
+}
+
+
+3. JAVASCRIPT PARA DESCARGA AUTOMÁTICA DEL PDF
+----------------------------------------------
+
+jQuery(document).ready(function($) {
+    $('#download-quote-btn').on('click', function(e) {
+        e.preventDefault();
+        
+        var $button = $(this);
+        var originalText = $button.text();
+        
+        // Mostrar estado de carga
+        $button.prop('disabled', true).text('Generando presupuesto...');
+        
+        // Recopilar datos del producto configurado
+        var quoteData = {
+            action: 'download_quote_pdf',
+            nonce: easyquote_vars.nonce,
+            calculator_id: getCurrentCalculatorId(),
+            prompts: JSON.stringify(getCurrentPrompts()),
+            outputs: JSON.stringify(getCurrentOutputs()),
+            price: getCurrentPrice(),
+            product_name: getProductName(),
+            description: getProductDescription()
+        };
+        
+        $.ajax({
+            url: easyquote_vars.ajax_url,
+            type: 'POST',
+            data: quoteData,
+            timeout: 65000, // 65 segundos timeout
+            success: function(response) {
+                if (response.success) {
+                    // Descargar PDF automáticamente
+                    downloadPdfFromBase64(
+                        response.data.pdf_base64,
+                        response.data.filename
+                    );
+                } else {
+                    alert('Error: ' + response.data.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                if (status === 'timeout') {
+                    alert('La generación del presupuesto está tardando demasiado. Por favor, inténtelo de nuevo.');
+                } else {
+                    alert('Error de conexión: ' + error);
+                }
+            },
+            complete: function() {
+                $button.prop('disabled', false).text(originalText);
+            }
+        });
+    });
+    
+    // Función para descargar PDF desde base64
+    function downloadPdfFromBase64(base64Data, filename) {
+        var link = document.createElement('a');
+        link.href = 'data:application/pdf;base64,' + base64Data;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+});
+
+
+================================================================================
+NOTAS IMPORTANTES
+================================================================================
+
+1. TIMEOUT:
+   El proceso completo (crear presupuesto + exportar Holded + descargar PDF) 
+   puede tardar 10-30 segundos. Configurar timeout mínimo de 60 segundos.
+
+2. API KEY:
+   La API key debe estar guardada en las opciones del plugin, no hardcodeada.
+   Es la misma key usada para sincronización de productos.
+
+3. CALCULATOR_ID:
+   Corresponde al campo "calculator_id" del producto WooCommerce, que ya está
+   sincronizado en la tabla woocommerce_product_links.
+
+4. PROMPTS Y OUTPUTS:
+   - prompts: Array con {label, value, order} - configuración del usuario
+   - outputs: Array con {name, value} - valores calculados por EasyQuote
+
+5. CLIENTE:
+   El presupuesto se creará con cliente genérico "Cliente Web" hasta implementar
+   captura de datos del cliente final.
+
+6. ERRORES:
+   Manejar todos los casos de error mostrando mensaje amigable al usuario.
+   Considerar reintentos automáticos para errores de red.
+
+================================================================================
+DEPENDENCIAS EN EASYQUOTE MANAGER
+================================================================================
+
+Este prompt asume que se creará una nueva Edge Function en Supabase:
+- Nombre: woocommerce-create-quote
+- Funcionalidad: Orquesta la creación de presupuesto, exportación a Holded y 
+  descarga de PDF
+- Reutiliza lógica de: holded-export-estimate, holded-download-pdf
+- Autenticación: Valida API Key contra organization_api_credentials
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================
