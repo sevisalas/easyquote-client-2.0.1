@@ -2191,7 +2191,7 @@ export default function ProductManagement() {
                 <Label htmlFor="promptSheet">Hoja</Label>
                 <Select
                   value={newPromptData.promptSheet || ""}
-                  onValueChange={(value) => setNewPromptData({...newPromptData, promptSheet: value})}
+                  onValueChange={(value) => setNewPromptData({...newPromptData, promptSheet: value, valueSheet: value, valueOptionSheet: value})}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar hoja" />
