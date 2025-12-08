@@ -601,8 +601,6 @@ export default function ProductManagement() {
       return data as EasyQuoteProduct[];
     },
     enabled: !!hasToken,
-    staleTime: 0, // Siempre considerar datos como stale para forzar refetch
-    gcTime: 0, // No cachear en memoria
     retry: (failureCount, error: any) => {
       // Si es error de autorización, no reintentar
       if (error?.message?.includes("401") || error?.message?.includes("EASYQUOTE_UNAUTHORIZED")) {
@@ -628,8 +626,6 @@ export default function ProductManagement() {
       return data as EasyQuoteProduct[];
     },
     enabled: !!hasToken,
-    staleTime: 0,
-    gcTime: 0,
     retry: false
   });
 
