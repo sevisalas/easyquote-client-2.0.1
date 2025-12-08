@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
@@ -152,6 +153,7 @@ export default function ProductManagement() {
   const [isNewOutputDialogOpen, setIsNewOutputDialogOpen] = useState(false);
   const [isBulkPromptsDialogOpen, setIsBulkPromptsDialogOpen] = useState(false);
   const [isBulkOutputsDialogOpen, setIsBulkOutputsDialogOpen] = useState(false);
+  const [isDeleteProductDialogOpen, setIsDeleteProductDialogOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>("");
   const [newPromptData, setNewPromptData] = useState({
@@ -848,6 +850,16 @@ export default function ProductManagement() {
           subcategory_id: selectedSubcategoryId || undefined
         });
       }
+    }
+  };
+
+  const handleDeleteProduct = () => {
+    if (selectedProduct) {
+      updateProductMutation.mutate({ 
+        product: { ...selectedProduct, isActive: false }, 
+        action: 'delete' 
+      });
+      setIsDeleteProductDialogOpen(false);
     }
   };
 
@@ -2152,26 +2164,36 @@ export default function ProductManagement() {
               </TabsContent>
             </Tabs>
 
-            <div className="flex justify-end space-x-2 pt-4 border-t">
+            <div className="flex justify-between pt-4 border-t">
               <Button 
-                variant="outline" 
-                onClick={() => setIsEditDialogOpen(false)}
-              >
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleSaveProduct}
+                variant="destructive" 
+                onClick={() => setIsDeleteProductDialogOpen(true)}
                 disabled={updateProductMutation.isPending}
               >
-                {updateProductMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Guardando...
-                  </>
-                ) : (
-                  'Guardar cambios'
-                )}
+                <Trash2 className="h-4 w-4 mr-2" />
+                Eliminar producto
               </Button>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsEditDialogOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleSaveProduct}
+                  disabled={updateProductMutation.isPending}
+                >
+                  {updateProductMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    'Guardar cambios'
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
           )}
@@ -2414,6 +2436,28 @@ export default function ProductManagement() {
         isSaving={createOutputMutation.isPending}
         existingOutputs={productOutputs}
       />
+
+      {/* AlertDialog para confirmar eliminación de producto */}
+      <AlertDialog open={isDeleteProductDialogOpen} onOpenChange={setIsDeleteProductDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción desactivará el producto "{selectedProduct?.productName}". 
+              El producto dejará de estar disponible pero puede reactivarse más tarde.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteProduct}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
