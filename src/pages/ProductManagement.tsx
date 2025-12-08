@@ -1038,15 +1038,19 @@ export default function ProductManagement() {
     const promptType = promptTypes.find(t => t.id === newPromptData.promptType);
     const isNumericType = promptType?.promptType === "Number" || promptType?.promptType === "Quantity";
 
+    // IMPORTANTE: Usar la misma hoja para los 3 campos (promptSheet, valueSheet, valueOptionSheet)
+    // El sistema antiguo de EasyQuote usa una sola variable selectedSheet para los 3
+    const sheetToUse = newPromptData.promptSheet;
+    
     const newPrompt = {
       productId: selectedProduct.id,
       promptSeq: newPromptData.promptSeq,
       promptType: newPromptData.promptType,
-      promptSheet: newPromptData.promptSheet,
+      promptSheet: sheetToUse,
       promptCell: newPromptData.promptCell,
-      valueSheet: newPromptData.valueSheet, 
+      valueSheet: sheetToUse, // Siempre igual a promptSheet
       valueCell: newPromptData.valueCell,
-      valueOptionSheet: newPromptData.valueOptionSheet,
+      valueOptionSheet: sheetToUse, // Siempre igual a promptSheet
       valueOptionRange: newPromptData.valueOptionRange,
       valueRequired: newPromptData.valueRequired,
       // Solo incluir estos campos si el tipo es numérico con valores por defecto
