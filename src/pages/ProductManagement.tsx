@@ -177,9 +177,7 @@ export default function ProductManagement() {
   const [excelSheets, setExcelSheets] = useState<string[]>([]);
   const [availableExcelFiles, setAvailableExcelFiles] = useState<EasyQuoteExcelFile[]>([]);
   
-  console.log('ProductManagement: About to call useSubscription hook');
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
-  console.log('ProductManagement: Successfully got subscription context', { isSuperAdmin, isOrgAdmin });
   const queryClient = useQueryClient();
 
   // Hooks for categories
@@ -342,7 +340,8 @@ export default function ProductManagement() {
 
       if (!response.ok) throw new Error("Error fetching prompt types");
       return response.json();
-    }
+    },
+    staleTime: 1000 * 60 * 30 // 30 minutes - types don't change often
   });
 
   const { data: outputTypes = [] } = useQuery({
@@ -357,7 +356,8 @@ export default function ProductManagement() {
 
       if (!response.ok) throw new Error("Error fetching output types");
       return response.json();
-    }
+    },
+    staleTime: 1000 * 60 * 30 // 30 minutes - types don't change often
   });
 
   // Queries para prompts y outputs del producto seleccionado
@@ -366,7 +366,6 @@ export default function ProductManagement() {
     queryFn: async () => {
       if (!selectedProduct?.id) return [];
       
-      console.log("Fetching prompts for product:", selectedProduct.id);
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
@@ -379,10 +378,10 @@ export default function ProductManagement() {
         throw new Error("Error fetching product prompts");
       }
 
-      console.log("Product prompts received:", data);
       return data;
     },
-    enabled: !!selectedProduct?.id
+    enabled: !!selectedProduct?.id,
+    staleTime: 1000 * 60 * 5 // 5 minutes
   });
 
   const { data: productOutputs = [], refetch: refetchOutputs, isLoading: outputsLoading } = useQuery({
@@ -390,7 +389,6 @@ export default function ProductManagement() {
     queryFn: async () => {
       if (!selectedProduct?.id) return [];
       
-      console.log("Fetching outputs for product:", selectedProduct.id);
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
 
@@ -403,10 +401,10 @@ export default function ProductManagement() {
         throw new Error("Error fetching product outputs");
       }
 
-      console.log("Product outputs received:", data);
       return data;
     },
-    enabled: !!selectedProduct?.id
+    enabled: !!selectedProduct?.id,
+    staleTime: 1000 * 60 * 5 // 5 minutes
   });
 
   // Mutations para prompts y outputs

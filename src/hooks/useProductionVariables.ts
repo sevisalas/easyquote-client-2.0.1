@@ -59,6 +59,7 @@ export function useProductionVariables() {
       return data as ProductionVariable[];
     },
     enabled: !!organization?.id,
+    staleTime: 1000 * 60 * 5 // 5 minutes
   });
 
   const createMutation = useMutation({
