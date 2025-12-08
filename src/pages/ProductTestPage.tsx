@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
@@ -49,17 +49,32 @@ export default function ProductTestPage() {
   const [hasUserModifiedPrompts, setHasUserModifiedPrompts] = useState(false);
   const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
   const [isDiagnosing, setIsDiagnosing] = useState(false);
+  const [tokenReady, setTokenReady] = useState(!!sessionStorage.getItem("easyquote_token"));
 
   const { isSuperAdmin, isOrgAdmin } = useSubscription();
+  const queryClient = useQueryClient();
 
-  // No debounce needed - we use onCommit events now
-  // debouncedPromptValues is updated directly in handlePromptCommit
+  // Listen for token updates to trigger product fetch immediately
+  useEffect(() => {
+    const handleTokenUpdate = () => {
+      setTokenReady(true);
+      queryClient.invalidateQueries({ queryKey: ["easyquote-products-test-page"] });
+    };
+
+    // Check immediately if token exists
+    if (sessionStorage.getItem("easyquote_token")) {
+      setTokenReady(true);
+    }
+
+    window.addEventListener('easyquote-token-updated', handleTokenUpdate);
+    return () => window.removeEventListener('easyquote-token-updated', handleTokenUpdate);
+  }, [queryClient]);
 
   // Fetch products - with aggressive caching (separate key to avoid conflicts)
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["easyquote-products-test-page"],
     queryFn: fetchProducts,
-    enabled: !!sessionStorage.getItem("easyquote_token"),
+    enabled: tokenReady,
     staleTime: 10 * 60 * 1000, // 10 minutes - products rarely change
     gcTime: 30 * 60 * 1000, // 30 minutes cache
   });
