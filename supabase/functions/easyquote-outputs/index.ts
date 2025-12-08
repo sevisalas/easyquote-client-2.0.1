@@ -29,11 +29,15 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log("easyquote-outputs: Fetching outputs for product:", productId);
 
-    const response = await fetch(`https://api.easyquote.cloud/api/v1/products/outputs/list/${productId}`, {
+    // Add cache buster to bypass any server-side caching
+    const cacheBuster = `_t=${Date.now()}`;
+    const response = await fetch(`https://api.easyquote.cloud/api/v1/products/outputs/list/${productId}?${cacheBuster}`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
       },
     });
 
