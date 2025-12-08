@@ -227,10 +227,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          // Usar window.location para evitar problemas de encoding con query params
-                          window.location.href = `/admin/productos/test?productId=${product.id}`;
-                        }}
+                        onClick={() => navigate(`/admin/productos/test?productId=${product.id}`)}
                         title="Test"
                         className="h-7 w-7 p-0"
                       >
@@ -403,9 +400,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    window.location.href = `/admin/productos/test?productId=${product.id}`;
-                  }}
+                  onClick={() => navigate(`/admin/productos/test?productId=${product.id}`)}
                   className="flex-1 text-xs"
                 >
                   <TestTube className="h-3 w-3 mr-2" />
