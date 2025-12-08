@@ -56,7 +56,17 @@ import ApiHome from "./pages/ApiHome";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { useSessionMonitor } from "./hooks/useSessionMonitor";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutos - los datos se consideran frescos
+      gcTime: 1000 * 60 * 30, // 30 minutos en caché
+      refetchOnWindowFocus: false, // No refetch al volver a la pestaña
+      refetchOnReconnect: false, // No refetch al reconectar
+      retry: 1, // Solo 1 reintento en errores
+    },
+  },
+});
 
 const AppContent = () => {
   useSessionMonitor();
