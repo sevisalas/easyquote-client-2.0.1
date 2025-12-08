@@ -118,13 +118,17 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         return;
       }
 
-      // Check if user has superadmin role
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id);
+      // Ejecutar consultas en paralelo para acelerar la carga
+      const [rolesResult, allOrgs] = await Promise.all([
+        supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id),
+        fetchAllUserOrganizations(user.id)
+      ]);
       
-      console.log('👥 User roles:', roles, 'Error:', rolesError);
+      const roles = rolesResult.data;
+      console.log('👥 User roles:', roles);
       
       const isSuperAdminUser = roles?.some(r => r.role === 'superadmin') || false;
       console.log('🔑 Is superadmin?', isSuperAdminUser);
@@ -132,8 +136,6 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
 
       // Get user's organization (as API user) - solo si no es superadmin
       if (!isSuperAdminUser) {
-        // Fetch all organizations the user belongs to
-        const allOrgs = await fetchAllUserOrganizations(user.id);
         setAllOrganizations(allOrgs);
         console.log('🏢 All user organizations:', allOrgs);
 
@@ -154,15 +156,10 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         }
 
         // If no saved selection and NOT pending user selection, use the first organization
-        // Don't auto-select if user is currently choosing from multiple orgs
-        // BUT if pending selection exists and we're not on the auth page, clear it and auto-select
         if (!selectedOrg && allOrgs.length > 0) {
-          // Check if we're on the auth page - if not, clear pending and auto-select
           const isOnAuthPage = window.location.pathname === '/auth';
           
           if (pendingSelection && !isOnAuthPage) {
-            // User has a session but pending flag exists and not on auth page
-            // This means they came back to the app - clear pending and auto-select
             console.log('🔄 Clearing pending selection (not on auth page) and auto-selecting...');
             sessionStorage.removeItem('pending_org_selection');
           }
@@ -179,22 +176,21 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         }
 
         if (selectedOrg) {
-          // Always get membership to retrieve display_name (even for owners)
-          const { data: memberData } = await supabase
+          // Get membership in background - don't block
+          supabase
             .from('organization_members')
             .select(`id, organization_id, user_id, role, display_name, organization:organizations(*)`)
             .eq('user_id', user.id)
             .eq('organization_id', selectedOrg.id)
-            .maybeSingle();
+            .maybeSingle()
+            .then(({ data: memberData }) => {
+              setMembership(memberData as OrganizationMember);
+            });
 
-          // Check if user is the owner or a member
           if (selectedOrg.api_user_id === user.id) {
             setOrganization(selectedOrg);
-            // Also set membership for display_name access
-            setMembership(memberData as OrganizationMember);
           } else {
             setOrganization(null);
-            setMembership(memberData as OrganizationMember);
           }
         } else {
           setOrganization(null);
