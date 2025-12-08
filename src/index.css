@@ -30,10 +30,10 @@ All colors MUST be HSL.
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 0, 92%, 48%; /* #d7398a - datos negativos */
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 92% 48%;
+    --destructive-foreground: 0 0% 100%;
 
-    --success: 187, 75%, 45%; /* #1bb6c9 - datos positivos */
+    --success: 187 75% 45%;
     --success-foreground: 0 0% 100%;
 
     --border: 214.3 31.8% 91.4%;
