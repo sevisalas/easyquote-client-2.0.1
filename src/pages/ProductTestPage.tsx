@@ -423,7 +423,7 @@ export default function ProductTestPage() {
             </Button>
           </div>
           <h1 className="text-3xl font-bold">
-            {selectedProduct ? getProductLabel(selectedProduct) : "Pruba de productos"}
+            {selectedProduct ? getProductLabel(selectedProduct) : "Prueba de productos"}
           </h1>
         </div>
       </div>
