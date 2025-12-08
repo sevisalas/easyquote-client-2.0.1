@@ -51,7 +51,8 @@ export const useProductCategoryMappings = () => {
       
       if (error) throw error;
       return data as ProductCategoryMapping[];
-    }
+    },
+    staleTime: 1000 * 60 * 5 // 5 minutes
   });
 
   // Get mapping for a specific product

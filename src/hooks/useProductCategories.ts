@@ -57,7 +57,8 @@ export const useProductCategories = () => {
       
       if (error) throw error;
       return data as ProductCategory[];
-    }
+    },
+    staleTime: 1000 * 60 * 5 // 5 minutes
   });
 
   // Fetch subcategories
@@ -78,7 +79,8 @@ export const useProductCategories = () => {
       
       if (error) throw error;
       return data as ProductSubcategory[];
-    }
+    },
+    staleTime: 1000 * 60 * 5 // 5 minutes
   });
 
   // Create category mutation
