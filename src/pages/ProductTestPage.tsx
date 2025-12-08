@@ -55,13 +55,13 @@ export default function ProductTestPage() {
   // No debounce needed - we use onCommit events now
   // debouncedPromptValues is updated directly in handlePromptCommit
 
-  // Fetch products - with aggressive caching
+  // Fetch products - with aggressive caching (separate key to avoid conflicts)
   const { data: products = [], isLoading } = useQuery({
-    queryKey: ["easyquote-products"],
+    queryKey: ["easyquote-products-test-page"],
     queryFn: fetchProducts,
     enabled: !!sessionStorage.getItem("easyquote_token"),
-    staleTime: 5 * 60 * 1000, // 5 minutes - products rarely change
-    gcTime: 10 * 60 * 1000, // 10 minutes cache
+    staleTime: 10 * 60 * 1000, // 10 minutes - products rarely change
+    gcTime: 30 * 60 * 1000, // 30 minutes cache
   });
 
   // Fetch product detail when productId changes
