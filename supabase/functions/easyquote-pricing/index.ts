@@ -129,8 +129,8 @@ serve(async (req: Request): Promise<Response> => {
         body: JSON.stringify(inputsList),
       });
     } else {
-      // No inputs, use simple GET (faster for initial load)
-      console.log("easyquote-pricing: no inputs, using simple GET");
+      // No inputs, try GET first (faster), fallback to PATCH with empty array if GET fails
+      console.log("easyquote-pricing: no inputs, trying GET first");
       res = await fetch(baseUrl, {
         method: "GET",
         headers: {
@@ -140,6 +140,22 @@ serve(async (req: Request): Promise<Response> => {
           "Pragma": "no-cache",
         },
       });
+      
+      // If GET fails with 500, retry with PATCH (bypasses cache issues)
+      if (res.status === 500) {
+        console.log("easyquote-pricing: GET failed with 500, retrying with PATCH");
+        res = await fetch(baseUrl, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+          },
+          body: JSON.stringify([]),
+        });
+      }
     }
 
     const text = await res.text();
