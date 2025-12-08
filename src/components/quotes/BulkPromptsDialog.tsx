@@ -33,6 +33,7 @@ interface BulkPromptsDialogProps {
   promptTypes: PromptType[];
   isSaving: boolean;
   existingPrompts: any[];
+  availableSheets?: string[];
 }
 
 export function BulkPromptsDialog({ 
@@ -41,7 +42,8 @@ export function BulkPromptsDialog({
   onSave, 
   promptTypes, 
   isSaving,
-  existingPrompts = []
+  existingPrompts = [],
+  availableSheets = []
 }: BulkPromptsDialogProps) {
   
   const getNextSeq = () => {
@@ -171,11 +173,26 @@ export function BulkPromptsDialog({
                     <div className="grid grid-cols-12 gap-2 items-end">
                       <div className="col-span-1">
                         <Label className="text-xs">Hoja</Label>
-                        <Input
+                        <Select
                           value={prompt.sheet}
-                          onChange={(e) => updatePrompt(index, 'sheet', e.target.value)}
-                          className="h-8 text-xs"
-                        />
+                          onValueChange={(value) => updatePrompt(index, 'sheet', value)}
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue placeholder="Hoja" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background border shadow-lg z-50">
+                            {prompt.sheet && !availableSheets.includes(prompt.sheet) && (
+                              <SelectItem value={prompt.sheet}>
+                                {prompt.sheet}
+                              </SelectItem>
+                            )}
+                            {availableSheets.map((sheet) => (
+                              <SelectItem key={sheet} value={sheet}>
+                                {sheet}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="col-span-1">
                         <Label className="text-xs">Rótulo</Label>

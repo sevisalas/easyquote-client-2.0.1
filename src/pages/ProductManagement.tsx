@@ -2426,6 +2426,7 @@ export default function ProductManagement() {
         promptTypes={promptTypes}
         isSaving={createPromptMutation.isPending}
         existingPrompts={productPrompts}
+        availableSheets={excelSheets}
       />
 
       <BulkOutputsDialog
@@ -2435,6 +2436,7 @@ export default function ProductManagement() {
         outputTypes={outputTypes}
         isSaving={createOutputMutation.isPending}
         existingOutputs={productOutputs}
+        availableSheets={excelSheets}
       />
 
       {/* AlertDialog para confirmar eliminación de producto */}

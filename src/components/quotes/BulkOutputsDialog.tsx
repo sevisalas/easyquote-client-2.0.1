@@ -26,6 +26,7 @@ interface BulkOutputsDialogProps {
   outputTypes: OutputType[];
   isSaving: boolean;
   existingOutputs: any[];
+  availableSheets?: string[];
 }
 
 export function BulkOutputsDialog({ 
@@ -34,7 +35,8 @@ export function BulkOutputsDialog({
   onSave, 
   outputTypes, 
   isSaving,
-  existingOutputs = []
+  existingOutputs = [],
+  availableSheets = []
 }: BulkOutputsDialogProps) {
 
   const getNextRow = () => {
@@ -147,11 +149,26 @@ export function BulkOutputsDialog({
                     <div className="grid grid-cols-12 gap-2 items-end">
                       <div className="col-span-2">
                         <Label className="text-xs">Hoja</Label>
-                        <Input
+                        <Select
                           value={output.sheet}
-                          onChange={(e) => updateOutput(index, 'sheet', e.target.value)}
-                          className="h-8 text-xs"
-                        />
+                          onValueChange={(value) => updateOutput(index, 'sheet', value)}
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue placeholder="Hoja" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background border shadow-lg z-50">
+                            {output.sheet && !availableSheets.includes(output.sheet) && (
+                              <SelectItem value={output.sheet}>
+                                {output.sheet}
+                              </SelectItem>
+                            )}
+                            {availableSheets.map((sheet) => (
+                              <SelectItem key={sheet} value={sheet}>
+                                {sheet}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="col-span-3">
                         <Label className="text-xs">Celda Rótulo</Label>
