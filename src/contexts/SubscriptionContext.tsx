@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-type SubscriptionPlan = 'api' | 'client' | 'erp' | 'custom' | 'api_base' | 'api_pro' | 'client_base' | 'client_pro';
+type SubscriptionPlan = 'api' | 'client' | 'erp' | 'manager' | 'custom' | 'api_base' | 'api_pro' | 'client_base' | 'client_pro';
 type OrganizationRole = 'admin' | 'gestor' | 'comercial' | 'operador';
 
 export interface Organization {
@@ -315,7 +315,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
 
   const isERPSubscription = () => {
     const org = organization || membership?.organization;
-    return org?.subscription_plan === 'erp';
+    return org?.subscription_plan === 'erp' || org?.subscription_plan === 'manager';
   };
 
   // Helper para verificar si tiene módulo específico (para usar con plan_configurations)
