@@ -232,7 +232,9 @@ const Auth = () => {
                         <Building2 className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{org.name}</p>
-                          <p className="text-xs text-muted-foreground">{org.subscription_plan}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {org.subscription_plan === 'manager' ? 'EQ Manager' : org.subscription_plan}
+                          </p>
                         </div>
                         {selectedOrgId === org.id && (
                           <Check className="h-5 w-5 text-primary flex-shrink-0" />
