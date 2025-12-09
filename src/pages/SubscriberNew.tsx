@@ -14,7 +14,7 @@ interface NuevoSuscriptor {
   organizationName: string;
   adminEmail: string;
   adminPassword: string;
-  subscriptionPlan: "api_base" | "api_pro" | "client_base" | "client_pro" | "erp" | "custom";
+  subscriptionPlan: "api_base" | "api_pro" | "client_base" | "client_pro" | "manager" | "custom";
   excelLimit?: number;
   excelExtra?: number;
   clientUserLimit?: number;
@@ -141,7 +141,7 @@ const NuevoSuscriptor = () => {
               <Label htmlFor="plan">Plan de suscripción</Label>
               <Select 
                 value={formData.subscriptionPlan} 
-                onValueChange={(value: "api_base" | "api_pro" | "client_base" | "client_pro" | "erp" | "custom") => 
+                onValueChange={(value: "api_base" | "api_pro" | "client_base" | "client_pro" | "manager" | "custom") => 
                   setFormData({ ...formData, subscriptionPlan: value })
                 }
               >
@@ -153,7 +153,7 @@ const NuevoSuscriptor = () => {
                   <SelectItem value="api_pro">API Pro</SelectItem>
                   <SelectItem value="client_base">Client Base</SelectItem>
                   <SelectItem value="client_pro">Client Pro</SelectItem>
-                  <SelectItem value="erp">ERP</SelectItem>
+                  <SelectItem value="manager">EQ Manager</SelectItem>
                   <SelectItem value="custom">Custom</SelectItem>
                 </SelectContent>
               </Select>
