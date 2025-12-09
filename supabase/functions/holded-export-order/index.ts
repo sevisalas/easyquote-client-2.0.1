@@ -34,10 +34,10 @@ Deno.serve(async (req) => {
       throw new Error('orderId is required');
     }
 
-    // Get sales order
+    // Get sales order with quote relation
     const { data: order, error: orderError } = await supabase
       .from('sales_orders')
-      .select('*')
+      .select('*, quotes!sales_orders_quote_id_fkey(holded_estimate_id, holded_estimate_number)')
       .eq('id', orderId)
       .single();
 
@@ -45,6 +45,9 @@ Deno.serve(async (req) => {
       console.error('Order not found:', orderError);
       throw new Error('Order not found');
     }
+
+    // Extract quote data if exists
+    const quoteData = order.quotes as { holded_estimate_id: string | null; holded_estimate_number: string | null } | null;
 
     // Verify user has access to this order
     if (order.user_id !== user.id) {
@@ -377,6 +380,15 @@ Deno.serve(async (req) => {
       date: Math.floor(new Date(order.order_date).getTime() / 1000),
       items
     };
+
+    // Add relation to source estimate if order comes from a quote
+    if (quoteData?.holded_estimate_id) {
+      payload.from = {
+        id: quoteData.holded_estimate_id,
+        docType: 'estimate'
+      };
+      console.log('📎 Linking to estimate:', quoteData.holded_estimate_id, '(', quoteData.holded_estimate_number, ')');
+    }
 
     // Add contact address information if available
     if (contactData?.address) {
