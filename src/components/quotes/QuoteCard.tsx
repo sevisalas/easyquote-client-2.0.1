@@ -17,6 +17,8 @@ interface QuoteCardProps {
   hasHoldedAccess?: boolean;
   onRefetch: () => void;
   handleDownloadHoldedPdf: (holdedEstimateId: string, holdedEstimateNumber: string, customerId: string) => void;
+  currentUserId?: string;
+  userRole?: string;
 }
 
 export function QuoteCard({
@@ -28,7 +30,9 @@ export function QuoteCard({
   isHoldedActive,
   hasHoldedAccess = false,
   onRefetch,
-  handleDownloadHoldedPdf
+  handleDownloadHoldedPdf,
+  currentUserId,
+  userRole
 }: QuoteCardProps) {
   const navigate = useNavigate();
 
@@ -138,6 +142,9 @@ export function QuoteCard({
             Duplicar
           </Button>
           {quote.status === 'draft' && (
+            // Comercial solo puede eliminar sus propios presupuestos
+            userRole !== 'comercial' || quote.user_id === currentUserId
+          ) && (
             <Button
               size="lg"
               variant="destructive"
