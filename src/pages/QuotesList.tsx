@@ -19,6 +19,7 @@ import { CustomerName } from "@/components/quotes/CustomerName";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { QuoteCard } from "@/components/quotes/QuoteCard";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 const statusOptions = ["draft", "sent", "approved", "rejected"] as const;
 const statusLabel: Record<string, string> = {
@@ -71,6 +72,7 @@ const fetchCustomers = async () => {
 const QuotesList = () => {
   const navigate = useNavigate();
   const { isHoldedActive, hasHoldedAccess } = useHoldedIntegration();
+  const { membership } = useSubscription();
   const isMobile = useIsMobile();
   
   // Filter states
@@ -362,6 +364,8 @@ const QuotesList = () => {
                   hasHoldedAccess={hasHoldedAccess}
                   onRefetch={refetch}
                   handleDownloadHoldedPdf={handleDownloadHoldedPdf}
+                  currentUserId={membership?.user_id}
+                  userRole={membership?.role}
                 />
               ))}
             </div>

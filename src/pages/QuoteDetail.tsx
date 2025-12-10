@@ -301,8 +301,13 @@ export default function QuoteDetail() {
     },
   });
 
-  const isEditable = quote?.status === 'draft' || quote?.status === 'pending';
-  const canApprove = membership?.role === 'admin' || membership?.role === 'comercial';
+  // Comercial solo puede editar/aprobar sus propios presupuestos
+  const isOwnQuote = quote?.user_id === membership?.user_id;
+  const isComercial = membership?.role === 'comercial';
+  
+  const isEditable = (quote?.status === 'draft' || quote?.status === 'pending') && 
+    (!isComercial || isOwnQuote);
+  const canApprove = (membership?.role === 'admin' || (membership?.role === 'comercial' && isOwnQuote));
   const isApprovable = quote?.status === 'sent' && canApprove;
 
   const handleEditOrDuplicate = () => {
@@ -426,25 +431,28 @@ export default function QuoteDetail() {
                   ) : null}
                 </>
               )}
-              <Button
-                onClick={handleEditOrDuplicate}
-                size="sm"
-                variant="outline"
-                className="gap-2"
-                disabled={duplicateQuoteMutation.isPending}
-              >
-                {isEditable ? (
-                  <>
-                    <Edit className="h-4 w-4" />
-                    Editar
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4" />
-                    {duplicateQuoteMutation.isPending ? 'Duplicando...' : 'Duplicar'}
-                  </>
-                )}
-              </Button>
+              {/* Botón editar/duplicar: comercial solo puede editar los suyos */}
+              {(!isComercial || isOwnQuote || !isEditable) && (
+                <Button
+                  onClick={handleEditOrDuplicate}
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                  disabled={duplicateQuoteMutation.isPending}
+                >
+                  {isEditable ? (
+                    <>
+                      <Edit className="h-4 w-4" />
+                      Editar
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4" />
+                      {duplicateQuoteMutation.isPending ? 'Duplicando...' : 'Duplicar'}
+                    </>
+                  )}
+                </Button>
+              )}
               <Button 
                 onClick={handleGeneratePDF}
                 size="sm" 
@@ -482,7 +490,7 @@ export default function QuoteDetail() {
                 <Select 
                   value={quote.status} 
                   onValueChange={(value) => updateStatusMutation.mutate({ quoteId: quote.id, status: value })}
-                  disabled={updateStatusMutation.isPending}
+                  disabled={updateStatusMutation.isPending || (isComercial && !isOwnQuote)}
                 >
                   <SelectTrigger className="h-7 text-xs">
                     <SelectValue />
