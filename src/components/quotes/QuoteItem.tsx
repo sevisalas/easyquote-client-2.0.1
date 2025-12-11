@@ -551,8 +551,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         throw error;
       }
       
-      // Inicializar promptValues con los datos del API si es un producto nuevo
-      if (isNewProduct && data?.prompts) {
+      // Inicializar promptValues con los datos del API SOLO si es un producto nuevo Y NO hay initialData
+      // CRÍTICO: Si hay initialData, los prompts guardados son DEFINITIVOS y NO deben sobrescribirse
+      if (isNewProduct && data?.prompts && !initialData) {
         console.log("✅ GET exitoso con prompts, marcando producto como cargado");
         console.log("📦 Prompts recibidos del API (GET inicial):", {
           productId,
@@ -595,6 +596,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         }
         
         setIsNewProduct(false);
+      } else if (isNewProduct && initialData) {
+        // Si hay initialData pero isNewProduct es true, corregir el flag sin sobrescribir prompts
+        console.log("⚠️ Artículo guardado detectado con isNewProduct=true, corrigiendo sin sobrescribir prompts");
+        setIsNewProduct(false);
+        setIsInitializing(false);
       }
       
       // NO sobrescribir promptValues después de PATCH - el usuario ya tiene los valores correctos localmente
