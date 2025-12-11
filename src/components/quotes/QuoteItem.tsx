@@ -1315,7 +1315,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         <div className="grid gap-6 md:grid-cols-5">
           <Card className="md:col-span-3">
             <CardHeader>
-              <CardTitle>{isCustomProduct ? "Configuración" : "Opciones"}</CardTitle>
+              <CardTitle>{isCustomProduct ? "Detalles" : "Opciones"}</CardTitle>
             </CardHeader>
             <CardContent>
               {isCustomProduct ? (
