@@ -30,7 +30,9 @@ type ItemSnapshot = {
   price?: any;
   multi?: any;
   needsRecalculation?: boolean;
-  itemDescription?: string;
+  displayName?: string;  // Nombre a mostrar del producto (editable)
+  itemDescription?: string;  // Descripción (para productos custom)
+  productName?: string;  // Nombre original del producto API
   itemAdditionals?: any[];
   isFinalized?: boolean;
 };
@@ -62,7 +64,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [forceRecalculate, setForceRecalculate] = useState<boolean>(false);
   const [isExpanded, setIsExpanded] = useState<boolean>(shouldExpand === true); // Solo expandir si shouldExpand es explícitamente true
   const [userCollapsed, setUserCollapsed] = useState<boolean>(false); // Flag para colapso manual del usuario
-  const [itemDescription, setItemDescription] = useState<string>("");
+  const [displayName, setDisplayName] = useState<string>(""); // Nombre a mostrar (editable)
+  const [itemDescription, setItemDescription] = useState<string>(""); // Descripción (solo para productos custom)
   const [isNewProduct, setIsNewProduct] = useState<boolean>(true);
   const [hasInitialOutputs, setHasInitialOutputs] = useState<boolean>(false);
   const [userHasChangedCurrentProduct, setUserHasChangedCurrentProduct] = useState<boolean>(false);
@@ -169,6 +172,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       
       setPromptValues(promptValuesOnly);
       setDebouncedPromptValues(promptValuesOnly);
+      setDisplayName(initialData.displayName || "");
       setItemDescription(initialData.itemDescription || "");
       
       // Handle custom product initialization
@@ -1087,13 +1091,20 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       });
     }
     
+    // Obtener nombre original del producto API
+    const originalProductName = products?.find((p: any) => String(p.id) === String(productId)) 
+      ? getProductLabel(products.find((p: any) => String(p.id) === String(productId))) 
+      : "";
+    
     const snapshot = {
       productId,
       prompts: promptsArray,
       outputs: isCustomProduct ? [] : outputs,
       price: finalPrice,
       multi: multiEnabled ? { qtyPrompt, qtyInputs, rows: multiRows } : null,
-      itemDescription: itemDescription || (isCustomProduct ? "Artículo personalizado" : (products?.find((p: any) => String(p.id) === String(productId)) ? getProductLabel(products.find((p: any) => String(p.id) === String(productId))) : "")),
+      displayName: displayName || originalProductName, // Nombre a mostrar (editable)
+      productName: originalProductName, // Nombre original del producto API
+      itemDescription: isCustomProduct ? (itemDescription || "Artículo personalizado") : "", // Solo para productos custom
       itemAdditionals,
       isFinalized: initialData?.isFinalized,
     };
@@ -1109,7 +1120,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     } else {
       console.log('⏭️ Snapshot sin cambios, no sincronizando');
     }
-  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, itemAdditionals, products, initialData?.isFinalized, isInitializing, isCustomProduct, customPrice, customQuantity, pricing, isPricingLoading]);
+  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, displayName, itemDescription, itemAdditionals, products, initialData?.isFinalized, isInitializing, isCustomProduct, customPrice, customQuantity, pricing, isPricingLoading]);
 
   // Verificar que el artículo está completo Y no se está recalculando el precio
   const isCalculating = isPricingLoading || multiLoading;
@@ -1278,8 +1289,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               <div className="space-y-2 md:col-span-2">
                 <Label>Nombre a mostrar del producto</Label>
                 <Input
-                  value={itemDescription}
-                  onChange={(e) => setItemDescription(e.target.value)}
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Editar nombre del producto..."
                 />
               </div>

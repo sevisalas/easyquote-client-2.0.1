@@ -32,9 +32,9 @@ import {
 
 interface QuoteItem {
   id: string;
-  name?: string;
-  product_name: string;
-  description?: string;
+  name?: string;  // Nombre a mostrar (editable)
+  product_name: string;  // Nombre original del producto API
+  description?: string;  // Descripción (solo para productos custom)
   price: number;
   isFromSelections?: boolean;
   // QuoteItem component compatibility
@@ -42,7 +42,9 @@ interface QuoteItem {
   prompts?: Record<string, any>;
   outputs?: any[];
   multi?: any;
-  itemDescription?: string;
+  displayName?: string;  // Nombre a mostrar (editable)
+  productName?: string;  // Nombre original del producto API
+  itemDescription?: string;  // Descripción (solo para productos custom)
   itemAdditionals?: any[];
 }
 
@@ -269,8 +271,9 @@ export default function QuoteEdit() {
 
           const mappedItem = {
             id: item.id,
-            product_name: item.product_name || "",
-            description: item.description || "",
+            product_name: item.product_name || "",  // Nombre original del producto API
+            name: item.name || item.product_name || "",  // Nombre a mostrar
+            description: item.description || "",  // Descripción (solo para productos custom)
             price: item.price || 0,
             // QuoteItem compatibility
             productId: item.product_id || "",
@@ -280,7 +283,9 @@ export default function QuoteEdit() {
               item.multi && typeof item.multi === "object" && (item.multi.qtyInputs || item.multi.qtyPrompt)
                 ? item.multi
                 : undefined,
-            itemDescription: item.product_name || "",
+            displayName: item.name || item.product_name || "",  // Nombre a mostrar
+            productName: item.product_name || "",  // Nombre original del producto API
+            itemDescription: item.description || "",  // Descripción (solo para productos custom)
             itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
           };
           console.log(`🔍 Mapped item ${idx}:`, {
@@ -315,8 +320,9 @@ export default function QuoteEdit() {
 
           return {
             id: `json-${index}`,
-            product_name: selection.itemDescription || "",
-            description: "",
+            product_name: selection.productName || selection.displayName || selection.itemDescription || "",
+            name: selection.displayName || selection.itemDescription || "",
+            description: selection.itemDescription || "",
             price: selection.price || 0,
             isFromSelections: true,
             // QuoteItem compatibility
@@ -324,6 +330,8 @@ export default function QuoteEdit() {
             prompts: promptsObj,
             outputs: selection.outputs || [],
             multi: selection.multi,
+            displayName: selection.displayName || selection.itemDescription || "",
+            productName: selection.productName || "",
             itemDescription: selection.itemDescription || "",
             itemAdditionals: selection.itemAdditionals || [],
           };
@@ -419,8 +427,9 @@ export default function QuoteEdit() {
 
           return {
             quote_id: id,
-            product_name: item.product_name || "",
-            description: item.description || "",
+            product_name: item.product_name || item.productName || "",  // Nombre original del producto API
+            name: item.name || item.displayName || item.product_name || "",  // Nombre a mostrar
+            description: item.description || item.itemDescription || "",  // Descripción (solo para custom)
             price: item.price || 0,
             position: index,
             product_id: item.productId || null,
@@ -563,14 +572,17 @@ export default function QuoteEdit() {
         item.id === itemId || index.toString() === itemId.toString()
           ? {
               ...item,
-              product_name: snapshot.itemDescription || item.product_name,
-              description: snapshot.itemDescription || item.description,
+              product_name: snapshot.productName || item.product_name,  // Nombre original del producto API
+              name: snapshot.displayName || item.name,  // Nombre a mostrar
+              description: snapshot.itemDescription || item.description,  // Descripción (solo para custom)
               price: snapshot.price || 0,
               // Update QuoteItem fields
               productId: snapshot.productId,
               prompts: promptsObj,  // ✅ Ahora siempre es objeto
               outputs: snapshot.outputs,
               multi: snapshot.multi,
+              displayName: snapshot.displayName,
+              productName: snapshot.productName,
               itemDescription: snapshot.itemDescription,
               itemAdditionals: snapshot.itemAdditionals,
             }
@@ -592,6 +604,7 @@ export default function QuoteEdit() {
     const newItem: QuoteItem = {
       id: newItemId,
       product_name: "",
+      name: "",
       description: "",
       price: 0,
       // QuoteItem compatibility
@@ -599,6 +612,8 @@ export default function QuoteEdit() {
       prompts: {},
       outputs: [],
       multi: undefined,
+      displayName: "",
+      productName: "",
       itemDescription: "",
       itemAdditionals: [],
     };
@@ -893,8 +908,10 @@ export default function QuoteEdit() {
                           prompts: item.prompts || {},
                           outputs: item.outputs || [],
                           price: item.price || 0,
-                          multi: item.multi, // No forzar valor por defecto
-                          itemDescription: item.itemDescription || item.product_name || "",
+                          multi: item.multi,
+                          displayName: item.displayName || item.name || item.product_name || "",
+                          productName: item.productName || item.product_name || "",
+                          itemDescription: item.itemDescription || item.description || "",
                           itemAdditionals: item.itemAdditionals || [],
                         }}
                         onChange={handleItemChange}
