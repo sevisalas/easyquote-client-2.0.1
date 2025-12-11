@@ -658,38 +658,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       return;
     }
     
-    // Si HAY initialData, fusionar TODOS los prompts con los valores guardados
+    // Si HAY initialData, NO fusionar prompts del API - los guardados son los DEFINITIVOS
+    // La fusión causaba que se añadieran todos los prompts del producto a los datos guardados
+    // corrompiendo los datos que el usuario había configurado originalmente
     if (initialData && hasPerformedInitialLoad && Object.keys(promptValues).length > 0) {
-      console.log("🔄 Fusionando TODOS los prompts del producto con valores guardados");
-      const mergedValues: Record<string, any> = { ...promptValues };
-      let hasChanges = false;
-      
-      pricing.prompts.forEach((prompt: any) => {
-        if (!prompt.id) return;
-        
-        // Si el prompt NO existe en promptValues, añadirlo con su valor por defecto o null
-        if (!(prompt.id in mergedValues)) {
-          const defaultValue = prompt.currentValue !== undefined && prompt.currentValue !== null 
-            ? prompt.currentValue 
-            : null;
-          
-          mergedValues[prompt.id] = {
-            label: prompt.promptText || prompt.label || prompt.id,
-            value: defaultValue,
-            order: prompt.promptSequence ?? prompt.order ?? 999
-          };
-          hasChanges = true;
-          console.log(`  ➕ Añadiendo prompt faltante: ${prompt.id} = ${defaultValue}`);
-        }
-      });
-      
-      if (hasChanges) {
-        console.log("✅ Prompts fusionados, actualizando state con TODOS los prompts");
-        setPromptValues(mergedValues);
-        setDebouncedPromptValues(mergedValues);
-      } else {
-        console.log("✅ Todos los prompts ya estaban presentes");
-      }
+      console.log("✅ Artículo guardado - usando prompts DEFINITIVOS guardados, sin fusionar con API");
+      console.log("   Prompts guardados:", Object.keys(promptValues).length);
     }
   }, [pricing, isNewProduct, initialData, promptValues, hasPerformedInitialLoad]);
 
