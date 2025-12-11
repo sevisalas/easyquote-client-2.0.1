@@ -16,8 +16,11 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
-import { ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Trash2, Package } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+
+// Special product ID for custom/manual items
+const CUSTOM_PRODUCT_ID = "__CUSTOM_PRODUCT__";
 
 type ItemSnapshot = {
   productId: string;
@@ -85,7 +88,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Item additionals
   const [itemAdditionals, setItemAdditionals] = useState<any[]>([]);
 
-  // Track changes for unsaved confirmation
+  // Custom product fields (when CUSTOM_PRODUCT_ID is selected)
+  const [customPrice, setCustomPrice] = useState<number>(0);
+  const [customQuantity, setCustomQuantity] = useState<number>(1);
+  const isCustomProduct = productId === CUSTOM_PRODUCT_ID;
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const initialStateRef = useRef<string>("");
@@ -164,13 +170,24 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setDebouncedPromptValues(promptValuesOnly);
       setItemDescription(initialData.itemDescription || "");
       
-      // Marcar como NO nuevo si tiene prompts guardados
-      const hasPromptsData = Object.keys(promptValuesOnly).length > 0;
-      if (hasPromptsData) {
-        console.log('✅ Artículo guardado detectado con', Object.keys(promptValuesOnly).length, 'prompts');
-        console.log('🎯 Se hará PATCH con estos valores guardados para recalcular outputs y precio');
+      // Handle custom product initialization
+      if (initialData.productId === CUSTOM_PRODUCT_ID) {
+        console.log('✅ Inicializando producto personalizado');
+        // Extract custom fields from synthetic prompts
+        const qtyPrompt = promptValuesOnly['custom_quantity'];
+        const pricePrompt = promptValuesOnly['custom_unit_price'];
+        if (qtyPrompt) setCustomQuantity(Number(qtyPrompt.value) || 1);
+        if (pricePrompt) setCustomPrice(Number(pricePrompt.value) || 0);
         setIsNewProduct(false);
-        // NO marcar userHasChangedCurrentProduct aquí, eso se hará después del PATCH inicial
+      } else {
+        // Marcar como NO nuevo si tiene prompts guardados
+        const hasPromptsData = Object.keys(promptValuesOnly).length > 0;
+        if (hasPromptsData) {
+          console.log('✅ Artículo guardado detectado con', Object.keys(promptValuesOnly).length, 'prompts');
+          console.log('🎯 Se hará PATCH con estos valores guardados para recalcular outputs y precio');
+          setIsNewProduct(false);
+          // NO marcar userHasChangedCurrentProduct aquí, eso se hará después del PATCH inicial
+        }
       }
       
       // Solo marcar hasInitialOutputs si hay outputs guardados
@@ -896,6 +913,25 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Calculate final price with additionals
   const finalPrice = useMemo(() => {
+    // For custom products, use customPrice * customQuantity
+    if (isCustomProduct) {
+      let basePrice = customPrice * customQuantity;
+      let additionalsTotal = 0;
+      
+      if (Array.isArray(itemAdditionals)) {
+        itemAdditionals.forEach((additional) => {
+          if (additional.type === 'net_amount') {
+            additionalsTotal += additional.value;
+          } else if (additional.type === 'quantity_multiplier') {
+            additionalsTotal += additional.value * customQuantity;
+          }
+        });
+      }
+      
+      return basePrice + additionalsTotal;
+    }
+    
+    // For API products, use priceOutput
     const basePrice = parseFloat(String((priceOutput as any)?.value ?? 0).replace(/\./g, "").replace(",", ".")) || 0;
     let additionalsTotal = 0;
     
@@ -913,7 +949,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     }
     
     return basePrice + additionalsTotal;
-  }, [priceOutput, itemAdditionals, multiEnabled, multiRows]);
+  }, [priceOutput, itemAdditionals, multiEnabled, multiRows, isCustomProduct, customPrice, customQuantity]);
 
   // This useEffect is now redundant - removed to prevent duplicate onChange calls
 
@@ -1010,55 +1046,65 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     
     console.log('🔄 syncToParent ejecutándose:', {
       productId,
+      isCustomProduct,
       promptValuesKeys: Object.keys(promptValues),
       promptValuesCount: Object.keys(promptValues).length,
       promptValues,
       hasOutputs: outputs && outputs.length > 0
     });
     
-    // Extraer las definiciones de prompts del producto para obtener reglas de visibilidad
-    const promptDefs = extractPrompts(pricing as any);
+    let promptsArray: any[] = [];
     
-    // Convertir promptValues a formato Record para evaluar visibilidad
-    const currentValues: Record<string, any> = {};
-    Object.entries(promptValues).forEach(([id, promptData]) => {
-      const value = (typeof promptData === 'object' && promptData !== null && 'value' in promptData) 
-        ? promptData.value 
-        : promptData;
-      currentValues[id] = value;
-    });
-    
-    // Guardar TODOS los prompts sin filtros
-    const promptsArray: any[] = [];
-    Object.entries(promptValues).forEach(([id, promptData]) => {
-      // promptData puede ser un objeto {label, value, order} o un valor simple
-      if (typeof promptData === 'object' && promptData !== null && 'value' in promptData) {
-        const value = promptData.value;
-        
-        promptsArray.push({
-          id,
-          label: promptData.label || id,
-          value: promptData.value,
-          order: promptData.order ?? 999
-        });
-      } else {
-        // Valor simple (fallback) - guardar sin filtrar
-        promptsArray.push({
-          id,
-          label: id,
-          value: promptData,
-          order: 999
-        });
-      }
-    });
+    // For custom products, create synthetic prompts for quantity and price
+    if (isCustomProduct) {
+      promptsArray = [
+        { id: 'custom_quantity', label: 'Cantidad', value: customQuantity, order: 1 },
+        { id: 'custom_unit_price', label: 'Precio unitario', value: customPrice, order: 2 }
+      ];
+    } else {
+      // Extraer las definiciones de prompts del producto para obtener reglas de visibilidad
+      const promptDefs = extractPrompts(pricing as any);
+      
+      // Convertir promptValues a formato Record para evaluar visibilidad
+      const currentValues: Record<string, any> = {};
+      Object.entries(promptValues).forEach(([id, promptData]) => {
+        const value = (typeof promptData === 'object' && promptData !== null && 'value' in promptData) 
+          ? promptData.value 
+          : promptData;
+        currentValues[id] = value;
+      });
+      
+      // Guardar TODOS los prompts sin filtros
+      Object.entries(promptValues).forEach(([id, promptData]) => {
+        // promptData puede ser un objeto {label, value, order} o un valor simple
+        if (typeof promptData === 'object' && promptData !== null && 'value' in promptData) {
+          const value = promptData.value;
+          
+          promptsArray.push({
+            id,
+            label: promptData.label || id,
+            value: promptData.value,
+            order: promptData.order ?? 999
+          });
+        } else {
+          // Valor simple (fallback) - guardar sin filtrar
+          promptsArray.push({
+            id,
+            label: id,
+            value: promptData,
+            order: 999
+          });
+        }
+      });
+    }
     
     const snapshot = {
       productId,
       prompts: promptsArray,
-      outputs,
+      outputs: isCustomProduct ? [] : outputs,
       price: finalPrice,
       multi: multiEnabled ? { qtyPrompt, qtyInputs, rows: multiRows } : null,
-      itemDescription: itemDescription || (products?.find((p: any) => String(p.id) === String(productId)) ? getProductLabel(products.find((p: any) => String(p.id) === String(productId))) : ""),
+      itemDescription: itemDescription || (isCustomProduct ? "Artículo personalizado" : (products?.find((p: any) => String(p.id) === String(productId)) ? getProductLabel(products.find((p: any) => String(p.id) === String(productId))) : "")),
       itemAdditionals,
       isFinalized: initialData?.isFinalized,
     };
@@ -1074,17 +1120,25 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     } else {
       console.log('⏭️ Snapshot sin cambios, no sincronizando');
     }
-  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, itemAdditionals, products, initialData?.isFinalized, isInitializing]);
+  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, itemAdditionals, products, initialData?.isFinalized, isInitializing, isCustomProduct, customPrice, customQuantity, pricing]);
 
-  const isComplete = productId && priceOutput && finalPrice > 0;
+  const isComplete = productId && ((isCustomProduct && customPrice > 0 && itemDescription) || (priceOutput && finalPrice > 0));
 
-  // Sincronizar automáticamente cuando cambien los prompts (excepto durante inicialización)
+  // Sincronizar automáticamente cuando cambien los prompts o campos personalizados (excepto durante inicialización)
   useEffect(() => {
-    if (!isInitializing && productId && Object.keys(promptValues).length > 0) {
-      console.log('🔄 Auto-sincronizando cambios de prompts');
-      syncToParent();
+    if (!isInitializing && productId) {
+      // Para productos personalizados, sincronizar cuando cambien los campos
+      if (isCustomProduct && itemDescription) {
+        console.log('🔄 Auto-sincronizando cambios de producto personalizado');
+        syncToParent();
+      }
+      // Para productos de API, sincronizar cuando cambien los prompts
+      else if (!isCustomProduct && Object.keys(promptValues).length > 0) {
+        console.log('🔄 Auto-sincronizando cambios de prompts');
+        syncToParent();
+      }
     }
-  }, [promptValues, isInitializing, productId, syncToParent]);
+  }, [promptValues, isInitializing, productId, syncToParent, isCustomProduct, itemDescription, customPrice, customQuantity]);
 
   // Debug logging para el botón Finalizar
   useEffect(() => {
@@ -1197,15 +1251,31 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               <Select onValueChange={(value) => {
                 console.log("🔄 Usuario cambió de producto:", value);
                 setProductId(value);
+                if (value === CUSTOM_PRODUCT_ID) {
+                  setItemDescription("Artículo personalizado");
+                  setCustomPrice(0);
+                  setCustomQuantity(1);
+                }
                 // El reset completo lo maneja el useEffect de líneas 365-405
-              }} value={productId} disabled={!hasToken || !!initialData?.productId}>
+              }} value={productId} disabled={!!initialData?.productId}>
                 <SelectTrigger ref={selectRef}>
-                  <SelectValue placeholder={hasToken ? (initialData?.productId ? "No se puede cambiar el producto" : "Elige un producto") : "Conecta EasyQuote para cargar"} />
+                  <SelectValue placeholder={initialData?.productId ? "No se puede cambiar el producto" : "Elige un producto"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {products?.map((p: any) => (
+                  {/* Custom product option always first */}
+                  <SelectItem value={CUSTOM_PRODUCT_ID} className="border-b">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">Artículo personalizado</span>
+                    </div>
+                  </SelectItem>
+                  {/* EasyQuote products */}
+                  {hasToken && products?.map((p: any) => (
                     <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
                   ))}
+                  {!hasToken && (
+                    <SelectItem value="" disabled>Conecta EasyQuote para más productos</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
               {initialData?.productId && (
@@ -1232,10 +1302,44 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         <div className="grid gap-6 md:grid-cols-5">
           <Card className="md:col-span-3">
             <CardHeader>
-              <CardTitle>Opciones</CardTitle>
+              <CardTitle>{isCustomProduct ? "Configuración" : "Opciones"}</CardTitle>
             </CardHeader>
             <CardContent>
-              {isPricingError && pricingError ? (
+              {isCustomProduct ? (
+                /* Custom product fields */
+                <div className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="custom-quantity">Cantidad</Label>
+                      <Input
+                        id="custom-quantity"
+                        type="number"
+                        min="1"
+                        value={customQuantity}
+                        onChange={(e) => setCustomQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                        placeholder="1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="custom-price">Precio unitario (€)</Label>
+                      <Input
+                        id="custom-price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={customPrice}
+                        onChange={(e) => setCustomPrice(Math.max(0, parseFloat(e.target.value) || 0))}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-md bg-muted/50 border">
+                    <p className="text-sm text-muted-foreground">
+                      Total: <span className="font-semibold text-foreground">{formatEUR(customPrice * customQuantity)}</span>
+                    </p>
+                  </div>
+                </div>
+              ) : isPricingError && pricingError ? (
                 <Alert variant="destructive">
                   <AlertTitle>Error al cargar este producto</AlertTitle>
                   <AlertDescription className="space-y-2">
@@ -1255,7 +1359,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           </Card>
 
           <div className="md:col-span-2 md:sticky md:top-6 self-start space-y-3">
-            {isPricingError && pricingError && (
+            {!isCustomProduct && isPricingError && pricingError && (
               <Alert variant="destructive">
                 <AlertTitle>Producto no disponible</AlertTitle>
                 <AlertDescription>
@@ -1263,7 +1367,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 </AlertDescription>
               </Alert>
             )}
-            {imageOutputs.length > 0 && (
+            {!isCustomProduct && imageOutputs.length > 0 && (
               <section className={imageOutputs.length === 1 ? "flex justify-center" : "grid grid-cols-2 gap-3"}>
                 {imageOutputs.map((o: any, idx: number) => (
                   <img 
@@ -1282,38 +1386,57 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 <CardTitle>Resultado</CardTitle>
               </CardHeader>
               <CardContent>
-                {pricingError && (
-                  <Alert variant="destructive" className="mb-4">
-                    <AlertTitle>Producto sin pricing</AlertTitle>
-                    <AlertDescription>El producto seleccionado no existe o es incorrecto.</AlertDescription>
-                  </Alert>
-                )}
-
-                {priceOutput ? (
+                {isCustomProduct ? (
+                  /* Custom product price display */
                   <div className="p-3 rounded-md border bg-card/50">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Precio</span>
+                      <span className="text-sm text-muted-foreground">Precio total</span>
                       <span className="px-2 py-1 rounded-full bg-accent text-accent-foreground text-lg font-semibold">
-                        {formatEUR((priceOutput as any).value)}
+                        {formatEUR(finalPrice)}
                       </span>
                     </div>
+                    {customQuantity > 1 && (
+                      <div className="flex items-center justify-between mt-2 text-sm">
+                        <span className="text-muted-foreground">{customQuantity} × {formatEUR(customPrice)}</span>
+                      </div>
+                    )}
                   </div>
-                ) : (!pricingError && <p className="text-sm text-muted-foreground">Selecciona opciones para ver el resultado.</p>)}
+                ) : (
+                  <>
+                    {pricingError && (
+                      <Alert variant="destructive" className="mb-4">
+                        <AlertTitle>Producto sin pricing</AlertTitle>
+                        <AlertDescription>El producto seleccionado no existe o es incorrecto.</AlertDescription>
+                      </Alert>
+                    )}
 
-                {otherOutputs.length > 0 && (
-                  <section className="space-y-2 mt-4">
-                      {otherOutputs.map((o: any, idx: number) => (
-                        <div key={idx} className="flex items-center justify-between text-sm px-1">
-                          <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
-                          <span className="truncate ml-2">{String(o.value)}</span>
+                    {priceOutput ? (
+                      <div className="p-3 rounded-md border bg-card/50">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Precio</span>
+                          <span className="px-2 py-1 rounded-full bg-accent text-accent-foreground text-lg font-semibold">
+                            {formatEUR((priceOutput as any).value)}
+                          </span>
                         </div>
-                      ))}
-                    </section>
+                      </div>
+                    ) : (!pricingError && <p className="text-sm text-muted-foreground">Selecciona opciones para ver el resultado.</p>)}
+
+                    {otherOutputs.length > 0 && (
+                      <section className="space-y-2 mt-4">
+                          {otherOutputs.map((o: any, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between text-sm px-1">
+                              <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
+                              <span className="truncate ml-2">{String(o.value)}</span>
+                            </div>
+                          ))}
+                        </section>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
 
-            {!hideMultiQuantities && (
+            {!hideMultiQuantities && !isCustomProduct && (
               <Card className="border-accent/50 bg-muted/30">
                 <CardHeader className="py-2 px-3">
                   <CardTitle className="text-base">Múltiples cantidades</CardTitle>
