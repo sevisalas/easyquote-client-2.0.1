@@ -3,6 +3,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -1308,6 +1309,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               {isCustomProduct ? (
                 /* Custom product fields */
                 <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="custom-description">Descripción</Label>
+                    <Textarea
+                      id="custom-description"
+                      value={itemDescription}
+                      onChange={(e) => setItemDescription(e.target.value)}
+                      placeholder="Describe el artículo..."
+                      rows={3}
+                    />
+                  </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="custom-quantity">Cantidad</Label>
