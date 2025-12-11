@@ -387,6 +387,17 @@ Deno.serve(async (req) => {
         id: quoteData.holded_estimate_id,
         docType: 'estimate'
       };
+      
+      // Add customFields with estimate number for traceability
+      if (quoteData.holded_estimate_number) {
+        payload.customFields = [
+          {
+            field: 'Presupuesto',
+            value: quoteData.holded_estimate_number
+          }
+        ];
+      }
+      
       console.log('📎 Linking to estimate:', quoteData.holded_estimate_id, '(', quoteData.holded_estimate_number, ')');
     }
 
