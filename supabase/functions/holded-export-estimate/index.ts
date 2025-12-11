@@ -583,13 +583,13 @@ Deno.serve(async (req) => {
         price = Math.round(price * 100) / 100;
         discountAmount = Math.round(discountAmount * 100) / 100;
         
-        // For custom products, use quantity from prompts + subtotal from item.price
+        // For custom products, use quantity from prompts + unit price (total / quantity)
         // For normal products, use units=1 + subtotal
         const itemData: any = isCustomProduct ? {
           name: item.product_name || 'Producto',
           desc: description,
           units: customQuantity,
-          subtotal: parseFloat(item.price) || 0,
+          subtotal: customQuantity > 0 ? (parseFloat(item.price) || 0) / customQuantity : 0,
           taxes: ["s_iva_21"]
         } : {
           name: item.product_name || 'Producto',

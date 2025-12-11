@@ -90,7 +90,11 @@ const QuotesList = () => {
     document.title = "Presupuestos | Listado";
   }, []);
 
-  const { data: quotes = [], refetch } = useQuery({ queryKey: ["quotes"], queryFn: fetchQuotes });
+  const { data: quotes = [], refetch } = useQuery({ 
+    queryKey: ["quotes"], 
+    queryFn: fetchQuotes,
+    refetchOnMount: 'always'
+  });
   const { data: customers = [] } = useQuery({ 
     queryKey: ["customers"], 
     queryFn: fetchCustomers
