@@ -27,7 +27,9 @@ type ItemSnapshot = {
   outputs: any[];
   price?: number;
   multi?: any;
-  itemDescription?: string;
+  displayName?: string;  // Nombre a mostrar (editable)
+  productName?: string;  // Nombre original del producto API
+  itemDescription?: string;  // Descripción (solo para productos custom)
   itemAdditionals?: any[];
   needsRecalculation?: boolean;
   isFinalized?: boolean; // Track if item is finalized
@@ -182,7 +184,9 @@ export default function QuoteNew() {
           outputs: item.outputs || [],
           price: item.price,
           multi: item.multi,
-          itemDescription: item.product_name || item.description || "",
+          displayName: item.name || item.product_name || "",  // Nombre a mostrar
+          productName: item.product_name || "",  // Nombre original del producto API
+          itemDescription: item.description || "",  // Descripción (solo para productos custom)
           itemAdditionals: item.item_additionals || [],
           needsRecalculation: true,
           isFinalized: true,
@@ -398,8 +402,9 @@ export default function QuoteNew() {
         return {
           quote_id: quote.id,
           product_id: item.productId,
-          product_name: item.itemDescription || "",
-          description: item.itemDescription || "",
+          product_name: item.productName || item.displayName || "",  // Nombre original del producto API
+          name: item.displayName || item.productName || "",  // Nombre a mostrar (editable)
+          description: item.itemDescription || "",  // Descripción (solo para productos custom)
           prompts: promptsArray,
           outputs: item.outputs || [],
           multi: item.multi || null,
