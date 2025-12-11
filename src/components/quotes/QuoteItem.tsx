@@ -340,7 +340,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Los prompts siempre vienen de easyquote-pricing (ya no usamos master-files)
 
   // Query principal de pricing
-  const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError } = useQuery({
+  const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError, isFetching: isPricingLoading } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct],
     enabled: (() => {
       // Verificar condiciones básicas
@@ -1031,6 +1031,18 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       return;
     }
     
+    // NO sincronizar si se está calculando el precio (evita guardar datos incompletos)
+    if (isPricingLoading) {
+      console.log('⏸️ syncToParent bloqueado: precio recalculándose');
+      return;
+    }
+    
+    // Para productos de API, verificar que haya prompts antes de sincronizar
+    if (!isCustomProduct && Object.keys(promptValues).length === 0) {
+      console.log('⏸️ syncToParent bloqueado: sin prompts para producto de API');
+      return;
+    }
+    
     console.log('🔄 syncToParent ejecutándose:', {
       productId,
       isCustomProduct,
@@ -1107,25 +1119,27 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     } else {
       console.log('⏭️ Snapshot sin cambios, no sincronizando');
     }
-  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, itemAdditionals, products, initialData?.isFinalized, isInitializing, isCustomProduct, customPrice, customQuantity, pricing]);
+  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, itemDescription, itemAdditionals, products, initialData?.isFinalized, isInitializing, isCustomProduct, customPrice, customQuantity, pricing, isPricingLoading]);
 
-  const isComplete = productId && ((isCustomProduct && customPrice > 0 && itemDescription) || (priceOutput && finalPrice > 0));
+  // Verificar que el artículo está completo Y no se está recalculando el precio
+  const isCalculating = isPricingLoading || multiLoading;
+  const isComplete = productId && !isCalculating && ((isCustomProduct && customPrice > 0 && itemDescription) || (priceOutput && finalPrice > 0));
 
-  // Sincronizar automáticamente cuando cambien los prompts o campos personalizados (excepto durante inicialización)
+  // Sincronizar automáticamente cuando cambien los prompts o campos personalizados (excepto durante inicialización o cálculo)
   useEffect(() => {
-    if (!isInitializing && productId) {
+    if (!isInitializing && !isPricingLoading && productId) {
       // Para productos personalizados, sincronizar cuando cambien los campos
       if (isCustomProduct && itemDescription) {
         console.log('🔄 Auto-sincronizando cambios de producto personalizado');
         syncToParent();
       }
-      // Para productos de API, sincronizar cuando cambien los prompts
+      // Para productos de API, sincronizar cuando cambien los prompts Y haya datos
       else if (!isCustomProduct && Object.keys(promptValues).length > 0) {
         console.log('🔄 Auto-sincronizando cambios de prompts');
         syncToParent();
       }
     }
-  }, [promptValues, isInitializing, productId, syncToParent, isCustomProduct, itemDescription, customPrice, customQuantity]);
+  }, [promptValues, isInitializing, productId, syncToParent, isCustomProduct, itemDescription, customPrice, customQuantity, isPricingLoading]);
 
   // Debug logging para el botón Finalizar
   useEffect(() => {
@@ -1196,10 +1210,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 }}
                 size="sm" 
                 variant="default"
-                disabled={!isComplete}
+                disabled={!isComplete || isCalculating}
                 className="whitespace-nowrap bg-primary hover:bg-primary/90"
               >
-                Finalizar producto
+                {isCalculating ? "Calculando..." : "Finalizar producto"}
               </Button>
               {onRemove && (
                 <Button
