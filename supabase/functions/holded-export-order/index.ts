@@ -321,40 +321,59 @@ Deno.serve(async (req) => {
         }
       }
       
-      // Get price
-      let price = 0;
-      let units = item.quantity || 1;
+      // Get price and detect quantity
+      let totalPrice = parseFloat(item.price) || 0;
+      let units = 1;
       
-      if (isCustomProduct) {
-        // For custom products, use quantity and unit price directly
-        price = customUnitPrice;
-        units = customQuantity;
-      } else if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
-        const priceOut = item.outputs.find((o: any) => 
-          String(o?.type || '').toLowerCase() === 'price' ||
-          String(o?.name || '').toLowerCase().includes('precio') ||
-          String(o?.name || '').toLowerCase().includes('price')
+      // Detect quantity: first from output type Quantity, then from prompts
+      if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
+        const quantityOut = item.outputs.find((o: any) => 
+          String(o?.type || '').toLowerCase() === 'quantity'
         );
         
-        if (priceOut) {
-          const priceValue = priceOut.value;
-          price = typeof priceValue === "number" 
-            ? priceValue 
-            : parseFloat(String(priceValue || 0).replace(/\./g, "").replace(",", ".")) || 0;
-        } else {
-          price = parseFloat(item.price) || 0;
+        if (quantityOut) {
+          const qtyValue = quantityOut.value;
+          units = typeof qtyValue === "number" 
+            ? qtyValue 
+            : parseInt(String(qtyValue || 1).replace(/\./g, "").replace(",", ".")) || 1;
+          console.log('📊 Quantity from output:', { units, outputName: quantityOut.name });
         }
-      } else {
-        price = parseFloat(item.price) || 0;
       }
       
-      price = Math.round(price * 100) / 100;
+      // If no quantity from output, check prompts for UNIDADES/CANTIDAD/EJEMPLAR
+      if (units === 1 && item.prompts) {
+        const promptsArray = Array.isArray(item.prompts) ? item.prompts : [];
+        const qtyPrompt = promptsArray.find((p: any) => {
+          const label = String(p?.label || '').toUpperCase();
+          return label.includes('UNIDADES') || label.includes('CANTIDAD') || label.includes('EJEMPLAR');
+        });
+        
+        if (qtyPrompt) {
+          const qtyValue = qtyPrompt.value;
+          units = typeof qtyValue === "number" 
+            ? qtyValue 
+            : parseInt(String(qtyValue || 1).replace(/\./g, "").replace(",", ".")) || 1;
+          console.log('📊 Quantity from prompt:', { units, promptLabel: qtyPrompt.label });
+        }
+      }
       
+      // For custom products, use quantity from prompts if not already found
+      if (isCustomProduct && units === 1) {
+        units = customQuantity;
+      }
+      
+      // Calculate unit price from total price and units
+      const unitPrice = units > 0 ? totalPrice / units : totalPrice;
+      const roundedUnitPrice = Math.round(unitPrice * 100) / 100;
+      
+      console.log('💰 Price calculation:', { totalPrice, units, unitPrice: roundedUnitPrice, productName: item.product_name });
+      
+      // All products use units + subtotal (unit price)
       const itemData: any = {
         name: item.product_name || 'Producto',
         desc: description,
         units: units,
-        subtotal: price,
+        subtotal: roundedUnitPrice,
         taxes: ["s_iva_21"]
       };
       
