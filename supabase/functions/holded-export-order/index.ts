@@ -251,59 +251,85 @@ Deno.serve(async (req) => {
       
       let description = '';
       
-      // Build description from prompts (ONLY VISIBLE ONES)
-      if (item.prompts) {
-        let promptsArray: any[] = [];
-        
-        if (Array.isArray(item.prompts)) {
-          promptsArray = item.prompts;
-        } else if (typeof item.prompts === 'object') {
-          promptsArray = Object.entries(item.prompts).map(([key, value]) => ({
-            id: key,
-            ...(typeof value === 'object' ? value : { value })
-          }));
-        }
-        
-        // Convert to object for visibility checking
-        const promptsObj = promptsArray.reduce((acc: any, p: any) => {
-          acc[p.id] = p;
-          return acc;
-        }, {});
-        
-        if (promptsArray.length > 0) {
-          description = promptsArray
-            .filter(prompt => isPromptVisible(prompt, promptsObj)) // Filter only visible prompts
-            .sort((a, b) => (a.order || 999) - (b.order || 999))
-            .map((prompt) => {
-              if (prompt && 'label' in prompt && 'value' in prompt) {
-                return `${prompt.label}: ${prompt.value}`;
-              }
-              return '';
-            })
-            .filter(Boolean)
-            .join('\n');
-        }
-      }
+      // Check if this is a custom product
+      const isCustomProduct = item.product_id === '__CUSTOM_PRODUCT__';
+      let customQuantity = 1;
+      let customUnitPrice = 0;
       
-      // Add outputs to description
-      if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
-        const outputsText = item.outputs
-          .filter((out: any) => {
-            const name = String(out.name || '').toLowerCase();
-            const type = String(out.type || '').toLowerCase();
-            return !type.includes('price') && !name.includes('precio') && !name.includes('price');
-          })
-          .map((out: any) => `${out.name}: ${out.value}`)
-          .join('\n');
+      if (isCustomProduct) {
+        // For custom products, extract quantity and unit price from prompts
+        const promptsArray = Array.isArray(item.prompts) ? item.prompts : [];
+        const qtyPrompt = promptsArray.find((p: any) => p.id === 'custom_quantity');
+        const pricePrompt = promptsArray.find((p: any) => p.id === 'custom_unit_price');
         
-        if (outputsText) {
-          description += (description ? '\n' : '') + outputsText;
+        customQuantity = qtyPrompt?.value || 1;
+        customUnitPrice = pricePrompt?.value || 0;
+        
+        // Use item description directly for custom products
+        description = item.description || '';
+        
+        console.log('📦 Custom product detected:', { customQuantity, customUnitPrice, description });
+      } else {
+        // Build description from prompts (ONLY VISIBLE ONES)
+        if (item.prompts) {
+          let promptsArray: any[] = [];
+          
+          if (Array.isArray(item.prompts)) {
+            promptsArray = item.prompts;
+          } else if (typeof item.prompts === 'object') {
+            promptsArray = Object.entries(item.prompts).map(([key, value]) => ({
+              id: key,
+              ...(typeof value === 'object' ? value : { value })
+            }));
+          }
+          
+          // Convert to object for visibility checking
+          const promptsObj = promptsArray.reduce((acc: any, p: any) => {
+            acc[p.id] = p;
+            return acc;
+          }, {});
+          
+          if (promptsArray.length > 0) {
+            description = promptsArray
+              .filter(prompt => isPromptVisible(prompt, promptsObj)) // Filter only visible prompts
+              .sort((a, b) => (a.order || 999) - (b.order || 999))
+              .map((prompt) => {
+                if (prompt && 'label' in prompt && 'value' in prompt) {
+                  return `${prompt.label}: ${prompt.value}`;
+                }
+                return '';
+              })
+              .filter(Boolean)
+              .join('\n');
+          }
+        }
+        
+        // Add outputs to description
+        if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
+          const outputsText = item.outputs
+            .filter((out: any) => {
+              const name = String(out.name || '').toLowerCase();
+              const type = String(out.type || '').toLowerCase();
+              return !type.includes('price') && !name.includes('precio') && !name.includes('price');
+            })
+            .map((out: any) => `${out.name}: ${out.value}`)
+            .join('\n');
+          
+          if (outputsText) {
+            description += (description ? '\n' : '') + outputsText;
+          }
         }
       }
       
       // Get price
       let price = 0;
-      if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
+      let units = item.quantity || 1;
+      
+      if (isCustomProduct) {
+        // For custom products, use quantity and unit price directly
+        price = customUnitPrice;
+        units = customQuantity;
+      } else if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
         const priceOut = item.outputs.find((o: any) => 
           String(o?.type || '').toLowerCase() === 'price' ||
           String(o?.name || '').toLowerCase().includes('precio') ||
@@ -327,7 +353,7 @@ Deno.serve(async (req) => {
       const itemData: any = {
         name: item.product_name || 'Producto',
         desc: description,
-        units: item.quantity || 1,
+        units: units,
         subtotal: price,
         taxes: ["s_iva_21"]
       };
