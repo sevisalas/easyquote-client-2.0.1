@@ -434,10 +434,14 @@ Deno.serve(async (req) => {
         let customUnitPrice = 0;
         
         if (isCustomProduct) {
-          // For custom products, extract quantity and unit price from prompts
+          // For custom products, extract quantity and unit price from prompts by label
           const promptsArray = Array.isArray(item.prompts) ? item.prompts : [];
-          const qtyPrompt = promptsArray.find((p: any) => p.id === 'custom_quantity');
-          const pricePrompt = promptsArray.find((p: any) => p.id === 'custom_unit_price');
+          const qtyPrompt = promptsArray.find((p: any) => 
+            p.label?.toLowerCase().includes('cantidad') || p.id === 'custom_quantity'
+          );
+          const pricePrompt = promptsArray.find((p: any) => 
+            p.label?.toLowerCase().includes('precio') || p.id === 'custom_unit_price'
+          );
           
           customQuantity = qtyPrompt?.value || 1;
           customUnitPrice = pricePrompt?.value || 0;
@@ -445,7 +449,7 @@ Deno.serve(async (req) => {
           // Use item description directly for custom products
           description = item.description || '';
           
-          console.log('📦 Custom product detected:', { customQuantity, customUnitPrice, description });
+          console.log('📦 Custom product detected:', { customQuantity, customUnitPrice, description, qtyPrompt, pricePrompt });
         } else {
           // Build description from prompts (filter using visibility rules)
           if (item.prompts) {
