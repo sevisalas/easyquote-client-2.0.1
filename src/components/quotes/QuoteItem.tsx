@@ -1274,7 +1274,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               )}
             </div>
 
-            {productId && (
+            {productId && !isCustomProduct && (
               <div className="space-y-2 md:col-span-2">
                 <Label>Nombre a mostrar del producto</Label>
                 <Input
