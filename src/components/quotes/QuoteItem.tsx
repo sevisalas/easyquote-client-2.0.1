@@ -1252,6 +1252,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               <Label>Selecciona producto</Label>
               <Select onValueChange={(value) => {
                 console.log("🔄 Usuario cambió de producto:", value);
+                console.log("🔍 Products disponibles:", products);
                 setProductId(value);
                 if (value === CUSTOM_PRODUCT_ID) {
                   setItemDescription("Artículo personalizado");
@@ -1259,9 +1260,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   setCustomQuantity(1);
                 } else {
                   // Producto de la API: usar el nombre del producto como displayName
-                  const selectedProduct = products?.find((p: any) => p.id === value);
+                  const selectedProduct = products?.find((p: any) => String(p.id) === String(value));
+                  console.log("🔍 Producto encontrado:", selectedProduct);
                   if (selectedProduct) {
-                    setDisplayName(selectedProduct.name);
+                    const productName = getProductLabel(selectedProduct);
+                    console.log("✅ Seteando displayName a:", productName);
+                    setDisplayName(productName);
                   }
                 }
                 // El reset completo lo maneja el useEffect de líneas 365-405
