@@ -1308,42 +1308,38 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             <CardContent>
               {isCustomProduct ? (
                 /* Custom product fields */
-                <div className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="custom-description">Descripción</Label>
-                      <Textarea
-                        id="custom-description"
-                        value={itemDescription}
-                        onChange={(e) => setItemDescription(e.target.value)}
-                        placeholder="Describe el artículo..."
-                        rows={3}
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="custom-description">Descripción</Label>
+                    <Textarea
+                      id="custom-description"
+                      value={itemDescription}
+                      onChange={(e) => setItemDescription(e.target.value)}
+                      placeholder="Describe el artículo..."
+                      rows={2}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="custom-quantity" className="text-xs">Cantidad</Label>
+                      <Input
+                        id="custom-quantity"
+                        type="number"
+                        min="1"
+                        value={customQuantity}
+                        onChange={(e) => setCustomQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                       />
                     </div>
-                    <div className="space-y-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="custom-quantity">Cantidad</Label>
-                        <Input
-                          id="custom-quantity"
-                          type="number"
-                          min="1"
-                          value={customQuantity}
-                          onChange={(e) => setCustomQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                          placeholder="1"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="custom-price">Precio unitario (€)</Label>
-                        <Input
-                          id="custom-price"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={customPrice}
-                          onChange={(e) => setCustomPrice(Math.max(0, parseFloat(e.target.value) || 0))}
-                          placeholder="0.00"
-                        />
-                      </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="custom-price" className="text-xs">Precio (€)</Label>
+                      <Input
+                        id="custom-price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={customPrice}
+                        onChange={(e) => setCustomPrice(Math.max(0, parseFloat(e.target.value) || 0))}
+                      />
                     </div>
                   </div>
                 </div>
