@@ -428,46 +428,66 @@ Deno.serve(async (req) => {
         // Single item without multi quantities
         let description = '';
         
-        // Build description from prompts (filter using visibility rules)
-        if (item.prompts) {
-          let promptsArray: any[] = [];
+        // Check if this is a custom product
+        const isCustomProduct = item.product_id === '__CUSTOM_PRODUCT__';
+        let customQuantity = 1;
+        let customUnitPrice = 0;
+        
+        if (isCustomProduct) {
+          // For custom products, extract quantity and unit price from prompts
+          const promptsArray = Array.isArray(item.prompts) ? item.prompts : [];
+          const qtyPrompt = promptsArray.find((p: any) => p.id === 'custom_quantity');
+          const pricePrompt = promptsArray.find((p: any) => p.id === 'custom_unit_price');
           
-          // Handle both array and object formats
-          if (Array.isArray(item.prompts)) {
-            promptsArray = item.prompts;
-          } else if (typeof item.prompts === 'object') {
-            promptsArray = Object.entries(item.prompts).map(([key, value]) => ({
-              id: key,
-              ...(typeof value === 'object' ? value : { value })
-            }));
-          }
+          customQuantity = qtyPrompt?.value || 1;
+          customUnitPrice = pricePrompt?.value || 0;
           
-          // Convert to object for visibility checking
-          const promptsObj = promptsArray.reduce((acc: any, p: any) => {
-            acc[p.id] = p;
-            return acc;
-          }, {});
+          // Use item description directly for custom products
+          description = item.description || '';
           
-          if (promptsArray.length > 0) {
-            description = promptsArray
-              .filter(prompt => {
-                if (!prompt || !prompt.label) return false;
-                if (!isPromptVisible(prompt.id, promptsObj, item.product_id || '')) return false;
-                // Check if this prompt is hidden in documents
-                const productId = item.product_id || '';
-                const promptLabel = prompt.label;
-                if (hiddenPromptsSet.has(`${productId}:${promptLabel}`)) {
-                  console.log(`🙈 Hiding prompt "${promptLabel}" for product ${productId}`);
-                  return false;
-                }
-                return true;
-              })
-              .sort((a, b) => (a.order || 999) - (b.order || 999))
-              .map((prompt) => {
-                return `${prompt.label}: ${prompt.value}`;
-              })
-              .filter(Boolean)
-              .join('\n');
+          console.log('📦 Custom product detected:', { customQuantity, customUnitPrice, description });
+        } else {
+          // Build description from prompts (filter using visibility rules)
+          if (item.prompts) {
+            let promptsArray: any[] = [];
+            
+            // Handle both array and object formats
+            if (Array.isArray(item.prompts)) {
+              promptsArray = item.prompts;
+            } else if (typeof item.prompts === 'object') {
+              promptsArray = Object.entries(item.prompts).map(([key, value]) => ({
+                id: key,
+                ...(typeof value === 'object' ? value : { value })
+              }));
+            }
+            
+            // Convert to object for visibility checking
+            const promptsObj = promptsArray.reduce((acc: any, p: any) => {
+              acc[p.id] = p;
+              return acc;
+            }, {});
+            
+            if (promptsArray.length > 0) {
+              description = promptsArray
+                .filter(prompt => {
+                  if (!prompt || !prompt.label) return false;
+                  if (!isPromptVisible(prompt.id, promptsObj, item.product_id || '')) return false;
+                  // Check if this prompt is hidden in documents
+                  const productId = item.product_id || '';
+                  const promptLabel = prompt.label;
+                  if (hiddenPromptsSet.has(`${productId}:${promptLabel}`)) {
+                    console.log(`🙈 Hiding prompt "${promptLabel}" for product ${productId}`);
+                    return false;
+                  }
+                  return true;
+                })
+                .sort((a, b) => (a.order || 999) - (b.order || 999))
+                .map((prompt) => {
+                  return `${prompt.label}: ${prompt.value}`;
+                })
+                .filter(Boolean)
+                .join('\n');
+            }
           }
         }
         
@@ -490,7 +510,13 @@ Deno.serve(async (req) => {
         
         // Get price from outputs or fallback to item.price
         let price = 0;
-        if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
+        let units = 1;
+        
+        if (isCustomProduct) {
+          // For custom products, use quantity and unit price directly
+          price = customUnitPrice;
+          units = customQuantity;
+        } else if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
           const priceOut = item.outputs.find((o: any) => 
             String(o?.type || '').toLowerCase() === 'price' ||
             String(o?.name || '').toLowerCase().includes('precio') ||
@@ -528,14 +554,15 @@ Deno.serve(async (req) => {
                   discountAmount += Math.abs(value);
                   break;
                 case 'percentage':
-                  discountAmount += Math.abs((price * value) / 100);
+                  discountAmount += Math.abs((price * units * value) / 100);
                   break;
               }
             } else {
-              // Apply non-discount adjustments to price
+              // Apply non-discount adjustments to price (per unit)
               switch (additional.type) {
                 case 'net_amount':
-                  price += value;
+                  // For custom products with quantity, distribute net amount per unit
+                  price += isCustomProduct ? value / units : value;
                   break;
                 case 'percentage':
                   price += (price * value) / 100;
@@ -555,7 +582,7 @@ Deno.serve(async (req) => {
         const itemData: any = {
           name: item.product_name || 'Producto',
           desc: description,
-          units: 1,
+          units: units,
           subtotal: price,
           taxes: ["s_iva_21"]
         };
