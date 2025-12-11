@@ -413,7 +413,7 @@ Deno.serve(async (req) => {
             name: `${item.product_name || 'Producto'} (${qtyLabel})`,
             desc: description,
             units: 1,
-            price: price,
+            subtotal: price,
             taxes: ["s_iva_21"]
           };
           
@@ -579,11 +579,18 @@ Deno.serve(async (req) => {
         price = Math.round(price * 100) / 100;
         discountAmount = Math.round(discountAmount * 100) / 100;
         
-        const itemData: any = {
+        // For custom products, use price/units; for normal products use subtotal
+        const itemData: any = isCustomProduct ? {
           name: item.product_name || 'Producto',
           desc: description,
-          units: units,
-          price: price,
+          units: customQuantity,
+          price: customUnitPrice,
+          taxes: ["s_iva_21"]
+        } : {
+          name: item.product_name || 'Producto',
+          desc: description,
+          units: 1,
+          subtotal: price,
           taxes: ["s_iva_21"]
         };
         
