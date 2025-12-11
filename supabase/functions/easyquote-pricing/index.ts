@@ -27,6 +27,15 @@ serve(async (req: Request): Promise<Response> => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    
+    // Custom products don't use EasyQuote API
+    if (productId === "__CUSTOM_PRODUCT__") {
+      console.log("easyquote-pricing: Custom product, returning empty response");
+      return new Response(JSON.stringify({ prompts: [], outputValues: [], price: 0 }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Build target URL with cache buster
     const cacheBuster = `_t=${Date.now()}`;

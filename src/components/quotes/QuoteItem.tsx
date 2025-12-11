@@ -349,6 +349,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         return false;
       }
       
+      // Productos personalizados no usan la API de EasyQuote
+      if (productId === "__CUSTOM_PRODUCT__") {
+        console.log("❌ Query disabled: producto personalizado");
+        return false;
+      }
+      
       // IMPORTANTE: Para productos NUEVOS, SIEMPRE permitir la query inicial (GET sin inputs)
       if (isNewProduct) {
         console.log("✅ Query enabled: producto nuevo, obteniendo prompts iniciales");
