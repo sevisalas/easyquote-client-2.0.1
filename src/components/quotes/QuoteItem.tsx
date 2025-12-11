@@ -1257,6 +1257,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   setItemDescription("Artículo personalizado");
                   setCustomPrice(0);
                   setCustomQuantity(1);
+                } else {
+                  // Producto de la API: usar el nombre del producto como displayName
+                  const selectedProduct = products?.find((p: any) => p.id === value);
+                  if (selectedProduct) {
+                    setDisplayName(selectedProduct.name);
+                  }
                 }
                 // El reset completo lo maneja el useEffect de líneas 365-405
               }} value={productId} disabled={!!initialData?.productId}>
