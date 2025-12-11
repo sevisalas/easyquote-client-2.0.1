@@ -1256,6 +1256,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 setProductId(value);
                 if (value === CUSTOM_PRODUCT_ID) {
                   setItemDescription("Artículo personalizado");
+                  setDisplayName("Artículo personalizado");
                   setCustomPrice(0);
                   setCustomQuantity(1);
                 } else {
@@ -1295,7 +1296,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               )}
             </div>
 
-            {productId && !isCustomProduct && (
+            {productId && (
               <div className="space-y-2 md:col-span-2">
                 <Label>Nombre a mostrar del producto</Label>
                 <Input
