@@ -704,9 +704,19 @@ export default function QuoteDetail() {
                             
                             {/* Collapsible details */}
                             <CollapsibleContent className="mt-2 space-y-0.5">
-                              {/* Descripción para productos personalizados */}
-                              {isCustomProduct && item.description && (
-                                <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
+                              {/* Descripción y cantidad para productos personalizados */}
+                              {isCustomProduct && (
+                                <>
+                                  {item.description && (
+                                    <p className="text-xs text-muted-foreground">{item.description}</p>
+                                  )}
+                                  {item.quantity && (
+                                    <p className="text-xs">
+                                      <span className="font-medium text-muted-foreground">Cantidad:</span>{' '}
+                                      <span className="text-foreground">{item.quantity}</span>
+                                    </p>
+                                  )}
+                                </>
                               )}
                               {/* Prompts para productos API */}
                               {!isCustomProduct && Object.keys(itemPrompts).length > 0 && (() => {
