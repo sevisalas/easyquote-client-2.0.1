@@ -610,23 +610,36 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         setPromptValues(prev => {
           const merged: Record<string, any> = { ...prev };
           
+          // Crear un mapa de labels existentes para evitar duplicados
+          const existingLabels = new Set<string>();
+          Object.values(prev).forEach((p: any) => {
+            if (typeof p === 'object' && p?.label) {
+              existingLabels.add(p.label.toLowerCase().trim());
+            }
+          });
+          
           data.prompts.forEach((prompt: any) => {
             if (prompt.id) {
-              // Si ya existe en los valores del usuario, mantener su valor pero actualizar label/order
+              const promptLabel = (prompt.promptText || prompt.label || prompt.id).toLowerCase().trim();
+              
+              // Si ya existe en los valores del usuario por ID, mantener su valor pero actualizar label/order
               if (merged[prompt.id]) {
                 merged[prompt.id] = {
                   ...merged[prompt.id],
                   label: prompt.promptText || prompt.label || merged[prompt.id].label || prompt.id,
                   order: prompt.promptSequence ?? prompt.order ?? merged[prompt.id].order ?? 999
                 };
-              } else {
-                // Si es nuevo (no está en los valores del usuario), añadirlo con valor del API
+              } 
+              // Solo añadir si NO existe ya un prompt con el mismo label
+              else if (!existingLabels.has(promptLabel)) {
                 merged[prompt.id] = {
                   label: prompt.promptText || prompt.label || prompt.id,
                   value: prompt.currentValue,
                   order: prompt.promptSequence ?? prompt.order ?? 999
                 };
+                existingLabels.add(promptLabel);
               }
+              // Si ya existe con el mismo label pero diferente ID, ignorar (no duplicar)
             }
           });
           
