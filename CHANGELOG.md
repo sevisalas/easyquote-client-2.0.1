@@ -5,6 +5,13 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.3.1] - 2025-12-12
+
+### Añadido
+- **Productos personalizados (no EasyQuote)**: Nueva funcionalidad para crear artículos personalizados en presupuestos sin depender de productos de la API de EasyQuote. Permite definir nombre, descripción, cantidad y precio manualmente.
+
+---
+
 ## [2.2.8] - 2025-12-08
 
 ### Corregido
