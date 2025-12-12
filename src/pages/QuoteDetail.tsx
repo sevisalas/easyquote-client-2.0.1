@@ -618,7 +618,7 @@ export default function QuoteDetail() {
                           <div className="flex-1 space-y-0.5">
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-medium">
-                                {item.name || item.product_name || item.description || '-'}
+                                {item.name || item.product_name || '-'}
                                 {hasMultipleQuantities && (
                                   <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
                                 )}
@@ -636,6 +636,11 @@ export default function QuoteDetail() {
                                 </CollapsibleTrigger>
                               )}
                             </div>
+                            
+                            {/* Mostrar descripción solo para productos personalizados (sin product_id) */}
+                            {!item.product_id && item.description && (
+                              <p className="text-xs text-muted-foreground">{item.description}</p>
+                            )}
                             
                             {/* Resumen de prompts en vista colapsada */}
                             {!isExpanded && Object.keys(itemPrompts).length > 0 && (() => {
