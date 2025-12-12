@@ -936,111 +936,138 @@ export default function QuoteEdit() {
                       }}
                     >
                       <div className="space-y-2">
-                        <div className="flex justify-between items-center gap-3">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            {hasDetails && (
-                              <CollapsibleTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                  <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                                </Button>
-                              </CollapsibleTrigger>
-                            )}
-                            <p className="text-sm font-medium truncate">
-                              {item.description || item.product_name || "-"}
-                              {item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1 && (
-                                <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
-                              )}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-3 shrink-0">
-                            <div className="text-sm font-medium text-secondary text-right">{fmtEUR(item.price || 0)}</div>
-                            <div className="flex items-center gap-2">
-                              <Button onClick={() => handleItemEdit(itemId)} size="sm" variant="outline" className="gap-1">
-                                <Edit className="h-3 w-3" />
-                                Editar
-                              </Button>
-                              <Button
-                                onClick={() => handleItemRemove(item.id || index)}
-                                size="sm"
-                                variant="outline"
-                                className="gap-1 text-destructive hover:bg-destructive/10"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                                Eliminar
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
+                        {(() => {
+                          const isCustomProduct = item.productId === '__CUSTOM_PRODUCT__';
+                          const customQuantity = isCustomProduct ? (itemPrompts as any)?.custom_quantity?.value : null;
+                          const hasCustomDetails = isCustomProduct && (item.description || item.itemDescription);
+                          
+                          return (
+                            <>
+                              <div className="flex justify-between items-center gap-3">
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  {(hasDetails || hasCustomDetails) && (
+                                    <CollapsibleTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                        <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                      </Button>
+                                    </CollapsibleTrigger>
+                                  )}
+                                  <p className="text-sm font-medium truncate">
+                                    {/* Para productos personalizados: mostrar displayName o name, NO description */}
+                                    {isCustomProduct 
+                                      ? (item.displayName || item.name || "Artículo personalizado")
+                                      : (item.displayName || item.name || item.product_name || "-")
+                                    }
+                                    {item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1 && (
+                                      <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
+                                    )}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-3 shrink-0">
+                                  <div className="text-sm font-medium text-secondary text-right">{fmtEUR(item.price || 0)}</div>
+                                  <div className="flex items-center gap-2">
+                                    <Button onClick={() => handleItemEdit(itemId)} size="sm" variant="outline" className="gap-1">
+                                      <Edit className="h-3 w-3" />
+                                      Editar
+                                    </Button>
+                                    <Button
+                                      onClick={() => handleItemRemove(item.id || index)}
+                                      size="sm"
+                                      variant="outline"
+                                      className="gap-1 text-destructive hover:bg-destructive/10"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                      Eliminar
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
 
-                        {/* Collapsible details - solo prompts, outputs se almacenan pero no se muestran */}
-                        <CollapsibleContent className="space-y-2">
-                          {/* Prompts */}
-                          {Object.keys(itemPrompts).length > 0 && (() => {
-                            // Mostrar TODOS los prompts sin ningún filtro
-                            const visiblePrompts = Object.entries(itemPrompts)
-                              .sort(([, a]: [string, any], [, b]: [string, any]) => {
-                                const orderA = typeof a === 'object' && a !== null ? (a.order ?? 999) : 999;
-                                const orderB = typeof b === 'object' && b !== null ? (b.order ?? 999) : 999;
-                                return orderA - orderB;
-                              });
-
-                            if (visiblePrompts.length === 0) return null;
-
-                            return (
-                              <div className="pl-8 space-y-1 border-l-2 border-muted">
-                                <p className="text-xs font-semibold text-muted-foreground uppercase">Opciones seleccionadas</p>
-                                {visiblePrompts.map(([key, promptData]: [string, any], idx: number) => {
-                                  const label = typeof promptData === 'object' && promptData !== null && promptData.label 
-                                    ? promptData.label 
-                                    : key;
-                                  const value = typeof promptData === 'object' && promptData !== null && 'value' in promptData 
-                                    ? promptData.value 
-                                    : promptData;
-                                  
-                                  const valueStr = value === null || value === undefined ? '' : String(value);
-                                  
-                                  // Handle image URLs
-                                  if (valueStr && valueStr.startsWith('http')) {
-                                    return (
-                                      <div key={idx} className="text-sm">
-                                        <span className="font-medium text-muted-foreground">{label}:</span>
-                                        <img 
-                                          src={valueStr} 
-                                          alt={label}
-                                          className="mt-1 w-32 h-32 object-contain rounded border"
-                                        />
+                              {/* Collapsible details */}
+                              <CollapsibleContent className="space-y-2">
+                                {/* Para productos personalizados: mostrar descripción y cantidad */}
+                                {isCustomProduct && (
+                                  <div className="pl-8 space-y-1 border-l-2 border-muted">
+                                    {(item.description || item.itemDescription) && (
+                                      <div className="text-sm">
+                                        <span className="font-medium text-muted-foreground">Descripción:</span>{' '}
+                                        <span className="text-foreground">{item.description || item.itemDescription}</span>
                                       </div>
-                                    );
-                                  }
-                                  
-                                  // Handle hex colors
-                                  if (valueStr && valueStr.startsWith('#')) {
-                                    return (
-                                      <div key={idx} className="text-sm flex items-center gap-2">
-                                        <span className="font-medium text-muted-foreground">{label}:</span>
-                                        <div className="flex items-center gap-2">
-                                          <div 
-                                            className="w-6 h-6 rounded border shadow-sm"
-                                            style={{ backgroundColor: valueStr }}
-                                          />
-                                          <span className="text-foreground">{valueStr}</span>
-                                        </div>
+                                    )}
+                                    {customQuantity && (
+                                      <div className="text-sm">
+                                        <span className="font-medium text-muted-foreground">Cantidad:</span>{' '}
+                                        <span className="text-foreground">{customQuantity}</span>
                                       </div>
-                                    );
-                                  }
-                                  
-                                  // Handle all other values (including empty strings, nulls, etc.)
+                                    )}
+                                  </div>
+                                )}
+                                {/* Prompts - solo para productos NO personalizados */}
+                                {!isCustomProduct && Object.keys(itemPrompts).length > 0 && (() => {
+                                  const visiblePrompts = Object.entries(itemPrompts)
+                                    .sort(([, a]: [string, any], [, b]: [string, any]) => {
+                                      const orderA = typeof a === 'object' && a !== null ? (a.order ?? 999) : 999;
+                                      const orderB = typeof b === 'object' && b !== null ? (b.order ?? 999) : 999;
+                                      return orderA - orderB;
+                                    });
+
+                                  if (visiblePrompts.length === 0) return null;
+
                                   return (
-                                    <div key={idx} className="text-sm">
-                                      <span className="font-medium text-muted-foreground">{label}:</span>{' '}
-                                      <span className="text-foreground">{valueStr || '(vacío)'}</span>
+                                    <div className="pl-8 space-y-1 border-l-2 border-muted">
+                                      <p className="text-xs font-semibold text-muted-foreground uppercase">Opciones seleccionadas</p>
+                                      {visiblePrompts.map(([key, promptData]: [string, any], idx: number) => {
+                                        const label = typeof promptData === 'object' && promptData !== null && promptData.label 
+                                          ? promptData.label 
+                                          : key;
+                                        const value = typeof promptData === 'object' && promptData !== null && 'value' in promptData 
+                                          ? promptData.value 
+                                          : promptData;
+                                        
+                                        const valueStr = value === null || value === undefined ? '' : String(value);
+                                        
+                                        if (valueStr && valueStr.startsWith('http')) {
+                                          return (
+                                            <div key={idx} className="text-sm">
+                                              <span className="font-medium text-muted-foreground">{label}:</span>
+                                              <img 
+                                                src={valueStr} 
+                                                alt={label}
+                                                className="mt-1 w-32 h-32 object-contain rounded border"
+                                              />
+                                            </div>
+                                          );
+                                        }
+                                        
+                                        if (valueStr && valueStr.startsWith('#')) {
+                                          return (
+                                            <div key={idx} className="text-sm flex items-center gap-2">
+                                              <span className="font-medium text-muted-foreground">{label}:</span>
+                                              <div className="flex items-center gap-2">
+                                                <div 
+                                                  className="w-6 h-6 rounded border shadow-sm"
+                                                  style={{ backgroundColor: valueStr }}
+                                                />
+                                                <span className="text-foreground">{valueStr}</span>
+                                              </div>
+                                            </div>
+                                          );
+                                        }
+                                        
+                                        return (
+                                          <div key={idx} className="text-sm">
+                                            <span className="font-medium text-muted-foreground">{label}:</span>{' '}
+                                            <span className="text-foreground">{valueStr || '(vacío)'}</span>
+                                          </div>
+                                        );
+                                      })}
                                     </div>
                                   );
-                                })}
-                              </div>
-                            );
-                          })()}
-                        </CollapsibleContent>
+                                })()}
+                              </CollapsibleContent>
+                            </>
+                          );
+                        })()}
                       </div>
                     </Collapsible>
                   )}
