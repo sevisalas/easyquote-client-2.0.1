@@ -586,7 +586,7 @@ export default function QuoteDetail() {
                   const hasMultipleQuantities = multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1;
                   const itemPrompts = item.prompts && typeof item.prompts === 'object' ? item.prompts : {};
                   const isCustomProduct = !item.product_id || item.product_id === '__CUSTOM_PRODUCT__';
-                  const hasDetails = !isCustomProduct && Object.keys(itemPrompts).length > 0; // Solo mostrar botón expandir si hay prompts Y NO es producto personalizado
+                  const hasDetails = isCustomProduct ? !!item.description : Object.keys(itemPrompts).length > 0; // Todos pueden desplegar
                   const isExpanded = expandedItems.has(index);
                   
                   return (
@@ -638,10 +638,7 @@ export default function QuoteDetail() {
                               )}
                             </div>
                             
-                            {/* Mostrar descripción solo para productos personalizados */}
-                            {isCustomProduct && item.description && (
-                              <p className="text-xs text-muted-foreground">{item.description}</p>
-                            )}
+                            {/* Descripción solo visible cuando está expandido */}
                             
                             {/* Resumen de prompts en vista colapsada */}
                             {!isExpanded && Object.keys(itemPrompts).length > 0 && (() => {
@@ -705,8 +702,13 @@ export default function QuoteDetail() {
                               </div>
                             )}
                             
-                            {/* Collapsible details - solo prompts para productos API, no mostrar para personalizados */}
+                            {/* Collapsible details */}
                             <CollapsibleContent className="mt-2 space-y-0.5">
+                              {/* Descripción para productos personalizados */}
+                              {isCustomProduct && item.description && (
+                                <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
+                              )}
+                              {/* Prompts para productos API */}
                               {!isCustomProduct && Object.keys(itemPrompts).length > 0 && (() => {
                                 const visiblePrompts = Object.entries(itemPrompts)
                                   .filter(([key, promptData]: [string, any]) => {
