@@ -585,7 +585,8 @@ export default function QuoteDetail() {
                   const multi = item.multi as any;
                   const hasMultipleQuantities = multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1;
                   const itemPrompts = item.prompts && typeof item.prompts === 'object' ? item.prompts : {};
-                  const hasDetails = item.product_id && Object.keys(itemPrompts).length > 0; // Solo mostrar botón expandir si hay prompts Y es producto API
+                  const isCustomProduct = !item.product_id || item.product_id === '__CUSTOM_PRODUCT__';
+                  const hasDetails = !isCustomProduct && Object.keys(itemPrompts).length > 0; // Solo mostrar botón expandir si hay prompts Y NO es producto personalizado
                   const isExpanded = expandedItems.has(index);
                   
                   return (
@@ -637,8 +638,8 @@ export default function QuoteDetail() {
                               )}
                             </div>
                             
-                            {/* Mostrar descripción solo para productos personalizados (sin product_id) */}
-                            {!item.product_id && item.description && (
+                            {/* Mostrar descripción solo para productos personalizados */}
+                            {isCustomProduct && item.description && (
                               <p className="text-xs text-muted-foreground">{item.description}</p>
                             )}
                             
@@ -706,7 +707,7 @@ export default function QuoteDetail() {
                             
                             {/* Collapsible details - solo prompts para productos API, no mostrar para personalizados */}
                             <CollapsibleContent className="mt-2 space-y-0.5">
-                              {item.product_id && Object.keys(itemPrompts).length > 0 && (() => {
+                              {!isCustomProduct && Object.keys(itemPrompts).length > 0 && (() => {
                                 const visiblePrompts = Object.entries(itemPrompts)
                                   .filter(([key, promptData]: [string, any]) => {
                                     const value = typeof promptData === 'object' ? promptData.value : promptData;
