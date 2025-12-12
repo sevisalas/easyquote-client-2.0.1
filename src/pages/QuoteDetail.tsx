@@ -585,7 +585,7 @@ export default function QuoteDetail() {
                   const multi = item.multi as any;
                   const hasMultipleQuantities = multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1;
                   const itemPrompts = item.prompts && typeof item.prompts === 'object' ? item.prompts : {};
-                  const hasDetails = Object.keys(itemPrompts).length > 0; // Solo mostrar botón expandir si hay prompts
+                  const hasDetails = item.product_id && Object.keys(itemPrompts).length > 0; // Solo mostrar botón expandir si hay prompts Y es producto API
                   const isExpanded = expandedItems.has(index);
                   
                   return (
@@ -704,9 +704,9 @@ export default function QuoteDetail() {
                               </div>
                             )}
                             
-                            {/* Collapsible details - solo prompts, outputs NO se muestran en resumen */}
+                            {/* Collapsible details - solo prompts para productos API, no mostrar para personalizados */}
                             <CollapsibleContent className="mt-2 space-y-0.5">
-                              {Object.keys(itemPrompts).length > 0 && (() => {
+                              {item.product_id && Object.keys(itemPrompts).length > 0 && (() => {
                                 const visiblePrompts = Object.entries(itemPrompts)
                                   .filter(([key, promptData]: [string, any]) => {
                                     const value = typeof promptData === 'object' ? promptData.value : promptData;
