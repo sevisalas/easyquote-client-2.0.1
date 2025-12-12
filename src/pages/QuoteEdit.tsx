@@ -972,34 +972,8 @@ export default function QuoteEdit() {
                           </div>
                         </div>
 
-                        {/* Collapsible details */}
+                        {/* Collapsible details - solo prompts, outputs se almacenan pero no se muestran */}
                         <CollapsibleContent className="space-y-2">
-                          {/* Outputs */}
-                          {itemOutputs.length > 0 && (
-                            <div className="pl-8 space-y-2 border-l-2 border-muted">
-                              <p className="text-xs font-semibold text-muted-foreground uppercase">Detalles del producto</p>
-                              {itemOutputs.map((output: any, idx: number) => {
-                                if (output.type === 'ProductImage') {
-                                  return (
-                                    <div key={idx}>
-                                      <img 
-                                        src={output.value} 
-                                        alt={output.name}
-                                        className="w-48 h-48 object-contain rounded border"
-                                      />
-                                    </div>
-                                  );
-                                }
-                                return (
-                                  <div key={idx} className="text-sm">
-                                    <span className="font-medium text-muted-foreground">{output.name}:</span>{' '}
-                                    <span className="text-foreground">{output.value}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-
                           {/* Prompts */}
                           {Object.keys(itemPrompts).length > 0 && (() => {
                             // Mostrar TODOS los prompts sin ningún filtro
