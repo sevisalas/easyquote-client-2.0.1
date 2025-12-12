@@ -597,13 +597,51 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         setIsInitializing(false);
       }
       
-      // NO sobrescribir promptValues después de PATCH - el usuario ya tiene los valores correctos localmente
-      // Solo necesitamos la respuesta del API para outputs y precio, no para reemplazar los prompts
-      if (!isNewProduct && data?.prompts) {
-        console.log("🔄 Prompts recibidos del API (después de PATCH) - manteniendo valores locales del usuario:", {
+      // Para productos de API: fusionar TODOS los prompts del API con los valores actuales del usuario
+      // Los prompts del usuario tienen prioridad (sus valores se mantienen), pero añadimos cualquier prompt
+      // nuevo que venga del API para tener el snapshot completo
+      if (!isNewProduct && data?.prompts && !isCustomProduct) {
+        console.log("🔄 Fusionando TODOS los prompts del API con valores del usuario:", {
           productId,
-          promptsCount: data.prompts.length
+          apiPromptsCount: data.prompts.length,
+          currentPromptsCount: Object.keys(promptValues).length
         });
+        
+        setPromptValues(prev => {
+          const merged: Record<string, any> = { ...prev };
+          
+          data.prompts.forEach((prompt: any) => {
+            if (prompt.id) {
+              // Si ya existe en los valores del usuario, mantener su valor pero actualizar label/order
+              if (merged[prompt.id]) {
+                merged[prompt.id] = {
+                  ...merged[prompt.id],
+                  label: prompt.promptText || prompt.label || merged[prompt.id].label || prompt.id,
+                  order: prompt.promptSequence ?? prompt.order ?? merged[prompt.id].order ?? 999
+                };
+              } else {
+                // Si es nuevo (no está en los valores del usuario), añadirlo con valor del API
+                merged[prompt.id] = {
+                  label: prompt.promptText || prompt.label || prompt.id,
+                  value: prompt.currentValue,
+                  order: prompt.promptSequence ?? prompt.order ?? 999
+                };
+              }
+            }
+          });
+          
+          console.log("✅ Prompts fusionados:", {
+            antes: Object.keys(prev).length,
+            despues: Object.keys(merged).length,
+            nuevos: Object.keys(merged).length - Object.keys(prev).length
+          });
+          
+          return merged;
+        });
+        
+        setIsInitializing(false);
+      } else if (!isNewProduct && data?.prompts) {
+        // Para productos custom, no fusionar
         setIsInitializing(false);
       }
       
