@@ -653,19 +653,8 @@ export default function QuoteDetail() {
 
                               if (summaryPrompts.length === 0) return null;
 
-                              return (
-                                <div className="text-xs text-muted-foreground">
-                                  {summaryPrompts.map(([key, promptData]: [string, any], idx: number) => {
-                                    const label = typeof promptData === 'object' ? promptData.label : key;
-                                    const value = typeof promptData === 'object' ? promptData.value : promptData;
-                                    return (
-                                      <span key={idx}>
-                                        {label}: {String(value)}{idx < summaryPrompts.length - 1 ? ' · ' : ''}
-                                      </span>
-                                    );
-                                  })}
-                                </div>
-                              );
+                              // No mostrar resumen - solo se ve al expandir
+                              return null;
                             })()}
                             
                             {/* Quantity selector for items with multiple quantities */}
