@@ -602,8 +602,13 @@ Deno.serve(async (req) => {
         console.log('💰 Price calculation:', { totalPrice, units, unitPrice: roundedUnitPrice, productName: item.product_name });
         
         // All products use units + subtotal (unit price)
+        // For custom products, use 'name' field (display name); for API products use 'product_name'
+        const itemName = isCustomProduct 
+          ? (item.name || 'Artículo personalizado')
+          : (item.name || item.product_name || 'Producto');
+        
         const itemData: any = {
-          name: item.product_name || 'Producto',
+          name: itemName,
           desc: description,
           units: units,
           subtotal: roundedUnitPrice,
