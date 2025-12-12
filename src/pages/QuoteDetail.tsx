@@ -618,7 +618,7 @@ export default function QuoteDetail() {
                           <div className="flex-1 space-y-0.5">
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-medium">
-                                {item.description || item.product_name || '-'}
+                                {item.name || item.product_name || item.description || '-'}
                                 {hasMultipleQuantities && (
                                   <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
                                 )}
@@ -636,6 +636,37 @@ export default function QuoteDetail() {
                                 </CollapsibleTrigger>
                               )}
                             </div>
+                            
+                            {/* Resumen de prompts en vista colapsada */}
+                            {!isExpanded && Object.keys(itemPrompts).length > 0 && (() => {
+                              const summaryPrompts = Object.entries(itemPrompts)
+                                .filter(([key, promptData]: [string, any]) => {
+                                  const value = typeof promptData === 'object' ? promptData.value : promptData;
+                                  if (!value || value === '' || value === null) return false;
+                                  if (typeof value === 'object') return false;
+                                  if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('#'))) return false;
+                                  const hasLabel = typeof promptData === 'object' && promptData.label && promptData.label.trim() !== '';
+                                  return hasLabel;
+                                })
+                                .sort(([, a]: [string, any], [, b]: [string, any]) => (a.order ?? 999) - (b.order ?? 999))
+                                .slice(0, 3); // Solo mostrar los primeros 3 prompts en resumen
+
+                              if (summaryPrompts.length === 0) return null;
+
+                              return (
+                                <div className="text-xs text-muted-foreground">
+                                  {summaryPrompts.map(([key, promptData]: [string, any], idx: number) => {
+                                    const label = typeof promptData === 'object' ? promptData.label : key;
+                                    const value = typeof promptData === 'object' ? promptData.value : promptData;
+                                    return (
+                                      <span key={idx}>
+                                        {label}: {String(value)}{idx < summaryPrompts.length - 1 ? ' · ' : ''}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })()}
                             
                             {/* Quantity selector for items with multiple quantities */}
                             {hasMultipleQuantities && isApprovable && !item.accepted && selectedItems.has(item.id) && (
