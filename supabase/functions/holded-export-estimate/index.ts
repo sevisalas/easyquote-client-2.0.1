@@ -446,22 +446,10 @@ Deno.serve(async (req) => {
           customQuantity = qtyPrompt?.value || 1;
           customUnitPrice = pricePrompt?.value || 0;
           
-          // Build description from prompts for custom products too
-          if (promptsArray.length > 0) {
-            description = promptsArray
-              .filter(prompt => prompt && prompt.label)
-              .sort((a, b) => (a.order || 999) - (b.order || 999))
-              .map((prompt) => `${prompt.label}: ${prompt.value}`)
-              .filter(Boolean)
-              .join('\n');
-          }
+          // Use item description directly for custom products
+          description = item.description || '';
           
-          // If no prompts but there's item.description, use that as fallback
-          if (!description && item.description) {
-            description = item.description;
-          }
-          
-          console.log('📦 Custom product detected:', { customQuantity, customUnitPrice, description, promptsCount: promptsArray.length });
+          console.log('📦 Custom product detected:', { customQuantity, customUnitPrice, description, qtyPrompt, pricePrompt });
         } else {
           // Build description from prompts (filter using visibility rules)
           if (item.prompts) {
