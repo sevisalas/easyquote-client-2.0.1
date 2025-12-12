@@ -710,12 +710,19 @@ export default function QuoteDetail() {
                                   {item.description && (
                                     <p className="text-xs text-muted-foreground">{item.description}</p>
                                   )}
-                                  {item.quantity && (
-                                    <p className="text-xs">
-                                      <span className="font-medium text-muted-foreground">Cantidad:</span>{' '}
-                                      <span className="text-foreground">{item.quantity}</span>
-                                    </p>
-                                  )}
+                                  {(() => {
+                                    const prompts = Array.isArray(item.prompts) ? item.prompts : [];
+                                    const cantidadPrompt = prompts.find((p: any) => p.label?.toLowerCase() === 'cantidad');
+                                    if (cantidadPrompt?.value) {
+                                      return (
+                                        <p className="text-xs">
+                                          <span className="font-medium text-muted-foreground">Cantidad:</span>{' '}
+                                          <span className="text-foreground">{cantidadPrompt.value}</span>
+                                        </p>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
                                 </>
                               )}
                               {/* Prompts para productos API */}
