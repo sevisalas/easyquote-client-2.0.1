@@ -640,7 +640,7 @@ const UsuariosSuscriptor = () => {
         <div>
           <h1 className="text-3xl font-bold">Usuarios de {suscriptor.name}</h1>
           <p className="text-muted-foreground">
-            Gestionar usuarios del suscriptor
+            Gestionar usuarios y permisos
             {isSuperAdmin && ` • Plan: ${suscriptor.subscription_plan}`}
           </p>
         </div>
