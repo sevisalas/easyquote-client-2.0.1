@@ -70,6 +70,10 @@ serve(async (req: Request): Promise<Response> => {
 
     const data = await response.json();
     console.log("easyquote-outputs: Outputs received:", data?.length || 0);
+    // Log first output to see available fields
+    if (Array.isArray(data) && data.length > 0) {
+      console.log("easyquote-outputs: Sample output fields:", JSON.stringify(data[0]));
+    }
 
     return new Response(JSON.stringify(data), {
       status: 200,
