@@ -1,26 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-
-interface EasyQuoteExcelFile {
-  id: string;
-  fileName: string;
-  fileSizeKb: number;
-  dateCreated: string;
-  dateModified: string;
-  isActive: boolean;
-}
+import { useEasyQuoteExcelFiles } from "@/hooks/useEasyQuoteExcelFiles";
 
 export default function ProductForm() {
   const navigate = useNavigate();
@@ -37,31 +27,11 @@ export default function ProductForm() {
   const [useNewFile, setUseNewFile] = useState(true);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
-  // Fetch Excel files for dropdown
-  const { data: excelFiles = [] } = useQuery({
-    queryKey: ["easyquote-excel-files"],
-    queryFn: async () => {
-      const token = sessionStorage.getItem("easyquote_token");
-      if (!token) {
-        throw new Error("No hay token de EasyQuote disponible");
-      }
-
-      const response = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al obtener archivos Excel de EasyQuote");
-      }
-
-      const data = await response.json();
-      return data.filter((file: EasyQuoteExcelFile) => file.isActive);
-    },
+  // Fetch Excel files for dropdown (cacheado vía edge function)
+  const { data: excelFiles = [] } = useEasyQuoteExcelFiles({
+    select: (files) => files.filter((f) => f.isActive),
   });
+
 
   // Upload Excel and create product with new file
   const createProductWithNewFileMutation = useMutation({

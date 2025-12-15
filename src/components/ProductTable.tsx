@@ -9,7 +9,7 @@ import { useWooCommerceIntegration } from "@/hooks/useWooCommerceIntegration";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useEasyQuoteExcelFiles } from "@/hooks/useEasyQuoteExcelFiles";
 
 interface EasyQuoteProduct {
   id: string;
@@ -46,24 +46,12 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
   const productIds = products.map((p) => p.id);
   const { data: wooLinks, isLoading: wooLoading } = useWooCommerceLink(isWooCommerceActive ? productIds : []);
 
-  // Obtener archivos Excel de EasyQuote
-  const { data: excelFiles = [] } = useQuery({
-    queryKey: ["easyquote-excel-files"],
-    queryFn: async () => {
-      const token = sessionStorage.getItem("easyquote_token");
-      if (!token) return [];
-
-      const response = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) return [];
-      return response.json();
-    },
+  // Obtener archivos Excel (cacheado vía edge function)
+  const { data: excelFiles = [] } = useEasyQuoteExcelFiles({
+    // si no hay token, el hook devuelve [] sin error
+    enabled: true,
   });
+
 
   // Crear un map de excelfileId -> fileName
   const excelFileMap = excelFiles.reduce((acc: Record<string, string>, file: any) => {
