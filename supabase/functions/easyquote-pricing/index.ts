@@ -152,7 +152,7 @@ serve(async (req: Request): Promise<Response> => {
         body: JSON.stringify(formattedInputsList),
       });
     } else {
-      // No inputs, try GET first (faster), fallback to PATCH with empty array if GET fails
+      // No inputs, try GET first (faster)
       console.log("easyquote-pricing: no inputs, trying GET first");
       res = await fetch(baseUrl, {
         method: "GET",
@@ -163,11 +163,12 @@ serve(async (req: Request): Promise<Response> => {
           "Pragma": "no-cache",
         },
       });
-      
-      // If GET fails with 500, retry with PATCH (bypasses cache issues)
-      if (res.status === 500) {
-        console.log("easyquote-pricing: GET failed with 500, retrying with PATCH");
-        res = await fetch(baseUrl, {
+
+      const tryPatchWithInputs = async (inputsForPatch: any[], reason: string) => {
+        console.log(`easyquote-pricing: retrying with PATCH (${reason})`, {
+          count: inputsForPatch.length,
+        });
+        return await fetch(baseUrl, {
           method: "PATCH",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -176,8 +177,72 @@ serve(async (req: Request): Promise<Response> => {
             "Cache-Control": "no-cache, no-store, must-revalidate",
             "Pragma": "no-cache",
           },
-          body: JSON.stringify([]),
+          body: JSON.stringify(inputsForPatch),
         });
+      };
+
+      // If GET fails with 500, retry with PATCH (sometimes bypasses server caching issues)
+      if (res.status === 500) {
+        res = await tryPatchWithInputs([], "empty inputs");
+      }
+
+      // If it still fails with 500, try to PATCH using "safe defaults" built from prompt definitions
+      if (res.status === 500) {
+        try {
+          const promptsUrl = `https://api.easyquote.cloud/api/v1/products/prompts/list/${productId}?_t=${Date.now()}`;
+          console.log("easyquote-pricing: still 500, fetching prompts to build fallback inputs", {
+            promptsUrl,
+          });
+
+          const promptsRes = await fetch(promptsUrl, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/json",
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              "Pragma": "no-cache",
+            },
+          });
+
+          const promptsText = await promptsRes.text();
+          const promptsData = promptsText ? JSON.parse(promptsText) : [];
+          const promptsList = Array.isArray(promptsData) ? promptsData : (promptsData?.items || promptsData?.data || []);
+
+          const fallbackInputs = (Array.isArray(promptsList) ? promptsList : []).map((p: any) => {
+            const id = p.id ?? p.promptId ?? p.prompt_id;
+            if (!id) return null;
+
+            // Try common fields for defaults/current values
+            let value = p.currentValue ?? p.value ?? p.defaultValue ?? p.default_value ?? p.selectedValue;
+
+            // If still missing, try first option
+            if (value === null || value === undefined) {
+              const opts = p.valueOptions ?? p.options ?? p.values ?? p.valueoptions;
+              if (Array.isArray(opts) && opts.length > 0) {
+                const first = opts[0];
+                value = first?.value ?? first?.id ?? first?.name ?? first?.label ?? first;
+              }
+            }
+
+            // Last resort for numeric types
+            if (value === null || value === undefined) {
+              const t = String(p.promptType ?? p.type ?? "");
+              if (t === "Number" || t === "Quantity") value = 1;
+            }
+
+            return { id: String(id), value };
+          }).filter(Boolean);
+
+          const usableFallbackInputs = (fallbackInputs as any[]).filter((i) => i.value !== null && i.value !== undefined && String(i.value).trim() !== "");
+
+          if (usableFallbackInputs.length > 0) {
+            res = await tryPatchWithInputs(usableFallbackInputs, "fallback prompt defaults");
+          } else {
+            console.log("easyquote-pricing: no usable fallback inputs could be built");
+          }
+        } catch (e) {
+          console.error("easyquote-pricing: fallback prompt-default PATCH failed", e);
+        }
       }
     }
 
