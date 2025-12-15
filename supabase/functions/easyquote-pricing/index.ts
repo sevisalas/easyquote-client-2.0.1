@@ -123,9 +123,23 @@ serve(async (req: Request): Promise<Response> => {
       return true;
     });
 
-    if (inputsList.length > 0) {
+    // Convert decimal numbers to strings with comma (Spanish format) for EasyQuote API
+    // The API interprets "15.5" as "155" if sent as a number with decimal point
+    const formattedInputsList = inputsList.map(input => {
+      const value = input.value;
+      // If it's a number with decimals, convert to string with comma
+      if (typeof value === 'number' && !Number.isInteger(value)) {
+        return {
+          id: input.id,
+          value: value.toString().replace('.', ',')
+        };
+      }
+      return input;
+    });
+
+    if (formattedInputsList.length > 0) {
       // API only supports PATCH for sending inputs (no POST exists for pricing)
-      console.log("easyquote-pricing: using PATCH with inputs", { count: inputsList.length, inputs: inputsList });
+      console.log("easyquote-pricing: using PATCH with inputs", { count: formattedInputsList.length, inputs: formattedInputsList });
       res = await fetch(baseUrl, {
         method: "PATCH",
         headers: {
@@ -135,7 +149,7 @@ serve(async (req: Request): Promise<Response> => {
           "Cache-Control": "no-cache, no-store, must-revalidate",
           "Pragma": "no-cache",
         },
-        body: JSON.stringify(inputsList),
+        body: JSON.stringify(formattedInputsList),
       });
     } else {
       // No inputs, try GET first (faster), fallback to PATCH with empty array if GET fails
