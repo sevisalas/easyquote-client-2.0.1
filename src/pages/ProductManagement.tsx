@@ -403,10 +403,8 @@ export default function ProductManagement() {
         throw new Error("Error fetching product outputs");
       }
 
-      // Sort outputs by orderSeq to maintain consistent order
-      if (Array.isArray(data)) {
-        return [...data].sort((a, b) => (a.orderSeq || 0) - (b.orderSeq || 0));
-      }
+      // Return data as-is - the order comes from EasyQuote API
+      // (orderSeq field is not returned by the API, order is controlled in EasyQuote admin)
       return data;
     },
     enabled: !!selectedProduct?.id,
