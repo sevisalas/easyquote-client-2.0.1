@@ -5,6 +5,14 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.3.2] - 2025-12-15
+
+### Corregido
+- **Decimales en API de EasyQuote**: Los valores decimales ahora se envían con coma (formato español) en lugar de punto, corrigiendo el problema donde `15.5` se interpretaba como `155`
+- **Orden de outputs**: Eliminado ordenamiento incorrecto por `orderSeq` (campo no disponible en la API). Los outputs ahora mantienen el orden definido en EasyQuote
+
+---
+
 ## [2.3.1] - 2025-12-12
 
 ### Añadido
