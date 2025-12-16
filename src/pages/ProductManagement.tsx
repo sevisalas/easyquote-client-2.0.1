@@ -568,11 +568,17 @@ export default function ProductManagement() {
 
       if (!response.ok) throw new Error("Error updating output");
       
-      // Return success without trying to parse JSON since PUT often returns empty response
-      return { success: true };
+      return { success: true, updatedOutput };
     },
-    onSuccess: () => {
-      refetchOutputs();
+    onSuccess: (_, updatedOutput) => {
+      // Update cache locally without refetch to preserve order
+      queryClient.setQueryData(
+        ["product-outputs", selectedProduct?.id],
+        (oldData: ProductOutput[] | undefined) => {
+          if (!oldData) return oldData;
+          return oldData.map(o => o.id === updatedOutput.id ? updatedOutput : o);
+        }
+      );
     }
   });
 
