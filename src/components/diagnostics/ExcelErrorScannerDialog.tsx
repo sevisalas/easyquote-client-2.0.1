@@ -12,8 +12,9 @@ import { Badge } from "@/components/ui/badge";
 
 const ERROR_RE = /^#(N\/?A|REF!|VALUE!|DIV\/0!|NAME\?|NULL!|NUM!|SPILL!|CALC!)$/i;
 
-// Regex to extract sheet references from formulas: 'SheetName'!A1 or SheetName!A1
-const SHEET_REF_RE = /'?([^'!\[\]]+)'?!([A-Z]+\d+)/gi;
+// Regex to extract sheet references: 'Sheet Name'!A1 or SheetName!A1
+// Must start with word boundary or comma/paren, sheet name is alphanumeric/spaces/underscores
+const SHEET_REF_RE = /(?:^|[,(])\s*'?([A-Za-z_][A-Za-z0-9_ ]*)'?!(\$?[A-Z]+\$?\d+)/gi;
 // Regex to detect external file references [filename]
 const EXTERNAL_REF_RE = /\[([^\]]+)\]/g;
 
@@ -63,11 +64,20 @@ function sortA1(a: string, b: string) {
 // Extract all sheet references from a formula
 function extractSheetRefs(formula: string): Array<{ sheet: string; cell: string }> {
   const refs: Array<{ sheet: string; cell: string }> = [];
+  
+  // More robust regex: look for patterns like SheetName!A1 or 'Sheet Name'!A1
+  // Exclude function names by checking for ! directly after name
+  const simpleRef = /(?:^|[,(:+\-*/=<>& ])'?([A-Za-z_][A-Za-z0-9_]*)'?!(\$?[A-Z]+\$?\d+)/gi;
+  
   let match;
-  const regex = new RegExp(SHEET_REF_RE.source, "gi");
-  while ((match = regex.exec(formula)) !== null) {
-    refs.push({ sheet: match[1], cell: match[2] });
+  while ((match = simpleRef.exec(formula)) !== null) {
+    const sheetName = match[1].trim();
+    // Filter out common Excel functions that might be captured
+    if (!["IF", "AND", "OR", "NOT", "SUM", "VLOOKUP", "HLOOKUP", "INDEX", "MATCH", "IFERROR", "SUMIF", "COUNTIF"].includes(sheetName.toUpperCase())) {
+      refs.push({ sheet: sheetName, cell: match[2] });
+    }
   }
+  
   return refs;
 }
 
