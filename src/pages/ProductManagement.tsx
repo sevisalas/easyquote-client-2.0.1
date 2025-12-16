@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
@@ -412,6 +412,58 @@ export default function ProductManagement() {
     enabled: !!selectedProduct?.id,
     staleTime: 1000 * 60 * 5 // 5 minutes
   });
+
+  // Orden estable para outputs (sin flechas): por Hoja + celda de rótulo (A25, B10...)
+  // Esto evita saltos de orden si EasyQuote devuelve la lista en orden distinto entre llamadas.
+  const orderedProductOutputs = useMemo(() => {
+    const colToNumber = (col: string) => {
+      // A=1, B=2, ..., Z=26, AA=27...
+      return col
+        .toUpperCase()
+        .split("")
+        .reduce((acc, ch) => acc * 26 + (ch.charCodeAt(0) - 64), 0);
+    };
+
+    const parseCellRef = (cell?: string | null) => {
+      const raw = (cell ?? "").trim();
+      const match = raw.match(/^\$?([A-Za-z]+)\$?(\d+)$/);
+      if (!match) return null;
+      return {
+        col: colToNumber(match[1]),
+        row: Number.parseInt(match[2], 10),
+      };
+    };
+
+    const normalizeSheet = (sheet?: string | null) => (sheet ?? "").trim();
+
+    return [...productOutputs].sort((a, b) => {
+      const sheetA = normalizeSheet(a.sheet);
+      const sheetB = normalizeSheet(b.sheet);
+      const sheetCmp = sheetA.localeCompare(sheetB, "es", { sensitivity: "base" });
+      if (sheetCmp !== 0) return sheetCmp;
+
+      const cellA = parseCellRef(a.nameCell) ?? parseCellRef(a.valueCell);
+      const cellB = parseCellRef(b.nameCell) ?? parseCellRef(b.valueCell);
+
+      // Celdas válidas primero
+      if (cellA && !cellB) return -1;
+      if (!cellA && cellB) return 1;
+
+      if (cellA && cellB) {
+        if (cellA.row !== cellB.row) return cellA.row - cellB.row;
+        if (cellA.col !== cellB.col) return cellA.col - cellB.col;
+      } else {
+        // Fallback: orden alfabético por nameCell/valueCell
+        const rawA = (a.nameCell || a.valueCell || "").toString();
+        const rawB = (b.nameCell || b.valueCell || "").toString();
+        const rawCmp = rawA.localeCompare(rawB, "es", { sensitivity: "base" });
+        if (rawCmp !== 0) return rawCmp;
+      }
+
+      // Último fallback estable
+      return (a.id || "").localeCompare(b.id || "");
+    });
+  }, [productOutputs]);
 
   // Mutations para prompts y outputs
   const createPromptMutation = useMutation({
