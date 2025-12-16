@@ -21,6 +21,7 @@ import { es } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { EasyQuoteConnectivityTest } from "@/components/diagnostics/EasyQuoteConnectivityTest";
+import { ExcelErrorScannerDialog } from "@/components/diagnostics/ExcelErrorScannerDialog";
 import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
 
 interface EasyQuoteExcelFile {
@@ -1149,15 +1150,18 @@ export default function ExcelFiles() {
                 Lista de archivos Excel disponibles en EasyQuote
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="include-inactive" className="text-sm font-medium">
-                Mostrar inactivos
-              </Label>
-              <Switch
-                id="include-inactive"
-                checked={includeInactive}
-                onCheckedChange={setIncludeInactive}
-              />
+            <div className="flex items-center gap-3">
+              <ExcelErrorScannerDialog />
+              <div className="flex items-center gap-2">
+                <Label htmlFor="include-inactive" className="text-sm font-medium">
+                  Mostrar inactivos
+                </Label>
+                <Switch
+                  id="include-inactive"
+                  checked={includeInactive}
+                  onCheckedChange={setIncludeInactive}
+                />
+              </div>
             </div>
           </div>
         </CardHeader>
