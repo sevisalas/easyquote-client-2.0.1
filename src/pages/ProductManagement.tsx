@@ -43,6 +43,7 @@ import { BulkPromptsDialog } from "@/components/quotes/BulkPromptsDialog";
 import { BulkOutputsDialog } from "@/components/quotes/BulkOutputsDialog";
 import { useSearchParams } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ExcelErrorScannerDialog } from "@/components/diagnostics/ExcelErrorScannerDialog";
 
 // Interface para productos del API de EasyQuote
 interface EasyQuoteProduct {
@@ -1285,6 +1286,7 @@ export default function ProductManagement() {
           </p>
         </div>
         <div className="flex-shrink-0 flex gap-2">
+          <ExcelErrorScannerDialog />
           <Button 
             onClick={() => navigate("/admin/productos/nuevo")}
             className="flex items-center gap-2 w-full sm:w-auto"
