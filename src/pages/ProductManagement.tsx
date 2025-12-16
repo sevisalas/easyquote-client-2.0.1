@@ -33,7 +33,9 @@ import {
   Trash2,
   Save,
   TestTube,
-  Layers
+  Layers,
+  ChevronUp,
+  ChevronDown
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -570,15 +572,9 @@ export default function ProductManagement() {
       
       return { success: true, updatedOutput };
     },
-    onSuccess: (_, updatedOutput) => {
-      // Update cache locally without refetch to preserve order
-      queryClient.setQueryData(
-        ["product-outputs", selectedProduct?.id],
-        (oldData: ProductOutput[] | undefined) => {
-          if (!oldData) return oldData;
-          return oldData.map(o => o.id === updatedOutput.id ? updatedOutput : o);
-        }
-      );
+    onSuccess: () => {
+      // Refetch to get updated order from API
+      refetchOutputs();
     }
   });
 
@@ -1222,6 +1218,31 @@ export default function ProductManagement() {
   // Delete output
   const deleteOutput = (outputId: string) => {
     deleteOutputMutation.mutate(outputId);
+  };
+
+  // Move output (reorder)
+  const moveOutput = (output: ProductOutput, direction: 'up' | 'down') => {
+    // Sort outputs by orderSeq
+    const sortedOutputs = [...productOutputs].sort((a, b) => (a.orderSeq || 0) - (b.orderSeq || 0));
+    const currentIndex = sortedOutputs.findIndex(o => o.id === output.id);
+    
+    if (direction === 'up' && currentIndex > 0) {
+      const targetOutput = sortedOutputs[currentIndex - 1];
+      // Swap orderSeq values
+      const currentSeq = output.orderSeq || currentIndex + 1;
+      const targetSeq = targetOutput.orderSeq || currentIndex;
+      
+      updateOutputMutation.mutate({ ...output, orderSeq: targetSeq });
+      updateOutputMutation.mutate({ ...targetOutput, orderSeq: currentSeq });
+    } else if (direction === 'down' && currentIndex < sortedOutputs.length - 1) {
+      const targetOutput = sortedOutputs[currentIndex + 1];
+      // Swap orderSeq values
+      const currentSeq = output.orderSeq || currentIndex + 1;
+      const targetSeq = targetOutput.orderSeq || currentIndex + 2;
+      
+      updateOutputMutation.mutate({ ...output, orderSeq: targetSeq });
+      updateOutputMutation.mutate({ ...targetOutput, orderSeq: currentSeq });
+    }
   };
 
   // ALL CONDITIONAL LOGIC AND EARLY RETURNS MUST COME AFTER ALL HOOKS
@@ -2031,7 +2052,7 @@ export default function ProductManagement() {
                 ) : (
                   <ScrollArea className="h-[500px] pr-4">
                     <div className="space-y-3">
-                      {productOutputs.map((output, index) => (
+                      {[...productOutputs].sort((a, b) => (a.orderSeq || 0) - (b.orderSeq || 0)).map((output, index) => (
                       <div key={output.id} className="p-4 border rounded-lg">
                         <div className="mb-4">
                           <h4 className="font-medium">Campo nº {index + 1}</h4>
@@ -2107,7 +2128,35 @@ export default function ProductManagement() {
                               </SelectContent>
                             </Select>
                           </div>
-                          <div className="col-span-3"></div>
+                          <div className="col-span-2">
+                            {/* Reorder buttons - hide for ProductImage (outputTypeId = 8) */}
+                            {output.outputTypeId !== 8 && (
+                              <>
+                                <Label>Orden</Label>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => moveOutput(output, 'up')}
+                                    disabled={index === 0}
+                                    title="Mover arriba"
+                                  >
+                                    <ChevronUp className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => moveOutput(output, 'down')}
+                                    disabled={index === productOutputs.length - 1}
+                                    title="Mover abajo"
+                                  >
+                                    <ChevronDown className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                          <div className="col-span-1"></div>
                           <div className="col-span-1">
                             <Label>Acción</Label>
                             <div className="flex gap-1">
