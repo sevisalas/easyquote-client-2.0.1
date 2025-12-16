@@ -2025,7 +2025,7 @@ export default function ProductManagement() {
                 ) : (
                   <ScrollArea className="h-[500px] pr-4">
                     <div className="space-y-3">
-                      {[...productOutputs].sort((a, b) => (a.orderSeq ?? 999) - (b.orderSeq ?? 999)).map((output, index) => (
+                      {productOutputs.map((output, index) => (
                       <div key={output.id} className="p-4 border rounded-lg">
                         <div className="mb-4">
                           <h4 className="font-medium">Campo nº {index + 1}</h4>
