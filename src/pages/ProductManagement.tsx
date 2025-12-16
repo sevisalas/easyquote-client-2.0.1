@@ -572,9 +572,15 @@ export default function ProductManagement() {
       
       return { success: true, updatedOutput };
     },
-    onSuccess: () => {
-      // Refetch to get updated order from API
-      refetchOutputs();
+    onSuccess: (_, updatedOutput) => {
+      // Update cache locally to preserve order - DO NOT refetch as API doesn't return orderSeq
+      queryClient.setQueryData(
+        ["product-outputs", selectedProduct?.id],
+        (oldData: ProductOutput[] | undefined) => {
+          if (!oldData) return oldData;
+          return oldData.map(o => o.id === updatedOutput.id ? { ...o, ...updatedOutput } : o);
+        }
+      );
     }
   });
 
@@ -1222,26 +1228,30 @@ export default function ProductManagement() {
 
   // Move output (reorder)
   const moveOutput = (output: ProductOutput, direction: 'up' | 'down') => {
-    // Sort outputs by orderSeq
-    const sortedOutputs = [...productOutputs].sort((a, b) => (a.orderSeq || 0) - (b.orderSeq || 0));
+    // Sort outputs by orderSeq, fallback to array index
+    const sortedOutputs = [...productOutputs].sort((a, b) => {
+      const seqA = a.orderSeq ?? productOutputs.indexOf(a);
+      const seqB = b.orderSeq ?? productOutputs.indexOf(b);
+      return seqA - seqB;
+    });
     const currentIndex = sortedOutputs.findIndex(o => o.id === output.id);
     
     if (direction === 'up' && currentIndex > 0) {
       const targetOutput = sortedOutputs[currentIndex - 1];
-      // Swap orderSeq values
-      const currentSeq = output.orderSeq || currentIndex + 1;
-      const targetSeq = targetOutput.orderSeq || currentIndex;
+      // Assign sequential orderSeq values based on position
+      const newCurrentSeq = currentIndex; // Will be at position currentIndex - 1
+      const newTargetSeq = currentIndex + 1; // Will be at position currentIndex
       
-      updateOutputMutation.mutate({ ...output, orderSeq: targetSeq });
-      updateOutputMutation.mutate({ ...targetOutput, orderSeq: currentSeq });
+      updateOutputMutation.mutate({ ...output, orderSeq: newCurrentSeq });
+      updateOutputMutation.mutate({ ...targetOutput, orderSeq: newTargetSeq });
     } else if (direction === 'down' && currentIndex < sortedOutputs.length - 1) {
       const targetOutput = sortedOutputs[currentIndex + 1];
-      // Swap orderSeq values
-      const currentSeq = output.orderSeq || currentIndex + 1;
-      const targetSeq = targetOutput.orderSeq || currentIndex + 2;
+      // Assign sequential orderSeq values based on position
+      const newCurrentSeq = currentIndex + 2; // Will be at position currentIndex + 1
+      const newTargetSeq = currentIndex + 1; // Will be at position currentIndex
       
-      updateOutputMutation.mutate({ ...output, orderSeq: targetSeq });
-      updateOutputMutation.mutate({ ...targetOutput, orderSeq: currentSeq });
+      updateOutputMutation.mutate({ ...output, orderSeq: newCurrentSeq });
+      updateOutputMutation.mutate({ ...targetOutput, orderSeq: newTargetSeq });
     }
   };
 
