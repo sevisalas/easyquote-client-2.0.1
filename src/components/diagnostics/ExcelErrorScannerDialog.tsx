@@ -57,6 +57,7 @@ export function ExcelErrorScannerDialog() {
   const [open, setOpen] = useState(false);
   const [fileName, setFileName] = useState<string>("");
   const [isScanning, setIsScanning] = useState(false);
+  const [hasScanned, setHasScanned] = useState(false);
   const [issues, setIssues] = useState<ExcelCellIssue[]>([]);
 
   const sheetCounts = useMemo(() => {
@@ -69,6 +70,7 @@ export function ExcelErrorScannerDialog() {
     if (!file) return;
     setFileName(file.name);
     setIsScanning(true);
+    setHasScanned(false);
     setIssues([]);
 
     try {
@@ -123,6 +125,7 @@ export function ExcelErrorScannerDialog() {
       });
     } finally {
       setIsScanning(false);
+      setHasScanned(true);
     }
   };
 
@@ -182,8 +185,10 @@ export function ExcelErrorScannerDialog() {
                     </span>
                   ) : issues.length ? (
                     `${issues.length} error(es) en ${sheetCounts.length} hoja(s)`
+                  ) : hasScanned ? (
+                    "✓ No se encontraron errores"
                   ) : (
-                    "Sin resultados todavía"
+                    "Sube un archivo para analizar"
                   )}
                 </div>
 
