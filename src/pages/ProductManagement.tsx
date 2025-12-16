@@ -413,11 +413,23 @@ export default function ProductManagement() {
     staleTime: 1000 * 60 * 5 // 5 minutes
   });
 
-  // Orden estable para outputs (sin flechas): por Hoja + celda de rótulo (A25, B10...)
-  // Esto evita saltos de orden si EasyQuote devuelve la lista en orden distinto entre llamadas.
+  // Orden estable para outputs por tipo y celda
   const orderedProductOutputs = useMemo(() => {
+    // Prioridad por tipo (imágenes al final)
+    const typePriority: Record<string, number> = {
+      'price': 1,
+      'instructions': 2,
+      'quantity': 3,
+      'workflow': 4,
+      'productimage': 99, // Imágenes al final
+    };
+
+    const getTypePriority = (type?: string | null) => {
+      const normalized = (type ?? "").toLowerCase().trim();
+      return typePriority[normalized] ?? 50; // Resto en el medio
+    };
+
     const colToNumber = (col: string) => {
-      // A=1, B=2, ..., Z=26, AA=27...
       return col
         .toUpperCase()
         .split("")
@@ -434,33 +446,26 @@ export default function ProductManagement() {
       };
     };
 
-    const normalizeSheet = (sheet?: string | null) => (sheet ?? "").trim();
-
     return [...productOutputs].sort((a, b) => {
-      const sheetA = normalizeSheet(a.sheet);
-      const sheetB = normalizeSheet(b.sheet);
-      const sheetCmp = sheetA.localeCompare(sheetB, "es", { sensitivity: "base" });
-      if (sheetCmp !== 0) return sheetCmp;
+      // 1. Ordenar por prioridad de tipo
+      const priorityA = getTypePriority(a.type);
+      const priorityB = getTypePriority(b.type);
+      if (priorityA !== priorityB) return priorityA - priorityB;
 
+      // 2. Para tipos con misma prioridad (resto), ordenar por celda
       const cellA = parseCellRef(a.nameCell) ?? parseCellRef(a.valueCell);
       const cellB = parseCellRef(b.nameCell) ?? parseCellRef(b.valueCell);
 
-      // Celdas válidas primero
       if (cellA && !cellB) return -1;
       if (!cellA && cellB) return 1;
 
       if (cellA && cellB) {
+        // Orden por fila primero, luego columna (A8 < B8 < A9)
         if (cellA.row !== cellB.row) return cellA.row - cellB.row;
         if (cellA.col !== cellB.col) return cellA.col - cellB.col;
-      } else {
-        // Fallback: orden alfabético por nameCell/valueCell
-        const rawA = (a.nameCell || a.valueCell || "").toString();
-        const rawB = (b.nameCell || b.valueCell || "").toString();
-        const rawCmp = rawA.localeCompare(rawB, "es", { sensitivity: "base" });
-        if (rawCmp !== 0) return rawCmp;
       }
 
-      // Último fallback estable
+      // Fallback por id
       return (a.id || "").localeCompare(b.id || "");
     });
   }, [productOutputs]);
@@ -2084,7 +2089,7 @@ export default function ProductManagement() {
                 ) : (
                   <ScrollArea className="h-[500px] pr-4">
                     <div className="space-y-3">
-                      {productOutputs.map((output, index) => (
+                      {orderedProductOutputs.map((output, index) => (
                       <div key={output.id} className="p-4 border rounded-lg">
                         <div className="mb-4">
                           <h4 className="font-medium">Campo nº {index + 1}</h4>
