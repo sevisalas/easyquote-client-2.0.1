@@ -138,35 +138,21 @@ const Auth = () => {
   };
 
   const completeLogin = async (userId: string) => {
-    // Obtener token de EasyQuote usando las credenciales guardadas
+    // Obtener token de EasyQuote usando la edge function segura
+    // La edge function obtiene las credenciales server-side y solo devuelve el token
     try {
-      const { data: credentials, error: credError } = await supabase.rpc('get_organization_easyquote_credentials', {
-        p_user_id: userId
+      const { data, error: fxError } = await supabase.functions.invoke("easyquote-refresh-token", {
+        body: {}
       });
       
-      if (credError) {
-        console.error("Error obteniendo credenciales:", credError);
-      } else if (credentials && credentials.length > 0) {
-        const userCredentials = credentials[0];
-        if (userCredentials.api_username && userCredentials.api_password) {
-          const { data, error: fxError } = await supabase.functions.invoke("easyquote-auth", {
-            body: {
-              email: userCredentials.api_username,
-              password: userCredentials.api_password
-            }
-          });
-          if (fxError) {
-            console.error("easyquote-auth error", fxError);
-          } else if ((data as any)?.token) {
-            sessionStorage.setItem("easyquote_token", (data as any).token);
-            console.log("Token de EasyQuote obtenido correctamente");
-            window.dispatchEvent(new CustomEvent('easyquote-token-updated'));
-          }
-        } else {
-          console.warn("Credenciales de EasyQuote incompletas");
-        }
+      if (fxError) {
+        console.error("easyquote-refresh-token error:", fxError);
+      } else if ((data as any)?.token) {
+        sessionStorage.setItem("easyquote_token", (data as any).token);
+        console.log("Token de EasyQuote obtenido correctamente");
+        window.dispatchEvent(new CustomEvent('easyquote-token-updated'));
       } else {
-        console.warn("No hay credenciales del API configuradas para este usuario");
+        console.warn("No se pudo obtener token de EasyQuote - puede que no haya credenciales configuradas");
       }
     } catch (e) {
       console.error("Error obteniendo el token de EasyQuote:", e);
