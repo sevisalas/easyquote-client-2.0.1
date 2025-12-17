@@ -80,3 +80,6 @@ verify_jwt = true
 
 [functions.easyquote-upload-excel]
 verify_jwt = true
+
+[functions.easyquote-refresh-token]
+verify_jwt = true

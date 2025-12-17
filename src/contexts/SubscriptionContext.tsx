@@ -238,26 +238,16 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       setMembership(memberData as OrganizationMember);
     }
 
-    // Re-fetch EasyQuote token for the new organization
+    // Re-fetch EasyQuote token for the new organization using secure edge function
+    // The edge function retrieves credentials server-side and only returns the token
     try {
-      const { data: credentials } = await supabase.rpc('get_organization_easyquote_credentials', {
-        p_user_id: user.id
+      const { data } = await supabase.functions.invoke("easyquote-refresh-token", {
+        body: {}
       });
-
-      if (credentials && credentials.length > 0) {
-        const userCredentials = credentials[0];
-        if (userCredentials.api_username && userCredentials.api_password) {
-          const { data } = await supabase.functions.invoke("easyquote-auth", {
-            body: {
-              email: userCredentials.api_username,
-              password: userCredentials.api_password
-            }
-          });
-          if ((data as any)?.token) {
-            sessionStorage.setItem("easyquote_token", (data as any).token);
-            window.dispatchEvent(new CustomEvent('easyquote-token-updated'));
-          }
-        }
+      
+      if ((data as any)?.token) {
+        sessionStorage.setItem("easyquote_token", (data as any).token);
+        window.dispatchEvent(new CustomEvent('easyquote-token-updated'));
       }
     } catch (e) {
       console.error("Error refreshing EasyQuote token:", e);

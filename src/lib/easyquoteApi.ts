@@ -18,11 +18,13 @@ function isTokenValid(token: string): boolean {
 }
 
 /**
- * Intenta refrescar el token de EasyQuote automáticamente
+ * Intenta refrescar el token de EasyQuote automáticamente usando la edge function segura
+ * La edge function obtiene las credenciales server-side y solo devuelve el token
  */
 async function refreshEasyQuoteToken(): Promise<string | null> {
   try {
-    console.log('[EasyQuote] Starting token refresh...');
+    console.log('[EasyQuote] Starting secure token refresh via edge function...');
+    
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       console.log('[EasyQuote] No user found');
@@ -30,42 +32,23 @@ async function refreshEasyQuoteToken(): Promise<string | null> {
     }
     console.log('[EasyQuote] User ID:', user.id);
 
-    // Usar credenciales de la organización (owner o propias)
-    const { data: credentials, error: credError } = await supabase.rpc('get_organization_easyquote_credentials', {
-      p_user_id: user.id
+    // Use secure edge function that retrieves credentials server-side
+    // This prevents credentials from being exposed to the frontend
+    const { data, error } = await supabase.functions.invoke('easyquote-refresh-token', {
+      body: {}
     });
 
-    console.log('[EasyQuote] Credentials fetch result:', {
-      hasCredentials: !!credentials,
-      credentialCount: credentials?.length || 0,
-      error: credError
-    });
-
-    if (credError || !credentials || credentials.length === 0) {
-      console.error('[EasyQuote] Failed to get credentials:', credError);
+    if (error) {
+      console.error('[EasyQuote] Token refresh failed:', error);
       return null;
     }
 
-    const cred = credentials[0];
-    if (!cred.api_username || !cred.api_password) {
-      console.error('[EasyQuote] Credentials missing username or password');
+    if (!data?.token) {
+      console.error('[EasyQuote] No token in response:', data);
       return null;
     }
 
-    console.log('[EasyQuote] Attempting authentication with username:', cred.api_username);
-    const { data, error } = await supabase.functions.invoke('easyquote-auth', {
-      body: {
-        email: cred.api_username,
-        password: cred.api_password
-      }
-    });
-
-    if (error || !data?.token) {
-      console.error('[EasyQuote] Authentication failed:', error);
-      return null;
-    }
-
-    console.log('[EasyQuote] Authentication successful, token obtained');
+    console.log('[EasyQuote] Token refresh successful');
     sessionStorage.setItem('easyquote_token', data.token);
     // Dispatch event to notify other components
     window.dispatchEvent(new Event('easyquote-token-updated'));
