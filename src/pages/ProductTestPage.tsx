@@ -515,11 +515,25 @@ export default function ProductTestPage() {
   // Order outputs por rangos: 1) Price, 2) Quantity, 3) Instructions, 4) Workflow, 5) Generic, 6) resto.
   // Dentro de cada rango: por hoja + nameCell (A1, B2, ...). Si no hay celda, por label.
   const sortedOutputs = useMemo(() => {
+    // Si hay orden guardado, usarlo como prioridad principal
+    if (savedOutputOrder && savedOutputOrder.length > 0) {
+      const normalizeKey = (v: any) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+      const orderMap = new Map(savedOutputOrder.map((k: string, idx: number) => [normalizeKey(k), idx]));
+
+      return [...allOutputs].sort((a: any, b: any) => {
+        const aKey = normalizeKey(a?.nameCell || a?.name || a?.label || "");
+        const bKey = normalizeKey(b?.nameCell || b?.name || b?.label || "");
+        const aIdx = aKey && orderMap.has(aKey) ? orderMap.get(aKey)! : 999;
+        const bIdx = bKey && orderMap.has(bKey) ? orderMap.get(bKey)! : 999;
+        return aIdx - bIdx;
+      });
+    }
+
+    // Fallback: ordenar por tipo y celda si no hay orden guardado
     const typePriority: Record<string, number> = {
       price: 1,
       quantity: 2,
       instructions: 3,
-      // tolerancia por si algún origen viene mal escrito
       intrucctions: 3,
       workflow: 4,
       generic: 5,
@@ -540,7 +554,7 @@ export default function ProductTestPage() {
       if (!m) return null;
       const [, letters, rowStr] = m;
       const row = Number(rowStr);
-      const col = letters.split("").reduce((acc, ch) => acc * 26 + (ch.charCodeAt(0) - 64), 0); // A=1
+      const col = letters.split("").reduce((acc, ch) => acc * 26 + (ch.charCodeAt(0) - 64), 0);
       if (!Number.isFinite(row) || row <= 0 || col <= 0) return null;
       return { col, row };
     };
@@ -549,25 +563,15 @@ export default function ProductTestPage() {
       .map((o, index) => {
         const type = normalizeType(o);
         const priority = typePriority[type] ?? 999;
-
         const sheetKey = normalizeSheet(o);
         const nameCellKey = normalizeCell(o?.nameCell);
         const parsed = nameCellKey ? parseCell(nameCellKey) : null;
-
-        const labelKey = String(o?.label ?? o?.name ?? "")
-          .trim()
-          .toUpperCase();
-
+        const labelKey = String(o?.label ?? o?.name ?? "").trim().toUpperCase();
         return { o, index, priority, sheetKey, nameCellKey, parsed, labelKey };
       })
       .sort((a, b) => {
-        // 1) Orden por rango (tipo)
         if (a.priority !== b.priority) return a.priority - b.priority;
-
-        // 2) Dentro del rango: hoja
         if (a.sheetKey !== b.sheetKey) return a.sheetKey.localeCompare(b.sheetKey);
-
-        // 3) Dentro del rango: celda (col/row). Si uno no tiene celda, va al final.
         const aHas = !!a.parsed;
         const bHas = !!b.parsed;
         if (aHas !== bHas) return aHas ? -1 : 1;
@@ -575,15 +579,11 @@ export default function ProductTestPage() {
           if (a.parsed.col !== b.parsed.col) return a.parsed.col - b.parsed.col;
           if (a.parsed.row !== b.parsed.row) return a.parsed.row - b.parsed.row;
         }
-
-        // 4) Fallback: label
         if (a.labelKey !== b.labelKey) return a.labelKey.localeCompare(b.labelKey);
-
-        // 5) Estable
         return a.index - b.index;
       })
       .map((x) => x.o);
-  }, [allOutputs]);
+  }, [allOutputs, savedOutputOrder]);
 
   const textOutputs = useMemo(() => {
     return sortedOutputs.filter((o: any) => {
