@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,9 +42,34 @@ export default function ProductTestPage() {
   const [tokenReady, setTokenReady] = useState(!!sessionStorage.getItem("easyquote_token"));
   const {
     isSuperAdmin,
-    isOrgAdmin
+    isOrgAdmin,
+    organization,
+    membership
   } = useSubscription();
   const queryClient = useQueryClient();
+  
+  const organizationId = organization?.id || membership?.organization_id;
+
+  // Fetch saved output order from Supabase
+  const { data: savedOutputOrder } = useQuery({
+    queryKey: ["product-output-order", productId, organizationId],
+    queryFn: async () => {
+      if (!productId || !organizationId) return null;
+      const { data, error } = await supabase
+        .from("product_output_order")
+        .select("output_order")
+        .eq("easyquote_product_id", productId)
+        .eq("organization_id", organizationId)
+        .maybeSingle();
+      if (error) {
+        console.error("Error fetching output order:", error);
+        return null;
+      }
+      return data?.output_order || null;
+    },
+    enabled: !!productId && !!organizationId,
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Listen for token updates to trigger product fetch immediately
   useEffect(() => {
@@ -322,19 +347,34 @@ export default function ProductTestPage() {
     return normalized;
   }, [pricing, productDetail]);
 
-  // Separate text outputs from image outputs
+  // Apply saved order and separate text outputs from image outputs
+  const sortedOutputs = useMemo(() => {
+    if (!savedOutputOrder || savedOutputOrder.length === 0) {
+      return allOutputs;
+    }
+    // Sort by saved order
+    const orderMap = new Map(savedOutputOrder.map((name: string, idx: number) => [name, idx]));
+    return [...allOutputs].sort((a, b) => {
+      const aName = a.name || a.label || '';
+      const bName = b.name || b.label || '';
+      const aIdx = orderMap.has(aName) ? orderMap.get(aName)! : 999;
+      const bIdx = orderMap.has(bName) ? orderMap.get(bName)! : 999;
+      return aIdx - bIdx;
+    });
+  }, [allOutputs, savedOutputOrder]);
+
   const textOutputs = useMemo(() => {
-    return allOutputs.filter((o: any) => {
+    return sortedOutputs.filter((o: any) => {
       const value = String(o?.value ?? "");
       return !/^https?:\/\//i.test(value);
     });
-  }, [allOutputs]);
+  }, [sortedOutputs]);
   const imageOutputs = useMemo(() => {
-    return allOutputs.filter((o: any) => {
+    return sortedOutputs.filter((o: any) => {
       const value = String(o?.value ?? "");
       return /^https?:\/\//i.test(value);
     });
-  }, [allOutputs]);
+  }, [sortedOutputs]);
   const selectedProduct = products.find((p: any) => p.id === productId);
 
   // Check permissions - AFTER all hooks are called
