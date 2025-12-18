@@ -455,18 +455,25 @@ export default function ProductTestPage() {
 
     // Normalize output structure
     const normalized = Array.isArray(outputValues)
-      ? outputValues.map((o: any) => ({
-          // Some API responses include a stable output id
-          stableId: String(o?.id ?? o?.outputId ?? o?.outputID ?? "").trim(),
-          // Some responses include sheet/cell coordinates (useful for ordering)
-          sheet: String(o?.sheet ?? "").trim(),
-          nameCell: String(o?.nameCell ?? o?.outputNameCell ?? "").trim(),
-          valueCell: String(o?.valueCell ?? o?.outputValueCell ?? "").trim(),
-          label: o.label || o.name || o.outputText || o.text || o.outputName || "Output",
-          name: o.name || o.label || o.outputName || "",
-          value: o.value ?? o.currentValue ?? o.outputValue ?? o.result ?? "",
-          outputType: o.outputType || o.type || "",
-        }))
+      ? outputValues.map((o: any) => {
+          const idxRaw = Number(o?.idx ?? o?.index ?? o?.orderSeq ?? o?.outputIndex ?? o?.order ?? NaN);
+          const idx = Number.isFinite(idxRaw) ? idxRaw : undefined;
+
+          return {
+            // Algunos responses incluyen un índice estable que puede corresponder al orden original de definiciones
+            idx,
+            // Some API responses include a stable output id
+            stableId: String(o?.id ?? o?.outputId ?? o?.outputID ?? "").trim(),
+            // Some responses include sheet/cell coordinates (useful for ordering)
+            sheet: String(o?.sheet ?? "").trim(),
+            nameCell: String(o?.nameCell ?? o?.outputNameCell ?? "").trim(),
+            valueCell: String(o?.valueCell ?? o?.outputValueCell ?? "").trim(),
+            label: o.label || o.name || o.outputText || o.text || o.outputName || "Output",
+            name: o.name || o.label || o.outputName || "",
+            value: o.value ?? o.currentValue ?? o.outputValue ?? o.result ?? "",
+            outputType: o.outputType || o.type || "",
+          };
+        })
       : [];
 
     return normalized;
@@ -478,7 +485,23 @@ export default function ProductTestPage() {
   // => asignamos celdas por tipo usando outputTypeId -> typeName y el orden guardado por celdas.
   const allOutputs = useMemo(() => {
     const normalizeType = (v: any) => String(v ?? "").trim().toLowerCase();
+    const normalizeId = (v: any) => String(v ?? "").trim();
 
+    // 1) Mejor caso: si pricing devuelve un id estable, lo asociamos directamente a la definición
+    const defById = new Map<string, any>();
+
+    // 2) Segundo mejor caso: si pricing devuelve idx, lo asociamos al índice original de definiciones
+    const defByOriginalIndex = new Map<number, any>();
+
+    for (const d of orderedOutputDefinitions as any[]) {
+      const id = normalizeId(d?.id);
+      if (id) defById.set(id, d);
+
+      const originalIndex = Number(d?.__index);
+      if (Number.isFinite(originalIndex)) defByOriginalIndex.set(originalIndex, d);
+    }
+
+    // 3) Fallback: asignación por tipo (cuando no hay id/idx en pricing)
     const defsByType = new Map<string, any[]>();
     for (const d of orderedOutputDefinitions as any[]) {
       const t = normalizeType(d?.outputTypeName);
@@ -493,6 +516,33 @@ export default function ProductTestPage() {
       // Si ya viene con celda (p.ej. PATCH), respetarla
       if (o?.nameCell) return o;
 
+      const stableId = normalizeId(o?.stableId);
+      if (stableId && defById.has(stableId)) {
+        const def = defById.get(stableId);
+        return {
+          ...o,
+          stableId,
+          sheet: o.sheet || String(def?.sheet ?? "").trim(),
+          nameCell: String(def?.nameCell ?? "").trim(),
+          valueCell: o.valueCell || String(def?.valueCell ?? "").trim(),
+        };
+      }
+
+      const idxRaw = Number(o?.idx);
+      if (Number.isFinite(idxRaw)) {
+        // Algunas APIs devuelven idx 0-based; otras 1-based. Probamos ambos.
+        const def = defByOriginalIndex.get(idxRaw) ?? defByOriginalIndex.get(idxRaw - 1);
+        if (def) {
+          return {
+            ...o,
+            stableId: stableId || normalizeId(def?.id),
+            sheet: o.sheet || String(def?.sheet ?? "").trim(),
+            nameCell: String(def?.nameCell ?? "").trim(),
+            valueCell: o.valueCell || String(def?.valueCell ?? "").trim(),
+          };
+        }
+      }
+
       const t = normalizeType(o?.outputType);
       const defs = defsByType.get(t);
       if (!defs || defs.length === 0) return o;
@@ -504,7 +554,7 @@ export default function ProductTestPage() {
 
       return {
         ...o,
-        stableId: o.stableId || String(def?.id ?? "").trim(),
+        stableId: stableId || normalizeId(def?.id),
         sheet: o.sheet || String(def?.sheet ?? "").trim(),
         nameCell: String(def?.nameCell ?? "").trim(),
         valueCell: o.valueCell || String(def?.valueCell ?? "").trim(),
