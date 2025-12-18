@@ -406,26 +406,29 @@ export default function ProductTestPage() {
     }));
   }, [outputs, nameCellByName]);
 
-  // Order outputs: 1) Price, 2) Quantity, 3) rest by nameCell alphabetically
+  // Order outputs: 1) Price, 2) Quantity, 3) Instructions, 4) Workflow, 5) Generic, resto como venga
   const sortedOutputs = useMemo(() => {
     const typePriority: Record<string, number> = {
-      'Price': 1,
-      'Quantity': 2,
-      'Instructions': 3,
-      'Workflow': 4,
-      'Generic': 5,
+      price: 1,
+      quantity: 2,
+      instructions: 3,
+      // tolerancia por si algún origen viene mal escrito
+      intrucctions: 3,
+      workflow: 4,
+      generic: 5,
     };
-    
-    return [...allOutputs].sort((a, b) => {
-      const typeA = String((a as any)?.outputType || '').trim();
-      const typeB = String((b as any)?.outputType || '').trim();
-      
-      const priorityA = typePriority[typeA] ?? 999;
-      const priorityB = typePriority[typeB] ?? 999;
-      
-      // Sort by priority, keep original order for same priority
-      return priorityA - priorityB;
-    });
+
+    // Garantiza orden estable: dentro de la misma prioridad se respeta el orden original
+    return allOutputs
+      .map((o, index) => {
+        const type = String((o as any)?.outputType ?? (o as any)?.type ?? "")
+          .trim()
+          .toLowerCase();
+        const priority = typePriority[type] ?? 999;
+        return { o, index, priority };
+      })
+      .sort((a, b) => (a.priority - b.priority) || (a.index - b.index))
+      .map((x) => x.o);
   }, [allOutputs]);
 
   const textOutputs = useMemo(() => {
