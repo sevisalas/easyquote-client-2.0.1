@@ -97,6 +97,93 @@ export default function ProductTestPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Output definitions NO incluyen el nombre/label; solo outputTypeId + celdas.
+  // Para poder asignar una celda a cada output calculado (pricing), necesitamos traducir outputTypeId -> nombre de tipo.
+  const { data: outputTypes = [] } = useQuery({
+    queryKey: ["easyquote-output-types"],
+    queryFn: async () => {
+      const token = await getEasyQuoteToken();
+      if (!token) return [];
+      const resp = await fetch("https://api.easyquote.cloud/api/v1/products/outputs/types", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!resp.ok) return [];
+      const data = await resp.json();
+      return Array.isArray(data) ? data : [];
+    },
+    enabled: tokenReady,
+    staleTime: 60 * 60 * 1000, // 1h: tipos cambian muy rara vez
+    refetchOnWindowFocus: false,
+  });
+
+  const outputTypeNameById = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const t of outputTypes as any[]) {
+      const id = Number(t?.id);
+      const name = String(t?.name ?? "").trim();
+      if (Number.isFinite(id) && name) map.set(id, name);
+    }
+    return map;
+  }, [outputTypes]);
+
+  // Ordenamos definiciones usando primero el orden guardado (product_output_order.output_order)
+  // y luego un fallback por hoja+celda.
+  const orderedOutputDefinitions = useMemo(() => {
+    const normalizeCell = (v: any) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+    const normalizeSheet = (v: any) => String(v ?? "").trim().toUpperCase();
+
+    const parseCell = (cellRaw: string) => {
+      const cell = normalizeCell(cellRaw);
+      const m = cell.match(/^([A-Z]+)(\d+)$/);
+      if (!m) return null;
+      const [, letters, rowStr] = m;
+      const row = Number(rowStr);
+      const col = letters.split("").reduce((acc, ch) => acc * 26 + (ch.charCodeAt(0) - 64), 0); // A=1
+      if (!Number.isFinite(row) || row <= 0 || col <= 0) return null;
+      return { col, row };
+    };
+
+    const orderMap = new Map<string, number>(
+      (savedOutputOrder ?? []).map((cell: string, idx: number) => [normalizeCell(cell), idx])
+    );
+
+    return (outputDefinitions as any[])
+      .map((d: any, index: number) => {
+        const outputTypeId = Number(d?.outputTypeId);
+        const outputTypeName = String(outputTypeNameById.get(outputTypeId) ?? "")
+          .trim()
+          .toLowerCase();
+
+        const sheetKey = normalizeSheet(d?.sheet);
+        const cellKey = normalizeCell(d?.nameCell);
+        const orderIdx = orderMap.has(cellKey) ? orderMap.get(cellKey)! : 9999;
+        const parsed = cellKey ? parseCell(cellKey) : null;
+
+        return {
+          ...d,
+          outputTypeName,
+          __index: index,
+          __orderIdx: orderIdx,
+          __sheetKey: sheetKey,
+          __cellKey: cellKey,
+          __parsed: parsed,
+        };
+      })
+      .sort((a: any, b: any) => {
+        if (a.__orderIdx !== b.__orderIdx) return a.__orderIdx - b.__orderIdx;
+        if (a.__sheetKey !== b.__sheetKey) return a.__sheetKey.localeCompare(b.__sheetKey);
+
+        const aHas = !!a.__parsed;
+        const bHas = !!b.__parsed;
+        if (aHas !== bHas) return aHas ? -1 : 1;
+        if (a.__parsed && b.__parsed) {
+          if (a.__parsed.col !== b.__parsed.col) return a.__parsed.col - b.__parsed.col;
+          if (a.__parsed.row !== b.__parsed.row) return a.__parsed.row - b.__parsed.row;
+        }
+        return a.__index - b.__index;
+      });
+  }, [outputDefinitions, outputTypeNameById, savedOutputOrder]);
+
   const outputDefIdByCells = useMemo(() => {
     const map = new Map<string, string>();
     for (const o of outputDefinitions as any[]) {
@@ -385,26 +472,45 @@ export default function ProductTestPage() {
     return normalized;
   }, [pricing, productDetail]);
 
-  // Build a map from output name to nameCell from outputDefinitions
-  const nameCellByName = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const o of outputDefinitions as any[]) {
-      const name = String(o?.name ?? "").trim();
-      const nameCell = String(o?.nameCell ?? "").trim();
-      if (name && nameCell) {
-        map.set(name.toUpperCase(), nameCell);
-      }
-    }
-    return map;
-  }, [outputDefinitions]);
-
-  // Enrich outputs with nameCell from outputDefinitions
+  // Enrich outputs con sheet/nameCell reales:
+  // - easyquote-pricing (GET) devuelve outputValues sin celdas
+  // - easyquote-outputs devuelve celdas pero sin nombre
+  // => asignamos celdas por tipo usando outputTypeId -> typeName y el orden guardado por celdas.
   const allOutputs = useMemo(() => {
-    return outputs.map((o: any) => ({
-      ...o,
-      nameCell: o.nameCell || nameCellByName.get(String(o.name || "").toUpperCase()) || "",
-    }));
-  }, [outputs, nameCellByName]);
+    const normalizeType = (v: any) => String(v ?? "").trim().toLowerCase();
+
+    const defsByType = new Map<string, any[]>();
+    for (const d of orderedOutputDefinitions as any[]) {
+      const t = normalizeType(d?.outputTypeName);
+      if (!t) continue;
+      if (!defsByType.has(t)) defsByType.set(t, []);
+      defsByType.get(t)!.push(d);
+    }
+
+    const counters = new Map<string, number>();
+
+    return outputs.map((o: any) => {
+      // Si ya viene con celda (p.ej. PATCH), respetarla
+      if (o?.nameCell) return o;
+
+      const t = normalizeType(o?.outputType);
+      const defs = defsByType.get(t);
+      if (!defs || defs.length === 0) return o;
+
+      const i = counters.get(t) ?? 0;
+      const def = defs[i];
+      counters.set(t, i + 1);
+      if (!def) return o;
+
+      return {
+        ...o,
+        stableId: o.stableId || String(def?.id ?? "").trim(),
+        sheet: o.sheet || String(def?.sheet ?? "").trim(),
+        nameCell: String(def?.nameCell ?? "").trim(),
+        valueCell: o.valueCell || String(def?.valueCell ?? "").trim(),
+      };
+    });
+  }, [outputs, orderedOutputDefinitions]);
 
   // Order outputs por rangos: 1) Price, 2) Quantity, 3) Instructions, 4) Workflow, 5) Generic, 6) resto.
   // Dentro de cada rango: por hoja + nameCell (A1, B2, ...). Si no hay celda, por label.
