@@ -408,22 +408,23 @@ export default function ProductTestPage() {
 
   // Order outputs: 1) Price, 2) Quantity, 3) rest by nameCell alphabetically
   const sortedOutputs = useMemo(() => {
+    const typePriority: Record<string, number> = {
+      'Price': 1,
+      'Quantity': 2,
+      'Instructions': 3,
+      'Workflow': 4,
+      'Generic': 5,
+    };
+    
     return [...allOutputs].sort((a, b) => {
       const typeA = String((a as any)?.outputType || '').trim();
       const typeB = String((b as any)?.outputType || '').trim();
       
-      // Price first
-      if (typeA === 'Price' && typeB !== 'Price') return -1;
-      if (typeB === 'Price' && typeA !== 'Price') return 1;
+      const priorityA = typePriority[typeA] ?? 999;
+      const priorityB = typePriority[typeB] ?? 999;
       
-      // Quantity second
-      if (typeA === 'Quantity' && typeB !== 'Quantity') return -1;
-      if (typeB === 'Quantity' && typeA !== 'Quantity') return 1;
-      
-      // Rest: sort by nameCell alphabetically
-      const cellA = String((a as any)?.nameCell || '').toUpperCase();
-      const cellB = String((b as any)?.nameCell || '').toUpperCase();
-      return cellA.localeCompare(cellB);
+      // Sort by priority, keep original order for same priority
+      return priorityA - priorityB;
     });
   }, [allOutputs]);
 
