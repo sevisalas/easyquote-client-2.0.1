@@ -455,11 +455,13 @@ export default function ProductTestPage() {
 
     // Normalize output structure
     const normalized = Array.isArray(outputValues)
-      ? outputValues.map((o: any) => {
+      ? outputValues.map((o: any, pos: number) => {
           const idxRaw = Number(o?.idx ?? o?.index ?? o?.orderSeq ?? o?.outputIndex ?? o?.order ?? NaN);
           const idx = Number.isFinite(idxRaw) ? idxRaw : undefined;
 
           return {
+            // Posición en el array (fallback fiable cuando GET no devuelve idx/nameCell)
+            __pos: pos,
             // Algunos responses incluyen un índice estable que puede corresponder al orden original de definiciones
             idx,
             // Some API responses include a stable output id
@@ -532,6 +534,21 @@ export default function ProductTestPage() {
       if (Number.isFinite(idxRaw)) {
         // Algunas APIs devuelven idx 0-based; otras 1-based. Probamos ambos.
         const def = defByOriginalIndex.get(idxRaw) ?? defByOriginalIndex.get(idxRaw - 1);
+        if (def) {
+          return {
+            ...o,
+            stableId: stableId || normalizeId(def?.id),
+            sheet: o.sheet || String(def?.sheet ?? "").trim(),
+            nameCell: String(def?.nameCell ?? "").trim(),
+            valueCell: o.valueCell || String(def?.valueCell ?? "").trim(),
+          };
+        }
+      }
+
+      // 2.5) Fallback MUY fiable: respetar el orden del array devuelto por pricing
+      const posRaw = Number(o?.__pos);
+      if (Number.isFinite(posRaw)) {
+        const def = defByOriginalIndex.get(posRaw);
         if (def) {
           return {
             ...o,
