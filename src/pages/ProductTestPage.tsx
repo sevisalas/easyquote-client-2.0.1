@@ -389,9 +389,34 @@ export default function ProductTestPage() {
     return outputs;
   }, [outputs]);
 
-  // Show outputs exactly as they come from the API - no ordering applied
+  // Order outputs by type priority, then alphabetically by cell/name
   const sortedOutputs = useMemo(() => {
-    return allOutputs;
+    const typePriority: Record<string, number> = {
+      'Price': 1,
+      'Instructions': 2,
+      'Quantity': 3,
+      'Generic': 4,
+      'Width': 5,
+      'Height': 6,
+      'Workflow': 7,
+    };
+    
+    return [...allOutputs].sort((a, b) => {
+      const typeA = String((a as any)?.type || '').trim();
+      const typeB = String((b as any)?.type || '').trim();
+      
+      const priorityA = typePriority[typeA] ?? 99;
+      const priorityB = typePriority[typeB] ?? 99;
+      
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      
+      // Same type: sort alphabetically by cell/name
+      const cellA = String((a as any)?.nameCell || (a as any)?.name || '').toUpperCase();
+      const cellB = String((b as any)?.nameCell || (b as any)?.name || '').toUpperCase();
+      return cellA.localeCompare(cellB);
+    });
   }, [allOutputs]);
 
   const textOutputs = useMemo(() => {
