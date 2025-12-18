@@ -90,7 +90,7 @@ export default function ProductTestPage() {
       }
 
       const list = Array.isArray(data) ? data : data?.items || data?.data || [];
-      console.log("📋 Output definitions with cells:", list.map((o: any) => ({ name: o.name, nameCell: o.nameCell, type: o.type })));
+      console.log("📋 Output definitions FULL:", JSON.stringify(list.slice(0, 3), null, 2));
       return Array.isArray(list) ? list : [];
     },
     enabled: !!productId && tokenReady,
