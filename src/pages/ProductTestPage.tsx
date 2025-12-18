@@ -384,12 +384,28 @@ export default function ProductTestPage() {
     return normalized;
   }, [pricing, productDetail]);
 
-  // Show ALL outputs exactly as they come from the API - no filtering, no modifications
-  const allOutputs = useMemo(() => {
-    return outputs;
-  }, [outputs]);
+  // Build a map from output name to nameCell from outputDefinitions
+  const nameCellByName = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const o of outputDefinitions as any[]) {
+      const name = String(o?.name ?? "").trim();
+      const nameCell = String(o?.nameCell ?? "").trim();
+      if (name && nameCell) {
+        map.set(name.toUpperCase(), nameCell);
+      }
+    }
+    return map;
+  }, [outputDefinitions]);
 
-  // Order outputs by type priority, then alphabetically by cell/name
+  // Enrich outputs with nameCell from outputDefinitions
+  const allOutputs = useMemo(() => {
+    return outputs.map((o: any) => ({
+      ...o,
+      nameCell: o.nameCell || nameCellByName.get(String(o.name || "").toUpperCase()) || "",
+    }));
+  }, [outputs, nameCellByName]);
+
+  // Order outputs by type priority, then alphabetically by nameCell
   const sortedOutputs = useMemo(() => {
     const typePriority: Record<string, number> = {
       'Price': 1,
@@ -402,8 +418,8 @@ export default function ProductTestPage() {
     };
     
     return [...allOutputs].sort((a, b) => {
-      const typeA = String((a as any)?.type || '').trim();
-      const typeB = String((b as any)?.type || '').trim();
+      const typeA = String((a as any)?.outputType || '').trim();
+      const typeB = String((b as any)?.outputType || '').trim();
       
       const priorityA = typePriority[typeA] ?? 99;
       const priorityB = typePriority[typeB] ?? 99;
@@ -412,9 +428,9 @@ export default function ProductTestPage() {
         return priorityA - priorityB;
       }
       
-      // Same type: sort alphabetically by cell (not name)
-      const cellA = String((a as any)?.cell || '').toUpperCase();
-      const cellB = String((b as any)?.cell || '').toUpperCase();
+      // Same type: sort alphabetically by nameCell
+      const cellA = String((a as any)?.nameCell || '').toUpperCase();
+      const cellB = String((b as any)?.nameCell || '').toUpperCase();
       return cellA.localeCompare(cellB);
     });
   }, [allOutputs]);
