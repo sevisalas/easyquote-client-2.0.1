@@ -367,7 +367,8 @@ export default function ProductManagement() {
   const [excelSheets, setExcelSheets] = useState<string[]>([]);
   const [availableExcelFiles, setAvailableExcelFiles] = useState<EasyQuoteExcelFile[]>([]);
   
-  const { isSuperAdmin, isOrgAdmin } = useSubscription();
+  const { isSuperAdmin, isOrgAdmin, organization } = useSubscription();
+  const organizationId = organization?.id;
   const queryClient = useQueryClient();
 
   // Hooks for categories
@@ -602,10 +603,80 @@ export default function ProductManagement() {
   // Estado local para el orden de outputs (drag & drop)
   const [localOutputOrder, setLocalOutputOrder] = useState<string[]>([]);
 
-  // Sincronizar orden local cuando cambian los outputs del API
+  // Cargar orden guardado desde Supabase
+  const { data: savedOutputOrder } = useQuery({
+    queryKey: ["product-output-order", selectedProduct?.id, organizationId],
+    queryFn: async () => {
+      if (!selectedProduct?.id || !organizationId) return null;
+      
+      const { data, error } = await supabase
+        .from("product_output_order")
+        .select("output_order")
+        .eq("organization_id", organizationId)
+        .eq("easyquote_product_id", selectedProduct.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error("Error loading output order:", error);
+        return null;
+      }
+      
+      return data?.output_order || null;
+    },
+    enabled: !!selectedProduct?.id && !!organizationId,
+    staleTime: 1000 * 60 * 5
+  });
+
+  // Mutation para guardar el orden en Supabase
+  const saveOutputOrderMutation = useMutation({
+    mutationFn: async (newOrder: string[]) => {
+      if (!selectedProduct?.id || !organizationId) {
+        throw new Error("Missing product or organization");
+      }
+
+      const { error } = await supabase
+        .from("product_output_order")
+        .upsert({
+          organization_id: organizationId,
+          easyquote_product_id: selectedProduct.id,
+          output_order: newOrder,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: "organization_id,easyquote_product_id"
+        });
+
+      if (error) throw error;
+      return newOrder;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: ["product-output-order", selectedProduct?.id, organizationId] 
+      });
+      toast({
+        title: "Orden guardado",
+        description: "El orden de outputs se ha guardado.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error saving output order:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el orden",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Sincronizar orden local cuando cambian los outputs del API o el orden guardado
   useEffect(() => {
     if (productOutputs.length > 0 && localOutputOrder.length === 0) {
-      // Orden inicial basado en tipo y celda
+      // Si hay orden guardado en Supabase, usarlo
+      if (savedOutputOrder && savedOutputOrder.length > 0) {
+        setLocalOutputOrder(savedOutputOrder);
+        return;
+      }
+
+      // Si no hay orden guardado, usar orden basado en tipo y celda
       const typePriority: Record<string, number> = {
         'price': 1,
         'instructions': 2,
@@ -651,7 +722,7 @@ export default function ProductManagement() {
 
       setLocalOutputOrder(sorted.map(o => o.id));
     }
-  }, [productOutputs, localOutputOrder.length]);
+  }, [productOutputs, localOutputOrder.length, savedOutputOrder]);
 
   // Reset orden local cuando cambia el producto seleccionado
   useEffect(() => {
@@ -690,7 +761,7 @@ export default function ProductManagement() {
     })
   );
 
-  // Handler para drag end
+  // Handler para drag end - guarda en Supabase
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     
@@ -698,7 +769,12 @@ export default function ProductManagement() {
       setLocalOutputOrder((items) => {
         const oldIndex = items.indexOf(active.id as string);
         const newIndex = items.indexOf(over.id as string);
-        return arrayMove(items, oldIndex, newIndex);
+        const newOrder = arrayMove(items, oldIndex, newIndex);
+        
+        // Guardar el nuevo orden en Supabase
+        saveOutputOrderMutation.mutate(newOrder);
+        
+        return newOrder;
       });
     }
   };
