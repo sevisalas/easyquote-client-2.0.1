@@ -258,6 +258,16 @@ serve(async (req: Request): Promise<Response> => {
       }
       if (data.outputValues) {
         console.log("easyquote-pricing: outputValues count:", data.outputValues.length);
+        // Log each output's fields to see what's available
+        console.log("easyquote-pricing: outputValues DETAILS:", JSON.stringify(data.outputValues.map((o: any, i: number) => ({
+          idx: i,
+          label: o.label || o.name || o.outputText,
+          nameCell: o.nameCell,
+          valueCell: o.valueCell,
+          sheet: o.sheet,
+          id: o.id,
+          outputId: o.outputId
+        }))));
       }
       if (data.priceOutputs) {
         console.log("easyquote-pricing: priceOutputs count:", data.priceOutputs.length);
