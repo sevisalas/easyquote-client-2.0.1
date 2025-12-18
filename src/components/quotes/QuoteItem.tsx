@@ -19,6 +19,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
 import { ChevronDown, ChevronUp, Pencil, Trash2, Package } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 // Special product ID for custom/manual items
 const CUSTOM_PRODUCT_ID = "__CUSTOM_PRODUCT__";
@@ -57,6 +58,10 @@ interface Additional {
 }
 
 export default function QuoteItem({ hasToken, id, initialData, onChange, onRemove, onFinishEdit, shouldExpand, hideMultiQuantities = false }: QuoteItemProps) {
+  // Get organization context for output ordering
+  const { organization, membership } = useSubscription();
+  const organizationId = organization?.id || membership?.organization_id;
+
   // Local state per item
   const [productId, setProductId] = useState<string>("");
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
@@ -329,6 +334,27 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       if (error) throw error;
       return data as Additional[];
     },
+  });
+
+  // Query para obtener el orden guardado de outputs
+  const { data: savedOutputOrder } = useQuery({
+    queryKey: ["product-output-order", productId, organizationId],
+    queryFn: async () => {
+      if (!productId || !organizationId || productId === CUSTOM_PRODUCT_ID) return null;
+      const { data, error } = await supabase
+        .from("product_output_order")
+        .select("output_order")
+        .eq("easyquote_product_id", productId)
+        .eq("organization_id", organizationId)
+        .maybeSingle();
+      if (error) {
+        console.error("Error fetching output order:", error);
+        return null;
+      }
+      return data?.output_order || null;
+    },
+    enabled: !!productId && !!organizationId && productId !== CUSTOM_PRODUCT_ID,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Los prompts siempre vienen de easyquote-pricing (ya no usamos master-files)
@@ -788,17 +814,34 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     // Una vez que pricing tiene datos (después de GET o PATCH), usar esos
     return Array.isArray((pricing as any)?.outputValues) ? (pricing as any).outputValues : [];
   }, [pricing, hasInitialOutputs, initialData]);
+
+  // Aplicar orden guardado a los outputs
+  const sortedOutputs = useMemo(() => {
+    if (!savedOutputOrder || savedOutputOrder.length === 0) {
+      return outputs;
+    }
+    // savedOutputOrder contiene nameCells (los rótulos de los outputs)
+    const orderMap = new Map(savedOutputOrder.map((name: string, idx: number) => [String(name), idx]));
+    return [...outputs].sort((a: any, b: any) => {
+      const aName = String(a?.name ?? "");
+      const bName = String(b?.name ?? "");
+      const aIdx = aName && orderMap.has(aName) ? orderMap.get(aName)! : 999;
+      const bIdx = bName && orderMap.has(bName) ? orderMap.get(bName)! : 999;
+      return aIdx - bIdx;
+    });
+  }, [outputs, savedOutputOrder]);
+
   const imageOutputs = useMemo(
-    () => outputs.filter((o: any) => /^https?:\/\//i.test(String(o?.value ?? ""))),
-    [outputs]
+    () => sortedOutputs.filter((o: any) => /^https?:\/\//i.test(String(o?.value ?? ""))),
+    [sortedOutputs]
   );
   const priceOutput = useMemo(
-    () => outputs.find((o: any) => String(o?.type || "").toLowerCase() === "price"),
-    [outputs]
+    () => sortedOutputs.find((o: any) => String(o?.type || "").toLowerCase() === "price"),
+    [sortedOutputs]
   );
   const otherOutputs = useMemo(
     () =>
-      outputs.filter((o: any) => {
+      sortedOutputs.filter((o: any) => {
         const t = String(o?.type || "").toLowerCase();
         const n = String(o?.name || "").toLowerCase();
         const v = String(o?.value ?? "");
@@ -806,7 +849,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         const isNA = v === "" || v === "#N/A";
         return o !== priceOutput && !isImageLike && !isNA;
       }),
-    [outputs, priceOutput]
+    [sortedOutputs, priceOutput]
   );
 
   const { data: multiResults, isFetching: multiLoading } = useQuery({
