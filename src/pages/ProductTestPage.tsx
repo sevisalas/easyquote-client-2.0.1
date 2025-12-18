@@ -71,6 +71,56 @@ export default function ProductTestPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Fetch output definitions so we can map calculated outputs back to their stable IDs
+  const { data: outputDefinitions = [] } = useQuery({
+    queryKey: ["easyquote-output-definitions", productId],
+    queryFn: async () => {
+      if (!productId) return [];
+      const token = await getEasyQuoteToken();
+      if (!token) return [];
+
+      const { data, error } = await invokeEasyQuoteFunction("easyquote-outputs", {
+        token,
+        productId,
+      });
+
+      if (error) {
+        console.error("Error fetching output definitions:", error);
+        return [];
+      }
+
+      const list = Array.isArray(data) ? data : data?.items || data?.data || [];
+      return Array.isArray(list) ? list : [];
+    },
+    enabled: !!productId && tokenReady,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const outputDefIdByCells = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const o of outputDefinitions as any[]) {
+      const sheet = String(o?.sheet ?? "").trim();
+      const nameCell = String(o?.nameCell ?? "").trim();
+      const valueCell = String(o?.valueCell ?? "").trim();
+      const id = String(o?.id ?? "").trim();
+      if (!id || !nameCell || !valueCell) continue;
+      map.set(`${sheet}|${nameCell}|${valueCell}`, id);
+    }
+    return map;
+  }, [outputDefinitions]);
+
+  const outputDefIdByNameValueCells = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const o of outputDefinitions as any[]) {
+      const nameCell = String(o?.nameCell ?? "").trim();
+      const valueCell = String(o?.valueCell ?? "").trim();
+      const id = String(o?.id ?? "").trim();
+      if (!id || !nameCell || !valueCell) continue;
+      map.set(`${nameCell}|${valueCell}`, id);
+    }
+    return map;
+  }, [outputDefinitions]);
+
   // Listen for token updates to trigger product fetch immediately
   useEffect(() => {
     const handleTokenUpdate = () => {
@@ -314,51 +364,42 @@ export default function ProductTestPage() {
 
     // EasyQuote API returns outputs in 'outputValues' (GET) or 'outputs' (PATCH)
     const outputValues = source.outputValues || source.outputs || source.results || [];
-    console.log("Processing outputs:", outputValues);
 
     // Normalize output structure
-    const normalized = Array.isArray(outputValues) ? outputValues.map((o: any) => ({
-      label: o.label || o.name || o.outputText || o.text || o.outputName || 'Output',
-      name: o.name || o.label || o.outputName || '',
-      value: o.value ?? o.currentValue ?? o.outputValue ?? o.result ?? '',
-      outputType: o.outputType || o.type || ''
-    })) : [];
+    const normalized = Array.isArray(outputValues)
+      ? outputValues.map((o: any) => ({
+          // Some API responses include a stable output id
+          stableId: String(o?.id ?? o?.outputId ?? o?.outputID ?? "").trim(),
+          label: o.label || o.name || o.outputText || o.text || o.outputName || "Output",
+          name: o.name || o.label || o.outputName || "",
+          value: o.value ?? o.currentValue ?? o.outputValue ?? o.result ?? "",
+          outputType: o.outputType || o.type || "",
+        }))
+      : [];
+
     return normalized;
   }, [pricing, productDetail]);
 
   // Show ALL outputs exactly as they come from the API - no filtering, no modifications
   const allOutputs = useMemo(() => {
-    const source = pricing || productDetail;
-    if (!source) return [];
-
-    // EasyQuote API returns outputs in 'outputValues' (GET) or 'outputs' (PATCH)
-    const outputValues = source.outputValues || source.outputs || source.results || [];
-    console.log("Showing ALL raw outputs:", outputValues);
-    console.log("Raw outputs structure sample:", outputValues.slice(0, 2));
-
-    // Normalize output structure - handle different API response formats
-    const normalized = Array.isArray(outputValues) ? outputValues.map((o: any) => ({
-      label: o.label || o.name || o.outputText || o.text || o.outputName || 'Output',
-      name: o.name || o.label || o.outputName || '',
-      value: o.value ?? o.currentValue ?? o.outputValue ?? o.result ?? '',
-      outputType: o.outputType || o.type || ''
-    })) : [];
-    console.log("Normalized outputs:", normalized);
-    return normalized;
-  }, [pricing, productDetail]);
+    return outputs;
+  }, [outputs]);
 
   // Apply saved order and separate text outputs from image outputs
   const sortedOutputs = useMemo(() => {
     if (!savedOutputOrder || savedOutputOrder.length === 0) {
       return allOutputs;
     }
-    // Sort by saved order
-    const orderMap = new Map(savedOutputOrder.map((name: string, idx: number) => [name, idx]));
+
+    // savedOutputOrder stores EasyQuote output definition IDs (stable) from ProductManagement
+    const orderMap = new Map(savedOutputOrder.map((id: string, idx: number) => [String(id), idx]));
+
     return [...allOutputs].sort((a, b) => {
-      const aName = a.name || a.label || '';
-      const bName = b.name || b.label || '';
-      const aIdx = orderMap.has(aName) ? orderMap.get(aName)! : 999;
-      const bIdx = orderMap.has(bName) ? orderMap.get(bName)! : 999;
+      const aKey = String((a as any)?.stableId ?? "");
+      const bKey = String((b as any)?.stableId ?? "");
+
+      const aIdx = aKey && orderMap.has(aKey) ? orderMap.get(aKey)! : 999;
+      const bIdx = bKey && orderMap.has(bKey) ? orderMap.get(bKey)! : 999;
       return aIdx - bIdx;
     });
   }, [allOutputs, savedOutputOrder]);
@@ -369,6 +410,7 @@ export default function ProductTestPage() {
       return !/^https?:\/\//i.test(value);
     });
   }, [sortedOutputs]);
+
   const imageOutputs = useMemo(() => {
     return sortedOutputs.filter((o: any) => {
       const value = String(o?.value ?? "");
