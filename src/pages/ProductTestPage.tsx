@@ -412,9 +412,9 @@ export default function ProductTestPage() {
         return priorityA - priorityB;
       }
       
-      // Same type: sort alphabetically by cell/name
-      const cellA = String((a as any)?.nameCell || (a as any)?.name || '').toUpperCase();
-      const cellB = String((b as any)?.nameCell || (b as any)?.name || '').toUpperCase();
+      // Same type: sort alphabetically by cell (not name)
+      const cellA = String((a as any)?.cell || '').toUpperCase();
+      const cellB = String((b as any)?.cell || '').toUpperCase();
       return cellA.localeCompare(cellB);
     });
   }, [allOutputs]);
