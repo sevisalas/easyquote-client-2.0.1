@@ -405,30 +405,21 @@ export default function ProductTestPage() {
     }));
   }, [outputs, nameCellByName]);
 
-  // Order outputs by type priority, then alphabetically by nameCell
+  // Order outputs: 1) Price, 2) Quantity, 3) rest by nameCell alphabetically
   const sortedOutputs = useMemo(() => {
-    const typePriority: Record<string, number> = {
-      'Price': 1,
-      'Instructions': 2,
-      'Quantity': 3,
-      'Generic': 4,
-      'Width': 5,
-      'Height': 6,
-      'Workflow': 7,
-    };
-    
     return [...allOutputs].sort((a, b) => {
       const typeA = String((a as any)?.outputType || '').trim();
       const typeB = String((b as any)?.outputType || '').trim();
       
-      const priorityA = typePriority[typeA] ?? 99;
-      const priorityB = typePriority[typeB] ?? 99;
+      // Price first
+      if (typeA === 'Price' && typeB !== 'Price') return -1;
+      if (typeB === 'Price' && typeA !== 'Price') return 1;
       
-      if (priorityA !== priorityB) {
-        return priorityA - priorityB;
-      }
+      // Quantity second
+      if (typeA === 'Quantity' && typeB !== 'Quantity') return -1;
+      if (typeB === 'Quantity' && typeA !== 'Quantity') return 1;
       
-      // Same type: sort alphabetically by nameCell
+      // Rest: sort by nameCell alphabetically
       const cellA = String((a as any)?.nameCell || '').toUpperCase();
       const cellB = String((b as any)?.nameCell || '').toUpperCase();
       return cellA.localeCompare(cellB);
