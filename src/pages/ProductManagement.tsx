@@ -33,7 +33,8 @@ import {
   Trash2,
   Save,
   TestTube,
-  Layers
+  Layers,
+  GripVertical
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -44,6 +45,23 @@ import { BulkOutputsDialog } from "@/components/quotes/BulkOutputsDialog";
 import { useSearchParams } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ExcelErrorScannerDialog } from "@/components/diagnostics/ExcelErrorScannerDialog";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // Interface para productos del API de EasyQuote
 interface EasyQuoteProduct {
@@ -109,6 +127,174 @@ interface EasyQuoteExcelFile {
   subscriberId?: string;
   excelfilesSheets: any[];
   products: any[];
+}
+
+// Componente Sortable para outputs
+function SortableOutputItem({
+  output,
+  index,
+  excelSheets,
+  outputTypes,
+  onUpdate,
+  onDelete,
+  getMappedVariableId,
+  getMappedNames,
+  upsertVariableMapping,
+  productionVariables,
+  selectedProduct,
+}: {
+  output: ProductOutput;
+  index: number;
+  excelSheets: string[];
+  outputTypes: OutputType[];
+  onUpdate: (output: ProductOutput) => void;
+  onDelete: (id: string) => void;
+  getMappedVariableId: (name: string) => string | undefined;
+  getMappedNames: () => string[];
+  upsertVariableMapping: (data: any) => void;
+  productionVariables: any[];
+  selectedProduct: EasyQuoteProduct | null;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: output.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`p-4 border rounded-lg bg-background ${isDragging ? "ring-2 ring-primary" : ""}`}
+    >
+      <div className="mb-4 flex items-center gap-2">
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+          type="button"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </button>
+        <h4 className="font-medium">Campo nº {index + 1}</h4>
+      </div>
+
+      <div className="grid grid-cols-12 gap-2 items-end">
+        <div className="col-span-2">
+          <Label>Hoja</Label>
+          <Select
+            value={output.sheet || ""}
+            onValueChange={(value) => onUpdate({ ...output, sheet: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={output.sheet || "Seleccionar hoja"} />
+            </SelectTrigger>
+            <SelectContent className="bg-background border shadow-lg z-50">
+              {output.sheet && !excelSheets.includes(output.sheet) && (
+                <SelectItem value={output.sheet}>{output.sheet}</SelectItem>
+              )}
+              {excelSheets.map((sheet) => (
+                <SelectItem key={sheet} value={sheet}>
+                  {sheet}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="col-span-2">
+          <Label>Rótulo</Label>
+          <Input
+            defaultValue={output.nameCell || ""}
+            placeholder="ej: A25"
+            onBlur={(e) => onUpdate({ ...output, nameCell: e.target.value })}
+          />
+        </div>
+        <div className="col-span-2">
+          <Label>Valor por defecto</Label>
+          <Input
+            defaultValue={output.valueCell || ""}
+            placeholder="ej: B25"
+            onBlur={(e) => onUpdate({ ...output, valueCell: e.target.value })}
+          />
+        </div>
+        <div className="col-span-2">
+          <Label>Tipo</Label>
+          <Select
+            value={output.outputTypeId?.toString() || ""}
+            onValueChange={(value) => onUpdate({ ...output, outputTypeId: parseInt(value) })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-background border shadow-lg z-50">
+              {outputTypes.map((type) => (
+                <SelectItem key={type.id} value={type.id?.toString() || "0"}>
+                  {type.outputType}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="col-span-3"></div>
+        <div className="col-span-1">
+          <Label>Acción</Label>
+          <div className="flex gap-1">
+            <Button variant="ghost" size="sm" onClick={() => onUpdate(output)}>
+              <Save className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onDelete(output.id)}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Variable de producción - Línea separada */}
+      <div className="flex items-center gap-4 mt-4 pt-4 border-t">
+        <Label className="w-48 text-sm font-medium">Variable de producción</Label>
+        <Select
+          value={getMappedVariableId(output.nameCell) || "none"}
+          onValueChange={(value) => {
+            if (selectedProduct) {
+              upsertVariableMapping({
+                easyquoteProductId: selectedProduct.id,
+                productName: selectedProduct.productName,
+                promptOrOutputName: output.nameCell,
+                variableId: value === "none" ? null : value,
+              });
+            }
+          }}
+        >
+          <SelectTrigger className="flex-1">
+            <SelectValue placeholder="Sin variable asignada" />
+          </SelectTrigger>
+          <SelectContent className="bg-background border shadow-lg z-50">
+            <SelectItem value="none">Sin variable asignada</SelectItem>
+            {productionVariables
+              .filter((v) => {
+                const mappedNames = getMappedNames();
+                const currentMapping = getMappedVariableId(output.nameCell);
+                return !mappedNames.includes(output.nameCell) || (currentMapping && v.id === currentMapping);
+              })
+              .map((variable) => (
+                <SelectItem key={variable.id} value={variable.id}>
+                  {variable.name}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
 }
 
 export default function ProductManagement() {
@@ -413,62 +599,109 @@ export default function ProductManagement() {
     staleTime: 1000 * 60 * 5 // 5 minutes
   });
 
-  // Orden estable para outputs por tipo y celda
-  const orderedProductOutputs = useMemo(() => {
-    // Prioridad por tipo (imágenes al final)
-    const typePriority: Record<string, number> = {
-      'price': 1,
-      'instructions': 2,
-      'quantity': 3,
-      'workflow': 4,
-      'productimage': 99, // Imágenes al final
-    };
+  // Estado local para el orden de outputs (drag & drop)
+  const [localOutputOrder, setLocalOutputOrder] = useState<string[]>([]);
 
-    const getTypePriority = (type?: string | null) => {
-      const normalized = (type ?? "").toLowerCase().trim();
-      return typePriority[normalized] ?? 50; // Resto en el medio
-    };
-
-    const colToNumber = (col: string) => {
-      return col
-        .toUpperCase()
-        .split("")
-        .reduce((acc, ch) => acc * 26 + (ch.charCodeAt(0) - 64), 0);
-    };
-
-    const parseCellRef = (cell?: string | null) => {
-      const raw = (cell ?? "").trim();
-      const match = raw.match(/^\$?([A-Za-z]+)\$?(\d+)$/);
-      if (!match) return null;
-      return {
-        col: colToNumber(match[1]),
-        row: Number.parseInt(match[2], 10),
+  // Sincronizar orden local cuando cambian los outputs del API
+  useEffect(() => {
+    if (productOutputs.length > 0 && localOutputOrder.length === 0) {
+      // Orden inicial basado en tipo y celda
+      const typePriority: Record<string, number> = {
+        'price': 1,
+        'instructions': 2,
+        'quantity': 3,
+        'workflow': 4,
+        'productimage': 99,
       };
-    };
 
-    return [...productOutputs].sort((a, b) => {
-      // 1. Ordenar por prioridad de tipo
-      const priorityA = getTypePriority(a.type);
-      const priorityB = getTypePriority(b.type);
-      if (priorityA !== priorityB) return priorityA - priorityB;
+      const getTypePriority = (type?: string | null) => {
+        const normalized = (type ?? "").toLowerCase().trim();
+        return typePriority[normalized] ?? 50;
+      };
 
-      // 2. Para tipos con misma prioridad (resto), ordenar por celda
-      const cellA = parseCellRef(a.nameCell) ?? parseCellRef(a.valueCell);
-      const cellB = parseCellRef(b.nameCell) ?? parseCellRef(b.valueCell);
+      const colToNumber = (col: string) => {
+        return col.toUpperCase().split("").reduce((acc, ch) => acc * 26 + (ch.charCodeAt(0) - 64), 0);
+      };
 
-      if (cellA && !cellB) return -1;
-      if (!cellA && cellB) return 1;
+      const parseCellRef = (cell?: string | null) => {
+        const raw = (cell ?? "").trim();
+        const match = raw.match(/^\$?([A-Za-z]+)\$?(\d+)$/);
+        if (!match) return null;
+        return { col: colToNumber(match[1]), row: Number.parseInt(match[2], 10) };
+      };
 
-      if (cellA && cellB) {
-        // Orden por fila primero, luego columna (A8 < B8 < A9)
-        if (cellA.row !== cellB.row) return cellA.row - cellB.row;
-        if (cellA.col !== cellB.col) return cellA.col - cellB.col;
+      const sorted = [...productOutputs].sort((a, b) => {
+        const priorityA = getTypePriority(a.type);
+        const priorityB = getTypePriority(b.type);
+        if (priorityA !== priorityB) return priorityA - priorityB;
+
+        const cellA = parseCellRef(a.nameCell) ?? parseCellRef(a.valueCell);
+        const cellB = parseCellRef(b.nameCell) ?? parseCellRef(b.valueCell);
+
+        if (cellA && !cellB) return -1;
+        if (!cellA && cellB) return 1;
+
+        if (cellA && cellB) {
+          if (cellA.row !== cellB.row) return cellA.row - cellB.row;
+          if (cellA.col !== cellB.col) return cellA.col - cellB.col;
+        }
+
+        return (a.id || "").localeCompare(b.id || "");
+      });
+
+      setLocalOutputOrder(sorted.map(o => o.id));
+    }
+  }, [productOutputs, localOutputOrder.length]);
+
+  // Reset orden local cuando cambia el producto seleccionado
+  useEffect(() => {
+    setLocalOutputOrder([]);
+  }, [selectedProduct?.id]);
+
+  // Outputs ordenados según el orden local (drag & drop)
+  const orderedProductOutputs = useMemo(() => {
+    if (localOutputOrder.length === 0) return productOutputs;
+    
+    const outputMap = new Map(productOutputs.map(o => [o.id, o]));
+    const ordered: typeof productOutputs = [];
+    
+    // Añadir outputs en el orden guardado
+    for (const id of localOutputOrder) {
+      const output = outputMap.get(id);
+      if (output) {
+        ordered.push(output);
+        outputMap.delete(id);
       }
+    }
+    
+    // Añadir cualquier output nuevo que no estaba en el orden local
+    for (const output of outputMap.values()) {
+      ordered.push(output);
+    }
+    
+    return ordered;
+  }, [productOutputs, localOutputOrder]);
 
-      // Fallback por id
-      return (a.id || "").localeCompare(b.id || "");
-    });
-  }, [productOutputs]);
+  // Sensores para drag & drop
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handler para drag end
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      setLocalOutputOrder((items) => {
+        const oldIndex = items.indexOf(active.id as string);
+        const newIndex = items.indexOf(over.id as string);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
 
   // Mutations para prompts y outputs
   const createPromptMutation = useMutation({
@@ -2087,148 +2320,37 @@ export default function ProductManagement() {
                     <p className="text-muted-foreground">No hay datos de salida configurados</p>
                   </div>
                 ) : (
-                  <ScrollArea className="h-[500px] pr-4">
-                    <div className="space-y-3">
-                      {orderedProductOutputs.map((output, index) => (
-                      <div key={output.id} className="p-4 border rounded-lg">
-                        <div className="mb-4">
-                          <h4 className="font-medium">Campo nº {index + 1}</h4>
-                        </div>
-                        
-                        <div className="grid grid-cols-12 gap-2 items-end">
-                          <div className="col-span-2">
-                            <Label>Hoja</Label>
-                            <Select
-                              value={output.sheet || ""}
-                              onValueChange={(value) => {
-                                const updatedOutput = { ...output, sheet: value };
-                                updateOutputMutation.mutate(updatedOutput);
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder={output.sheet || "Seleccionar hoja"} />
-                              </SelectTrigger>
-                              <SelectContent className="bg-background border shadow-lg z-50">
-                                {output.sheet && !excelSheets.includes(output.sheet) && (
-                                  <SelectItem value={output.sheet}>
-                                    {output.sheet}
-                                  </SelectItem>
-                                )}
-                                {excelSheets.map((sheet) => (
-                                  <SelectItem key={sheet} value={sheet}>
-                                    {sheet}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="col-span-2">
-                            <Label>Rótulo</Label>
-                            <Input
-                              defaultValue={output.nameCell || ""}
-                              placeholder="ej: A25"
-                              onBlur={(e) => {
-                                const updatedOutput = { ...output, nameCell: e.target.value };
-                                updateOutputMutation.mutate(updatedOutput);
-                              }}
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext
+                      items={orderedProductOutputs.map(o => o.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <ScrollArea className="h-[500px] pr-4">
+                        <div className="space-y-3">
+                          {orderedProductOutputs.map((output, index) => (
+                            <SortableOutputItem
+                              key={output.id}
+                              output={output}
+                              index={index}
+                              excelSheets={excelSheets}
+                              outputTypes={outputTypes}
+                              onUpdate={(updatedOutput) => updateOutputMutation.mutate(updatedOutput)}
+                              onDelete={deleteOutput}
+                              getMappedVariableId={getMappedVariableId}
+                              getMappedNames={getMappedNames}
+                              upsertVariableMapping={upsertVariableMapping}
+                              productionVariables={productionVariables}
+                              selectedProduct={selectedProduct}
                             />
-                          </div>
-                          <div className="col-span-2">
-                            <Label>Valor por defecto</Label>
-                            <Input
-                              defaultValue={output.valueCell || ""}
-                              placeholder="ej: B25"
-                              onBlur={(e) => {
-                                const updatedOutput = { ...output, valueCell: e.target.value };
-                                updateOutputMutation.mutate(updatedOutput);
-                              }}
-                            />
-                          </div>
-                          <div className="col-span-2">
-                            <Label>Tipo</Label>
-                            <Select
-                              value={output.outputTypeId?.toString() || ""}
-                              onValueChange={(value) => {
-                                const updatedOutput = { ...output, outputTypeId: parseInt(value) };
-                                updateOutputMutation.mutate(updatedOutput);
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="bg-background border shadow-lg z-50">
-                                {outputTypes.map((type) => (
-                                  <SelectItem key={type.id} value={type.id?.toString() || "0"}>
-                                    {type.outputType}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="col-span-3"></div>
-                          <div className="col-span-1">
-                            <Label>Acción</Label>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  updateOutputMutation.mutate(output);
-                                }}
-                              >
-                                <Save className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => deleteOutput(output.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
+                          ))}
                         </div>
-
-                        {/* Variable de producción - Línea separada */}
-                        <div className="flex items-center gap-4 mt-4 pt-4 border-t">
-                          <Label className="w-48 text-sm font-medium">Variable de producción</Label>
-                          <Select
-                            value={getMappedVariableId(output.nameCell) || "none"}
-                            onValueChange={(value) => {
-                              if (selectedProduct) {
-                                upsertVariableMapping({
-                                  easyquoteProductId: selectedProduct.id,
-                                  productName: selectedProduct.productName,
-                                  promptOrOutputName: output.nameCell,
-                                  variableId: value === "none" ? null : value,
-                                });
-                              }
-                            }}
-                          >
-                            <SelectTrigger className="flex-1">
-                              <SelectValue placeholder="Sin variable asignada" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-background border shadow-lg z-50">
-                              <SelectItem value="none">Sin variable asignada</SelectItem>
-                              {productionVariables
-                                .filter(v => {
-                                  const mappedNames = getMappedNames();
-                                  const currentMapping = getMappedVariableId(output.nameCell);
-                                  return !mappedNames.includes(output.nameCell) || 
-                                         (currentMapping && v.id === currentMapping);
-                                })
-                                .map((variable) => (
-                                  <SelectItem key={variable.id} value={variable.id}>
-                                    {variable.name}
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    ))}
-                    </div>
-                  </ScrollArea>
+                      </ScrollArea>
+                    </SortableContext>
+                  </DndContext>
                 )}
               </TabsContent>
             </Tabs>
