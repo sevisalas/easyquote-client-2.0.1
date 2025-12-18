@@ -973,6 +973,41 @@ export type Database = {
           },
         ]
       }
+      product_output_order: {
+        Row: {
+          created_at: string
+          easyquote_product_id: string
+          id: string
+          organization_id: string
+          output_order: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          easyquote_product_id: string
+          id?: string
+          organization_id: string
+          output_order?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          easyquote_product_id?: string
+          id?: string
+          organization_id?: string
+          output_order?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_output_order_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_prompt_settings: {
         Row: {
           created_at: string
