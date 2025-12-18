@@ -406,7 +406,8 @@ export default function ProductTestPage() {
     }));
   }, [outputs, nameCellByName]);
 
-  // Order outputs: 1) Price, 2) Quantity, 3) Instructions, 4) Workflow, 5) Generic, resto como venga
+  // Order outputs por rangos: 1) Price, 2) Quantity, 3) Instructions, 4) Workflow, 5) Generic, 6) resto.
+  // Dentro de cada rango: por hoja + nameCell (A1, B2, ...). Si no hay celda, por label.
   const sortedOutputs = useMemo(() => {
     const typePriority: Record<string, number> = {
       price: 1,
@@ -418,16 +419,63 @@ export default function ProductTestPage() {
       generic: 5,
     };
 
-    // Garantiza orden estable: dentro de la misma prioridad se respeta el orden original
+    const normalizeType = (o: any) =>
+      String(o?.outputType ?? o?.type ?? "")
+        .trim()
+        .toLowerCase();
+
+    const normalizeSheet = (o: any) => String(o?.sheet ?? "").trim().toUpperCase();
+
+    const normalizeCell = (v: any) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+
+    const parseCell = (cellRaw: string) => {
+      const cell = normalizeCell(cellRaw);
+      const m = cell.match(/^([A-Z]+)(\d+)$/);
+      if (!m) return null;
+      const [, letters, rowStr] = m;
+      const row = Number(rowStr);
+      const col = letters.split("").reduce((acc, ch) => acc * 26 + (ch.charCodeAt(0) - 64), 0); // A=1
+      if (!Number.isFinite(row) || row <= 0 || col <= 0) return null;
+      return { col, row };
+    };
+
     return allOutputs
       .map((o, index) => {
-        const type = String((o as any)?.outputType ?? (o as any)?.type ?? "")
-          .trim()
-          .toLowerCase();
+        const type = normalizeType(o);
         const priority = typePriority[type] ?? 999;
-        return { o, index, priority };
+
+        const sheetKey = normalizeSheet(o);
+        const nameCellKey = normalizeCell(o?.nameCell);
+        const parsed = nameCellKey ? parseCell(nameCellKey) : null;
+
+        const labelKey = String(o?.label ?? o?.name ?? "")
+          .trim()
+          .toUpperCase();
+
+        return { o, index, priority, sheetKey, nameCellKey, parsed, labelKey };
       })
-      .sort((a, b) => (a.priority - b.priority) || (a.index - b.index))
+      .sort((a, b) => {
+        // 1) Orden por rango (tipo)
+        if (a.priority !== b.priority) return a.priority - b.priority;
+
+        // 2) Dentro del rango: hoja
+        if (a.sheetKey !== b.sheetKey) return a.sheetKey.localeCompare(b.sheetKey);
+
+        // 3) Dentro del rango: celda (col/row). Si uno no tiene celda, va al final.
+        const aHas = !!a.parsed;
+        const bHas = !!b.parsed;
+        if (aHas !== bHas) return aHas ? -1 : 1;
+        if (a.parsed && b.parsed) {
+          if (a.parsed.col !== b.parsed.col) return a.parsed.col - b.parsed.col;
+          if (a.parsed.row !== b.parsed.row) return a.parsed.row - b.parsed.row;
+        }
+
+        // 4) Fallback: label
+        if (a.labelKey !== b.labelKey) return a.labelKey.localeCompare(b.labelKey);
+
+        // 5) Estable
+        return a.index - b.index;
+      })
       .map((x) => x.o);
   }, [allOutputs]);
 
