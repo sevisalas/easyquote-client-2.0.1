@@ -389,26 +389,10 @@ export default function ProductTestPage() {
     return outputs;
   }, [outputs]);
 
-  // Apply saved order and separate text outputs from image outputs
+  // Show outputs exactly as they come from the API - no ordering applied
   const sortedOutputs = useMemo(() => {
-    if (!savedOutputOrder || savedOutputOrder.length === 0) {
-      return allOutputs;
-    }
-
-    const normalizeKey = (v: any) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
-
-    // savedOutputOrder stores output nameCell values from ProductManagement (e.g. "E6")
-    const orderMap = new Map(savedOutputOrder.map((k: string, idx: number) => [normalizeKey(k), idx]));
-
-    return [...allOutputs].sort((a, b) => {
-      const aKey = normalizeKey((a as any)?.nameCell || (a as any)?.name || (a as any)?.label || "");
-      const bKey = normalizeKey((b as any)?.nameCell || (b as any)?.name || (b as any)?.label || "");
-
-      const aIdx = aKey && orderMap.has(aKey) ? orderMap.get(aKey)! : 999;
-      const bIdx = bKey && orderMap.has(bKey) ? orderMap.get(bKey)! : 999;
-      return aIdx - bIdx;
-    });
-  }, [allOutputs, savedOutputOrder]);
+    return allOutputs;
+  }, [allOutputs]);
 
   const textOutputs = useMemo(() => {
     return sortedOutputs.filter((o: any) => {
