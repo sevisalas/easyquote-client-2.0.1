@@ -602,9 +602,10 @@ export default function ProductManagement() {
 
   // Estado local para el orden de outputs (drag & drop)
   const [localOutputOrder, setLocalOutputOrder] = useState<string[]>([]);
+  const [orderInitializedForProduct, setOrderInitializedForProduct] = useState<string | null>(null);
 
   // Cargar orden guardado desde Supabase
-  const { data: savedOutputOrder } = useQuery({
+  const { data: savedOutputOrder, isFetched: savedOrderFetched } = useQuery({
     queryKey: ["product-output-order", selectedProduct?.id, organizationId],
     queryFn: async () => {
       if (!selectedProduct?.id || !organizationId) return null;
@@ -667,67 +668,84 @@ export default function ProductManagement() {
     }
   });
 
-  // Sincronizar orden local cuando cambian los outputs del API o el orden guardado
-  useEffect(() => {
-    if (productOutputs.length > 0 && localOutputOrder.length === 0) {
-      // Si hay orden guardado en Supabase, usarlo
-      if (savedOutputOrder && savedOutputOrder.length > 0) {
-        setLocalOutputOrder(savedOutputOrder);
-        return;
-      }
-
-      // Si no hay orden guardado, usar orden basado en tipo y celda
-      const typePriority: Record<string, number> = {
-        'price': 1,
-        'instructions': 2,
-        'quantity': 3,
-        'workflow': 4,
-        'productimage': 99,
-      };
-
-      const getTypePriority = (type?: string | null) => {
-        const normalized = (type ?? "").toLowerCase().trim();
-        return typePriority[normalized] ?? 50;
-      };
-
-      const colToNumber = (col: string) => {
-        return col.toUpperCase().split("").reduce((acc, ch) => acc * 26 + (ch.charCodeAt(0) - 64), 0);
-      };
-
-      const parseCellRef = (cell?: string | null) => {
-        const raw = (cell ?? "").trim();
-        const match = raw.match(/^\$?([A-Za-z]+)\$?(\d+)$/);
-        if (!match) return null;
-        return { col: colToNumber(match[1]), row: Number.parseInt(match[2], 10) };
-      };
-
-      const sorted = [...productOutputs].sort((a, b) => {
-        const priorityA = getTypePriority(a.type);
-        const priorityB = getTypePriority(b.type);
-        if (priorityA !== priorityB) return priorityA - priorityB;
-
-        const cellA = parseCellRef(a.nameCell) ?? parseCellRef(a.valueCell);
-        const cellB = parseCellRef(b.nameCell) ?? parseCellRef(b.valueCell);
-
-        if (cellA && !cellB) return -1;
-        if (!cellA && cellB) return 1;
-
-        if (cellA && cellB) {
-          if (cellA.row !== cellB.row) return cellA.row - cellB.row;
-          if (cellA.col !== cellB.col) return cellA.col - cellB.col;
-        }
-
-        return (a.id || "").localeCompare(b.id || "");
-      });
-
-      setLocalOutputOrder(sorted.map(o => o.id));
-    }
-  }, [productOutputs, localOutputOrder.length, savedOutputOrder]);
-
-  // Reset orden local cuando cambia el producto seleccionado
+  // Reset cuando cambia el producto seleccionado
   useEffect(() => {
     setLocalOutputOrder([]);
+    setOrderInitializedForProduct(null);
   }, [selectedProduct?.id]);
+
+  // Sincronizar orden local - espera a que llegue la consulta de Supabase
+  useEffect(() => {
+    // Solo procesar si tenemos outputs y la consulta de orden guardado ha terminado
+    if (productOutputs.length === 0 || !savedOrderFetched) return;
+    
+    // Solo inicializar una vez por producto
+    if (orderInitializedForProduct === selectedProduct?.id) return;
+    
+    // Marcar como inicializado para este producto
+    setOrderInitializedForProduct(selectedProduct?.id || null);
+
+    // Si hay orden guardado en Supabase, usarlo
+    if (savedOutputOrder && savedOutputOrder.length > 0) {
+      // Filtrar solo IDs que existen en productOutputs
+      const validIds = new Set(productOutputs.map(o => o.id));
+      const filteredOrder = savedOutputOrder.filter((id: string) => validIds.has(id));
+      
+      // Añadir nuevos outputs que no están en el orden guardado
+      const newOutputIds = productOutputs
+        .filter(o => !savedOutputOrder.includes(o.id))
+        .map(o => o.id);
+      
+      setLocalOutputOrder([...filteredOrder, ...newOutputIds]);
+      return;
+    }
+
+    // Si no hay orden guardado, usar orden basado en tipo y celda
+    const typePriority: Record<string, number> = {
+      'price': 1,
+      'instructions': 2,
+      'quantity': 3,
+      'workflow': 4,
+      'productimage': 99,
+    };
+
+    const getTypePriority = (type?: string | null) => {
+      const normalized = (type ?? "").toLowerCase().trim();
+      return typePriority[normalized] ?? 50;
+    };
+
+    const colToNumber = (col: string) => {
+      return col.toUpperCase().split("").reduce((acc, ch) => acc * 26 + (ch.charCodeAt(0) - 64), 0);
+    };
+
+    const parseCellRef = (cell?: string | null) => {
+      const raw = (cell ?? "").trim();
+      const match = raw.match(/^\$?([A-Za-z]+)\$?(\d+)$/);
+      if (!match) return null;
+      return { col: colToNumber(match[1]), row: Number.parseInt(match[2], 10) };
+    };
+
+    const sorted = [...productOutputs].sort((a, b) => {
+      const priorityA = getTypePriority(a.type);
+      const priorityB = getTypePriority(b.type);
+      if (priorityA !== priorityB) return priorityA - priorityB;
+
+      const cellA = parseCellRef(a.nameCell) ?? parseCellRef(a.valueCell);
+      const cellB = parseCellRef(b.nameCell) ?? parseCellRef(b.valueCell);
+
+      if (cellA && !cellB) return -1;
+      if (!cellA && cellB) return 1;
+
+      if (cellA && cellB) {
+        if (cellA.row !== cellB.row) return cellA.row - cellB.row;
+        if (cellA.col !== cellB.col) return cellA.col - cellB.col;
+      }
+
+      return (a.id || "").localeCompare(b.id || "");
+    });
+
+    setLocalOutputOrder(sorted.map(o => o.id));
+  }, [productOutputs, savedOutputOrder, savedOrderFetched, orderInitializedForProduct, selectedProduct?.id]);
 
   // Outputs ordenados según el orden local (drag & drop)
   const orderedProductOutputs = useMemo(() => {
