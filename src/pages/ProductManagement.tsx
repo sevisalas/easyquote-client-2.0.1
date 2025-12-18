@@ -367,8 +367,8 @@ export default function ProductManagement() {
   const [excelSheets, setExcelSheets] = useState<string[]>([]);
   const [availableExcelFiles, setAvailableExcelFiles] = useState<EasyQuoteExcelFile[]>([]);
   
-  const { isSuperAdmin, isOrgAdmin, organization } = useSubscription();
-  const organizationId = organization?.id;
+  const { isSuperAdmin, isOrgAdmin, organization, membership } = useSubscription();
+  const organizationId = organization?.id || membership?.organization_id;
   const queryClient = useQueryClient();
 
   // Hooks for categories
