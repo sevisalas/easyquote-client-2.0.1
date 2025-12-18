@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
+import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,8 +11,10 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import PromptsForm from "@/components/quotes/PromptsForm";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+
 const fetchProducts = async () => {
-  const token = sessionStorage.getItem("easyquote_token");
+  // Use getEasyQuoteToken which validates and auto-refreshes expired tokens
+  const token = await getEasyQuoteToken();
   if (!token) throw new Error("No hay token de EasyQuote disponible. Por favor, inicia sesión nuevamente.");
   const {
     data,
@@ -88,13 +90,15 @@ export default function ProductTestPage() {
       setIsInitialLoad(true);
       setHasUserModifiedPrompts(false);
       setDiagnosticResult(null);
-      const token = sessionStorage.getItem("easyquote_token");
+      
+      // Use getEasyQuoteToken which validates and auto-refreshes expired tokens
+      const token = await getEasyQuoteToken();
       if (!token) {
-        console.error("🔴 No EasyQuote token found in sessionStorage");
+        console.error("🔴 No EasyQuote token available");
         setIsLoadingProduct(false);
         return;
       }
-      console.log("✅ EasyQuote token found");
+      console.log("✅ EasyQuote token obtained");
       try {
         // Get product details
         const selectedProduct = products.find((p: any) => p.id === productId);
@@ -157,7 +161,7 @@ export default function ProductTestPage() {
     refetch: refetchPricing
   } = useQuery({
     queryKey: ["easyquote-pricing", productId, debouncedPromptValues],
-    enabled: !!sessionStorage.getItem("easyquote_token") && !!productId && !isInitialLoad && hasUserModifiedPrompts,
+    enabled: !!productId && !isInitialLoad && hasUserModifiedPrompts,
     refetchOnWindowFocus: false,
     retry: 1,
     staleTime: 30 * 1000,
@@ -165,7 +169,8 @@ export default function ProductTestPage() {
     gcTime: 60 * 1000,
     // 1 minute cache
     queryFn: async () => {
-      const token = sessionStorage.getItem("easyquote_token");
+      // Use getEasyQuoteToken which validates and auto-refreshes expired tokens
+      const token = await getEasyQuoteToken();
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
       console.log("Making pricing call with inputs:", debouncedPromptValues);
 
