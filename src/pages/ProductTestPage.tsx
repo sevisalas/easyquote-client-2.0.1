@@ -391,15 +391,15 @@ export default function ProductTestPage() {
       return allOutputs;
     }
 
-    // savedOutputOrder stores EasyQuote output definition IDs (stable) from ProductManagement
-    const orderMap = new Map(savedOutputOrder.map((id: string, idx: number) => [String(id), idx]));
+    // savedOutputOrder stores output names from ProductManagement
+    const orderMap = new Map(savedOutputOrder.map((name: string, idx: number) => [String(name), idx]));
 
     return [...allOutputs].sort((a, b) => {
-      const aKey = String((a as any)?.stableId ?? "");
-      const bKey = String((b as any)?.stableId ?? "");
+      const aName = String((a as any)?.name ?? "");
+      const bName = String((b as any)?.name ?? "");
 
-      const aIdx = aKey && orderMap.has(aKey) ? orderMap.get(aKey)! : 999;
-      const bIdx = bKey && orderMap.has(bKey) ? orderMap.get(bKey)! : 999;
+      const aIdx = aName && orderMap.has(aName) ? orderMap.get(aName)! : 999;
+      const bIdx = bName && orderMap.has(bName) ? orderMap.get(bName)! : 999;
       return aIdx - bIdx;
     });
   }, [allOutputs, savedOutputOrder]);

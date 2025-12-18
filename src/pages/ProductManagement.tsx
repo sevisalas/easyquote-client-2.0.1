@@ -685,15 +685,20 @@ export default function ProductManagement() {
     // Marcar como inicializado para este producto
     setOrderInitializedForProduct(selectedProduct?.id || null);
 
-    // Si hay orden guardado en Supabase, usarlo
+    // Si hay orden guardado en Supabase, usarlo (guardado por nameCell)
     if (savedOutputOrder && savedOutputOrder.length > 0) {
-      // Filtrar solo IDs que existen en productOutputs
-      const validIds = new Set(productOutputs.map(o => o.id));
-      const filteredOrder = savedOutputOrder.filter((id: string) => validIds.has(id));
+      // Crear mapa de nameCell -> output
+      const outputByName = new Map<string, ProductOutput>(productOutputs.map(o => [o.nameCell, o]));
+      
+      // Filtrar solo names que existen en productOutputs
+      const filteredOrder = savedOutputOrder
+        .filter((name: string) => outputByName.has(name))
+        .map((name: string) => outputByName.get(name)!.id);
       
       // Añadir nuevos outputs que no están en el orden guardado
+      const savedNames = new Set<string>(savedOutputOrder);
       const newOutputIds = productOutputs
-        .filter(o => !savedOutputOrder.includes(o.id))
+        .filter(o => !savedNames.has(o.nameCell))
         .map(o => o.id);
       
       setLocalOutputOrder([...filteredOrder, ...newOutputIds]);
@@ -745,6 +750,7 @@ export default function ProductManagement() {
     });
 
     setLocalOutputOrder(sorted.map(o => o.id));
+    // Nota: localOutputOrder usa IDs internamente, pero guardamos por name en Supabase
   }, [productOutputs, savedOutputOrder, savedOrderFetched, orderInitializedForProduct, selectedProduct?.id]);
 
   // Outputs ordenados según el orden local (drag & drop)
@@ -779,7 +785,7 @@ export default function ProductManagement() {
     })
   );
 
-  // Handler para drag end - guarda en Supabase
+  // Handler para drag end - guarda en Supabase (por name, no por id)
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     
@@ -789,8 +795,14 @@ export default function ProductManagement() {
         const newIndex = items.indexOf(over.id as string);
         const newOrder = arrayMove(items, oldIndex, newIndex);
         
-        // Guardar el nuevo orden en Supabase
-        saveOutputOrderMutation.mutate(newOrder);
+        // Convertir IDs a nameCells para guardar en Supabase
+        const outputById = new Map<string, ProductOutput>(productOutputs.map(o => [o.id, o]));
+        const orderByName = newOrder
+          .map(id => outputById.get(id)?.nameCell)
+          .filter((name): name is string => !!name);
+        
+        // Guardar el nuevo orden en Supabase (por name)
+        saveOutputOrderMutation.mutate(orderByName);
         
         return newOrder;
       });
