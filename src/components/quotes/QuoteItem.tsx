@@ -820,13 +820,17 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     if (!savedOutputOrder || savedOutputOrder.length === 0) {
       return outputs;
     }
-    // savedOutputOrder contiene nameCells (los rótulos de los outputs)
-    const orderMap = new Map(savedOutputOrder.map((name: string, idx: number) => [String(name), idx]));
+
+    const normalizeKey = (v: any) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+
+    // savedOutputOrder contiene nameCells (los rótulos/celdas de los outputs)
+    const orderMap = new Map(savedOutputOrder.map((k: string, idx: number) => [normalizeKey(k), idx]));
+
     return [...outputs].sort((a: any, b: any) => {
-      const aName = String(a?.name ?? "");
-      const bName = String(b?.name ?? "");
-      const aIdx = aName && orderMap.has(aName) ? orderMap.get(aName)! : 999;
-      const bIdx = bName && orderMap.has(bName) ? orderMap.get(bName)! : 999;
+      const aKey = normalizeKey(a?.nameCell || a?.name || a?.label || "");
+      const bKey = normalizeKey(b?.nameCell || b?.name || b?.label || "");
+      const aIdx = aKey && orderMap.has(aKey) ? orderMap.get(aKey)! : 999;
+      const bIdx = bKey && orderMap.has(bKey) ? orderMap.get(bKey)! : 999;
       return aIdx - bIdx;
     });
   }, [outputs, savedOutputOrder]);

@@ -687,20 +687,25 @@ export default function ProductManagement() {
 
     // Si hay orden guardado en Supabase, usarlo (guardado por nameCell)
     if (savedOutputOrder && savedOutputOrder.length > 0) {
-      // Crear mapa de nameCell -> output
-      const outputByName = new Map<string, ProductOutput>(productOutputs.map(o => [o.nameCell, o]));
-      
-      // Filtrar solo names que existen en productOutputs
+      const normalizeKey = (v: any) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+
+      // Crear mapa de nameCell(normalizado) -> output
+      const outputByName = new Map<string, ProductOutput>(
+        productOutputs.map((o) => [normalizeKey(o.nameCell), o])
+      );
+
+      // Filtrar solo keys que existen en productOutputs
       const filteredOrder = savedOutputOrder
-        .filter((name: string) => outputByName.has(name))
-        .map((name: string) => outputByName.get(name)!.id);
-      
+        .map((k: string) => normalizeKey(k))
+        .filter((k: string) => outputByName.has(k))
+        .map((k: string) => outputByName.get(k)!.id);
+
       // Añadir nuevos outputs que no están en el orden guardado
-      const savedNames = new Set<string>(savedOutputOrder);
+      const savedNames = new Set<string>(savedOutputOrder.map((k: string) => normalizeKey(k)));
       const newOutputIds = productOutputs
-        .filter(o => !savedNames.has(o.nameCell))
-        .map(o => o.id);
-      
+        .filter((o) => !savedNames.has(normalizeKey(o.nameCell)))
+        .map((o) => o.id);
+
       setLocalOutputOrder([...filteredOrder, ...newOutputIds]);
       return;
     }
@@ -785,25 +790,27 @@ export default function ProductManagement() {
     })
   );
 
-  // Handler para drag end - guarda en Supabase (por name, no por id)
+  // Handler para drag end - guarda en Supabase (por nameCell)
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    
+
     if (over && active.id !== over.id) {
       setLocalOutputOrder((items) => {
         const oldIndex = items.indexOf(active.id as string);
         const newIndex = items.indexOf(over.id as string);
         const newOrder = arrayMove(items, oldIndex, newIndex);
-        
-        // Convertir IDs a nameCells para guardar en Supabase
-        const outputById = new Map<string, ProductOutput>(productOutputs.map(o => [o.id, o]));
+
+        // Convertir IDs a nameCells para guardar en Supabase (normalizados)
+        const normalizeKey = (v: any) => String(v ?? "").replace(/\$/g, "").trim();
+        const outputById = new Map<string, ProductOutput>(productOutputs.map((o) => [o.id, o]));
         const orderByName = newOrder
-          .map(id => outputById.get(id)?.nameCell)
-          .filter((name): name is string => !!name);
-        
-        // Guardar el nuevo orden en Supabase (por name)
+          .map((id) => outputById.get(id)?.nameCell)
+          .filter((name): name is string => !!name)
+          .map((name) => normalizeKey(name));
+
+        // Guardar el nuevo orden en Supabase
         saveOutputOrderMutation.mutate(orderByName);
-        
+
         return newOrder;
       });
     }

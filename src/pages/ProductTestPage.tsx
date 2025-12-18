@@ -370,6 +370,10 @@ export default function ProductTestPage() {
       ? outputValues.map((o: any) => ({
           // Some API responses include a stable output id
           stableId: String(o?.id ?? o?.outputId ?? o?.outputID ?? "").trim(),
+          // Some responses include sheet/cell coordinates (useful for ordering)
+          sheet: String(o?.sheet ?? "").trim(),
+          nameCell: String(o?.nameCell ?? o?.outputNameCell ?? "").trim(),
+          valueCell: String(o?.valueCell ?? o?.outputValueCell ?? "").trim(),
           label: o.label || o.name || o.outputText || o.text || o.outputName || "Output",
           name: o.name || o.label || o.outputName || "",
           value: o.value ?? o.currentValue ?? o.outputValue ?? o.result ?? "",
@@ -391,15 +395,17 @@ export default function ProductTestPage() {
       return allOutputs;
     }
 
-    // savedOutputOrder stores output names from ProductManagement
-    const orderMap = new Map(savedOutputOrder.map((name: string, idx: number) => [String(name), idx]));
+    const normalizeKey = (v: any) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+
+    // savedOutputOrder stores output nameCell values from ProductManagement (e.g. "E6")
+    const orderMap = new Map(savedOutputOrder.map((k: string, idx: number) => [normalizeKey(k), idx]));
 
     return [...allOutputs].sort((a, b) => {
-      const aName = String((a as any)?.name ?? "");
-      const bName = String((b as any)?.name ?? "");
+      const aKey = normalizeKey((a as any)?.nameCell || (a as any)?.name || (a as any)?.label || "");
+      const bKey = normalizeKey((b as any)?.nameCell || (b as any)?.name || (b as any)?.label || "");
 
-      const aIdx = aName && orderMap.has(aName) ? orderMap.get(aName)! : 999;
-      const bIdx = bName && orderMap.has(bName) ? orderMap.get(bName)! : 999;
+      const aIdx = aKey && orderMap.has(aKey) ? orderMap.get(aKey)! : 999;
+      const bIdx = bKey && orderMap.has(bKey) ? orderMap.get(bKey)! : 999;
       return aIdx - bIdx;
     });
   }, [allOutputs, savedOutputOrder]);
