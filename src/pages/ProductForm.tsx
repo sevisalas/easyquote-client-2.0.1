@@ -29,13 +29,25 @@ export default function ProductForm() {
   const [useNewFile, setUseNewFile] = useState(true);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   
-  // Estado para producto compuesto
-  const [isComposite, setIsComposite] = useState(false);
-  const [enabledComponents, setEnabledComponents] = useState({
-    cubierta: true,
-    interior_1: true, // Siempre activo si es compuesto
-    interior_2: false,
-  });
+  // Estado para tipo de producto
+  type ProductType = 'simple' | 'composite' | 'preset';
+  const [productType, setProductType] = useState<ProductType>('simple');
+  const [selectedPreset, setSelectedPreset] = useState<string>('encuadernado');
+  const [customComponents, setCustomComponents] = useState<string[]>([]);
+  const [newComponentName, setNewComponentName] = useState('');
+
+  // Presets predefinidos
+  const PRESETS = {
+    encuadernado: {
+      label: 'Encuadernado',
+      description: 'Cubierta + Interior(es)',
+      components: ['cubierta', 'interior_1', 'interior_2'],
+      defaultEnabled: ['cubierta', 'interior_1'],
+    },
+  };
+
+  // Componentes habilitados según el preset
+  const [presetEnabledComponents, setPresetEnabledComponents] = useState<string[]>(['cubierta', 'interior_1']);
 
   // Obtener organization_id del usuario actual
   const { data: userRole } = useQuery({
@@ -55,11 +67,16 @@ export default function ProductForm() {
 
   // Función para guardar configuración de componentes
   const saveComponentSettings = async (productId: string) => {
-    if (!isComposite || !userRole?.organization_id) return;
+    if (productType === 'simple' || !userRole?.organization_id) return;
 
-    const components = Object.entries(enabledComponents)
-      .filter(([_, enabled]) => enabled)
-      .map(([name]) => name);
+    let components: string[] = [];
+    if (productType === 'preset') {
+      components = presetEnabledComponents;
+    } else if (productType === 'composite') {
+      components = customComponents;
+    }
+
+    if (components.length === 0) return;
 
     const { error } = await supabase
       .from('product_component_settings')
@@ -158,14 +175,15 @@ export default function ProductForm() {
       }
     },
     onSuccess: async (data) => {
-      // Guardar configuración de componentes si es producto compuesto
       await saveComponentSettings(data);
+      
+      const typeLabel = productType === 'simple' ? '' : 
+        productType === 'preset' ? ` (${PRESETS[selectedPreset as keyof typeof PRESETS]?.label})` : 
+        ' (compuesto)';
       
       toast({
         title: "Producto creado",
-        description: isComposite 
-          ? "El producto compuesto se ha creado correctamente." 
-          : "El producto se ha creado correctamente. Ahora puedes completar los detalles.",
+        description: `El producto${typeLabel} se ha creado correctamente.`,
       });
       navigate(`/admin/productos?editProduct=${data}`);
     },
@@ -211,14 +229,15 @@ export default function ProductForm() {
       }
     },
     onSuccess: async (data) => {
-      // Guardar configuración de componentes si es producto compuesto
       await saveComponentSettings(data);
+      
+      const typeLabel = productType === 'simple' ? '' : 
+        productType === 'preset' ? ` (${PRESETS[selectedPreset as keyof typeof PRESETS]?.label})` : 
+        ' (compuesto)';
       
       toast({
         title: "Producto creado",
-        description: isComposite 
-          ? "El producto compuesto se ha creado correctamente." 
-          : "El producto se ha creado correctamente. Ahora puedes completar los detalles.",
+        description: `El producto${typeLabel} se ha creado correctamente.`,
       });
       navigate(`/admin/productos?editProduct=${data}`);
     },
@@ -282,11 +301,24 @@ export default function ProductForm() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleComponentChange = (component: 'cubierta' | 'interior_2', checked: boolean) => {
-    setEnabledComponents(prev => ({
-      ...prev,
-      [component]: checked,
-    }));
+  const handlePresetComponentToggle = (component: string) => {
+    setPresetEnabledComponents(prev => 
+      prev.includes(component) 
+        ? prev.filter(c => c !== component)
+        : [...prev, component]
+    );
+  };
+
+  const addCustomComponent = () => {
+    const name = newComponentName.trim().toLowerCase().replace(/\s+/g, '_');
+    if (name && !customComponents.includes(name)) {
+      setCustomComponents(prev => [...prev, name]);
+      setNewComponentName('');
+    }
+  };
+
+  const removeCustomComponent = (component: string) => {
+    setCustomComponents(prev => prev.filter(c => c !== component));
   };
 
   return (
@@ -381,62 +413,146 @@ export default function ProductForm() {
               </Label>
             </div>
 
-            {/* Switch para producto compuesto */}
+            {/* Tipo de producto */}
             <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="isComposite"
-                  checked={isComposite}
-                  onCheckedChange={setIsComposite}
-                />
-                <Label htmlFor="isComposite" className="cursor-pointer flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-primary" />
-                  Producto compuesto
-                </Label>
-              </div>
-
-              {/* Configuración de componentes */}
-              {isComposite && (
-                <div className="ml-8 p-4 border rounded-lg bg-muted/30 space-y-3">
-                  <Label className="text-sm font-medium text-muted-foreground">
-                    Componentes del producto:
-                  </Label>
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="comp-cubierta"
-                        checked={enabledComponents.cubierta}
-                        onCheckedChange={(checked) => handleComponentChange('cubierta', !!checked)}
-                      />
-                      <Label htmlFor="comp-cubierta" className="cursor-pointer font-normal">
-                        Cubierta
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="comp-interior1"
-                        checked={enabledComponents.interior_1}
-                        disabled
-                      />
-                      <Label htmlFor="comp-interior1" className="cursor-pointer font-normal text-muted-foreground">
-                        Interior 1 <span className="text-xs">(siempre activo)</span>
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="comp-interior2"
-                        checked={enabledComponents.interior_2}
-                        onCheckedChange={(checked) => handleComponentChange('interior_2', !!checked)}
-                      />
-                      <Label htmlFor="comp-interior2" className="cursor-pointer font-normal">
-                        Interior 2
-                      </Label>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Después de crear el producto, podrás asignar cada prompt/output a su componente correspondiente.
+              <Label className="text-base font-semibold flex items-center gap-2">
+                <Layers className="h-4 w-4 text-primary" />
+                Tipo de producto
+              </Label>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Simple */}
+                <div 
+                  className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                    productType === 'simple' 
+                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
+                      : 'hover:border-muted-foreground/50'
+                  }`}
+                  onClick={() => setProductType('simple')}
+                >
+                  <div className="font-medium">Simple</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Producto estándar sin componentes
                   </p>
                 </div>
+
+                {/* Preset */}
+                <div 
+                  className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                    productType === 'preset' 
+                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
+                      : 'hover:border-muted-foreground/50'
+                  }`}
+                  onClick={() => setProductType('preset')}
+                >
+                  <div className="font-medium">Encuadernado</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Cubierta + Interior(es)
+                  </p>
+                </div>
+
+                {/* Compuesto personalizado */}
+                <div 
+                  className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                    productType === 'composite' 
+                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
+                      : 'hover:border-muted-foreground/50'
+                  }`}
+                  onClick={() => setProductType('composite')}
+                >
+                  <div className="font-medium">Compuesto</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Define tus propios componentes
+                  </p>
+                </div>
+              </div>
+
+              {/* Configuración de preset Encuadernado */}
+              {productType === 'preset' && (
+                <div className="p-4 border rounded-lg bg-muted/30 space-y-3">
+                  <Label className="text-sm font-medium text-muted-foreground">
+                    Componentes del encuadernado:
+                  </Label>
+                  <div className="space-y-3">
+                    {PRESETS.encuadernado.components.map((comp) => {
+                      const labels: Record<string, string> = {
+                        cubierta: 'Cubierta',
+                        interior_1: 'Interior 1',
+                        interior_2: 'Interior 2',
+                      };
+                      const isRequired = comp === 'interior_1';
+                      return (
+                        <div key={comp} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`preset-${comp}`}
+                            checked={presetEnabledComponents.includes(comp)}
+                            disabled={isRequired}
+                            onCheckedChange={() => !isRequired && handlePresetComponentToggle(comp)}
+                          />
+                          <Label 
+                            htmlFor={`preset-${comp}`} 
+                            className={`cursor-pointer font-normal ${isRequired ? 'text-muted-foreground' : ''}`}
+                          >
+                            {labels[comp]} {isRequired && <span className="text-xs">(obligatorio)</span>}
+                          </Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Configuración de componentes personalizados */}
+              {productType === 'composite' && (
+                <div className="p-4 border rounded-lg bg-muted/30 space-y-3">
+                  <Label className="text-sm font-medium text-muted-foreground">
+                    Componentes personalizados:
+                  </Label>
+                  
+                  {/* Añadir nuevo componente */}
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Nombre del componente..."
+                      value={newComponentName}
+                      onChange={(e) => setNewComponentName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomComponent())}
+                    />
+                    <Button type="button" variant="outline" size="sm" onClick={addCustomComponent}>
+                      Añadir
+                    </Button>
+                  </div>
+
+                  {/* Lista de componentes */}
+                  {customComponents.length > 0 ? (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {customComponents.map((comp) => (
+                        <div 
+                          key={comp}
+                          className="flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
+                        >
+                          {comp}
+                          <button
+                            type="button"
+                            onClick={() => removeCustomComponent(comp)}
+                            className="ml-1 hover:text-destructive"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Añade componentes para crear un producto compuesto personalizado
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {productType !== 'simple' && (
+                <p className="text-xs text-muted-foreground">
+                  Después de crear el producto, podrás asignar cada prompt/output a su componente.
+                </p>
               )}
             </div>
 
