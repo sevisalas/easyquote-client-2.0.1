@@ -976,6 +976,44 @@ export type Database = {
           },
         ]
       }
+      product_component_settings: {
+        Row: {
+          created_at: string
+          easyquote_product_id: string
+          enabled_components: string[]
+          id: string
+          is_composite: boolean
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          easyquote_product_id: string
+          enabled_components?: string[]
+          id?: string
+          is_composite?: boolean
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          easyquote_product_id?: string
+          enabled_components?: string[]
+          id?: string
+          is_composite?: boolean
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_component_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_output_order: {
         Row: {
           created_at: string
@@ -1004,6 +1042,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "product_output_order_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_prompt_components: {
+        Row: {
+          component: string
+          created_at: string
+          easyquote_product_id: string
+          id: string
+          organization_id: string
+          prompt_name: string
+          updated_at: string
+        }
+        Insert: {
+          component: string
+          created_at?: string
+          easyquote_product_id: string
+          id?: string
+          organization_id: string
+          prompt_name: string
+          updated_at?: string
+        }
+        Update: {
+          component?: string
+          created_at?: string
+          easyquote_product_id?: string
+          id?: string
+          organization_id?: string
+          prompt_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_prompt_components_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
