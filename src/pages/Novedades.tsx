@@ -14,6 +14,7 @@ interface ChangeItem {
 interface Version {
   version: string;
   date: string;
+  isDevelopment?: boolean;
   changes: {
     added?: string[];
     changed?: string[];
@@ -27,6 +28,7 @@ const versions: Version[] = [
   {
     version: "2.3.4",
     date: "2025-12-19",
+    isDevelopment: true,
     changes: {
       added: [],
       changed: [],
@@ -367,7 +369,9 @@ const Novedades = () => {
                     <CardTitle className={isMobile ? "text-lg" : "text-xl"}>
                       Versión {version.version}
                     </CardTitle>
-                    {index === 0 && (
+                    {version.isDevelopment ? (
+                      <Badge variant="outline" className="border-amber-500/50 text-amber-600 bg-amber-500/10">En desarrollo</Badge>
+                    ) : index === 1 && (
                       <Badge className="bg-primary">Actual</Badge>
                     )}
                   </div>
