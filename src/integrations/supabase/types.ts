@@ -17,6 +17,7 @@ export type Database = {
       additionals: {
         Row: {
           assignment_type: string | null
+          capacity_value: number | null
           created_at: string
           default_value: number | null
           description: string | null
@@ -35,6 +36,7 @@ export type Database = {
         }
         Insert: {
           assignment_type?: string | null
+          capacity_value?: number | null
           created_at?: string
           default_value?: number | null
           description?: string | null
@@ -53,6 +55,7 @@ export type Database = {
         }
         Update: {
           assignment_type?: string | null
+          capacity_value?: number | null
           created_at?: string
           default_value?: number | null
           description?: string | null
