@@ -16,16 +16,29 @@ export interface ProductPromptComponent {
   organization_id: string;
   easyquote_product_id: string;
   prompt_name: string;
-  component: 'general' | 'cubierta' | 'interior_1' | 'interior_2';
+  component: string; // Ahora acepta cualquier componente, no solo los hardcodeados
   created_at: string;
   updated_at: string;
 }
 
-export const COMPONENT_OPTIONS = [
-  { value: 'cubierta', label: 'Cubierta' },
-  { value: 'interior_1', label: 'Interior 1' },
-  { value: 'interior_2', label: 'Interior 2' },
-] as const;
+// Presets de componentes para diferentes tipos de productos
+export const COMPONENT_PRESETS = {
+  encuadernado: {
+    label: 'Encuadernado',
+    components: [
+      { value: 'cubierta', label: 'Cubierta' },
+      { value: 'interior_1', label: 'Interior 1' },
+      { value: 'interior_2', label: 'Interior 2' },
+    ],
+    defaultEnabled: ['cubierta', 'interior_1'], // Interior 1 siempre, cubierta por defecto
+  },
+  // Futuros presets se pueden añadir aquí:
+  // diptico: { label: 'Díptico', components: [...], defaultEnabled: [...] },
+  // triptico: { label: 'Tríptico', components: [...], defaultEnabled: [...] },
+} as const;
+
+// Componente especial "general" que siempre existe
+export const GENERAL_COMPONENT = { value: 'general', label: 'General' };
 
 export function useProductComponentSettings(easyquoteProductId?: string) {
   const queryClient = useQueryClient();
@@ -118,7 +131,7 @@ export function useProductComponentSettings(easyquoteProductId?: string) {
     mutationFn: async (assignment: {
       easyquote_product_id: string;
       prompt_name: string;
-      component: 'general' | 'cubierta' | 'interior_1' | 'interior_2';
+      component: string; // Acepta cualquier nombre de componente
     }) => {
       if (!organizationId) throw new Error('No organization found');
 
@@ -177,7 +190,7 @@ export function useProductComponentSettings(easyquoteProductId?: string) {
   const enabledComponents = componentSettings?.enabled_components ?? [];
 
   // Helper: obtener el componente asignado a un prompt
-  const getPromptComponent = (promptName: string): 'general' | 'cubierta' | 'interior_1' | 'interior_2' => {
+  const getPromptComponent = (promptName: string): string => {
     const assignment = promptComponents?.find(p => p.prompt_name === promptName);
     return assignment?.component ?? 'general';
   };
