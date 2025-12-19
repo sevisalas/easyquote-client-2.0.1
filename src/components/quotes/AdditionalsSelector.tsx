@@ -40,7 +40,8 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
   const [predefinedCapacity, setPredefinedCapacity] = useState<number | null>(null)
   const [customName, setCustomName] = useState("")
   const [customValue, setCustomValue] = useState(0)
-  const [customType, setCustomType] = useState<"net_amount" | "quantity_multiplier">("net_amount")
+  const [customType, setCustomType] = useState<"net_amount" | "quantity_multiplier" | "capacity_divider">("net_amount")
+  const [customCapacity, setCustomCapacity] = useState<number>(1)
 
   const { data: availableAdditionals = [] } = useQuery({
     queryKey: ["additionals", "article"],
@@ -111,12 +112,14 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
       name: customName.trim(),
       type: customType,
       value: customValue,
-      isCustom: true
+      isCustom: true,
+      capacity_value: customType === 'capacity_divider' ? customCapacity : null
     }
 
     onChange([...selectedAdditionals, newCustom])
     setCustomName("")
     setCustomValue(0)
+    setCustomCapacity(1)
   }
 
   const removeAdditional = (id: string) => {
@@ -234,22 +237,37 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
       )}
 
       {/* Add Custom Additional */}
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-2 items-center flex-wrap">
         <Input
           value={customName}
           onChange={(e) => setCustomName(e.target.value)}
           placeholder="Concepto personalizado"
           className="w-64 h-9"
         />
-        <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier") => setCustomType(value)}>
-          <SelectTrigger className="w-28 h-9">
+        <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier" | "capacity_divider") => setCustomType(value)}>
+          <SelectTrigger className="w-32 h-9">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="net_amount">Importe</SelectItem>
             <SelectItem value="quantity_multiplier">Precio ud.</SelectItem>
+            <SelectItem value="capacity_divider">Por capacidad</SelectItem>
           </SelectContent>
         </Select>
+        {customType === 'capacity_divider' && (
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              min="1"
+              step="1"
+              value={customCapacity}
+              onChange={(e) => setCustomCapacity(parseInt(e.target.value) || 1)}
+              placeholder="Capacidad"
+              className="w-16 h-9"
+            />
+            <span className="text-xs text-muted-foreground">uds</span>
+          </div>
+        )}
         <div className="flex items-center gap-1 w-24">
           <Input
             type="number"
