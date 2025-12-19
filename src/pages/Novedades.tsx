@@ -25,12 +25,97 @@ interface Version {
 
 const versions: Version[] = [
   {
-    version: "2.2.0",
-    date: "En Desarrollo",
+    version: "2.3.4",
+    date: "2025-12-19",
     changes: {
       added: [],
       changed: [],
       fixed: [],
+    },
+  },
+  {
+    version: "2.3.3",
+    date: "2025-12-19",
+    changes: {
+      added: [
+        "Ajuste 'Por capacidad': Nuevo tipo de ajuste para conceptos como cajas, bolsas o embalajes con cálculo automático",
+        "Ordenamiento personalizable de outputs arrastrando y soltando",
+        "Opción 'Por capacidad' en ajustes personalizados de artículo",
+      ],
+      fixed: [
+        "Error UUID vacío en ajustes sin fase de producción asociada",
+      ],
+    },
+  },
+  {
+    version: "2.3.1",
+    date: "2025-12-12",
+    changes: {
+      added: [
+        "Productos personalizados (no EasyQuote): crear artículos con nombre, descripción, cantidad y precio manual",
+      ],
+    },
+  },
+  {
+    version: "2.2.8",
+    date: "2025-12-08",
+    changes: {
+      fixed: [
+        "Navegación a página de prueba de productos sin recarga completa",
+        "Typo en título 'Pruba de productos' → 'Prueba de productos'",
+      ],
+    },
+  },
+  {
+    version: "2.2.7",
+    date: "2025-12-04",
+    changes: {
+      fixed: [
+        "Campo is_discount ahora se guarda correctamente al exportar pedidos a Holded",
+        "Edición de prompts numéricos: los valores ya no parpadean ni se sobrescriben",
+      ],
+    },
+  },
+  {
+    version: "2.2.5",
+    date: "2025-12-04",
+    changes: {
+      fixed: [
+        "Migración de presupuestos sin organization_id para Reprotel y Tradsis",
+        "Columnas de Holded visibles si la organización tiene acceso a la integración",
+      ],
+    },
+  },
+  {
+    version: "2.2.4",
+    date: "2025-12-03",
+    changes: {
+      fixed: [
+        "SPA routing en producción: agregado web.config y _redirects para evitar errores 404",
+      ],
+    },
+  },
+  {
+    version: "2.2.3",
+    date: "2025-12-03",
+    changes: {
+      fixed: [
+        "Filtro de prompts ocultos en Holded al exportar presupuestos",
+        "Limbo de organización en login para usuarios con múltiples organizaciones",
+        "Limpieza de sesión al cerrar para evitar problemas de selección",
+      ],
+    },
+  },
+  {
+    version: "2.2.1",
+    date: "2025-12-03",
+    changes: {
+      added: [
+        "Botón 'Actualizar contactos' en página de Clientes",
+      ],
+      fixed: [
+        "Selector de organizaciones en login redirige correctamente",
+      ],
     },
   },
   {
@@ -149,6 +234,52 @@ const versions: Version[] = [
       changed: [
         "Menú de acciones convertido a dropdown para ahorrar espacio",
         "Interfaz de lista de clientes mejorada con badges de origen",
+      ],
+    },
+  },
+  {
+    version: "1.2.0",
+    date: "2024-12-20",
+    changes: {
+      added: [
+        "Sistema de temas personalizables con colores por usuario",
+        "Temas predefinidos (Azul Corporativo, Verde Natural, Morado Moderno)",
+        "Vista previa en tiempo real de cambios de tema",
+        "Configuración de plantillas PDF (6 plantillas diferentes)",
+        "Personalización de logo y colores de marca en PDFs",
+      ],
+    },
+  },
+  {
+    version: "1.1.0",
+    date: "2024-12-10",
+    changes: {
+      added: [
+        "Integración con EasyQuote API",
+        "Obtención de productos desde EasyQuote",
+        "Configuración de prompts y outputs por producto",
+        "Cálculo de precios desde API EasyQuote",
+        "Gestión de archivos Excel maestros",
+      ],
+      changed: [
+        "Proxy de llamadas a EasyQuote API a través de Edge Functions",
+        "Mejoras en manejo de CORS y conectividad",
+      ],
+    },
+  },
+  {
+    version: "1.0.0",
+    date: "2024-12-01",
+    changes: {
+      added: [
+        "Sistema de presupuestos con artículos y adicionales",
+        "Generación de PDF de presupuestos",
+        "Estados de presupuestos (Borrador, Enviado, Aprobado, Rechazado)",
+        "Sistema de pedidos/órdenes de venta",
+        "Conversión de presupuestos a pedidos",
+        "Sistema de autenticación con Supabase Auth",
+        "Dashboard principal con estadísticas",
+        "Sistema multiorganización con planes de suscripción",
       ],
     },
   },
