@@ -142,7 +142,7 @@ const versions: Version[] = [
   },
   {
     version: "2.0.0",
-    date: "2024-11-25",
+    date: "2025-11-25",
     changes: {
       added: [
         "Interfaz móvil completa para roles Comercial y Operador",
@@ -177,7 +177,7 @@ const versions: Version[] = [
   },
   {
     version: "1.5.0",
-    date: "2024-11-15",
+    date: "2025-11-15",
     changes: {
       added: [
         "Sistema de roles y permisos completo",
@@ -199,7 +199,7 @@ const versions: Version[] = [
   },
   {
     version: "1.4.0",
-    date: "2024-11-10",
+    date: "2025-11-10",
     changes: {
       added: [
         "Integración con Holded ERP",
@@ -223,7 +223,7 @@ const versions: Version[] = [
   },
   {
     version: "1.3.0",
-    date: "2024-11-05",
+    date: "2025-11-05",
     changes: {
       added: [
         "Gestión de clientes unificada (locales y de Holded)",
@@ -239,7 +239,7 @@ const versions: Version[] = [
   },
   {
     version: "1.2.0",
-    date: "2024-12-20",
+    date: "2025-10-20",
     changes: {
       added: [
         "Sistema de temas personalizables con colores por usuario",
@@ -252,7 +252,7 @@ const versions: Version[] = [
   },
   {
     version: "1.1.0",
-    date: "2024-12-10",
+    date: "2025-10-10",
     changes: {
       added: [
         "Integración con EasyQuote API",
@@ -269,7 +269,7 @@ const versions: Version[] = [
   },
   {
     version: "1.0.0",
-    date: "2024-12-01",
+    date: "2025-10-01",
     changes: {
       added: [
         "Sistema de presupuestos con artículos y adicionales",
