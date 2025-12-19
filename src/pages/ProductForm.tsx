@@ -473,12 +473,13 @@ export default function ProductForm() {
                   </Label>
                   <div className="space-y-3">
                     {PRESETS.encuadernado.components.map((comp) => {
-                      const labels: Record<string, string> = {
-                        cubierta: 'Cubierta',
-                        interior_1: 'Interior 1',
-                        interior_2: 'Interior 2',
+                      const labels: Record<string, { name: string; hint?: string }> = {
+                        cubierta: { name: 'Cubierta', hint: 'papel o acabado distinto al interior' },
+                        interior_1: { name: 'Interior 1' },
+                        interior_2: { name: 'Interior 2' },
                       };
                       const isRequired = comp === 'interior_1';
+                      const labelData = labels[comp];
                       return (
                         <div key={comp} className="flex items-center space-x-2">
                           <Checkbox
@@ -491,7 +492,9 @@ export default function ProductForm() {
                             htmlFor={`preset-${comp}`} 
                             className={`cursor-pointer font-normal ${isRequired ? 'text-muted-foreground' : ''}`}
                           >
-                            {labels[comp]} {isRequired && <span className="text-xs">(obligatorio)</span>}
+                            {labelData.name}
+                            {labelData.hint && <span className="text-xs text-muted-foreground ml-1">({labelData.hint})</span>}
+                            {isRequired && <span className="text-xs ml-1">(obligatorio)</span>}
                           </Label>
                         </div>
                       );
@@ -549,7 +552,7 @@ export default function ProductForm() {
 
               {productType !== 'simple' && (
                 <p className="text-xs text-muted-foreground">
-                  Después de crear el producto, podrás asignar cada prompt/output a su componente.
+                  Después de crear el producto, podrás asignar cada dato de entrada y de salida a su componente.
                 </p>
               )}
             </div>
