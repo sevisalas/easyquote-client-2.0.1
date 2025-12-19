@@ -99,6 +99,8 @@ export default function Additionals() {
         .from("additionals")
         .insert({
           ...newAdditional,
+          // Convertir strings vacíos a null para campos UUID
+          task_phase_id: newAdditional.task_phase_id || null,
           user_id: user.id
         })
         .select()
@@ -123,7 +125,11 @@ export default function Additionals() {
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<AdditionalForm>) => {
       const { data, error } = await supabase
         .from("additionals")
-        .update(updates)
+        .update({
+          ...updates,
+          // Convertir strings vacíos a null para campos UUID
+          task_phase_id: updates.task_phase_id || null,
+        })
         .eq("id", id)
         .select()
         .single()
