@@ -5,11 +5,22 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
-## [2.3.2] - 2025-12-15
+## [2.3.4] - 2025-12-19
+
+### En desarrollo
+- ...
+
+---
+
+## [2.3.3] - 2025-12-19
+
+### Añadido
+- **Ajuste "Por capacidad"**: Nuevo tipo de ajuste de artículo para conceptos como cajas, bolsas o embalajes donde el coste depende de la cantidad de unidades. Configurable con "unidades por envase" y cálculo automático: `CEIL(cantidad / capacidad) × precio`
+- **Ordenamiento personalizable de outputs**: Los usuarios pueden reordenar los outputs de cada producto arrastrando y soltando. El orden se guarda por producto y organización
+- **Opción "Por capacidad" en ajustes personalizados**: Al crear un ajuste personalizado en un artículo, ahora se puede seleccionar el tipo "Por capacidad"
 
 ### Corregido
-- **Decimales en API de EasyQuote**: Los valores decimales ahora se envían con coma (formato español) en lugar de punto, corrigiendo el problema donde `15.5` se interpretaba como `155`
-- **Orden de outputs**: Eliminado ordenamiento incorrecto por `orderSeq` (campo no disponible en la API). Los outputs ahora mantienen el orden definido en EasyQuote
+- **Error UUID vacío en ajustes**: Corregido error "invalid input syntax for type uuid" al crear ajustes sin fase de producción asociada
 
 ---
 
