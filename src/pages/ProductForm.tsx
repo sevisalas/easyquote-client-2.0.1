@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Layers } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useEasyQuoteExcelFiles } from "@/hooks/useEasyQuoteExcelFiles";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function ProductForm() {
   const navigate = useNavigate();
@@ -26,12 +28,60 @@ export default function ProductForm() {
 
   const [useNewFile, setUseNewFile] = useState(true);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  
+  // Estado para producto compuesto
+  const [isComposite, setIsComposite] = useState(false);
+  const [enabledComponents, setEnabledComponents] = useState({
+    cubierta: true,
+    interior_1: true, // Siempre activo si es compuesto
+    interior_2: false,
+  });
+
+  // Obtener organization_id del usuario actual
+  const { data: userRole } = useQuery({
+    queryKey: ['current-user-role'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_current_user_role');
+      if (error) throw error;
+      return data?.[0] || null;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Fetch Excel files for dropdown (cacheado vía edge function)
   const { data: excelFiles = [] } = useEasyQuoteExcelFiles({
     select: (files) => files.filter((f) => f.isActive),
   });
 
+  // Función para guardar configuración de componentes
+  const saveComponentSettings = async (productId: string) => {
+    if (!isComposite || !userRole?.organization_id) return;
+
+    const components = Object.entries(enabledComponents)
+      .filter(([_, enabled]) => enabled)
+      .map(([name]) => name);
+
+    const { error } = await supabase
+      .from('product_component_settings')
+      .upsert({
+        organization_id: userRole.organization_id,
+        easyquote_product_id: productId,
+        is_composite: true,
+        enabled_components: components,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'organization_id,easyquote_product_id',
+      });
+
+    if (error) {
+      console.error('Error saving component settings:', error);
+      toast({
+        title: "Advertencia",
+        description: "El producto se creó pero hubo un error al guardar la configuración de componentes",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Upload Excel and create product with new file
   const createProductWithNewFileMutation = useMutation({
@@ -107,10 +157,15 @@ export default function ProductForm() {
         return productResponseText.replace(/['"]/g, '').trim();
       }
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      // Guardar configuración de componentes si es producto compuesto
+      await saveComponentSettings(data);
+      
       toast({
         title: "Producto creado",
-        description: "El producto se ha creado correctamente. Ahora puedes completar los detalles.",
+        description: isComposite 
+          ? "El producto compuesto se ha creado correctamente." 
+          : "El producto se ha creado correctamente. Ahora puedes completar los detalles.",
       });
       navigate(`/admin/productos?editProduct=${data}`);
     },
@@ -155,10 +210,15 @@ export default function ProductForm() {
         return responseText.replace(/['"]/g, '').trim();
       }
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      // Guardar configuración de componentes si es producto compuesto
+      await saveComponentSettings(data);
+      
       toast({
         title: "Producto creado",
-        description: "El producto se ha creado correctamente. Ahora puedes completar los detalles.",
+        description: isComposite 
+          ? "El producto compuesto se ha creado correctamente." 
+          : "El producto se ha creado correctamente. Ahora puedes completar los detalles.",
       });
       navigate(`/admin/productos?editProduct=${data}`);
     },
@@ -220,6 +280,13 @@ export default function ProductForm() {
 
   const handleChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleComponentChange = (component: 'cubierta' | 'interior_2', checked: boolean) => {
+    setEnabledComponents(prev => ({
+      ...prev,
+      [component]: checked,
+    }));
   };
 
   return (
@@ -312,6 +379,65 @@ export default function ProductForm() {
               <Label htmlFor="isActive" className="cursor-pointer">
                 Producto activo
               </Label>
+            </div>
+
+            {/* Switch para producto compuesto */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="isComposite"
+                  checked={isComposite}
+                  onCheckedChange={setIsComposite}
+                />
+                <Label htmlFor="isComposite" className="cursor-pointer flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-primary" />
+                  Producto compuesto
+                </Label>
+              </div>
+
+              {/* Configuración de componentes */}
+              {isComposite && (
+                <div className="ml-8 p-4 border rounded-lg bg-muted/30 space-y-3">
+                  <Label className="text-sm font-medium text-muted-foreground">
+                    Componentes del producto:
+                  </Label>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="comp-cubierta"
+                        checked={enabledComponents.cubierta}
+                        onCheckedChange={(checked) => handleComponentChange('cubierta', !!checked)}
+                      />
+                      <Label htmlFor="comp-cubierta" className="cursor-pointer font-normal">
+                        Cubierta
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="comp-interior1"
+                        checked={enabledComponents.interior_1}
+                        disabled
+                      />
+                      <Label htmlFor="comp-interior1" className="cursor-pointer font-normal text-muted-foreground">
+                        Interior 1 <span className="text-xs">(siempre activo)</span>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="comp-interior2"
+                        checked={enabledComponents.interior_2}
+                        onCheckedChange={(checked) => handleComponentChange('interior_2', !!checked)}
+                      />
+                      <Label htmlFor="comp-interior2" className="cursor-pointer font-normal">
+                        Interior 2
+                      </Label>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Después de crear el producto, podrás asignar cada prompt/output a su componente correspondiente.
+                  </p>
+                </div>
+              )}
             </div>
 
             <Alert>
