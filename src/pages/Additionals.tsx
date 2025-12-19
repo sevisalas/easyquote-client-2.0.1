@@ -18,9 +18,10 @@ interface Additional {
   name: string
   description: string | null
   assignment_type: "article" | "quote"
-  type: "net_amount" | "quantity_multiplier" | "percentage"
+  type: "net_amount" | "quantity_multiplier" | "percentage" | "capacity_divider"
   default_value: number
   is_discount: boolean
+  capacity_value: number | null
   created_at: string
   updated_at: string
 }
@@ -29,9 +30,10 @@ interface AdditionalForm {
   name: string
   description: string
   assignment_type: "article" | "quote"
-  type: "net_amount" | "quantity_multiplier" | "percentage"
+  type: "net_amount" | "quantity_multiplier" | "percentage" | "capacity_divider"
   default_value: number
   is_discount: boolean
+  capacity_value: number | null
   has_implicit_task: boolean
   task_name: string
   task_phase_id: string
@@ -62,6 +64,7 @@ export default function Additionals() {
     type: "net_amount",
     default_value: 0,
     is_discount: false,
+    capacity_value: null,
     has_implicit_task: false,
     task_name: "",
     task_phase_id: "",
@@ -177,6 +180,7 @@ export default function Additionals() {
       type: "net_amount",
       default_value: 0,
       is_discount: false,
+      capacity_value: null,
       has_implicit_task: false,
       task_name: "",
       task_phase_id: "",
@@ -203,6 +207,7 @@ export default function Additionals() {
       type: additional.type,
       default_value: additional.default_value,
       is_discount: additional.is_discount || false,
+      capacity_value: additional.capacity_value ?? null,
       has_implicit_task: (additional as any).has_implicit_task || false,
       task_name: (additional as any).task_name || "",
       task_phase_id: (additional as any).task_phase_id || "",
@@ -310,8 +315,8 @@ export default function Additionals() {
                   <Label htmlFor="type">Tipo</Label>
                   <Select
                     value={form.type}
-                    onValueChange={(value: "net_amount" | "quantity_multiplier" | "percentage") => 
-                      setForm({ ...form, type: value })
+                    onValueChange={(value: "net_amount" | "quantity_multiplier" | "percentage" | "capacity_divider") => 
+                      setForm({ ...form, type: value, capacity_value: value === "capacity_divider" ? (form.capacity_value || 1) : null })
                     }
                   >
                     <SelectTrigger>
@@ -320,13 +325,34 @@ export default function Additionals() {
                     <SelectContent>
                        <SelectItem value="net_amount">Importe neto</SelectItem>
                        {form.assignment_type === "article" ? (
-                         <SelectItem value="quantity_multiplier">Importe unitario (por cantidad)</SelectItem>
+                         <>
+                           <SelectItem value="quantity_multiplier">Importe unitario (por cantidad)</SelectItem>
+                           <SelectItem value="capacity_divider">Por capacidad (ej: cajas)</SelectItem>
+                         </>
                        ) : (
                          <SelectItem value="percentage">Porcentaje sobre subtotal</SelectItem>
                        )}
                     </SelectContent>
                   </Select>
                 </div>
+                
+                {form.type === "capacity_divider" && (
+                  <div>
+                    <Label htmlFor="capacity_value">Unidades por envase</Label>
+                    <Input
+                      id="capacity_value"
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={form.capacity_value || 1}
+                      onChange={(e) => setForm({ ...form, capacity_value: parseInt(e.target.value) || 1 })}
+                      placeholder="Ej: 50 unidades por caja"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Cuántas unidades del artículo caben en cada envase. El sistema calculará automáticamente cuántos envases se necesitan.
+                    </p>
+                  </div>
+                )}
                 
                 <div>
                   <Label htmlFor="default_value">Valor por defecto</Label>
@@ -512,6 +538,8 @@ export default function Additionals() {
                               ? "Importe Neto" 
                               : additional.type === "quantity_multiplier" 
                               ? "Importe Unitario"
+                              : additional.type === "capacity_divider"
+                              ? "Por Capacidad"
                               : "Porcentaje"
                             }
                           </span>
@@ -523,6 +551,11 @@ export default function Additionals() {
                               ? `${additional.default_value}%` 
                               : `€${additional.default_value.toFixed(2)}`
                             }
+                            {additional.type === "capacity_divider" && additional.capacity_value && (
+                              <span className="text-muted-foreground ml-1">
+                                ({additional.capacity_value} uds/envase)
+                              </span>
+                            )}
                           </span>
                         </div>
                         {additional.is_discount && (

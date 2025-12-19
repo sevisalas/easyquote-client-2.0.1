@@ -1003,6 +1003,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             additionalsTotal += additional.value;
           } else if (additional.type === 'quantity_multiplier') {
             additionalsTotal += additional.value * customQuantity;
+          } else if (additional.type === 'capacity_divider') {
+            // Calculate how many units are needed based on capacity
+            const capacity = additional.capacity_value || 1;
+            const unitsNeeded = Math.ceil(customQuantity / capacity);
+            additionalsTotal += additional.value * unitsNeeded;
           }
         });
       }
@@ -1014,15 +1019,21 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     const basePrice = parseFloat(String((priceOutput as any)?.value ?? 0).replace(/\./g, "").replace(",", ".")) || 0;
     let additionalsTotal = 0;
     
+    // Get quantity from prompts or multi for additionals calculation
+    const quantity = multiEnabled && multiRows.length > 0 ? 
+      multiRows.reduce((sum, row) => sum + row.qty, 0) : 1;
+    
     if (Array.isArray(itemAdditionals)) {
       itemAdditionals.forEach((additional) => {
         if (additional.type === 'net_amount') {
           additionalsTotal += additional.value;
         } else if (additional.type === 'quantity_multiplier') {
-          // For quantity type, we need to get the quantity from prompts or multi
-          const quantity = multiEnabled && multiRows.length > 0 ? 
-            multiRows.reduce((sum, row) => sum + row.qty, 0) : 1;
           additionalsTotal += additional.value * quantity;
+        } else if (additional.type === 'capacity_divider') {
+          // Calculate how many units are needed based on capacity
+          const capacity = additional.capacity_value || 1;
+          const unitsNeeded = Math.ceil(quantity / capacity);
+          additionalsTotal += additional.value * unitsNeeded;
         }
       });
     }
