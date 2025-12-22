@@ -124,15 +124,9 @@ export function BulkOutputsDialog({
 
         <div className="flex-1 overflow-y-auto max-h-[60vh] pr-2">
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <p className="text-sm text-muted-foreground">
-                {outputs.length} dato{outputs.length !== 1 ? 's' : ''} nuevo{outputs.length !== 1 ? 's' : ''}
-              </p>
-              <Button onClick={addOutput} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Añadir
-              </Button>
-            </div>
+            <p className="text-sm text-muted-foreground">
+              {outputs.length} dato{outputs.length !== 1 ? 's' : ''} nuevo{outputs.length !== 1 ? 's' : ''}
+            </p>
 
             <div className="space-y-3">
               {outputs.map((output, index) => {
@@ -244,9 +238,13 @@ export function BulkOutputsDialog({
 
         <Separator />
 
-        <div className="flex justify-end space-x-2">
+        <div className="flex justify-between items-center">
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
             Cancelar
+          </Button>
+          <Button variant="secondary" onClick={addOutput} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Añadir
           </Button>
           <Button onClick={handleSave} disabled={isSaving || outputs.length === 0}>
             {isSaving ? (
