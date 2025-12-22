@@ -358,7 +358,8 @@ export default function ProductManagement() {
     valueQuantityAllowedDecimals: 0,
     valueQuantityMin: 1,
     valueQuantityMax: 9999,
-    promptSeq: 1
+    promptSeq: 1,
+    component: "general" // Componente asignado
   });
   const [newOutputData, setNewOutputData] = useState({
     sheet: "",
@@ -1470,7 +1471,8 @@ export default function ProductManagement() {
       valueQuantityAllowedDecimals: 0,
       valueQuantityMin: 1,
       valueQuantityMax: 9999,
-      promptSeq: nextSeq
+      promptSeq: nextSeq,
+      component: "general"
     });
     setIsNewPromptDialogOpen(true);
   };
@@ -1506,8 +1508,21 @@ export default function ProductManagement() {
       valueQuantityMax: isNumericType ? (newPromptData.valueQuantityMax ?? 9999) : null
     };
 
-    createPromptMutation.mutate(newPrompt);
+    createPromptMutation.mutate(newPrompt, {
+      onSuccess: () => {
+        // Si el producto es compuesto y se asignó un componente, guardarlo
+        if (isComposite && newPromptData.component && newPromptData.promptCell) {
+          assignPromptToComponent({
+            easyquote_product_id: selectedProduct.id,
+            prompt_name: newPromptData.promptCell,
+            component: newPromptData.component,
+          });
+        }
+      }
+    });
     setIsNewPromptDialogOpen(false);
+    // Reset component to general for next prompt
+    setNewPromptData(prev => ({ ...prev, component: "general" }));
   };
 
   // Add new output
@@ -2834,6 +2849,30 @@ export default function ProductManagement() {
                   placeholder="ej: $E$2:$E$3"
                 />
               </div>
+              {/* Selector de componente - solo si el producto es compuesto */}
+              {isComposite && (
+                <div className="col-span-12">
+                  <Label htmlFor="component">Componente</Label>
+                  <Select
+                    value={newPromptData.component}
+                    onValueChange={(value) => setNewPromptData({...newPromptData, component: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar componente" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border shadow-lg z-50">
+                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="cubierta">Cubierta</SelectItem>
+                      {enabledComponents.includes('interior_1') && (
+                        <SelectItem value="interior_1">Interior 1</SelectItem>
+                      )}
+                      {enabledComponents.includes('interior_2') && (
+                        <SelectItem value="interior_2">Interior 2</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             {/* Campos numéricos - solo si el tipo es Number (0) */}
             {newPromptData.promptType === 0 && (
