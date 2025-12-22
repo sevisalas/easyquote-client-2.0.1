@@ -1640,7 +1640,26 @@ export default function ProductManagement() {
           valueQuantityMax: isNumericType ? (promptData.valueQuantityMax ?? 9999) : null
         };
         
-        await createPromptMutation.mutateAsync(newPrompt);
+        const result = await createPromptMutation.mutateAsync(newPrompt);
+        
+        // Asignar componente si es producto compuesto
+        if (isComposite && promptData.component && promptData.component !== "general" && result?.promptCell) {
+          await assignPromptToComponent({
+            easyquote_product_id: selectedProduct.id,
+            prompt_name: result.promptCell,
+            component: promptData.component
+          });
+        }
+        
+        // Guardar configuración de ocultar en documentos
+        if (promptData.hideInDocuments && result?.promptCell) {
+          await supabase.from('product_prompt_settings').upsert({
+            easyquote_product_id: selectedProduct.id,
+            prompt_name: result.promptCell,
+            hide_in_documents: true,
+            organization_id: organizationId
+          }, { onConflict: 'easyquote_product_id,prompt_name,organization_id' });
+        }
       }
       
       setIsBulkPromptsDialogOpen(false);
@@ -1671,7 +1690,16 @@ export default function ProductManagement() {
           valueCell: outputData.valueCell
         };
         
-        await createOutputMutation.mutateAsync(newOutput);
+        const result = await createOutputMutation.mutateAsync(newOutput);
+        
+        // Asignar componente si es producto compuesto
+        if (isComposite && outputData.component && outputData.component !== "general" && result?.nameCell) {
+          await assignPromptToComponent({
+            easyquote_product_id: selectedProduct.id,
+            prompt_name: result.nameCell,
+            component: outputData.component
+          });
+        }
       }
       
       setIsBulkOutputsDialogOpen(false);
@@ -3067,6 +3095,8 @@ export default function ProductManagement() {
         isSaving={createPromptMutation.isPending}
         existingPrompts={productPrompts}
         availableSheets={excelSheets}
+        isComposite={isComposite}
+        enabledComponents={enabledComponents}
       />
 
       <BulkOutputsDialog
@@ -3077,6 +3107,8 @@ export default function ProductManagement() {
         isSaving={createOutputMutation.isPending}
         existingOutputs={productOutputs}
         availableSheets={excelSheets}
+        isComposite={isComposite}
+        enabledComponents={enabledComponents}
       />
 
       {/* AlertDialog para confirmar eliminación de producto */}

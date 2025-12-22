@@ -24,6 +24,8 @@ interface BulkPromptData {
   valueQuantityMin: number;
   valueQuantityMax: number;
   promptSeq: number;
+  component?: string;
+  hideInDocuments?: boolean;
 }
 
 interface BulkPromptsDialogProps {
@@ -34,6 +36,8 @@ interface BulkPromptsDialogProps {
   isSaving: boolean;
   existingPrompts: any[];
   availableSheets?: string[];
+  isComposite?: boolean;
+  enabledComponents?: string[];
 }
 
 export function BulkPromptsDialog({ 
@@ -43,7 +47,9 @@ export function BulkPromptsDialog({
   promptTypes, 
   isSaving,
   existingPrompts = [],
-  availableSheets = []
+  availableSheets = [],
+  isComposite = false,
+  enabledComponents = []
 }: BulkPromptsDialogProps) {
   
   const getNextSeq = () => {
@@ -82,7 +88,9 @@ export function BulkPromptsDialog({
     valueQuantityAllowedDecimals: 0,
     valueQuantityMin: 1,
     valueQuantityMax: 9999,
-    promptSeq: seq
+    promptSeq: seq,
+    component: "general",
+    hideInDocuments: false
   });
 
   const [prompts, setPrompts] = useState<BulkPromptData[]>([]);
@@ -261,6 +269,40 @@ export function BulkPromptsDialog({
                         </div>
                       </div>
 
+                      <div className="col-span-1">
+                        <Label className="text-xs">Ocultar</Label>
+                        <div className="flex items-center h-8">
+                          <Switch
+                            checked={prompt.hideInDocuments}
+                            onCheckedChange={(checked) => updatePrompt(index, 'hideInDocuments', checked)}
+                          />
+                        </div>
+                      </div>
+
+                      {isComposite && (
+                        <div className="col-span-2">
+                          <Label className="text-xs">Componente</Label>
+                          <Select
+                            value={prompt.component || "general"}
+                            onValueChange={(value) => updatePrompt(index, 'component', value)}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="general">General</SelectItem>
+                              <SelectItem value="cubierta">Cubierta</SelectItem>
+                              {enabledComponents.includes("interior1") && (
+                                <SelectItem value="interior1">Interior 1</SelectItem>
+                              )}
+                              {enabledComponents.includes("interior2") && (
+                                <SelectItem value="interior2">Interior 2</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
                       {isNumericType && (
                         <>
                           <div className="col-span-1">
@@ -293,7 +335,8 @@ export function BulkPromptsDialog({
                         </>
                       )}
 
-                      {!isNumericType && <div className="col-span-3"></div>}
+                      {!isNumericType && !isComposite && <div className="col-span-3"></div>}
+                      {!isNumericType && isComposite && <div className="col-span-1"></div>}
                     </div>
                   </div>
                 );

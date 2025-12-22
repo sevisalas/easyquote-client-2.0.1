@@ -17,6 +17,7 @@ interface BulkOutputData {
   nameCell: string;
   valueCell: string;
   outputTypeId: number;
+  component?: string;
 }
 
 interface BulkOutputsDialogProps {
@@ -27,6 +28,8 @@ interface BulkOutputsDialogProps {
   isSaving: boolean;
   existingOutputs: any[];
   availableSheets?: string[];
+  isComposite?: boolean;
+  enabledComponents?: string[];
 }
 
 export function BulkOutputsDialog({ 
@@ -36,7 +39,9 @@ export function BulkOutputsDialog({
   outputTypes, 
   isSaving,
   existingOutputs = [],
-  availableSheets = []
+  availableSheets = [],
+  isComposite = false,
+  enabledComponents = []
 }: BulkOutputsDialogProps) {
 
   const getNextRow = () => {
@@ -63,7 +68,8 @@ export function BulkOutputsDialog({
     sheet: "",
     nameCell: "",
     valueCell: "",
-    outputTypeId: outputTypes[0]?.id || 0
+    outputTypeId: outputTypes[0]?.id || 0,
+    component: "general"
   });
 
   const [outputs, setOutputs] = useState<BulkOutputData[]>([]);
@@ -186,7 +192,7 @@ export function BulkOutputsDialog({
                           className="h-8 text-xs"
                         />
                       </div>
-                      <div className="col-span-4">
+                      <div className={isComposite ? "col-span-2" : "col-span-4"}>
                         <Label className="text-xs">Tipo</Label>
                         <Select
                           value={output.outputTypeId.toString()}
@@ -204,6 +210,30 @@ export function BulkOutputsDialog({
                           </SelectContent>
                         </Select>
                       </div>
+
+                      {isComposite && (
+                        <div className="col-span-2">
+                          <Label className="text-xs">Componente</Label>
+                          <Select
+                            value={output.component || "general"}
+                            onValueChange={(value) => updateOutput(index, 'component', value)}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="general">General</SelectItem>
+                              <SelectItem value="cubierta">Cubierta</SelectItem>
+                              {enabledComponents.includes("interior1") && (
+                                <SelectItem value="interior1">Interior 1</SelectItem>
+                              )}
+                              {enabledComponents.includes("interior2") && (
+                                <SelectItem value="interior2">Interior 2</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
