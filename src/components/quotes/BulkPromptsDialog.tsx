@@ -178,165 +178,168 @@ export function BulkPromptsDialog({
                       )}
                     </div>
                     
-                    <div className="grid grid-cols-12 gap-2 items-end">
-                      <div className="col-span-1">
-                        <Label className="text-xs">Hoja</Label>
-                        <Select
-                          value={prompt.sheet}
-                          onValueChange={(value) => updatePrompt(index, 'sheet', value)}
-                        >
-                          <SelectTrigger className="h-8 text-xs">
-                            <SelectValue placeholder="Hoja" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-background border shadow-lg z-50">
-                            {prompt.sheet && !availableSheets.includes(prompt.sheet) && (
-                              <SelectItem value={prompt.sheet}>
-                                {prompt.sheet}
-                              </SelectItem>
-                            )}
-                            {availableSheets.map((sheet) => (
-                              <SelectItem key={sheet} value={sheet}>
-                                {sheet}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="col-span-1">
-                        <Label className="text-xs">Rótulo</Label>
-                        <Input
-                          value={prompt.promptCell}
-                          onChange={(e) => updatePrompt(index, 'promptCell', e.target.value)}
-                          className="h-8 text-xs"
-                        />
-                      </div>
-                      <div className="col-span-1">
-                        <Label className="text-xs">Valor</Label>
-                        <Input
-                          value={prompt.valueCell}
-                          onChange={(e) => updatePrompt(index, 'valueCell', e.target.value)}
-                          className="h-8 text-xs"
-                        />
-                      </div>
-                      <div className="col-span-1">
-                        <Label className="text-xs">Orden</Label>
-                        <Input
-                          type="number"
-                          value={prompt.promptSeq}
-                          onChange={(e) => updatePrompt(index, 'promptSeq', parseInt(e.target.value) || 1)}
-                          className="h-8 text-xs"
-                        />
-                      </div>
-
-                      {!isNumericType && (
-                        <div className="col-span-2">
-                          <Label className="text-xs">Rango</Label>
+                    <div className="space-y-2">
+                      {/* Primera fila: campos principales */}
+                      <div className="grid grid-cols-12 gap-2 items-end">
+                        <div className="col-span-1">
+                          <Label className="text-xs">Hoja</Label>
+                          <Select
+                            value={prompt.sheet}
+                            onValueChange={(value) => updatePrompt(index, 'sheet', value)}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue placeholder="Hoja" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background border shadow-lg z-50">
+                              {prompt.sheet && !availableSheets.includes(prompt.sheet) && (
+                                <SelectItem value={prompt.sheet}>
+                                  {prompt.sheet}
+                                </SelectItem>
+                              )}
+                              {availableSheets.map((sheet) => (
+                                <SelectItem key={sheet} value={sheet}>
+                                  {sheet}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="col-span-1">
+                          <Label className="text-xs">Rótulo</Label>
                           <Input
-                            value={prompt.valueOptionRange}
-                            onChange={(e) => updatePrompt(index, 'valueOptionRange', e.target.value)}
-                            placeholder="$E$2:$E$3"
+                            value={prompt.promptCell}
+                            onChange={(e) => updatePrompt(index, 'promptCell', e.target.value)}
                             className="h-8 text-xs"
                           />
                         </div>
-                      )}
-
-                      <div className="col-span-2">
-                        <Label className="text-xs">Tipo</Label>
-                        <Select
-                          value={prompt.promptType.toString()}
-                          onValueChange={(value) => updatePrompt(index, 'promptType', parseInt(value))}
-                        >
-                          <SelectTrigger className="h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {promptTypes.map((type) => (
-                              <SelectItem key={type.id} value={type.id.toString()}>
-                                {type.promptType}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="col-span-1">
-                        <Label className="text-xs">Req.</Label>
-                        <div className="flex items-center h-8">
-                          <Switch
-                            checked={prompt.valueRequired}
-                            onCheckedChange={(checked) => updatePrompt(index, 'valueRequired', checked)}
+                        <div className="col-span-1">
+                          <Label className="text-xs">Valor</Label>
+                          <Input
+                            value={prompt.valueCell}
+                            onChange={(e) => updatePrompt(index, 'valueCell', e.target.value)}
+                            className="h-8 text-xs"
                           />
                         </div>
-                      </div>
-
-                      <div className="col-span-1">
-                        <Label className="text-xs">Ocultar</Label>
-                        <div className="flex items-center h-8">
-                          <Switch
-                            checked={prompt.hideInDocuments}
-                            onCheckedChange={(checked) => updatePrompt(index, 'hideInDocuments', checked)}
+                        <div className="col-span-1">
+                          <Label className="text-xs">Orden</Label>
+                          <Input
+                            type="number"
+                            value={prompt.promptSeq}
+                            onChange={(e) => updatePrompt(index, 'promptSeq', parseInt(e.target.value) || 1)}
+                            className="h-8 text-xs"
                           />
                         </div>
-                      </div>
 
-                      {isComposite && (
+                        {!isNumericType && (
+                          <div className="col-span-2">
+                            <Label className="text-xs">Rango</Label>
+                            <Input
+                              value={prompt.valueOptionRange}
+                              onChange={(e) => updatePrompt(index, 'valueOptionRange', e.target.value)}
+                              placeholder="$E$2:$E$3"
+                              className="h-8 text-xs"
+                            />
+                          </div>
+                        )}
+
                         <div className="col-span-2">
-                          <Label className="text-xs">Componente</Label>
+                          <Label className="text-xs">Tipo</Label>
                           <Select
-                            value={prompt.component || "general"}
-                            onValueChange={(value) => updatePrompt(index, 'component', value)}
+                            value={prompt.promptType.toString()}
+                            onValueChange={(value) => updatePrompt(index, 'promptType', parseInt(value))}
                           >
                             <SelectTrigger className="h-8 text-xs">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="general">General</SelectItem>
-                              <SelectItem value="cubierta">Cubierta</SelectItem>
-                              {enabledComponents.includes("interior1") && (
-                                <SelectItem value="interior1">Interior 1</SelectItem>
-                              )}
-                              {enabledComponents.includes("interior2") && (
-                                <SelectItem value="interior2">Interior 2</SelectItem>
-                              )}
+                              {promptTypes.map((type) => (
+                                <SelectItem key={type.id} value={type.id.toString()}>
+                                  {type.promptType}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
-                      )}
 
-                      {isNumericType && (
-                        <>
-                          <div className="col-span-1">
-                            <Label className="text-xs">Decs.</Label>
-                            <Input
-                              type="number"
-                              value={prompt.valueQuantityAllowedDecimals}
-                              onChange={(e) => updatePrompt(index, 'valueQuantityAllowedDecimals', parseInt(e.target.value) || 0)}
-                              className="h-8 text-xs"
+                        <div className="col-span-1">
+                          <Label className="text-xs">Req.</Label>
+                          <div className="flex items-center h-8">
+                            <Switch
+                              checked={prompt.valueRequired}
+                              onCheckedChange={(checked) => updatePrompt(index, 'valueRequired', checked)}
                             />
                           </div>
-                          <div className="col-span-1">
-                            <Label className="text-xs">Min</Label>
-                            <Input
-                              type="number"
-                              value={prompt.valueQuantityMin}
-                              onChange={(e) => updatePrompt(index, 'valueQuantityMin', parseFloat(e.target.value) || 1)}
-                              className="h-8 text-xs"
-                            />
-                          </div>
-                          <div className="col-span-1">
-                            <Label className="text-xs">Max</Label>
-                            <Input
-                              type="number"
-                              value={prompt.valueQuantityMax}
-                              onChange={(e) => updatePrompt(index, 'valueQuantityMax', parseFloat(e.target.value) || 9999)}
-                              className="h-8 text-xs"
-                            />
-                          </div>
-                        </>
-                      )}
+                        </div>
 
-                      {!isNumericType && !isComposite && <div className="col-span-3"></div>}
-                      {!isNumericType && isComposite && <div className="col-span-1"></div>}
+                        {isNumericType && (
+                          <>
+                            <div className="col-span-1">
+                              <Label className="text-xs">Decs.</Label>
+                              <Input
+                                type="number"
+                                value={prompt.valueQuantityAllowedDecimals}
+                                onChange={(e) => updatePrompt(index, 'valueQuantityAllowedDecimals', parseInt(e.target.value) || 0)}
+                                className="h-8 text-xs"
+                              />
+                            </div>
+                            <div className="col-span-1">
+                              <Label className="text-xs">Min</Label>
+                              <Input
+                                type="number"
+                                value={prompt.valueQuantityMin}
+                                onChange={(e) => updatePrompt(index, 'valueQuantityMin', parseFloat(e.target.value) || 1)}
+                                className="h-8 text-xs"
+                              />
+                            </div>
+                            <div className="col-span-1">
+                              <Label className="text-xs">Max</Label>
+                              <Input
+                                type="number"
+                                value={prompt.valueQuantityMax}
+                                onChange={(e) => updatePrompt(index, 'valueQuantityMax', parseFloat(e.target.value) || 9999)}
+                                className="h-8 text-xs"
+                              />
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Segunda fila: Ocultar en docs y Componente */}
+                      <div className="grid grid-cols-12 gap-2 items-end">
+                        <div className="col-span-2">
+                          <Label className="text-xs">Ocultar en docs</Label>
+                          <div className="flex items-center h-8">
+                            <Switch
+                              checked={prompt.hideInDocuments}
+                              onCheckedChange={(checked) => updatePrompt(index, 'hideInDocuments', checked)}
+                            />
+                          </div>
+                        </div>
+
+                        {isComposite && (
+                          <div className="col-span-2">
+                            <Label className="text-xs">Componente</Label>
+                            <Select
+                              value={prompt.component || "general"}
+                              onValueChange={(value) => updatePrompt(index, 'component', value)}
+                            >
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="general">General</SelectItem>
+                                <SelectItem value="cubierta">Cubierta</SelectItem>
+                                {enabledComponents.includes("interior1") && (
+                                  <SelectItem value="interior1">Interior 1</SelectItem>
+                                )}
+                                {enabledComponents.includes("interior2") && (
+                                  <SelectItem value="interior2">Interior 2</SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
