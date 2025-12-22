@@ -1193,7 +1193,10 @@ export default function ProductManagement() {
   // Auto-open edit dialog if editProduct parameter is present
   useEffect(() => {
     const editProductId = searchParams.get('editProduct');
-    if (editProductId && products.length > 0) {
+    if (!editProductId) return;
+    
+    // Si los productos ya están cargados, buscar y abrir
+    if (products.length > 0) {
       const productToEdit = products.find(p => p.id === editProductId);
       if (productToEdit) {
         handleEditProduct(productToEdit);
@@ -1201,9 +1204,13 @@ export default function ProductManagement() {
         const newSearchParams = new URLSearchParams(searchParams);
         newSearchParams.delete('editProduct');
         setSearchParams(newSearchParams, { replace: true });
+      } else {
+        // Producto no encontrado en la lista actual, refrescar la lista
+        // (puede ser un producto recién creado)
+        refetch();
       }
     }
-  }, [products, searchParams, setSearchParams]);
+  }, [products, searchParams, setSearchParams, refetch]);
 
   // Mutation para actualizar producto
   const updateProductMutation = useMutation({
