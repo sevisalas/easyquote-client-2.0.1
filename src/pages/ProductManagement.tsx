@@ -144,6 +144,9 @@ function SortableOutputItem({
   upsertVariableMapping,
   productionVariables,
   selectedProduct,
+  isComposite,
+  getPromptComponent,
+  enabledComponents,
 }: {
   output: ProductOutput;
   index: number;
@@ -156,6 +159,9 @@ function SortableOutputItem({
   upsertVariableMapping: (data: any) => void;
   productionVariables: any[];
   selectedProduct: EasyQuoteProduct | null;
+  isComposite: boolean;
+  getPromptComponent: (name: string) => string;
+  enabledComponents: string[];
 }) {
   const {
     attributes,
@@ -172,22 +178,36 @@ function SortableOutputItem({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  // Obtener componente asignado para este output
+  const outputName = output.nameCell || output.id;
+  const assignedComponent = getPromptComponent(outputName);
+  const componentLabel = assignedComponent === 'general' 
+    ? 'General' 
+    : COMPONENT_PRESETS.encuadernado.components.find(c => c.value === assignedComponent)?.label || assignedComponent;
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={`p-4 border rounded-lg bg-background ${isDragging ? "ring-2 ring-primary" : ""}`}
     >
-      <div className="mb-4 flex items-center gap-2">
-        <button
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
-          type="button"
-        >
-          <GripVertical className="h-4 w-4 text-muted-foreground" />
-        </button>
-        <h4 className="font-medium">Campo nº {index + 1}</h4>
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+            type="button"
+          >
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
+          </button>
+          <h4 className="font-medium">Campo nº {index + 1}</h4>
+        </div>
+        {isComposite && (
+          <Badge variant={assignedComponent === 'general' ? 'secondary' : 'default'} className="text-xs">
+            {componentLabel}
+          </Badge>
+        )}
       </div>
 
       <div className="grid grid-cols-12 gap-2 items-end">
@@ -365,7 +385,8 @@ export default function ProductManagement() {
     sheet: "",
     prompt: "",
     defaultValue: "",
-    outputTypeId: 0
+    outputTypeId: 0,
+    component: "general"
   });
   const [excelSheets, setExcelSheets] = useState<string[]>([]);
   const [availableExcelFiles, setAvailableExcelFiles] = useState<EasyQuoteExcelFile[]>([]);
@@ -1559,7 +1580,8 @@ export default function ProductManagement() {
       sheet: "",
       prompt: "",
       defaultValue: "",
-      outputTypeId: outputTypes[0]?.id || 0
+      outputTypeId: outputTypes[0]?.id || 0,
+      component: "general"
     });
     setIsNewOutputDialogOpen(true);
   };
@@ -1575,8 +1597,20 @@ export default function ProductManagement() {
       valueCell: newOutputData.defaultValue
     };
 
-    createOutputMutation.mutate(newOutput);
+    createOutputMutation.mutate(newOutput, {
+      onSuccess: () => {
+        // Si el producto es compuesto y se asignó un componente, guardarlo
+        if (isComposite && newOutputData.component && newOutputData.prompt) {
+          assignPromptToComponent({
+            easyquote_product_id: selectedProduct.id,
+            prompt_name: newOutputData.prompt,
+            component: newOutputData.component,
+          });
+        }
+      }
+    });
     setIsNewOutputDialogOpen(false);
+    setNewOutputData(prev => ({ ...prev, component: "general" }));
   };
 
   // Bulk create prompts
@@ -2509,6 +2543,9 @@ export default function ProductManagement() {
                               upsertVariableMapping={upsertVariableMapping}
                               productionVariables={productionVariables}
                               selectedProduct={selectedProduct}
+                              isComposite={isComposite}
+                              getPromptComponent={getPromptComponent}
+                              enabledComponents={enabledComponents}
                             />
                           ))}
                         </div>
@@ -2984,6 +3021,30 @@ export default function ProductManagement() {
                   </SelectContent>
                 </Select>
               </div>
+              {/* Selector de componente - solo si el producto es compuesto */}
+              {isComposite && (
+                <div>
+                  <Label htmlFor="outputComponent">Componente</Label>
+                  <Select
+                    value={newOutputData.component}
+                    onValueChange={(value) => setNewOutputData({...newOutputData, component: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar componente" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border shadow-lg z-50">
+                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="cubierta">Cubierta</SelectItem>
+                      {enabledComponents.includes('interior_1') && (
+                        <SelectItem value="interior_1">Interior 1</SelectItem>
+                      )}
+                      {enabledComponents.includes('interior_2') && (
+                        <SelectItem value="interior_2">Interior 2</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           </div>
           <div className="flex justify-end space-x-2">
