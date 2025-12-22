@@ -147,15 +147,9 @@ export function BulkPromptsDialog({
 
         <div className="flex-1 overflow-y-auto max-h-[60vh] pr-2">
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <p className="text-sm text-muted-foreground">
-                {prompts.length} dato{prompts.length !== 1 ? 's' : ''} nuevo{prompts.length !== 1 ? 's' : ''}
-              </p>
-              <Button onClick={addPrompt} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Añadir
-              </Button>
-            </div>
+            <p className="text-sm text-muted-foreground">
+              {prompts.length} dato{prompts.length !== 1 ? 's' : ''} nuevo{prompts.length !== 1 ? 's' : ''}
+            </p>
 
             <div className="space-y-3">
               {prompts.map((prompt, index) => {
@@ -350,9 +344,13 @@ export function BulkPromptsDialog({
 
         <Separator />
 
-        <div className="flex justify-end space-x-2">
+        <div className="flex justify-between items-center">
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
             Cancelar
+          </Button>
+          <Button variant="secondary" onClick={addPrompt} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Añadir
           </Button>
           <Button onClick={handleSave} disabled={isSaving || prompts.length === 0}>
             {isSaving ? (
