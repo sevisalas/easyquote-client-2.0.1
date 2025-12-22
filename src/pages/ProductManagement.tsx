@@ -2106,10 +2106,22 @@ export default function ProductManagement() {
                 ) : (
                   <ScrollArea className="h-[500px] pr-4">
                     <div className="space-y-3">
-                      {productPrompts.map((prompt, index) => (
+                      {productPrompts.map((prompt, index) => {
+                        const promptName = prompt.promptCell || prompt.id;
+                        const assignedComponent = getPromptComponent(promptName);
+                        const componentLabel = assignedComponent === 'general' 
+                          ? 'General' 
+                          : COMPONENT_PRESETS.encuadernado.components.find(c => c.value === assignedComponent)?.label || assignedComponent;
+                        
+                        return (
                       <div key={prompt.id} className="p-4 border rounded-lg">
-                        <div className="mb-4">
+                        <div className="mb-4 flex items-center justify-between">
                           <h4 className="font-medium">Campo nº {index + 1}</h4>
+                          {isComposite && (
+                            <Badge variant={assignedComponent === 'general' ? 'secondary' : 'default'} className="text-xs">
+                              {componentLabel}
+                            </Badge>
+                          )}
                         </div>
                         
                         {(() => {
@@ -2419,7 +2431,8 @@ export default function ProductManagement() {
                           );
                         })()}
                       </div>
-                    ))}
+                      );
+                    })}
                     </div>
                   </ScrollArea>
                 )}
