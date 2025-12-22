@@ -18,7 +18,33 @@ const SHEET_REF_RE = /(?:^|[,(])\s*'?([A-Za-z_][A-Za-z0-9_ ]*)'?!(\$?[A-Z]+\$?\d
 // Regex to detect external file references [filename]
 const EXTERNAL_REF_RE = /\[([^\]]+)\]/g;
 
-type IssueType = "error" | "missing_sheet" | "external_ref" | "circular_suspect";
+// Functions not supported or problematic in PHPExcel (used by WooCommerce Price Calculator)
+// These cause "internal error" or "Formula Error: An unexpected error occured"
+const PHPEXCEL_UNSUPPORTED_FUNCTIONS = [
+  // Dynamic array functions (Excel 365+)
+  "FILTER", "SORT", "SORTBY", "UNIQUE", "SEQUENCE", "RANDARRAY", "LET", "LAMBDA",
+  "XLOOKUP", "XMATCH", "CHOOSECOLS", "CHOOSEROWS", "DROP", "TAKE", "EXPAND",
+  "TEXTSPLIT", "TEXTBEFORE", "TEXTAFTER", "VALUETOTEXT", "ARRAYTOTEXT",
+  "WRAPROWS", "WRAPCOLS", "TOCOL", "TOROW", "VSTACK", "HSTACK", "BYCOL", "BYROW",
+  "MAKEARRAY", "MAP", "REDUCE", "SCAN", "ISOMITTED",
+  // IFS variants
+  "IFS", "SWITCH", "MAXIFS", "MINIFS",
+  // Text functions
+  "CONCAT", "TEXTJOIN", "STOCKHISTORY",
+  // Web/data functions
+  "WEBSERVICE", "FILTERXML", "ENCODEURL",
+  // Image functions
+  "IMAGE",
+  // Other newer functions
+  "FORMULATEXT", "ISFORMULA", "SHEET", "SHEETS", "IFNA",
+  // Functions that may have issues
+  "AGGREGATE", "NUMBERVALUE", "UNICHAR", "UNICODE",
+];
+
+// Regex to extract function names from formulas
+const FUNCTION_RE = /([A-Z][A-Z0-9_.]+)\s*\(/gi;
+
+type IssueType = "error" | "missing_sheet" | "external_ref" | "circular_suspect" | "phpexcel_unsupported";
 
 type ExcelCellIssue = {
   sheet: string;
@@ -92,6 +118,22 @@ function extractExternalRefs(formula: string): string[] {
   return refs;
 }
 
+// Extract functions that are not supported by PHPExcel
+function extractUnsupportedFunctions(formula: string): string[] {
+  const funcs: string[] = [];
+  const seen = new Set<string>();
+  let match;
+  const regex = new RegExp(FUNCTION_RE.source, "gi");
+  while ((match = regex.exec(formula)) !== null) {
+    const funcName = match[1].toUpperCase();
+    if (!seen.has(funcName) && PHPEXCEL_UNSUPPORTED_FUNCTIONS.includes(funcName)) {
+      seen.add(funcName);
+      funcs.push(funcName);
+    }
+  }
+  return funcs;
+}
+
 // Build a reference graph and detect potential circular references
 function buildRefGraph(
   wb: XLSX.WorkBook
@@ -154,6 +196,7 @@ function traceRefChain(
 
 const TYPE_LABELS: Record<IssueType, { label: string; variant: "destructive" | "secondary" | "outline" | "default" }> = {
   error: { label: "Error", variant: "destructive" },
+  phpexcel_unsupported: { label: "PHPExcel", variant: "destructive" },
   missing_sheet: { label: "Hoja no existe", variant: "secondary" },
   external_ref: { label: "Ref externa", variant: "outline" },
   circular_suspect: { label: "Ref circular?", variant: "default" },
@@ -253,6 +296,18 @@ export function ExcelErrorScannerDialog() {
               type: "external_ref",
             });
           }
+          
+          // 4. Check for PHPExcel unsupported functions
+          const unsupportedFuncs = extractUnsupportedFunctions(formula);
+          if (unsupportedFuncs.length > 0) {
+            found.push({
+              sheet: sheetName,
+              cell: addr,
+              error: `Función no soportada: ${unsupportedFuncs.join(", ")}`,
+              formula,
+              type: "phpexcel_unsupported",
+            });
+          }
         }
       }
 
@@ -277,7 +332,13 @@ export function ExcelErrorScannerDialog() {
 
       found.sort((a, b) => {
         // Sort by type priority, then sheet, then cell
-        const typePriority: Record<IssueType, number> = { error: 0, missing_sheet: 1, external_ref: 2, circular_suspect: 3 };
+        const typePriority: Record<IssueType, number> = { 
+          error: 0, 
+          phpexcel_unsupported: 1, 
+          missing_sheet: 2, 
+          external_ref: 3, 
+          circular_suspect: 4 
+        };
         if (a.type !== b.type) return typePriority[a.type] - typePriority[b.type];
         if (a.sheet !== b.sheet) return a.sheet.localeCompare(b.sheet);
         return sortA1(a.cell, b.cell);
@@ -330,7 +391,7 @@ export function ExcelErrorScannerDialog() {
         <DialogHeader>
           <DialogTitle>Analizador de errores de Excel</DialogTitle>
           <DialogDescription>
-            Detecta errores (#N/A, #REF!), referencias a hojas inexistentes, referencias externas y cadenas de referencias problemáticas.
+            Detecta errores (#N/A, #REF!), funciones no soportadas por PHPExcel (WooCommerce), referencias a hojas inexistentes, referencias externas y cadenas de referencias problemáticas.
           </DialogDescription>
         </DialogHeader>
 
