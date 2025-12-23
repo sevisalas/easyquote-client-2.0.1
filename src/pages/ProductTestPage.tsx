@@ -10,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import PromptsForm from "@/components/quotes/PromptsForm";
 import ComponentTabsPromptsForm, { COMPONENT_LABELS } from "@/components/quotes/ComponentTabsPromptsForm";
+import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -48,6 +49,9 @@ export default function ProductTestPage() {
     organization,
     membership
   } = useSubscription();
+  
+  // Check if product is composite
+  const { isComposite } = useProductComponentSettings(productId || undefined);
   const queryClient = useQueryClient();
   
   const organizationId = organization?.id || membership?.organization_id;
@@ -844,11 +848,6 @@ export default function ProductTestPage() {
             {productId && <Card>
                 <CardHeader>
                   <CardTitle>Resultados</CardTitle>
-                  {selectedComponent !== 'general' && (
-                    <p className="text-sm text-muted-foreground">
-                      Componente: <span className="font-medium text-foreground">{COMPONENT_LABELS[selectedComponent] || selectedComponent}</span>
-                    </p>
-                  )}
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {pricingLoading && <div className="text-center py-8 text-muted-foreground">
@@ -878,6 +877,18 @@ export default function ProductTestPage() {
                           <img key={output.value} src={output.value} alt={output.label || output.name || `Imagen ${index + 1}`} className="w-full max-w-md rounded border" />
                         </div>)}
                     </div>}
+
+                  {/* Component section - only for composite products */}
+                  {isComposite && selectedComponent !== 'general' && (
+                    <div className="border-t pt-4 mt-4">
+                      <h4 className="text-sm font-semibold mb-3">
+                        {COMPONENT_LABELS[selectedComponent] || selectedComponent}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Outputs del componente seleccionado
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>}
           </div>
