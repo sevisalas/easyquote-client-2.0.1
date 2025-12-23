@@ -1761,21 +1761,27 @@ export default function ProductManagement() {
           outputTypeId: outputData.outputTypeId,
           sheet: outputData.sheet,
           nameCell: outputData.nameCell,
-          valueCell: outputData.valueCell
+          valueCell: outputData.valueCell,
         };
-        
+
         const result = await createOutputMutation.mutateAsync(newOutput);
-        
+
         // Asignar componente si es producto compuesto
-        if (isComposite && outputData.component && outputData.component !== "general" && result?.nameCell) {
+        // Usamos el nameCell de entrada; la respuesta de la API puede no incluirlo.
+        const createdOutputKey = String(outputData.nameCell ?? result?.nameCell ?? "")
+          .replace(/\$/g, "")
+          .trim()
+          .toUpperCase();
+
+        if (isComposite && outputData.component && outputData.component !== "general" && createdOutputKey) {
           await assignPromptToComponent({
             easyquote_product_id: selectedProduct.id,
-            prompt_name: result.nameCell,
-            component: outputData.component
+            prompt_name: createdOutputKey,
+            component: outputData.component,
           });
         }
       }
-      
+
       setIsBulkOutputsDialogOpen(false);
       toast({
         title: "Éxito",
