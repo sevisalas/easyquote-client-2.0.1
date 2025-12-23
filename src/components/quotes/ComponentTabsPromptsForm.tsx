@@ -26,6 +26,11 @@ function getPromptCell(op: any): string | undefined {
 function normalizePromptName(v: any): string {
   return String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
 }
+function extractCellRef(v: any): string | undefined {
+  const s = String(v ?? "").replace(/\$/g, "").toUpperCase();
+  const m = s.match(/\b[A-Z]{1,3}\d{1,4}\b/);
+  return m?.[0];
+}
 export default function ComponentTabsPromptsForm({
   product,
   productId,
@@ -66,13 +71,23 @@ export default function ComponentTabsPromptsForm({
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false
   });
-  const promptCellById = useMemo(() => {
+  const promptCellLookup = useMemo(() => {
     const map = new Map<string, string>();
+
     for (const p of promptDefinitions as any[]) {
-      const id = p?.id;
-      const cell = getPromptCell(p);
-      if (id && cell) map.set(String(id), normalizePromptName(cell));
+      const cell = extractCellRef(getPromptCell(p)) ?? normalizePromptName(getPromptCell(p));
+      if (!cell) continue;
+
+      const keys = [p?.id, p?.key, p?.code, p?.slug, p?.name, getPromptCell(p)];
+      for (const k of keys) {
+        const kn = extractCellRef(k) ?? normalizePromptName(k);
+        if (kn) map.set(kn, cell);
+      }
+
+      // Asegurar que la propia celda también está indexada
+      map.set(cell, cell);
     }
+
     return map;
   }, [promptDefinitions]);
 
@@ -98,14 +113,42 @@ export default function ComponentTabsPromptsForm({
     const originalPrompts: any[] = Array.isArray(promptDefinitions) && promptDefinitions as any[] || Array.isArray(product?.prompts) && product.prompts || Array.isArray(product?.pricing?.prompts) && product.pricing.prompts || [];
 
     // Asignar cada prompt a su componente
-    prompts.forEach(prompt => {
+    prompts.forEach((prompt) => {
       const idStr = String(prompt.id);
-      const promptCellFromDefs = promptCellById.get(idStr);
+      const idNorm = extractCellRef(idStr) ?? normalizePromptName(idStr);
+      const labelCell = extractCellRef((prompt as any)?.label);
+
+      const promptCellFromDefs =
+        (idNorm ? promptCellLookup.get(idNorm) : undefined) ??
+        (labelCell ? (promptCellLookup.get(labelCell) ?? labelCell) : undefined);
 
       // Buscar el prompt original (si existe) para extraer más metadata
-      const originalPrompt = originalPrompts.find((op: any) => [op?.id, getPromptCell(op), op?.key, op?.name, op?.code].filter(Boolean).map(String).includes(idStr));
-      const promptIdentifierRaw = promptCellFromDefs || getPromptCell(originalPrompt) || originalPrompt?.key || originalPrompt?.id || prompt.id;
-      const promptIdentifier = normalizePromptName(promptIdentifierRaw) || idStr;
+      const originalPrompt = originalPrompts.find((op: any) => {
+        const keys = [op?.id, getPromptCell(op), op?.key, op?.name, op?.code, op?.slug]
+          .filter(Boolean)
+          .map(String);
+        if (keys.includes(idStr)) return true;
+        const keyCells = keys.map((k) => extractCellRef(k)).filter(Boolean);
+        return (
+          (labelCell && keyCells.includes(labelCell)) ||
+          (promptCellFromDefs && keyCells.includes(promptCellFromDefs))
+        );
+      });
+
+      const identifierCandidates = [
+        promptCellFromDefs,
+        getPromptCell(originalPrompt),
+        originalPrompt?.key,
+        originalPrompt?.id,
+        (prompt as any)?.label,
+        prompt.id,
+      ];
+
+      const promptIdentifier =
+        identifierCandidates.map((v) => extractCellRef(v)).find(Boolean) ??
+        identifierCandidates.map((v) => normalizePromptName(v)).find(Boolean) ??
+        idStr;
+
       const component = getPromptComponent(promptIdentifier);
 
       // Si el componente asignado existe en los disponibles, usarlo; sino, poner en general
@@ -116,7 +159,7 @@ export default function ComponentTabsPromptsForm({
       }
     });
     return grouped;
-  }, [prompts, availableComponents, getPromptComponent, product]);
+  }, [prompts, availableComponents, getPromptComponent, product, promptDefinitions, promptCellLookup]);
 
   // Contar prompts por componente (solo para habilitar/deshabilitar tabs)
   const countByComponent = useMemo(() => {
