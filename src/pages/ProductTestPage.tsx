@@ -51,7 +51,7 @@ export default function ProductTestPage() {
   } = useSubscription();
   
   // Check if product is composite
-  const { isComposite } = useProductComponentSettings(productId || undefined);
+  const { isComposite, getPromptComponent } = useProductComponentSettings(productId || undefined);
   const queryClient = useQueryClient();
   
   const organizationId = organization?.id || membership?.organization_id;
@@ -476,7 +476,7 @@ export default function ProductTestPage() {
             sheet: String(o?.sheet ?? "").trim(),
             nameCell: String(o?.nameCell ?? o?.outputNameCell ?? "").trim(),
             valueCell: String(o?.valueCell ?? o?.outputValueCell ?? "").trim(),
-            label: o.label || o.name || o.outputText || o.text || o.outputName || "Output",
+            label: o.label || o.name || o.outputText || o.text || o.outputName || "",
             name: o.name || o.label || o.outputName || "",
             value: o.value ?? o.currentValue ?? o.outputValue ?? o.result ?? "",
             outputType: o.outputType || o.type || "",
@@ -658,19 +658,29 @@ export default function ProductTestPage() {
       .map((x) => x.o);
   }, [allOutputs, savedOutputOrder]);
 
-  const textOutputs = useMemo(() => {
+  // Filter outputs by selected component
+  const componentFilteredOutputs = useMemo(() => {
+    if (!isComposite) return sortedOutputs;
     return sortedOutputs.filter((o: any) => {
+      const outputIdentifier = o.nameCell || o.name || o.label || '';
+      const component = getPromptComponent(outputIdentifier);
+      return component === selectedComponent;
+    });
+  }, [sortedOutputs, isComposite, selectedComponent, getPromptComponent]);
+
+  const textOutputs = useMemo(() => {
+    return componentFilteredOutputs.filter((o: any) => {
       const value = String(o?.value ?? "");
       return !/^https?:\/\//i.test(value);
     });
-  }, [sortedOutputs]);
+  }, [componentFilteredOutputs]);
 
   const imageOutputs = useMemo(() => {
-    return sortedOutputs.filter((o: any) => {
+    return componentFilteredOutputs.filter((o: any) => {
       const value = String(o?.value ?? "");
       return /^https?:\/\//i.test(value);
     });
-  }, [sortedOutputs]);
+  }, [componentFilteredOutputs]);
   const selectedProduct = products.find((p: any) => p.id === productId);
 
   // Check permissions - AFTER all hooks are called
@@ -878,14 +888,6 @@ export default function ProductTestPage() {
                         </div>)}
                     </div>}
 
-                  {/* Component section - only for composite products */}
-                  {isComposite && selectedComponent !== 'general' && (
-                    <div className="border-t pt-4 mt-4">
-                      <h4 className="text-sm font-semibold mb-3">
-                        {COMPONENT_LABELS[selectedComponent] || selectedComponent}
-                      </h4>
-                    </div>
-                  )}
 
                 </CardContent>
               </Card>}
