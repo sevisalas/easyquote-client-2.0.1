@@ -402,6 +402,7 @@ export default function ProductManagement() {
   const [isDeleteProductDialogOpen, setIsDeleteProductDialogOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>("");
+  const [productType, setProductType] = useState<'sencillo' | 'encuadernado' | 'compuesto'>('sencillo');
   const [newPromptData, setNewPromptData] = useState({
     promptSheet: "",
     promptCell: "",
@@ -461,6 +462,15 @@ export default function ProductManagement() {
     isUpserting: isUpsertingComponents,
     isAssigning: isAssigningComponent,
   } = useProductComponentSettings(selectedProduct?.id);
+
+  // Sincronizar productType con isComposite cuando cambia
+  useEffect(() => {
+    if (isComposite) {
+      setProductType('encuadernado');
+    } else {
+      setProductType('sencillo');
+    }
+  }, [isComposite, selectedProduct?.id]);
 
   // Helper to get current organization ID from sessionStorage or fetch it
   const getCurrentOrganizationIdAsync = async (): Promise<string | null> => {
@@ -2035,11 +2045,13 @@ export default function ProductManagement() {
           {selectedProduct && (
           <div>
             <Tabs defaultValue="general" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className={`grid w-full ${productType === 'sencillo' ? 'grid-cols-3' : 'grid-cols-4'}`}>
                 <TabsTrigger value="general">General</TabsTrigger>
                 <TabsTrigger value="prompts">Datos de entrada ({productPrompts.length})</TabsTrigger>
                 <TabsTrigger value="outputs">Datos de salida ({productOutputs.length})</TabsTrigger>
-                <TabsTrigger value="components">Componentes</TabsTrigger>
+                {productType !== 'sencillo' && (
+                  <TabsTrigger value="components">Componentes</TabsTrigger>
+                )}
               </TabsList>
               
               <TabsContent value="general" className="space-y-4">
@@ -2173,16 +2185,50 @@ export default function ProductManagement() {
                   )}
                 </div>
                 
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="isActive"
-                    checked={selectedProduct.isActive}
-                    onCheckedChange={(checked) => setSelectedProduct({
-                      ...selectedProduct,
-                      isActive: checked
-                    })}
-                  />
-                  <Label htmlFor="isActive">Producto activo</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="product-type">Tipo de producto</Label>
+                    <Select
+                      value={productType}
+                      onValueChange={async (value: 'sencillo' | 'encuadernado' | 'compuesto') => {
+                        setProductType(value);
+                        if (selectedProduct) {
+                          const newIsComposite = value !== 'sencillo';
+                          try {
+                            await upsertComponentSettings({
+                              easyquote_product_id: selectedProduct.id,
+                              is_composite: newIsComposite,
+                              enabled_components: newIsComposite ? ['interior_1'] : [],
+                            });
+                          } catch (error) {
+                            console.error("Error updating product type:", error);
+                          }
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sencillo">Sencillo</SelectItem>
+                        <SelectItem value="encuadernado">Encuadernado</SelectItem>
+                        <SelectItem value="compuesto" disabled>
+                          Compuesto (no disponible todavía)
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center space-x-2 pt-6">
+                    <Switch
+                      id="isActive"
+                      checked={selectedProduct.isActive}
+                      onCheckedChange={(checked) => setSelectedProduct({
+                        ...selectedProduct,
+                        isActive: checked
+                      })}
+                    />
+                    <Label htmlFor="isActive">Producto activo</Label>
+                  </div>
                 </div>
               </TabsContent>
 
@@ -2656,200 +2702,153 @@ export default function ProductManagement() {
                 <div>
                   <h3 className="text-lg font-medium">Configuración de Componentes</h3>
                   <p className="text-sm text-muted-foreground">
-                    Define si este producto tiene múltiples partes (ej: cubierta + interior) y asigna cada dato de entrada a su componente.
+                    Configura las partes del producto (cubierta, interior, etc.) y asigna cada dato de entrada a su componente.
                   </p>
                 </div>
 
-                {/* Tipo de producto */}
-                <div className="flex items-center space-x-3 p-4 border rounded-lg bg-muted/30">
-                  <Switch
-                    id="isComposite"
-                    checked={isComposite}
-                    onCheckedChange={async (checked) => {
-                      if (selectedProduct) {
-                        try {
-                          await upsertComponentSettings({
-                            easyquote_product_id: selectedProduct.id,
-                            is_composite: checked,
-                            enabled_components: checked ? ['interior_1'] : [],
-                          });
-                          toast({
-                            title: "Configuración guardada",
-                            description: checked ? "Producto marcado como encuadernado" : "Producto marcado como simple",
-                          });
-                        } catch (error) {
-                          toast({
-                            title: "Error",
-                            description: "No se pudo guardar la configuración",
-                            variant: "destructive",
-                          });
-                        }
-                      }
-                    }}
-                    disabled={isUpsertingComponents}
-                  />
+                {/* Componentes habilitados */}
+                <div className="space-y-4">
                   <div>
-                    <Label htmlFor="isComposite" className="font-medium cursor-pointer">
-                      Producto Encuadernado
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      Activa esta opción si el producto tiene múltiples partes (cubierta, interior, etc.)
+                    <Label className="text-base font-medium">Componentes habilitados</Label>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Selecciona qué partes tiene este producto
                     </p>
+                    <div className="space-y-2">
+                      {COMPONENT_PRESETS.encuadernado.components.map((comp) => {
+                        const isEnabled = enabledComponents.includes(comp.value);
+                        const isRequired = comp.value === 'interior_1';
+                        const hints: Record<string, string> = {
+                          cubierta: 'papel o acabado distinto al interior',
+                          interior_1: 'páginas interiores principales',
+                          interior_2: 'segundas páginas interiores (opcional)',
+                        };
+                        return (
+                          <div key={comp.value} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`comp-${comp.value}`}
+                              checked={isEnabled}
+                              disabled={isRequired || isUpsertingComponents}
+                              onCheckedChange={async (checked) => {
+                                if (selectedProduct) {
+                                  const newComponents = checked
+                                    ? [...enabledComponents, comp.value]
+                                    : enabledComponents.filter(c => c !== comp.value);
+                                  try {
+                                    await upsertComponentSettings({
+                                      easyquote_product_id: selectedProduct.id,
+                                      is_composite: true,
+                                      enabled_components: newComponents,
+                                    });
+                                  } catch (error) {
+                                    toast({
+                                      title: "Error",
+                                      description: "No se pudo guardar",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }
+                              }}
+                            />
+                            <Label 
+                              htmlFor={`comp-${comp.value}`} 
+                              className={`cursor-pointer ${isRequired ? 'text-muted-foreground' : ''}`}
+                            >
+                              {comp.label}
+                              {hints[comp.value] && (
+                                <span className="text-xs text-muted-foreground ml-1">({hints[comp.value]})</span>
+                              )}
+                              {isRequired && <span className="text-xs ml-1">(obligatorio)</span>}
+                            </Label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Asignación de datos de entrada a componentes */}
+                  <div>
+                    <Label className="text-base font-medium">Asignación de Datos de Entrada</Label>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Asigna cada dato de entrada al componente correspondiente
+                    </p>
+                    
+                    {productPrompts.length === 0 ? (
+                      <div className="text-center py-4 text-muted-foreground">
+                        <Package className="h-8 w-8 mx-auto mb-2" />
+                        <p className="text-sm">No hay datos de entrada configurados</p>
+                      </div>
+                    ) : (
+                      <ScrollArea className="h-[300px] pr-4">
+                        <div className="space-y-2">
+                          {productPrompts.map((prompt) => {
+                            const promptName = prompt.promptCell || prompt.id;
+                            const currentComponent = getPromptComponent(promptName);
+                            
+                            // Construir lista de componentes disponibles
+                            const availableComponents = [
+                              GENERAL_COMPONENT,
+                              ...COMPONENT_PRESETS.encuadernado.components.filter(c => 
+                                enabledComponents.includes(c.value)
+                              ),
+                            ];
+                            
+                            return (
+                              <div 
+                                key={prompt.id} 
+                                className="flex items-center justify-between p-3 border rounded-lg bg-background"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">{promptName}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {promptTypes.find(t => t.id === prompt.promptType)?.promptType || 'Tipo desconocido'}
+                                  </p>
+                                </div>
+                                <Select
+                                  value={currentComponent}
+                                  onValueChange={async (value) => {
+                                    if (selectedProduct) {
+                                      try {
+                                        await assignPromptToComponent({
+                                          easyquote_product_id: selectedProduct.id,
+                                          prompt_name: promptName,
+                                          component: value,
+                                        });
+                                        toast({
+                                          title: "Asignación guardada",
+                                          description: `"${promptName}" asignado a ${availableComponents.find(c => c.value === value)?.label || value}`,
+                                        });
+                                      } catch (error) {
+                                        toast({
+                                          title: "Error",
+                                          description: "No se pudo guardar la asignación",
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    }
+                                  }}
+                                  disabled={isAssigningComponent}
+                                >
+                                  <SelectTrigger className="w-40">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {availableComponents.map((comp) => (
+                                      <SelectItem key={comp.value} value={comp.value}>
+                                        {comp.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </ScrollArea>
+                    )}
                   </div>
                 </div>
-
-                {/* Componentes habilitados - solo si es compuesto */}
-                {isComposite && (
-                  <div className="space-y-4">
-                    <div>
-                      <Label className="text-base font-medium">Componentes habilitados</Label>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        Selecciona qué partes tiene este producto
-                      </p>
-                      <div className="space-y-2">
-                        {COMPONENT_PRESETS.encuadernado.components.map((comp) => {
-                          const isEnabled = enabledComponents.includes(comp.value);
-                          const isRequired = comp.value === 'interior_1';
-                          const hints: Record<string, string> = {
-                            cubierta: 'papel o acabado distinto al interior',
-                            interior_1: 'páginas interiores principales',
-                            interior_2: 'segundas páginas interiores (opcional)',
-                          };
-                          return (
-                            <div key={comp.value} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`comp-${comp.value}`}
-                                checked={isEnabled}
-                                disabled={isRequired || isUpsertingComponents}
-                                onCheckedChange={async (checked) => {
-                                  if (selectedProduct) {
-                                    const newComponents = checked
-                                      ? [...enabledComponents, comp.value]
-                                      : enabledComponents.filter(c => c !== comp.value);
-                                    try {
-                                      await upsertComponentSettings({
-                                        easyquote_product_id: selectedProduct.id,
-                                        is_composite: true,
-                                        enabled_components: newComponents,
-                                      });
-                                    } catch (error) {
-                                      toast({
-                                        title: "Error",
-                                        description: "No se pudo guardar",
-                                        variant: "destructive",
-                                      });
-                                    }
-                                  }
-                                }}
-                              />
-                              <Label 
-                                htmlFor={`comp-${comp.value}`} 
-                                className={`cursor-pointer ${isRequired ? 'text-muted-foreground' : ''}`}
-                              >
-                                {comp.label}
-                                {hints[comp.value] && (
-                                  <span className="text-xs text-muted-foreground ml-1">({hints[comp.value]})</span>
-                                )}
-                                {isRequired && <span className="text-xs ml-1">(obligatorio)</span>}
-                              </Label>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Asignación de datos de entrada a componentes */}
-                    <div>
-                      <Label className="text-base font-medium">Asignación de Datos de Entrada</Label>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        Asigna cada dato de entrada al componente correspondiente
-                      </p>
-                      
-                      {productPrompts.length === 0 ? (
-                        <div className="text-center py-4 text-muted-foreground">
-                          <Package className="h-8 w-8 mx-auto mb-2" />
-                          <p className="text-sm">No hay datos de entrada configurados</p>
-                        </div>
-                      ) : (
-                        <ScrollArea className="h-[300px] pr-4">
-                          <div className="space-y-2">
-                            {productPrompts.map((prompt) => {
-                              const promptName = prompt.promptCell || prompt.id;
-                              const currentComponent = getPromptComponent(promptName);
-                              
-                              // Construir lista de componentes disponibles
-                              const availableComponents = [
-                                GENERAL_COMPONENT,
-                                ...COMPONENT_PRESETS.encuadernado.components.filter(c => 
-                                  enabledComponents.includes(c.value)
-                                ),
-                              ];
-                              
-                              return (
-                                <div 
-                                  key={prompt.id} 
-                                  className="flex items-center justify-between p-3 border rounded-lg bg-background"
-                                >
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium truncate">{promptName}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {promptTypes.find(t => t.id === prompt.promptType)?.promptType || 'Tipo desconocido'}
-                                    </p>
-                                  </div>
-                                  <Select
-                                    value={currentComponent}
-                                    onValueChange={async (value) => {
-                                      if (selectedProduct) {
-                                        try {
-                                          await assignPromptToComponent({
-                                            easyquote_product_id: selectedProduct.id,
-                                            prompt_name: promptName,
-                                            component: value,
-                                          });
-                                          toast({
-                                            title: "Asignación guardada",
-                                            description: `"${promptName}" asignado a ${availableComponents.find(c => c.value === value)?.label || value}`,
-                                          });
-                                        } catch (error) {
-                                          toast({
-                                            title: "Error",
-                                            description: "No se pudo guardar la asignación",
-                                            variant: "destructive",
-                                          });
-                                        }
-                                      }
-                                    }}
-                                    disabled={isAssigningComponent}
-                                  >
-                                    <SelectTrigger className="w-40">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {availableComponents.map((comp) => (
-                                        <SelectItem key={comp.value} value={comp.value}>
-                                          {comp.label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </ScrollArea>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {!isComposite && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Package className="h-12 w-12 mx-auto mb-4" />
-                    <p>Activa "Producto Encuadernado" para configurar los componentes</p>
-                  </div>
-                )}
               </TabsContent>
             </Tabs>
 
