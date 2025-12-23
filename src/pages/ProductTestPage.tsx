@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import PromptsForm from "@/components/quotes/PromptsForm";
-// ComponentTabsPromptsForm removed - using PromptsForm directly
-
+import ComponentTabsPromptsForm, { COMPONENT_LABELS } from "@/components/quotes/ComponentTabsPromptsForm";
+import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -41,7 +41,7 @@ export default function ProductTestPage() {
   const [hasUserModifiedPrompts, setHasUserModifiedPrompts] = useState(false);
   const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
   const [isDiagnosing, setIsDiagnosing] = useState(false);
-  
+  const [selectedComponent, setSelectedComponent] = useState<string>('general');
   const [tokenReady, setTokenReady] = useState(!!sessionStorage.getItem("easyquote_token"));
   const {
     isSuperAdmin,
@@ -50,6 +50,8 @@ export default function ProductTestPage() {
     membership
   } = useSubscription();
   
+  // Check if product is composite
+  const { isComposite } = useProductComponentSettings(productId || undefined);
   const queryClient = useQueryClient();
   
   const organizationId = organization?.id || membership?.organization_id;
@@ -656,7 +658,6 @@ export default function ProductTestPage() {
       .map((x) => x.o);
   }, [allOutputs, savedOutputOrder]);
 
-
   const textOutputs = useMemo(() => {
     return sortedOutputs.filter((o: any) => {
       const value = String(o?.value ?? "");
@@ -829,12 +830,13 @@ export default function ProductTestPage() {
                   </Alert>}
 
                 {productId && !isLoadingProduct && productDetail && <div className="border-t pt-4">
-                    <h3 className="font-medium mb-4">Datos de entrada</h3>
-                    <PromptsForm 
+                    <ComponentTabsPromptsForm 
                       product={productDetail} 
+                      productId={productId} 
                       values={promptValues} 
                       onChange={handlePromptChange} 
                       onCommit={handlePromptCommit}
+                      onComponentChange={setSelectedComponent}
                     />
                   </div>}
               </CardContent>
@@ -875,6 +877,18 @@ export default function ProductTestPage() {
                           <img key={output.value} src={output.value} alt={output.label || output.name || `Imagen ${index + 1}`} className="w-full max-w-md rounded border" />
                         </div>)}
                     </div>}
+
+                  {/* Component section - only for composite products */}
+                  {isComposite && selectedComponent !== 'general' && (
+                    <div className="border-t pt-4 mt-4">
+                      <h4 className="text-sm font-semibold mb-3">
+                        {COMPONENT_LABELS[selectedComponent] || selectedComponent}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Outputs del componente seleccionado
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>}
           </div>
