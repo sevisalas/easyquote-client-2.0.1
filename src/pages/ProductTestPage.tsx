@@ -682,6 +682,13 @@ export default function ProductTestPage() {
       'interior2': 'interior_2',
     };
     
+    console.log("📊 Agrupando outputs por componente. Total outputs:", sortedOutputs.length);
+    console.log("📊 Outputs con sus sheets:", sortedOutputs.map((o: any) => ({ 
+      label: o.label, 
+      sheet: o.sheet, 
+      nameCell: o.nameCell 
+    })));
+    
     sortedOutputs.forEach((output: any) => {
       const sheetRaw = String(output?.sheet ?? '').toLowerCase().trim();
       let component = 'general';
@@ -700,8 +707,11 @@ export default function ProductTestPage() {
       grouped[component].push(output);
     });
     
+    console.log("📊 Outputs agrupados por componente:", Object.keys(grouped).map(k => `${k}: ${grouped[k].length}`));
+    console.log("📊 selectedComponent:", selectedComponent);
+    
     return grouped;
-  }, [sortedOutputs]);
+  }, [sortedOutputs, selectedComponent]);
 
   // Todos los outputs (para la vista principal)
   const textOutputs = useMemo(() => {
