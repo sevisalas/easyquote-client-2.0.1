@@ -1,8 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import PromptsForm, { extractPrompts, type PromptDef } from "./PromptsForm";
-import { useProductComponentSettings, COMPONENT_PRESETS, GENERAL_COMPONENT } from "@/hooks/useProductComponentSettings";
+import { GENERAL_COMPONENT, useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 
 interface ComponentTabsPromptsFormProps {
   product: any;
@@ -15,11 +14,15 @@ interface ComponentTabsPromptsFormProps {
 
 // Labels para componentes
 const COMPONENT_LABELS: Record<string, string> = {
-  'general': 'General',
-  'cubierta': 'Cubierta',
-  'interior_1': 'Interior 1',
-  'interior_2': 'Interior 2',
+  general: "General",
+  cubierta: "Cubierta",
+  interior_1: "Interior 1",
+  interior_2: "Interior 2",
 };
+
+function getPromptCell(op: any): string | undefined {
+  return op?.promptCell ?? op?.prompt_cell ?? op?.cell ?? op?.promptcell;
+}
 
 export default function ComponentTabsPromptsForm({
   product,
@@ -29,15 +32,11 @@ export default function ComponentTabsPromptsForm({
   onCommit,
   showAllPrompts = false,
 }: ComponentTabsPromptsFormProps) {
-  const {
-    isComposite,
-    enabledComponents,
-    getPromptComponent,
-    isLoading,
-  } = useProductComponentSettings(productId);
+  const { isComposite, enabledComponents, getPromptComponent, isLoading } =
+    useProductComponentSettings(productId);
 
   const prompts = useMemo(() => extractPrompts(product), [product]);
-  
+
   // Si NO es un producto compuesto, renderizar el formulario normal
   if (!isComposite || isLoading) {
     return (
@@ -61,43 +60,51 @@ export default function ComponentTabsPromptsForm({
   // Agrupar prompts por componente
   const promptsByComponent = useMemo(() => {
     const grouped: Record<string, PromptDef[]> = {};
-    
+
     // Inicializar todos los componentes
-    availableComponents.forEach(comp => {
+    availableComponents.forEach((comp) => {
       grouped[comp] = [];
     });
 
     // Obtener los prompts originales del producto para acceder a promptCell
-    const originalPrompts = product?.prompts || [];
+    const originalPrompts: any[] =
+      (Array.isArray(product?.prompts) && product.prompts) ||
+      (Array.isArray(product?.pricing?.prompts) && product.pricing.prompts) ||
+      [];
 
     // Asignar cada prompt a su componente
     prompts.forEach((prompt) => {
       // Buscar el prompt original para obtener el promptCell (que es lo que se guarda en DB)
-      const originalPrompt = originalPrompts.find((op: any) => 
-        String(op.id) === String(prompt.id) || 
-        String(op.promptCell) === String(prompt.id) ||
-        String(op.key) === String(prompt.id)
+      const originalPrompt = originalPrompts.find((op: any) =>
+        [op?.id, getPromptCell(op), op?.key, op?.name, op?.code]
+          .filter(Boolean)
+          .map(String)
+          .includes(String(prompt.id))
       );
-      
-      // El nombre guardado en la DB es promptCell, no el id
-      const promptIdentifier = originalPrompt?.promptCell || originalPrompt?.id || prompt.id;
-      const component = getPromptComponent(promptIdentifier);
-      
+
+      const promptIdentifier =
+        getPromptCell(originalPrompt) ||
+        originalPrompt?.id ||
+        originalPrompt?.key ||
+        prompt.id;
+
+      const component = getPromptComponent(String(promptIdentifier));
+
       // Si el componente asignado existe en los disponibles, usarlo; sino, poner en general
       if (grouped[component]) {
         grouped[component].push(prompt);
       } else {
-        grouped['general'].push(prompt);
+        grouped[GENERAL_COMPONENT.value].push(prompt);
       }
     });
 
     return grouped;
   }, [prompts, availableComponents, getPromptComponent, product]);
 
-  // Contar prompts por componente para mostrar badge
+  // Contar prompts por componente (solo para habilitar/deshabilitar tabs)
   const countByComponent = useMemo(() => {
     const counts: Record<string, number> = {};
-    availableComponents.forEach(comp => {
+    availableComponents.forEach((comp) => {
       counts[comp] = promptsByComponent[comp]?.length || 0;
     });
     return counts;
@@ -106,21 +113,22 @@ export default function ComponentTabsPromptsForm({
   // Encontrar el primer tab con prompts
   const defaultTab = useMemo(() => {
     for (const comp of availableComponents) {
-      if (countByComponent[comp] > 0) {
-        return comp;
-      }
+      if (countByComponent[comp] > 0) return comp;
     }
-    return 'general';
+    return GENERAL_COMPONENT.value;
   }, [availableComponents, countByComponent]);
 
   // Crear un "producto virtual" para cada componente con solo sus prompts
   const createComponentProduct = (componentPrompts: PromptDef[]) => {
     return {
       ...product,
-      prompts: componentPrompts.map(p => {
+      prompts: componentPrompts.map((p) => {
         // Buscar el prompt original en product.prompts para preservar toda la metadata
-        const original = (product?.prompts || []).find((op: any) => 
-          (op.id === p.id) || (op.promptCell === p.id) || (op.key === p.id)
+        const original = (product?.prompts || []).find((op: any) =>
+          [op?.id, getPromptCell(op), op?.key, op?.name, op?.code]
+            .filter(Boolean)
+            .map(String)
+            .includes(String(p.id))
         );
         return original || p;
       }),
@@ -133,20 +141,15 @@ export default function ComponentTabsPromptsForm({
         {availableComponents.map((comp) => {
           const count = countByComponent[comp];
           const label = COMPONENT_LABELS[comp] || comp;
-          
+
           return (
-            <TabsTrigger 
-              key={comp} 
+            <TabsTrigger
+              key={comp}
               value={comp}
-              className="relative flex items-center gap-2"
+              className="relative flex items-center"
               disabled={count === 0}
             >
               {label}
-              {count > 0 && (
-                <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-xs">
-                  {count}
-                </Badge>
-              )}
             </TabsTrigger>
           );
         })}
@@ -154,7 +157,7 @@ export default function ComponentTabsPromptsForm({
 
       {availableComponents.map((comp) => {
         const componentPrompts = promptsByComponent[comp] || [];
-        
+
         return (
           <TabsContent key={comp} value={comp} className="mt-0">
             {componentPrompts.length === 0 ? (
