@@ -2506,7 +2506,7 @@ export default function ProductManagement() {
                               </div>
                               {isComposite && (
                                 <div className="flex items-center gap-2">
-                                  <Label className="text-sm font-medium whitespace-nowrap">Comp.</Label>
+                                  <Label className="text-sm font-medium whitespace-nowrap">Componente</Label>
                                   <Select
                                     value={assignedComponent}
                                     onValueChange={(value) => {
