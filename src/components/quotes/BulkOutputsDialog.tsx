@@ -75,24 +75,27 @@ export function BulkOutputsDialog({
   const [outputs, setOutputs] = useState<BulkOutputData[]>([]);
 
   const addOutput = () => {
-    const baseRow = getNextRow();
-    const nextRow = baseRow + outputs.length;
-    // Heredar hoja y componente del último output añadido
-    const lastOutput = outputs[outputs.length - 1];
-    const inheritSheet = lastOutput?.sheet || availableSheets[0] || "";
-    const inheritComponent = lastOutput?.component || "general";
-    setOutputs([...outputs, createInitialOutput(nextRow, inheritSheet, inheritComponent)]);
+    setOutputs((prev) => {
+      const baseRow = getNextRow();
+      const nextRow = baseRow + prev.length;
+
+      // Heredar hoja y componente del último output (evita estado "stale" al hacer click rápido)
+      const lastOutput = prev[prev.length - 1];
+      const inheritSheet = lastOutput?.sheet || availableSheets[0] || "";
+      const inheritComponent = lastOutput?.component || "general";
+
+      return [...prev, createInitialOutput(nextRow, inheritSheet, inheritComponent)];
+    });
   };
 
   const removeOutput = (index: number) => {
-    setOutputs(outputs.filter((_, i) => i !== index));
+    setOutputs((prev) => prev.filter((_, i) => i !== index));
   };
 
   const updateOutput = (index: number, field: keyof BulkOutputData, value: any) => {
-    const updated = outputs.map((output, i) => 
-      i === index ? { ...output, [field]: value } : output
+    setOutputs((prev) =>
+      prev.map((output, i) => (i === index ? { ...output, [field]: value } : output))
     );
-    setOutputs(updated);
   };
 
   const handleSave = () => {
