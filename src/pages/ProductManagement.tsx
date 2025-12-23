@@ -766,37 +766,13 @@ export default function ProductManagement() {
     // Solo procesar si tenemos outputs y la consulta de orden guardado ha terminado
     if (productOutputs.length === 0 || !savedOrderFetched) return;
     
-    // Solo inicializar una vez por producto
-    if (orderInitializedForProduct === selectedProduct?.id) return;
-    
-    // Marcar como inicializado para este producto
-    setOrderInitializedForProduct(selectedProduct?.id || null);
+    // (Antes se inicializaba una sola vez por producto; ahora recalculamos el orden visual
+    // siempre que cambien los outputs para mantenerlo consistente por celda.)
 
-    // Si hay orden guardado en Supabase, usarlo (guardado por nameCell)
-    if (savedOutputOrder && savedOutputOrder.length > 0) {
-      const normalizeKey = (v: any) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
-
-      // Crear mapa de nameCell(normalizado) -> output
-      const outputByName = new Map<string, ProductOutput>(
-        productOutputs.map((o) => [normalizeKey(o.nameCell), o])
-      );
-
-      // Filtrar solo keys que existen en productOutputs
-      const filteredOrder = savedOutputOrder
-        .map((k: string) => normalizeKey(k))
-        .filter((k: string) => outputByName.has(k))
-        .map((k: string) => outputByName.get(k)!.id);
-
-      // Añadir nuevos outputs que no están en el orden guardado
-      const savedNames = new Set<string>(savedOutputOrder.map((k: string) => normalizeKey(k)));
-      const newOutputIds = productOutputs
-        .filter((o) => !savedNames.has(normalizeKey(o.nameCell)))
-        .map((o) => o.id);
-
-      setLocalOutputOrder([...filteredOrder, ...newOutputIds]);
-      return;
-    }
-
+    // NOTA: Para que el orden aquí coincida con las páginas de prueba/presupuestos/pedidos,
+    // mostramos SIEMPRE los outputs ordenados por celda (columna, luego fila),
+    // independientemente de si hay un orden guardado.
+    // (El orden guardado sigue existiendo en BD, pero no gobierna el orden visual de esta lista.)
     // Si no hay orden guardado, usar orden basado en celda (columna, luego fila) - mismo orden que ProductTestPage
     const colToNumber = (col: string) => {
       return col.toUpperCase().split("").reduce((acc, ch) => acc * 26 + (ch.charCodeAt(0) - 64), 0);
@@ -827,7 +803,7 @@ export default function ProductManagement() {
 
     setLocalOutputOrder(sorted.map(o => o.id));
     // Nota: localOutputOrder usa IDs internamente, pero guardamos por name en Supabase
-  }, [productOutputs, savedOutputOrder, savedOrderFetched, orderInitializedForProduct, selectedProduct?.id]);
+  }, [productOutputs, savedOrderFetched]);
 
   // Outputs ordenados según el orden local (drag & drop)
   const orderedProductOutputs = useMemo(() => {
