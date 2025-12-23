@@ -592,78 +592,35 @@ export default function ProductTestPage() {
     });
   }, [outputs, orderedOutputDefinitions]);
 
-  // Order outputs por rangos: 1) Price, 2) Quantity, 3) Instructions, 4) Workflow, 5) Generic, 6) resto.
-  // Dentro de cada rango: por hoja + nameCell (A1, B2, ...). Si no hay celda, por label.
+  // Ordenar outputs por celda (columna, luego fila): E5, E8, E9, E12...
   const sortedOutputs = useMemo(() => {
-    // Si hay orden guardado, usarlo como prioridad principal
-    if (savedOutputOrder && savedOutputOrder.length > 0) {
-      const normalizeKey = (v: any) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
-      const orderMap = new Map(savedOutputOrder.map((k: string, idx: number) => [normalizeKey(k), idx]));
-
-      return [...allOutputs].sort((a: any, b: any) => {
-        const aKey = normalizeKey(a?.nameCell || a?.name || a?.label || "");
-        const bKey = normalizeKey(b?.nameCell || b?.name || b?.label || "");
-        const aIdx = aKey && orderMap.has(aKey) ? orderMap.get(aKey)! : 999;
-        const bIdx = bKey && orderMap.has(bKey) ? orderMap.get(bKey)! : 999;
-        return aIdx - bIdx;
-      });
-    }
-
-    // Fallback: ordenar por tipo y celda si no hay orden guardado
-    const typePriority: Record<string, number> = {
-      price: 1,
-      quantity: 2,
-      instructions: 3,
-      intrucctions: 3,
-      workflow: 4,
-      generic: 5,
-    };
-
-    const normalizeType = (o: any) =>
-      String(o?.outputType ?? o?.type ?? "")
-        .trim()
-        .toLowerCase();
-
-    const normalizeSheet = (o: any) => String(o?.sheet ?? "").trim().toUpperCase();
-
-    const normalizeCell = (v: any) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
-
     const parseCell = (cellRaw: string) => {
-      const cell = normalizeCell(cellRaw);
+      const cell = String(cellRaw ?? "").replace(/\$/g, "").trim().toUpperCase();
       const m = cell.match(/^([A-Z]+)(\d+)$/);
       if (!m) return null;
       const [, letters, rowStr] = m;
       const row = Number(rowStr);
       const col = letters.split("").reduce((acc, ch) => acc * 26 + (ch.charCodeAt(0) - 64), 0);
-      if (!Number.isFinite(row) || row <= 0 || col <= 0) return null;
       return { col, row };
     };
 
-    return allOutputs
-      .map((o, index) => {
-        const type = normalizeType(o);
-        const priority = typePriority[type] ?? 999;
-        const sheetKey = normalizeSheet(o);
-        const nameCellKey = normalizeCell(o?.nameCell);
-        const parsed = nameCellKey ? parseCell(nameCellKey) : null;
-        const labelKey = String(o?.label ?? o?.name ?? "").trim().toUpperCase();
-        return { o, index, priority, sheetKey, nameCellKey, parsed, labelKey };
-      })
-      .sort((a, b) => {
-        if (a.priority !== b.priority) return a.priority - b.priority;
-        if (a.sheetKey !== b.sheetKey) return a.sheetKey.localeCompare(b.sheetKey);
-        const aHas = !!a.parsed;
-        const bHas = !!b.parsed;
-        if (aHas !== bHas) return aHas ? -1 : 1;
-        if (a.parsed && b.parsed) {
-          if (a.parsed.col !== b.parsed.col) return a.parsed.col - b.parsed.col;
-          if (a.parsed.row !== b.parsed.row) return a.parsed.row - b.parsed.row;
-        }
-        if (a.labelKey !== b.labelKey) return a.labelKey.localeCompare(b.labelKey);
-        return a.index - b.index;
-      })
-      .map((x) => x.o);
-  }, [allOutputs, savedOutputOrder]);
+    return [...allOutputs].sort((a: any, b: any) => {
+      const cellA = String(a?.nameCell ?? "").replace(/\$/g, "").trim().toUpperCase();
+      const cellB = String(b?.nameCell ?? "").replace(/\$/g, "").trim().toUpperCase();
+      
+      const parsedA = parseCell(cellA);
+      const parsedB = parseCell(cellB);
+      
+      if (parsedA && parsedB) {
+        if (parsedA.col !== parsedB.col) return parsedA.col - parsedB.col;
+        return parsedA.row - parsedB.row;
+      }
+      
+      if (parsedA && !parsedB) return -1;
+      if (!parsedA && parsedB) return 1;
+      return 0;
+    });
+  }, [allOutputs]);
 
   // Agrupar outputs por componente usando asignaciones guardadas + fallback por hoja
   
