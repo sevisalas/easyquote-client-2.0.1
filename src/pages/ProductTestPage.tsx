@@ -667,22 +667,32 @@ export default function ProductTestPage() {
 
   // Agrupar outputs por componente basado en la hoja (sheet)
   const outputsByComponent = useMemo(() => {
-    const grouped: Record<string, any[]> = {
-      general: [],
-    };
+    const grouped: Record<string, any[]> = {};
     
-    // Mapear hojas a componentes (hoja 1 = general, hoja 2 = cubierta, etc.)
-    // Esto puede variar según la configuración del producto
-    const sheetToComponent: Record<string, string> = {
-      '1': 'general',
-      '2': 'cubierta', 
-      '3': 'interior_1',
-      '4': 'interior_2',
+    // Mapear hojas a componentes por nombre de hoja
+    const sheetNameToComponent: Record<string, string> = {
+      'cubierta': 'cubierta',
+      'cover': 'cubierta', 
+      'interior': 'interior_1',
+      'interior 1': 'interior_1',
+      'interior_1': 'interior_1',
+      'interior1': 'interior_1',
+      'interior 2': 'interior_2',
+      'interior_2': 'interior_2',
+      'interior2': 'interior_2',
     };
     
     sortedOutputs.forEach((output: any) => {
-      const sheet = String(output?.sheet ?? '1');
-      const component = sheetToComponent[sheet] || 'general';
+      const sheetRaw = String(output?.sheet ?? '').toLowerCase().trim();
+      let component = 'general';
+      
+      // Intentar mapear por nombre de hoja
+      if (sheetNameToComponent[sheetRaw]) {
+        component = sheetNameToComponent[sheetRaw];
+      } else if (sheetRaw && sheetRaw !== '1' && sheetRaw !== '') {
+        // Si tiene un nombre de hoja que no conocemos, usarlo como componente
+        component = sheetRaw;
+      }
       
       if (!grouped[component]) {
         grouped[component] = [];
@@ -693,28 +703,26 @@ export default function ProductTestPage() {
     return grouped;
   }, [sortedOutputs]);
 
-  // Outputs del componente general (siempre visibles)
-  const generalOutputs = useMemo(() => outputsByComponent.general || [], [outputsByComponent]);
-  
-  // Outputs del componente seleccionado (si no es general)
+  // Todos los outputs (para la vista principal)
+  const textOutputs = useMemo(() => {
+    return sortedOutputs.filter((o: any) => {
+      const value = String(o?.value ?? "");
+      return !/^https?:\/\//i.test(value);
+    });
+  }, [sortedOutputs]);
+
+  const imageOutputs = useMemo(() => {
+    return sortedOutputs.filter((o: any) => {
+      const value = String(o?.value ?? "");
+      return /^https?:\/\//i.test(value);
+    });
+  }, [sortedOutputs]);
+
+  // Outputs específicos del componente seleccionado (excluyendo general)
   const selectedComponentOutputs = useMemo(() => {
     if (selectedComponent === 'general') return [];
     return outputsByComponent[selectedComponent] || [];
   }, [outputsByComponent, selectedComponent]);
-
-  const textOutputs = useMemo(() => {
-    return generalOutputs.filter((o: any) => {
-      const value = String(o?.value ?? "");
-      return !/^https?:\/\//i.test(value);
-    });
-  }, [generalOutputs]);
-
-  const imageOutputs = useMemo(() => {
-    return generalOutputs.filter((o: any) => {
-      const value = String(o?.value ?? "");
-      return /^https?:\/\//i.test(value);
-    });
-  }, [generalOutputs]);
 
   const selectedTextOutputs = useMemo(() => {
     return selectedComponentOutputs.filter((o: any) => {
