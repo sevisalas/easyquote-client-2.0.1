@@ -872,7 +872,7 @@ export default function ProductTestPage() {
                   {/* Text outputs */}
                   {textOutputs.length > 0 && <div className="space-y-2 text-sm">
                       {textOutputs.map((output, index) => <div key={index} className="flex justify-between">
-                          <span>{output.label || output.name}:</span>
+                          <span>{output.label || output.name}</span>
                           <span className="font-medium">{output.value}</span>
                         </div>)}
                     </div>}
