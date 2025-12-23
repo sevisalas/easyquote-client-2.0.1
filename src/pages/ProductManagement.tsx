@@ -2273,22 +2273,6 @@ export default function ProductManagement() {
                   </div>
                 </div>
 
-                {/* Selector de componente para productos compuestos */}
-                {isComposite && (
-                  <Tabs value={selectedInputComponent} onValueChange={setSelectedInputComponent} className="w-full">
-                    <TabsList>
-                      <TabsTrigger value="general">General</TabsTrigger>
-                      {enabledComponents.map((comp) => {
-                        const preset = COMPONENT_PRESETS.encuadernado.components.find(c => c.value === comp);
-                        return (
-                          <TabsTrigger key={comp} value={comp}>
-                            {preset?.label || comp}
-                          </TabsTrigger>
-                        );
-                      })}
-                    </TabsList>
-                  </Tabs>
-                )}
 
                 {promptsLoading ? (
                   <div className="text-center py-4">
