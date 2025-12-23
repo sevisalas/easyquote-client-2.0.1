@@ -2505,7 +2505,7 @@ export default function ProductManagement() {
                                 />
                               </div>
                               {isComposite && (
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-1">
                                   <Label className="text-sm font-medium whitespace-nowrap">Componente</Label>
                                   <Select
                                     value={assignedComponent}
@@ -2519,7 +2519,7 @@ export default function ProductManagement() {
                                       }
                                     }}
                                   >
-                                    <SelectTrigger className="w-28">
+                                    <SelectTrigger className="flex-1">
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent className="bg-background border shadow-lg z-50">
@@ -2536,8 +2536,8 @@ export default function ProductManagement() {
                                   </Select>
                                 </div>
                               )}
-                              <div className="flex items-center gap-2">
-                                <Label className="text-sm font-medium whitespace-nowrap">Var. prod.</Label>
+                              <div className="flex items-center gap-2 ml-auto">
+                                <Label className="text-sm font-medium whitespace-nowrap">Variable de prod.</Label>
                                 <Select
                                   value={getMappedVariableId(prompt.promptCell) || "none"}
                                   onValueChange={(value) => {
