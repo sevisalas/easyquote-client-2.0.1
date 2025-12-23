@@ -45,7 +45,6 @@ export default function ComponentTabsPromptsForm({
     getPromptComponent,
     isLoading
   } = useProductComponentSettings(productId);
-  const prompts = useMemo(() => extractPrompts(product), [product]);
   const {
     data: promptDefinitions = []
   } = useQuery({
@@ -71,6 +70,17 @@ export default function ComponentTabsPromptsForm({
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false
   });
+  const prompts = useMemo(() => {
+    // En productos compuestos, el pricing (easyquote-pricing) a veces NO devuelve todos los prompts.
+    // Para poder mostrar (y agrupar) los campos asignados a “Cubierta/Interior…”, usamos
+    // las definiciones completas (easyquote-prompts) cuando estén disponibles.
+    const source = isComposite && (promptDefinitions?.length ?? 0) > 0
+      ? { ...product, prompts: promptDefinitions }
+      : product;
+
+    return extractPrompts(source);
+  }, [product, isComposite, promptDefinitions]);
+
   const promptCellLookup = useMemo(() => {
     const map = new Map<string, string>();
 
