@@ -2128,7 +2128,7 @@ export default function ProductManagement() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4 items-end">
                   <div>
                     <Label htmlFor="category-select">Categoría</Label>
                     <Select
@@ -2158,34 +2158,6 @@ export default function ProductManagement() {
                     </Select>
                   </div>
                   
-                  {selectedCategoryId && (
-                    <div>
-                      <Label htmlFor="subcategory-select">Subcategoría</Label>
-                      <Select
-                        value={selectedSubcategoryId || "none"}
-                        onValueChange={(value) => setSelectedSubcategoryId(value === "none" ? "" : value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sin subcategoría" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Sin subcategoría</SelectItem>
-                          {allSubcategories
-                            .filter(subcat => 
-                              subcat.category_id === selectedCategoryId && subcat.is_active
-                            )
-                            .map((subcategory) => (
-                              <SelectItem key={subcategory.id} value={subcategory.id}>
-                                {subcategory.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="product-type">Tipo de producto</Label>
                     <Select
@@ -2213,12 +2185,13 @@ export default function ProductManagement() {
                         <SelectItem value="sencillo">Sencillo</SelectItem>
                         <SelectItem value="encuadernado">Encuadernado</SelectItem>
                         <SelectItem value="compuesto" disabled>
-                          Compuesto (no disponible todavía)
+                          Compuesto (no disponible)
                         </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex items-center space-x-2 pt-6">
+
+                  <div className="flex items-center space-x-2 pb-2">
                     <Switch
                       id="isActive"
                       checked={selectedProduct.isActive}
@@ -2230,6 +2203,32 @@ export default function ProductManagement() {
                     <Label htmlFor="isActive">Producto activo</Label>
                   </div>
                 </div>
+
+                {selectedCategoryId && (
+                  <div className="max-w-xs">
+                    <Label htmlFor="subcategory-select">Subcategoría</Label>
+                    <Select
+                      value={selectedSubcategoryId || "none"}
+                      onValueChange={(value) => setSelectedSubcategoryId(value === "none" ? "" : value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sin subcategoría" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sin subcategoría</SelectItem>
+                        {allSubcategories
+                          .filter(subcat => 
+                            subcat.category_id === selectedCategoryId && subcat.is_active
+                          )
+                          .map((subcategory) => (
+                            <SelectItem key={subcategory.id} value={subcategory.id}>
+                              {subcategory.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="prompts" className="space-y-4">
