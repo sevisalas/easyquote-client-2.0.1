@@ -51,7 +51,7 @@ export default function ProductTestPage() {
   } = useSubscription();
   
   // Check if product is composite
-  const { isComposite } = useProductComponentSettings(productId || undefined);
+  const { isComposite, enabledComponents } = useProductComponentSettings(productId || undefined);
   const queryClient = useQueryClient();
   
   const organizationId = organization?.id || membership?.organization_id;
@@ -667,72 +667,72 @@ export default function ProductTestPage() {
 
   // Agrupar outputs por componente basado en la hoja (sheet)
   const outputsByComponent = useMemo(() => {
-    const grouped: Record<string, any[]> = {};
-    
-    // Mapear hojas a componentes por nombre de hoja
-    const sheetNameToComponent: Record<string, string> = {
-      'cubierta': 'cubierta',
-      'cover': 'cubierta', 
-      'interior': 'interior_1',
-      'interior 1': 'interior_1',
-      'interior_1': 'interior_1',
-      'interior1': 'interior_1',
-      'interior 2': 'interior_2',
-      'interior_2': 'interior_2',
-      'interior2': 'interior_2',
-    };
-    
-    console.log("📊 Agrupando outputs por componente. Total outputs:", sortedOutputs.length);
-    sortedOutputs.forEach((o: any, i: number) => {
-      console.log(`📊 Output ${i}:`, { label: o.label, sheet: o.sheet, nameCell: o.nameCell });
-    });
-    
-    sortedOutputs.forEach((output: any) => {
-      const sheetRaw = String(output?.sheet ?? '').toLowerCase().trim();
-      let component = 'general';
-      
-      // Intentar mapear por nombre de hoja
-      if (sheetNameToComponent[sheetRaw]) {
-        component = sheetNameToComponent[sheetRaw];
-      } else if (sheetRaw && sheetRaw !== '1' && sheetRaw !== '') {
-        // Si tiene un nombre de hoja que no conocemos, usarlo como componente
-        component = sheetRaw;
-      }
-      
-      if (!grouped[component]) {
-        grouped[component] = [];
-      }
-      grouped[component].push(output);
-    });
-    
-    console.log("📊 Outputs agrupados por componente:", Object.keys(grouped).map(k => `${k}: ${grouped[k].length}`));
-    console.log("📊 selectedComponent:", selectedComponent);
-    
-    return grouped;
-  }, [sortedOutputs, selectedComponent]);
+    const grouped: Record<string, any[]> = { general: [] };
+    const availableComponents = ["general", ...(enabledComponents ?? [])];
 
-  // Todos los outputs (para la vista principal)
+    // Mapear nombres de hoja comunes a componentes
+    const sheetNameToComponent: Record<string, string> = {
+      cubierta: "cubierta",
+      cover: "cubierta",
+      interior: "interior_1",
+      "interior 1": "interior_1",
+      interior_1: "interior_1",
+      interior1: "interior_1",
+      "interior 2": "interior_2",
+      interior_2: "interior_2",
+      interior2: "interior_2",
+    };
+
+    const inferComponentFromSheet = (sheet: any): string => {
+      const raw = String(sheet ?? "").trim();
+      const norm = raw.toLowerCase().trim();
+      if (!norm) return "general";
+
+      if (sheetNameToComponent[norm]) return sheetNameToComponent[norm];
+
+      // Si viene como número ("1", "2"...) o contiene un número ("Sheet 2", "Hoja3"), mapear por orden de componentes habilitados
+      const m = norm.match(/\d+/);
+      if (m) {
+        const n = Number(m[0]);
+        if (Number.isFinite(n) && n >= 1 && n <= availableComponents.length) {
+          return availableComponents[n - 1];
+        }
+      }
+
+      return "general";
+    };
+
+    for (const output of sortedOutputs as any[]) {
+      const component = inferComponentFromSheet(output?.sheet);
+      if (!grouped[component]) grouped[component] = [];
+      grouped[component].push(output);
+    }
+
+    return grouped;
+  }, [sortedOutputs, enabledComponents]);
+
+  // Outputs generales (siempre visibles)
+  const generalOutputs = useMemo(() => outputsByComponent.general || [], [outputsByComponent]);
+
   const textOutputs = useMemo(() => {
-    return sortedOutputs.filter((o: any) => {
+    return generalOutputs.filter((o: any) => {
       const value = String(o?.value ?? "");
       return !/^https?:\/\//i.test(value);
     });
-  }, [sortedOutputs]);
+  }, [generalOutputs]);
 
   const imageOutputs = useMemo(() => {
-    return sortedOutputs.filter((o: any) => {
+    return generalOutputs.filter((o: any) => {
       const value = String(o?.value ?? "");
       return /^https?:\/\//i.test(value);
     });
-  }, [sortedOutputs]);
+  }, [generalOutputs]);
 
-  // Outputs del componente seleccionado - por ahora mostramos todos los outputs
-  // ya que la agrupación por sheet no está funcionando correctamente
+  // Outputs del componente seleccionado (sin repetir los generales)
   const selectedComponentOutputs = useMemo(() => {
-    if (selectedComponent === 'general') return [];
-    // Mostrar todos los outputs bajo el componente seleccionado
-    return sortedOutputs;
-  }, [sortedOutputs, selectedComponent]);
+    if (selectedComponent === "general") return [];
+    return outputsByComponent[selectedComponent] || [];
+  }, [outputsByComponent, selectedComponent]);
 
   const selectedTextOutputs = useMemo(() => {
     return selectedComponentOutputs.filter((o: any) => {
@@ -955,7 +955,7 @@ export default function ProductTestPage() {
                     </div>}
 
                   {/* Título y outputs del componente seleccionado */}
-                  {selectedComponent !== 'general' && (textOutputs.length > 0 || imageOutputs.length > 0) && (
+                  {selectedComponent !== 'general' && (selectedTextOutputs.length > 0 || selectedImageOutputs.length > 0) && (
                     <div className="border-t pt-4 mt-4 space-y-4">
                       <h4 className="font-semibold text-sm">{COMPONENT_LABELS[selectedComponent] || selectedComponent}</h4>
                       
