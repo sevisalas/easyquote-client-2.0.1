@@ -183,47 +183,79 @@ export default function ComponentTabsPromptsForm({
     );
   }
 
+  // Filtrar componentes sin incluir "general" para las pestañas
+  const tabComponents = availableComponents.filter((c) => c !== GENERAL_COMPONENT.value);
+  const generalPrompts = promptsByComponent[GENERAL_COMPONENT.value] || [];
+  
+  // Default tab para los componentes (sin general)
+  const tabDefaultValue = useMemo(() => {
+    for (const comp of tabComponents) {
+      if (countByComponent[comp] > 0) return comp;
+    }
+    return tabComponents[0] || "";
+  }, [tabComponents, countByComponent]);
+
   return (
-    <Tabs defaultValue={defaultTab} className="w-full">
-      <TabsList className="mb-4 flex-wrap h-auto gap-1">
-        {availableComponents.map((comp) => {
-          const count = countByComponent[comp];
-          const label = COMPONENT_LABELS[comp] || comp;
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Columna izquierda: General (siempre visible) */}
+      {generalPrompts.length > 0 && (
+        <div className="space-y-4">
+          <PromptsForm
+            product={createComponentProduct(generalPrompts)}
+            values={values}
+            onChange={onChange}
+            onCommit={onCommit}
+            showAllPrompts={showAllPrompts}
+          />
+        </div>
+      )}
 
-          return (
-            <TabsTrigger
-              key={comp}
-              value={comp}
-              className="relative flex items-center"
-              disabled={count === 0}
-            >
-              {label}
-            </TabsTrigger>
-          );
-        })}
-      </TabsList>
+      {/* Columna derecha: Componentes con pestañas */}
+      {tabComponents.length > 0 && (
+        <div className="space-y-4">
+          <Tabs defaultValue={tabDefaultValue} className="w-full">
+            <TabsList className="mb-4 flex-wrap h-auto gap-1">
+              {tabComponents.map((comp) => {
+                const count = countByComponent[comp];
+                const label = COMPONENT_LABELS[comp] || comp;
 
-      {availableComponents.map((comp) => {
-        const componentPrompts = promptsByComponent[comp] || [];
+                return (
+                  <TabsTrigger
+                    key={comp}
+                    value={comp}
+                    className="relative flex items-center"
+                    disabled={count === 0}
+                  >
+                    {label}
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
 
-        return (
-          <TabsContent key={comp} value={comp} className="mt-0">
-            {componentPrompts.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4">
-                No hay campos de entrada asignados a {COMPONENT_LABELS[comp] || comp}.
-              </p>
-            ) : (
-              <PromptsForm
-                product={createComponentProduct(componentPrompts)}
-                values={values}
-                onChange={onChange}
-                onCommit={onCommit}
-                showAllPrompts={showAllPrompts}
-              />
-            )}
-          </TabsContent>
-        );
-      })}
-    </Tabs>
+            {tabComponents.map((comp) => {
+              const componentPrompts = promptsByComponent[comp] || [];
+
+              return (
+                <TabsContent key={comp} value={comp} className="mt-0">
+                  {componentPrompts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-4">
+                      No hay campos asignados a {COMPONENT_LABELS[comp] || comp}.
+                    </p>
+                  ) : (
+                    <PromptsForm
+                      product={createComponentProduct(componentPrompts)}
+                      values={values}
+                      onChange={onChange}
+                      onCommit={onCommit}
+                      showAllPrompts={showAllPrompts}
+                    />
+                  )}
+                </TabsContent>
+              );
+            })}
+          </Tabs>
+        </div>
+      )}
+    </div>
   );
 }
