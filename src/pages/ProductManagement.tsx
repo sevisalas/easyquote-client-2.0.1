@@ -285,8 +285,8 @@ function SortableOutputItem({
       {/* Componente + Variable de producción - Línea separada */}
       <div className="flex items-center gap-4 mt-4 pt-4 border-t flex-wrap">
         {isComposite && (
-          <div className="flex items-center gap-2">
-            <Label className="text-sm font-medium whitespace-nowrap">Comp.</Label>
+          <div className="flex items-center gap-2 flex-1">
+            <Label className="text-sm font-medium whitespace-nowrap">Componente</Label>
             <Select
               value={assignedComponent}
               onValueChange={(value) => {
@@ -299,7 +299,7 @@ function SortableOutputItem({
                 }
               }}
             >
-              <SelectTrigger className="w-28">
+              <SelectTrigger className="flex-1">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-background border shadow-lg z-50">
@@ -317,7 +317,7 @@ function SortableOutputItem({
           </div>
         )}
         <div className="flex items-center gap-2 flex-1">
-          <Label className="text-sm font-medium whitespace-nowrap">Var. prod.</Label>
+          <Label className="text-sm font-medium whitespace-nowrap">Variable de producción</Label>
           <Select
             value={getMappedVariableId(output.nameCell) || "none"}
             onValueChange={(value) => {
@@ -331,8 +331,8 @@ function SortableOutputItem({
               }
             }}
           >
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Sin variable asignada" />
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Sin variable" />
             </SelectTrigger>
             <SelectContent className="bg-background border shadow-lg z-50">
               <SelectItem value="none">Sin variable asignada</SelectItem>
