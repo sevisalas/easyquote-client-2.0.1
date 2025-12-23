@@ -824,11 +824,8 @@ export default function ProductTestPage() {
                     </AlertDescription>
                   </Alert>}
 
-                {productId && !isLoadingProduct && productDetail && <div className="space-y-4">
-                    <div className="border-t pt-4">
-                      <h3 className="font-medium mb-4">Configuración del Producto</h3>
-                      <ComponentTabsPromptsForm product={productDetail} productId={productId} values={promptValues} onChange={handlePromptChange} onCommit={handlePromptCommit} />
-                    </div>
+                {productId && !isLoadingProduct && productDetail && <div className="border-t pt-4">
+                    <ComponentTabsPromptsForm product={productDetail} productId={productId} values={promptValues} onChange={handlePromptChange} onCommit={handlePromptCommit} />
                   </div>}
               </CardContent>
             </Card>
