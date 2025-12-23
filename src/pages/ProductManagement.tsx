@@ -541,39 +541,40 @@ export default function ProductManagement() {
   // Mutation for prompt settings
   const upsertPromptSettingMutation = useMutation({
     mutationFn: async ({ productId, promptName, hideInDocuments }: { productId: string; promptName: string; hideInDocuments: boolean }) => {
+      const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+      const promptKey = normalizePromptKey(promptName);
+
       const orgId = await getCurrentOrganizationIdAsync();
-      console.log("Saving prompt setting:", { orgId, productId, promptName, hideInDocuments });
+      console.log("Saving prompt setting:", { orgId, productId, promptName: promptKey, hideInDocuments });
       if (!orgId) throw new Error("No organization selected");
-      
+
       // First try to find existing record
       const { data: existing } = await supabase
-        .from('product_prompt_settings')
-        .select('id')
-        .eq('organization_id', orgId)
-        .eq('easyquote_product_id', productId)
-        .eq('prompt_name', promptName)
+        .from("product_prompt_settings")
+        .select("id")
+        .eq("organization_id", orgId)
+        .eq("easyquote_product_id", productId)
+        .eq("prompt_name", promptKey)
         .maybeSingle();
-      
+
       if (existing) {
         // Update existing record
         const { error } = await supabase
-          .from('product_prompt_settings')
+          .from("product_prompt_settings")
           .update({
             hide_in_documents: hideInDocuments,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
-          .eq('id', existing.id);
+          .eq("id", existing.id);
         if (error) throw error;
       } else {
         // Insert new record
-        const { error } = await supabase
-          .from('product_prompt_settings')
-          .insert({
-            organization_id: orgId,
-            easyquote_product_id: productId,
-            prompt_name: promptName,
-            hide_in_documents: hideInDocuments
-          });
+        const { error } = await supabase.from("product_prompt_settings").insert({
+          organization_id: orgId,
+          easyquote_product_id: productId,
+          prompt_name: promptKey,
+          hide_in_documents: hideInDocuments,
+        });
         if (error) throw error;
       }
     },
@@ -581,7 +582,7 @@ export default function ProductManagement() {
       refetchPromptSettings();
       toast({
         title: "Configuración guardada",
-        description: "La configuración del prompt se ha actualizado"
+        description: "La configuración del prompt se ha actualizado",
       });
     },
     onError: (error) => {
@@ -589,14 +590,16 @@ export default function ProductManagement() {
       toast({
         title: "Error",
         description: "No se pudo guardar la configuración",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Helper to check if prompt is hidden in documents
   const isPromptHiddenInDocuments = (promptName: string): boolean => {
-    const setting = promptSettings.find(s => s.prompt_name === promptName);
+    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+    const key = normalizePromptKey(promptName);
+    const setting = promptSettings.find((s) => normalizePromptKey(s.prompt_name) === key);
     return setting?.hide_in_documents || false;
   };
   
@@ -1577,15 +1580,21 @@ export default function ProductManagement() {
 
     createPromptMutation.mutate(newPrompt, {
       onSuccess: () => {
-        // Si el producto es compuesto y se asignó un componente, guardarlo
-        if (isComposite && newPromptData.component && newPromptData.promptCell) {
+        // Si el producto es compuesto y se asignó un componente, guardarlo.
+        // Usamos SIEMPRE el promptCell introducido (la API a veces no lo devuelve en la respuesta).
+        const promptKey = String(newPromptData.promptCell ?? "")
+          .replace(/\$/g, "")
+          .trim()
+          .toUpperCase();
+
+        if (isComposite && newPromptData.component && newPromptData.component !== "general" && promptKey) {
           assignPromptToComponent({
             easyquote_product_id: selectedProduct.id,
-            prompt_name: newPromptData.promptCell,
+            prompt_name: promptKey,
             component: newPromptData.component,
           });
         }
-      }
+      },
     });
     setIsNewPromptDialogOpen(false);
     // Reset component to general for next prompt
@@ -1689,22 +1698,30 @@ export default function ProductManagement() {
         const result = await createPromptMutation.mutateAsync(newPrompt);
         
         // Asignar componente si es producto compuesto
-        if (isComposite && promptData.component && promptData.component !== "general" && result?.promptCell) {
+        // Usamos el promptCell de entrada; la respuesta de la API puede no incluirlo.
+        const createdPromptKey = String(promptData.promptCell ?? result?.promptCell ?? "")
+          .replace(/\$/g, "")
+          .trim()
+          .toUpperCase();
+        if (isComposite && promptData.component && promptData.component !== "general" && createdPromptKey) {
           await assignPromptToComponent({
             easyquote_product_id: selectedProduct.id,
-            prompt_name: result.promptCell,
-            component: promptData.component
+            prompt_name: createdPromptKey,
+            component: promptData.component,
           });
         }
-        
+
         // Guardar configuración de ocultar en documentos
-        if (promptData.hideInDocuments && result?.promptCell) {
-          await supabase.from('product_prompt_settings').upsert({
-            easyquote_product_id: selectedProduct.id,
-            prompt_name: result.promptCell,
-            hide_in_documents: true,
-            organization_id: organizationId
-          }, { onConflict: 'easyquote_product_id,prompt_name,organization_id' });
+        if (promptData.hideInDocuments && createdPromptKey) {
+          await supabase.from("product_prompt_settings").upsert(
+            {
+              easyquote_product_id: selectedProduct.id,
+              prompt_name: createdPromptKey,
+              hide_in_documents: true,
+              organization_id: organizationId,
+            },
+            { onConflict: "easyquote_product_id,prompt_name,organization_id" }
+          );
         }
       }
       
