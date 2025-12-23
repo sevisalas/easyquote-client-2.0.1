@@ -665,19 +665,70 @@ export default function ProductTestPage() {
       .map((x) => x.o);
   }, [allOutputs, savedOutputOrder]);
 
+  // Agrupar outputs por componente basado en la hoja (sheet)
+  const outputsByComponent = useMemo(() => {
+    const grouped: Record<string, any[]> = {
+      general: [],
+    };
+    
+    // Mapear hojas a componentes (hoja 1 = general, hoja 2 = cubierta, etc.)
+    // Esto puede variar según la configuración del producto
+    const sheetToComponent: Record<string, string> = {
+      '1': 'general',
+      '2': 'cubierta', 
+      '3': 'interior_1',
+      '4': 'interior_2',
+    };
+    
+    sortedOutputs.forEach((output: any) => {
+      const sheet = String(output?.sheet ?? '1');
+      const component = sheetToComponent[sheet] || 'general';
+      
+      if (!grouped[component]) {
+        grouped[component] = [];
+      }
+      grouped[component].push(output);
+    });
+    
+    return grouped;
+  }, [sortedOutputs]);
+
+  // Outputs del componente general (siempre visibles)
+  const generalOutputs = useMemo(() => outputsByComponent.general || [], [outputsByComponent]);
+  
+  // Outputs del componente seleccionado (si no es general)
+  const selectedComponentOutputs = useMemo(() => {
+    if (selectedComponent === 'general') return [];
+    return outputsByComponent[selectedComponent] || [];
+  }, [outputsByComponent, selectedComponent]);
+
   const textOutputs = useMemo(() => {
-    return sortedOutputs.filter((o: any) => {
+    return generalOutputs.filter((o: any) => {
       const value = String(o?.value ?? "");
       return !/^https?:\/\//i.test(value);
     });
-  }, [sortedOutputs]);
+  }, [generalOutputs]);
 
   const imageOutputs = useMemo(() => {
-    return sortedOutputs.filter((o: any) => {
+    return generalOutputs.filter((o: any) => {
       const value = String(o?.value ?? "");
       return /^https?:\/\//i.test(value);
     });
-  }, [sortedOutputs]);
+  }, [generalOutputs]);
+
+  const selectedTextOutputs = useMemo(() => {
+    return selectedComponentOutputs.filter((o: any) => {
+      const value = String(o?.value ?? "");
+      return !/^https?:\/\//i.test(value);
+    });
+  }, [selectedComponentOutputs]);
+
+  const selectedImageOutputs = useMemo(() => {
+    return selectedComponentOutputs.filter((o: any) => {
+      const value = String(o?.value ?? "");
+      return /^https?:\/\//i.test(value);
+    });
+  }, [selectedComponentOutputs]);
   const selectedProduct = products.find((p: any) => p.id === productId);
 
   // Check permissions - AFTER all hooks are called
@@ -865,11 +916,11 @@ export default function ProductTestPage() {
                       <p>Configura los parámetros para ver los resultados</p>
                     </div>}
 
-                  {!pricingLoading && pricing && textOutputs.length === 0 && imageOutputs.length === 0 && <div className="text-center py-8 text-muted-foreground">
+                  {!pricingLoading && pricing && textOutputs.length === 0 && imageOutputs.length === 0 && selectedTextOutputs.length === 0 && selectedImageOutputs.length === 0 && <div className="text-center py-8 text-muted-foreground">
                       <p>No hay resultados disponibles para esta configuración</p>
                     </div>}
 
-                  {/* Text outputs */}
+                  {/* Text outputs - General */}
                   {textOutputs.length > 0 && <div className="space-y-2 text-sm">
                       {textOutputs.map((output, index) => <div key={index} className="flex justify-between">
                           <span>{output.label || output.name}</span>
@@ -877,13 +928,34 @@ export default function ProductTestPage() {
                         </div>)}
                     </div>}
 
-                  {/* Image outputs at the end */}
+                  {/* Image outputs - General */}
                   {imageOutputs.length > 0 && <div className="space-y-3 border-t pt-4">
                       {imageOutputs.map((output, index) => <div key={`${output.value}-${index}`} className="space-y-2">
                           <div className="text-sm font-medium">{output.label || output.name}</div>
                           <img key={output.value} src={output.value} alt={output.label || output.name || `Imagen ${index + 1}`} className="w-full max-w-md rounded border" />
                         </div>)}
                     </div>}
+
+                  {/* Outputs del componente seleccionado */}
+                  {selectedComponent !== 'general' && (selectedTextOutputs.length > 0 || selectedImageOutputs.length > 0) && (
+                    <div className="border-t pt-4 mt-4 space-y-4">
+                      <h4 className="font-semibold text-sm">{COMPONENT_LABELS[selectedComponent] || selectedComponent}</h4>
+                      
+                      {selectedTextOutputs.length > 0 && <div className="space-y-2 text-sm">
+                          {selectedTextOutputs.map((output, index) => <div key={`sel-${index}`} className="flex justify-between">
+                              <span>{output.label || output.name}</span>
+                              <span className="font-medium">{output.value}</span>
+                            </div>)}
+                        </div>}
+
+                      {selectedImageOutputs.length > 0 && <div className="space-y-3 pt-2">
+                          {selectedImageOutputs.map((output, index) => <div key={`sel-img-${output.value}-${index}`} className="space-y-2">
+                              <div className="text-sm font-medium">{output.label || output.name}</div>
+                              <img key={output.value} src={output.value} alt={output.label || output.name || `Imagen ${index + 1}`} className="w-full max-w-md rounded border" />
+                            </div>)}
+                        </div>}
+                    </div>
+                  )}
 
                 </CardContent>
               </Card>}
