@@ -254,6 +254,13 @@ export default function ProductTestPage() {
         setIsLoadingProduct(false);
         return;
       }
+      
+      // SKIP if we already have this product loaded
+      if (productDetail?.productId === productId || productDetail?.id === productId) {
+        console.log("⏭️ Product already loaded, skipping fetch:", productId);
+        return;
+      }
+      
       console.log("🟢 Starting to fetch product detail for:", productId);
       setIsLoadingProduct(true);
       setIsInitialLoad(true);
@@ -321,7 +328,7 @@ export default function ProductTestPage() {
       }
     };
     fetchProductDetail();
-  }, [productId, products]);
+  }, [productId, products, productDetail?.productId, productDetail?.id]);
 
   // Fetch pricing data ONLY when user modifies prompts (not on initial load)
   const {
