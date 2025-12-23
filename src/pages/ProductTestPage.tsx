@@ -658,13 +658,14 @@ export default function ProductTestPage() {
       .map((x) => x.o);
   }, [allOutputs, savedOutputOrder]);
 
-  // Filter outputs by selected component
+  // Filter outputs by selected component - General always visible
   const componentFilteredOutputs = useMemo(() => {
     if (!isComposite) return sortedOutputs;
     return sortedOutputs.filter((o: any) => {
       const outputIdentifier = o.nameCell || o.name || o.label || '';
       const component = getPromptComponent(outputIdentifier);
-      return component === selectedComponent;
+      // General siempre visible + los del componente seleccionado
+      return component === 'general' || component === selectedComponent;
     });
   }, [sortedOutputs, isComposite, selectedComponent, getPromptComponent]);
 
