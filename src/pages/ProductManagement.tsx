@@ -2686,109 +2686,46 @@ export default function ProductManagement() {
                     <div className="space-y-6">
                       {/* Sección General */}
                       <div>
-                        <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">General</h4>
                         <DndContext
                           sensors={sensors}
                           collisionDetection={closestCenter}
                           onDragEnd={handleDragEnd}
                         >
                           <SortableContext
-                            items={orderedProductOutputs.filter(o => getPromptComponent(o.nameCell || o.id) === 'general').map(o => o.id)}
+                            items={orderedProductOutputs.map(o => o.id)}
                             strategy={verticalListSortingStrategy}
                           >
                             <div className="space-y-3">
-                              {orderedProductOutputs
-                                .filter(output => getPromptComponent(output.nameCell || output.id) === 'general')
-                                .map((output, index) => (
-                                  <SortableOutputItem
-                                    key={output.id}
-                                    output={output}
-                                    index={index}
-                                    excelSheets={excelSheets}
-                                    outputTypes={outputTypes}
-                                    onUpdate={(updatedOutput) => updateOutputMutation.mutate(updatedOutput)}
-                                    onDelete={deleteOutput}
-                                    getMappedVariableId={getMappedVariableId}
-                                    getMappedNames={getMappedNames}
-                                    upsertVariableMapping={upsertVariableMapping}
-                                    productionVariables={productionVariables}
-                                    selectedProduct={selectedProduct}
-                                    isComposite={isComposite}
-                                    getPromptComponent={getPromptComponent}
-                                    enabledComponents={enabledComponents}
-                                    assignPromptToComponent={assignPromptToComponent}
-                                  />
-                                ))}
-                              {orderedProductOutputs.filter(o => getPromptComponent(o.nameCell || o.id) === 'general').length === 0 && (
+                              {orderedProductOutputs.map((output, index) => (
+                                <SortableOutputItem
+                                  key={output.id}
+                                  output={output}
+                                  index={index}
+                                  excelSheets={excelSheets}
+                                  outputTypes={outputTypes}
+                                  onUpdate={(updatedOutput) => updateOutputMutation.mutate(updatedOutput)}
+                                  onDelete={deleteOutput}
+                                  getMappedVariableId={getMappedVariableId}
+                                  getMappedNames={getMappedNames}
+                                  upsertVariableMapping={upsertVariableMapping}
+                                  productionVariables={productionVariables}
+                                  selectedProduct={selectedProduct}
+                                  isComposite={isComposite}
+                                  getPromptComponent={getPromptComponent}
+                                  enabledComponents={enabledComponents}
+                                  assignPromptToComponent={assignPromptToComponent}
+                                />
+                              ))}
+                              {orderedProductOutputs.length === 0 && (
                                 <div className="text-center py-4">
                                   <Package className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                                  <p className="text-sm text-muted-foreground">No hay resultados generales</p>
+                                  <p className="text-sm text-muted-foreground">No hay campos de salida</p>
                                 </div>
                               )}
                             </div>
                           </SortableContext>
                         </DndContext>
                       </div>
-
-                      {/* Sección del componente seleccionado */}
-                      {isComposite && selectedInputComponent !== 'general' && (() => {
-                        const selectedComponentLabel = COMPONENT_PRESETS.encuadernado.components.find(
-                          c => c.value === selectedInputComponent
-                        )?.label || selectedInputComponent;
-                        const componentOutputs = orderedProductOutputs.filter(
-                          output => getPromptComponent(output.nameCell || output.id) === selectedInputComponent
-                        );
-
-                        return (
-                          <div>
-                            <Separator className="my-4" />
-                            <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
-                              {selectedComponentLabel}
-                            </h4>
-                            <DndContext
-                              sensors={sensors}
-                              collisionDetection={closestCenter}
-                              onDragEnd={handleDragEnd}
-                            >
-                              <SortableContext
-                                items={componentOutputs.map(o => o.id)}
-                                strategy={verticalListSortingStrategy}
-                              >
-                                <div className="space-y-3">
-                                  {componentOutputs.map((output, index) => (
-                                    <SortableOutputItem
-                                      key={output.id}
-                                      output={output}
-                                      index={index}
-                                      excelSheets={excelSheets}
-                                      outputTypes={outputTypes}
-                                      onUpdate={(updatedOutput) => updateOutputMutation.mutate(updatedOutput)}
-                                      onDelete={deleteOutput}
-                                      getMappedVariableId={getMappedVariableId}
-                                      getMappedNames={getMappedNames}
-                                      upsertVariableMapping={upsertVariableMapping}
-                                      productionVariables={productionVariables}
-                                      selectedProduct={selectedProduct}
-                                      isComposite={isComposite}
-                                      getPromptComponent={getPromptComponent}
-                                      enabledComponents={enabledComponents}
-                                      assignPromptToComponent={assignPromptToComponent}
-                                    />
-                                  ))}
-                                  {componentOutputs.length === 0 && (
-                                    <div className="text-center py-4">
-                                      <Package className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                                      <p className="text-sm text-muted-foreground">
-                                        No hay resultados para {selectedComponentLabel}
-                                      </p>
-                                    </div>
-                                  )}
-                                </div>
-                              </SortableContext>
-                            </DndContext>
-                          </div>
-                        );
-                      })()}
                     </div>
                   </ScrollArea>
                 )}
