@@ -252,7 +252,7 @@ export default function ComponentTabsPromptsForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Columna izquierda: General (siempre visible) */}
         {generalPrompts.length > 0 && (
-          <div>
+          <div className="rounded-lg border border-border bg-card p-4">
             <PromptsForm
               product={createComponentProduct(generalPrompts)}
               values={values}
@@ -264,7 +264,7 @@ export default function ComponentTabsPromptsForm({
         )}
 
         {/* Columna derecha: Componentes con contenido de pestañas */}
-        <div>
+        <div className="rounded-lg border border-border bg-card p-4">
           {tabComponents.map((comp) => {
             const componentPrompts = promptsByComponent[comp] || [];
 
