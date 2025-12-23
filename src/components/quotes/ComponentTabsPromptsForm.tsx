@@ -1,7 +1,9 @@
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PromptsForm, { extractPrompts, type PromptDef } from "./PromptsForm";
 import { GENERAL_COMPONENT, useProductComponentSettings } from "@/hooks/useProductComponentSettings";
+import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 
 interface ComponentTabsPromptsFormProps {
   product: any;
@@ -37,6 +39,40 @@ export default function ComponentTabsPromptsForm({
 
   const prompts = useMemo(() => extractPrompts(product), [product]);
 
+  const { data: promptDefinitions = [] } = useQuery({
+    queryKey: ["easyquote-prompts-definitions", productId],
+    queryFn: async () => {
+      if (!productId) return [];
+      const token = await getEasyQuoteToken();
+      if (!token) return [];
+
+      const { data, error } = await invokeEasyQuoteFunction<any[]>("easyquote-prompts", {
+        token,
+        productId,
+      });
+
+      if (error) {
+        console.error("[ComponentTabsPromptsForm] Error fetching prompt definitions", error);
+        return [];
+      }
+
+      return Array.isArray(data) ? data : [];
+    },
+    enabled: isComposite && !!productId,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const promptCellById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of promptDefinitions as any[]) {
+      const id = p?.id;
+      const cell = getPromptCell(p);
+      if (id && cell) map.set(String(id), String(cell));
+    }
+    return map;
+  }, [promptDefinitions]);
+
   // Si NO es un producto compuesto, renderizar el formulario normal
   if (!isComposite || isLoading) {
     return (
@@ -67,25 +103,32 @@ export default function ComponentTabsPromptsForm({
     });
 
     // Obtener los prompts originales del producto para acceder a promptCell
+    // Nota: en QuoteItem/ProductTestPage el objeto "pricing" NO trae promptCell.
+    // Para poder mapear id(UUID) -> promptCell, usamos promptDefinitions (easyquote-prompts).
     const originalPrompts: any[] =
+      (Array.isArray(promptDefinitions) && (promptDefinitions as any[])) ||
       (Array.isArray(product?.prompts) && product.prompts) ||
       (Array.isArray(product?.pricing?.prompts) && product.pricing.prompts) ||
       [];
 
     // Asignar cada prompt a su componente
     prompts.forEach((prompt) => {
-      // Buscar el prompt original para obtener el promptCell (que es lo que se guarda en DB)
+      const idStr = String(prompt.id);
+      const promptCellFromDefs = promptCellById.get(idStr);
+
+      // Buscar el prompt original (si existe) para extraer más metadata
       const originalPrompt = originalPrompts.find((op: any) =>
         [op?.id, getPromptCell(op), op?.key, op?.name, op?.code]
           .filter(Boolean)
           .map(String)
-          .includes(String(prompt.id))
+          .includes(idStr)
       );
 
       const promptIdentifier =
+        promptCellFromDefs ||
         getPromptCell(originalPrompt) ||
-        originalPrompt?.id ||
         originalPrompt?.key ||
+        originalPrompt?.id ||
         prompt.id;
 
       const component = getPromptComponent(String(promptIdentifier));
