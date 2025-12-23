@@ -132,7 +132,15 @@ function extractPrompts(product: any): PromptDef[] {
 
   return raw.map((f: any, idx: number): PromptDef => {
     const id = String(f.id ?? f.key ?? f.code ?? f.slug ?? f.name ?? `field_${idx}`);
-    const label = f.promptText ?? f.label ?? f.title ?? f.promptName ?? f.displayName ?? f.text ?? f.caption ?? f.name ?? id;
+    
+    // Determinar el label: usar promptText, pero si parece UUID usar promptCell o fallback legible
+    const rawLabel = f.promptText ?? f.label ?? f.title ?? f.promptName ?? f.displayName ?? f.text ?? f.caption ?? f.name;
+    const isUuidLabel = typeof rawLabel === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawLabel);
+    const cellLabel = f.promptCell ?? f.prompt_cell ?? f.cell;
+    const label = (isUuidLabel || !rawLabel) && cellLabel 
+      ? `Campo ${cellLabel}` 
+      : (rawLabel ?? id);
+    
     const rawType = String(f.promptType ?? f.type ?? f.inputType ?? f.kind ?? f.uiType ?? "text").toLowerCase();
     const options = normalizeOptions(f.valueOptions ?? f.options ?? f.choices ?? f.values ?? f.items ?? f.optionsList ?? []);
     const hasImages = options.some((o) => !!o.imageUrl);
