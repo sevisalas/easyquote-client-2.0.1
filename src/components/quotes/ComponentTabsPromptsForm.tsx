@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PromptsForm, { extractPrompts, type PromptDef } from "./PromptsForm";
 import { GENERAL_COMPONENT, useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
+
 interface ComponentTabsPromptsFormProps {
   product: any;
   productId: string;
@@ -20,17 +21,21 @@ const COMPONENT_LABELS: Record<string, string> = {
   interior_1: "Interior 1",
   interior_2: "Interior 2"
 };
+
 function getPromptCell(op: any): string | undefined {
   return op?.promptCell ?? op?.prompt_cell ?? op?.cell ?? op?.promptcell;
 }
+
 function normalizePromptName(v: any): string {
   return String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
 }
+
 function extractCellRef(v: any): string | undefined {
   const s = String(v ?? "").replace(/\$/g, "").toUpperCase();
   const m = s.match(/\b[A-Z]{1,3}\d{1,4}\b/);
   return m?.[0];
 }
+
 export default function ComponentTabsPromptsForm({
   product,
   productId,
@@ -45,6 +50,7 @@ export default function ComponentTabsPromptsForm({
     getPromptComponent,
     isLoading
   } = useProductComponentSettings(productId);
+
   const {
     data: promptDefinitions = []
   } = useQuery({
@@ -53,10 +59,7 @@ export default function ComponentTabsPromptsForm({
       if (!productId) return [];
       const token = await getEasyQuoteToken();
       if (!token) return [];
-      const {
-        data,
-        error
-      } = await invokeEasyQuoteFunction<any[]>("easyquote-prompts", {
+      const { data, error } = await invokeEasyQuoteFunction<any[]>("easyquote-prompts", {
         token,
         productId
       });
@@ -70,17 +73,12 @@ export default function ComponentTabsPromptsForm({
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false
   });
-  const prompts = useMemo(() => {
-    // En productos compuestos, el pricing (easyquote-pricing) a veces NO devuelve todos los prompts.
-    // Para poder mostrar (y agrupar) los campos asignados a “Cubierta/Interior…”, usamos
-    // las definiciones completas (easyquote-prompts) cuando estén disponibles.
-    const source = isComposite && (promptDefinitions?.length ?? 0) > 0
-      ? { ...product, prompts: promptDefinitions }
-      : product;
 
-    return extractPrompts(source);
-  }, [product, isComposite, promptDefinitions]);
+  // Usamos siempre los prompts del producto (pricing) porque tienen los labels (promptText) y currentValue.
+  // Las definiciones (promptDefinitions) solo se usan para mapear UUID -> celda (B12, B36...) para la agrupación.
+  const prompts = useMemo(() => extractPrompts(product), [product]);
 
+  // Construir lookup: UUID -> promptCell (celda normalizada)
   const promptCellLookup = useMemo(() => {
     const map = new Map<string, string>();
 
@@ -219,47 +217,87 @@ export default function ComponentTabsPromptsForm({
 
   // Si no hay componentes (solo general), mostramos el título y el formulario general a ancho completo
   if (tabComponents.length === 0) {
-    return <div className="space-y-4">
+    return (
+      <div className="space-y-4">
         <div className="flex items-center justify-between gap-4">
           <h3 className="font-medium whitespace-nowrap">Configuración del Producto</h3>
         </div>
-        {generalPrompts.length > 0 && <PromptsForm product={createComponentProduct(generalPrompts)} values={values} onChange={onChange} onCommit={onCommit} showAllPrompts={showAllPrompts} />}
-      </div>;
+        {generalPrompts.length > 0 && (
+          <PromptsForm 
+            product={createComponentProduct(generalPrompts)} 
+            values={values} 
+            onChange={onChange} 
+            onCommit={onCommit} 
+            showAllPrompts={showAllPrompts} 
+          />
+        )}
+      </div>
+    );
   }
-  return <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-4">
+
+  return (
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-4">
       {/* Header con título y pestañas a la misma altura */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h3 className="font-medium whitespace-nowrap">Configuración del producto</h3>
 
         <TabsList className="flex-wrap h-auto gap-1 md:w-auto">
           {tabComponents.map(comp => {
-          const count = countByComponent[comp];
-          const label = COMPONENT_LABELS[comp] || comp;
-          return <TabsTrigger key={comp} value={comp} className="relative flex items-center" disabled={count === 0}>
+            const count = countByComponent[comp];
+            const label = COMPONENT_LABELS[comp] || comp;
+            return (
+              <TabsTrigger 
+                key={comp} 
+                value={comp} 
+                className="relative flex items-center" 
+                disabled={count === 0}
+              >
                 {label}
-              </TabsTrigger>;
-        })}
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
       </div>
 
       {/* Contenido: dos columnas */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Columna izquierda: General (siempre visible) */}
-        {generalPrompts.length > 0 && <div className="rounded-lg border border-border bg-card p-4">
-            <PromptsForm product={createComponentProduct(generalPrompts)} values={values} onChange={onChange} onCommit={onCommit} showAllPrompts={showAllPrompts} />
-          </div>}
+        {generalPrompts.length > 0 && (
+          <div className="rounded-lg border border-border bg-card p-4">
+            <PromptsForm 
+              product={createComponentProduct(generalPrompts)} 
+              values={values} 
+              onChange={onChange} 
+              onCommit={onCommit} 
+              showAllPrompts={showAllPrompts} 
+            />
+          </div>
+        )}
 
         {/* Columna derecha: Componentes con contenido de pestañas */}
         <div className="rounded-lg border border-border bg-card p-4">
           {tabComponents.map(comp => {
-          const componentPrompts = promptsByComponent[comp] || [];
-          return <TabsContent key={comp} value={comp} className="mt-0">
-                {componentPrompts.length === 0 ? <p className="text-sm text-muted-foreground py-4">
+            const componentPrompts = promptsByComponent[comp] || [];
+            return (
+              <TabsContent key={comp} value={comp} className="mt-0">
+                {componentPrompts.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4">
                     No hay campos asignados a {COMPONENT_LABELS[comp] || comp}.
-                  </p> : <PromptsForm product={createComponentProduct(componentPrompts)} values={values} onChange={onChange} onCommit={onCommit} showAllPrompts={showAllPrompts} />}
-              </TabsContent>;
-        })}
+                  </p>
+                ) : (
+                  <PromptsForm 
+                    product={createComponentProduct(componentPrompts)} 
+                    values={values} 
+                    onChange={onChange} 
+                    onCommit={onCommit} 
+                    showAllPrompts={showAllPrompts} 
+                  />
+                )}
+              </TabsContent>
+            );
+          })}
         </div>
       </div>
-    </Tabs>;
+    </Tabs>
+  );
 }
