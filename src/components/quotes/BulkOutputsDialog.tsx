@@ -217,13 +217,18 @@ export function BulkOutputsDialog({
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="general">General</SelectItem>
-                              <SelectItem value="cubierta">Cubierta</SelectItem>
-                              {enabledComponents.includes("interior1") && (
-                                <SelectItem value="interior1">Interior 1</SelectItem>
-                              )}
-                              {enabledComponents.includes("interior2") && (
-                                <SelectItem value="interior2">Interior 2</SelectItem>
-                              )}
+                              {enabledComponents.map((comp) => {
+                                const labels: Record<string, string> = {
+                                  'cubierta': 'Cubierta',
+                                  'interior_1': 'Interior 1',
+                                  'interior_2': 'Interior 2',
+                                };
+                                return (
+                                  <SelectItem key={comp} value={comp}>
+                                    {labels[comp] || comp}
+                                  </SelectItem>
+                                );
+                              })}
                             </SelectContent>
                           </Select>
                         </div>
