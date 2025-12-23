@@ -50,8 +50,8 @@ export default function ProductTestPage() {
     membership
   } = useSubscription();
   
-  // Check if product is composite
-  const { isComposite } = useProductComponentSettings(productId || undefined);
+  // Check if product is composite and get component assignments
+  const { isComposite, getPromptComponent } = useProductComponentSettings(productId || undefined);
   const queryClient = useQueryClient();
   
   const organizationId = organization?.id || membership?.organization_id;
@@ -658,19 +658,29 @@ export default function ProductTestPage() {
       .map((x) => x.o);
   }, [allOutputs, savedOutputOrder]);
 
-  const textOutputs = useMemo(() => {
+  // Filter outputs by selected component
+  const componentFilteredOutputs = useMemo(() => {
+    if (!isComposite) return sortedOutputs;
     return sortedOutputs.filter((o: any) => {
+      const outputName = o.nameCell || o.id || o.name;
+      const component = getPromptComponent(outputName);
+      return component === selectedComponent;
+    });
+  }, [sortedOutputs, isComposite, selectedComponent, getPromptComponent]);
+
+  const textOutputs = useMemo(() => {
+    return componentFilteredOutputs.filter((o: any) => {
       const value = String(o?.value ?? "");
       return !/^https?:\/\//i.test(value);
     });
-  }, [sortedOutputs]);
+  }, [componentFilteredOutputs]);
 
   const imageOutputs = useMemo(() => {
-    return sortedOutputs.filter((o: any) => {
+    return componentFilteredOutputs.filter((o: any) => {
       const value = String(o?.value ?? "");
       return /^https?:\/\//i.test(value);
     });
-  }, [sortedOutputs]);
+  }, [componentFilteredOutputs]);
   const selectedProduct = products.find((p: any) => p.id === productId);
 
   // Check permissions - AFTER all hooks are called
@@ -877,18 +887,6 @@ export default function ProductTestPage() {
                           <img key={output.value} src={output.value} alt={output.label || output.name || `Imagen ${index + 1}`} className="w-full max-w-md rounded border" />
                         </div>)}
                     </div>}
-
-                  {/* Component section - only for composite products */}
-                  {isComposite && selectedComponent !== 'general' && (
-                    <div className="border-t pt-4 mt-4">
-                      <h4 className="text-sm font-semibold mb-3">
-                        {COMPONENT_LABELS[selectedComponent] || selectedComponent}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Outputs del componente seleccionado
-                      </p>
-                    </div>
-                  )}
                 </CardContent>
               </Card>}
           </div>
