@@ -726,11 +726,13 @@ export default function ProductTestPage() {
     });
   }, [sortedOutputs]);
 
-  // Outputs específicos del componente seleccionado (excluyendo general)
+  // Outputs del componente seleccionado - por ahora mostramos todos los outputs
+  // ya que la agrupación por sheet no está funcionando correctamente
   const selectedComponentOutputs = useMemo(() => {
     if (selectedComponent === 'general') return [];
-    return outputsByComponent[selectedComponent] || [];
-  }, [outputsByComponent, selectedComponent]);
+    // Mostrar todos los outputs bajo el componente seleccionado
+    return sortedOutputs;
+  }, [sortedOutputs, selectedComponent]);
 
   const selectedTextOutputs = useMemo(() => {
     return selectedComponentOutputs.filter((o: any) => {
