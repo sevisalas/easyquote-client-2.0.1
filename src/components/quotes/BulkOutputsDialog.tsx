@@ -113,11 +113,12 @@ export function BulkOutputsDialog({
     onOpenChange(newOpen);
   };
 
+  // Resetear siempre que el diálogo se abra (detectado por prop `open`)
   useEffect(() => {
-    if (open && outputs.length === 0) {
-      // No pre-cargar nada, empezar con lista vacía
+    if (open) {
+      resetForm();
     }
-  }, [open, existingOutputs]);
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
