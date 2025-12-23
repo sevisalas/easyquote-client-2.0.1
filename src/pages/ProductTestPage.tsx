@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import PromptsForm from "@/components/quotes/PromptsForm";
+import ComponentTabsPromptsForm from "@/components/quotes/ComponentTabsPromptsForm";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -826,7 +827,7 @@ export default function ProductTestPage() {
                 {productId && !isLoadingProduct && productDetail && <div className="space-y-4">
                     <div className="border-t pt-4">
                       <h3 className="font-medium mb-4">Configuración del Producto</h3>
-                      <PromptsForm product={productDetail} values={promptValues} onChange={handlePromptChange} onCommit={handlePromptCommit} />
+                      <ComponentTabsPromptsForm product={productDetail} productId={productId} values={promptValues} onChange={handlePromptChange} onCommit={handlePromptCommit} />
                     </div>
                   </div>}
               </CardContent>
