@@ -26,6 +26,10 @@ function getPromptCell(op: any): string | undefined {
   return op?.promptCell ?? op?.prompt_cell ?? op?.cell ?? op?.promptcell;
 }
 
+function normalizePromptName(v: any): string {
+  return String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+}
+
 export default function ComponentTabsPromptsForm({
   product,
   productId,
@@ -68,7 +72,7 @@ export default function ComponentTabsPromptsForm({
     for (const p of promptDefinitions as any[]) {
       const id = p?.id;
       const cell = getPromptCell(p);
-      if (id && cell) map.set(String(id), String(cell));
+      if (id && cell) map.set(String(id), normalizePromptName(cell));
     }
     return map;
   }, [promptDefinitions]);
@@ -124,14 +128,15 @@ export default function ComponentTabsPromptsForm({
           .includes(idStr)
       );
 
-      const promptIdentifier =
+      const promptIdentifierRaw =
         promptCellFromDefs ||
         getPromptCell(originalPrompt) ||
         originalPrompt?.key ||
         originalPrompt?.id ||
         prompt.id;
 
-      const component = getPromptComponent(String(promptIdentifier));
+      const promptIdentifier = normalizePromptName(promptIdentifierRaw) || idStr;
+      const component = getPromptComponent(promptIdentifier);
 
       // Si el componente asignado existe en los disponibles, usarlo; sino, poner en general
       if (grouped[component]) {

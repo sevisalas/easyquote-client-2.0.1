@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -189,10 +190,19 @@ export function useProductComponentSettings(easyquoteProductId?: string) {
   // Helper: obtener componentes habilitados
   const enabledComponents = componentSettings?.enabled_components ?? [];
 
+  const normalizePromptName = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+
+  const componentByPromptName = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of promptComponents ?? []) {
+      map.set(normalizePromptName(p.prompt_name), p.component);
+    }
+    return map;
+  }, [promptComponents]);
+
   // Helper: obtener el componente asignado a un prompt
   const getPromptComponent = (promptName: string): string => {
-    const assignment = promptComponents?.find(p => p.prompt_name === promptName);
-    return assignment?.component ?? 'general';
+    return componentByPromptName.get(normalizePromptName(promptName)) ?? "general";
   };
 
   return {
