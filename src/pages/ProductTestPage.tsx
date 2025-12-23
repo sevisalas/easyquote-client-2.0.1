@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import PromptsForm from "@/components/quotes/PromptsForm";
-import ComponentTabsPromptsForm, { COMPONENT_LABELS } from "@/components/quotes/ComponentTabsPromptsForm";
-import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
+// ComponentTabsPromptsForm removed - using PromptsForm directly
+
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -41,7 +41,7 @@ export default function ProductTestPage() {
   const [hasUserModifiedPrompts, setHasUserModifiedPrompts] = useState(false);
   const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
   const [isDiagnosing, setIsDiagnosing] = useState(false);
-  const [selectedComponent, setSelectedComponent] = useState<string>('general');
+  
   const [tokenReady, setTokenReady] = useState(!!sessionStorage.getItem("easyquote_token"));
   const {
     isSuperAdmin,
@@ -50,8 +50,6 @@ export default function ProductTestPage() {
     membership
   } = useSubscription();
   
-  // Check if product is composite and get component assignments
-  const { isComposite, getPromptComponent } = useProductComponentSettings(productId || undefined);
   const queryClient = useQueryClient();
   
   const organizationId = organization?.id || membership?.organization_id;
@@ -658,29 +656,20 @@ export default function ProductTestPage() {
       .map((x) => x.o);
   }, [allOutputs, savedOutputOrder]);
 
-  // Filter outputs by selected component
-  const componentFilteredOutputs = useMemo(() => {
-    if (!isComposite) return sortedOutputs;
-    return sortedOutputs.filter((o: any) => {
-      const outputName = o.nameCell || o.id || o.name;
-      const component = getPromptComponent(outputName);
-      return component === selectedComponent;
-    });
-  }, [sortedOutputs, isComposite, selectedComponent, getPromptComponent]);
 
   const textOutputs = useMemo(() => {
-    return componentFilteredOutputs.filter((o: any) => {
+    return sortedOutputs.filter((o: any) => {
       const value = String(o?.value ?? "");
       return !/^https?:\/\//i.test(value);
     });
-  }, [componentFilteredOutputs]);
+  }, [sortedOutputs]);
 
   const imageOutputs = useMemo(() => {
-    return componentFilteredOutputs.filter((o: any) => {
+    return sortedOutputs.filter((o: any) => {
       const value = String(o?.value ?? "");
       return /^https?:\/\//i.test(value);
     });
-  }, [componentFilteredOutputs]);
+  }, [sortedOutputs]);
   const selectedProduct = products.find((p: any) => p.id === productId);
 
   // Check permissions - AFTER all hooks are called
@@ -840,13 +829,12 @@ export default function ProductTestPage() {
                   </Alert>}
 
                 {productId && !isLoadingProduct && productDetail && <div className="border-t pt-4">
-                    <ComponentTabsPromptsForm 
+                    <h3 className="font-medium mb-4">Datos de entrada</h3>
+                    <PromptsForm 
                       product={productDetail} 
-                      productId={productId} 
                       values={promptValues} 
                       onChange={handlePromptChange} 
                       onCommit={handlePromptCommit}
-                      onComponentChange={setSelectedComponent}
                     />
                   </div>}
               </CardContent>
