@@ -77,25 +77,12 @@ export default function ComponentTabsPromptsForm({
     return map;
   }, [promptDefinitions]);
 
-  // Si NO es un producto compuesto, renderizar el formulario normal
-  if (!isComposite || isLoading) {
-    return (
-      <PromptsForm
-        product={product}
-        values={values}
-        onChange={onChange}
-        onCommit={onCommit}
-        showAllPrompts={showAllPrompts}
-      />
-    );
-  }
-
   // Construir lista de componentes disponibles: siempre "general" + los habilitados
   const availableComponents = useMemo(() => {
-    const components = [GENERAL_COMPONENT.value, ...enabledComponents];
+    const base = isComposite ? [GENERAL_COMPONENT.value, ...enabledComponents] : [GENERAL_COMPONENT.value];
     // Eliminar duplicados manteniendo el orden
-    return [...new Set(components)];
-  }, [enabledComponents]);
+    return [...new Set(base)];
+  }, [enabledComponents, isComposite]);
 
   // Agrupar prompts por componente
   const promptsByComponent = useMemo(() => {
@@ -182,6 +169,19 @@ export default function ComponentTabsPromptsForm({
       }),
     };
   };
+
+  // Si NO es un producto compuesto (o está cargando), renderizar el formulario normal
+  if (!isComposite || isLoading) {
+    return (
+      <PromptsForm
+        product={product}
+        values={values}
+        onChange={onChange}
+        onCommit={onCommit}
+        showAllPrompts={showAllPrompts}
+      />
+    );
+  }
 
   return (
     <Tabs defaultValue={defaultTab} className="w-full">
