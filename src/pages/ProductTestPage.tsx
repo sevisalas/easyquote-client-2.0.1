@@ -51,7 +51,7 @@ export default function ProductTestPage() {
   } = useSubscription();
   
   // Check if product is composite
-  const { isComposite, enabledComponents } = useProductComponentSettings(productId || undefined);
+  const { isComposite, enabledComponents, getPromptComponent } = useProductComponentSettings(productId || undefined);
   const queryClient = useQueryClient();
   
   const organizationId = organization?.id || membership?.organization_id;
@@ -665,12 +665,13 @@ export default function ProductTestPage() {
       .map((x) => x.o);
   }, [allOutputs, savedOutputOrder]);
 
-  // Agrupar outputs por componente basado en la hoja (sheet)
+  // Agrupar outputs por componente usando asignaciones guardadas + fallback por hoja
+  
   const outputsByComponent = useMemo(() => {
     const grouped: Record<string, any[]> = { general: [] };
     const availableComponents = ["general", ...(enabledComponents ?? [])];
 
-    // Mapear nombres de hoja comunes a componentes
+    // Mapear nombres de hoja comunes a componentes (fallback)
     const sheetNameToComponent: Record<string, string> = {
       cubierta: "cubierta",
       cover: "cubierta",
@@ -690,33 +691,46 @@ export default function ProductTestPage() {
 
       if (sheetNameToComponent[norm]) return sheetNameToComponent[norm];
 
-       // Si viene como número ("1", "2"...) o contiene un número ("Sheet 2", "Hoja3"),
-       // primero intentamos mapear a los componentes habilitados (sin incluir "general").
-       const m = norm.match(/\d+/);
-       if (m) {
-         const n = Number(m[0]);
-         const enabled = enabledComponents ?? [];
+      const m = norm.match(/\d+/);
+      if (m) {
+        const n = Number(m[0]);
+        const enabled = enabledComponents ?? [];
 
-         if (Number.isFinite(n) && n >= 1 && n <= enabled.length) {
-           return enabled[n - 1];
-         }
+        if (Number.isFinite(n) && n >= 1 && n <= enabled.length) {
+          return enabled[n - 1];
+        }
 
-         if (Number.isFinite(n) && n >= 1 && n <= availableComponents.length) {
-           return availableComponents[n - 1];
-         }
-       }
+        if (Number.isFinite(n) && n >= 1 && n <= availableComponents.length) {
+          return availableComponents[n - 1];
+        }
+      }
 
       return "general";
     };
 
     for (const output of sortedOutputs as any[]) {
-      const component = inferComponentFromSheet(output?.sheet);
+      // Primero buscar en asignaciones guardadas usando nameCell (ej: "E13")
+      const nameCell = output?.nameCell || output?.name_cell;
+      let component = "general";
+      
+      if (nameCell) {
+        const assigned = getPromptComponent(nameCell);
+        if (assigned !== "general") {
+          component = assigned;
+        } else {
+          // Fallback: inferir por hoja
+          component = inferComponentFromSheet(output?.sheet);
+        }
+      } else {
+        component = inferComponentFromSheet(output?.sheet);
+      }
+      
       if (!grouped[component]) grouped[component] = [];
       grouped[component].push(output);
     }
 
     return grouped;
-  }, [sortedOutputs, enabledComponents]);
+  }, [sortedOutputs, enabledComponents, getPromptComponent]);
 
   // Outputs generales (siempre visibles)
   const generalOutputs = useMemo(() => outputsByComponent.general || [], [outputsByComponent]);
