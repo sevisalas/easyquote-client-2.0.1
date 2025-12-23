@@ -683,11 +683,9 @@ export default function ProductTestPage() {
     };
     
     console.log("📊 Agrupando outputs por componente. Total outputs:", sortedOutputs.length);
-    console.log("📊 Outputs con sus sheets:", sortedOutputs.map((o: any) => ({ 
-      label: o.label, 
-      sheet: o.sheet, 
-      nameCell: o.nameCell 
-    })));
+    sortedOutputs.forEach((o: any, i: number) => {
+      console.log(`📊 Output ${i}:`, { label: o.label, sheet: o.sheet, nameCell: o.nameCell });
+    });
     
     sortedOutputs.forEach((output: any) => {
       const sheetRaw = String(output?.sheet ?? '').toLowerCase().trim();
