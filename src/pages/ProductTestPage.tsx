@@ -878,17 +878,6 @@ export default function ProductTestPage() {
                         </div>)}
                     </div>}
 
-                  {/* Component section - only for composite products */}
-                  {isComposite && selectedComponent !== 'general' && (
-                    <div className="border-t pt-4 mt-4">
-                      <h4 className="text-sm font-semibold mb-3">
-                        {COMPONENT_LABELS[selectedComponent] || selectedComponent}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Outputs del componente seleccionado
-                      </p>
-                    </div>
-                  )}
                 </CardContent>
               </Card>}
           </div>
