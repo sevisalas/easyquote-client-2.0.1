@@ -2490,7 +2490,7 @@ export default function ProductManagement() {
                                 />
                               </div>
                               <div className="flex items-center gap-2">
-                                <Label className="text-sm font-medium whitespace-nowrap">Ocultar</Label>
+                                <Label className="text-sm font-medium whitespace-nowrap">Ocultar docs.</Label>
                                 <Switch
                                   checked={isPromptHiddenInDocuments(prompt.promptCell)}
                                   onCheckedChange={(checked) => {
@@ -2536,7 +2536,7 @@ export default function ProductManagement() {
                                   </Select>
                                 </div>
                               )}
-                              <div className="flex items-center gap-2 flex-1">
+                              <div className="flex items-center gap-2">
                                 <Label className="text-sm font-medium whitespace-nowrap">Var. prod.</Label>
                                 <Select
                                   value={getMappedVariableId(prompt.promptCell) || "none"}
@@ -2551,8 +2551,8 @@ export default function ProductManagement() {
                                     }
                                   }}
                                 >
-                                  <SelectTrigger className="flex-1">
-                                    <SelectValue placeholder="Sin variable asignada" />
+                                  <SelectTrigger className="w-40">
+                                    <SelectValue placeholder="Sin variable" />
                                   </SelectTrigger>
                                   <SelectContent className="bg-background border shadow-lg z-50">
                                     <SelectItem value="none">Sin variable asignada</SelectItem>
