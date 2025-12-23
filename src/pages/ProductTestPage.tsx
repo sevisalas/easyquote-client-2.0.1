@@ -944,10 +944,24 @@ export default function ProductTestPage() {
                         </div>)}
                     </div>}
 
-                  {/* Título del componente seleccionado */}
+                  {/* Título y outputs del componente seleccionado */}
                   {selectedComponent !== 'general' && (textOutputs.length > 0 || imageOutputs.length > 0) && (
-                    <div className="border-t pt-4 mt-4">
+                    <div className="border-t pt-4 mt-4 space-y-4">
                       <h4 className="font-semibold text-sm">{COMPONENT_LABELS[selectedComponent] || selectedComponent}</h4>
+                      
+                      {selectedTextOutputs.length > 0 && <div className="space-y-2 text-sm">
+                          {selectedTextOutputs.map((output, index) => <div key={`sel-${index}`} className="flex justify-between">
+                              <span>{output.label || output.name}</span>
+                              <span className="font-medium">{output.value}</span>
+                            </div>)}
+                        </div>}
+
+                      {selectedImageOutputs.length > 0 && <div className="space-y-3 pt-2">
+                          {selectedImageOutputs.map((output, index) => <div key={`sel-img-${output.value}-${index}`} className="space-y-2">
+                              <div className="text-sm font-medium">{output.label || output.name}</div>
+                              <img key={output.value} src={output.value} alt={output.label || output.name || `Imagen ${index + 1}`} className="w-full max-w-md rounded border" />
+                            </div>)}
+                        </div>}
                     </div>
                   )}
 
