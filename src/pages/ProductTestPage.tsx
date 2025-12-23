@@ -483,7 +483,7 @@ export default function ProductTestPage() {
             sheet: String(o?.sheet ?? "").trim(),
             nameCell: String(o?.nameCell ?? o?.outputNameCell ?? "").trim(),
             valueCell: String(o?.valueCell ?? o?.outputValueCell ?? "").trim(),
-            label: o.label || o.name || o.outputText || o.text || o.outputName || "Output",
+            label: o.label || o.name || o.outputText || o.text || o.outputName || "",
             name: o.name || o.label || o.outputName || "",
             value: o.value ?? o.currentValue ?? o.outputValue ?? o.result ?? "",
             outputType: o.outputType || o.type || "",
