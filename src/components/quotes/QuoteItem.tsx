@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 import PromptsForm, { extractPrompts, isVisiblePrompt, type PromptDef } from "@/components/quotes/PromptsForm";
+import ComponentTabsPromptsForm from "@/components/quotes/ComponentTabsPromptsForm";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -1476,7 +1477,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   </AlertDescription>
                 </Alert>
               ) : pricing ? (
-                <PromptsForm product={pricing} values={promptValues} onChange={handlePromptChange} showAllPrompts={!!initialData} />
+                <ComponentTabsPromptsForm 
+                  product={pricing} 
+                  productId={productId}
+                  values={promptValues} 
+                  onChange={handlePromptChange} 
+                  showAllPrompts={!!initialData} 
+                />
               ) : (
                 <p className="text-sm text-muted-foreground">Cargando prompts…</p>
               )}
