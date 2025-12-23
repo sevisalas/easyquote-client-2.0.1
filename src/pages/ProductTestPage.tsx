@@ -516,7 +516,18 @@ export default function ProductTestPage() {
       if (Number.isFinite(originalIndex)) defByOriginalIndex.set(originalIndex, d);
     }
 
-    // 3) Fallback: asignación por tipo (cuando no hay id/idx en pricing)
+    // IMPORTANTE: en algunos productos, EasyQuote devuelve `outputValues` en el orden
+    // "tal cual" del Excel (índice posicional), pero nuestras definiciones pueden estar
+    // re-ordenadas (por celda/hoja o por orden guardado). Para evitar que Interior 2
+    // termine mapeando celdas/hojas de Interior 1, también mantenemos un lookup por
+    // índice ya ordenado.
+    const defBySortedIndex = new Map<number, any>();
+    (orderedOutputDefinitions as any[]).forEach((d: any, sortedIndex: number) => {
+      defBySortedIndex.set(sortedIndex, d);
+    });
+
+    const getDefByIndex = (n: number) => defByOriginalIndex.get(n) ?? defBySortedIndex.get(n);
+    // 3) Fallback: asignación por tipo (cuando no hay id/idx/pos fiables en pricing)
     const defsByType = new Map<string, any[]>();
     for (const d of orderedOutputDefinitions as any[]) {
       const t = normalizeType(d?.outputTypeName);
@@ -546,7 +557,7 @@ export default function ProductTestPage() {
       const idxRaw = Number(o?.idx);
       if (Number.isFinite(idxRaw)) {
         // Algunas APIs devuelven idx 0-based; otras 1-based. Probamos ambos.
-        const def = defByOriginalIndex.get(idxRaw) ?? defByOriginalIndex.get(idxRaw - 1);
+        const def = getDefByIndex(idxRaw) ?? getDefByIndex(idxRaw - 1);
         if (def) {
           return {
             ...o,
@@ -558,10 +569,10 @@ export default function ProductTestPage() {
         }
       }
 
-      // 2.5) Fallback MUY fiable: respetar el orden del array devuelto por pricing
+      // Fallback: respetar el orden del array devuelto por pricing
       const posRaw = Number(o?.__pos);
       if (Number.isFinite(posRaw)) {
-        const def = defByOriginalIndex.get(posRaw);
+        const def = getDefByIndex(posRaw);
         if (def) {
           return {
             ...o,

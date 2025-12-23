@@ -99,7 +99,6 @@ export function BulkOutputsDialog({
   };
 
   const handleSave = () => {
-    console.log('BulkOutputsDialog handleSave - outputs to save:', JSON.stringify(outputs, null, 2));
     onSave(outputs);
   };
 
