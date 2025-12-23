@@ -147,6 +147,7 @@ function SortableOutputItem({
   isComposite,
   getPromptComponent,
   enabledComponents,
+  assignPromptToComponent,
 }: {
   output: ProductOutput;
   index: number;
@@ -162,6 +163,7 @@ function SortableOutputItem({
   isComposite: boolean;
   getPromptComponent: (name: string) => string;
   enabledComponents: string[];
+  assignPromptToComponent: (data: { easyquote_product_id: string; prompt_name: string; component: string }) => void;
 }) {
   const {
     attributes,
@@ -280,40 +282,74 @@ function SortableOutputItem({
         </div>
       </div>
 
-      {/* Variable de producción - Línea separada */}
-      <div className="flex items-center gap-4 mt-4 pt-4 border-t">
-        <Label className="w-48 text-sm font-medium">Variable de producción</Label>
-        <Select
-          value={getMappedVariableId(output.nameCell) || "none"}
-          onValueChange={(value) => {
-            if (selectedProduct) {
-              upsertVariableMapping({
-                easyquoteProductId: selectedProduct.id,
-                productName: selectedProduct.productName,
-                promptOrOutputName: output.nameCell,
-                variableId: value === "none" ? null : value,
-              });
-            }
-          }}
-        >
-          <SelectTrigger className="flex-1">
-            <SelectValue placeholder="Sin variable asignada" />
-          </SelectTrigger>
-          <SelectContent className="bg-background border shadow-lg z-50">
-            <SelectItem value="none">Sin variable asignada</SelectItem>
-            {productionVariables
-              .filter((v) => {
-                const mappedNames = getMappedNames();
-                const currentMapping = getMappedVariableId(output.nameCell);
-                return !mappedNames.includes(output.nameCell) || (currentMapping && v.id === currentMapping);
-              })
-              .map((variable) => (
-                <SelectItem key={variable.id} value={variable.id}>
-                  {variable.name}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
+      {/* Componente + Variable de producción - Línea separada */}
+      <div className="flex items-center gap-4 mt-4 pt-4 border-t flex-wrap">
+        {isComposite && (
+          <div className="flex items-center gap-2">
+            <Label className="text-sm font-medium whitespace-nowrap">Comp.</Label>
+            <Select
+              value={assignedComponent}
+              onValueChange={(value) => {
+                if (selectedProduct) {
+                  assignPromptToComponent({
+                    easyquote_product_id: selectedProduct.id,
+                    prompt_name: outputName,
+                    component: value
+                  });
+                }
+              }}
+            >
+              <SelectTrigger className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-background border shadow-lg z-50">
+                <SelectItem value="general">General</SelectItem>
+                {enabledComponents.map((comp) => {
+                  const preset = COMPONENT_PRESETS.encuadernado.components.find(c => c.value === comp);
+                  return (
+                    <SelectItem key={comp} value={comp}>
+                      {preset?.label || comp}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        <div className="flex items-center gap-2 flex-1">
+          <Label className="text-sm font-medium whitespace-nowrap">Var. prod.</Label>
+          <Select
+            value={getMappedVariableId(output.nameCell) || "none"}
+            onValueChange={(value) => {
+              if (selectedProduct) {
+                upsertVariableMapping({
+                  easyquoteProductId: selectedProduct.id,
+                  productName: selectedProduct.productName,
+                  promptOrOutputName: output.nameCell,
+                  variableId: value === "none" ? null : value,
+                });
+              }
+            }}
+          >
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Sin variable asignada" />
+            </SelectTrigger>
+            <SelectContent className="bg-background border shadow-lg z-50">
+              <SelectItem value="none">Sin variable asignada</SelectItem>
+              {productionVariables
+                .filter((v) => {
+                  const mappedNames = getMappedNames();
+                  const currentMapping = getMappedVariableId(output.nameCell);
+                  return !mappedNames.includes(output.nameCell) || (currentMapping && v.id === currentMapping);
+                })
+                .map((variable) => (
+                  <SelectItem key={variable.id} value={variable.id}>
+                    {variable.name}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
   );
@@ -2435,8 +2471,8 @@ export default function ProductManagement() {
                               </div>
                             </div>
 
-                            {/* Requerido + Ocultar en documentos + Variable de producción - Línea separada */}
-                            <div className="flex items-center gap-6 mt-4 pt-4 border-t">
+                            {/* Requerido + Ocultar en documentos + Componente + Variable de producción - Línea separada */}
+                            <div className="flex items-center gap-4 mt-4 pt-4 border-t flex-wrap">
                               <div className="flex items-center gap-2">
                                 <Label className="text-sm font-medium">Requerido</Label>
                                 <Switch
@@ -2454,7 +2490,7 @@ export default function ProductManagement() {
                                 />
                               </div>
                               <div className="flex items-center gap-2">
-                                <Label className="text-sm font-medium whitespace-nowrap">Ocultar en documentos</Label>
+                                <Label className="text-sm font-medium whitespace-nowrap">Ocultar</Label>
                                 <Switch
                                   checked={isPromptHiddenInDocuments(prompt.promptCell)}
                                   onCheckedChange={(checked) => {
@@ -2468,8 +2504,40 @@ export default function ProductManagement() {
                                   }}
                                 />
                               </div>
+                              {isComposite && (
+                                <div className="flex items-center gap-2">
+                                  <Label className="text-sm font-medium whitespace-nowrap">Comp.</Label>
+                                  <Select
+                                    value={assignedComponent}
+                                    onValueChange={(value) => {
+                                      if (selectedProduct) {
+                                        assignPromptToComponent({
+                                          easyquote_product_id: selectedProduct.id,
+                                          prompt_name: promptName,
+                                          component: value
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <SelectTrigger className="w-28">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-background border shadow-lg z-50">
+                                      <SelectItem value="general">General</SelectItem>
+                                      {enabledComponents.map((comp) => {
+                                        const preset = COMPONENT_PRESETS.encuadernado.components.find(c => c.value === comp);
+                                        return (
+                                          <SelectItem key={comp} value={comp}>
+                                            {preset?.label || comp}
+                                          </SelectItem>
+                                        );
+                                      })}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              )}
                               <div className="flex items-center gap-2 flex-1">
-                                <Label className="text-sm font-medium whitespace-nowrap">Variable de producción</Label>
+                                <Label className="text-sm font-medium whitespace-nowrap">Var. prod.</Label>
                                 <Select
                                   value={getMappedVariableId(prompt.promptCell) || "none"}
                                   onValueChange={(value) => {
@@ -2574,6 +2642,7 @@ export default function ProductManagement() {
                               isComposite={isComposite}
                               getPromptComponent={getPromptComponent}
                               enabledComponents={enabledComponents}
+                              assignPromptToComponent={assignPromptToComponent}
                             />
                           ))}
                         </div>
