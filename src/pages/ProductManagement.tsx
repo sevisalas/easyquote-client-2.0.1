@@ -2680,41 +2680,122 @@ export default function ProductManagement() {
                     <p className="text-muted-foreground">No hay datos de salida configurados</p>
                   </div>
                 ) : (
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <SortableContext
-                      items={orderedProductOutputs.map(o => o.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <ScrollArea className="h-[500px] pr-4">
-                        <div className="space-y-3">
-                          {orderedProductOutputs.map((output, index) => (
-                            <SortableOutputItem
-                              key={output.id}
-                              output={output}
-                              index={index}
-                              excelSheets={excelSheets}
-                              outputTypes={outputTypes}
-                              onUpdate={(updatedOutput) => updateOutputMutation.mutate(updatedOutput)}
-                              onDelete={deleteOutput}
-                              getMappedVariableId={getMappedVariableId}
-                              getMappedNames={getMappedNames}
-                              upsertVariableMapping={upsertVariableMapping}
-                              productionVariables={productionVariables}
-                              selectedProduct={selectedProduct}
-                              isComposite={isComposite}
-                              getPromptComponent={getPromptComponent}
-                              enabledComponents={enabledComponents}
-                              assignPromptToComponent={assignPromptToComponent}
-                            />
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    </SortableContext>
-                  </DndContext>
+                  <Tabs defaultValue="general" className="w-full">
+                    <TabsList className="mb-4">
+                      <TabsTrigger value="general">General</TabsTrigger>
+                      {isComposite && enabledComponents.map((comp) => {
+                        const preset = COMPONENT_PRESETS.encuadernado.components.find(c => c.value === comp);
+                        return (
+                          <TabsTrigger key={comp} value={comp}>
+                            {preset?.label || comp}
+                          </TabsTrigger>
+                        );
+                      })}
+                    </TabsList>
+
+                    {/* Pestaña General */}
+                    <TabsContent value="general">
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <SortableContext
+                          items={orderedProductOutputs.filter(o => getPromptComponent(o.nameCell || o.id) === 'general').map(o => o.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <ScrollArea className="h-[450px] pr-4">
+                            <div className="space-y-3">
+                              {orderedProductOutputs
+                                .filter(output => getPromptComponent(output.nameCell || output.id) === 'general')
+                                .map((output, index) => (
+                                  <SortableOutputItem
+                                    key={output.id}
+                                    output={output}
+                                    index={index}
+                                    excelSheets={excelSheets}
+                                    outputTypes={outputTypes}
+                                    onUpdate={(updatedOutput) => updateOutputMutation.mutate(updatedOutput)}
+                                    onDelete={deleteOutput}
+                                    getMappedVariableId={getMappedVariableId}
+                                    getMappedNames={getMappedNames}
+                                    upsertVariableMapping={upsertVariableMapping}
+                                    productionVariables={productionVariables}
+                                    selectedProduct={selectedProduct}
+                                    isComposite={isComposite}
+                                    getPromptComponent={getPromptComponent}
+                                    enabledComponents={enabledComponents}
+                                    assignPromptToComponent={assignPromptToComponent}
+                                  />
+                                ))}
+                              {orderedProductOutputs.filter(o => getPromptComponent(o.nameCell || o.id) === 'general').length === 0 && (
+                                <div className="text-center py-8">
+                                  <Package className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                                  <p className="text-sm text-muted-foreground">No hay resultados generales</p>
+                                </div>
+                              )}
+                            </div>
+                          </ScrollArea>
+                        </SortableContext>
+                      </DndContext>
+                    </TabsContent>
+
+                    {/* Pestañas de componentes */}
+                    {isComposite && enabledComponents.map((comp) => {
+                      const componentOutputs = orderedProductOutputs.filter(
+                        output => getPromptComponent(output.nameCell || output.id) === comp
+                      );
+                      const preset = COMPONENT_PRESETS.encuadernado.components.find(c => c.value === comp);
+                      
+                      return (
+                        <TabsContent key={comp} value={comp}>
+                          <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                          >
+                            <SortableContext
+                              items={componentOutputs.map(o => o.id)}
+                              strategy={verticalListSortingStrategy}
+                            >
+                              <ScrollArea className="h-[450px] pr-4">
+                                <div className="space-y-3">
+                                  {componentOutputs.map((output, index) => (
+                                    <SortableOutputItem
+                                      key={output.id}
+                                      output={output}
+                                      index={index}
+                                      excelSheets={excelSheets}
+                                      outputTypes={outputTypes}
+                                      onUpdate={(updatedOutput) => updateOutputMutation.mutate(updatedOutput)}
+                                      onDelete={deleteOutput}
+                                      getMappedVariableId={getMappedVariableId}
+                                      getMappedNames={getMappedNames}
+                                      upsertVariableMapping={upsertVariableMapping}
+                                      productionVariables={productionVariables}
+                                      selectedProduct={selectedProduct}
+                                      isComposite={isComposite}
+                                      getPromptComponent={getPromptComponent}
+                                      enabledComponents={enabledComponents}
+                                      assignPromptToComponent={assignPromptToComponent}
+                                    />
+                                  ))}
+                                  {componentOutputs.length === 0 && (
+                                    <div className="text-center py-8">
+                                      <Package className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                                      <p className="text-sm text-muted-foreground">
+                                        No hay resultados para {preset?.label || comp}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              </ScrollArea>
+                            </SortableContext>
+                          </DndContext>
+                        </TabsContent>
+                      );
+                    })}
+                  </Tabs>
                 )}
               </TabsContent>
 
