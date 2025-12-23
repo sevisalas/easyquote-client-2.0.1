@@ -1632,12 +1632,18 @@ export default function ProductManagement() {
     const nextRow = getNextRow();
     
     // Reset form data and open dialog
+    const preferredDatos = excelSheets.find(
+      (s) => String(s).toLowerCase().trim() === "datos"
+    );
+    const defaultSheet = newOutputData.sheet || preferredDatos || excelSheets[0] || "";
+    const defaultComponent = isComposite ? (newOutputData.component || "general") : "general";
+
     setNewOutputData({
-      sheet: "",
+      sheet: defaultSheet,
       prompt: "",
       defaultValue: "",
       outputTypeId: outputTypes[0]?.id || 0,
-      component: "general"
+      component: defaultComponent,
     });
     setIsNewOutputDialogOpen(true);
   };
@@ -1666,13 +1672,13 @@ export default function ProductManagement() {
       }
     });
     setIsNewOutputDialogOpen(false);
-    setNewOutputData(prev => ({ ...prev, component: "general" }));
+    // Mantener hoja y componente para facilitar crear varios outputs seguidos
+    setNewOutputData((prev) => ({ ...prev, prompt: "", defaultValue: "" }));
   };
 
   // Bulk create prompts
   const handleBulkSavePrompts = async (prompts: any[]) => {
     if (!selectedProduct) return;
-    
     try {
       for (const promptData of prompts) {
         // Verificar si el tipo es numérico
@@ -3018,7 +3024,9 @@ export default function ProductManagement() {
                 <Label htmlFor="outputSheet">Hoja</Label>
                 <Select
                   value={newOutputData.sheet || ""}
-                  onValueChange={(value) => setNewOutputData({...newOutputData, sheet: value})}
+                  onValueChange={(value) =>
+                    setNewOutputData((prev) => ({ ...prev, sheet: value }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar hoja" />
@@ -3072,7 +3080,9 @@ export default function ProductManagement() {
                   <Label htmlFor="outputComponent">Componente</Label>
                   <Select
                     value={newOutputData.component}
-                    onValueChange={(value) => setNewOutputData({...newOutputData, component: value})}
+                    onValueChange={(value) =>
+                      setNewOutputData((prev) => ({ ...prev, component: value }))
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar componente" />
