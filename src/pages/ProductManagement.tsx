@@ -1725,6 +1725,10 @@ export default function ProductManagement() {
         }
       }
       
+      // Refrescar queries para mostrar los cambios en la UI
+      await refetchPromptSettings();
+      queryClient.invalidateQueries({ queryKey: ['product-prompt-components', selectedProduct.id] });
+      
       setIsBulkPromptsDialogOpen(false);
       toast({
         title: "Éxito",
