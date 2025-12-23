@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PromptsForm, { extractPrompts, type PromptDef } from "./PromptsForm";
@@ -145,14 +145,6 @@ export default function ComponentTabsPromptsForm({
     return counts;
   }, [promptsByComponent, availableComponents]);
 
-  // Encontrar el primer tab con prompts
-  const defaultTab = useMemo(() => {
-    for (const comp of availableComponents) {
-      if (countByComponent[comp] > 0) return comp;
-    }
-    return GENERAL_COMPONENT.value;
-  }, [availableComponents, countByComponent]);
-
   // Crear un "producto virtual" para cada componente con solo sus prompts
   const createComponentProduct = (componentPrompts: PromptDef[]) => {
     return {
@@ -170,7 +162,35 @@ export default function ComponentTabsPromptsForm({
     };
   };
 
+  // Componentes para pestañas (sin "general") y prompts generales
+  const tabComponents = useMemo(
+    () => availableComponents.filter((c) => c !== GENERAL_COMPONENT.value),
+    [availableComponents]
+  );
+  const generalPrompts = useMemo(
+    () => promptsByComponent[GENERAL_COMPONENT.value] || [],
+    [promptsByComponent]
+  );
+
+  const initialTab = useMemo(() => {
+    for (const comp of tabComponents) {
+      if ((countByComponent[comp] || 0) > 0) return comp;
+    }
+    return tabComponents[0] || "";
+  }, [tabComponents, countByComponent]);
+
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
+
+  // Mantener activeTab válido cuando cambien componentes o conteos
+  useEffect(() => {
+    if (!tabComponents.length) return;
+    if (!activeTab || !tabComponents.includes(activeTab)) {
+      setActiveTab(initialTab);
+    }
+  }, [activeTab, tabComponents, initialTab]);
+
   // Si NO es un producto compuesto (o está cargando), renderizar el formulario normal
+  // (pero aseguramos que los hooks se llamen siempre para evitar "Rendered more hooks")
   if (!isComposite || isLoading) {
     return (
       <PromptsForm
@@ -183,47 +203,49 @@ export default function ComponentTabsPromptsForm({
     );
   }
 
-  // Filtrar componentes sin incluir "general" para las pestañas
-  const tabComponents = availableComponents.filter((c) => c !== GENERAL_COMPONENT.value);
-  const generalPrompts = promptsByComponent[GENERAL_COMPONENT.value] || [];
-  
-  // Default tab para los componentes (sin general)
-  const initialTab = useMemo(() => {
-    for (const comp of tabComponents) {
-      if (countByComponent[comp] > 0) return comp;
-    }
-    return tabComponents[0] || "";
-  }, [tabComponents, countByComponent]);
-
-  const [activeTab, setActiveTab] = useState(initialTab);
+  // Si no hay componentes (solo general), mostramos el título y el formulario general a ancho completo
+  if (tabComponents.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <h3 className="font-medium whitespace-nowrap">Configuración del Producto</h3>
+        </div>
+        {generalPrompts.length > 0 && (
+          <PromptsForm
+            product={createComponentProduct(generalPrompts)}
+            values={values}
+            onChange={onChange}
+            onCommit={onCommit}
+            showAllPrompts={showAllPrompts}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-4">
       {/* Header con título y pestañas a la misma altura */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h3 className="font-medium whitespace-nowrap">Configuración del Producto</h3>
-        
-        {tabComponents.length > 0 && (
-          <TabsList className="flex-wrap h-auto gap-1">
-            {tabComponents.map((comp) => {
-              const count = countByComponent[comp];
-              const label = COMPONENT_LABELS[comp] || comp;
 
-              return (
-                <TabsTrigger
-                  key={comp}
-                  value={comp}
-                  className="relative flex items-center"
-                  disabled={count === 0}
-                  data-state={activeTab === comp ? "active" : "inactive"}
-                  onClick={() => setActiveTab(comp)}
-                >
-                  {label}
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-        )}
+        <TabsList className="flex-wrap h-auto gap-1 md:w-auto">
+          {tabComponents.map((comp) => {
+            const count = countByComponent[comp];
+            const label = COMPONENT_LABELS[comp] || comp;
+
+            return (
+              <TabsTrigger
+                key={comp}
+                value={comp}
+                className="relative flex items-center"
+                disabled={count === 0}
+              >
+                {label}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
       </div>
 
       {/* Contenido: dos columnas */}
@@ -242,33 +264,30 @@ export default function ComponentTabsPromptsForm({
         )}
 
         {/* Columna derecha: Componentes con contenido de pestañas */}
-        {tabComponents.length > 0 && (
-          <div>
-            {tabComponents.map((comp) => {
-              if (comp !== activeTab) return null;
-              const componentPrompts = promptsByComponent[comp] || [];
+        <div>
+          {tabComponents.map((comp) => {
+            const componentPrompts = promptsByComponent[comp] || [];
 
-              return (
-                <div key={comp}>
-                  {componentPrompts.length === 0 ? (
-                    <p className="text-sm text-muted-foreground py-4">
-                      No hay campos asignados a {COMPONENT_LABELS[comp] || comp}.
-                    </p>
-                  ) : (
-                    <PromptsForm
-                      product={createComponentProduct(componentPrompts)}
-                      values={values}
-                      onChange={onChange}
-                      onCommit={onCommit}
-                      showAllPrompts={showAllPrompts}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+            return (
+              <TabsContent key={comp} value={comp} className="mt-0">
+                {componentPrompts.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4">
+                    No hay campos asignados a {COMPONENT_LABELS[comp] || comp}.
+                  </p>
+                ) : (
+                  <PromptsForm
+                    product={createComponentProduct(componentPrompts)}
+                    values={values}
+                    onChange={onChange}
+                    onCommit={onCommit}
+                    showAllPrompts={showAllPrompts}
+                  />
+                )}
+              </TabsContent>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </Tabs>
   );
 }
