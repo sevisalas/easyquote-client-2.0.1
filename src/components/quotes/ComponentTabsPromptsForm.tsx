@@ -12,7 +12,10 @@ interface ComponentTabsPromptsFormProps {
   onChange: (id: string, value: any, label: string) => void;
   onCommit?: (id: string, value: any, label: string) => void;
   showAllPrompts?: boolean;
+  onComponentChange?: (component: string) => void;
 }
+
+export { COMPONENT_LABELS };
 
 // Labels para componentes
 const COMPONENT_LABELS: Record<string, string> = {
@@ -42,7 +45,8 @@ export default function ComponentTabsPromptsForm({
   values,
   onChange,
   onCommit,
-  showAllPrompts = false
+  showAllPrompts = false,
+  onComponentChange
 }: ComponentTabsPromptsFormProps) {
   const {
     isComposite,
@@ -200,6 +204,13 @@ export default function ComponentTabsPromptsForm({
     return tabComponents[0] || "";
   }, [tabComponents, countByComponent]);
   const [activeTab, setActiveTab] = useState<string>(initialTab);
+
+  // Notificar cambio de componente al padre
+  useEffect(() => {
+    if (onComponentChange && activeTab) {
+      onComponentChange(activeTab);
+    }
+  }, [activeTab, onComponentChange]);
 
   // Mantener activeTab válido cuando cambien componentes o conteos
   useEffect(() => {
