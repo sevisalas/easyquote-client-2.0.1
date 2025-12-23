@@ -64,12 +64,12 @@ export function BulkOutputsDialog({
     return maxRow + 1;
   };
 
-  const createInitialOutput = (row: number) => ({
-    sheet: "",
+  const createInitialOutput = (row: number, inheritSheet?: string, inheritComponent?: string) => ({
+    sheet: inheritSheet || "",
     nameCell: "",
     valueCell: "",
     outputTypeId: outputTypes[0]?.id || 0,
-    component: "general"
+    component: inheritComponent || "general"
   });
 
   const [outputs, setOutputs] = useState<BulkOutputData[]>([]);
@@ -77,7 +77,11 @@ export function BulkOutputsDialog({
   const addOutput = () => {
     const baseRow = getNextRow();
     const nextRow = baseRow + outputs.length;
-    setOutputs([...outputs, createInitialOutput(nextRow)]);
+    // Heredar hoja y componente del último output añadido
+    const lastOutput = outputs[outputs.length - 1];
+    const inheritSheet = lastOutput?.sheet || availableSheets[0] || "";
+    const inheritComponent = lastOutput?.component || "general";
+    setOutputs([...outputs, createInitialOutput(nextRow, inheritSheet, inheritComponent)]);
   };
 
   const removeOutput = (index: number) => {
