@@ -67,9 +67,22 @@ export default function ComponentTabsPromptsForm({
       grouped[comp] = [];
     });
 
+    // Obtener los prompts originales del producto para acceder a promptCell
+    const originalPrompts = product?.prompts || [];
+
     // Asignar cada prompt a su componente
     prompts.forEach((prompt) => {
-      const component = getPromptComponent(prompt.id);
+      // Buscar el prompt original para obtener el promptCell (que es lo que se guarda en DB)
+      const originalPrompt = originalPrompts.find((op: any) => 
+        String(op.id) === String(prompt.id) || 
+        String(op.promptCell) === String(prompt.id) ||
+        String(op.key) === String(prompt.id)
+      );
+      
+      // El nombre guardado en la DB es promptCell, no el id
+      const promptIdentifier = originalPrompt?.promptCell || originalPrompt?.id || prompt.id;
+      const component = getPromptComponent(promptIdentifier);
+      
       // Si el componente asignado existe en los disponibles, usarlo; sino, poner en general
       if (grouped[component]) {
         grouped[component].push(prompt);
@@ -79,7 +92,7 @@ export default function ComponentTabsPromptsForm({
     });
 
     return grouped;
-  }, [prompts, availableComponents, getPromptComponent]);
+  }, [prompts, availableComponents, getPromptComponent, product]);
 
   // Contar prompts por componente para mostrar badge
   const countByComponent = useMemo(() => {
