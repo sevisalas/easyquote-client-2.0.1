@@ -403,6 +403,7 @@ export default function ProductManagement() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>("");
   const [productType, setProductType] = useState<'sencillo' | 'encuadernado' | 'compuesto'>('sencillo');
+  const [selectedInputComponent, setSelectedInputComponent] = useState<string>('general');
   const [newPromptData, setNewPromptData] = useState({
     promptSheet: "",
     promptCell: "",
@@ -2272,6 +2273,23 @@ export default function ProductManagement() {
                   </div>
                 </div>
 
+                {/* Selector de componente para productos compuestos */}
+                {isComposite && (
+                  <Tabs value={selectedInputComponent} onValueChange={setSelectedInputComponent} className="w-full">
+                    <TabsList>
+                      <TabsTrigger value="general">General</TabsTrigger>
+                      {enabledComponents.map((comp) => {
+                        const preset = COMPONENT_PRESETS.encuadernado.components.find(c => c.value === comp);
+                        return (
+                          <TabsTrigger key={comp} value={comp}>
+                            {preset?.label || comp}
+                          </TabsTrigger>
+                        );
+                      })}
+                    </TabsList>
+                  </Tabs>
+                )}
+
                 {promptsLoading ? (
                   <div className="text-center py-4">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
@@ -2680,31 +2698,20 @@ export default function ProductManagement() {
                     <p className="text-muted-foreground">No hay datos de salida configurados</p>
                   </div>
                 ) : (
-                  <Tabs defaultValue="general" className="w-full">
-                    <TabsList className="mb-4">
-                      <TabsTrigger value="general">General</TabsTrigger>
-                      {isComposite && enabledComponents.map((comp) => {
-                        const preset = COMPONENT_PRESETS.encuadernado.components.find(c => c.value === comp);
-                        return (
-                          <TabsTrigger key={comp} value={comp}>
-                            {preset?.label || comp}
-                          </TabsTrigger>
-                        );
-                      })}
-                    </TabsList>
-
-                    {/* Pestaña General */}
-                    <TabsContent value="general">
-                      <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={handleDragEnd}
-                      >
-                        <SortableContext
-                          items={orderedProductOutputs.filter(o => getPromptComponent(o.nameCell || o.id) === 'general').map(o => o.id)}
-                          strategy={verticalListSortingStrategy}
+                  <ScrollArea className="h-[500px] pr-4">
+                    <div className="space-y-6">
+                      {/* Sección General */}
+                      <div>
+                        <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">General</h4>
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={handleDragEnd}
                         >
-                          <ScrollArea className="h-[450px] pr-4">
+                          <SortableContext
+                            items={orderedProductOutputs.filter(o => getPromptComponent(o.nameCell || o.id) === 'general').map(o => o.id)}
+                            strategy={verticalListSortingStrategy}
+                          >
                             <div className="space-y-3">
                               {orderedProductOutputs
                                 .filter(output => getPromptComponent(output.nameCell || output.id) === 'general')
@@ -2729,36 +2736,40 @@ export default function ProductManagement() {
                                   />
                                 ))}
                               {orderedProductOutputs.filter(o => getPromptComponent(o.nameCell || o.id) === 'general').length === 0 && (
-                                <div className="text-center py-8">
-                                  <Package className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                                <div className="text-center py-4">
+                                  <Package className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
                                   <p className="text-sm text-muted-foreground">No hay resultados generales</p>
                                 </div>
                               )}
                             </div>
-                          </ScrollArea>
-                        </SortableContext>
-                      </DndContext>
-                    </TabsContent>
+                          </SortableContext>
+                        </DndContext>
+                      </div>
 
-                    {/* Pestañas de componentes */}
-                    {isComposite && enabledComponents.map((comp) => {
-                      const componentOutputs = orderedProductOutputs.filter(
-                        output => getPromptComponent(output.nameCell || output.id) === comp
-                      );
-                      const preset = COMPONENT_PRESETS.encuadernado.components.find(c => c.value === comp);
-                      
-                      return (
-                        <TabsContent key={comp} value={comp}>
-                          <DndContext
-                            sensors={sensors}
-                            collisionDetection={closestCenter}
-                            onDragEnd={handleDragEnd}
-                          >
-                            <SortableContext
-                              items={componentOutputs.map(o => o.id)}
-                              strategy={verticalListSortingStrategy}
+                      {/* Sección del componente seleccionado */}
+                      {isComposite && selectedInputComponent !== 'general' && (() => {
+                        const selectedComponentLabel = COMPONENT_PRESETS.encuadernado.components.find(
+                          c => c.value === selectedInputComponent
+                        )?.label || selectedInputComponent;
+                        const componentOutputs = orderedProductOutputs.filter(
+                          output => getPromptComponent(output.nameCell || output.id) === selectedInputComponent
+                        );
+
+                        return (
+                          <div>
+                            <Separator className="my-4" />
+                            <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
+                              {selectedComponentLabel}
+                            </h4>
+                            <DndContext
+                              sensors={sensors}
+                              collisionDetection={closestCenter}
+                              onDragEnd={handleDragEnd}
                             >
-                              <ScrollArea className="h-[450px] pr-4">
+                              <SortableContext
+                                items={componentOutputs.map(o => o.id)}
+                                strategy={verticalListSortingStrategy}
+                              >
                                 <div className="space-y-3">
                                   {componentOutputs.map((output, index) => (
                                     <SortableOutputItem
@@ -2781,21 +2792,21 @@ export default function ProductManagement() {
                                     />
                                   ))}
                                   {componentOutputs.length === 0 && (
-                                    <div className="text-center py-8">
-                                      <Package className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                                    <div className="text-center py-4">
+                                      <Package className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
                                       <p className="text-sm text-muted-foreground">
-                                        No hay resultados para {preset?.label || comp}
+                                        No hay resultados para {selectedComponentLabel}
                                       </p>
                                     </div>
                                   )}
                                 </div>
-                              </ScrollArea>
-                            </SortableContext>
-                          </DndContext>
-                        </TabsContent>
-                      );
-                    })}
-                  </Tabs>
+                              </SortableContext>
+                            </DndContext>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </ScrollArea>
                 )}
               </TabsContent>
 
