@@ -690,14 +690,21 @@ export default function ProductTestPage() {
 
       if (sheetNameToComponent[norm]) return sheetNameToComponent[norm];
 
-      // Si viene como número ("1", "2"...) o contiene un número ("Sheet 2", "Hoja3"), mapear por orden de componentes habilitados
-      const m = norm.match(/\d+/);
-      if (m) {
-        const n = Number(m[0]);
-        if (Number.isFinite(n) && n >= 1 && n <= availableComponents.length) {
-          return availableComponents[n - 1];
-        }
-      }
+       // Si viene como número ("1", "2"...) o contiene un número ("Sheet 2", "Hoja3"),
+       // primero intentamos mapear a los componentes habilitados (sin incluir "general").
+       const m = norm.match(/\d+/);
+       if (m) {
+         const n = Number(m[0]);
+         const enabled = enabledComponents ?? [];
+
+         if (Number.isFinite(n) && n >= 1 && n <= enabled.length) {
+           return enabled[n - 1];
+         }
+
+         if (Number.isFinite(n) && n >= 1 && n <= availableComponents.length) {
+           return availableComponents[n - 1];
+         }
+       }
 
       return "general";
     };
@@ -954,26 +961,46 @@ export default function ProductTestPage() {
                         </div>)}
                     </div>}
 
-                  {/* Título y outputs del componente seleccionado */}
-                  {selectedComponent !== 'general' && (selectedTextOutputs.length > 0 || selectedImageOutputs.length > 0) && (
+                  {/* Resultados del componente seleccionado */}
+                  {selectedComponent !== "general" && (
                     <div className="border-t pt-4 mt-4 space-y-4">
                       <h4 className="font-semibold text-sm">{COMPONENT_LABELS[selectedComponent] || selectedComponent}</h4>
-                      
-                      {selectedTextOutputs.length > 0 && <div className="space-y-2 text-sm">
-                          {selectedTextOutputs.map((output, index) => <div key={`sel-${index}`} className="flex justify-between">
-                              <span>{output.label || output.name}</span>
-                              <span className="font-medium">{output.value}</span>
-                            </div>)}
-                        </div>}
 
-                      {selectedImageOutputs.length > 0 && <div className="space-y-3 pt-2">
-                          {selectedImageOutputs.map((output, index) => <div key={`sel-img-${output.value}-${index}`} className="space-y-2">
-                              <div className="text-sm font-medium">{output.label || output.name}</div>
-                              <img key={output.value} src={output.value} alt={output.label || output.name || `Imagen ${index + 1}`} className="w-full max-w-md rounded border" />
-                            </div>)}
-                        </div>}
+                      {selectedTextOutputs.length === 0 && selectedImageOutputs.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">Sin resultados para este componente</p>
+                      ) : (
+                        <>
+                          {selectedTextOutputs.length > 0 && (
+                            <div className="space-y-2 text-sm">
+                              {selectedTextOutputs.map((output, index) => (
+                                <div key={`sel-${index}`} className="flex justify-between">
+                                  <span>{output.label || output.name}</span>
+                                  <span className="font-medium">{output.value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {selectedImageOutputs.length > 0 && (
+                            <div className="space-y-3 pt-2">
+                              {selectedImageOutputs.map((output, index) => (
+                                <div key={`sel-img-${output.value}-${index}`} className="space-y-2">
+                                  <div className="text-sm font-medium">{output.label || output.name}</div>
+                                  <img
+                                    key={output.value}
+                                    src={output.value}
+                                    alt={output.label || output.name || `Imagen ${index + 1}`}
+                                    className="w-full max-w-md rounded border"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   )}
+
 
                 </CardContent>
               </Card>}
