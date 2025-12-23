@@ -797,36 +797,19 @@ export default function ProductManagement() {
       return;
     }
 
-    // Si no hay orden guardado, usar orden basado en tipo y celda
-    const typePriority: Record<string, number> = {
-      'price': 1,
-      'instructions': 2,
-      'quantity': 3,
-      'workflow': 4,
-      'productimage': 99,
-    };
-
-    const getTypePriority = (type?: string | null) => {
-      const normalized = (type ?? "").toLowerCase().trim();
-      return typePriority[normalized] ?? 50;
-    };
-
+    // Si no hay orden guardado, usar orden basado en celda (columna, luego fila) - mismo orden que ProductTestPage
     const colToNumber = (col: string) => {
       return col.toUpperCase().split("").reduce((acc, ch) => acc * 26 + (ch.charCodeAt(0) - 64), 0);
     };
 
     const parseCellRef = (cell?: string | null) => {
-      const raw = (cell ?? "").trim();
-      const match = raw.match(/^\$?([A-Za-z]+)\$?(\d+)$/);
+      const raw = (cell ?? "").replace(/\$/g, "").trim().toUpperCase();
+      const match = raw.match(/^([A-Za-z]+)(\d+)$/);
       if (!match) return null;
       return { col: colToNumber(match[1]), row: Number.parseInt(match[2], 10) };
     };
 
     const sorted = [...productOutputs].sort((a, b) => {
-      const priorityA = getTypePriority(a.type);
-      const priorityB = getTypePriority(b.type);
-      if (priorityA !== priorityB) return priorityA - priorityB;
-
       const cellA = parseCellRef(a.nameCell) ?? parseCellRef(a.valueCell);
       const cellB = parseCellRef(b.nameCell) ?? parseCellRef(b.valueCell);
 
@@ -834,8 +817,9 @@ export default function ProductManagement() {
       if (!cellA && cellB) return 1;
 
       if (cellA && cellB) {
-        if (cellA.row !== cellB.row) return cellA.row - cellB.row;
+        // Ordenar primero por columna, luego por fila (igual que ProductTestPage)
         if (cellA.col !== cellB.col) return cellA.col - cellB.col;
+        if (cellA.row !== cellB.row) return cellA.row - cellB.row;
       }
 
       return (a.id || "").localeCompare(b.id || "");
