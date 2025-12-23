@@ -331,7 +331,7 @@ function SortableOutputItem({
               }
             }}
           >
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="flex-1">
               <SelectValue placeholder="Sin variable" />
             </SelectTrigger>
             <SelectContent className="bg-background border shadow-lg z-50">
