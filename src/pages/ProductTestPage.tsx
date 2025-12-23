@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import PromptsForm from "@/components/quotes/PromptsForm";
-import ComponentTabsPromptsForm from "@/components/quotes/ComponentTabsPromptsForm";
+import ComponentTabsPromptsForm, { COMPONENT_LABELS } from "@/components/quotes/ComponentTabsPromptsForm";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -40,6 +40,7 @@ export default function ProductTestPage() {
   const [hasUserModifiedPrompts, setHasUserModifiedPrompts] = useState(false);
   const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
   const [isDiagnosing, setIsDiagnosing] = useState(false);
+  const [selectedComponent, setSelectedComponent] = useState<string>('general');
   const [tokenReady, setTokenReady] = useState(!!sessionStorage.getItem("easyquote_token"));
   const {
     isSuperAdmin,
@@ -825,7 +826,14 @@ export default function ProductTestPage() {
                   </Alert>}
 
                 {productId && !isLoadingProduct && productDetail && <div className="border-t pt-4">
-                    <ComponentTabsPromptsForm product={productDetail} productId={productId} values={promptValues} onChange={handlePromptChange} onCommit={handlePromptCommit} />
+                    <ComponentTabsPromptsForm 
+                      product={productDetail} 
+                      productId={productId} 
+                      values={promptValues} 
+                      onChange={handlePromptChange} 
+                      onCommit={handlePromptCommit}
+                      onComponentChange={setSelectedComponent}
+                    />
                   </div>}
               </CardContent>
             </Card>
@@ -836,6 +844,11 @@ export default function ProductTestPage() {
             {productId && <Card>
                 <CardHeader>
                   <CardTitle>Resultados</CardTitle>
+                  {selectedComponent !== 'general' && (
+                    <p className="text-sm text-muted-foreground">
+                      Componente: <span className="font-medium text-foreground">{COMPONENT_LABELS[selectedComponent] || selectedComponent}</span>
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {pricingLoading && <div className="text-center py-8 text-muted-foreground">
