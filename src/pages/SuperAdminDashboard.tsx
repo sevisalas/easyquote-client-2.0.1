@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Building2, Network, BarChart3 } from "lucide-react";
+import { Users, Building2, Network } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import SystemMetricsCharts from "@/components/superadmin/SystemMetricsCharts";
 
 const SuperAdminDashboard = () => {
   const navigate = useNavigate();
@@ -109,15 +108,6 @@ const SuperAdminDashboard = () => {
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Métricas del Sistema - Solo SuperAdmin */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            Métricas del Sistema
-          </h2>
-          <SystemMetricsCharts />
         </div>
 
         {/* Acciones principales */}
