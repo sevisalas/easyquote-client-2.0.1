@@ -1346,7 +1346,27 @@ export default function ProductManagement() {
         body: { token, productId: sourceProduct.id }
       });
 
-      // 3. Crear nuevo producto con el mismo excelfileId
+      // 3. Obtener configuración de componentes del producto original (Supabase)
+      const { data: sourceComponentSettings } = await supabase
+        .from('product_component_settings')
+        .select('*')
+        .eq('easyquote_product_id', sourceProduct.id)
+        .maybeSingle();
+
+      // 4. Obtener asignaciones de prompts a componentes del producto original (Supabase)
+      const { data: sourcePromptComponents } = await supabase
+        .from('product_prompt_components')
+        .select('*')
+        .eq('easyquote_product_id', sourceProduct.id);
+
+      // 5. Obtener orden de outputs del producto original (Supabase)
+      const { data: sourceOutputOrder } = await supabase
+        .from('product_output_order')
+        .select('*')
+        .eq('easyquote_product_id', sourceProduct.id)
+        .maybeSingle();
+
+      // 6. Crear nuevo producto con el mismo excelfileId
       const response = await fetch("https://api.easyquote.cloud/api/v1/products", {
         method: "POST",
         headers: {
@@ -1374,7 +1394,7 @@ export default function ProductManagement() {
         newProductId = responseText.replace(/['"]/g, '').trim();
       }
 
-      // 4. Duplicar prompts al nuevo producto
+      // 7. Duplicar prompts al nuevo producto (EasyQuote API)
       const promptsArray = Array.isArray(sourcePrompts) ? sourcePrompts : [];
       for (const prompt of promptsArray) {
         const newPrompt = {
@@ -1406,7 +1426,7 @@ export default function ProductManagement() {
         });
       }
 
-      // 5. Duplicar outputs al nuevo producto
+      // 8. Duplicar outputs al nuevo producto (EasyQuote API)
       const outputsArray = Array.isArray(sourceOutputs) ? sourceOutputs : [];
       for (const output of outputsArray) {
         const newOutput = {
@@ -1425,6 +1445,52 @@ export default function ProductManagement() {
           },
           body: JSON.stringify(newOutput),
         });
+      }
+
+      // 9. Copiar configuración de componentes (is_composite, enabled_components) a Supabase
+      if (sourceComponentSettings) {
+        await supabase
+          .from('product_component_settings')
+          .upsert({
+            organization_id: sourceComponentSettings.organization_id,
+            easyquote_product_id: newProductId,
+            is_composite: sourceComponentSettings.is_composite,
+            enabled_components: sourceComponentSettings.enabled_components,
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'organization_id,easyquote_product_id',
+          });
+      }
+
+      // 10. Copiar asignaciones de prompts a componentes a Supabase
+      if (sourcePromptComponents && sourcePromptComponents.length > 0) {
+        const newPromptComponents = sourcePromptComponents.map((pc: any) => ({
+          organization_id: pc.organization_id,
+          easyquote_product_id: newProductId,
+          prompt_name: pc.prompt_name,
+          component: pc.component,
+          updated_at: new Date().toISOString(),
+        }));
+
+        await supabase
+          .from('product_prompt_components')
+          .upsert(newPromptComponents, {
+            onConflict: 'organization_id,easyquote_product_id,prompt_name',
+          });
+      }
+
+      // 11. Copiar orden de outputs a Supabase
+      if (sourceOutputOrder && sourceOutputOrder.output_order?.length > 0) {
+        await supabase
+          .from('product_output_order')
+          .upsert({
+            organization_id: sourceOutputOrder.organization_id,
+            easyquote_product_id: newProductId,
+            output_order: sourceOutputOrder.output_order,
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'organization_id,easyquote_product_id',
+          });
       }
 
       return newProductId;
