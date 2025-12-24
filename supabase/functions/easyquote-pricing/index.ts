@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { logMetric } from "../_shared/metrics.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -330,12 +331,30 @@ serve(async (req: Request): Promise<Response> => {
     const totalTime = Date.now() - startTime;
     console.log(`⏱️ easyquote-pricing: TOTAL request time: ${totalTime}ms`);
     
+    // Registrar métrica de rendimiento (async, no bloquea)
+    logMetric({
+      functionName: 'easyquote-pricing',
+      endpoint: `pricing/${productId}`,
+      responseTimeMs: totalTime,
+      statusCode: 200,
+      metadata: { productId, inputsCount: formattedInputsList.length }
+    }).catch(() => {});
+    
     return new Response(JSON.stringify(data), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
     console.error("easyquote-pricing: unexpected error", err);
+    
+    // Registrar error
+    logMetric({
+      functionName: 'easyquote-pricing',
+      responseTimeMs: 0,
+      statusCode: 500,
+      errorMessage: err instanceof Error ? err.message : String(err)
+    }).catch(() => {});
+    
     return new Response(JSON.stringify({ error: "Unexpected error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
