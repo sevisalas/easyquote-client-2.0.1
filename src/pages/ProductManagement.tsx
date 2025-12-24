@@ -1336,6 +1336,10 @@ export default function ProductManagement() {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No hay token de EasyQuote disponible");
 
+      // 0. Obtener organization_id del usuario actual
+      const orgId = await getCurrentOrganizationIdAsync();
+      if (!orgId) throw new Error("No se pudo obtener la organización del usuario");
+
       // 1. Obtener prompts del producto original
       const { data: sourcePrompts } = await supabase.functions.invoke("easyquote-prompts", {
         body: { token, productId: sourceProduct.id }
@@ -1350,6 +1354,7 @@ export default function ProductManagement() {
       const { data: sourceComponentSettings } = await supabase
         .from('product_component_settings')
         .select('*')
+        .eq('organization_id', orgId)
         .eq('easyquote_product_id', sourceProduct.id)
         .maybeSingle();
 
@@ -1357,12 +1362,14 @@ export default function ProductManagement() {
       const { data: sourcePromptComponents } = await supabase
         .from('product_prompt_components')
         .select('*')
+        .eq('organization_id', orgId)
         .eq('easyquote_product_id', sourceProduct.id);
 
       // 5. Obtener orden de outputs del producto original (Supabase)
       const { data: sourceOutputOrder } = await supabase
         .from('product_output_order')
         .select('*')
+        .eq('organization_id', orgId)
         .eq('easyquote_product_id', sourceProduct.id)
         .maybeSingle();
 
@@ -1452,7 +1459,7 @@ export default function ProductManagement() {
         await supabase
           .from('product_component_settings')
           .upsert({
-            organization_id: sourceComponentSettings.organization_id,
+            organization_id: orgId,
             easyquote_product_id: newProductId,
             is_composite: sourceComponentSettings.is_composite,
             enabled_components: sourceComponentSettings.enabled_components,
@@ -1465,7 +1472,7 @@ export default function ProductManagement() {
       // 10. Copiar asignaciones de prompts a componentes a Supabase
       if (sourcePromptComponents && sourcePromptComponents.length > 0) {
         const newPromptComponents = sourcePromptComponents.map((pc: any) => ({
-          organization_id: pc.organization_id,
+          organization_id: orgId,
           easyquote_product_id: newProductId,
           prompt_name: pc.prompt_name,
           component: pc.component,
@@ -1484,7 +1491,7 @@ export default function ProductManagement() {
         await supabase
           .from('product_output_order')
           .upsert({
-            organization_id: sourceOutputOrder.organization_id,
+            organization_id: orgId,
             easyquote_product_id: newProductId,
             output_order: sourceOutputOrder.output_order,
             updated_at: new Date().toISOString(),
