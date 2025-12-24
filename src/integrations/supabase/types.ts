@@ -82,6 +82,57 @@ export type Database = {
           },
         ]
       }
+      api_performance_metrics: {
+        Row: {
+          created_at: string
+          endpoint: string | null
+          error_message: string | null
+          function_name: string
+          id: string
+          metadata: Json | null
+          organization_id: string | null
+          response_time_ms: number
+          status_code: number | null
+        }
+        Insert: {
+          created_at?: string
+          endpoint?: string | null
+          error_message?: string | null
+          function_name: string
+          id?: string
+          metadata?: Json | null
+          organization_id?: string | null
+          response_time_ms: number
+          status_code?: number | null
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string | null
+          error_message?: string | null
+          function_name?: string
+          id?: string
+          metadata?: Json | null
+          organization_id?: string | null
+          response_time_ms?: number
+          status_code?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_performance_metrics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "api_performance_metrics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_access_logs: {
         Row: {
           accessed_at: string
@@ -177,6 +228,13 @@ export type Database = {
             foreignKeyName: "customers_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "customers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -214,6 +272,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "default_production_tasks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
           {
             foreignKeyName: "default_production_tasks_organization_id_fkey"
             columns: ["organization_id"]
@@ -341,6 +406,13 @@ export type Database = {
             foreignKeyName: "holded_sales_accounts_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "holded_sales_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -436,6 +508,13 @@ export type Database = {
             foreignKeyName: "integrations_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "integrations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -489,6 +568,13 @@ export type Database = {
             foreignKeyName: "numbering_formats_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "numbering_formats_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -538,6 +624,13 @@ export type Database = {
           usage_count?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "organization_api_credentials_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
           {
             foreignKeyName: "organization_api_credentials_organization_id_fkey"
             columns: ["organization_id"]
@@ -599,6 +692,13 @@ export type Database = {
             foreignKeyName: "organization_integration_access_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "organization_integration_access_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -636,6 +736,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
           {
             foreignKeyName: "organization_members_organization_id_fkey"
             columns: ["organization_id"]
@@ -707,6 +814,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "organization_themes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
           {
             foreignKeyName: "organization_themes_organization_id_fkey"
             columns: ["organization_id"]
@@ -844,6 +958,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "pdf_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
           {
             foreignKeyName: "pdf_templates_organization_id_fkey"
             columns: ["organization_id"]
@@ -1009,6 +1130,13 @@ export type Database = {
             foreignKeyName: "product_component_settings_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "product_component_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -1040,6 +1168,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "product_output_order_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
           {
             foreignKeyName: "product_output_order_organization_id_fkey"
             columns: ["organization_id"]
@@ -1082,6 +1217,13 @@ export type Database = {
             foreignKeyName: "product_prompt_components_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "product_prompt_components_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -1116,6 +1258,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "product_prompt_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
           {
             foreignKeyName: "product_prompt_settings_organization_id_fkey"
             columns: ["organization_id"]
@@ -1198,6 +1347,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "product_variable_mappings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
           {
             foreignKeyName: "product_variable_mappings_organization_id_fkey"
             columns: ["organization_id"]
@@ -1354,6 +1510,13 @@ export type Database = {
           variable_type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "production_variables_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
           {
             foreignKeyName: "production_variables_organization_id_fkey"
             columns: ["organization_id"]
@@ -1615,6 +1778,13 @@ export type Database = {
             foreignKeyName: "quotes_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "quotes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -1821,6 +1991,13 @@ export type Database = {
             foreignKeyName: "sales_orders_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "sales_orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -1896,6 +2073,13 @@ export type Database = {
             foreignKeyName: "woocommerce_product_links_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "woocommerce_product_links_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -1903,7 +2087,29 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      api_performance_summary: {
+        Row: {
+          avg_response_time: number | null
+          date: string | null
+          error_count: number | null
+          function_name: string | null
+          max_response_time: number | null
+          min_response_time: number | null
+          p95_response_time: number | null
+          total_calls: number | null
+        }
+        Relationships: []
+      }
+      organization_daily_stats: {
+        Row: {
+          date: string | null
+          orders_count: number | null
+          organization_id: string | null
+          organization_name: string | null
+          quotes_count: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       create_organization_api_credential: {
