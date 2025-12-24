@@ -19,6 +19,7 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    const startTime = Date.now();
     const { token, productId, inputs } = await req.json();
     console.log("easyquote-pricing: Request received", { productId, inputsCount: Array.isArray(inputs) ? inputs.length : (inputs ? Object.keys(inputs).length : 0) });
     if (!token || !productId) {
@@ -140,6 +141,7 @@ serve(async (req: Request): Promise<Response> => {
     if (formattedInputsList.length > 0) {
       // API only supports PATCH for sending inputs (no POST exists for pricing)
       console.log("easyquote-pricing: using PATCH with inputs", { count: formattedInputsList.length, inputs: formattedInputsList });
+      const apiCallStart = Date.now();
       res = await fetch(baseUrl, {
         method: "PATCH",
         headers: {
@@ -151,9 +153,11 @@ serve(async (req: Request): Promise<Response> => {
         },
         body: JSON.stringify(formattedInputsList),
       });
+      console.log(`⏱️ easyquote-pricing: API PATCH call took ${Date.now() - apiCallStart}ms`);
     } else {
       // No inputs, try GET first (faster)
       console.log("easyquote-pricing: no inputs, trying GET first");
+      const apiCallStart = Date.now();
       res = await fetch(baseUrl, {
         method: "GET",
         headers: {
@@ -163,6 +167,7 @@ serve(async (req: Request): Promise<Response> => {
           "Pragma": "no-cache",
         },
       });
+      console.log(`⏱️ easyquote-pricing: API GET call took ${Date.now() - apiCallStart}ms`);
 
       const tryPatchWithInputs = async (inputsForPatch: any[], reason: string) => {
         console.log(`easyquote-pricing: retrying with PATCH (${reason})`, {
@@ -322,6 +327,9 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    const totalTime = Date.now() - startTime;
+    console.log(`⏱️ easyquote-pricing: TOTAL request time: ${totalTime}ms`);
+    
     return new Response(JSON.stringify(data), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
