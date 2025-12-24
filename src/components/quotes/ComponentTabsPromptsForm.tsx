@@ -25,6 +25,9 @@ const COMPONENT_LABELS: Record<string, string> = {
   interior_2: "Interior 2"
 };
 
+// Orden predefinido de componentes (el orden en que aparecen para ser activados)
+const COMPONENT_ORDER = ["cubierta", "interior_1", "interior_2"];
+
 function getPromptCell(op: any): string | undefined {
   return op?.promptCell ?? op?.prompt_cell ?? op?.cell ?? op?.promptcell;
 }
@@ -103,11 +106,21 @@ export default function ComponentTabsPromptsForm({
     return map;
   }, [promptDefinitions]);
 
-  // Construir lista de componentes disponibles: siempre "general" + los habilitados
+  // Construir lista de componentes disponibles: siempre "general" + los habilitados ordenados
   const availableComponents = useMemo(() => {
-    const base = isComposite ? [GENERAL_COMPONENT.value, ...enabledComponents] : [GENERAL_COMPONENT.value];
-    // Eliminar duplicados manteniendo el orden
-    return [...new Set(base)];
+    if (!isComposite) return [GENERAL_COMPONENT.value];
+    
+    // Ordenar los componentes habilitados según el orden predefinido
+    const sortedEnabled = [...enabledComponents].sort((a, b) => {
+      const indexA = COMPONENT_ORDER.indexOf(a);
+      const indexB = COMPONENT_ORDER.indexOf(b);
+      // Si no está en el orden predefinido, ponerlo al final
+      const orderA = indexA === -1 ? 999 : indexA;
+      const orderB = indexB === -1 ? 999 : indexB;
+      return orderA - orderB;
+    });
+    
+    return [GENERAL_COMPONENT.value, ...sortedEnabled];
   }, [enabledComponents, isComposite]);
 
   // Agrupar prompts por componente
