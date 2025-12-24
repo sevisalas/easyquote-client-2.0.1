@@ -140,7 +140,6 @@ serve(async (req: Request): Promise<Response> => {
     if (formattedInputsList.length > 0) {
       // API only supports PATCH for sending inputs (no POST exists for pricing)
       console.log("easyquote-pricing: using PATCH with inputs", { count: formattedInputsList.length, inputs: formattedInputsList });
-      const startTime = Date.now();
       res = await fetch(baseUrl, {
         method: "PATCH",
         headers: {
@@ -152,12 +151,9 @@ serve(async (req: Request): Promise<Response> => {
         },
         body: JSON.stringify(formattedInputsList),
       });
-      const patchDuration = Date.now() - startTime;
-      console.log(`⏱️ PATCH duration: ${patchDuration}ms for product ${productId}`);
     } else {
       // No inputs, try GET first (faster)
       console.log("easyquote-pricing: no inputs, trying GET first");
-      const startTime = Date.now();
       res = await fetch(baseUrl, {
         method: "GET",
         headers: {
@@ -167,8 +163,7 @@ serve(async (req: Request): Promise<Response> => {
           "Pragma": "no-cache",
         },
       });
-      const getDuration = Date.now() - startTime;
-      console.log(`⏱️ GET duration: ${getDuration}ms for product ${productId}`);
+
       const tryPatchWithInputs = async (inputsForPatch: any[], reason: string) => {
         console.log(`easyquote-pricing: retrying with PATCH (${reason})`, {
           count: inputsForPatch.length,

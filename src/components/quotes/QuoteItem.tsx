@@ -277,9 +277,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // This duplicate reset is handled by the more sophisticated useEffect below (lines 291-320)
   // that uses previousProductIdRef to detect real product changes
 
-  // Debounce promptValues changes - 800ms para reducir llamadas a API (servidor con RAM limitada)
+  // Debounce promptValues changes
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastCommittedValuesRef = useRef<string>("");
   
   useEffect(() => {
     // Cancelar timer anterior si existe
@@ -288,16 +287,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     }
     
     const t = setTimeout(() => {
-      // Solo actualizar si hay cambios reales respecto a la última llamada
-      const currentSnapshot = JSON.stringify(promptValues);
-      if (currentSnapshot !== lastCommittedValuesRef.current) {
-        console.log("⏱️ Debounce (800ms): actualizando debouncedPromptValues", promptValues);
-        lastCommittedValuesRef.current = currentSnapshot;
-        setDebouncedPromptValues(promptValues);
-      } else {
-        console.log("⏱️ Debounce: sin cambios reales, evitando llamada API");
-      }
-    }, 800);
+      console.log("⏱️ Debounce: actualizando debouncedPromptValues", promptValues);
+      setDebouncedPromptValues(promptValues);
+    }, 350);
     
     debounceTimerRef.current = t;
     return () => clearTimeout(t);
