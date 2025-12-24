@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
+import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -36,6 +37,7 @@ export default function ProductTestPage() {
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
   const [debouncedPromptValues, setDebouncedPromptValues] = useState<Record<string, any>>({});
   const [productDetail, setProductDetail] = useState<any>(null);
+  const [productLoadError, setProductLoadError] = useState<string | null>(null);
   const [isLoadingProduct, setIsLoadingProduct] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [hasUserModifiedPrompts, setHasUserModifiedPrompts] = useState(false);
@@ -266,6 +268,7 @@ export default function ProductTestPage() {
       setIsInitialLoad(true);
       setHasUserModifiedPrompts(false);
       setDiagnosticResult(null);
+      setProductLoadError(null);
       
       // Use getEasyQuoteToken which validates and auto-refreshes expired tokens
       const token = await getEasyQuoteToken();
@@ -318,8 +321,11 @@ export default function ProductTestPage() {
           console.log("✅ Initial load complete");
           setIsInitialLoad(false);
         }, 300); // Reduced from 1000ms
-      } catch (error) {
+      } catch (error: any) {
         console.error("🔴 Error fetching product detail:", error);
+        const msg = error?.message || "Error al cargar el producto";
+        setProductLoadError(msg);
+        toast({ title: "Error al cargar el producto", description: msg, variant: "destructive" });
         setProductDetail(null);
         setPromptValues({});
         setIsInitialLoad(false);
@@ -430,7 +436,14 @@ export default function ProductTestPage() {
         productId,
         inputs: inputsArray
       });
-      if (error) throw error;
+      if (error) {
+        toast({
+          title: "Error al calcular precio",
+          description: error?.message || "EasyQuote devolvió un error",
+          variant: "destructive",
+        });
+        return null as any;
+      }
       console.log("Pricing data received:", data);
       console.log("Pricing outputValues:", data?.outputValues);
       console.log("Pricing price field:", data?.price);
@@ -853,11 +866,11 @@ export default function ProductTestPage() {
                     <AlertDescription>Obteniendo configuración del producto desde EasyQuote.</AlertDescription>
                   </Alert>}
 
-                {productId && !isLoadingProduct && !productDetail && <Alert variant="destructive">
+                {productId && !isLoadingProduct && !productDetail && productLoadError && <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Error al cargar el producto</AlertTitle>
                     <AlertDescription className="space-y-3">
-                      <p>El servidor de EasyQuote devolvió un error 500. Esto indica un problema de configuración en EasyQuote.</p>
+                      <p className="text-sm">{productLoadError}</p>
                       <Button onClick={handleDiagnoseProduct} disabled={isDiagnosing} size="sm" variant="outline">
                         {isDiagnosing ? "Diagnosticando..." : "🔍 Diagnosticar Producto"}
                       </Button>
