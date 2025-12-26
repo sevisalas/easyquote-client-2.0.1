@@ -279,23 +279,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // This duplicate reset is handled by the more sophisticated useEffect below (lines 291-320)
   // that uses previousProductIdRef to detect real product changes
 
-  // Debounce promptValues changes
+  // Ref para el timer de debounce (ya no usado para campos individuales, solo para compatibilidad)
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   
-  useEffect(() => {
-    // Cancelar timer anterior si existe
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-    
-    const t = setTimeout(() => {
-      console.log("⏱️ Debounce: actualizando debouncedPromptValues", promptValues);
-      setDebouncedPromptValues(promptValues);
-    }, 350);
-    
-    debounceTimerRef.current = t;
-    return () => clearTimeout(t);
-  }, [promptValues]);
+  // Ya NO usamos debounce automático en promptValues.
+  // El recálculo ahora se dispara explícitamente desde handlePromptCommit (onBlur/Enter).
 
   const fetchProducts = async (): Promise<any[]> => {
     const token = sessionStorage.getItem("easyquote_token");
@@ -1127,6 +1115,40 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     });
   };
 
+  // Handler para commit (onBlur o Enter) - dispara el recálculo de precios
+  const handlePromptCommit = useCallback((id: string, value: any, label: string) => {
+    console.log("✅ Prompt committed (blur/enter):", { id, value, label });
+    
+    // Actualizar el estado de prompts con el valor final
+    setPromptValues((prev) => {
+      let order = prev[id]?.order;
+      
+      if (order === undefined && pricing) {
+        const prompts = (pricing as any)?.prompts || [];
+        const promptDef = prompts.find((p: any) => String(p.id) === String(id));
+        if (promptDef) {
+          order = Number.isFinite(Number(promptDef.promptSequence)) 
+            ? Number(promptDef.promptSequence) 
+            : (Number.isFinite(Number(promptDef.order)) ? Number(promptDef.order) : prompts.indexOf(promptDef));
+        }
+      }
+      
+      const newValues = {
+        ...prev, 
+        [id]: { 
+          label, 
+          value,
+          order: order !== undefined ? order : 999
+        } 
+      };
+      
+      // Disparar inmediatamente el recálculo actualizando debouncedPromptValues
+      setDebouncedPromptValues(newValues);
+      
+      return newValues;
+    });
+  }, [pricing]);
+
   // Sync with parent only on specific user actions, not automatically
   const syncToParent = useCallback(() => {
     if (!onChange) return;
@@ -1483,7 +1505,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   product={pricing} 
                   productId={productId}
                   values={promptValues} 
-                  onChange={handlePromptChange} 
+                  onChange={handlePromptChange}
+                  onCommit={handlePromptCommit}
                   showAllPrompts={!!initialData}
                   onComponentChange={setActiveComponent}
                 />
