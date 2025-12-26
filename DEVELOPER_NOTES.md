@@ -146,9 +146,18 @@ psql -h <host> -U postgres -d postgres -c "\dt"
 - **Tipo de disco**: Desconocido (VPS estándar OVH)
 
 ### Motor de cálculo
-- **Librería**: Syncfusion XlsIO
+- **Librería**: Syncfusion XlsIO (Essential XlsIO)
+- **Documentación oficial**: https://help.syncfusion.com/document-processing/excel/excel-library/net/overview
 - **Funcionamiento**: Los Excel ya están leídos e interpretados en memoria, NO se procesan en cada petición
 - **Cálculo**: Solo ejecuta las fórmulas con los valores de entrada recibidos
+
+### Formatos Excel Soportados
+- XLSX, XLSM, XLS, XLTX, XLTM, XLT, CSV, SpreadsheetML, TSV
+- XLSB (soporte limitado)
+- **NO soportado**: Documentos Excel anteriores a versión 97
+
+### Versiones Excel Compatibles
+- Microsoft Excel 97-2003, 2007, 2010, 2013, 2016, 2019, Microsoft 365
 
 ### Funciones Excel Soportadas por Syncfusion
 **Matemáticas**: ABS, ACOS, ACOSH, ASIN, ASINH, ATAN, ATAN2, ATANH, CEILING, COMBIN, COS, COSH, DEGREES, EVEN, EXP, FACT, FLOOR, INT, LN, LOG, LOG10, MDETERM, MINVERSE, MMULT, MOD, ODD, PI, POWER, PRODUCT, RADIANS, RAND, ROMAN, ROUND, ROUNDDOWN, ROUNDUP, SIGN, SIN, SINH, SQRT, SUBTOTAL, SUM, SUMIF, SUMIFS, SUMPRODUCT, SUMSQ, SUMX2MY2, SUMX2PY2, SUMXMY2, TAN, TANH, TRUNC
