@@ -65,10 +65,8 @@ export default function ComponentTabsOutputs({
     isLoading: isLoadingSettings
   } = useProductComponentSettings(productId);
 
-  const isLoadingData = isLoadingProp || isLoadingSettings;
-
   // Definiciones de outputs (traen sheet/nameCell/cell) para poder mapear outputs del pricing -> componente
-  const { data: outputDefinitions = [] } = useQuery({
+  const { data: outputDefinitions = [], isLoading: isLoadingOutputDefinitions } = useQuery({
     queryKey: ["easyquote-outputs-definitions", productId],
     queryFn: async () => {
       if (!productId) return [];
@@ -88,6 +86,8 @@ export default function ComponentTabsOutputs({
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
+  const isLoadingData = isLoadingProp || isLoadingSettings || isLoadingOutputDefinitions;
+
   // Componentes disponibles ordenados
   const availableComponents = useMemo(() => {
     if (!isComposite) return [GENERAL_COMPONENT.value];
@@ -207,11 +207,8 @@ export default function ComponentTabsOutputs({
     return counts;
   }, [outputsByComponent, availableComponents]);
 
-  // Componentes para pestañas (sin "general")
-  const tabComponents = useMemo(() => 
-    availableComponents.filter(c => c !== GENERAL_COMPONENT.value), 
-    [availableComponents]
-  );
+  // Componentes para pestañas (incluye "general")
+  const tabComponents = useMemo(() => availableComponents, [availableComponents]);
   
   // Outputs generales
   const generalOutputs = useMemo(() => 
@@ -251,10 +248,19 @@ export default function ComponentTabsOutputs({
 
   // Sincronizar con el componente activo del padre (prompts)
   useEffect(() => {
-    if (activeComponent && tabComponents.includes(activeComponent)) {
+    if (!activeComponent) return;
+
+    const hasComponentOutputs = (countByComponent[activeComponent] || 0) > 0;
+    if (tabComponents.includes(activeComponent) && hasComponentOutputs) {
       setActiveTab(activeComponent);
+      return;
     }
-  }, [activeComponent, tabComponents]);
+
+    // Si no hay resultados para ese componente, mostrar General como fallback
+    if ((countByComponent[GENERAL_COMPONENT.value] || 0) > 0) {
+      setActiveTab(GENERAL_COMPONENT.value);
+    }
+  }, [activeComponent, tabComponents, countByComponent]);
 
   // Notificar cambio de componente
   useEffect(() => {
