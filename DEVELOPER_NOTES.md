@@ -146,13 +146,14 @@ psql -h <host> -U postgres -d postgres -c "\dt"
 - **Tipo de disco**: Desconocido (VPS estándar OVH)
 
 ### Motor de cálculo
-- **Librería**: Syncfusion (procesa los archivos Excel subidos)
-- **Flujo**: El API carga los Excel con Syncfusion y ejecuta las fórmulas para calcular precios
+- **Librería**: Syncfusion
+- **Funcionamiento**: Los Excel ya están leídos e interpretados en memoria, NO se procesan en cada petición
+- **Cálculo**: Solo ejecuta las fórmulas con los valores de entrada recibidos
 
 ### Rendimiento
 - **Tiempos de respuesta**: ~6 segundos (mejorado de ~9s tras subir RAM a 8GB)
-- **Cuello de botella**: Procesamiento Syncfusion de los Excel, no el servidor
-- **Caché NO viable**: Millones de combinaciones posibles de prompts/valores, imposible cachear resultados
+- **Cuello de botella**: Ejecución de fórmulas Excel complejas
+- **Caché NO viable**: Millones de combinaciones posibles de prompts/valores
 
 ### Métricas OVH vs Servidor
 - OVH puede mostrar 100% RAM porque cuenta memoria cacheada
