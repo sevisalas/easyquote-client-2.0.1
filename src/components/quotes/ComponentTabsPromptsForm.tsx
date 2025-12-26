@@ -18,15 +18,35 @@ interface ComponentTabsPromptsFormProps {
   boundProductConfig?: BoundProductConfig | null;
 }
 
-export { COMPONENT_LABELS };
+// Labels dinámicos para componentes según la configuración
+function getComponentLabels(boundProductConfig?: BoundProductConfig | null): Record<string, string> {
+  switch (boundProductConfig) {
+    case "same_paper":
+      // Solo hay interior_1, llamarlo "Contenido"
+      return {
+        general: "General",
+        interior_1: "Contenido"
+      };
+    case "cover_1_interior":
+      // Cubierta + Interior (sin números)
+      return {
+        general: "General",
+        cubierta: "Cubierta",
+        interior_1: "Interior"
+      };
+    default:
+      // Todos los componentes o sin configuración
+      return {
+        general: "General",
+        cubierta: "Cubierta",
+        interior_1: "Interior 1",
+        interior_2: "Interior 2"
+      };
+  }
+}
 
-// Labels para componentes
-const COMPONENT_LABELS: Record<string, string> = {
-  general: "General",
-  cubierta: "Cubierta",
-  interior_1: "Interior 1",
-  interior_2: "Interior 2"
-};
+// Export para compatibilidad (labels por defecto)
+export const COMPONENT_LABELS = getComponentLabels(null);
 
 // Orden predefinido de componentes (el orden en que aparecen para ser activados)
 const COMPONENT_ORDER = ["cubierta", "interior_1", "interior_2"];
@@ -295,7 +315,8 @@ export default function ComponentTabsPromptsForm({
         <TabsList className="flex-wrap h-auto gap-1 md:w-auto">
           {tabComponents.map(comp => {
             const count = countByComponent[comp];
-            const label = COMPONENT_LABELS[comp] || comp;
+            const labels = getComponentLabels(boundProductConfig);
+            const label = labels[comp] || comp;
             return (
               <TabsTrigger 
                 key={comp} 
@@ -329,11 +350,12 @@ export default function ComponentTabsPromptsForm({
         <div className="rounded-lg border border-border bg-card p-4">
           {tabComponents.map(comp => {
             const componentPrompts = promptsByComponent[comp] || [];
+            const labels = getComponentLabels(boundProductConfig);
             return (
               <TabsContent key={comp} value={comp} className="mt-0">
                 {componentPrompts.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-4">
-                    No hay campos asignados a {COMPONENT_LABELS[comp] || comp}.
+                    No hay campos asignados a {labels[comp] || comp}.
                   </p>
                 ) : (
                   <PromptsForm 
