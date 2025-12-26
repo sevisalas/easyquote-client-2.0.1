@@ -137,7 +137,28 @@ psql -h <host> -U postgres -d postgres -c "\dt"
 - **Holded API**: Edge functions en `supabase/functions/holded-*`
 - **WooCommerce**: Edge functions en `supabase/functions/woocommerce-*`
 
+## Infraestructura del Servidor EasyQuote API
+
+### Servidor OVH (VPS)
+- **RAM**: 8 GB
+- **CPU**: Intel Core Haswell, 2 vCPU
+- **Uso típico**: CPU ~53%, RAM ~24% (1.9 GB de 7.8 GB)
+- **Tipo de disco**: Desconocido (VPS estándar OVH)
+
+### Motor de cálculo
+- **Librería**: Syncfusion (procesa los archivos Excel subidos)
+- **Flujo**: El API carga los Excel con Syncfusion y ejecuta las fórmulas para calcular precios
+
+### Rendimiento
+- **Tiempos de respuesta**: ~6 segundos (mejorado de ~9s tras subir RAM a 8GB)
+- **Cuello de botella**: Procesamiento Syncfusion de los Excel, no el servidor
+
+### Métricas OVH vs Servidor
+- OVH puede mostrar 100% RAM porque cuenta memoria cacheada
+- El servidor real muestra ~24% de uso (la cache es liberarle automáticamente)
+- Siempre verificar con `free -h` o Administrador de tareas para datos reales
+
 ---
 
-**Última actualización**: 2025-01-14
+**Última actualización**: 2025-12-26
 **Mantener actualizado**: Cada vez que se establezca una nueva regla crítica de negocio
