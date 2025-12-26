@@ -10,6 +10,7 @@ interface ComponentTabsOutputsProps {
   renderOutput: (output: any, index: number) => React.ReactNode;
   renderPrice?: () => React.ReactNode;
   renderImages?: (images: any[]) => React.ReactNode;
+  isLoading?: boolean;
 }
 
 // Labels para componentes
@@ -30,14 +31,17 @@ export default function ComponentTabsOutputs({
   onComponentChange,
   renderOutput,
   renderPrice,
-  renderImages
+  renderImages,
+  isLoading: isLoadingProp = false
 }: ComponentTabsOutputsProps) {
   const {
     isComposite,
     enabledComponents,
     getPromptComponent,
-    isLoading
+    isLoading: isLoadingSettings
   } = useProductComponentSettings(productId);
+
+  const isLoadingData = isLoadingProp || isLoadingSettings;
 
   // Componentes disponibles ordenados
   const availableComponents = useMemo(() => {
@@ -89,16 +93,15 @@ export default function ComponentTabsOutputs({
       grouped[comp] = [];
     });
 
-    console.log("🔍 ComponentTabsOutputs: Agrupando", outputs.length, "outputs en componentes:", availableComponents);
-
     for (const output of outputs) {
-      const nameCell = output?.nameCell || output?.name_cell;
+      // Usar nameCell, name, o label como identificador
+      const identifier = output?.nameCell || output?.name_cell || output?.name || output?.label;
       const sheet = output?.sheet;
       let component = "general";
       
-      // Primero buscar en asignaciones guardadas
-      if (nameCell) {
-        const assigned = getPromptComponent(nameCell);
+      // Buscar en asignaciones guardadas usando el identificador
+      if (identifier) {
+        const assigned = getPromptComponent(identifier);
         if (assigned !== "general") {
           component = assigned;
         } else if (sheet) {
@@ -109,8 +112,6 @@ export default function ComponentTabsOutputs({
         component = inferComponentFromSheet(sheet);
       }
       
-      console.log(`  Output "${output?.name || nameCell}": sheet=${sheet}, component=${component}`);
-      
       // Si el componente no está en los disponibles, poner en general
       if (!grouped[component]) {
         grouped[GENERAL_COMPONENT.value].push(output);
@@ -118,10 +119,6 @@ export default function ComponentTabsOutputs({
         grouped[component].push(output);
       }
     }
-
-    console.log("📊 Outputs por componente:", Object.fromEntries(
-      Object.entries(grouped).map(([k, v]) => [k, (v as any[]).length])
-    ));
 
     return grouped;
   }, [outputs, availableComponents, getPromptComponent, enabledComponents]);
@@ -219,8 +216,20 @@ export default function ComponentTabsOutputs({
     [selectedComponentOutputs]
   );
 
+  // Si está cargando, mostrar indicador
+  if (isLoadingData) {
+    return (
+      <div className="space-y-4">
+        {renderPrice && renderPrice()}
+        <div className="flex items-center justify-center py-4">
+          <span className="text-sm text-muted-foreground animate-pulse">Calculando resultados...</span>
+        </div>
+      </div>
+    );
+  }
+
   // Si NO es compuesto o no hay tabs, mostrar outputs planos
-  if (!isComposite || isLoading || tabComponents.length === 0) {
+  if (!isComposite || tabComponents.length === 0) {
     return (
       <div className="space-y-4">
         {renderPrice && renderPrice()}
