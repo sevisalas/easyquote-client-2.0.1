@@ -958,17 +958,27 @@ export default function ProductTestPage() {
                   <CardTitle>Resultados</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {pricingLoading && <div className="text-center py-8 text-muted-foreground">
-                      <p>Calculando resultados...</p>
-                    </div>}
+                  {/* Si requiere configuración y no se ha seleccionado, mostrar mensaje */}
+                  {needsConfigSelector && !boundProductConfig && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Selecciona el tipo de producto para ver los resultados</p>
+                    </div>
+                  )}
+                  
+                  {/* Solo mostrar resultados si no requiere configuración O ya se seleccionó una */}
+                  {(!needsConfigSelector || boundProductConfig) && (
+                    <>
+                      {pricingLoading && <div className="text-center py-8 text-muted-foreground">
+                          <p>Calculando resultados...</p>
+                        </div>}
 
-                  {!pricingLoading && !pricing && !isLoadingProduct && productDetail && textOutputs.length === 0 && <div className="text-center py-8 text-muted-foreground">
-                      <p>Configura los parámetros para ver los resultados</p>
-                    </div>}
+                      {!pricingLoading && !pricing && !isLoadingProduct && productDetail && textOutputs.length === 0 && <div className="text-center py-8 text-muted-foreground">
+                          <p>Configura los parámetros para ver los resultados</p>
+                        </div>}
 
-                  {!pricingLoading && pricing && textOutputs.length === 0 && imageOutputs.length === 0 && selectedTextOutputs.length === 0 && selectedImageOutputs.length === 0 && <div className="text-center py-8 text-muted-foreground">
-                      <p>No hay resultados disponibles para esta configuración</p>
-                    </div>}
+                      {!pricingLoading && pricing && textOutputs.length === 0 && imageOutputs.length === 0 && selectedTextOutputs.length === 0 && selectedImageOutputs.length === 0 && <div className="text-center py-8 text-muted-foreground">
+                          <p>No hay resultados disponibles para esta configuración</p>
+                        </div>}
 
                   {/* Text outputs - General */}
                   {textOutputs.length > 0 && <div className="space-y-2 text-sm">
@@ -1026,6 +1036,8 @@ export default function ProductTestPage() {
                     </div>
                   )}
 
+                    </>
+                  )}
 
                 </CardContent>
               </Card>}
