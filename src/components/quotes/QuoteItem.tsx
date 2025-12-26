@@ -1544,14 +1544,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                       onComponentChange={setActiveComponent}
                       boundProductConfig={boundProductConfig}
                     />
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      Selecciona el tipo de producto para continuar configurando
-                    </p>
-                  )}
+                  ) : null}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Cargando prompts…</p>
+                <p className="text-sm text-muted-foreground">Cargando opciones…</p>
               )}
             </CardContent>
           </Card>

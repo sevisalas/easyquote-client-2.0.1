@@ -941,11 +941,7 @@ export default function ProductTestPage() {
                         onComponentChange={setSelectedComponent}
                         boundProductConfig={boundProductConfig}
                       />
-                    ) : (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        Selecciona el tipo de producto para ver los prompts
-                      </p>
-                    )}
+                    ) : null}
                   </div>}
               </CardContent>
             </Card>
