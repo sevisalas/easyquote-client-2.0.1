@@ -13,6 +13,7 @@ interface ComponentTabsOutputsProps {
   renderPrice?: () => React.ReactNode;
   renderImages?: (images: any[]) => React.ReactNode;
   isLoading?: boolean;
+  savedOutputOrder?: string[] | null;
 }
 
 // Labels para componentes
@@ -60,7 +61,8 @@ export default function ComponentTabsOutputs({
   renderOutput,
   renderPrice,
   renderImages,
-  isLoading: isLoadingProp = false
+  isLoading: isLoadingProp = false,
+  savedOutputOrder
 }: ComponentTabsOutputsProps) {
   const {
     isComposite,
@@ -91,6 +93,12 @@ export default function ComponentTabsOutputs({
     refetchOnWindowFocus: false,
   });
   const isLoadingData = isLoadingProp || isLoadingSettings || isLoadingOutputDefinitions;
+
+  // Crear mapa de orden guardado para ordenar outputs
+  const orderMap = useMemo(() => {
+    if (!savedOutputOrder || savedOutputOrder.length === 0) return new Map<string, number>();
+    return new Map(savedOutputOrder.map((cell, idx) => [normalizeKey(cell), idx]));
+  }, [savedOutputOrder]);
 
   // Normalizar + enriquecer outputs (en ProductTestPage funciona porque se completa nameCell/sheet)
   const orderedOutputDefinitions = useMemo(() => {
@@ -152,7 +160,7 @@ export default function ComponentTabsOutputs({
 
     const counters = new Map<string, number>();
 
-    return normalizedOutputs.map((o: any) => {
+    const mapped = normalizedOutputs.map((o: any) => {
       // Si ya viene con celda, respetarla
       if (o?.nameCell) return o;
 
@@ -208,9 +216,21 @@ export default function ComponentTabsOutputs({
         nameCell: String(extractCellRef(getOutputCell(def)) ?? getOutputCell(def) ?? "").trim(),
       };
     });
-  }, [normalizedOutputs, orderedOutputDefinitions]);
 
-  // Componentes disponibles ordenados
+    // Ordenar según savedOutputOrder si existe
+    if (orderMap.size > 0) {
+      return mapped.sort((a, b) => {
+        const cellA = normalizeKey(a?.nameCell);
+        const cellB = normalizeKey(b?.nameCell);
+        const orderA = orderMap.has(cellA) ? orderMap.get(cellA)! : 9999;
+        const orderB = orderMap.has(cellB) ? orderMap.get(cellB)! : 9999;
+        if (orderA !== orderB) return orderA - orderB;
+        return (a?.__pos ?? 0) - (b?.__pos ?? 0);
+      });
+    }
+    return mapped;
+  }, [normalizedOutputs, orderedOutputDefinitions, orderMap]);
+
   const availableComponents = useMemo(() => {
     if (!isComposite) return [GENERAL_COMPONENT.value];
     
