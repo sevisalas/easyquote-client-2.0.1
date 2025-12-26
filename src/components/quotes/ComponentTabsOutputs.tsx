@@ -447,17 +447,15 @@ export default function ComponentTabsOutputs({
     [generalOutputs]
   );
 
-  // Calcular precios por componente
+  // Calcular precios por componente - SOLO componentes activos (enabledComponents)
   const pricesByComponent = useMemo(() => {
     const prices: Record<string, number> = {};
     
-    // Recorrer todos los componentes (excluyendo general)
-    for (const comp of availableComponents) {
-      if (comp === GENERAL_COMPONENT.value) continue;
-      
+    // Solo recorrer los componentes ACTIVOS (enabledComponents), no "general"
+    for (const comp of enabledComponents) {
       const componentOutputs = outputsByComponent[comp] || [];
       const priceOutput = componentOutputs.find((o: any) => 
-        String(o?.type || "").toLowerCase() === "price"
+        String(o?.type || o?.outputType || "").toLowerCase() === "price"
       );
       
       if (priceOutput) {
@@ -467,7 +465,7 @@ export default function ComponentTabsOutputs({
     }
     
     return prices;
-  }, [outputsByComponent, availableComponents]);
+  }, [outputsByComponent, enabledComponents]);
 
   // Precio total calculado (suma de componentes)
   const calculatedTotalPrice = useMemo(() => {
