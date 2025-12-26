@@ -743,24 +743,38 @@ export default function ProductTestPage() {
     });
   }, [generalOutputs]);
 
+  // Precio del API (productos simples): output type "Price" / "price"
+  const apiPrice = useMemo(() => {
+    const priceOutput = generalOutputs.find(
+      (o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price"
+    );
+
+    if (!priceOutput) return 0;
+
+    return (
+      parseFloat(String(priceOutput.value ?? "0").replace(/\./g, "").replace(",", ".")) || 0
+    );
+  }, [generalOutputs]);
+
   // Calcular componentes activos según configuración
   const activeComponentsForPrice = useMemo(() => {
     if (boundProductConfig) {
-      return getActiveComponents(boundProductConfig).filter(c => c !== "general");
+      return getActiveComponents(boundProductConfig).filter((c) => c !== "general");
     }
     return enabledComponents;
   }, [boundProductConfig, enabledComponents]);
 
-  // Calcular precio total sumando solo los componentes activos
+  // Calcular precio total sumando solo los componentes activos (productos compuestos)
   const calculatedTotalPrice = useMemo(() => {
     let total = 0;
     for (const comp of activeComponentsForPrice) {
       const compOutputs = outputsByComponent[comp] || [];
-      const priceOutput = compOutputs.find((o: any) => 
-        String(o?.type || o?.outputType || "").toLowerCase() === "price"
+      const priceOutput = compOutputs.find(
+        (o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price"
       );
       if (priceOutput) {
-        const val = parseFloat(String(priceOutput.value ?? "0").replace(/\./g, "").replace(",", ".")) || 0;
+        const val =
+          parseFloat(String(priceOutput.value ?? "0").replace(/\./g, "").replace(",", ".")) || 0;
         total += val;
       }
     }
@@ -1021,89 +1035,105 @@ export default function ProductTestPage() {
                           <p>No hay resultados disponibles para esta configuración</p>
                         </div>}
 
-                  {/* Precio Total - con opción de modificar */}
-                  {isComposite && calculatedTotalPrice > 0 && (
-                    <div className="p-3 rounded-md border bg-accent/10 mb-4 space-y-3">
-                      {/* Precio calculado */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-muted-foreground">
-                          {modifiedPrice !== null ? "Precio calculado" : "Precio Total"}
-                        </span>
-                        <span className={modifiedPrice !== null ? "text-sm text-muted-foreground line-through" : "text-lg font-semibold"}>
-                          {formatCurrency(calculatedTotalPrice)}
-                        </span>
-                      </div>
+                  {/* Precio (simple = API / compuesto = suma de componentes) + opción de modificar */}
+                  {(() => {
+                    const basePrice = isComposite ? calculatedTotalPrice : apiPrice;
+                    if (!(basePrice > 0)) return null;
 
-                      {/* Precio modificado (si existe) */}
-                      {modifiedPrice !== null && (
+                    const title = isComposite ? "Precio Total" : "Precio";
+
+                    return (
+                      <div className="p-3 rounded-md border bg-accent/10 mb-4 space-y-3">
+                        {/* Precio calculado */}
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-muted-foreground">Precio modificado</span>
-                          <span className="text-lg font-semibold text-primary">{formatCurrency(modifiedPrice)}</span>
+                          <span className="text-sm font-medium text-muted-foreground">
+                            {modifiedPrice !== null ? "Precio calculado" : title}
+                          </span>
+                          <span
+                            className={
+                              modifiedPrice !== null
+                                ? "text-sm text-muted-foreground line-through"
+                                : "text-lg font-semibold"
+                            }
+                          >
+                            {formatCurrency(basePrice)}
+                          </span>
                         </div>
-                      )}
 
-                      {/* Campo de edición */}
-                      {isEditingPrice && (
-                        <div className="flex items-center gap-2 pt-2 border-t">
-                          <Input
-                            type="text"
-                            value={localPriceInput}
-                            onChange={(e) => setLocalPriceInput(e.target.value)}
-                            placeholder="Nuevo precio"
-                            className="flex-1"
-                            autoFocus
-                          />
+                        {/* Precio modificado (si existe) */}
+                        {modifiedPrice !== null && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-muted-foreground">Precio modificado</span>
+                            <span className="text-lg font-semibold text-primary">{formatCurrency(modifiedPrice)}</span>
+                          </div>
+                        )}
+
+                        {/* Campo de edición */}
+                        {isEditingPrice && (
+                          <div className="flex items-center gap-2 pt-2 border-t">
+                            <Input
+                              type="text"
+                              value={localPriceInput}
+                              onChange={(e) => setLocalPriceInput(e.target.value)}
+                              placeholder="Nuevo precio"
+                              className="flex-1"
+                              autoFocus
+                            />
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                const parsed =
+                                  parseFloat(localPriceInput.replace(/\./g, "").replace(",", ".")) || 0;
+                                setModifiedPrice(parsed > 0 ? parsed : null);
+                                setIsEditingPrice(false);
+                              }}
+                            >
+                              Aplicar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setIsEditingPrice(false);
+                                setLocalPriceInput("");
+                              }}
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* Botón para activar edición */}
+                        {!isEditingPrice && (
                           <Button
                             size="sm"
+                            variant="ghost"
+                            className="w-full text-xs"
                             onClick={() => {
-                              const parsed = parseFloat(localPriceInput.replace(/\./g, "").replace(",", ".")) || 0;
-                              setModifiedPrice(parsed > 0 ? parsed : null);
-                              setIsEditingPrice(false);
+                              const prefill = (modifiedPrice ?? basePrice).toFixed(2).replace(".", ",");
+                              setLocalPriceInput(prefill);
+                              setIsEditingPrice(true);
                             }}
                           >
-                            Aplicar
+                            {modifiedPrice !== null ? "Editar precio modificado" : "Modificar precio final"}
                           </Button>
+                        )}
+
+                        {/* Botón para quitar precio modificado */}
+                        {modifiedPrice !== null && !isEditingPrice && (
                           <Button
                             size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setIsEditingPrice(false);
-                              setLocalPriceInput("");
-                            }}
+                            variant="ghost"
+                            className="w-full text-xs text-muted-foreground"
+                            onClick={() => setModifiedPrice(null)}
                           >
-                            Cancelar
+                            Usar precio calculado
                           </Button>
-                        </div>
-                      )}
+                        )}
+                      </div>
+                    );
+                  })()}
 
-                      {/* Botón para activar edición */}
-                      {!isEditingPrice && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="w-full text-xs"
-                          onClick={() => {
-                            setLocalPriceInput(modifiedPrice !== null ? modifiedPrice.toString().replace(".", ",") : "");
-                            setIsEditingPrice(true);
-                          }}
-                        >
-                          {modifiedPrice !== null ? "Editar precio modificado" : "Modificar precio final"}
-                        </Button>
-                      )}
-
-                      {/* Botón para quitar precio modificado */}
-                      {modifiedPrice !== null && !isEditingPrice && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="w-full text-xs text-muted-foreground"
-                          onClick={() => setModifiedPrice(null)}
-                        >
-                          Usar precio calculado
-                        </Button>
-                      )}
-                    </div>
-                  )}
 
                   {/* Text outputs - General (sin precio) */}
                   {textOutputs.length > 0 && <div className="space-y-2 text-sm">
