@@ -196,6 +196,13 @@ export default function ComponentTabsPromptsForm({
 
       const component = getPromptComponent(promptIdentifier);
 
+      // Si hay boundProductConfig y el componente NO está en activeComponents, EXCLUIR el prompt
+      // (excepto "general" que siempre se muestra)
+      if (boundProductConfig && component !== "general" && !activeComponents.includes(component)) {
+        // No incluir este prompt - pertenece a un componente excluido
+        return;
+      }
+
       // Si el componente asignado existe en los disponibles, usarlo; sino, poner en general
       if (grouped[component]) {
         grouped[component].push(prompt);
@@ -204,7 +211,7 @@ export default function ComponentTabsPromptsForm({
       }
     });
     return grouped;
-  }, [prompts, availableComponents, getPromptComponent, product, promptDefinitions, promptCellLookup]);
+  }, [prompts, availableComponents, getPromptComponent, product, promptDefinitions, promptCellLookup, boundProductConfig, activeComponents]);
 
   // Contar prompts por componente (solo para habilitar/deshabilitar tabs)
   const countByComponent = useMemo(() => {
