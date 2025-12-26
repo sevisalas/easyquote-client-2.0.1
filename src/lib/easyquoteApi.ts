@@ -57,9 +57,22 @@ async function refreshEasyQuoteToken(): Promise<string | null> {
 }
 
 function normalizeInvokeError(err: any) {
+  // Handle FunctionsHttpError from Supabase client
+  // The error context contains the response body with our custom error message
   const context = err?.context;
 
-  let body: any = context?.body ?? context?.data ?? null;
+  let body: any = null;
+  
+  // Try to get body from different possible locations
+  if (context?.body) {
+    body = context.body;
+  } else if (context?.data) {
+    body = context.data;
+  } else if (err?.data) {
+    body = err.data;
+  }
+  
+  // Parse body if it's a string
   if (typeof body === "string") {
     try {
       body = JSON.parse(body);
@@ -68,11 +81,29 @@ function normalizeInvokeError(err: any) {
     }
   }
 
-  const status = body?.status ?? context?.status ?? err?.status;
+  // Extract status from multiple possible locations
+  const status = body?.status ?? context?.status ?? err?.status ?? 500;
   const code = body?.code ?? err?.code;
-  const message = body?.error ?? body?.message ?? err?.message ?? "Error en la edge function";
+  
+  // Priority order for error message:
+  // 1. Our custom error message from the edge function body
+  // 2. Error from context
+  // 3. Generic message from err
+  // 4. Fallback
+  let message = "Error en la edge function";
+  
+  if (body?.error && typeof body.error === "string") {
+    message = body.error;
+  } else if (body?.message && typeof body.message === "string") {
+    message = body.message;
+  } else if (context?.error && typeof context.error === "string") {
+    message = context.error;
+  } else if (err?.message && typeof err.message === "string" && !err.message.includes("non-2xx")) {
+    message = err.message;
+  }
 
-  // Evita devolver objetos no serializables (Request/Response)
+  console.log("[EasyQuote] Normalized error:", { status, code, message, bodyKeys: body ? Object.keys(body) : [] });
+
   return {
     status,
     code,
