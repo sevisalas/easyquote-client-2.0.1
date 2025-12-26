@@ -13,7 +13,8 @@ import PromptsForm from "@/components/quotes/PromptsForm";
 import ComponentTabsPromptsForm, { COMPONENT_LABELS } from "@/components/quotes/ComponentTabsPromptsForm";
 import BoundProductConfigSelector, { 
   type BoundProductConfig, 
-  getAvailableConfigs 
+  getAvailableConfigs,
+  getActiveComponents
 } from "@/components/quotes/BoundProductConfigSelector";
 import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { ArrowLeft, AlertCircle } from "lucide-react";
@@ -729,12 +730,38 @@ export default function ProductTestPage() {
   // Outputs generales (siempre visibles)
   const generalOutputs = useMemo(() => outputsByComponent.general || [], [outputsByComponent]);
 
+  // Filtrar outputs de texto generales, EXCLUYENDO el price (se muestra aparte)
   const textOutputs = useMemo(() => {
     return generalOutputs.filter((o: any) => {
       const value = String(o?.value ?? "");
-      return !/^https?:\/\//i.test(value);
+      const type = String(o?.type || o?.outputType || "").toLowerCase();
+      return !/^https?:\/\//i.test(value) && type !== "price";
     });
   }, [generalOutputs]);
+
+  // Calcular componentes activos según configuración
+  const activeComponentsForPrice = useMemo(() => {
+    if (boundProductConfig) {
+      return getActiveComponents(boundProductConfig).filter(c => c !== "general");
+    }
+    return enabledComponents;
+  }, [boundProductConfig, enabledComponents]);
+
+  // Calcular precio total sumando solo los componentes activos
+  const calculatedTotalPrice = useMemo(() => {
+    let total = 0;
+    for (const comp of activeComponentsForPrice) {
+      const compOutputs = outputsByComponent[comp] || [];
+      const priceOutput = compOutputs.find((o: any) => 
+        String(o?.type || o?.outputType || "").toLowerCase() === "price"
+      );
+      if (priceOutput) {
+        const val = parseFloat(String(priceOutput.value ?? "0").replace(/\./g, "").replace(",", ".")) || 0;
+        total += val;
+      }
+    }
+    return total;
+  }, [outputsByComponent, activeComponentsForPrice]);
 
   const imageOutputs = useMemo(() => {
     return generalOutputs.filter((o: any) => {
@@ -977,7 +1004,20 @@ export default function ProductTestPage() {
                           <p>No hay resultados disponibles para esta configuración</p>
                         </div>}
 
-                  {/* Text outputs - General */}
+                  {/* Precio Total Calculado - suma de componentes activos */}
+                  {isComposite && calculatedTotalPrice > 0 && (
+                    <div className="p-3 rounded-md border bg-accent/10 mb-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-muted-foreground">Precio Total</span>
+                        <span className="text-lg font-semibold">{formatCurrency(calculatedTotalPrice)}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Suma de componentes activos: {activeComponentsForPrice.map(c => COMPONENT_LABELS[c] || c).join(" + ")}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Text outputs - General (sin precio) */}
                   {textOutputs.length > 0 && <div className="space-y-2 text-sm">
                       {textOutputs.map((output, index) => <div key={index} className="flex justify-between">
                           <span>{output.label || output.name}</span>
