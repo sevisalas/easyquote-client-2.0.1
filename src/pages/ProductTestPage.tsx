@@ -858,25 +858,19 @@ export default function ProductTestPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Product Selection */}
-                {!productId ? (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Producto</label>
-                    <Select value={productId} onValueChange={setProductId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona un producto..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {products.map((product: any) => <SelectItem key={product.id} value={product.id}>
-                            {getProductLabel(product)}
-                          </SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ) : (
-                  <div className="flex items-center">
-                    <span className="text-sm font-medium">{selectedProduct ? getProductLabel(selectedProduct) : ''}</span>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Producto</label>
+                  <Select value={productId} onValueChange={setProductId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un producto..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {products.map((product: any) => <SelectItem key={product.id} value={product.id}>
+                          {getProductLabel(product)}
+                        </SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 {/* Product Configuration */}
                 {productId && isLoadingProduct && <Alert>
