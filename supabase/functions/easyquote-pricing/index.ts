@@ -311,19 +311,21 @@ serve(async (req: Request): Promise<Response> => {
         });
       }
       
-      // Mensaje de error más descriptivo
-      const errorMessage = data?.message || data?.error || res.statusText || "Error desconocido";
+      // Mensaje de error claro para el usuario
       const detailedError = res.status === 500 
-        ? `Error del servidor de EasyQuote al procesar el producto (${productId}): ${errorMessage}. Por favor, verifica la configuración del producto en EasyQuote.`
-        : `Error al obtener precio: ${errorMessage}`;
+        ? `El servidor de EasyQuote no pudo procesar este producto. Esto suele ocurrir cuando el servidor está sobrecargado o el Excel tiene un problema. Intenta de nuevo en unos segundos.`
+        : `Error al obtener precio del servidor de EasyQuote (código ${res.status})`;
       
+      // IMPORTANTE: Devolver 200 con campo error para que el mensaje llegue al frontend
+      // Supabase client no pasa bien el body de errores 4xx/5xx
       return new Response(JSON.stringify({ 
         error: detailedError,
-        status: res.status,
+        errorCode: res.status,
         productId,
+        isApiError: true,
         details: data
       }), {
-        status: res.status,
+        status: 200, // Devolver 200 para que el body llegue al frontend
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
