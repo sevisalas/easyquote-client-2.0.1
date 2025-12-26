@@ -37,13 +37,18 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Get EasyQuote credentials
-    const { data: credentials } = await supabase.rpc('get_user_credentials', {
+    // Get EasyQuote credentials (supports org members, not just owners)
+    const { data: credentials, error: credError } = await supabase.rpc('get_organization_easyquote_credentials', {
       p_user_id: user.id
     });
 
+    console.log("Credentials lookup result:", { hasCredentials: !!credentials?.length, error: credError?.message });
+
     if (!credentials || credentials.length === 0) {
-      return new Response(JSON.stringify({ error: "No EasyQuote credentials found" }), {
+      return new Response(JSON.stringify({ 
+        error: "No se encontraron credenciales de EasyQuote para tu organización",
+        hint: "Verifica que el administrador de la organización haya configurado las credenciales de EasyQuote"
+      }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
