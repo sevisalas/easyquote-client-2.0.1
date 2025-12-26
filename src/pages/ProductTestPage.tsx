@@ -1011,9 +1011,6 @@ export default function ProductTestPage() {
                         <span className="text-sm font-medium text-muted-foreground">Precio Total</span>
                         <span className="text-lg font-semibold">{formatCurrency(calculatedTotalPrice)}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Suma de componentes activos: {activeComponentsForPrice.map(c => COMPONENT_LABELS[c] || c).join(" + ")}
-                      </p>
                     </div>
                   )}
 
