@@ -329,9 +329,12 @@ export default function ComponentTabsOutputs({
     return counts;
   }, [outputsByComponent, availableComponents]);
 
-  // Componentes para pestañas (incluye "general")
-  const tabComponents = useMemo(() => availableComponents, [availableComponents]);
-  
+  // Componentes para pestañas (en productos compuestos NO mostramos "General")
+  const tabComponents = useMemo(() => {
+    if (!isComposite) return availableComponents;
+    return availableComponents.filter((c) => c !== GENERAL_COMPONENT.value);
+  }, [availableComponents, isComposite]);
+
   // Outputs generales
   const generalOutputs = useMemo(() => 
     outputsByComponent[GENERAL_COMPONENT.value] || [], 
@@ -375,12 +378,6 @@ export default function ComponentTabsOutputs({
     const hasComponentOutputs = (countByComponent[activeComponent] || 0) > 0;
     if (tabComponents.includes(activeComponent) && hasComponentOutputs) {
       setActiveTab(activeComponent);
-      return;
-    }
-
-    // Si no hay resultados para ese componente, mostrar General como fallback
-    if ((countByComponent[GENERAL_COMPONENT.value] || 0) > 0) {
-      setActiveTab(GENERAL_COMPONENT.value);
     }
   }, [activeComponent, tabComponents, countByComponent]);
 
@@ -431,7 +428,6 @@ export default function ComponentTabsOutputs({
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-4">
       <TabsList className="flex-wrap h-auto gap-1">
         {tabComponents.map(comp => {
-          const count = countByComponent[comp];
           const label = COMPONENT_LABELS[comp] || comp;
           return (
             <TabsTrigger 
@@ -440,9 +436,6 @@ export default function ComponentTabsOutputs({
               className="relative flex items-center text-xs" 
             >
               {label}
-              {count > 0 && (
-                <span className="ml-1 text-xs text-muted-foreground">({count})</span>
-              )}
             </TabsTrigger>
           );
         })}
