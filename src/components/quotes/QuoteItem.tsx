@@ -1402,7 +1402,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             </div>
           )}
           
-          <div className="grid gap-4 md:grid-cols-3 mb-4">
+          <div className={`grid gap-4 mb-4 ${needsConfigSelector && boundProductConfig ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
             <div className="space-y-2">
               <Label>Selecciona producto</Label>
               <Select onValueChange={(value) => {
@@ -1451,8 +1451,22 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               )}
             </div>
 
-            {productId && (
-              <div className="space-y-2 md:col-span-2">
+            {/* Mostrar opción elegida al lado del selector cuando hay configuración seleccionada */}
+            {needsConfigSelector && boundProductConfig && (
+              <div className="space-y-2">
+                <Label>Configuración</Label>
+                <BoundProductConfigSelector
+                  enabledComponents={enabledComponents}
+                  value={boundProductConfig}
+                  onChange={setBoundProductConfig}
+                  onClear={() => setBoundProductConfig(null)}
+                />
+              </div>
+            )}
+
+            {/* Solo mostrar nombre cuando NO hay selector de config activo */}
+            {productId && !(needsConfigSelector && boundProductConfig) && (
+              <div className={`space-y-2 ${needsConfigSelector ? '' : 'md:col-span-2'}`}>
                 <Label>Nombre a mostrar del producto</Label>
                 <Input
                   value={displayName}
@@ -1523,12 +1537,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 </Alert>
               ) : pricing ? (
                 <div className="space-y-4">
-                  {/* Selector de configuración para productos encuadernados */}
-                  {needsConfigSelector && (
+                  {/* Selector de configuración para productos encuadernados - solo si NO hay config seleccionada */}
+                  {needsConfigSelector && !boundProductConfig && (
                     <BoundProductConfigSelector
                       enabledComponents={enabledComponents}
                       value={boundProductConfig}
                       onChange={setBoundProductConfig}
+                      onClear={() => setBoundProductConfig(null)}
                     />
                   )}
                   
