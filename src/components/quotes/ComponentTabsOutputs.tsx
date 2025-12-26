@@ -526,7 +526,7 @@ export default function ComponentTabsOutputs({
         
         {/* Total/Precio editable */}
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground font-medium">{componentCount > 1 ? "Total" : "Precio"}</span>
+          <span className="text-sm text-muted-foreground font-medium">{componentCount > 1 ? "Precio Total" : "Precio Total"}</span>
           {isEditingPrice ? (
             <div className="flex items-center gap-1">
               <Input
@@ -569,6 +569,17 @@ export default function ComponentTabsOutputs({
             </button>
           )}
         </div>
+        
+        {/* Botón para modificar precio */}
+        {!isEditingPrice && (
+          <button
+            type="button"
+            onClick={() => setIsEditingPrice(true)}
+            className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+          >
+            Modificar precio final
+          </button>
+        )}
         
         {/* Indicador si el precio fue modificado */}
         {editablePrice !== null && editablePrice !== undefined && editablePrice !== calculatedTotalPrice && (
@@ -685,10 +696,10 @@ export default function ComponentTabsOutputs({
             const componentOutputs = outputsByComponent[comp] || [];
             
             const componentImages = componentOutputs.filter((o: any) => /^https?:\/\//i.test(String(o?.value ?? "")));
+            // Incluir TODOS los outputs de texto (incluyendo precio) para mostrar igual que ProductTestPage
             const componentTextOutputs = componentOutputs.filter((o: any) => {
               const value = String(o?.value ?? "");
-              const type = String(o?.type || "").toLowerCase();
-              return !/^https?:\/\//i.test(value) && type !== "price";
+              return !/^https?:\/\//i.test(value);
             });
 
             return (
