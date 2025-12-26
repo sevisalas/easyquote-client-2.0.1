@@ -872,6 +872,15 @@ export default function ProductTestPage() {
                   </Select>
                 </div>
 
+                {/* Selector de configuración - mostrar INMEDIATAMENTE cuando se selecciona producto */}
+                {productId && needsConfigSelector && (
+                  <BoundProductConfigSelector
+                    enabledComponents={enabledComponents}
+                    value={boundProductConfig}
+                    onChange={setBoundProductConfig}
+                  />
+                )}
+
                 {/* Product Configuration */}
                 {productId && isLoadingProduct && <Alert>
                     <AlertCircle className="h-4 w-4" />
@@ -921,14 +930,6 @@ export default function ProductTestPage() {
                   </Alert>}
 
                 {productId && !isLoadingProduct && productDetail && <div className="border-t pt-4 space-y-4">
-                    {/* Selector de configuración para productos encuadernados */}
-                    {needsConfigSelector && (
-                      <BoundProductConfigSelector
-                        enabledComponents={enabledComponents}
-                        value={boundProductConfig}
-                        onChange={setBoundProductConfig}
-                      />
-                    )}
                     
                     {/* Mostrar prompts solo si no requiere configuración O ya se seleccionó una */}
                     {(!needsConfigSelector || boundProductConfig) ? (
