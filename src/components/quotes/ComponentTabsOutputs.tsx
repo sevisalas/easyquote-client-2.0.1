@@ -420,17 +420,18 @@ export default function ComponentTabsOutputs({
     return counts;
   }, [outputsByComponent, availableComponents]);
 
-  // Componentes para pestañas (en productos compuestos NO mostramos "General")
-  const tabComponents = useMemo(() => {
-    if (!isComposite) return availableComponents;
-    return availableComponents.filter((c) => c !== GENERAL_COMPONENT.value);
-  }, [availableComponents, isComposite]);
-
   // Componentes activos según configuración seleccionada (boundProductConfig)
   const activeComponents = useMemo(() => {
     if (boundProductConfig) return getActiveComponents(boundProductConfig);
     return availableComponents;
   }, [boundProductConfig, availableComponents]);
+
+  // Componentes para pestañas: usar activeComponents (filtrados por boundProductConfig), sin "General"
+  const tabComponents = useMemo(() => {
+    if (!isComposite) return [];
+    // Solo mostrar los componentes activos según la configuración seleccionada
+    return activeComponents.filter((c) => c !== GENERAL_COMPONENT.value);
+  }, [activeComponents, isComposite]);
 
   // Outputs generales
   const generalOutputs = useMemo(() => 
@@ -504,26 +505,28 @@ export default function ComponentTabsOutputs({
       ? editablePrice 
       : calculatedTotalPrice;
 
+    const componentCount = Object.keys(pricesByComponent).length;
+
     return (
       <div className="p-3 rounded-md border bg-card/50 space-y-3">
-        {/* Desglose por componente */}
-        <div className="space-y-1">
-          {Object.entries(pricesByComponent).map(([comp, price]) => (
-            <div key={comp} className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{componentLabels[comp] || comp}</span>
-              <span className="font-medium">{formatEUR(price)}</span>
+        {/* Desglose por componente - solo si hay más de 1 */}
+        {componentCount > 1 && (
+          <>
+            <div className="space-y-1">
+              {Object.entries(pricesByComponent).map(([comp, price]) => (
+                <div key={comp} className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{componentLabels[comp] || comp}</span>
+                  <span className="font-medium">{formatEUR(price)}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        
-        {/* Separador si hay más de un componente */}
-        {Object.keys(pricesByComponent).length > 1 && (
-          <div className="border-t border-border" />
+            <div className="border-t border-border" />
+          </>
         )}
         
-        {/* Total editable */}
+        {/* Total/Precio editable */}
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground font-medium">Total</span>
+          <span className="text-sm text-muted-foreground font-medium">{componentCount > 1 ? "Total" : "Precio"}</span>
           {isEditingPrice ? (
             <div className="flex items-center gap-1">
               <Input
