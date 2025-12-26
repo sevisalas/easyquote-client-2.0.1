@@ -1459,7 +1459,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   enabledComponents={enabledComponents}
                   value={boundProductConfig}
                   onChange={setBoundProductConfig}
-                  onClear={() => setBoundProductConfig(null)}
                 />
               </div>
             )}
@@ -1543,7 +1542,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                       enabledComponents={enabledComponents}
                       value={boundProductConfig}
                       onChange={setBoundProductConfig}
-                      onClear={() => setBoundProductConfig(null)}
                     />
                   )}
                   
