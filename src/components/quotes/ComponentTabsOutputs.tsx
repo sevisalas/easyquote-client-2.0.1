@@ -89,20 +89,27 @@ export default function ComponentTabsOutputs({
       grouped[comp] = [];
     });
 
+    console.log("🔍 ComponentTabsOutputs: Agrupando", outputs.length, "outputs en componentes:", availableComponents);
+
     for (const output of outputs) {
       const nameCell = output?.nameCell || output?.name_cell;
+      const sheet = output?.sheet;
       let component = "general";
       
+      // Primero buscar en asignaciones guardadas
       if (nameCell) {
         const assigned = getPromptComponent(nameCell);
         if (assigned !== "general") {
           component = assigned;
-        } else {
-          component = inferComponentFromSheet(output?.sheet);
+        } else if (sheet) {
+          // Fallback: inferir por hoja
+          component = inferComponentFromSheet(sheet);
         }
-      } else {
-        component = inferComponentFromSheet(output?.sheet);
+      } else if (sheet) {
+        component = inferComponentFromSheet(sheet);
       }
+      
+      console.log(`  Output "${output?.name || nameCell}": sheet=${sheet}, component=${component}`);
       
       // Si el componente no está en los disponibles, poner en general
       if (!grouped[component]) {
@@ -111,6 +118,10 @@ export default function ComponentTabsOutputs({
         grouped[component].push(output);
       }
     }
+
+    console.log("📊 Outputs por componente:", Object.fromEntries(
+      Object.entries(grouped).map(([k, v]) => [k, (v as any[]).length])
+    ));
 
     return grouped;
   }, [outputs, availableComponents, getPromptComponent, enabledComponents]);
@@ -235,7 +246,6 @@ export default function ComponentTabsOutputs({
               key={comp} 
               value={comp} 
               className="relative flex items-center text-xs" 
-              disabled={count === 0}
             >
               {label}
               {count > 0 && (
@@ -249,21 +259,16 @@ export default function ComponentTabsOutputs({
       {/* Precio siempre visible arriba */}
       {renderPrice && renderPrice()}
 
-      {/* Outputs generales siempre visibles */}
-      {generalTextOutputs.length > 0 && (
-        <div className="border-b border-border pb-3 mb-3">
-          <p className="text-xs font-medium text-muted-foreground mb-2">General</p>
-          <section className="space-y-2">
-            {generalTextOutputs.map((o, idx) => renderOutput(o, idx))}
-          </section>
-        </div>
-      )}
-
-      {/* Contenido de cada tab */}
+      {/* Contenido de cada tab - muestra solo los outputs de ese componente */}
       {tabComponents.map(comp => {
         const componentOutputs = outputsByComponent[comp] || [];
-        const componentImages = componentOutputs.filter((o: any) => /^https?:\/\//i.test(String(o?.value ?? "")));
-        const componentTextOutputs = componentOutputs.filter((o: any) => {
+        // Añadir también los outputs generales al componente activo
+        const allOutputsForComponent = comp === activeTab 
+          ? [...(outputsByComponent[GENERAL_COMPONENT.value] || []), ...componentOutputs]
+          : componentOutputs;
+        
+        const componentImages = allOutputsForComponent.filter((o: any) => /^https?:\/\//i.test(String(o?.value ?? "")));
+        const componentTextOutputs = allOutputsForComponent.filter((o: any) => {
           const value = String(o?.value ?? "");
           const type = String(o?.type || "").toLowerCase();
           return !/^https?:\/\//i.test(value) && type !== "price";
