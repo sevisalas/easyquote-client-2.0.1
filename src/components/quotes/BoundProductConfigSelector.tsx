@@ -92,7 +92,7 @@ export default function BoundProductConfigSelector({
       <CardContent className="pt-4 pb-4">
         <div className="flex items-center gap-2 mb-3">
           <BookOpen className="h-5 w-5 text-primary" />
-          <span className="font-medium text-foreground">¿Cómo es este producto?</span>
+          <span className="font-medium text-foreground">Selecciona una opción</span>
         </div>
         
         <RadioGroup
