@@ -1,6 +1,8 @@
 import { useMemo, useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GENERAL_COMPONENT, useProductComponentSettings } from "@/hooks/useProductComponentSettings";
+import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 
 interface ComponentTabsOutputsProps {
   productId: string;
@@ -24,6 +26,28 @@ const COMPONENT_LABELS: Record<string, string> = {
 // Orden predefinido de componentes
 const COMPONENT_ORDER = ["cubierta", "interior_1", "interior_2"];
 
+function normalizeKey(v: any): string {
+  return String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+}
+
+function extractCellRef(v: any): string | undefined {
+  const s = String(v ?? "").replace(/\$/g, "").toUpperCase();
+  const m = s.match(/\b[A-Z]{1,3}\d{1,4}\b/);
+  return m?.[0];
+}
+
+function getOutputCell(def: any): string | undefined {
+  return def?.outputCell ?? def?.output_cell ?? def?.cell ?? def?.outputcell ?? def?.nameCell ?? def?.name_cell;
+}
+
+function getOutputName(def: any): string | undefined {
+  return def?.outputName ?? def?.output_name ?? def?.name ?? def?.label ?? def?.title;
+}
+
+function getOutputSheet(def: any): string | undefined {
+  return def?.sheet ?? def?.sheetName ?? def?.sheet_name ?? def?.tab ?? def?.worksheet;
+}
+
 export default function ComponentTabsOutputs({
   productId,
   outputs,
@@ -43,6 +67,27 @@ export default function ComponentTabsOutputs({
 
   const isLoadingData = isLoadingProp || isLoadingSettings;
 
+  // Definiciones de outputs (traen sheet/nameCell/cell) para poder mapear outputs del pricing -> componente
+  const { data: outputDefinitions = [] } = useQuery({
+    queryKey: ["easyquote-outputs-definitions", productId],
+    queryFn: async () => {
+      if (!productId) return [];
+      const token = await getEasyQuoteToken();
+      if (!token) return [];
+      const { data, error } = await invokeEasyQuoteFunction<any[]>("easyquote-outputs", {
+        token,
+        productId,
+      });
+      if (error) {
+        console.error("[ComponentTabsOutputs] Error fetching output definitions", error);
+        return [];
+      }
+      return Array.isArray(data) ? data : [];
+    },
+    enabled: !!productId,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
   // Componentes disponibles ordenados
   const availableComponents = useMemo(() => {
     if (!isComposite) return [GENERAL_COMPONENT.value];
@@ -84,34 +129,64 @@ export default function ComponentTabsOutputs({
     return "general";
   };
 
+  const outputMetaByKey = useMemo(() => {
+    const map = new Map<string, { cell?: string; sheet?: string }>();
+
+    for (const def of outputDefinitions as any[]) {
+      const cell = extractCellRef(getOutputCell(def)) ?? normalizeKey(getOutputCell(def));
+      const name = getOutputName(def);
+      const sheet = getOutputSheet(def);
+
+      const keys = [def?.id, def?.key, def?.code, def?.slug, name, getOutputCell(def)].filter(Boolean);
+      for (const k of keys) {
+        const kn = normalizeKey(k);
+        if (kn) map.set(kn, { cell, sheet });
+      }
+
+      if (cell) map.set(normalizeKey(cell), { cell, sheet });
+    }
+
+    return map;
+  }, [outputDefinitions]);
+
   // Agrupar outputs por componente
   const outputsByComponent = useMemo(() => {
     const grouped: Record<string, any[]> = {};
-    
+
     // Inicializar todos los componentes
-    availableComponents.forEach(comp => {
+    availableComponents.forEach((comp) => {
       grouped[comp] = [];
     });
 
     for (const output of outputs) {
-      // Usar nameCell, name, o label como identificador
-      const identifier = output?.nameCell || output?.name_cell || output?.name || output?.label;
-      const sheet = output?.sheet;
+      const rawIdentifier = output?.nameCell || output?.name_cell || output?.name || output?.label;
+      const identifier = String(rawIdentifier ?? "");
+
+      const idNorm = normalizeKey(identifier);
+      const cellFromIdentifier = extractCellRef(identifier);
+      const meta =
+        (idNorm ? outputMetaByKey.get(idNorm) : undefined) ??
+        (cellFromIdentifier ? outputMetaByKey.get(normalizeKey(cellFromIdentifier)) : undefined);
+
+      const metaCell = meta?.cell;
+      const metaSheet = meta?.sheet;
+
+      // 1) Primero por celda (E13) si la tenemos
+      // 2) Luego por nombre textual ("Plastificado", "Encuadernado")
       let component = "general";
-      
-      // Buscar en asignaciones guardadas usando el identificador
-      if (identifier) {
-        const assigned = getPromptComponent(identifier);
-        if (assigned !== "general") {
-          component = assigned;
-        } else if (sheet) {
-          // Fallback: inferir por hoja
-          component = inferComponentFromSheet(sheet);
-        }
-      } else if (sheet) {
-        component = inferComponentFromSheet(sheet);
+      if (metaCell) {
+        component = getPromptComponent(metaCell);
       }
-      
+      if (component === "general" && identifier) {
+        component = getPromptComponent(identifier);
+      }
+
+      // Fallback: inferir por sheet de definiciones (o del output si viniera)
+      if (component === "general") {
+        const sheet = metaSheet ?? output?.sheet;
+        if (sheet) component = inferComponentFromSheet(sheet);
+      }
+
       // Si el componente no está en los disponibles, poner en general
       if (!grouped[component]) {
         grouped[GENERAL_COMPONENT.value].push(output);
@@ -121,7 +196,7 @@ export default function ComponentTabsOutputs({
     }
 
     return grouped;
-  }, [outputs, availableComponents, getPromptComponent, enabledComponents]);
+  }, [outputs, availableComponents, getPromptComponent, inferComponentFromSheet, outputMetaByKey, outputDefinitions]);
 
   // Contar outputs por componente
   const countByComponent = useMemo(() => {
@@ -196,26 +271,6 @@ export default function ComponentTabsOutputs({
     }
   }, [activeTab, tabComponents, initialTab]);
 
-  // Obtener outputs del componente seleccionado
-  const selectedComponentOutputs = useMemo(() => {
-    if (activeTab === "general") return [];
-    return outputsByComponent[activeTab] || [];
-  }, [outputsByComponent, activeTab]);
-
-  const selectedImages = useMemo(() => 
-    selectedComponentOutputs.filter((o: any) => /^https?:\/\//i.test(String(o?.value ?? ""))),
-    [selectedComponentOutputs]
-  );
-  
-  const selectedTextOutputs = useMemo(() => 
-    selectedComponentOutputs.filter((o: any) => {
-      const value = String(o?.value ?? "");
-      const type = String(o?.type || "").toLowerCase();
-      return !/^https?:\/\//i.test(value) && type !== "price";
-    }),
-    [selectedComponentOutputs]
-  );
-
   // Si está cargando, mostrar indicador
   if (isLoadingData) {
     return (
@@ -271,10 +326,7 @@ export default function ComponentTabsOutputs({
       {/* Contenido de cada tab - muestra solo los outputs de ese componente */}
       {tabComponents.map(comp => {
         const componentOutputs = outputsByComponent[comp] || [];
-        // Añadir también los outputs generales al componente activo
-        const allOutputsForComponent = comp === activeTab 
-          ? [...(outputsByComponent[GENERAL_COMPONENT.value] || []), ...componentOutputs]
-          : componentOutputs;
+        const allOutputsForComponent = componentOutputs;
         
         const componentImages = allOutputsForComponent.filter((o: any) => /^https?:\/\//i.test(String(o?.value ?? "")));
         const componentTextOutputs = allOutputsForComponent.filter((o: any) => {
