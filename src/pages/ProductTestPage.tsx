@@ -858,19 +858,28 @@ export default function ProductTestPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Product Selection */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Producto</label>
-                  <Select value={productId} onValueChange={setProductId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un producto..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {products.map((product: any) => <SelectItem key={product.id} value={product.id}>
-                          {getProductLabel(product)}
-                        </SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {!productId ? (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Producto</label>
+                    <Select value={productId} onValueChange={setProductId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un producto..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {products.map((product: any) => <SelectItem key={product.id} value={product.id}>
+                            {getProductLabel(product)}
+                          </SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium">{selectedProduct ? getProductLabel(selectedProduct) : ''}</span>
+                    <Button variant="ghost" size="sm" onClick={() => setProductId('')} className="text-xs text-muted-foreground">
+                      Cambiar
+                    </Button>
+                  </div>
+                )}
 
                 {/* Product Configuration */}
                 {productId && isLoadingProduct && <Alert>
