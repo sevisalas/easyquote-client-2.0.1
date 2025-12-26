@@ -303,6 +303,20 @@ export default function ComponentTabsOutputs({
     return map;
   }, [outputDefinitions]);
 
+  // Ordenar por celda alfabéticamente (E5, E8, E9, E12...)
+  const sortByCell = (arr: any[]): any[] => {
+    return [...arr].sort((a, b) => {
+      const cellA = (a?.nameCell || a?.name_cell || "").replace(/\$/g, "").toUpperCase();
+      const cellB = (b?.nameCell || b?.name_cell || "").replace(/\$/g, "").toUpperCase();
+      const colA = cellA.replace(/\d+/g, "");
+      const colB = cellB.replace(/\d+/g, "");
+      const rowA = parseInt(cellA.replace(/\D+/g, ""), 10) || 0;
+      const rowB = parseInt(cellB.replace(/\D+/g, ""), 10) || 0;
+      if (colA !== colB) return colA.localeCompare(colB);
+      return rowA - rowB;
+    });
+  };
+
   // Agrupar outputs por componente
   const outputsByComponent = useMemo(() => {
     const grouped: Record<string, any[]> = {};
@@ -348,6 +362,11 @@ export default function ComponentTabsOutputs({
         grouped[component].push(output);
       }
     }
+
+    // ORDENAR cada grupo alfabéticamente por celda (E5, E8, E9, E12...)
+    Object.keys(grouped).forEach(comp => {
+      grouped[comp] = sortByCell(grouped[comp]);
+    });
 
     return grouped;
   }, [resolvedOutputs, availableComponents, getPromptComponent, inferComponentFromSheet, outputMetaByKey]);
