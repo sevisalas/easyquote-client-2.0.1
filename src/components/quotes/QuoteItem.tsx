@@ -808,9 +808,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Aplicar orden guardado a los outputs
   const sortedOutputs = useMemo(() => {
-    if (!savedOutputOrder || savedOutputOrder.length === 0) {
-      return outputs;
-    }
+    if (!savedOutputOrder || savedOutputOrder.length === 0) return outputs;
+
+    // Si los outputs no traen nameCell todavía (pricing), NO forzar sort aquí.
+    // El orden real se aplicará en ComponentTabsOutputs tras resolver nameCell vía definiciones.
+    const hasAnyCell = outputs.some((o: any) => !!(o?.nameCell || o?.outputNameCell || o?.name_cell));
+    if (!hasAnyCell) return outputs;
 
     const normalizeKey = (v: any) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
 
@@ -818,8 +821,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     const orderMap = new Map(savedOutputOrder.map((k: string, idx: number) => [normalizeKey(k), idx]));
 
     return [...outputs].sort((a: any, b: any) => {
-      const aKey = normalizeKey(a?.nameCell || a?.name || a?.label || "");
-      const bKey = normalizeKey(b?.nameCell || b?.name || b?.label || "");
+      const aKey = normalizeKey(a?.nameCell || a?.outputNameCell || a?.name_cell || "");
+      const bKey = normalizeKey(b?.nameCell || b?.outputNameCell || b?.name_cell || "");
       const aIdx = aKey && orderMap.has(aKey) ? orderMap.get(aKey)! : 999;
       const bIdx = bKey && orderMap.has(bKey) ? orderMap.get(bKey)! : 999;
       return aIdx - bIdx;

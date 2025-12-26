@@ -38,7 +38,19 @@ function extractCellRef(v: any): string | undefined {
 }
 
 function getOutputCell(def: any): string | undefined {
-  return def?.outputCell ?? def?.output_cell ?? def?.cell ?? def?.outputcell ?? def?.nameCell ?? def?.name_cell;
+  // IMPORTANTE: el orden guardado en Supabase usa nameCell (no outputCell)
+  return (
+    def?.nameCell ??
+    def?.name_cell ??
+    def?.outputNameCell ??
+    def?.output_name_cell ??
+    def?.labelCell ??
+    def?.label_cell ??
+    def?.outputCell ??
+    def?.output_cell ??
+    def?.cell ??
+    def?.outputcell
+  );
 }
 
 function getOutputName(def: any): string | undefined {
