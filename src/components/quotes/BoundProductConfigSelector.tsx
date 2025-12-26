@@ -1,7 +1,8 @@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen } from "lucide-react";
+import { BookOpen, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Tipos de configuración de producto encuadernado
 export type BoundProductConfig = "same_paper" | "cover_1_interior" | "cover_2_interiors";
@@ -36,6 +37,8 @@ interface BoundProductConfigSelectorProps {
   value: BoundProductConfig | null;
   /** Callback cuando cambia la configuración */
   onChange: (config: BoundProductConfig) => void;
+  /** Callback para limpiar la selección */
+  onClear?: () => void;
 }
 
 /**
@@ -79,6 +82,7 @@ export default function BoundProductConfigSelector({
   enabledComponents,
   value,
   onChange,
+  onClear,
 }: BoundProductConfigSelectorProps) {
   const availableConfigs = getAvailableConfigs(enabledComponents);
 
@@ -87,6 +91,22 @@ export default function BoundProductConfigSelector({
     return null;
   }
 
+  // Si ya hay una opción seleccionada, mostrar vista compacta
+  if (value) {
+    const selectedConfig = BOUND_CONFIG_OPTIONS[value];
+    return (
+      <div 
+        className="flex items-center gap-2 px-3 py-2 rounded-md border border-primary/30 bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors"
+        onClick={() => onClear?.()}
+      >
+        <BookOpen className="h-4 w-4 text-primary flex-shrink-0" />
+        <span className="font-medium text-sm text-foreground">{selectedConfig.label}</span>
+        <ChevronDown className="h-4 w-4 text-muted-foreground ml-auto" />
+      </div>
+    );
+  }
+
+  // Mostrar selector completo de opciones
   return (
     <Card className="border-primary/20 bg-primary/5">
       <CardContent className="pt-4 pb-4">
