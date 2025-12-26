@@ -311,10 +311,10 @@ serve(async (req: Request): Promise<Response> => {
         });
       }
       
-      // Mensaje de error claro para el usuario
+      // Mensaje claro y sencillo para el usuario
       const detailedError = res.status === 500 
-        ? `El servidor de EasyQuote no pudo procesar este producto. Esto suele ocurrir cuando el servidor está sobrecargado o el Excel tiene un problema. Intenta de nuevo en unos segundos.`
-        : `Error al obtener precio del servidor de EasyQuote (código ${res.status})`;
+        ? `⚠️ No se pudo cargar el producto. El servidor de cálculo está ocupado o el archivo Excel tiene un error. Espera unos segundos e inténtalo de nuevo.`
+        : `⚠️ Error de conexión con el servidor (${res.status}). Inténtalo de nuevo.`;
       
       // IMPORTANTE: Devolver 200 con campo error para que el mensaje llegue al frontend
       // Supabase client no pasa bien el body de errores 4xx/5xx
