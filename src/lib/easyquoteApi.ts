@@ -124,6 +124,20 @@ export async function invokeEasyQuoteFunction<T = any>(
   try {
     const { data, error } = await supabase.functions.invoke(functionName, { body });
 
+    // Check if data contains an error field (edge function returned 200 with error)
+    if (data && typeof data === "object" && data.isApiError) {
+      console.log("[EasyQuote] API error in response:", data.error);
+      return { 
+        data: null, 
+        error: { 
+          message: data.error, 
+          status: data.errorCode, 
+          code: data.code,
+          details: data.details 
+        } 
+      };
+    }
+
     const is401Error =
       (error && ((error as any).status === 401 || (error as any).code === "EASYQUOTE_UNAUTHORIZED")) ||
       (data && typeof data === "object" && ((data as any).status === 401 || (data as any).code === "EASYQUOTE_UNAUTHORIZED"));
