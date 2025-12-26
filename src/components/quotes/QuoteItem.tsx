@@ -102,6 +102,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [qtyInputs, setQtyInputs] = useState<string[]>(["", "", "", "", ""]);
   const MAX_QTY = 10;
   const [qtyCount, setQtyCount] = useState<number>(5);
+  const [multiModifiedPrices, setMultiModifiedPrices] = useState<Record<number, number | null>>({}); // Precios modificados por cantidad
+  const [editingMultiPriceIdx, setEditingMultiPriceIdx] = useState<number | null>(null);
+  const [localMultiPriceInput, setLocalMultiPriceInput] = useState("");
 
   // Item additionals
   const [itemAdditionals, setItemAdditionals] = useState<any[]>([]);
@@ -1761,65 +1764,80 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                             {multiRows.map((r, idx) => {
                               const priceOut = (r.outs || []).find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
-                              const priceValue = typeof priceOut?.value === "number" ? priceOut.value : parseFloat(String(priceOut?.value).replace(/\./g, "").replace(",", "."));
-                              const formattedPrice = !isNaN(priceValue) ? new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(priceValue) : "0,00";
+                              const calculatedPrice = typeof priceOut?.value === "number" ? priceOut.value : parseFloat(String(priceOut?.value).replace(/\./g, "").replace(",", ".")) || 0;
+                              const modifiedPrice = multiModifiedPrices[idx];
+                              const hasModified = modifiedPrice !== null && modifiedPrice !== undefined && modifiedPrice !== calculatedPrice;
+                              const displayPrice = hasModified ? modifiedPrice : calculatedPrice;
+                              const formattedPrice = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(displayPrice);
+                              const formattedCalculated = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedPrice);
+                              
                               return (
-                                <div key={idx} className="border rounded p-2">
-                                  <div className="text-xs text-muted-foreground mb-1">Q{idx + 1}</div>
-                                  <div className="text-xs">{formattedPrice}</div>
+                                <div key={idx} className="border rounded p-2 space-y-1">
+                                  <div className="text-xs text-muted-foreground mb-1 font-medium">Q{idx + 1}</div>
+                                  
+                                  {editingMultiPriceIdx === idx ? (
+                                    <div className="space-y-1">
+                                      <Input
+                                        type="text"
+                                        value={localMultiPriceInput}
+                                        onChange={(e) => setLocalMultiPriceInput(e.target.value)}
+                                        className="h-7 text-xs"
+                                        autoFocus
+                                      />
+                                      <div className="flex gap-1">
+                                        <Button
+                                          size="sm"
+                                          className="h-6 text-xs flex-1"
+                                          onClick={() => {
+                                            const parsed = parseFloat(localMultiPriceInput.replace(/\./g, "").replace(",", ".")) || 0;
+                                            setMultiModifiedPrices(prev => ({
+                                              ...prev,
+                                              [idx]: parsed > 0 ? parsed : null
+                                            }));
+                                            setEditingMultiPriceIdx(null);
+                                          }}
+                                        >
+                                          OK
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="h-6 text-xs flex-1"
+                                          onClick={() => setEditingMultiPriceIdx(null)}
+                                        >
+                                          ✕
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      {hasModified && (
+                                        <div className="text-xs text-muted-foreground line-through">{formattedCalculated} €</div>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setLocalMultiPriceInput(displayPrice.toFixed(2).replace(".", ","));
+                                          setEditingMultiPriceIdx(idx);
+                                        }}
+                                        className="text-sm font-semibold hover:text-primary transition-colors"
+                                      >
+                                        {formattedPrice} €
+                                      </button>
+                                      {hasModified && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setMultiModifiedPrices(prev => ({ ...prev, [idx]: null }))}
+                                          className="block text-[10px] text-muted-foreground hover:text-foreground"
+                                        >
+                                          Usar calculado
+                                        </button>
+                                      )}
+                                    </>
+                                  )}
                                 </div>
                               );
                             })}
-                          </div>
-
-                          <div className="mt-3">
-                            <Accordion type="single" collapsible className="w-full">
-                              <AccordionItem value="detalles">
-                                <AccordionTrigger>Detalles</AccordionTrigger>
-                                <AccordionContent>
-                                  <Tabs defaultValue="q1" className="w-full">
-                                    <TabsList className="mb-3">
-                                      {multiRows.map((_, idx) => (
-                                        <TabsTrigger key={idx} value={`q${idx + 1}`}>Q{idx + 1}</TabsTrigger>
-                                      ))}
-                                    </TabsList>
-
-                                    {multiRows.map((r, idx) => {
-                                      const outs = r.outs || [];
-                                      const priceOut = outs.find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
-                                      const details = outs.filter((o:any) => {
-                                        const t = String(o?.type || '').toLowerCase();
-                                        const n = String(o?.name || '').toLowerCase();
-                                        const v = String(o?.value ?? '');
-                                        const isImageLike = t.includes('image') || n.includes('image');
-                                        const isNA = v === '' || v === '#N/A';
-                                        return o !== priceOut && !isImageLike && !isNA;
-                                      });
-                                      return (
-                                        <TabsContent key={idx} value={`q${idx + 1}`}>
-                                          <div className="p-3 rounded-md border bg-card/50 space-y-2">
-                                            <div className="flex items-center justify-between">
-                                              <span className="text-sm text-muted-foreground">Precio total</span>
-                                              <span className="font-semibold">{formatEUR(priceOut?.value)}</span>
-                                            </div>
-                                            {details.length > 0 && (
-                                                <div className="space-y-1 mt-2">
-                                                  {details.map((o:any, i:number) => (
-                                                    <div key={i} className="flex items-center justify-between text-sm">
-                                                      <span className="text-muted-foreground">{o.name ?? 'Dato'}</span>
-                                                      <span>{String(o.value)}</span>
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                            )}
-                                          </div>
-                                        </TabsContent>
-                                      );
-                                    })}
-                                  </Tabs>
-                                </AccordionContent>
-                              </AccordionItem>
-                            </Accordion>
                           </div>
                         </>
                       ) : (
