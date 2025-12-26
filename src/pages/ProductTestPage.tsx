@@ -11,6 +11,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import PromptsForm from "@/components/quotes/PromptsForm";
 import ComponentTabsPromptsForm, { COMPONENT_LABELS } from "@/components/quotes/ComponentTabsPromptsForm";
+import BoundProductConfigSelector, { 
+  type BoundProductConfig, 
+  getAvailableConfigs 
+} from "@/components/quotes/BoundProductConfigSelector";
 import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -44,6 +48,7 @@ export default function ProductTestPage() {
   const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
   const [isDiagnosing, setIsDiagnosing] = useState(false);
   const [selectedComponent, setSelectedComponent] = useState<string>('general');
+  const [boundProductConfig, setBoundProductConfig] = useState<BoundProductConfig | null>(null);
   const [tokenReady, setTokenReady] = useState(!!sessionStorage.getItem("easyquote_token"));
   const {
     isSuperAdmin,
@@ -58,6 +63,13 @@ export default function ProductTestPage() {
   
   const organizationId = organization?.id || membership?.organization_id;
 
+  // Determinar si el producto necesita selector de configuración (tiene múltiples componentes)
+  const availableConfigs = useMemo(() => {
+    if (!isComposite || !productId) return [];
+    return getAvailableConfigs(enabledComponents);
+  }, [isComposite, enabledComponents, productId]);
+  
+  const needsConfigSelector = availableConfigs.length > 0;
   // Fetch saved output order from Supabase
   const { data: savedOutputOrder } = useQuery({
     queryKey: ["product-output-order", productId, organizationId],
@@ -269,6 +281,7 @@ export default function ProductTestPage() {
       setHasUserModifiedPrompts(false);
       setDiagnosticResult(null);
       setProductLoadError(null);
+      setBoundProductConfig(null); // Reset configuración de producto encuadernado
       
       // Use getEasyQuoteToken which validates and auto-refreshes expired tokens
       const token = await getEasyQuoteToken();
@@ -907,15 +920,32 @@ export default function ProductTestPage() {
                     </AlertDescription>
                   </Alert>}
 
-                {productId && !isLoadingProduct && productDetail && <div className="border-t pt-4">
-                    <ComponentTabsPromptsForm 
-                      product={productDetail} 
-                      productId={productId} 
-                      values={promptValues} 
-                      onChange={handlePromptChange} 
-                      onCommit={handlePromptCommit}
-                      onComponentChange={setSelectedComponent}
-                    />
+                {productId && !isLoadingProduct && productDetail && <div className="border-t pt-4 space-y-4">
+                    {/* Selector de configuración para productos encuadernados */}
+                    {needsConfigSelector && (
+                      <BoundProductConfigSelector
+                        enabledComponents={enabledComponents}
+                        value={boundProductConfig}
+                        onChange={setBoundProductConfig}
+                      />
+                    )}
+                    
+                    {/* Mostrar prompts solo si no requiere configuración O ya se seleccionó una */}
+                    {(!needsConfigSelector || boundProductConfig) ? (
+                      <ComponentTabsPromptsForm 
+                        product={productDetail} 
+                        productId={productId} 
+                        values={promptValues} 
+                        onChange={handlePromptChange} 
+                        onCommit={handlePromptCommit}
+                        onComponentChange={setSelectedComponent}
+                        boundProductConfig={boundProductConfig}
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Selecciona el tipo de producto para ver los prompts
+                      </p>
+                    )}
                   </div>}
               </CardContent>
             </Card>

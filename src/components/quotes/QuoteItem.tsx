@@ -13,6 +13,12 @@ import { invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 import PromptsForm, { extractPrompts, isVisiblePrompt, type PromptDef } from "@/components/quotes/PromptsForm";
 import ComponentTabsPromptsForm from "@/components/quotes/ComponentTabsPromptsForm";
 import ComponentTabsOutputs from "@/components/quotes/ComponentTabsOutputs";
+import BoundProductConfigSelector, { 
+  type BoundProductConfig, 
+  getAvailableConfigs, 
+  getActiveComponents 
+} from "@/components/quotes/BoundProductConfigSelector";
+import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -22,7 +28,6 @@ import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
 import { ChevronDown, ChevronUp, Pencil, Trash2, Package } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-
 // Special product ID for custom/manual items
 const CUSTOM_PRODUCT_ID = "__CUSTOM_PRODUCT__";
 
@@ -106,7 +111,19 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [activeComponent, setActiveComponent] = useState<string>("cubierta");
+  const [boundProductConfig, setBoundProductConfig] = useState<BoundProductConfig | null>(null);
   const initialStateRef = useRef<string>("");
+  
+  // Obtener configuración de componentes del producto
+  const { isComposite, enabledComponents } = useProductComponentSettings(productId || undefined);
+  
+  // Determinar si el producto necesita selector de configuración (tiene múltiples componentes)
+  const availableConfigs = useMemo(() => {
+    if (!isComposite || !productId || productId === CUSTOM_PRODUCT_ID) return [];
+    return getAvailableConfigs(enabledComponents);
+  }, [isComposite, enabledComponents, productId]);
+  
+  const needsConfigSelector = availableConfigs.length > 0;
 
   // Inicialización desde datos previos (duplicar)
   const initializedRef = useRef(false);
@@ -765,6 +782,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setHasUnsavedChanges(false);
       setUserHasChangedCurrentProduct(false); // Reset flag para nuevo producto
       setHasPerformedInitialLoad(false); // Reset flag para carga inicial
+      setBoundProductConfig(null); // Reset configuración de producto encuadernado
       hasMarkedAsLoadedRef.current = false;
       
       console.log("✅ Estados reseteados completamente, listo para cargar nuevo producto");
@@ -1504,15 +1522,34 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   </AlertDescription>
                 </Alert>
               ) : pricing ? (
-                <ComponentTabsPromptsForm 
-                  product={pricing} 
-                  productId={productId}
-                  values={promptValues} 
-                  onChange={handlePromptChange}
-                  onCommit={handlePromptCommit}
-                  showAllPrompts={!!initialData}
-                  onComponentChange={setActiveComponent}
-                />
+                <div className="space-y-4">
+                  {/* Selector de configuración para productos encuadernados */}
+                  {needsConfigSelector && (
+                    <BoundProductConfigSelector
+                      enabledComponents={enabledComponents}
+                      value={boundProductConfig}
+                      onChange={setBoundProductConfig}
+                    />
+                  )}
+                  
+                  {/* Mostrar prompts solo si no requiere configuración O ya se seleccionó una */}
+                  {(!needsConfigSelector || boundProductConfig) ? (
+                    <ComponentTabsPromptsForm 
+                      product={pricing} 
+                      productId={productId}
+                      values={promptValues} 
+                      onChange={handlePromptChange}
+                      onCommit={handlePromptCommit}
+                      showAllPrompts={!!initialData}
+                      onComponentChange={setActiveComponent}
+                      boundProductConfig={boundProductConfig}
+                    />
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Selecciona el tipo de producto para continuar configurando
+                    </p>
+                  )}
+                </div>
               ) : (
                 <p className="text-sm text-muted-foreground">Cargando prompts…</p>
               )}
