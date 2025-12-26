@@ -112,6 +112,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [activeComponent, setActiveComponent] = useState<string>("cubierta");
   const [boundProductConfig, setBoundProductConfig] = useState<BoundProductConfig | null>(null);
+  const [userEditedPrice, setUserEditedPrice] = useState<number | null>(null); // Precio editado por usuario
   const initialStateRef = useRef<string>("");
   
   // Obtener configuración de componentes del producto
@@ -713,6 +714,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     if (forceRecalculate && hasToken && productId) {
       refetchPricing();
       setForceRecalculate(false);
+      setUserEditedPrice(null); // Reset precio editado al recalcular
     }
   }, [forceRecalculate, hasToken, productId, refetchPricing]);
 
@@ -783,6 +785,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setUserHasChangedCurrentProduct(false); // Reset flag para nuevo producto
       setHasPerformedInitialLoad(false); // Reset flag para carga inicial
       setBoundProductConfig(null); // Reset configuración de producto encuadernado
+      setUserEditedPrice(null); // Reset precio editado por usuario
       hasMarkedAsLoadedRef.current = false;
       
       console.log("✅ Estados reseteados completamente, listo para cargar nuevo producto");
@@ -1610,6 +1613,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                       activeComponent={activeComponent}
                       isLoading={isPricingLoading}
                       savedOutputOrder={savedOutputOrder}
+                      boundProductConfig={boundProductConfig}
+                      editablePrice={userEditedPrice}
+                      onPriceChange={(price) => setUserEditedPrice(price)}
                       renderPrice={() => (
                         priceOutput ? (
                           <div className="p-3 rounded-md border bg-card/50">
