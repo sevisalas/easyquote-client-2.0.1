@@ -152,6 +152,7 @@ psql -h <host> -U postgres -d postgres -c "\dt"
 ### Rendimiento
 - **Tiempos de respuesta**: ~6 segundos (mejorado de ~9s tras subir RAM a 8GB)
 - **Cuello de botella**: Procesamiento Syncfusion de los Excel, no el servidor
+- **Caché NO viable**: Millones de combinaciones posibles de prompts/valores, imposible cachear resultados
 
 ### Métricas OVH vs Servidor
 - OVH puede mostrar 100% RAM porque cuenta memoria cacheada
