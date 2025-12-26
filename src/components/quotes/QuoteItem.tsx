@@ -36,6 +36,7 @@ type ItemSnapshot = {
   prompts: Record<string, any>;
   outputs: any[];
   price?: any;
+  modifiedPrice?: number | null;  // Precio modificado por el usuario (null = usar calculado)
   multi?: any;
   needsRecalculation?: boolean;
   displayName?: string;  // Nombre a mostrar del producto (editable)
@@ -43,6 +44,7 @@ type ItemSnapshot = {
   productName?: string;  // Nombre original del producto API
   itemAdditionals?: any[];
   isFinalized?: boolean;
+  boundProductConfig?: BoundProductConfig | null;  // Configuración de producto encuadernado
 };
 
 interface QuoteItemProps {
@@ -259,6 +261,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       // Activar recálculo automático si es una duplicación
       if (initialData.needsRecalculation) {
         setForceRecalculate(true);
+      }
+      // Restaurar precio modificado si existe
+      if (initialData.modifiedPrice !== null && initialData.modifiedPrice !== undefined) {
+        console.log('💰 Restaurando precio modificado:', initialData.modifiedPrice);
+        setUserEditedPrice(initialData.modifiedPrice);
+      }
+      // Restaurar configuración de producto encuadernado si existe
+      if (initialData.boundProductConfig) {
+        console.log('📦 Restaurando boundProductConfig:', initialData.boundProductConfig);
+        setBoundProductConfig(initialData.boundProductConfig);
       }
     } catch {}
   }, [initialData]);
@@ -1258,13 +1270,15 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       productId,
       prompts: promptsArray,
       outputs: isCustomProduct ? [] : outputs,
-      price: finalPrice,
+      price: userEditedPrice !== null ? userEditedPrice : finalPrice, // Usar precio modificado si existe
+      modifiedPrice: userEditedPrice, // Guardar precio modificado por separado
       multi: multiEnabled ? { qtyPrompt, qtyInputs, rows: multiRows } : null,
       displayName: displayName || originalProductName, // Nombre a mostrar (editable)
       productName: originalProductName, // Nombre original del producto API
       itemDescription: isCustomProduct ? (itemDescription || "Artículo personalizado") : "", // Solo para productos custom
       itemAdditionals,
       isFinalized: initialData?.isFinalized,
+      boundProductConfig, // Guardar configuración de producto encuadernado
     };
     
     const snapshotString = JSON.stringify(snapshot);
@@ -1278,7 +1292,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     } else {
       console.log('⏭️ Snapshot sin cambios, no sincronizando');
     }
-  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, displayName, itemDescription, itemAdditionals, products, initialData?.isFinalized, isInitializing, isCustomProduct, customPrice, customQuantity, pricing, isPricingLoading]);
+  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, displayName, itemDescription, itemAdditionals, products, initialData?.isFinalized, isInitializing, isCustomProduct, customPrice, customQuantity, pricing, isPricingLoading, userEditedPrice, boundProductConfig]);
 
   // Verificar que el artículo está completo Y no se está recalculando el precio
   const isCalculating = isPricingLoading || multiLoading;
@@ -1298,7 +1312,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         syncToParent();
       }
     }
-  }, [promptValues, isInitializing, productId, syncToParent, isCustomProduct, itemDescription, customPrice, customQuantity, isPricingLoading]);
+  }, [promptValues, isInitializing, productId, syncToParent, isCustomProduct, itemDescription, customPrice, customQuantity, isPricingLoading, userEditedPrice, boundProductConfig]);
 
   // Debug logging para el botón Finalizar
   useEffect(() => {
@@ -1322,7 +1336,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             {multiEnabled && <span className="text-sm text-muted-foreground/70 ml-2">(cantidad múltiple activada)</span>}
           </span>
           <div className="flex items-center gap-4">
-            <span className="text-xl font-bold">{formatEUR(finalPrice)}</span>
+            <span className="text-xl font-bold">{formatEUR(userEditedPrice !== null ? userEditedPrice : finalPrice)}</span>
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
