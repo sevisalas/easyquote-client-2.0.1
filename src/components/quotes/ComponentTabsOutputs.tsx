@@ -48,6 +48,10 @@ function getOutputSheet(def: any): string | undefined {
   return def?.sheet ?? def?.sheetName ?? def?.sheet_name ?? def?.tab ?? def?.worksheet;
 }
 
+function getOutputTypeName(def: any): string | undefined {
+  return def?.outputTypeName ?? def?.output_type_name ?? def?.typeName ?? def?.type_name ?? def?.outputType ?? def?.type;
+}
+
 export default function ComponentTabsOutputs({
   productId,
   outputs,
@@ -87,6 +91,124 @@ export default function ComponentTabsOutputs({
     refetchOnWindowFocus: false,
   });
   const isLoadingData = isLoadingProp || isLoadingSettings || isLoadingOutputDefinitions;
+
+  // Normalizar + enriquecer outputs (en ProductTestPage funciona porque se completa nameCell/sheet)
+  const orderedOutputDefinitions = useMemo(() => {
+    return (outputDefinitions as any[]).map((d: any, index: number) => ({
+      ...d,
+      __index: Number.isFinite(Number(d?.__index)) ? Number(d?.__index) : index,
+    }));
+  }, [outputDefinitions]);
+
+  const normalizedOutputs = useMemo(() => {
+    if (!Array.isArray(outputs)) return [];
+
+    return outputs.map((o: any, pos: number) => {
+      const idxRaw = Number(o?.idx ?? o?.index ?? o?.orderSeq ?? o?.outputIndex ?? o?.order ?? NaN);
+      const idx = Number.isFinite(idxRaw) ? idxRaw : undefined;
+
+      return {
+        ...o,
+        __pos: Number.isFinite(Number(o?.__pos)) ? Number(o?.__pos) : pos,
+        idx,
+        stableId: String(o?.stableId ?? o?.id ?? o?.outputId ?? o?.outputID ?? "").trim(),
+        sheet: String(o?.sheet ?? "").trim(),
+        nameCell: String(o?.nameCell ?? o?.outputNameCell ?? o?.name_cell ?? "").trim(),
+        valueCell: String(o?.valueCell ?? o?.outputValueCell ?? o?.value_cell ?? "").trim(),
+        label: o?.label || o?.name || o?.outputText || o?.text || o?.outputName || "",
+        name: o?.name || o?.label || o?.outputName || "",
+        value: o?.value ?? o?.currentValue ?? o?.outputValue ?? o?.result ?? "",
+        outputType: o?.outputType || o?.type || "",
+      };
+    });
+  }, [outputs]);
+
+  const resolvedOutputs = useMemo(() => {
+    const normalizeType = (v: any) => String(v ?? "").trim().toLowerCase();
+    const normalizeId = (v: any) => String(v ?? "").trim();
+
+    const defById = new Map<string, any>();
+    const defByOriginalIndex = new Map<number, any>();
+    orderedOutputDefinitions.forEach((d: any, sortedIndex: number) => {
+      const id = normalizeId(d?.id);
+      if (id) defById.set(id, d);
+
+      const originalIndex = Number(d?.__index);
+      if (Number.isFinite(originalIndex)) defByOriginalIndex.set(originalIndex, d);
+
+      // También guardamos el índice ya ordenado como fallback
+      defByOriginalIndex.set(sortedIndex, defByOriginalIndex.get(sortedIndex) ?? d);
+    });
+
+    const getDefByIndex = (n: number) => defByOriginalIndex.get(n);
+
+    const defsByType = new Map<string, any[]>();
+    for (const d of orderedOutputDefinitions as any[]) {
+      const t = normalizeType(getOutputTypeName(d));
+      if (!t) continue;
+      if (!defsByType.has(t)) defsByType.set(t, []);
+      defsByType.get(t)!.push(d);
+    }
+
+    const counters = new Map<string, number>();
+
+    return normalizedOutputs.map((o: any) => {
+      // Si ya viene con celda, respetarla
+      if (o?.nameCell) return o;
+
+      const stableId = normalizeId(o?.stableId);
+      if (stableId && defById.has(stableId)) {
+        const def = defById.get(stableId);
+        return {
+          ...o,
+          sheet: o.sheet || String(getOutputSheet(def) ?? "").trim(),
+          nameCell: String(extractCellRef(getOutputCell(def)) ?? getOutputCell(def) ?? "").trim(),
+        };
+      }
+
+      const idxRaw = Number(o?.idx);
+      if (Number.isFinite(idxRaw)) {
+        const def = getDefByIndex(idxRaw) ?? getDefByIndex(idxRaw - 1);
+        if (def) {
+          return {
+            ...o,
+            stableId: stableId || normalizeId(def?.id),
+            sheet: o.sheet || String(getOutputSheet(def) ?? "").trim(),
+            nameCell: String(extractCellRef(getOutputCell(def)) ?? getOutputCell(def) ?? "").trim(),
+          };
+        }
+      }
+
+      const posRaw = Number(o?.__pos);
+      if (Number.isFinite(posRaw)) {
+        const def = getDefByIndex(posRaw);
+        if (def) {
+          return {
+            ...o,
+            stableId: stableId || normalizeId(def?.id),
+            sheet: o.sheet || String(getOutputSheet(def) ?? "").trim(),
+            nameCell: String(extractCellRef(getOutputCell(def)) ?? getOutputCell(def) ?? "").trim(),
+          };
+        }
+      }
+
+      const t = normalizeType(o?.outputType);
+      const defs = defsByType.get(t);
+      if (!defs || defs.length === 0) return o;
+
+      const i = counters.get(t) ?? 0;
+      const def = defs[i];
+      counters.set(t, i + 1);
+      if (!def) return o;
+
+      return {
+        ...o,
+        stableId: stableId || normalizeId(def?.id),
+        sheet: o.sheet || String(getOutputSheet(def) ?? "").trim(),
+        nameCell: String(extractCellRef(getOutputCell(def)) ?? getOutputCell(def) ?? "").trim(),
+      };
+    });
+  }, [normalizedOutputs, orderedOutputDefinitions]);
 
   // Componentes disponibles ordenados
   const availableComponents = useMemo(() => {
@@ -158,7 +280,7 @@ export default function ComponentTabsOutputs({
       grouped[comp] = [];
     });
 
-    for (const output of outputs) {
+    for (const output of resolvedOutputs) {
       const rawIdentifier = output?.nameCell || output?.name_cell || output?.name || output?.label;
       const identifier = String(rawIdentifier ?? "");
 
@@ -196,7 +318,7 @@ export default function ComponentTabsOutputs({
     }
 
     return grouped;
-  }, [outputs, availableComponents, getPromptComponent, inferComponentFromSheet, outputMetaByKey, outputDefinitions]);
+  }, [resolvedOutputs, availableComponents, getPromptComponent, inferComponentFromSheet, outputMetaByKey]);
 
   // Contar outputs por componente
   const countByComponent = useMemo(() => {
