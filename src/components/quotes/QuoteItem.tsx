@@ -1621,47 +1621,57 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                       </Alert>
                     )}
 
-                    <ComponentTabsOutputs
-                      productId={productId}
-                      outputs={sortedOutputs}
-                      activeComponent={activeComponent}
-                      isLoading={isPricingLoading}
-                      savedOutputOrder={savedOutputOrder}
-                      boundProductConfig={boundProductConfig}
-                      editablePrice={userEditedPrice}
-                      onPriceChange={(price) => setUserEditedPrice(price)}
-                      renderPrice={() => (
-                        priceOutput ? (
-                          <div className="p-3 rounded-md border bg-card/50">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">Precio</span>
-                              <span className="px-2 py-1 rounded-full bg-accent text-accent-foreground text-lg font-semibold">
-                                {formatEUR((priceOutput as any).value)}
-                              </span>
+                    {/* Si requiere configuración y no se ha seleccionado, mostrar mensaje */}
+                    {needsConfigSelector && !boundProductConfig && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>Selecciona el tipo de producto para ver los resultados</p>
+                      </div>
+                    )}
+
+                    {/* Solo mostrar resultados si no requiere configuración O ya se seleccionó una */}
+                    {(!needsConfigSelector || boundProductConfig) && (
+                      <ComponentTabsOutputs
+                        productId={productId}
+                        outputs={sortedOutputs}
+                        activeComponent={activeComponent}
+                        isLoading={isPricingLoading}
+                        savedOutputOrder={savedOutputOrder}
+                        boundProductConfig={boundProductConfig}
+                        editablePrice={userEditedPrice}
+                        onPriceChange={(price) => setUserEditedPrice(price)}
+                        renderPrice={() => (
+                          priceOutput ? (
+                            <div className="p-3 rounded-md border bg-card/50">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">Precio</span>
+                                <span className="px-2 py-1 rounded-full bg-accent text-accent-foreground text-lg font-semibold">
+                                  {formatEUR((priceOutput as any).value)}
+                                </span>
+                              </div>
                             </div>
+                          ) : (!pricingError ? <p className="text-sm text-muted-foreground">Selecciona opciones para ver el resultado.</p> : null)
+                        )}
+                        renderImages={(images) => (
+                          <section className={images.length === 1 ? "flex justify-center" : "grid grid-cols-2 gap-3"}>
+                            {images.map((o: any, idx: number) => (
+                              <img 
+                                key={`${o.value}-${idx}`}
+                                src={String(o.value)} 
+                                alt={`resultado imagen ${idx + 1}`} 
+                                loading="lazy" 
+                                className={images.length === 1 ? "max-w-[180px] w-full h-auto rounded-md" : "w-full h-auto rounded-md"}
+                              />
+                            ))}
+                          </section>
+                        )}
+                        renderOutput={(o, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-sm px-1">
+                            <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
+                            <span className="truncate ml-2">{String(o.value)}</span>
                           </div>
-                        ) : (!pricingError ? <p className="text-sm text-muted-foreground">Selecciona opciones para ver el resultado.</p> : null)
-                      )}
-                      renderImages={(images) => (
-                        <section className={images.length === 1 ? "flex justify-center" : "grid grid-cols-2 gap-3"}>
-                          {images.map((o: any, idx: number) => (
-                            <img 
-                              key={`${o.value}-${idx}`}
-                              src={String(o.value)} 
-                              alt={`resultado imagen ${idx + 1}`} 
-                              loading="lazy" 
-                              className={images.length === 1 ? "max-w-[180px] w-full h-auto rounded-md" : "w-full h-auto rounded-md"}
-                            />
-                          ))}
-                        </section>
-                      )}
-                      renderOutput={(o, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-sm px-1">
-                          <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
-                          <span className="truncate ml-2">{String(o.value)}</span>
-                        </div>
-                      )}
-                    />
+                        )}
+                      />
+                    )}
                   </>
                 )}
               </CardContent>
