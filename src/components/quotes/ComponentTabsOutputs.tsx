@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { GENERAL_COMPONENT, useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 import { type BoundProductConfig, getActiveComponents } from "./BoundProductConfigSelector";
@@ -506,6 +507,9 @@ export default function ComponentTabsOutputs({
       : calculatedTotalPrice;
 
     const componentCount = Object.keys(pricesByComponent).length;
+    
+    // Determinar si el precio ha sido modificado
+    const hasModifiedPrice = editablePrice !== null && editablePrice !== undefined && editablePrice !== calculatedTotalPrice;
 
     return (
       <div className="p-3 rounded-md border bg-card/50 space-y-3">
@@ -524,69 +528,96 @@ export default function ComponentTabsOutputs({
           </>
         )}
         
-        {/* Total/Precio editable */}
+        {/* Precio calculado */}
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground font-medium">{componentCount > 1 ? "Precio Total" : "Precio Total"}</span>
-          {isEditingPrice ? (
-            <div className="flex items-center gap-1">
-              <Input
-                type="text"
-                value={localEditPrice}
-                onChange={(e) => setLocalEditPrice(e.target.value)}
-                onBlur={() => {
-                  setIsEditingPrice(false);
-                  const parsed = parsePrice(localEditPrice);
-                  if (onPriceChange && parsed !== calculatedTotalPrice) {
-                    onPriceChange(parsed);
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    setIsEditingPrice(false);
-                    const parsed = parsePrice(localEditPrice);
-                    if (onPriceChange && parsed !== calculatedTotalPrice) {
-                      onPriceChange(parsed);
-                    }
-                  }
-                  if (e.key === "Escape") {
-                    setIsEditingPrice(false);
-                    setLocalEditPrice(displayPrice.toFixed(2).replace(".", ","));
-                  }
-                }}
-                className="w-24 h-8 text-right text-sm"
-                autoFocus
-              />
-              <span className="text-sm">€</span>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setIsEditingPrice(true)}
-              className="px-2 py-1 rounded-full bg-accent text-accent-foreground text-lg font-semibold hover:bg-accent/80 transition-colors cursor-pointer"
-              title="Clic para editar"
-            >
-              {formatEUR(displayPrice)}
-            </button>
-          )}
-        </div>
-        
-        {/* Botón para modificar precio */}
-        {!isEditingPrice && (
-          <button
-            type="button"
-            onClick={() => setIsEditingPrice(true)}
-            className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+          <span className="text-sm font-medium text-muted-foreground">
+            {hasModifiedPrice ? "Precio calculado" : "Precio Total"}
+          </span>
+          <span
+            className={
+              hasModifiedPrice
+                ? "text-sm text-muted-foreground line-through"
+                : "text-lg font-semibold"
+            }
           >
-            Modificar precio final
-          </button>
-        )}
-        
-        {/* Indicador si el precio fue modificado */}
-        {editablePrice !== null && editablePrice !== undefined && editablePrice !== calculatedTotalPrice && (
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Calculado:</span>
-            <span className="text-muted-foreground line-through">{formatEUR(calculatedTotalPrice)}</span>
+            {formatEUR(calculatedTotalPrice)}
+          </span>
+        </div>
+
+        {/* Precio modificado (si existe) */}
+        {hasModifiedPrice && (
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-muted-foreground">Precio modificado</span>
+            <span className="text-lg font-semibold text-primary">{formatEUR(editablePrice!)}</span>
           </div>
+        )}
+
+        {/* Campo de edición */}
+        {isEditingPrice && (
+          <div className="flex items-center gap-2 pt-2 border-t">
+            <Input
+              type="text"
+              value={localEditPrice}
+              onChange={(e) => setLocalEditPrice(e.target.value)}
+              placeholder="Nuevo precio"
+              className="flex-1"
+              autoFocus
+            />
+            <Button
+              size="sm"
+              onClick={() => {
+                const parsed = parsePrice(localEditPrice);
+                if (onPriceChange) {
+                  onPriceChange(parsed > 0 ? parsed : null);
+                }
+                setIsEditingPrice(false);
+              }}
+            >
+              Aplicar
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setIsEditingPrice(false);
+                setLocalEditPrice(displayPrice.toFixed(2).replace(".", ","));
+              }}
+            >
+              Cancelar
+            </Button>
+          </div>
+        )}
+
+        {/* Botón para activar edición */}
+        {!isEditingPrice && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="w-full text-xs"
+            onClick={() => {
+              const prefill = (editablePrice ?? calculatedTotalPrice).toFixed(2).replace(".", ",");
+              setLocalEditPrice(prefill);
+              setIsEditingPrice(true);
+            }}
+          >
+            {hasModifiedPrice ? "Editar precio modificado" : "Modificar precio final"}
+          </Button>
+        )}
+
+        {/* Botón para quitar precio modificado */}
+        {hasModifiedPrice && !isEditingPrice && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="w-full text-xs text-muted-foreground"
+            onClick={() => {
+              if (onPriceChange) {
+                onPriceChange(null);
+              }
+            }}
+          >
+            Usar precio calculado
+          </Button>
         )}
       </div>
     );
