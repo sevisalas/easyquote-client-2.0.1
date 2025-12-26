@@ -1,8 +1,21 @@
 import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import { GENERAL_COMPONENT, useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
+import { type BoundProductConfig } from "./BoundProductConfigSelector";
+
+// Función para formatear precio en EUR
+function formatEUR(value: any): string {
+  const num = typeof value === "number" ? value : parseFloat(String(value ?? 0).replace(/\./g, "").replace(",", ".")) || 0;
+  return num.toLocaleString("es-ES", { style: "currency", currency: "EUR" });
+}
+
+// Función para parsear precio desde string
+function parsePrice(value: string): number {
+  return parseFloat(value.replace(/\./g, "").replace(",", ".")) || 0;
+}
 
 interface ComponentTabsOutputsProps {
   productId: string;
@@ -14,15 +27,37 @@ interface ComponentTabsOutputsProps {
   renderImages?: (images: any[]) => React.ReactNode;
   isLoading?: boolean;
   savedOutputOrder?: string[] | null;
+  /** Configuración de producto encuadernado (afecta labels) */
+  boundProductConfig?: BoundProductConfig | null;
+  /** Precio total editable por el usuario */
+  editablePrice?: number | null;
+  /** Callback cuando el usuario edita el precio */
+  onPriceChange?: (price: number) => void;
 }
 
-// Labels para componentes
-const COMPONENT_LABELS: Record<string, string> = {
-  general: "General",
-  cubierta: "Cubierta",
-  interior_1: "Interior 1",
-  interior_2: "Interior 2"
-};
+// Labels dinámicos para componentes según la configuración
+function getComponentLabels(boundProductConfig?: BoundProductConfig | null): Record<string, string> {
+  switch (boundProductConfig) {
+    case "same_paper":
+      return {
+        general: "General",
+        interior_1: "Contenido"
+      };
+    case "cover_1_interior":
+      return {
+        general: "General",
+        cubierta: "Cubierta",
+        interior_1: "Interior"
+      };
+    default:
+      return {
+        general: "General",
+        cubierta: "Cubierta",
+        interior_1: "Interior 1",
+        interior_2: "Interior 2"
+      };
+  }
+}
 
 // Orden predefinido de componentes
 const COMPONENT_ORDER = ["cubierta", "interior_1", "interior_2"];
@@ -74,8 +109,13 @@ export default function ComponentTabsOutputs({
   renderPrice,
   renderImages,
   isLoading: isLoadingProp = false,
-  savedOutputOrder
+  savedOutputOrder,
+  boundProductConfig,
+  editablePrice,
+  onPriceChange
 }: ComponentTabsOutputsProps) {
+  // Labels dinámicos según configuración
+  const componentLabels = useMemo(() => getComponentLabels(boundProductConfig), [boundProductConfig]);
   const {
     isComposite,
     enabledComponents,
@@ -407,6 +447,131 @@ export default function ComponentTabsOutputs({
     [generalOutputs]
   );
 
+  // Calcular precios por componente
+  const pricesByComponent = useMemo(() => {
+    const prices: Record<string, number> = {};
+    
+    // Recorrer todos los componentes (excluyendo general)
+    for (const comp of availableComponents) {
+      if (comp === GENERAL_COMPONENT.value) continue;
+      
+      const componentOutputs = outputsByComponent[comp] || [];
+      const priceOutput = componentOutputs.find((o: any) => 
+        String(o?.type || "").toLowerCase() === "price"
+      );
+      
+      if (priceOutput) {
+        const value = parsePrice(String(priceOutput.value ?? "0"));
+        prices[comp] = value;
+      }
+    }
+    
+    return prices;
+  }, [outputsByComponent, availableComponents]);
+
+  // Precio total calculado (suma de componentes)
+  const calculatedTotalPrice = useMemo(() => {
+    return Object.values(pricesByComponent).reduce((sum, p) => sum + p, 0);
+  }, [pricesByComponent]);
+
+  // Estado local para edición de precio
+  const [isEditingPrice, setIsEditingPrice] = useState(false);
+  const [localEditPrice, setLocalEditPrice] = useState("");
+
+  // Sincronizar precio editable con el calculado cuando no hay precio editado
+  useEffect(() => {
+    if (editablePrice === null || editablePrice === undefined) {
+      setLocalEditPrice(calculatedTotalPrice.toFixed(2).replace(".", ","));
+    } else {
+      setLocalEditPrice(editablePrice.toFixed(2).replace(".", ","));
+    }
+  }, [calculatedTotalPrice, editablePrice]);
+
+  // Determinar si hay precios de componentes para mostrar
+  const hasComponentPrices = Object.keys(pricesByComponent).length > 0;
+
+  // Renderizar sección de precios con desglose por componente
+  const renderComponentPrices = () => {
+    if (!hasComponentPrices) return null;
+
+    const displayPrice = editablePrice !== null && editablePrice !== undefined 
+      ? editablePrice 
+      : calculatedTotalPrice;
+
+    return (
+      <div className="p-3 rounded-md border bg-card/50 space-y-3">
+        {/* Desglose por componente */}
+        <div className="space-y-1">
+          {Object.entries(pricesByComponent).map(([comp, price]) => (
+            <div key={comp} className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{componentLabels[comp] || comp}</span>
+              <span className="font-medium">{formatEUR(price)}</span>
+            </div>
+          ))}
+        </div>
+        
+        {/* Separador si hay más de un componente */}
+        {Object.keys(pricesByComponent).length > 1 && (
+          <div className="border-t border-border" />
+        )}
+        
+        {/* Total editable */}
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground font-medium">Total</span>
+          {isEditingPrice ? (
+            <div className="flex items-center gap-1">
+              <Input
+                type="text"
+                value={localEditPrice}
+                onChange={(e) => setLocalEditPrice(e.target.value)}
+                onBlur={() => {
+                  setIsEditingPrice(false);
+                  const parsed = parsePrice(localEditPrice);
+                  if (onPriceChange && parsed !== calculatedTotalPrice) {
+                    onPriceChange(parsed);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    setIsEditingPrice(false);
+                    const parsed = parsePrice(localEditPrice);
+                    if (onPriceChange && parsed !== calculatedTotalPrice) {
+                      onPriceChange(parsed);
+                    }
+                  }
+                  if (e.key === "Escape") {
+                    setIsEditingPrice(false);
+                    setLocalEditPrice(displayPrice.toFixed(2).replace(".", ","));
+                  }
+                }}
+                className="w-24 h-8 text-right text-sm"
+                autoFocus
+              />
+              <span className="text-sm">€</span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsEditingPrice(true)}
+              className="px-2 py-1 rounded-full bg-accent text-accent-foreground text-lg font-semibold hover:bg-accent/80 transition-colors cursor-pointer"
+              title="Clic para editar"
+            >
+              {formatEUR(displayPrice)}
+            </button>
+          )}
+        </div>
+        
+        {/* Indicador si el precio fue modificado */}
+        {editablePrice !== null && editablePrice !== undefined && editablePrice !== calculatedTotalPrice && (
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Calculado:</span>
+            <span className="text-muted-foreground line-through">{formatEUR(calculatedTotalPrice)}</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Estado del tab activo
   const initialTab = useMemo(() => {
     // Si hay activeComponent y es válido, usarlo
@@ -477,8 +642,8 @@ export default function ComponentTabsOutputs({
   // Producto compuesto: mostrar con pestañas
   return (
     <div className="space-y-4">
-      {/* Precio siempre visible arriba */}
-      {renderPrice && renderPrice()}
+      {/* Precio: usar desglose por componentes si hay, sino el renderPrice normal */}
+      {hasComponentPrices ? renderComponentPrices() : (renderPrice && renderPrice())}
 
       {/* Outputs generales siempre visibles (sin pestaña) */}
       {renderImages && generalImages.length > 0 && renderImages(generalImages)}
@@ -493,7 +658,7 @@ export default function ComponentTabsOutputs({
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-4">
           <TabsList className="flex-wrap h-auto gap-1">
             {tabComponents.map(comp => {
-              const label = COMPONENT_LABELS[comp] || comp;
+              const label = componentLabels[comp] || comp;
               return (
                 <TabsTrigger 
                   key={comp} 
@@ -522,7 +687,7 @@ export default function ComponentTabsOutputs({
                 {renderImages && componentImages.length > 0 && renderImages(componentImages)}
                 {componentTextOutputs.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-2">
-                    No hay resultados para {COMPONENT_LABELS[comp] || comp}.
+                    No hay resultados para {componentLabels[comp] || comp}.
                   </p>
                 ) : (
                   <section className="space-y-2">
