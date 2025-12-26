@@ -425,52 +425,65 @@ export default function ComponentTabsOutputs({
 
   // Producto compuesto: mostrar con pestañas
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-4">
-      <TabsList className="flex-wrap h-auto gap-1">
-        {tabComponents.map(comp => {
-          const label = COMPONENT_LABELS[comp] || comp;
-          return (
-            <TabsTrigger 
-              key={comp} 
-              value={comp} 
-              className="relative flex items-center text-xs" 
-            >
-              {label}
-            </TabsTrigger>
-          );
-        })}
-      </TabsList>
-
+    <div className="space-y-4">
       {/* Precio siempre visible arriba */}
       {renderPrice && renderPrice()}
 
-      {/* Contenido de cada tab - muestra solo los outputs de ese componente */}
-      {tabComponents.map(comp => {
-        const componentOutputs = outputsByComponent[comp] || [];
-        const allOutputsForComponent = componentOutputs;
-        
-        const componentImages = allOutputsForComponent.filter((o: any) => /^https?:\/\//i.test(String(o?.value ?? "")));
-        const componentTextOutputs = allOutputsForComponent.filter((o: any) => {
-          const value = String(o?.value ?? "");
-          const type = String(o?.type || "").toLowerCase();
-          return !/^https?:\/\//i.test(value) && type !== "price";
-        });
+      {/* Outputs generales siempre visibles (sin pestaña) */}
+      {renderImages && generalImages.length > 0 && renderImages(generalImages)}
+      {generalTextOutputs.length > 0 && (
+        <section className="space-y-2">
+          {generalTextOutputs.map((o, idx) => renderOutput(o, idx))}
+        </section>
+      )}
 
-        return (
-          <TabsContent key={comp} value={comp} className="mt-0 space-y-3">
-            {renderImages && componentImages.length > 0 && renderImages(componentImages)}
-            {componentTextOutputs.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-2">
-                No hay resultados para {COMPONENT_LABELS[comp] || comp}.
-              </p>
-            ) : (
-              <section className="space-y-2">
-                {componentTextOutputs.map((o, idx) => renderOutput(o, idx))}
-              </section>
-            )}
-          </TabsContent>
-        );
-      })}
-    </Tabs>
+      {/* Pestañas solo para componentes específicos (sin "General") */}
+      {tabComponents.length > 0 && (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-4">
+          <TabsList className="flex-wrap h-auto gap-1">
+            {tabComponents.map(comp => {
+              const label = COMPONENT_LABELS[comp] || comp;
+              return (
+                <TabsTrigger 
+                  key={comp} 
+                  value={comp} 
+                  className="relative flex items-center text-xs" 
+                >
+                  {label}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+
+          {/* Contenido de cada tab - muestra solo los outputs de ese componente */}
+          {tabComponents.map(comp => {
+            const componentOutputs = outputsByComponent[comp] || [];
+            
+            const componentImages = componentOutputs.filter((o: any) => /^https?:\/\//i.test(String(o?.value ?? "")));
+            const componentTextOutputs = componentOutputs.filter((o: any) => {
+              const value = String(o?.value ?? "");
+              const type = String(o?.type || "").toLowerCase();
+              return !/^https?:\/\//i.test(value) && type !== "price";
+            });
+
+            return (
+              <TabsContent key={comp} value={comp} className="mt-0 space-y-3">
+                {renderImages && componentImages.length > 0 && renderImages(componentImages)}
+                {componentTextOutputs.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">
+                    No hay resultados para {COMPONENT_LABELS[comp] || comp}.
+                  </p>
+                ) : (
+                  <section className="space-y-2">
+                    {componentTextOutputs.map((o, idx) => renderOutput(o, idx))}
+                  </section>
+                )}
+              </TabsContent>
+            );
+          })}
+        </Tabs>
+      )}
+    </div>
   );
 }
+
