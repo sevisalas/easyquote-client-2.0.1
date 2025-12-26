@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 import PromptsForm, { extractPrompts, isVisiblePrompt, type PromptDef } from "@/components/quotes/PromptsForm";
 import ComponentTabsPromptsForm from "@/components/quotes/ComponentTabsPromptsForm";
+import ComponentTabsOutputs from "@/components/quotes/ComponentTabsOutputs";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -104,6 +105,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const isCustomProduct = productId === CUSTOM_PRODUCT_ID;
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [activeComponent, setActiveComponent] = useState<string>("cubierta");
   const initialStateRef = useRef<string>("");
 
   // Inicialización desde datos previos (duplicar)
@@ -1482,7 +1484,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   productId={productId}
                   values={promptValues} 
                   onChange={handlePromptChange} 
-                  showAllPrompts={!!initialData} 
+                  showAllPrompts={!!initialData}
+                  onComponentChange={setActiveComponent}
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">Cargando prompts…</p>
@@ -1498,19 +1501,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   Este producto no puede ser usado actualmente. Selecciona otro de la lista.
                 </AlertDescription>
               </Alert>
-            )}
-            {!isCustomProduct && imageOutputs.length > 0 && (
-              <section className={imageOutputs.length === 1 ? "flex justify-center" : "grid grid-cols-2 gap-3"}>
-                {imageOutputs.map((o: any, idx: number) => (
-                  <img 
-                    key={`${o.value}-${idx}`}
-                    src={String(o.value)} 
-                    alt={`resultado imagen ${idx + 1}`} 
-                    loading="lazy" 
-                    className={imageOutputs.length === 1 ? "max-w-[180px] w-full h-auto rounded-md" : "w-full h-auto rounded-md"}
-                  />
-                ))}
-              </section>
             )}
 
             <Card className="border-accent/50 bg-muted/50">
@@ -1542,27 +1532,42 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                       </Alert>
                     )}
 
-                    {priceOutput ? (
-                      <div className="p-3 rounded-md border bg-card/50">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Precio</span>
-                          <span className="px-2 py-1 rounded-full bg-accent text-accent-foreground text-lg font-semibold">
-                            {formatEUR((priceOutput as any).value)}
-                          </span>
-                        </div>
-                      </div>
-                    ) : (!pricingError && <p className="text-sm text-muted-foreground">Selecciona opciones para ver el resultado.</p>)}
-
-                    {otherOutputs.length > 0 && (
-                      <section className="space-y-2 mt-4">
-                          {otherOutputs.map((o: any, idx: number) => (
-                            <div key={idx} className="flex items-center justify-between text-sm px-1">
-                              <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
-                              <span className="truncate ml-2">{String(o.value)}</span>
+                    <ComponentTabsOutputs
+                      productId={productId}
+                      outputs={sortedOutputs}
+                      activeComponent={activeComponent}
+                      renderPrice={() => (
+                        priceOutput ? (
+                          <div className="p-3 rounded-md border bg-card/50">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Precio</span>
+                              <span className="px-2 py-1 rounded-full bg-accent text-accent-foreground text-lg font-semibold">
+                                {formatEUR((priceOutput as any).value)}
+                              </span>
                             </div>
+                          </div>
+                        ) : (!pricingError ? <p className="text-sm text-muted-foreground">Selecciona opciones para ver el resultado.</p> : null)
+                      )}
+                      renderImages={(images) => (
+                        <section className={images.length === 1 ? "flex justify-center" : "grid grid-cols-2 gap-3"}>
+                          {images.map((o: any, idx: number) => (
+                            <img 
+                              key={`${o.value}-${idx}`}
+                              src={String(o.value)} 
+                              alt={`resultado imagen ${idx + 1}`} 
+                              loading="lazy" 
+                              className={images.length === 1 ? "max-w-[180px] w-full h-auto rounded-md" : "w-full h-auto rounded-md"}
+                            />
                           ))}
                         </section>
-                    )}
+                      )}
+                      renderOutput={(o, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-sm px-1">
+                          <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
+                          <span className="truncate ml-2">{String(o.value)}</span>
+                        </div>
+                      )}
+                    />
                   </>
                 )}
               </CardContent>
