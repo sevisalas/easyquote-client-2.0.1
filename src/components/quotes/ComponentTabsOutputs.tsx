@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { GENERAL_COMPONENT, useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
-import { type BoundProductConfig } from "./BoundProductConfigSelector";
+import { type BoundProductConfig, getActiveComponents } from "./BoundProductConfigSelector";
 
 // Función para formatear precio en EUR
 function formatEUR(value: any): string {
@@ -426,6 +426,12 @@ export default function ComponentTabsOutputs({
     return availableComponents.filter((c) => c !== GENERAL_COMPONENT.value);
   }, [availableComponents, isComposite]);
 
+  // Componentes activos según configuración seleccionada (boundProductConfig)
+  const activeComponents = useMemo(() => {
+    if (boundProductConfig) return getActiveComponents(boundProductConfig);
+    return availableComponents;
+  }, [boundProductConfig, availableComponents]);
+
   // Outputs generales
   const generalOutputs = useMemo(() => 
     outputsByComponent[GENERAL_COMPONENT.value] || [], 
@@ -447,25 +453,27 @@ export default function ComponentTabsOutputs({
     [generalOutputs]
   );
 
-  // Calcular precios por componente - SOLO componentes activos (enabledComponents)
+  // Calcular precios por componente - SOLO componentes activos (según configuración)
   const pricesByComponent = useMemo(() => {
     const prices: Record<string, number> = {};
-    
-    // Solo recorrer los componentes ACTIVOS (enabledComponents), no "general"
-    for (const comp of enabledComponents) {
+
+    const priceComponents = activeComponents.filter((c) => c !== GENERAL_COMPONENT.value);
+
+    // Solo recorrer los componentes ACTIVOS de esta configuración
+    for (const comp of priceComponents) {
       const componentOutputs = outputsByComponent[comp] || [];
-      const priceOutput = componentOutputs.find((o: any) => 
-        String(o?.type || o?.outputType || "").toLowerCase() === "price"
+      const priceOutput = componentOutputs.find(
+        (o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price"
       );
-      
+
       if (priceOutput) {
         const value = parsePrice(String(priceOutput.value ?? "0"));
         prices[comp] = value;
       }
     }
-    
+
     return prices;
-  }, [outputsByComponent, enabledComponents]);
+  }, [outputsByComponent, activeComponents]);
 
   // Precio total calculado (suma de componentes)
   const calculatedTotalPrice = useMemo(() => {
