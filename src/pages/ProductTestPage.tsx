@@ -873,11 +873,8 @@ export default function ProductTestPage() {
                     </Select>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center">
                     <span className="text-sm font-medium">{selectedProduct ? getProductLabel(selectedProduct) : ''}</span>
-                    <Button variant="ghost" size="sm" onClick={() => setProductId('')} className="text-xs text-muted-foreground">
-                      Cambiar
-                    </Button>
                   </div>
                 )}
 
