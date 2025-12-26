@@ -1536,6 +1536,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                       productId={productId}
                       outputs={sortedOutputs}
                       activeComponent={activeComponent}
+                      isLoading={isPricingLoading}
                       renderPrice={() => (
                         priceOutput ? (
                           <div className="p-3 rounded-md border bg-card/50">
