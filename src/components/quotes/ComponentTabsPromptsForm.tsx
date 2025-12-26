@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PromptsForm, { extractPrompts, type PromptDef } from "./PromptsForm";
 import { GENERAL_COMPONENT, useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
+import { type BoundProductConfig, getActiveComponents } from "./BoundProductConfigSelector";
 
 interface ComponentTabsPromptsFormProps {
   product: any;
@@ -13,6 +14,8 @@ interface ComponentTabsPromptsFormProps {
   onCommit?: (id: string, value: any, label: string) => void;
   showAllPrompts?: boolean;
   onComponentChange?: (component: string) => void;
+  /** Configuración de producto encuadernado (filtra qué componentes mostrar) */
+  boundProductConfig?: BoundProductConfig | null;
 }
 
 export { COMPONENT_LABELS };
@@ -49,7 +52,8 @@ export default function ComponentTabsPromptsForm({
   onChange,
   onCommit,
   showAllPrompts = false,
-  onComponentChange
+  onComponentChange,
+  boundProductConfig
 }: ComponentTabsPromptsFormProps) {
   const {
     isComposite,
@@ -57,6 +61,15 @@ export default function ComponentTabsPromptsForm({
     getPromptComponent,
     isLoading
   } = useProductComponentSettings(productId);
+
+  // Obtener componentes activos según la configuración de producto encuadernado
+  const activeComponents = useMemo(() => {
+    if (boundProductConfig) {
+      return getActiveComponents(boundProductConfig);
+    }
+    // Si no hay configuración, mostrar todos los componentes habilitados
+    return ["general", ...enabledComponents];
+  }, [boundProductConfig, enabledComponents]);
 
   const {
     data: promptDefinitions = []
@@ -107,6 +120,7 @@ export default function ComponentTabsPromptsForm({
   }, [promptDefinitions]);
 
   // Construir lista de componentes disponibles: siempre "general" + los habilitados ordenados
+  // Pero filtrados por boundProductConfig si está definido
   const availableComponents = useMemo(() => {
     if (!isComposite) return [GENERAL_COMPONENT.value];
     
@@ -120,8 +134,14 @@ export default function ComponentTabsPromptsForm({
       return orderA - orderB;
     });
     
+    // Si hay configuración de producto encuadernado, filtrar componentes
+    if (boundProductConfig) {
+      const filtered = sortedEnabled.filter(comp => activeComponents.includes(comp));
+      return [GENERAL_COMPONENT.value, ...filtered];
+    }
+    
     return [GENERAL_COMPONENT.value, ...sortedEnabled];
-  }, [enabledComponents, isComposite]);
+  }, [enabledComponents, isComposite, boundProductConfig, activeComponents]);
 
   // Agrupar prompts por componente
   const promptsByComponent = useMemo(() => {
