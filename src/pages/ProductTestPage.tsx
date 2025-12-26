@@ -789,6 +789,19 @@ export default function ProductTestPage() {
       return /^https?:\/\//i.test(value);
     });
   }, [selectedComponentOutputs]);
+
+  // Labels dinámicos según configuración seleccionada
+  const dynamicComponentLabels = useMemo(() => {
+    switch (boundProductConfig) {
+      case "same_paper":
+        return { general: "General", interior_1: "Contenido" };
+      case "cover_1_interior":
+        return { general: "General", cubierta: "Cubierta", interior_1: "Interior" };
+      default:
+        return { general: "General", cubierta: "Cubierta", interior_1: "Interior 1", interior_2: "Interior 2" };
+    }
+  }, [boundProductConfig]);
+
   const selectedProduct = products.find((p: any) => p.id === productId);
 
   // Check permissions - AFTER all hooks are called
@@ -1033,7 +1046,7 @@ export default function ProductTestPage() {
                   {/* Resultados del componente seleccionado */}
                   {selectedComponent !== "general" && (
                     <div className="border-t pt-4 mt-4 space-y-4">
-                      <h4 className="font-semibold text-sm">{COMPONENT_LABELS[selectedComponent] || selectedComponent}</h4>
+                      <h4 className="font-semibold text-sm">{dynamicComponentLabels[selectedComponent] || COMPONENT_LABELS[selectedComponent] || selectedComponent}</h4>
 
                       {selectedTextOutputs.length === 0 && selectedImageOutputs.length === 0 ? (
                         <p className="text-sm text-muted-foreground">Sin resultados para este componente</p>
