@@ -920,12 +920,20 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
       const qtys = qtyInputs
         .map((q) => Number(String(q).replace(/\./g, "").replace(",", ".")))
-        .filter((n) => !Number.isNaN(n));
+        .filter((n) => !Number.isNaN(n) && n > 0);
       if (qtys.length === 0) return [] as any[];
+      
+      // Q1 ya está calculada en el pricing principal, solo calculamos Q2, Q3...
+      const mainQty = qtys[0];
+      const additionalQtys = qtys.slice(1);
+      
       const list = Object.entries(norm).map(([id, value]) => ({ id, value }));
-      // Llamadas secuenciales para no saturar el servidor de EasyQuote
-      const results: { qty: number; data: any }[] = [];
-      for (const qty of qtys) {
+      
+      // Resultado de Q1: usamos el pricing ya calculado
+      const results: { qty: number; data: any }[] = [{ qty: mainQty, data: pricing }];
+      
+      // Solo llamamos a la API para Q2, Q3... (secuencialmente)
+      for (const qty of additionalQtys) {
         const replaced = list.filter((it) => it.id !== qtyPrompt).concat([{ id: qtyPrompt, value: qty }]);
         const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
           token,
