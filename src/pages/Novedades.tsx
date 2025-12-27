@@ -26,13 +26,27 @@ interface Version {
 
 const versions: Version[] = [
   {
-    version: "2.3.4",
-    date: "2025-12-19",
+    version: "2.4.2",
+    date: "En desarrollo",
     isDevelopment: true,
     changes: {
-      added: [],
-      changed: [],
-      fixed: [],
+      added: [
+        "Productos compuestos (encuadernados con portada + interiores)",
+      ],
+    },
+  },
+  {
+    version: "2.4.1",
+    date: "2025-12-27",
+    changes: {
+      added: [
+        "Selector de configuración de encuadernado para productos compuestos",
+        "Bloqueo de edición de precio cuando las cantidades múltiples están activas",
+      ],
+      changed: [
+        "Carga inmediata del selector de encuadernado sin esperar la API",
+        "Optimización de velocidad en campos Q1-Q5 con debounce de 800ms",
+      ],
     },
   },
   {
