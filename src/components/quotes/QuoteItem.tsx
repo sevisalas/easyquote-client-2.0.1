@@ -1716,6 +1716,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                         boundProductConfig={boundProductConfig}
                         editablePrice={userEditedPrice}
                         onPriceChange={(price) => setUserEditedPrice(price)}
+                        multiEnabled={multiEnabled}
                         renderPrice={() => (
                           priceOutput ? (
                             <div className="p-3 rounded-md border bg-card/50">
