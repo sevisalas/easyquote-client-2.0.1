@@ -99,7 +99,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Multi-cantidades
   const [multiEnabled, setMultiEnabled] = useState<boolean>(false);
   const [qtyPrompt, setQtyPrompt] = useState<string>("");
-  const [qtyInputs, setQtyInputs] = useState<string[]>(["", "", "", "", ""]);
+  const [qtyInputs, setQtyInputs] = useState<string[]>(["", "", "", "", ""]); // Estado committed (dispara API)
+  const [localQtyInputs, setLocalQtyInputs] = useState<string[]>(["", "", "", "", ""]); // Estado local mientras se escribe
   const MAX_QTY = 10;
   const [qtyCount, setQtyCount] = useState<number>(5);
   const [multiModifiedPrices, setMultiModifiedPrices] = useState<Record<number, number | null>>({}); // Precios modificados por cantidad
@@ -261,6 +262,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         if (m.qtyPrompt) setQtyPrompt(m.qtyPrompt);
         if (Array.isArray(m.qtyInputs)) {
           setQtyInputs(m.qtyInputs);
+          setLocalQtyInputs(m.qtyInputs); // Sincronizar estado local
           setQtyCount(Math.max(1, Math.min(MAX_QTY, m.qtyInputs.length)));
         }
       }
@@ -819,6 +821,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setMultiEnabled(false);
       setQtyPrompt("");
       setQtyInputs(["", "", "", "", ""]);
+      setLocalQtyInputs(["", "", "", "", ""]); // Reset estado local también
       setItemAdditionals([]);
       setItemDescription("");
       setIsNewProduct(true);
@@ -914,12 +917,25 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     [sortedOutputs, priceOutput]
   );
 
-  // Multi-quantity query: DEBE esperar a que pricing termine para evitar llamadas duplicadas
+  // Multi-quantity query: DEBE esperar a que pricing termine y TODAS las cantidades estén completas
+  // IMPORTANTE: No calcular si hay alguna cantidad vacía
+  const allQtysComplete = useMemo(() => {
+    if (!multiEnabled || qtyCount <= 0) return false;
+    // Verificar que TODAS las cantidades hasta qtyCount tengan valor válido
+    for (let i = 0; i < qtyCount; i++) {
+      const val = qtyInputs[i];
+      if (!val || String(val).trim() === "") return false;
+      const num = Number(String(val).replace(/\./g, "").replace(",", "."));
+      if (Number.isNaN(num) || num <= 0) return false;
+    }
+    return true;
+  }, [multiEnabled, qtyCount, qtyInputs]);
+
   const { data: multiResults, isFetching: multiLoading } = useQuery({
     // Incluir pricing en queryKey para re-ejecutar solo cuando pricing cambie
-    queryKey: ["easyquote-multi", productId, debouncedPromptValues, qtyPrompt, qtyInputs, multiEnabled, !!pricing],
-    // CRÍTICO: Solo habilitar cuando pricing esté listo y no cargando
-    enabled: !!hasToken && !!productId && multiEnabled && !!qtyPrompt && !!pricing && !isPricingLoading && qtyInputs.some((q) => q && q.trim() !== ""),
+    queryKey: ["easyquote-multi", productId, debouncedPromptValues, qtyPrompt, qtyInputs, multiEnabled, !!pricing, allQtysComplete],
+    // CRÍTICO: Solo habilitar cuando pricing esté listo, no cargando, Y TODAS las cantidades estén completas
+    enabled: !!hasToken && !!productId && multiEnabled && !!qtyPrompt && !!pricing && !isPricingLoading && allQtysComplete,
     refetchOnWindowFocus: false,
     retry: 1,
     staleTime: 30000, // Mantener resultado 30s para evitar recálculos innecesarios
@@ -1031,12 +1047,23 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         next[0] = asStr;
         return next;
       });
+      // También sincronizar el estado local
+      setLocalQtyInputs((prev) => {
+        const next = [...prev];
+        next[0] = asStr;
+        return next;
+      });
     }
   }, [qtyPrompt, debouncedPromptValues, pricing]);
 
-  // Adjust qty inputs length
+  // Adjust qty inputs length - sincronizar ambos estados
   useEffect(() => {
     setQtyInputs((prev) => {
+      if (qtyCount > prev.length) return prev.concat(Array(qtyCount - prev.length).fill(""));
+      if (qtyCount < prev.length) return prev.slice(0, qtyCount);
+      return prev;
+    });
+    setLocalQtyInputs((prev) => {
       if (qtyCount > prev.length) return prev.concat(Array(qtyCount - prev.length).fill(""));
       if (qtyCount < prev.length) return prev.slice(0, qtyCount);
       return prev;
@@ -1776,7 +1803,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                           <Input
                             type="number"
                             min={1}
-                            value={qtyInputs[0] ?? ""}
+                            value={localQtyInputs[0] ?? ""}
                             readOnly
                             className="bg-muted px-2"
                           />
@@ -1787,14 +1814,30 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                             <Input
                               type="number"
                               min={1}
-                              value={qtyInputs[idx] ?? ""}
+                              value={localQtyInputs[idx] ?? ""}
                               onChange={(e) => {
+                                // Solo actualizar estado local mientras se escribe
+                                const v = e.target.value;
+                                setLocalQtyInputs((prev) => {
+                                  const next = [...prev];
+                                  next[idx] = v;
+                                  return next;
+                                });
+                              }}
+                              onBlur={(e) => {
+                                // Commitear al estado principal en blur
                                 const v = e.target.value;
                                 setQtyInputs((prev) => {
                                   const next = [...prev];
                                   next[idx] = v;
                                   return next;
                                 });
+                              }}
+                              onKeyDown={(e) => {
+                                // Commitear en Enter
+                                if (e.key === 'Enter') {
+                                  e.currentTarget.blur();
+                                }
                               }}
                               className="px-2"
                             />
