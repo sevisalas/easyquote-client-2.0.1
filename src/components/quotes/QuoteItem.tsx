@@ -762,12 +762,19 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     }
   }, [forceRecalculate, hasToken, productId, refetchPricing]);
 
-  // Inicializar/Fusionar TODOS los prompts del producto con los valores guardados
+  // Inicializar prompts con valores por defecto del producto (SOLO para productos nuevos sin datos)
+  // NOTA: NO incluir promptValues en dependencias para evitar re-ejecución en cada keystroke
+  const promptValuesLengthRef = useRef(0);
+  useEffect(() => {
+    promptValuesLengthRef.current = Object.keys(promptValues).length;
+  }, [promptValues]);
+  
   useEffect(() => {
     if (!pricing?.prompts || !Array.isArray(pricing.prompts)) return;
     
     // Si NO hay initialData, inicializar con valores por defecto (producto nuevo)
-    if (!initialData && isNewProduct && Object.keys(promptValues).length === 0) {
+    // Usar ref para evitar dependencia directa de promptValues
+    if (!initialData && isNewProduct && promptValuesLengthRef.current === 0) {
       console.log("🎨 Producto NUEVO - Inicializando promptValues con valores por defecto de pricing");
       const defaultValues: Record<string, any> = {};
       pricing.prompts.forEach((prompt: any) => {
@@ -777,7 +784,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             value: prompt.currentValue,
             order: prompt.promptSequence ?? prompt.order ?? 999
           };
-          console.log(`  📌 ${prompt.id} = ${prompt.currentValue}`);
         }
       });
       
@@ -786,17 +792,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         setPromptValues(defaultValues);
         setDebouncedPromptValues(defaultValues);
       }
-      return;
     }
-    
-    // Si HAY initialData, NO fusionar prompts del API - los guardados son los DEFINITIVOS
-    // La fusión causaba que se añadieran todos los prompts del producto a los datos guardados
-    // corrompiendo los datos que el usuario había configurado originalmente
-    if (initialData && hasPerformedInitialLoad && Object.keys(promptValues).length > 0) {
-      console.log("✅ Artículo guardado - usando prompts DEFINITIVOS guardados, sin fusionar con API");
-      console.log("   Prompts guardados:", Object.keys(promptValues).length);
-    }
-  }, [pricing, isNewProduct, initialData, promptValues, hasPerformedInitialLoad]);
+    // NO incluir promptValues como dependencia - solo necesitamos esto cuando pricing cambia
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pricing, isNewProduct, initialData, hasPerformedInitialLoad]);
 
   // Track if prompts were initialized from saved data
   const previousProductIdRef = useRef<string>("");
@@ -1005,16 +1004,17 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     if (!qtyPrompt && numericPrompts.length > 0) setQtyPrompt(numericPrompts[0].id);
   }, [numericPrompts, qtyPrompt]);
 
-  // Always sync Q1 with the selected qtyPrompt field value
+  // Sync Q1 with the selected qtyPrompt field value - SOLO cuando hay commit (debouncedPromptValues)
+  // IMPORTANTE: Usar debouncedPromptValues para evitar sincronizar en cada keystroke
   useEffect(() => {
     if (!qtyPrompt) return;
     
-    // Get current value from promptValues or from pricing defaults
-    let currentRaw = (promptValues as any)[qtyPrompt];
+    // Get current value from debouncedPromptValues (committed values) or from pricing defaults
+    let currentRaw = (debouncedPromptValues as any)[qtyPrompt];
     // Extract actual value if it's stored as {label, value}
     let current = (currentRaw && typeof currentRaw === 'object' && 'value' in currentRaw) ? currentRaw.value : currentRaw;
     
-    // If not in promptValues, try to get it from pricing prompts defaults
+    // If not in debouncedPromptValues, try to get it from pricing prompts defaults
     if ((current === undefined || current === null || String(current).trim() === "") && pricing) {
       const prompts = (pricing as any)?.prompts || [];
       const prompt = prompts.find((p: any) => String(p.id) === String(qtyPrompt));
@@ -1032,7 +1032,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         return next;
       });
     }
-  }, [qtyPrompt, promptValues, pricing]);
+  }, [qtyPrompt, debouncedPromptValues, pricing]);
 
   // Adjust qty inputs length
   useEffect(() => {
@@ -1169,12 +1169,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Los valores ya se cargan desde initialData (líneas 110-145)
   // No se necesita useEffect adicional que sobrescriba valores guardados
 
+  // Handler para cambios mientras se escribe - NO dispara API, solo actualiza estado local
+  // IMPORTANTE: NO llamar a setUserHasChangedCurrentProduct aquí para evitar re-renders innecesarios
   const handlePromptChange = (id: string, value: any, label: string) => {
-    console.log("🔄 Usuario cambió prompt:", { id, value, label });
-    
-    // Marcar que el usuario ha cambiado valores del producto actual
-    setUserHasChangedCurrentProduct(true);
-    
     setPromptValues((prev) => {
       let order = prev[id]?.order;
       
@@ -1202,6 +1199,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Handler para commit (onBlur o Enter) - dispara el recálculo de precios
   const handlePromptCommit = useCallback((id: string, value: any, label: string) => {
     console.log("✅ Prompt committed (blur/enter):", { id, value, label });
+    
+    // Marcar que el usuario ha cambiado valores (solo en commit, no en cada keystroke)
+    setUserHasChangedCurrentProduct(true);
     
     // Actualizar el estado de prompts con el valor final
     setPromptValues((prev) => {
