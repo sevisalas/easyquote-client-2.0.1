@@ -34,6 +34,8 @@ interface ComponentTabsOutputsProps {
   editablePrice?: number | null;
   /** Callback cuando el usuario edita el precio */
   onPriceChange?: (price: number) => void;
+  /** Indica si las cantidades múltiples están activas (deshabilita edición de precio) */
+  multiEnabled?: boolean;
 }
 
 // Labels dinámicos para componentes según la configuración
@@ -113,7 +115,8 @@ export default function ComponentTabsOutputs({
   savedOutputOrder,
   boundProductConfig,
   editablePrice,
-  onPriceChange
+  onPriceChange,
+  multiEnabled = false
 }: ComponentTabsOutputsProps) {
   // Labels dinámicos según configuración
   const componentLabels = useMemo(() => getComponentLabels(boundProductConfig), [boundProductConfig]);
@@ -588,8 +591,8 @@ export default function ComponentTabsOutputs({
           </div>
         )}
 
-        {/* Botón para activar edición */}
-        {!isEditingPrice && (
+        {/* Botón para activar edición - deshabilitado si multiEnabled */}
+        {!isEditingPrice && !multiEnabled && (
           <Button
             size="sm"
             variant="ghost"
@@ -602,6 +605,13 @@ export default function ComponentTabsOutputs({
           >
             {hasModifiedPrice ? "Editar precio modificado" : "Modificar precio final"}
           </Button>
+        )}
+        
+        {/* Mensaje informativo cuando multiEnabled */}
+        {!isEditingPrice && multiEnabled && (
+          <p className="text-xs text-muted-foreground text-center py-1">
+            El precio se calcula desde las cantidades múltiples
+          </p>
         )}
 
         {/* Botón para quitar precio modificado */}
