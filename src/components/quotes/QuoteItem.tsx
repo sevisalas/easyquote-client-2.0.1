@@ -915,11 +915,15 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     [sortedOutputs, priceOutput]
   );
 
+  // Multi-quantity query: DEBE esperar a que pricing termine para evitar llamadas duplicadas
   const { data: multiResults, isFetching: multiLoading } = useQuery({
-    queryKey: ["easyquote-multi", productId, debouncedPromptValues, qtyPrompt, qtyInputs, multiEnabled],
-    enabled: !!hasToken && !!productId && multiEnabled && !!qtyPrompt && qtyInputs.some((q) => q && q.trim() !== ""),
+    // Incluir pricing en queryKey para re-ejecutar solo cuando pricing cambie
+    queryKey: ["easyquote-multi", productId, debouncedPromptValues, qtyPrompt, qtyInputs, multiEnabled, !!pricing],
+    // CRÍTICO: Solo habilitar cuando pricing esté listo y no cargando
+    enabled: !!hasToken && !!productId && multiEnabled && !!qtyPrompt && !!pricing && !isPricingLoading && qtyInputs.some((q) => q && q.trim() !== ""),
     refetchOnWindowFocus: false,
     retry: 1,
+    staleTime: 30000, // Mantener resultado 30s para evitar recálculos innecesarios
     queryFn: async () => {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
