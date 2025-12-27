@@ -5,10 +5,22 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
-## [2.3.4] - 2025-12-19
+## [2.4.2] - En desarrollo
 
 ### En desarrollo
-- ...
+- Productos compuestos (encuadernados con portada + interiores)
+
+---
+
+## [2.4.1] - 2025-12-27
+
+### Añadido
+- **Selector de configuración de encuadernado**: Para productos compuestos, permite elegir entre "Mismo papel", "Portada + 1 Interior" o "Portada + 2 Interiores"
+- **Bloqueo de edición de precio con multi-cantidades**: Cuando las cantidades múltiples están activas, se deshabilita la edición manual del precio principal
+
+### Cambiado
+- **Carga inmediata del selector de encuadernado**: El selector de configuración aparece inmediatamente al seleccionar un producto, sin esperar la respuesta de la API de precios
+- **Optimización de velocidad en campos de cantidad**: Los campos Q1-Q5 ahora usan debounce de 800ms para evitar llamadas API intermedias mientras el usuario escribe
 
 ---
 
