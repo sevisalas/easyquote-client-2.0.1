@@ -923,19 +923,19 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         .filter((n) => !Number.isNaN(n));
       if (qtys.length === 0) return [] as any[];
       const list = Object.entries(norm).map(([id, value]) => ({ id, value }));
-      const results = await Promise.all(
-        qtys.map(async (qty) => {
-          const replaced = list.filter((it) => it.id !== qtyPrompt).concat([{ id: qtyPrompt, value: qty }]);
-          const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
-            token,
-            productId,
-            inputs: replaced
-          });
-          
-          if (error) throw error;
-          return { qty, data };
-        })
-      );
+      // Llamadas secuenciales para no saturar el servidor de EasyQuote
+      const results: { qty: number; data: any }[] = [];
+      for (const qty of qtys) {
+        const replaced = list.filter((it) => it.id !== qtyPrompt).concat([{ id: qtyPrompt, value: qty }]);
+        const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
+          token,
+          productId,
+          inputs: replaced
+        });
+        
+        if (error) throw error;
+        results.push({ qty, data });
+      }
       return results;
     },
   });
