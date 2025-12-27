@@ -1626,9 +1626,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                     <p className="font-semibold">Por favor, selecciona otro producto o contacta al administrador.</p>
                   </AlertDescription>
                 </Alert>
-              ) : pricing ? (
+              ) : (
                 <div className="space-y-4">
-                  {/* Selector de configuración para productos encuadernados - solo si NO hay config seleccionada */}
+                  {/* Selector de configuración - mostrar INMEDIATAMENTE sin esperar API */}
                   {needsConfigSelector && !boundProductConfig && (
                     <BoundProductConfigSelector
                       enabledComponents={enabledComponents}
@@ -1639,20 +1639,22 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   
                   {/* Mostrar prompts solo si no requiere configuración O ya se seleccionó una */}
                   {(!needsConfigSelector || boundProductConfig) ? (
-                    <ComponentTabsPromptsForm 
-                      product={pricing} 
-                      productId={productId}
-                      values={promptValues} 
-                      onChange={handlePromptChange}
-                      onCommit={handlePromptCommit}
-                      showAllPrompts={!!initialData}
-                      onComponentChange={setActiveComponent}
-                      boundProductConfig={boundProductConfig}
-                    />
+                    pricing ? (
+                      <ComponentTabsPromptsForm 
+                        product={pricing} 
+                        productId={productId}
+                        values={promptValues} 
+                        onChange={handlePromptChange}
+                        onCommit={handlePromptCommit}
+                        showAllPrompts={!!initialData}
+                        onComponentChange={setActiveComponent}
+                        boundProductConfig={boundProductConfig}
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Cargando opciones…</p>
+                    )
                   ) : null}
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Cargando opciones…</p>
               )}
             </CardContent>
           </Card>
