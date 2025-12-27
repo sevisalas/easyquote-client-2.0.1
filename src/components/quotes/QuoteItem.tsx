@@ -120,6 +120,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [userEditedPrice, setUserEditedPrice] = useState<number | null>(null); // Precio editado por usuario
   const initialStateRef = useRef<string>("");
   
+  // Cache de opciones de prompts: se cargan una vez por producto y no se recargan en cada PATCH
+  const promptOptionsCache = useRef<Record<string, any[]>>({});
+  
   // Obtener configuración de componentes del producto
   const { isComposite, enabledComponents } = useProductComponentSettings(productId || undefined);
   
@@ -718,6 +721,32 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       if (initialData && !hasPerformedInitialLoad) {
         console.log("✅ Primera carga completada para artículo guardado");
         setHasPerformedInitialLoad(true);
+      }
+      
+      // CACHE DE OPCIONES: Guardar las valueOptions de cada prompt la primera vez
+      if (data?.prompts && Array.isArray(data.prompts)) {
+        const cacheKey = productId;
+        const isFirstLoad = !promptOptionsCache.current[cacheKey];
+        
+        if (isFirstLoad) {
+          // Primera carga: guardar todas las opciones en cache
+          console.log("📦 Cacheando opciones de prompts para producto:", productId);
+          promptOptionsCache.current[cacheKey] = data.prompts.map((p: any) => ({
+            id: p.id,
+            valueOptions: p.valueOptions || []
+          }));
+        } else {
+          // Cargas posteriores: restaurar las opciones del cache para reducir tamaño de datos procesados
+          const cachedOptions = promptOptionsCache.current[cacheKey];
+          if (cachedOptions && cachedOptions.length > 0) {
+            data.prompts.forEach((prompt: any) => {
+              const cached = cachedOptions.find((c: any) => c.id === prompt.id);
+              if (cached && (!prompt.valueOptions || prompt.valueOptions.length === 0)) {
+                prompt.valueOptions = cached.valueOptions;
+              }
+            });
+          }
+        }
       }
       
       return data;
