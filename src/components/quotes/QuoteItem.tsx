@@ -923,7 +923,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         .filter((n) => !Number.isNaN(n) && n > 0);
       if (qtys.length === 0) return [] as any[];
       
-      // Q1 ya está calculada en el pricing principal, solo calculamos Q2, Q3...
+      // Q1 ya está calculada en el pricing principal
       const mainQty = qtys[0];
       const additionalQtys = qtys.slice(1);
       
@@ -932,17 +932,21 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       // Resultado de Q1: usamos el pricing ya calculado
       const results: { qty: number; data: any }[] = [{ qty: mainQty, data: pricing }];
       
-      // Solo llamamos a la API para Q2, Q3... (secuencialmente)
-      for (const qty of additionalQtys) {
-        const replaced = list.filter((it) => it.id !== qtyPrompt).concat([{ id: qtyPrompt, value: qty }]);
-        const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
-          token,
-          productId,
-          inputs: replaced
-        });
-        
-        if (error) throw error;
-        results.push({ qty, data });
+      // Q2, Q3... en paralelo (máximo 2-3 llamadas, no satura)
+      if (additionalQtys.length > 0) {
+        const additionalResults = await Promise.all(
+          additionalQtys.map(async (qty) => {
+            const replaced = list.filter((it) => it.id !== qtyPrompt).concat([{ id: qtyPrompt, value: qty }]);
+            const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
+              token,
+              productId,
+              inputs: replaced
+            });
+            if (error) throw error;
+            return { qty, data };
+          })
+        );
+        results.push(...additionalResults);
       }
       return results;
     },
