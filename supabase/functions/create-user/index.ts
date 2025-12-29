@@ -61,17 +61,22 @@ Deno.serve(async (req) => {
       if (orgData) {
         isOrgAdmin = true;
       } else {
-        // Check if user is admin member of an organization  
-        const { data: memberData, error: memberError } = await supabaseAdmin
-          .from('organization_members')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .maybeSingle();
+      // Check if user is admin member of an organization
+      // NOTE: A user can be admin in multiple organizations, so we must NOT use maybeSingle() here.
+      const { data: memberRows, error: memberError } = await supabaseAdmin
+        .from('organization_members')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .limit(1);
 
-        if (memberData) {
-          isOrgAdmin = true;
-        }
+      if (memberError) {
+        console.error('Error checking organization admin membership:', memberError);
+      }
+
+      if (memberRows && memberRows.length > 0) {
+        isOrgAdmin = true;
+      }
       }
     }
 
