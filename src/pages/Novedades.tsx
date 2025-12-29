@@ -26,12 +26,21 @@ interface Version {
 
 const versions: Version[] = [
   {
-    version: "2.4.2",
+    version: "2.4.3",
     date: "En desarrollo",
     isDevelopment: true,
     changes: {
       added: [
         "Productos compuestos (encuadernados con portada + interiores)",
+      ],
+    },
+  },
+  {
+    version: "2.4.2",
+    date: "2025-12-29",
+    changes: {
+      fixed: [
+        "Creación de usuarios en organizaciones cuando un admin pertenece a múltiples organizaciones",
       ],
     },
   },
