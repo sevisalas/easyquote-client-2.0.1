@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export default function ProductForm() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { id } = useParams();
   const isEdit = !!id;
 
@@ -185,6 +186,10 @@ export default function ProductForm() {
         title: "Producto creado",
         description: `El producto${typeLabel} se ha creado correctamente.`,
       });
+      
+      // Invalidate products cache before navigating
+      await queryClient.invalidateQueries({ queryKey: ["easyquote-products"] });
+      
       navigate(`/admin/productos?editProduct=${data}`);
     },
     onError: (error: Error) => {
@@ -239,6 +244,10 @@ export default function ProductForm() {
         title: "Producto creado",
         description: `El producto${typeLabel} se ha creado correctamente.`,
       });
+      
+      // Invalidate products cache before navigating
+      await queryClient.invalidateQueries({ queryKey: ["easyquote-products"] });
+      
       navigate(`/admin/productos?editProduct=${data}`);
     },
     onError: (error: Error) => {
