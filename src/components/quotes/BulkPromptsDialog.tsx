@@ -86,7 +86,7 @@ export function BulkPromptsDialog({
     valueRequired: false,
     valueOptionRange: "",
     valueQuantityAllowedDecimals: 0,
-    valueQuantityMin: 1,
+    valueQuantityMin: 0,
     valueQuantityMax: 9999,
     promptSeq: seq,
     component: "general",
@@ -281,7 +281,10 @@ export function BulkPromptsDialog({
                               <Input
                                 type="number"
                                 value={prompt.valueQuantityMin}
-                                onChange={(e) => updatePrompt(index, 'valueQuantityMin', parseFloat(e.target.value) || 1)}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  updatePrompt(index, 'valueQuantityMin', val === '' ? 0 : parseFloat(val));
+                                }}
                                 className="h-8 text-xs"
                               />
                             </div>
