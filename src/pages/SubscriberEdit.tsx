@@ -14,7 +14,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 interface Suscriptor {
   id: string;
   name: string;
-  subscription_plan: "api_base" | "api_pro" | "client_base" | "client_pro" | "erp" | "custom";
+  subscription_plan: "api_base" | "api_pro" | "client_base" | "client_pro" | "manager" | "custom";
   excel_limit?: number;
   excel_extra?: number;
   client_user_limit?: number;
@@ -177,7 +177,7 @@ const EditarSuscriptor = () => {
               <Label htmlFor="plan">Plan de suscripción</Label>
               <Select 
                 value={suscriptor.subscription_plan} 
-                onValueChange={(value: "api_base" | "api_pro" | "client_base" | "client_pro" | "erp" | "custom") => setSuscriptor({ ...suscriptor, subscription_plan: value })}
+                onValueChange={(value: "api_base" | "api_pro" | "client_base" | "client_pro" | "manager" | "custom") => setSuscriptor({ ...suscriptor, subscription_plan: value })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -187,7 +187,7 @@ const EditarSuscriptor = () => {
                   <SelectItem value="api_pro">API Pro</SelectItem>
                   <SelectItem value="client_base">Client Base</SelectItem>
                   <SelectItem value="client_pro">Client Pro</SelectItem>
-                  <SelectItem value="erp">ERP</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
                   <SelectItem value="custom">Custom</SelectItem>
                 </SelectContent>
               </Select>
