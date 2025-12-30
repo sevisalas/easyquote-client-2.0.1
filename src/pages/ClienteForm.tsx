@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Save } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-
+import { useSubscription } from "@/contexts/SubscriptionContext";
 interface ClienteData {
   name: string;
   email: string;
@@ -22,6 +22,7 @@ const ClienteForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { organization } = useSubscription();
   const isEditing = !!id;
   
   const [formData, setFormData] = useState<ClienteData>({
@@ -94,7 +95,8 @@ const ClienteForm = () => {
           .from('customers')
           .insert({
             ...formData,
-            user_id: user.id
+            user_id: user.id,
+            organization_id: organization?.id || null
           });
 
         if (error) throw error;
