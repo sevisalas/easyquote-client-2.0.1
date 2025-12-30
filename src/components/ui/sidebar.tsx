@@ -561,7 +561,11 @@ const SidebarMenuButton = React.forwardRef<
       />
     )
 
-    if (!tooltip) {
+    // Don't render tooltip at all if sidebar is not collapsed or on mobile
+    // Using hidden prop still leaves the element in DOM intercepting clicks
+    const shouldShowTooltip = tooltip && state === "collapsed" && !isMobile
+
+    if (!shouldShowTooltip) {
       return button
     }
 
@@ -577,7 +581,6 @@ const SidebarMenuButton = React.forwardRef<
         <TooltipContent
           side="right"
           align="center"
-          hidden={state !== "collapsed" || isMobile}
           {...tooltip}
         />
       </Tooltip>
