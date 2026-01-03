@@ -5,10 +5,17 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
-## [2.4.3] - En desarrollo
+## [2.4.4] - En desarrollo
 
 ### En desarrollo
 - Productos compuestos (encuadernados con portada + interiores)
+
+---
+
+## [2.4.3] - 2026-01-03
+
+### Corregido
+- **Formato de año dinámico en numeración**: El selector de formato de año ahora muestra el año actual (26/2026) en lugar de valores hardcodeados (25/2025)
 
 ---
 
