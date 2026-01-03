@@ -323,8 +323,8 @@ export default function SettingsNumberingFormats() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="YY">25</SelectItem>
-                        <SelectItem value="YYYY">2025</SelectItem>
+                        <SelectItem value="YY">{new Date().getFullYear().toString().slice(-2)}</SelectItem>
+                        <SelectItem value="YYYY">{new Date().getFullYear()}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -420,8 +420,8 @@ export default function SettingsNumberingFormats() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="YY">25</SelectItem>
-                        <SelectItem value="YYYY">2025</SelectItem>
+                        <SelectItem value="YY">{new Date().getFullYear().toString().slice(-2)}</SelectItem>
+                        <SelectItem value="YYYY">{new Date().getFullYear()}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
