@@ -44,7 +44,6 @@ export function AppSidebar() {
     isERPSubscription,
     loading
   } = useSubscription();
-  
   const currentOrgId = organization?.id || membership?.organization_id;
   const currentOrgName = organization?.name || membership?.organization?.name || "Organización";
   const {
@@ -439,28 +438,21 @@ export function AppSidebar() {
       <SidebarFooter className="p-1">
         <SidebarMenu>
           {/* Selector de organización - Solo si hay múltiples organizaciones */}
-          {!isSuperAdmin && allOrganizations.length > 1 && (
-            <SidebarMenuItem>
+          {!isSuperAdmin && allOrganizations.length > 1 && <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip={currentOrgName} className="h-8 px-2">
-                <button 
-                  onClick={() => {
-                    // Mostrar un dropdown o dialog para seleccionar org
-                    const nextOrgIndex = (allOrganizations.findIndex(o => o.id === currentOrgId) + 1) % allOrganizations.length;
-                    switchOrganization(allOrganizations[nextOrgIndex].id);
-                  }}
-                  className="w-full flex items-center text-xs"
-                >
+                <button onClick={() => {
+              // Mostrar un dropdown o dialog para seleccionar org
+              const nextOrgIndex = (allOrganizations.findIndex(o => o.id === currentOrgId) + 1) % allOrganizations.length;
+              switchOrganization(allOrganizations[nextOrgIndex].id);
+            }} className="w-full flex items-center text-xs">
                   <Building2 className="mr-2 h-4 w-4" />
-                  {!isCollapsed && (
-                    <div className="flex flex-col items-start truncate">
+                  {!isCollapsed && <div className="flex flex-col items-start truncate">
                       <span className="truncate max-w-[120px] font-medium">{currentOrgName}</span>
-                      <span className="text-[10px] text-muted-foreground">Cambiar org.</span>
-                    </div>
-                  )}
+                      <span className="text-[10px] text-muted-foreground">Cambiar empresa </span>
+                    </div>}
                 </button>
               </SidebarMenuButton>
-            </SidebarMenuItem>
-          )}
+            </SidebarMenuItem>}
           {isSuperAdmin && <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Novedades" className="h-7 px-2">
                 <NavLink to="/novedades" className={getNavCls}>
