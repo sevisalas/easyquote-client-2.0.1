@@ -942,7 +942,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       multiEnabled,
       allQtysComplete,
     ],
-    enabled: !!hasToken && !!productId && multiEnabled && !!qtyPrompt && allQtysComplete && !isPricingLoading,
+    // No esperar a isPricingLoading - Q2/Q3 se lanzan en paralelo con Q1
+    enabled: !!hasToken && !!productId && multiEnabled && !!qtyPrompt && allQtysComplete,
     refetchOnWindowFocus: false,
     retry: 1,
     staleTime: 30000,
@@ -981,6 +982,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       const list = Object.entries(norm).map(([id, value]) => ({ id, value }));
 
       // Decidir si podemos reutilizar el pricing principal como Q1
+      // Solo reutilizar si: pricing ya tiene datos Y la cantidad Q1 coincide con el valor actual del prompt
       const mainQty = qtys[0];
       const canReusePricingForQ1 =
         !!pricing && !isPricingLoading && qtyPrompt && (() => {
@@ -997,8 +999,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
       const results: { qty: number; data: any }[] = [];
 
-      // Lanzar Q2..Qn en paralelo siempre
-      const qtysToFetch = qtys.filter((q) => !(q === mainQty && canReusePricingForQ1));
+      // Determinar qué cantidades necesitan fetch
+      // Si pricing aún está cargando, NO podemos reutilizar Q1 todavía
+      const qtysToFetch = canReusePricingForQ1 
+        ? qtys.filter((q) => q !== mainQty)  // Reutilizar Q1, fetch solo Q2..Qn
+        : qtys;  // Fetch todas (Q1, Q2, Q3 en paralelo)
+
+      console.log("🔢 Multi-cantidad: lanzando", qtysToFetch.length, "llamadas en paralelo", { qtysToFetch, canReusePricingForQ1 });
+
       const fetched = await Promise.all(
         qtysToFetch.map(async (qty) => {
           const replaced = list
