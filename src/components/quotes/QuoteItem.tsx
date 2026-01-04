@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -70,6 +70,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Get organization context for output ordering
   const { organization, membership } = useSubscription();
   const organizationId = organization?.id || membership?.organization_id;
+  const queryClient = useQueryClient();
 
   // Local state per item
   const [productId, setProductId] = useState<string>("");
@@ -388,10 +389,27 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Los prompts siempre vienen de easyquote-pricing (ya no usamos master-files)
 
+  // Multi-quantity: validación compartida (Q1..Qn)
+  const allQtysComplete = useMemo(() => {
+    if (!multiEnabled || qtyCount <= 0) return false;
+    for (let i = 0; i < qtyCount; i++) {
+      const val = qtyInputs[i];
+      if (!val || String(val).trim() === "") return false;
+      const num = Number(String(val).replace(/\./g, "").replace(",", "."));
+      if (Number.isNaN(num) || num <= 0) return false;
+    }
+    return true;
+  }, [multiEnabled, qtyCount, qtyInputs]);
+
   // Query principal de pricing
   // NOTA: forceRecalculate NO está en queryKey - se usa refetch() manual
+  const pricingQueryKey = useMemo(
+    () => ["easyquote-pricing", productId, debouncedPromptValues, isNewProduct] as const,
+    [productId, debouncedPromptValues, isNewProduct]
+  );
+
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError, isFetching: isPricingLoading } = useQuery({
-    queryKey: ["easyquote-pricing", productId, debouncedPromptValues, isNewProduct],
+    queryKey: pricingQueryKey,
     enabled: (() => {
       // Verificar condiciones básicas
       if (!hasToken || !productId) {
@@ -416,7 +434,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         console.log("❌ Query disabled: no prompts para producto cargado");
         return false;
       }
-      
+
+      // Si multi-cantidades está activo y completo, el pricing principal viene de easyquote-multi (Q1)
+      // para evitar llamadas duplicadas.
+      if (multiEnabled && qtyPrompt && allQtysComplete) {
+        console.log("⏸️ Query disabled: multi-cantidades activo (pricing viene de Q1)");
+        return false;
+      }
+
       // Si hay initialData (artículo guardado), hacer query inicial para obtener prompts
       if (initialData) {
         // Permitir la primera carga para obtener las definiciones de los prompts
@@ -759,11 +784,15 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Forzar recálculo cuando se activa el flag
   useEffect(() => {
     if (forceRecalculate && hasToken && productId) {
-      refetchPricing();
+      if (multiEnabled && qtyPrompt && allQtysComplete) {
+        queryClient.invalidateQueries({ queryKey: ["easyquote-multi", productId] });
+      } else {
+        refetchPricing();
+      }
       setForceRecalculate(false);
       setUserEditedPrice(null); // Reset precio editado al recalcular
     }
-  }, [forceRecalculate, hasToken, productId, refetchPricing]);
+  }, [forceRecalculate, hasToken, productId, refetchPricing, multiEnabled, qtyPrompt, allQtysComplete, queryClient]);
 
   // Inicializar prompts con valores por defecto del producto (SOLO para productos nuevos sin datos)
   // NOTA: NO incluir promptValues en dependencias para evitar re-ejecución en cada keystroke
@@ -921,16 +950,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Multi-quantity query:
   // - Se dispara SOLO cuando todas las cantidades están completas
   // - No espera a que termine el pricing principal (para que Q2..Qn puedan empezar en paralelo)
-  const allQtysComplete = useMemo(() => {
-    if (!multiEnabled || qtyCount <= 0) return false;
-    for (let i = 0; i < qtyCount; i++) {
-      const val = qtyInputs[i];
-      if (!val || String(val).trim() === "") return false;
-      const num = Number(String(val).replace(/\./g, "").replace(",", "."));
-      if (Number.isNaN(num) || num <= 0) return false;
-    }
-    return true;
-  }, [multiEnabled, qtyCount, qtyInputs]);
+  // (allQtysComplete se calcula más arriba para poder controlar también la query principal)
 
   const { data: multiResults, isFetching: multiLoading } = useQuery({
     queryKey: [
@@ -981,28 +1001,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
       const list = Object.entries(norm).map(([id, value]) => ({ id, value }));
 
-      // Obtener la cantidad que ya tiene pricing (si está disponible)
-      let pricingQty: number | null = null;
-      if (pricing && !isPricingLoading && qtyPrompt) {
-        try {
-          const prompts = (pricing as any)?.prompts || [];
-          const qPrompt = prompts.find((p: any) => String(p.id) === String(qtyPrompt));
-          const current = qPrompt?.currentValue ?? qPrompt?.default ?? qPrompt?.defaultValue ?? qPrompt?.value;
-          const asNum = Number(String(current).replace(/\./g, "").replace(",", "."));
-          if (!Number.isNaN(asNum) && asNum > 0) {
-            pricingQty = asNum;
-          }
-        } catch {}
-      }
+      // Cuando multi está activo, calculamos TODAS las cantidades (Q1..Qn) en paralelo aquí.
+      // Así evitamos el patrón "primero cantidad principal y luego Q1/Q2/Q3".
+      const qtysToFetch = qtys;
 
-      // Determinar qué cantidades necesitan fetch
-      // Reutilizar pricing para cualquier cantidad que coincida (no solo Q1)
-      const qtysToFetch = qtys.filter((q) => q !== pricingQty);
-
-      console.log("🔢 Multi-cantidad: lanzando", qtysToFetch.length, "llamadas en paralelo", { 
-        qtysToFetch, 
-        pricingQty, 
-        reusingPricing: pricingQty !== null && qtys.includes(pricingQty)
+      console.log("🔢 Multi-cantidad: lanzando", qtysToFetch.length, "llamadas en paralelo", {
+        qtysToFetch,
       });
 
       const fetched = await Promise.all(
@@ -1024,18 +1028,25 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       const fetchedByQty = new Map<number, any>(fetched.map((r) => [r.qty, r.data]));
 
       // Reconstruir respetando el orden de qtyInputs
-      const results: { qty: number; data: any }[] = [];
-      for (const qty of qtys) {
-        if (qty === pricingQty && pricing) {
-          results.push({ qty, data: pricing });
-        } else {
-          results.push({ qty, data: fetchedByQty.get(qty) });
-        }
-      }
+      const results: { qty: number; data: any }[] = qtys.map((qty) => ({
+        qty,
+        data: fetchedByQty.get(qty),
+      }));
 
       return results;
     },
   });
+
+  // Cuando multi está activo, usamos el resultado de Q1 como "pricing" principal
+  // para que el resto del componente (prompts/outputs/precio) no dispare otra llamada.
+  useEffect(() => {
+    if (!multiEnabled || !qtyPrompt || !allQtysComplete) return;
+    if (!Array.isArray(multiResults) || multiResults.length === 0) return;
+    const q1 = (multiResults[0] as any)?.data;
+    if (!q1) return;
+
+    queryClient.setQueryData(pricingQueryKey, q1);
+  }, [multiEnabled, qtyPrompt, allQtysComplete, multiResults, queryClient, pricingQueryKey]);
 
   // Numeric prompts detection
   const numericPrompts = useMemo(() => {
