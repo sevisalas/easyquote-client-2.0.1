@@ -981,31 +981,29 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
       const list = Object.entries(norm).map(([id, value]) => ({ id, value }));
 
-      // Decidir si podemos reutilizar el pricing principal como Q1
-      // Solo reutilizar si: pricing ya tiene datos Y la cantidad Q1 coincide con el valor actual del prompt
-      const mainQty = qtys[0];
-      const canReusePricingForQ1 =
-        !!pricing && !isPricingLoading && qtyPrompt && (() => {
-          try {
-            const prompts = (pricing as any)?.prompts || [];
-            const qPrompt = prompts.find((p: any) => String(p.id) === String(qtyPrompt));
-            const current = qPrompt?.currentValue ?? qPrompt?.default ?? qPrompt?.defaultValue ?? qPrompt?.value;
-            const asNum = Number(String(current).replace(/\./g, "").replace(",", "."));
-            return !Number.isNaN(asNum) && asNum === mainQty;
-          } catch {
-            return false;
+      // Obtener la cantidad que ya tiene pricing (si está disponible)
+      let pricingQty: number | null = null;
+      if (pricing && !isPricingLoading && qtyPrompt) {
+        try {
+          const prompts = (pricing as any)?.prompts || [];
+          const qPrompt = prompts.find((p: any) => String(p.id) === String(qtyPrompt));
+          const current = qPrompt?.currentValue ?? qPrompt?.default ?? qPrompt?.defaultValue ?? qPrompt?.value;
+          const asNum = Number(String(current).replace(/\./g, "").replace(",", "."));
+          if (!Number.isNaN(asNum) && asNum > 0) {
+            pricingQty = asNum;
           }
-        })();
-
-      const results: { qty: number; data: any }[] = [];
+        } catch {}
+      }
 
       // Determinar qué cantidades necesitan fetch
-      // Si pricing aún está cargando, NO podemos reutilizar Q1 todavía
-      const qtysToFetch = canReusePricingForQ1 
-        ? qtys.filter((q) => q !== mainQty)  // Reutilizar Q1, fetch solo Q2..Qn
-        : qtys;  // Fetch todas (Q1, Q2, Q3 en paralelo)
+      // Reutilizar pricing para cualquier cantidad que coincida (no solo Q1)
+      const qtysToFetch = qtys.filter((q) => q !== pricingQty);
 
-      console.log("🔢 Multi-cantidad: lanzando", qtysToFetch.length, "llamadas en paralelo", { qtysToFetch, canReusePricingForQ1 });
+      console.log("🔢 Multi-cantidad: lanzando", qtysToFetch.length, "llamadas en paralelo", { 
+        qtysToFetch, 
+        pricingQty, 
+        reusingPricing: pricingQty !== null && qtys.includes(pricingQty)
+      });
 
       const fetched = await Promise.all(
         qtysToFetch.map(async (qty) => {
@@ -1026,8 +1024,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       const fetchedByQty = new Map<number, any>(fetched.map((r) => [r.qty, r.data]));
 
       // Reconstruir respetando el orden de qtyInputs
+      const results: { qty: number; data: any }[] = [];
       for (const qty of qtys) {
-        if (qty === mainQty && canReusePricingForQ1) {
+        if (qty === pricingQty && pricing) {
           results.push({ qty, data: pricing });
         } else {
           results.push({ qty, data: fetchedByQty.get(qty) });
