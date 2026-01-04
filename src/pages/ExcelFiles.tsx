@@ -853,15 +853,14 @@ export default function ExcelFiles() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Gestión de rchivos Excel</h1>
+          <h1 className="text-3xl font-bold">Gestión de archivos Excel</h1>
           <p className="text-muted-foreground mt-2">
             Administra archivos Excel desde EasyQuote para tus productos
           </p>
         </div>
         <div className="flex gap-3">
           <Dialog open={isCreateProductDialogOpen} onOpenChange={setIsCreateProductDialogOpen}>Crear producto<DialogTrigger asChild>
-              <Button variant="outline">
-                <Package className="h-4 w-4 mr-2" />
+              <Button variant="outline">Crear producto<Package className="h-4 w-4 mr-2" />
                 Crear Producto
               </Button>
             </DialogTrigger>
@@ -954,8 +953,7 @@ export default function ExcelFiles() {
           
           <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
+              <Button>Subir archivo<Plus className="h-4 w-4 mr-2" />
                 Subir Archivo
               </Button>
             </DialogTrigger>
