@@ -917,11 +917,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     [sortedOutputs, priceOutput]
   );
 
-  // Multi-quantity query: DEBE esperar a que pricing termine y TODAS las cantidades estén completas
-  // Solo se dispara cuando TODAS las cantidades requeridas tienen valor válido
+  // Multi-quantity query:
+  // - Se dispara SOLO cuando todas las cantidades están completas
+  // - No espera a que termine el pricing principal (para que Q2..Qn puedan empezar en paralelo)
   const allQtysComplete = useMemo(() => {
     if (!multiEnabled || qtyCount <= 0) return false;
-    // Verificar que TODAS las cantidades hasta qtyCount tengan valor válido
     for (let i = 0; i < qtyCount; i++) {
       const val = qtyInputs[i];
       if (!val || String(val).trim() === "") return false;
@@ -932,21 +932,30 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   }, [multiEnabled, qtyCount, qtyInputs]);
 
   const { data: multiResults, isFetching: multiLoading } = useQuery({
-    // Solo re-ejecutar cuando qtyInputs cambie Y allQtysComplete sea true
-    queryKey: ["easyquote-multi", productId, debouncedPromptValues, qtyPrompt, qtyInputs, multiEnabled, !!pricing, allQtysComplete],
-    // CRÍTICO: Solo habilitar cuando pricing esté listo, no cargando, Y TODAS las cantidades estén completas
-    enabled: !!hasToken && !!productId && multiEnabled && !!qtyPrompt && !!pricing && !isPricingLoading && allQtysComplete,
+    queryKey: [
+      "easyquote-multi",
+      productId,
+      debouncedPromptValues,
+      qtyPrompt,
+      qtyInputs,
+      multiEnabled,
+      allQtysComplete,
+      // Si el pricing principal cambia, queremos recalcular (aunque no esperemos a que termine)
+      (pricing as any)?.productID,
+      isPricingLoading,
+    ],
+    enabled: !!hasToken && !!productId && multiEnabled && !!qtyPrompt && allQtysComplete,
     refetchOnWindowFocus: false,
     retry: 1,
-    staleTime: 30000, // Mantener resultado 30s para evitar recálculos innecesarios
+    staleTime: 30000,
     queryFn: async () => {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
+
       const norm: Record<string, any> = {};
       Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
-        // Extract actual value if it's stored as {label, value}
-        const actualValue = (v && typeof v === 'object' && 'value' in v) ? v.value : v;
-        
+        const actualValue = (v && typeof v === "object" && "value" in v) ? (v as any).value : v;
+
         if (actualValue === "" || actualValue === undefined || actualValue === null) return;
         if (typeof actualValue === "string") {
           const trimmed = actualValue.trim();
@@ -970,32 +979,55 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         .map((q) => Number(String(q).replace(/\./g, "").replace(",", ".")))
         .filter((n) => !Number.isNaN(n) && n > 0);
       if (qtys.length === 0) return [] as any[];
-      
-      // Q1 ya está calculada en el pricing principal
-      const mainQty = qtys[0];
-      const additionalQtys = qtys.slice(1);
-      
+
       const list = Object.entries(norm).map(([id, value]) => ({ id, value }));
-      
-      // Resultado de Q1: usamos el pricing ya calculado
-      const results: { qty: number; data: any }[] = [{ qty: mainQty, data: pricing }];
-      
-      // Q2, Q3... en paralelo (máximo 2-3 llamadas, no satura)
-      if (additionalQtys.length > 0) {
-        const additionalResults = await Promise.all(
-          additionalQtys.map(async (qty) => {
-            const replaced = list.filter((it) => it.id !== qtyPrompt).concat([{ id: qtyPrompt, value: qty }]);
-            const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
-              token,
-              productId,
-              inputs: replaced
-            });
-            if (error) throw error;
-            return { qty, data };
-          })
-        );
-        results.push(...additionalResults);
+
+      // Decidir si podemos reutilizar el pricing principal como Q1
+      const mainQty = qtys[0];
+      const canReusePricingForQ1 =
+        !!pricing && !isPricingLoading && qtyPrompt && (() => {
+          try {
+            const prompts = (pricing as any)?.prompts || [];
+            const qPrompt = prompts.find((p: any) => String(p.id) === String(qtyPrompt));
+            const current = qPrompt?.currentValue ?? qPrompt?.default ?? qPrompt?.defaultValue ?? qPrompt?.value;
+            const asNum = Number(String(current).replace(/\./g, "").replace(",", "."));
+            return !Number.isNaN(asNum) && asNum === mainQty;
+          } catch {
+            return false;
+          }
+        })();
+
+      const results: { qty: number; data: any }[] = [];
+
+      // Lanzar Q2..Qn en paralelo siempre
+      const qtysToFetch = qtys.filter((q) => !(q === mainQty && canReusePricingForQ1));
+      const fetched = await Promise.all(
+        qtysToFetch.map(async (qty) => {
+          const replaced = list
+            .filter((it) => String(it.id) !== String(qtyPrompt))
+            .concat([{ id: qtyPrompt, value: qty }]);
+
+          const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
+            token,
+            productId,
+            inputs: replaced,
+          });
+          if (error) throw error;
+          return { qty, data };
+        })
+      );
+
+      const fetchedByQty = new Map<number, any>(fetched.map((r) => [r.qty, r.data]));
+
+      // Reconstruir respetando el orden de qtyInputs
+      for (const qty of qtys) {
+        if (qty === mainQty && canReusePricingForQ1) {
+          results.push({ qty, data: pricing });
+        } else {
+          results.push({ qty, data: fetchedByQty.get(qty) });
+        }
       }
+
       return results;
     },
   });
