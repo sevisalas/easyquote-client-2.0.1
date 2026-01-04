@@ -389,8 +389,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Los prompts siempre vienen de easyquote-pricing (ya no usamos master-files)
 
   // Query principal de pricing
+  // NOTA: forceRecalculate NO está en queryKey - se usa refetch() manual
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError, isFetching: isPricingLoading } = useQuery({
-    queryKey: ["easyquote-pricing", productId, debouncedPromptValues, forceRecalculate, isNewProduct],
+    queryKey: ["easyquote-pricing", productId, debouncedPromptValues, isNewProduct],
     enabled: (() => {
       // Verificar condiciones básicas
       if (!hasToken || !productId) {
@@ -424,7 +425,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           return true;
         }
         // Después de la primera carga, solo hacer query si el usuario ha hecho cambios
-        if (!userHasChangedCurrentProduct && !forceRecalculate) {
+        if (!userHasChangedCurrentProduct) {
           console.log("ℹ️ Query disabled: usando datos guardados, sin cambios del usuario");
           return false;
         }
@@ -439,7 +440,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     retry: false,
     placeholderData: isNewProduct ? undefined : keepPreviousData,
     refetchOnWindowFocus: false,
-    staleTime: 0,
+    staleTime: 30000, // 30 segundos - evita re-fetches inmediatos
     queryFn: async () => {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
@@ -940,11 +941,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       qtyInputs,
       multiEnabled,
       allQtysComplete,
-      // Si el pricing principal cambia, queremos recalcular (aunque no esperemos a que termine)
-      (pricing as any)?.productID,
-      isPricingLoading,
     ],
-    enabled: !!hasToken && !!productId && multiEnabled && !!qtyPrompt && allQtysComplete,
+    enabled: !!hasToken && !!productId && multiEnabled && !!qtyPrompt && allQtysComplete && !isPricingLoading,
     refetchOnWindowFocus: false,
     retry: 1,
     staleTime: 30000,
