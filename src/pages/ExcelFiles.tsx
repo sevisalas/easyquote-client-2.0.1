@@ -860,8 +860,8 @@ export default function ExcelFiles() {
         </div>
         <div className="flex gap-3">
           <Dialog open={isCreateProductDialogOpen} onOpenChange={setIsCreateProductDialogOpen}>Crear producto<DialogTrigger asChild>
-              <Button variant="outline">Crear producto<Package className="h-4 w-4 mr-2" />
-                Crear Producto
+              <Button variant="outline">​<Package className="h-4 w-4 mr-2" />
+                Crear producto
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
