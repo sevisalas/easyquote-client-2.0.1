@@ -953,8 +953,8 @@ export default function ExcelFiles() {
           
           <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
             <DialogTrigger asChild>
-              <Button>Subir archivo<Plus className="h-4 w-4 mr-2" />
-                Subir Archivo
+              <Button>​<Plus className="h-4 w-4 mr-2" />
+                Subir archivo
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
