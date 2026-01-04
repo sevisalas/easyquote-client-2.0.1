@@ -51,6 +51,9 @@ export default function ProductTestPage() {
   const [isDiagnosing, setIsDiagnosing] = useState(false);
   const [selectedComponent, setSelectedComponent] = useState<string>('general');
   const [boundProductConfig, setBoundProductConfig] = useState<BoundProductConfig | null>(null);
+  const [modifiedPrice, setModifiedPrice] = useState<number | null>(null);
+  const [isEditingPrice, setIsEditingPrice] = useState(false);
+  const [localPriceInput, setLocalPriceInput] = useState("");
   const [tokenReady, setTokenReady] = useState(!!sessionStorage.getItem("easyquote_token"));
   const {
     isSuperAdmin,
@@ -1024,15 +1027,8 @@ export default function ProductTestPage() {
                           <p>Calculando resultados...</p>
                         </div>}
 
-                      {!pricingLoading && !pricing && !isLoadingProduct && productDetail && textOutputs.length === 0 && <div className="text-center py-8 text-muted-foreground">
-                          <p>Configura los parámetros para ver los resultados</p>
-                        </div>}
 
-                      {!pricingLoading && pricing && textOutputs.length === 0 && imageOutputs.length === 0 && selectedTextOutputs.length === 0 && selectedImageOutputs.length === 0 && <div className="text-center py-8 text-muted-foreground">
-                          <p>No hay resultados disponibles para esta configuración</p>
-                        </div>}
-
-                  {/* Precio (simple = API / compuesto = suma de componentes) */}
+                  {/* Precio (simple = API / compuesto = suma de componentes) + opción de modificar */}
                   {(() => {
                     const basePrice = isComposite ? calculatedTotalPrice : apiPrice;
                     if (!(basePrice > 0)) return null;
@@ -1040,11 +1036,93 @@ export default function ProductTestPage() {
                     const title = isComposite ? "Precio Total" : "Precio";
 
                     return (
-                      <div className="p-3 rounded-md border bg-accent/10 mb-4">
+                      <div className="p-3 rounded-md border bg-accent/10 mb-4 space-y-3">
+                        {/* Precio calculado */}
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-muted-foreground">{title}</span>
-                          <span className="text-lg font-semibold">{formatCurrency(basePrice)}</span>
+                          <span className="text-sm font-medium text-muted-foreground">
+                            {modifiedPrice !== null ? "Precio calculado" : title}
+                          </span>
+                          <span
+                            className={
+                              modifiedPrice !== null
+                                ? "text-sm text-muted-foreground line-through"
+                                : "text-lg font-semibold"
+                            }
+                          >
+                            {formatCurrency(basePrice)}
+                          </span>
                         </div>
+
+                        {/* Precio modificado (si existe) */}
+                        {modifiedPrice !== null && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-muted-foreground">Precio modificado</span>
+                            <span className="text-lg font-semibold text-primary">{formatCurrency(modifiedPrice)}</span>
+                          </div>
+                        )}
+
+                        {/* Campo de edición */}
+                        {isEditingPrice && (
+                          <div className="flex items-center gap-2 pt-2 border-t">
+                            <Input
+                              type="text"
+                              value={localPriceInput}
+                              onChange={(e) => setLocalPriceInput(e.target.value)}
+                              placeholder="Nuevo precio"
+                              className="flex-1"
+                              autoFocus
+                            />
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                const parsed =
+                                  parseFloat(localPriceInput.replace(/\./g, "").replace(",", ".")) || 0;
+                                setModifiedPrice(parsed > 0 ? parsed : null);
+                                setIsEditingPrice(false);
+                              }}
+                            >
+                              Aplicar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setIsEditingPrice(false);
+                                setLocalPriceInput("");
+                              }}
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* Botón para activar edición */}
+                        {!isEditingPrice && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="w-full text-xs"
+                            onClick={() => {
+                              const prefill = (modifiedPrice ?? basePrice).toFixed(2).replace(".", ",");
+                              setLocalPriceInput(prefill);
+                              setIsEditingPrice(true);
+                            }}
+                          >
+                            {modifiedPrice !== null ? "Editar precio modificado" : "Modificar precio final"}
+                          </Button>
+                        )}
+
+                        {/* Botón para quitar precio modificado */}
+                        {modifiedPrice !== null && !isEditingPrice && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="w-full text-xs text-muted-foreground"
+                            onClick={() => setModifiedPrice(null)}
+                          >
+                            Usar precio calculado
+                          </Button>
+                        )}
                       </div>
                     );
                   })()}
