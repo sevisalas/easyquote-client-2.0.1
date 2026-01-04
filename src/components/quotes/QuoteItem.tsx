@@ -100,6 +100,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [multiEnabled, setMultiEnabled] = useState<boolean>(false);
   const [qtyPrompt, setQtyPrompt] = useState<string>("");
   const [qtyInputs, setQtyInputs] = useState<string[]>(["", "", "", "", ""]); // Estado committed (dispara API)
+  const [debouncedQtyInputs, setDebouncedQtyInputs] = useState<string[]>(["", "", "", "", ""]); // Estado debounced para queries
   const [localQtyInputs, setLocalQtyInputs] = useState<string[]>(["", "", "", "", ""]); // Estado local mientras se escribe
   const MAX_QTY = 10;
   const [qtyCount, setQtyCount] = useState<number>(5);
@@ -918,22 +919,22 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   );
 
   // Multi-quantity query: DEBE esperar a que pricing termine y TODAS las cantidades estén completas
-  // IMPORTANTE: No calcular si hay alguna cantidad vacía
+  // IMPORTANTE: Usa debouncedQtyInputs para evitar llamadas mientras se escriben cantidades
   const allQtysComplete = useMemo(() => {
     if (!multiEnabled || qtyCount <= 0) return false;
-    // Verificar que TODAS las cantidades hasta qtyCount tengan valor válido
+    // Verificar que TODAS las cantidades hasta qtyCount tengan valor válido en el estado debounced
     for (let i = 0; i < qtyCount; i++) {
-      const val = qtyInputs[i];
+      const val = debouncedQtyInputs[i];
       if (!val || String(val).trim() === "") return false;
       const num = Number(String(val).replace(/\./g, "").replace(",", "."));
       if (Number.isNaN(num) || num <= 0) return false;
     }
     return true;
-  }, [multiEnabled, qtyCount, qtyInputs]);
+  }, [multiEnabled, qtyCount, debouncedQtyInputs]);
 
   const { data: multiResults, isFetching: multiLoading } = useQuery({
-    // Incluir pricing en queryKey para re-ejecutar solo cuando pricing cambie
-    queryKey: ["easyquote-multi", productId, debouncedPromptValues, qtyPrompt, qtyInputs, multiEnabled, !!pricing, allQtysComplete],
+    // Usar debouncedQtyInputs para evitar re-ejecutar mientras usuario escribe
+    queryKey: ["easyquote-multi", productId, debouncedPromptValues, qtyPrompt, debouncedQtyInputs, multiEnabled, !!pricing, allQtysComplete],
     // CRÍTICO: Solo habilitar cuando pricing esté listo, no cargando, Y TODAS las cantidades estén completas
     enabled: !!hasToken && !!productId && multiEnabled && !!qtyPrompt && !!pricing && !isPricingLoading && allQtysComplete,
     refetchOnWindowFocus: false,
@@ -966,7 +967,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         }
       });
 
-      const qtys = qtyInputs
+      const qtys = debouncedQtyInputs
         .map((q) => Number(String(q).replace(/\./g, "").replace(",", ".")))
         .filter((n) => !Number.isNaN(n) && n > 0);
       if (qtys.length === 0) return [] as any[];
@@ -1056,7 +1057,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     }
   }, [qtyPrompt, debouncedPromptValues, pricing]);
 
-  // Adjust qty inputs length - sincronizar ambos estados
+  // Adjust qty inputs length - sincronizar todos los estados
   useEffect(() => {
     setQtyInputs((prev) => {
       if (qtyCount > prev.length) return prev.concat(Array(qtyCount - prev.length).fill(""));
@@ -1068,7 +1069,20 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       if (qtyCount < prev.length) return prev.slice(0, qtyCount);
       return prev;
     });
+    setDebouncedQtyInputs((prev) => {
+      if (qtyCount > prev.length) return prev.concat(Array(qtyCount - prev.length).fill(""));
+      if (qtyCount < prev.length) return prev.slice(0, qtyCount);
+      return prev;
+    });
   }, [qtyCount]);
+
+  // Debounce de qtyInputs para evitar múltiples llamadas mientras se escriben cantidades
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQtyInputs(qtyInputs);
+    }, 800); // 800ms de espera tras último cambio
+    return () => clearTimeout(timer);
+  }, [qtyInputs]);
 
   const prompts = extractPrompts(pricing);
 
