@@ -99,10 +99,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Multi-cantidades
   const [multiEnabled, setMultiEnabled] = useState<boolean>(false);
   const [qtyPrompt, setQtyPrompt] = useState<string>("");
-  const [qtyInputs, setQtyInputs] = useState<string[]>(["", "", "", "", ""]); // Estado committed (dispara API)
-  const [localQtyInputs, setLocalQtyInputs] = useState<string[]>(["", "", "", "", ""]); // Estado local mientras se escribe
+  const [qtyInputs, setQtyInputs] = useState<string[]>(["", "", ""]); // Estado committed (dispara API) - Q1, Q2, Q3
+  const [localQtyInputs, setLocalQtyInputs] = useState<string[]>(["", "", ""]); // Estado local mientras se escribe
   const MAX_QTY = 10;
-  const [qtyCount, setQtyCount] = useState<number>(5);
+  const [qtyCount, setQtyCount] = useState<number>(3); // Por defecto Q1, Q2, Q3
   const [multiModifiedPrices, setMultiModifiedPrices] = useState<Record<number, number | null>>({}); // Precios modificados por cantidad
   const [editingMultiPriceIdx, setEditingMultiPriceIdx] = useState<number | null>(null);
   const [localMultiPriceInput, setLocalMultiPriceInput] = useState("");
