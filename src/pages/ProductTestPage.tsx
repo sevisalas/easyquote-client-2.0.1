@@ -55,7 +55,8 @@ export default function ProductTestPage() {
   const [isEditingPrice, setIsEditingPrice] = useState(false);
   const [localPriceInput, setLocalPriceInput] = useState("");
   const [tokenReady, setTokenReady] = useState(!!sessionStorage.getItem("easyquote_token"));
-  const [viewMode, setViewMode] = useState<'productos' | 'componentes'>('productos');
+  const initialView = searchParams.get('view') === 'componentes' ? 'componentes' : 'productos';
+  const [viewMode, setViewMode] = useState<'productos' | 'componentes'>(initialView);
   const {
     isSuperAdmin,
     isOrgAdmin,
@@ -935,9 +936,9 @@ export default function ProductTestPage() {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/admin/productos" className="flex items-center gap-1">
+              <Link to={`/admin/productos?view=${viewMode}`} className="flex items-center gap-1">
                 <ArrowLeft className="h-4 w-4" />
-                Volver a Productos
+                Volver a {viewMode === 'productos' ? 'Productos' : 'Componentes'}
               </Link>
             </Button>
           </div>
