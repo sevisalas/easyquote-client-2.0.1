@@ -1925,11 +1925,6 @@ export default function ProductManagement() {
         >
           <Boxes className="h-4 w-4" />
           Componentes
-          {componentProductIds.size > 0 && (
-            <Badge variant="secondary" className="ml-1 text-xs">
-              {componentProductIds.size}
-            </Badge>
-          )}
         </Button>
       </div>
 
