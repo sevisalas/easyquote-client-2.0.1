@@ -377,8 +377,8 @@ export function AppSidebar() {
                                </SidebarMenuSubButton>
                               </SidebarMenuSubItem>}
 
-                            {/* Componentes - Solo admins con acceso a productos */}
-                            {canAccessProductos() && <SidebarMenuSubItem>
+                            {/* Componentes - Solo visible para Tradsis (en pruebas) */}
+                            {canAccessProductos() && currentOrgName === 'Tradsis' && <SidebarMenuSubItem>
                                 <SidebarMenuSubButton asChild isActive={currentPath === "/admin/componentes"} className="h-6 px-2">
                                   <NavLink to="/admin/componentes" end className={getNavCls}>
                                     <Boxes className="mr-2 h-4 w-4" />
