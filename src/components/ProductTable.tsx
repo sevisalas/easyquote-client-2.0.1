@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
 import { Edit, TestTube, ShoppingCart, ExternalLink, Copy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useWooCommerceLink } from "@/hooks/useWooCommerceLink";
@@ -38,9 +39,12 @@ interface ProductTableProps {
   getProductMapping: (productId: string) => ProductMapping | undefined;
   onEditProduct: (product: EasyQuoteProduct) => void;
   onDuplicateProduct?: (product: EasyQuoteProduct) => void;
+  componentProductIds?: Set<string>;
+  onToggleComponent?: (productId: string, isComponent: boolean) => void;
+  isTogglingComponent?: boolean;
 }
 
-export function ProductTable({ products, getProductMapping, onEditProduct, onDuplicateProduct }: ProductTableProps) {
+export function ProductTable({ products, getProductMapping, onEditProduct, onDuplicateProduct, componentProductIds, onToggleComponent, isTogglingComponent }: ProductTableProps) {
   const navigate = useNavigate();
   const { isWooCommerceActive, loading: wooIntegrationLoading } = useWooCommerceIntegration();
   const productIds = products.map((p) => p.id);
@@ -79,12 +83,13 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
           <Table>
             <TableHeader>
               <TableRow className="h-9">
-                <TableHead className="w-[330px] py-2 text-xs font-semibold">Producto</TableHead>
-                <TableHead className="w-[220px] py-2 text-xs font-semibold">Excel</TableHead>
-                <TableHead className="w-[90px] py-2 text-xs font-semibold">Estado</TableHead>
-                <TableHead className="w-[150px] py-2 text-xs font-semibold">Categoría</TableHead>
+                <TableHead className="w-[300px] py-2 text-xs font-semibold">Producto</TableHead>
+                <TableHead className="w-[180px] py-2 text-xs font-semibold">Excel</TableHead>
+                <TableHead className="w-[80px] py-2 text-xs font-semibold">Estado</TableHead>
+                <TableHead className="w-[130px] py-2 text-xs font-semibold">Categoría</TableHead>
+                {onToggleComponent && <TableHead className="w-[100px] py-2 text-xs font-semibold">Componente</TableHead>}
                 {isWooCommerceActive && <TableHead className="w-[80px] py-2 text-xs font-semibold">Woo</TableHead>}
-                <TableHead className="w-[140px] py-2 text-xs font-semibold">Acciones</TableHead>
+                <TableHead className="w-[120px] py-2 text-xs font-semibold">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -146,6 +151,15 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
                       );
                     })()}
                   </TableCell>
+                  {onToggleComponent && (
+                    <TableCell className="py-1.5 px-3">
+                      <Switch
+                        checked={componentProductIds?.has(product.id) || false}
+                        onCheckedChange={(checked) => onToggleComponent(product.id, checked)}
+                        disabled={isTogglingComponent}
+                      />
+                    </TableCell>
+                  )}
                   {isWooCommerceActive && (
                     <TableCell className="py-1.5 px-3">
                       {wooLoading ? (
@@ -313,6 +327,17 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
                   );
                 })()}
               </div>
+
+              {onToggleComponent && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Es componente:</span>
+                  <Switch
+                    checked={componentProductIds?.has(product.id) || false}
+                    onCheckedChange={(checked) => onToggleComponent(product.id, checked)}
+                    disabled={isTogglingComponent}
+                  />
+                </div>
+              )}
 
               {isWooCommerceActive && (
                 <div className="text-sm">

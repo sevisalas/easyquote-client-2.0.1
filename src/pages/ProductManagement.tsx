@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Boxes } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
 import { Button } from "@/components/ui/button";
@@ -294,6 +295,7 @@ export default function ProductManagement() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [subcategoryFilter, setSubcategoryFilter] = useState<string>("all");
   const [includeInactive, setIncludeInactive] = useState(false);
+  const [viewMode, setViewMode] = useState<'productos' | 'componentes'>('productos');
   const [selectedProduct, setSelectedProduct] = useState<EasyQuoteProduct | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [hasToken, setHasToken] = useState<boolean | null>(null);
@@ -411,6 +413,51 @@ export default function ProductManagement() {
       setProductType('sencillo');
     }
   }, [isComposite, selectedProduct?.id]);
+
+  // Query para obtener IDs de productos que son componentes
+  const { data: componentProductIds = new Set<string>(), refetch: refetchComponentIds } = useQuery({
+    queryKey: ['component-product-ids', organizationId],
+    queryFn: async () => {
+      if (!organizationId) return new Set<string>();
+      const { data, error } = await supabase
+        .from('product_component_settings')
+        .select('easyquote_product_id')
+        .eq('organization_id', organizationId)
+        .eq('is_component', true);
+      if (error) {
+        console.error("Error fetching component IDs:", error);
+        return new Set<string>();
+      }
+      return new Set((data || []).map(d => d.easyquote_product_id));
+    },
+    enabled: !!organizationId,
+    select: (data) => data instanceof Set ? data : new Set<string>()
+  });
+
+  // Mutación para cambiar si un producto es componente
+  const toggleComponentMutation = useMutation({
+    mutationFn: async ({ productId, isComponent }: { productId: string; isComponent: boolean }) => {
+      if (!organizationId) throw new Error('No organization');
+      const { error } = await supabase
+        .from('product_component_settings')
+        .upsert({
+          organization_id: organizationId,
+          easyquote_product_id: productId,
+          is_component: isComponent,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'organization_id,easyquote_product_id',
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['component-product-ids'] });
+      toast({ title: "Producto actualizado" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
 
   // Helper to get current organization ID from sessionStorage or fetch it
   const getCurrentOrganizationIdAsync = async (): Promise<string | null> => {
@@ -1037,6 +1084,11 @@ export default function ProductManagement() {
 
   // Filtrar productos localmente
   const filteredProducts = products.filter(product => {
+    // Filtrar por vista: productos vs componentes (nunca se mezclan)
+    const isProductComponent = componentProductIds.has(product.id);
+    if (viewMode === 'productos' && isProductComponent) return false;
+    if (viewMode === 'componentes' && !isProductComponent) return false;
+
     const matchesSearch = !searchTerm || product.productName?.toLowerCase().includes(searchTerm.toLowerCase()) || product.description?.toLowerCase().includes(searchTerm.toLowerCase()) || product.id?.toLowerCase().includes(searchTerm.toLowerCase());
 
     // Filtrar por categorías locales usando los mappings
@@ -1834,6 +1886,33 @@ export default function ProductManagement() {
         </div>
       </div>
 
+      {/* Tabs: Productos / Componentes */}
+      <div className="flex items-center gap-2">
+        <Button 
+          variant={viewMode === 'productos' ? 'default' : 'outline'} 
+          size="sm"
+          onClick={() => setViewMode('productos')}
+          className="flex items-center gap-2"
+        >
+          <Package className="h-4 w-4" />
+          Productos
+        </Button>
+        <Button 
+          variant={viewMode === 'componentes' ? 'default' : 'outline'} 
+          size="sm"
+          onClick={() => setViewMode('componentes')}
+          className="flex items-center gap-2"
+        >
+          <Boxes className="h-4 w-4" />
+          Componentes
+          {componentProductIds.size > 0 && (
+            <Badge variant="secondary" className="ml-1 text-xs">
+              {componentProductIds.size}
+            </Badge>
+          )}
+        </Button>
+      </div>
+
       <Separator />
 
       {/* Filters */}
@@ -1936,9 +2015,11 @@ export default function ProductManagement() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Productos</CardTitle>
+              <CardTitle>{viewMode === 'productos' ? 'Productos' : 'Componentes'}</CardTitle>
               <CardDescription>
-                Lista de productos obtenidos del API de EasyQuote
+                {viewMode === 'productos' 
+                  ? 'Lista de productos para presupuestos y pedidos' 
+                  : 'Componentes para usar dentro de productos compuestos'}
               </CardDescription>
             </div>
           </div>
@@ -1948,18 +2029,37 @@ export default function ProductManagement() {
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
               <p className="text-muted-foreground">Cargando productos desde EasyQuote...</p>
             </div> : filteredProducts.length === 0 ? <div className="text-center py-8">
-              <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              {viewMode === 'productos' 
+                ? <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                : <Boxes className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              }
               <p className="text-muted-foreground">
-                {products.length === 0 ? "No hay productos en EasyQuote" : "No hay productos que coincidan con los filtros"}
+                {viewMode === 'productos'
+                  ? (products.length === 0 ? "No hay productos en EasyQuote" : "No hay productos que coincidan con los filtros")
+                  : "No hay componentes configurados"
+                }
               </p>
-              {searchTerm || categoryFilter !== "all" || subcategoryFilter !== "all" ? <Button variant="outline" size="sm" onClick={() => {
+              {viewMode === 'componentes' && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Marca productos como componentes desde la vista "Productos"
+                </p>
+              )}
+              {viewMode === 'productos' && (searchTerm || categoryFilter !== "all" || subcategoryFilter !== "all") ? <Button variant="outline" size="sm" onClick={() => {
             setSearchTerm("");
             setCategoryFilter("all");
             setSubcategoryFilter("all");
           }} className="mt-2">
                   Limpiar filtros
                 </Button> : null}
-            </div> : <ProductTable products={filteredProducts} getProductMapping={getProductMapping} onEditProduct={handleEditProduct} onDuplicateProduct={handleDuplicateProduct} />}
+            </div> : <ProductTable 
+              products={filteredProducts} 
+              getProductMapping={getProductMapping} 
+              onEditProduct={handleEditProduct} 
+              onDuplicateProduct={handleDuplicateProduct}
+              componentProductIds={componentProductIds}
+              onToggleComponent={(productId, isComponent) => toggleComponentMutation.mutate({ productId, isComponent })}
+              isTogglingComponent={toggleComponentMutation.isPending}
+            />}
         </CardContent>
       </Card>
 
