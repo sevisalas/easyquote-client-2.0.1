@@ -5,16 +5,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SalesOrderItem } from "@/hooks/useSalesOrders";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 interface EditOrderItemDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   item: SalesOrderItem | null;
-  onSave: (itemId: string, updates: { quantity: number; price: number; description?: string }) => Promise<void>;
+  onSave: (itemId: string, updates: { quantity: number; price?: number; description?: string }) => Promise<void>;
   saving: boolean;
 }
 
 export const EditOrderItemDialog = ({ open, onOpenChange, item, onSave, saving }: EditOrderItemDialogProps) => {
+  const { isSuperAdmin, isOrgAdmin } = useSubscription();
+  const canEditPrice = isSuperAdmin || isOrgAdmin;
+  
   const [quantity, setQuantity] = useState(item?.quantity?.toString() || "1");
   const [price, setPrice] = useState(item?.price?.toString() || "0");
   const [description, setDescription] = useState(item?.description || "");
@@ -32,23 +36,32 @@ export const EditOrderItemDialog = ({ open, onOpenChange, item, onSave, saving }
     if (!item) return;
     
     const qty = parseFloat(quantity);
-    const prc = parseFloat(price);
     
     if (isNaN(qty) || qty <= 0) {
       alert("La cantidad debe ser un número mayor que 0");
       return;
     }
     
-    if (isNaN(prc) || prc < 0) {
-      alert("El precio debe ser un número mayor o igual a 0");
-      return;
+    // Solo validar y enviar precio si el usuario puede editarlo
+    if (canEditPrice) {
+      const prc = parseFloat(price);
+      if (isNaN(prc) || prc < 0) {
+        alert("El precio debe ser un número mayor o igual a 0");
+        return;
+      }
+      
+      await onSave(item.id, {
+        quantity: qty,
+        price: prc,
+        description: description || undefined
+      });
+    } else {
+      // Sin permisos de precio, solo enviar cantidad y descripción
+      await onSave(item.id, {
+        quantity: qty,
+        description: description || undefined
+      });
     }
-    
-    await onSave(item.id, {
-      quantity: qty,
-      price: prc,
-      description: description || undefined
-    });
     
     onOpenChange(false);
   };
@@ -61,7 +74,10 @@ export const EditOrderItemDialog = ({ open, onOpenChange, item, onSave, saving }
         <DialogHeader>
           <DialogTitle>Editar artículo</DialogTitle>
           <DialogDescription>
-            Modifica la cantidad, precio o descripción del artículo del pedido.
+            {canEditPrice 
+              ? "Modifica la cantidad, precio o descripción del artículo del pedido."
+              : "Modifica la cantidad o descripción del artículo del pedido."
+            }
           </DialogDescription>
         </DialogHeader>
         
@@ -84,18 +100,21 @@ export const EditOrderItemDialog = ({ open, onOpenChange, item, onSave, saving }
             />
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="price">Precio (€)</Label>
-            <Input
-              id="price"
-              type="number"
-              min="0"
-              step="0.01"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              disabled={saving}
-            />
-          </div>
+          {/* Campo de precio solo visible para admins */}
+          {canEditPrice && (
+            <div className="space-y-2">
+              <Label htmlFor="price">Precio (€)</Label>
+              <Input
+                id="price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                disabled={saving}
+              />
+            </div>
+          )}
           
           <div className="space-y-2">
             <Label htmlFor="description">Descripción (opcional)</Label>

@@ -68,8 +68,9 @@ interface Additional {
 
 export default function QuoteItem({ hasToken, id, initialData, onChange, onRemove, onFinishEdit, shouldExpand, hideMultiQuantities = false }: QuoteItemProps) {
   // Get organization context for output ordering
-  const { organization, membership } = useSubscription();
+  const { organization, membership, isSuperAdmin, isOrgAdmin } = useSubscription();
   const organizationId = organization?.id || membership?.organization_id;
+  const canEditPrice = isSuperAdmin || isOrgAdmin;
   const queryClient = useQueryClient();
 
   // Local state per item
@@ -1793,6 +1794,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                         editablePrice={userEditedPrice}
                         onPriceChange={(price) => setUserEditedPrice(price)}
                         multiEnabled={multiEnabled}
+                        canEditPrice={canEditPrice}
                         renderPrice={() => (
                           priceOutput ? (
                             <div className="p-3 rounded-md border bg-card/50">

@@ -33,9 +33,11 @@ interface ComponentTabsOutputsProps {
   /** Precio total editable por el usuario */
   editablePrice?: number | null;
   /** Callback cuando el usuario edita el precio */
-  onPriceChange?: (price: number) => void;
+  onPriceChange?: (price: number | null) => void;
   /** Indica si las cantidades múltiples están activas (deshabilita edición de precio) */
   multiEnabled?: boolean;
+  /** Indica si el usuario puede editar el precio (solo admin) */
+  canEditPrice?: boolean;
 }
 
 // Labels dinámicos para componentes según la configuración
@@ -116,7 +118,8 @@ export default function ComponentTabsOutputs({
   boundProductConfig,
   editablePrice,
   onPriceChange,
-  multiEnabled = false
+  multiEnabled = false,
+  canEditPrice = false
 }: ComponentTabsOutputsProps) {
   // Labels dinámicos según configuración
   const componentLabels = useMemo(() => getComponentLabels(boundProductConfig), [boundProductConfig]);
@@ -591,8 +594,8 @@ export default function ComponentTabsOutputs({
           </div>
         )}
 
-        {/* Botón para activar edición - deshabilitado si multiEnabled */}
-        {!isEditingPrice && !multiEnabled && (
+        {/* Botón para activar edición - solo visible para admins y deshabilitado si multiEnabled */}
+        {!isEditingPrice && !multiEnabled && canEditPrice && (
           <Button
             size="sm"
             variant="ghost"
@@ -614,8 +617,8 @@ export default function ComponentTabsOutputs({
           </p>
         )}
 
-        {/* Botón para quitar precio modificado */}
-        {hasModifiedPrice && !isEditingPrice && (
+        {/* Botón para quitar precio modificado - solo visible para admins */}
+        {hasModifiedPrice && !isEditingPrice && canEditPrice && (
           <Button
             size="sm"
             variant="ghost"
