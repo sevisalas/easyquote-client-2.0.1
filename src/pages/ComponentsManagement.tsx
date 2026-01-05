@@ -288,13 +288,13 @@ export default function ComponentsManagement() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="product">Producto EasyQuote (Excel)</Label>
-              <Select
+                <Label htmlFor="product">Archivo Excel</Label>
+                <Select
                   value={formData.easyquote_product_id || "none"}
                   onValueChange={(value) => setFormData({ ...formData, easyquote_product_id: value === "none" ? "" : value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar producto..." />
+                    <SelectValue placeholder="Seleccionar archivo..." />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Sin vincular</SelectItem>
@@ -378,7 +378,7 @@ export default function ComponentsManagement() {
                 <TableRow>
                   <TableHead>Nombre</TableHead>
                   <TableHead>Tipo</TableHead>
-                  <TableHead>Producto EasyQuote</TableHead>
+                  <TableHead>Archivo Excel</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead className="w-[100px]">Acciones</TableHead>
                 </TableRow>
