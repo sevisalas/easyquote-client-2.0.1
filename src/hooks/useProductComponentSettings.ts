@@ -7,6 +7,7 @@ export interface ProductComponentSettings {
   organization_id: string;
   easyquote_product_id: string;
   is_composite: boolean;
+  is_component: boolean;
   enabled_components: string[];
   created_at: string;
   updated_at: string;
@@ -98,20 +99,25 @@ export function useProductComponentSettings(easyquoteProductId?: string) {
   const upsertSettingsMutation = useMutation({
     mutationFn: async (settings: {
       easyquote_product_id: string;
-      is_composite: boolean;
-      enabled_components: string[];
+      is_composite?: boolean;
+      is_component?: boolean;
+      enabled_components?: string[];
     }) => {
       if (!organizationId) throw new Error('No organization found');
 
+      const payload: any = {
+        organization_id: organizationId,
+        easyquote_product_id: settings.easyquote_product_id,
+        updated_at: new Date().toISOString(),
+      };
+      
+      if (settings.is_composite !== undefined) payload.is_composite = settings.is_composite;
+      if (settings.is_component !== undefined) payload.is_component = settings.is_component;
+      if (settings.enabled_components !== undefined) payload.enabled_components = settings.enabled_components;
+
       const { data, error } = await supabase
         .from('product_component_settings')
-        .upsert({
-          organization_id: organizationId,
-          easyquote_product_id: settings.easyquote_product_id,
-          is_composite: settings.is_composite,
-          enabled_components: settings.enabled_components,
-          updated_at: new Date().toISOString(),
-        }, {
+        .upsert(payload, {
           onConflict: 'organization_id,easyquote_product_id',
         })
         .select()
@@ -123,6 +129,9 @@ export function useProductComponentSettings(easyquoteProductId?: string) {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ['product-component-settings', variables.easyquote_product_id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['component-product-ids'],
       });
     },
   });
@@ -187,6 +196,9 @@ export function useProductComponentSettings(easyquoteProductId?: string) {
   // Helper: verificar si un producto es compuesto
   const isComposite = componentSettings?.is_composite ?? false;
 
+  // Helper: verificar si un producto es componente
+  const isComponent = componentSettings?.is_component ?? false;
+
   // Helper: obtener componentes habilitados
   const enabledComponents = componentSettings?.enabled_components ?? [];
 
@@ -210,6 +222,7 @@ export function useProductComponentSettings(easyquoteProductId?: string) {
     componentSettings,
     promptComponents,
     isComposite,
+    isComponent,
     enabledComponents,
     organizationId,
     
