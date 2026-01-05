@@ -345,12 +345,39 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const getProductLabel = (p: any) =>
     p?.name ?? p?.title ?? p?.displayName ?? p?.productName ?? p?.product_name ?? p?.nombre ?? p?.Nombre ?? p?.description ?? "Producto sin nombre";
 
-  const { data: products } = useQuery({
+  // Obtener productos que son componentes (para excluirlos de la selección)
+  const { data: componentProductIds } = useQuery({
+    queryKey: ["component-product-ids", organizationId],
+    queryFn: async () => {
+      if (!organizationId) return [];
+      const { data, error } = await supabase
+        .from("product_component_settings")
+        .select("easyquote_product_id")
+        .eq("organization_id", organizationId)
+        .eq("is_component", true);
+      if (error) {
+        console.error("Error fetching component products:", error);
+        return [];
+      }
+      return data.map(d => d.easyquote_product_id);
+    },
+    enabled: !!organizationId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: allProducts } = useQuery({
     queryKey: ["easyquote-products"],
     queryFn: fetchProducts,
     retry: 1,
     enabled: !!hasToken,
   });
+
+  // Filtrar componentes de la lista de productos para selección
+  const products = useMemo(() => {
+    if (!allProducts) return [];
+    if (!componentProductIds || componentProductIds.length === 0) return allProducts;
+    return allProducts.filter((p: any) => !componentProductIds.includes(p.id));
+  }, [allProducts, componentProductIds]);
 
   // Auto-fill product description cuando se selecciona un producto se maneja en el useEffect principal (líneas 712-722)
 
