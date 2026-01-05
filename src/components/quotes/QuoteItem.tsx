@@ -375,8 +375,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Filtrar componentes de la lista de productos para selección
   const products = useMemo(() => {
     if (!allProducts) return [];
-    if (!componentProductIds || componentProductIds.length === 0) return allProducts;
-    return allProducts.filter((p: any) => !componentProductIds.includes(p.id));
+    const componentIds = Array.isArray(componentProductIds) ? componentProductIds : [];
+    if (componentIds.length === 0) return allProducts;
+    return allProducts.filter((p: any) => !componentIds.includes(p.id));
   }, [allProducts, componentProductIds]);
 
   // Auto-fill product description cuando se selecciona un producto se maneja en el useEffect principal (líneas 712-722)
