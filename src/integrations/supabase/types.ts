@@ -133,6 +133,57 @@ export type Database = {
           },
         ]
       }
+      components: {
+        Row: {
+          component_type: string
+          created_at: string
+          description: string | null
+          easyquote_product_id: string | null
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          component_type?: string
+          created_at?: string
+          description?: string | null
+          easyquote_product_id?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          component_type?: string
+          created_at?: string
+          description?: string | null
+          easyquote_product_id?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "components_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "components_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_access_logs: {
         Row: {
           accessed_at: string

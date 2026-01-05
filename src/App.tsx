@@ -32,6 +32,7 @@ import ExcelFiles from "./pages/ExcelFiles";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProductManagement from "./pages/ProductManagement";
 import ProductCategories from "./pages/ProductCategories";
+import ComponentsManagement from "./pages/ComponentsManagement";
 import ProductForm from "./pages/ProductForm";
 import ProductionConfiguration from "./pages/ProductionConfiguration";
 import WorkloadDashboard from "./pages/WorkloadDashboard";
@@ -340,6 +341,16 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <ProductCategories />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/componentes"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ComponentsManagement />
             </AppLayout>
           </ProtectedRoute>
         }
