@@ -1145,9 +1145,14 @@ export default function ProductManagement() {
   // Obtener subcategorías disponibles para la categoría seleccionada
   const availableSubcategories = allSubcategories.filter(sub => sub.is_active && (categoryFilter === "all" || sub.category_id === categoryFilter));
 
-  // Estadísticas - usar allProductsForStats para contar siempre todos
-  const activeProducts = allProductsForStats.filter(p => p.isActive);
-  const inactiveProducts = allProductsForStats.filter(p => !p.isActive);
+  // Estadísticas - filtrar según la vista actual (productos vs componentes)
+  const statsProducts = allProductsForStats.filter(p => {
+    const isProductComponent = componentProductIds.has(p.id);
+    if (viewMode === 'productos') return !isProductComponent;
+    return isProductComponent;
+  });
+  const activeProducts = statsProducts.filter(p => p.isActive);
+  const inactiveProducts = statsProducts.filter(p => !p.isActive);
   const handleEditProduct = async (product: EasyQuoteProduct) => {
     console.log("=== handleEditProduct called ===");
     console.log("Product ID:", product.id);
@@ -1935,17 +1940,17 @@ export default function ProductManagement() {
         <CardHeader>
           <CardTitle>Filtros</CardTitle>
           <CardDescription>
-            Busca y filtra productos por diferentes criterios
+            Busca y filtra {viewMode === 'productos' ? 'productos' : 'componentes'} por diferentes criterios
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 lg:space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 lg:gap-4 items-end">
             {/* Búsqueda */}
             <div className="lg:col-span-2">
-              <Label htmlFor="search" className="text-sm">Buscar productos</Label>
+              <Label htmlFor="search" className="text-sm">Buscar {viewMode === 'productos' ? 'productos' : 'componentes'}</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input id="search" placeholder="Buscar por nombre, ID o descripción..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
+                <Input id="search" placeholder={`Buscar por nombre, ID o descripción...`} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
               </div>
             </div>
             
@@ -2001,15 +2006,19 @@ export default function ProductManagement() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-4">
         <Card>
           <CardHeader className="pb-2 text-center">
-            <CardTitle className="text-xs lg:text-sm font-medium">Total productos</CardTitle>
+            <CardTitle className="text-xs lg:text-sm font-medium">
+              Total {viewMode === 'productos' ? 'productos' : 'componentes'}
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-center pt-2">
-            <div className="text-lg lg:text-2xl font-bold">{allProductsForStats.length}</div>
+            <div className="text-lg lg:text-2xl font-bold">{statsProducts.length}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2 text-center">
-            <CardTitle className="text-xs lg:text-sm font-medium">Productos activos</CardTitle>
+            <CardTitle className="text-xs lg:text-sm font-medium">
+              {viewMode === 'productos' ? 'Productos' : 'Componentes'} activos
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-center pt-2">
             <div className="text-lg lg:text-2xl font-bold text-green-600">{activeProducts.length}</div>
@@ -2017,7 +2026,9 @@ export default function ProductManagement() {
         </Card>
         <Card>
           <CardHeader className="pb-2 text-center">
-            <CardTitle className="text-xs lg:text-sm font-medium">Productos inactivos</CardTitle>
+            <CardTitle className="text-xs lg:text-sm font-medium">
+              {viewMode === 'productos' ? 'Productos' : 'Componentes'} inactivos
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-center pt-2">
             <div className="text-lg lg:text-2xl font-bold text-red-600">{inactiveProducts.length}</div>
