@@ -40,11 +40,12 @@ interface ProductTableProps {
   onEditProduct: (product: EasyQuoteProduct) => void;
   onDuplicateProduct?: (product: EasyQuoteProduct) => void;
   componentProductIds?: Set<string>;
+  compositeProductIds?: Set<string>;
   onToggleComponent?: (productId: string, isComponent: boolean) => void;
   isTogglingComponent?: boolean;
 }
 
-export function ProductTable({ products, getProductMapping, onEditProduct, onDuplicateProduct, componentProductIds, onToggleComponent, isTogglingComponent }: ProductTableProps) {
+export function ProductTable({ products, getProductMapping, onEditProduct, onDuplicateProduct, componentProductIds, compositeProductIds, onToggleComponent, isTogglingComponent }: ProductTableProps) {
   const navigate = useNavigate();
   const { isWooCommerceActive, loading: wooIntegrationLoading } = useWooCommerceIntegration();
   const productIds = products.map((p) => p.id);
@@ -83,13 +84,14 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
           <Table>
             <TableHeader>
               <TableRow className="h-9">
-                <TableHead className="w-[300px] py-2 text-xs font-semibold">Producto</TableHead>
-                <TableHead className="w-[180px] py-2 text-xs font-semibold">Excel</TableHead>
-                <TableHead className="w-[80px] py-2 text-xs font-semibold">Estado</TableHead>
-                <TableHead className="w-[130px] py-2 text-xs font-semibold">Categoría</TableHead>
-                {onToggleComponent && <TableHead className="w-[100px] py-2 text-xs font-semibold">Componente</TableHead>}
-                {isWooCommerceActive && <TableHead className="w-[80px] py-2 text-xs font-semibold">Woo</TableHead>}
-                <TableHead className="w-[120px] py-2 text-xs font-semibold">Acciones</TableHead>
+                <TableHead className="w-[280px] py-2 text-xs font-semibold">Producto</TableHead>
+                <TableHead className="w-[160px] py-2 text-xs font-semibold">Excel</TableHead>
+                <TableHead className="w-[70px] py-2 text-xs font-semibold">Tipo</TableHead>
+                <TableHead className="w-[70px] py-2 text-xs font-semibold">Estado</TableHead>
+                <TableHead className="w-[120px] py-2 text-xs font-semibold">Categoría</TableHead>
+                {onToggleComponent && <TableHead className="w-[90px] py-2 text-xs font-semibold">Componente</TableHead>}
+                {isWooCommerceActive && <TableHead className="w-[70px] py-2 text-xs font-semibold">Woo</TableHead>}
+                <TableHead className="w-[110px] py-2 text-xs font-semibold">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -119,6 +121,11 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
                     <span className="font-mono text-xs text-muted-foreground break-words block">
                       {getExcelFileName(product.excelfileId)}
                     </span>
+                  </TableCell>
+                  <TableCell className="py-1.5 px-3">
+                    <Badge variant={compositeProductIds?.has(product.id) ? "default" : "outline"} className="text-xs px-2 py-0 h-5">
+                      {compositeProductIds?.has(product.id) ? "Compuesto" : "Simple"}
+                    </Badge>
                   </TableCell>
                   <TableCell className="py-1.5 px-3">
                     <Badge variant={product.isActive ? "default" : "secondary"} className="text-xs px-2 py-0 h-5">
@@ -288,9 +295,14 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
                     <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{product.description}</p>
                   )}
                 </div>
-                <Badge variant={product.isActive ? "default" : "secondary"} className="ml-2 text-xs">
-                  {product.isActive ? "Activo" : "Inactivo"}
-                </Badge>
+                <div className="flex items-center gap-1.5 ml-2">
+                  <Badge variant={compositeProductIds?.has(product.id) ? "default" : "outline"} className="text-xs">
+                    {compositeProductIds?.has(product.id) ? "Compuesto" : "Simple"}
+                  </Badge>
+                  <Badge variant={product.isActive ? "default" : "secondary"} className="text-xs">
+                    {product.isActive ? "Activo" : "Inactivo"}
+                  </Badge>
+                </div>
               </div>
 
               <div className="text-sm">
