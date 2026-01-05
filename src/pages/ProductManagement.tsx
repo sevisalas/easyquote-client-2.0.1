@@ -2302,8 +2302,8 @@ export default function ProductManagement() {
                                   </div>
                                    <div className="col-span-1">
                                      <Label>Mínimo</Label>
-                                     <Input type="number" defaultValue={prompt.valueQuantityMin ?? 0} onBlur={e => {
-                                  const value = e.target.value === '' ? 0 : parseInt(e.target.value);
+                                     <Input type="number" step="any" defaultValue={prompt.valueQuantityMin ?? 0} onBlur={e => {
+                                  const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
                                   const updatedPrompt = {
                                     ...prompt,
                                     valueQuantityMin: value,
@@ -2315,8 +2315,8 @@ export default function ProductManagement() {
                                    </div>
                                    <div className="col-span-2">
                                      <Label>Máximo</Label>
-                                     <Input type="number" defaultValue={prompt.valueQuantityMax ?? 9999} onBlur={e => {
-                                  const value = e.target.value === '' ? 9999 : parseInt(e.target.value);
+                                     <Input type="number" step="any" defaultValue={prompt.valueQuantityMax ?? 9999} onBlur={e => {
+                                  const value = e.target.value === '' ? 9999 : parseFloat(e.target.value);
                                   const updatedPrompt = {
                                     ...prompt,
                                     valueQuantityMax: value,
