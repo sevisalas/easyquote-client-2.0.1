@@ -1900,12 +1900,12 @@ export default function ProductManagement() {
           <ExcelErrorScannerDialog />
           <Button onClick={() => navigate("/admin/productos/nuevo")} className="flex items-center gap-2 w-full sm:w-auto" size="sm">
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Crear producto</span>
+            <span className="hidden sm:inline">Crear {viewMode === 'productos' ? 'producto' : 'componente'}</span>
             <span className="sm:hidden">Crear</span>
           </Button>
           <Button onClick={() => navigate("/admin/productos/test")} variant="outline" className="flex items-center gap-2 w-full sm:w-auto" size="sm">
             <TestTube className="h-4 w-4" />
-            <span className="hidden sm:inline">Probar productos</span>
+            <span className="hidden sm:inline">Probar {viewMode === 'productos' ? 'productos' : 'componentes'}</span>
             <span className="sm:hidden">Probar</span>
           </Button>
         </div>
