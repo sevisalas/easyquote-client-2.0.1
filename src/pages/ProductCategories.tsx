@@ -13,22 +13,13 @@ import { Plus, Edit, Trash2, Tag, Tags } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { 
-  useProductCategories, 
-  type ProductCategory, 
-  type ProductSubcategory,
-  type CategoryFormData,
-  type SubcategoryFormData 
-} from "@/hooks/useProductCategories";
-
-const DEFAULT_COLORS = [
-  '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
-  '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16',
-  '#f97316', '#6366f1', '#14b8a6', '#eab308'
-];
-
+import { useProductCategories, type ProductCategory, type ProductSubcategory, type CategoryFormData, type SubcategoryFormData } from "@/hooks/useProductCategories";
+const DEFAULT_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1', '#14b8a6', '#eab308'];
 export default function ProductCategories() {
-  const { isSuperAdmin, isOrgAdmin } = useSubscription();
+  const {
+    isSuperAdmin,
+    isOrgAdmin
+  } = useSubscription();
   const {
     categories,
     subcategories,
@@ -41,19 +32,16 @@ export default function ProductCategories() {
     updateSubcategory,
     deleteSubcategory
   } = useProductCategories();
-
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [isSubcategoryDialogOpen, setIsSubcategoryDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ProductCategory | null>(null);
   const [editingSubcategory, setEditingSubcategory] = useState<ProductSubcategory | null>(null);
-  
   const [categoryForm, setCategoryForm] = useState<CategoryFormData>({
     name: "",
     description: "",
     color: DEFAULT_COLORS[0],
     is_active: true
   });
-
   const [subcategoryForm, setSubcategoryForm] = useState<SubcategoryFormData>({
     name: "",
     description: "",
@@ -63,8 +51,7 @@ export default function ProductCategories() {
 
   // Check permissions
   if (!isSuperAdmin && !isOrgAdmin) {
-    return (
-      <div className="container mx-auto py-10">
+    return <div className="container mx-auto py-10">
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Acceso denegado</AlertTitle>
@@ -72,10 +59,8 @@ export default function ProductCategories() {
             Solo los administradores pueden acceder a esta sección.
           </AlertDescription>
         </Alert>
-      </div>
-    );
+      </div>;
   }
-
   const handleCreateCategory = () => {
     setEditingCategory(null);
     setCategoryForm({
@@ -86,7 +71,6 @@ export default function ProductCategories() {
     });
     setIsCategoryDialogOpen(true);
   };
-
   const handleEditCategory = (category: ProductCategory) => {
     setEditingCategory(category);
     setCategoryForm({
@@ -97,7 +81,6 @@ export default function ProductCategories() {
     });
     setIsCategoryDialogOpen(true);
   };
-
   const handleCreateSubcategory = () => {
     setEditingSubcategory(null);
     setSubcategoryForm({
@@ -108,7 +91,6 @@ export default function ProductCategories() {
     });
     setIsSubcategoryDialogOpen(true);
   };
-
   const handleEditSubcategory = (subcategory: ProductSubcategory) => {
     setEditingSubcategory(subcategory);
     setSubcategoryForm({
@@ -119,7 +101,6 @@ export default function ProductCategories() {
     });
     setIsSubcategoryDialogOpen(true);
   };
-
   const handleSaveCategory = () => {
     if (editingCategory) {
       updateCategory.mutate({
@@ -138,7 +119,6 @@ export default function ProductCategories() {
       is_active: true
     });
   };
-
   const handleSaveSubcategory = () => {
     if (editingSubcategory) {
       updateSubcategory.mutate({
@@ -157,12 +137,10 @@ export default function ProductCategories() {
       is_active: true
     });
   };
-
-  return (
-    <div className="container mx-auto py-6 space-y-8">
+  return <div className="container mx-auto py-6 space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Categorías de Productos</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Categorías de productos</h1>
           <p className="text-muted-foreground">
             Administra las categorías y subcategorías de tus productos
           </p>
@@ -188,18 +166,12 @@ export default function ProductCategories() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {categoriesLoading ? (
-              <div className="text-center py-4">Cargando categorías...</div>
-            ) : (
-              <div className="space-y-4">
-                {categories.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+            {categoriesLoading ? <div className="text-center py-4">Cargando categorías...</div> : <div className="space-y-4">
+                {categories.length === 0 ? <div className="text-center py-8 text-muted-foreground">
                     <Tag className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>No hay categorías creadas</p>
                     <p className="text-sm">Crea tu primera categoría para empezar</p>
-                  </div>
-                ) : (
-                  <Table>
+                  </div> : <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Nombre</TableHead>
@@ -208,21 +180,17 @@ export default function ProductCategories() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {categories.map((category) => (
-                        <TableRow key={category.id}>
+                      {categories.map(category => <TableRow key={category.id}>
                           <TableCell>
                             <div className="flex items-center space-x-2">
-                              <div
-                                className="w-4 h-4 rounded-full border"
-                                style={{ backgroundColor: category.color }}
-                              />
+                              <div className="w-4 h-4 rounded-full border" style={{
+                        backgroundColor: category.color
+                      }} />
                               <div>
                                 <div className="font-medium">{category.name}</div>
-                                {category.description && (
-                                  <div className="text-sm text-muted-foreground">
+                                {category.description && <div className="text-sm text-muted-foreground">
                                     {category.description}
-                                  </div>
-                                )}
+                                  </div>}
                               </div>
                             </div>
                           </TableCell>
@@ -233,29 +201,18 @@ export default function ProductCategories() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end space-x-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditCategory(category)}
-                              >
+                              <Button variant="ghost" size="sm" onClick={() => handleEditCategory(category)}>
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => deleteCategory.mutate(category.id)}
-                              >
+                              <Button variant="ghost" size="sm" onClick={() => deleteCategory.mutate(category.id)}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
                           </TableCell>
-                        </TableRow>
-                      ))}
+                        </TableRow>)}
                     </TableBody>
-                  </Table>
-                )}
-              </div>
-            )}
+                  </Table>}
+              </div>}
           </CardContent>
         </Card>
 
@@ -267,11 +224,7 @@ export default function ProductCategories() {
                 <Tags className="h-5 w-5" />
                 <CardTitle>Subcategorías</CardTitle>
               </div>
-              <Button 
-                onClick={handleCreateSubcategory} 
-                size="sm"
-                disabled={categories.length === 0}
-              >
+              <Button onClick={handleCreateSubcategory} size="sm" disabled={categories.length === 0}>
                 <Plus className="h-4 w-4 mr-2" />
                 Nueva Subcategoría
               </Button>
@@ -281,26 +234,18 @@ export default function ProductCategories() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {subcategoriesLoading ? (
-              <div className="text-center py-4">Cargando subcategorías...</div>
-            ) : (
-              <div className="space-y-4">
-                {categories.length === 0 ? (
-                  <Alert>
+            {subcategoriesLoading ? <div className="text-center py-4">Cargando subcategorías...</div> : <div className="space-y-4">
+                {categories.length === 0 ? <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Sin categorías</AlertTitle>
                     <AlertDescription>
                       Debes crear al menos una categoría antes de poder crear subcategorías.
                     </AlertDescription>
-                  </Alert>
-                ) : subcategories.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  </Alert> : subcategories.length === 0 ? <div className="text-center py-8 text-muted-foreground">
                     <Tags className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>No hay subcategorías creadas</p>
                     <p className="text-sm">Crea tu primera subcategoría para empezar</p>
-                  </div>
-                ) : (
-                  <Table>
+                  </div> : <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Nombre</TableHead>
@@ -310,28 +255,22 @@ export default function ProductCategories() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {subcategories.map((subcategory) => (
-                        <TableRow key={subcategory.id}>
+                      {subcategories.map(subcategory => <TableRow key={subcategory.id}>
                           <TableCell>
                             <div>
                               <div className="font-medium">{subcategory.name}</div>
-                              {subcategory.description && (
-                                <div className="text-sm text-muted-foreground">
+                              {subcategory.description && <div className="text-sm text-muted-foreground">
                                   {subcategory.description}
-                                </div>
-                              )}
+                                </div>}
                             </div>
                           </TableCell>
                           <TableCell>
-                            {subcategory.product_categories && (
-                              <div className="flex items-center space-x-2">
-                                <div
-                                  className="w-3 h-3 rounded-full"
-                                  style={{ backgroundColor: subcategory.product_categories.color }}
-                                />
+                            {subcategory.product_categories && <div className="flex items-center space-x-2">
+                                <div className="w-3 h-3 rounded-full" style={{
+                        backgroundColor: subcategory.product_categories.color
+                      }} />
                                 <span className="text-sm">{subcategory.product_categories.name}</span>
-                              </div>
-                            )}
+                              </div>}
                           </TableCell>
                           <TableCell>
                             <Badge variant={subcategory.is_active ? "default" : "secondary"}>
@@ -340,29 +279,18 @@ export default function ProductCategories() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end space-x-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditSubcategory(subcategory)}
-                              >
+                              <Button variant="ghost" size="sm" onClick={() => handleEditSubcategory(subcategory)}>
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => deleteSubcategory.mutate(subcategory.id)}
-                              >
+                              <Button variant="ghost" size="sm" onClick={() => deleteSubcategory.mutate(subcategory.id)}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
                           </TableCell>
-                        </TableRow>
-                      ))}
+                        </TableRow>)}
                     </TableBody>
-                  </Table>
-                )}
-              </div>
-            )}
+                  </Table>}
+              </div>}
           </CardContent>
         </Card>
       </div>
@@ -382,47 +310,35 @@ export default function ProductCategories() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nombre</Label>
-              <Input
-                id="name"
-                value={categoryForm.name}
-                onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
-                placeholder="Nombre de la categoría"
-              />
+              <Input id="name" value={categoryForm.name} onChange={e => setCategoryForm({
+              ...categoryForm,
+              name: e.target.value
+            })} placeholder="Nombre de la categoría" />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="description">Descripción</Label>
-              <Textarea
-                id="description"
-                value={categoryForm.description}
-                onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
-                placeholder="Descripción opcional"
-              />
+              <Textarea id="description" value={categoryForm.description} onChange={e => setCategoryForm({
+              ...categoryForm,
+              description: e.target.value
+            })} placeholder="Descripción opcional" />
             </div>
             
             <div className="space-y-2">
               <Label>Color</Label>
               <div className="flex flex-wrap gap-2">
-                {DEFAULT_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className={`w-8 h-8 rounded-full border-2 ${
-                      categoryForm.color === color ? "border-primary" : "border-gray-200"
-                    }`}
-                    style={{ backgroundColor: color }}
-                    onClick={() => setCategoryForm({ ...categoryForm, color })}
-                  />
-                ))}
+                {DEFAULT_COLORS.map(color => <button key={color} type="button" className={`w-8 h-8 rounded-full border-2 ${categoryForm.color === color ? "border-primary" : "border-gray-200"}`} style={{
+                backgroundColor: color
+              }} onClick={() => setCategoryForm({
+                ...categoryForm,
+                color
+              })} />)}
               </div>
             </div>
           </div>
           
           <DialogFooter>
-            <Button
-              onClick={handleSaveCategory}
-              disabled={!categoryForm.name.trim()}
-            >
+            <Button onClick={handleSaveCategory} disabled={!categoryForm.name.trim()}>
               {editingCategory ? "Actualizar" : "Crear"} Categoría
             </Button>
           </DialogFooter>
@@ -444,60 +360,49 @@ export default function ProductCategories() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="subcategory-name">Nombre</Label>
-              <Input
-                id="subcategory-name"
-                value={subcategoryForm.name}
-                onChange={(e) => setSubcategoryForm({ ...subcategoryForm, name: e.target.value })}
-                placeholder="Nombre de la subcategoría"
-              />
+              <Input id="subcategory-name" value={subcategoryForm.name} onChange={e => setSubcategoryForm({
+              ...subcategoryForm,
+              name: e.target.value
+            })} placeholder="Nombre de la subcategoría" />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="category">Categoría</Label>
-              <Select
-                value={subcategoryForm.category_id}
-                onValueChange={(value) => setSubcategoryForm({ ...subcategoryForm, category_id: value })}
-              >
+              <Select value={subcategoryForm.category_id} onValueChange={value => setSubcategoryForm({
+              ...subcategoryForm,
+              category_id: value
+            })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar categoría" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.filter(cat => cat.is_active).map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
+                  {categories.filter(cat => cat.is_active).map(category => <SelectItem key={category.id} value={category.id}>
                       <div className="flex items-center space-x-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: category.color }}
-                        />
+                        <div className="w-3 h-3 rounded-full" style={{
+                      backgroundColor: category.color
+                    }} />
                         <span>{category.name}</span>
                       </div>
-                    </SelectItem>
-                  ))}
+                    </SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="subcategory-description">Descripción</Label>
-              <Textarea
-                id="subcategory-description"
-                value={subcategoryForm.description}
-                onChange={(e) => setSubcategoryForm({ ...subcategoryForm, description: e.target.value })}
-                placeholder="Descripción opcional"
-              />
+              <Textarea id="subcategory-description" value={subcategoryForm.description} onChange={e => setSubcategoryForm({
+              ...subcategoryForm,
+              description: e.target.value
+            })} placeholder="Descripción opcional" />
             </div>
           </div>
           
           <DialogFooter>
-            <Button
-              onClick={handleSaveSubcategory}
-              disabled={!subcategoryForm.name.trim() || !subcategoryForm.category_id}
-            >
+            <Button onClick={handleSaveSubcategory} disabled={!subcategoryForm.name.trim() || !subcategoryForm.category_id}>
               {editingSubcategory ? "Actualizar" : "Crear"} Subcategoría
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 }
