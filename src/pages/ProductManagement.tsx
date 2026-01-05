@@ -344,7 +344,7 @@ export default function ProductManagement() {
     promptType: 0,
     valueRequired: false,
     valueQuantityAllowedDecimals: 0,
-    valueQuantityMin: 1,
+    valueQuantityMin: 0,
     valueQuantityMax: 9999,
     promptSeq: 1,
     component: "general" // Componente asignado
@@ -1525,7 +1525,7 @@ export default function ProductManagement() {
       promptType: promptTypes[0]?.id || 0,
       valueRequired: false,
       valueQuantityAllowedDecimals: 0,
-      valueQuantityMin: 1,
+      valueQuantityMin: 0,
       valueQuantityMax: 9999,
       promptSeq: nextSeq,
       component: "general"
@@ -1560,7 +1560,7 @@ export default function ProductManagement() {
       valueRequired: newPromptData.valueRequired,
       // Solo incluir estos campos si el tipo es numérico con valores por defecto
       valueQuantityAllowedDecimals: isNumericType ? newPromptData.valueQuantityAllowedDecimals ?? 0 : null,
-      valueQuantityMin: isNumericType ? newPromptData.valueQuantityMin ?? 1 : null,
+      valueQuantityMin: isNumericType ? newPromptData.valueQuantityMin ?? 0 : null,
       valueQuantityMax: isNumericType ? newPromptData.valueQuantityMax ?? 9999 : null
     };
     createPromptMutation.mutate(newPrompt, {
@@ -2294,7 +2294,7 @@ export default function ProductManagement() {
                                   const updatedPrompt = {
                                     ...prompt,
                                     valueQuantityAllowedDecimals: value,
-                                    valueQuantityMin: prompt.valueQuantityMin ?? 1,
+                                    valueQuantityMin: prompt.valueQuantityMin ?? 0,
                                     valueQuantityMax: prompt.valueQuantityMax ?? 9999
                                   };
                                   updatePromptMutation.mutate(updatedPrompt);
@@ -2302,8 +2302,8 @@ export default function ProductManagement() {
                                   </div>
                                    <div className="col-span-1">
                                      <Label>Mínimo</Label>
-                                     <Input type="number" defaultValue={prompt.valueQuantityMin ?? 1} onBlur={e => {
-                                  const value = e.target.value === '' ? 1 : parseInt(e.target.value);
+                                     <Input type="number" defaultValue={prompt.valueQuantityMin ?? 0} onBlur={e => {
+                                  const value = e.target.value === '' ? 0 : parseInt(e.target.value);
                                   const updatedPrompt = {
                                     ...prompt,
                                     valueQuantityMin: value,
@@ -2321,7 +2321,7 @@ export default function ProductManagement() {
                                     ...prompt,
                                     valueQuantityMax: value,
                                     valueQuantityAllowedDecimals: prompt.valueQuantityAllowedDecimals ?? 0,
-                                    valueQuantityMin: prompt.valueQuantityMin ?? 1
+                                    valueQuantityMin: prompt.valueQuantityMin ?? 0
                                   };
                                   updatePromptMutation.mutate(updatedPrompt);
                                 }} />
@@ -2338,7 +2338,7 @@ export default function ProductManagement() {
                                   const updatedPrompt = {
                                     ...prompt,
                                     valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals ?? 0 : null,
-                                    valueQuantityMin: isNumericType ? prompt.valueQuantityMin ?? 1 : null,
+                                    valueQuantityMin: isNumericType ? prompt.valueQuantityMin ?? 0 : null,
                                     valueQuantityMax: isNumericType ? prompt.valueQuantityMax ?? 9999 : null
                                   };
                                   updatePromptMutation.mutate(updatedPrompt);
@@ -2675,10 +2675,19 @@ export default function ProductManagement() {
                 </div>
                 <div>
                   <Label htmlFor="valueQuantityMin">Mínimo</Label>
-                  <Input id="valueQuantityMin" type="number" value={newPromptData.valueQuantityMin} onChange={e => setNewPromptData({
-                ...newPromptData,
-                valueQuantityMin: parseFloat(e.target.value) || 1
-              })} placeholder="1" />
+                  <Input
+                    id="valueQuantityMin"
+                    type="number"
+                    value={newPromptData.valueQuantityMin}
+                    onChange={e => {
+                      const raw = e.target.value;
+                      setNewPromptData({
+                        ...newPromptData,
+                        valueQuantityMin: raw === '' ? 0 : parseFloat(raw)
+                      });
+                    }}
+                    placeholder="0"
+                  />
                 </div>
                 <div>
                   <Label htmlFor="valueQuantityMax">Máximo</Label>
