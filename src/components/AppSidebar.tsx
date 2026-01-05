@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles, Monitor, ListChecks, TrendingUp, Building2, Boxes } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles, Monitor, ListChecks, TrendingUp, Building2 } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, SidebarRail, useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -377,15 +377,6 @@ export function AppSidebar() {
                                </SidebarMenuSubButton>
                               </SidebarMenuSubItem>}
 
-                            {/* Componentes - Solo visible para Tradsis (en pruebas) */}
-                            {canAccessProductos() && currentOrgName === 'Tradsis' && <SidebarMenuSubItem>
-                                <SidebarMenuSubButton asChild isActive={currentPath === "/admin/componentes"} className="h-6 px-2">
-                                  <NavLink to="/admin/componentes" end className={getNavCls}>
-                                    <Boxes className="mr-2 h-4 w-4" />
-                                    {!isCollapsed && <span>Componentes</span>}
-                                  </NavLink>
-                                </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>}
                            
                             {/* Categorías - Solo Client/ERP, NO API puro */}
                             {canAccessCategorias() && (isClientSubscription() || isERPSubscription()) && <SidebarMenuSubItem>
