@@ -18,7 +18,7 @@ import BoundProductConfigSelector, {
   getActiveComponents
 } from "@/components/quotes/BoundProductConfigSelector";
 import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
-import { ArrowLeft, AlertCircle } from "lucide-react";
+import { ArrowLeft, AlertCircle, Package, Boxes } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const fetchProducts = async () => {
@@ -55,6 +55,7 @@ export default function ProductTestPage() {
   const [isEditingPrice, setIsEditingPrice] = useState(false);
   const [localPriceInput, setLocalPriceInput] = useState("");
   const [tokenReady, setTokenReady] = useState(!!sessionStorage.getItem("easyquote_token"));
+  const [viewMode, setViewMode] = useState<'productos' | 'componentes'>('productos');
   const {
     isSuperAdmin,
     isOrgAdmin,
@@ -67,6 +68,26 @@ export default function ProductTestPage() {
   const queryClient = useQueryClient();
   
   const organizationId = organization?.id || membership?.organization_id;
+
+  // Fetch component product IDs
+  const { data: componentProductIds = new Set<string>() } = useQuery({
+    queryKey: ["component-product-ids", organizationId],
+    queryFn: async () => {
+      if (!organizationId) return new Set<string>();
+      const { data, error } = await supabase
+        .from("product_component_settings")
+        .select("easyquote_product_id")
+        .eq("organization_id", organizationId)
+        .eq("is_component", true);
+      if (error) {
+        console.error("Error fetching component products:", error);
+        return new Set<string>();
+      }
+      return new Set((data || []).map((d) => d.easyquote_product_id));
+    },
+    enabled: !!organizationId,
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Determinar si el producto necesita selector de configuración (tiene múltiples componentes)
   const availableConfigs = useMemo(() => {
@@ -253,7 +274,7 @@ export default function ProductTestPage() {
 
   // Fetch products - with aggressive caching (separate key to avoid conflicts)
   const {
-    data: products = [],
+    data: allProducts = [],
     isLoading
   } = useQuery({
     queryKey: ["easyquote-products-test-page"],
@@ -263,6 +284,27 @@ export default function ProductTestPage() {
     // 10 minutes - products rarely change
     gcTime: 30 * 60 * 1000 // 30 minutes cache
   });
+
+  // Filter products based on viewMode
+  const products = useMemo(() => {
+    return allProducts.filter((p: any) => {
+      const isProductComponent = componentProductIds.has(p.id);
+      if (viewMode === 'productos') return !isProductComponent;
+      return isProductComponent;
+    });
+  }, [allProducts, componentProductIds, viewMode]);
+
+  // Reset productId when switching viewMode if current product doesn't match the new filter
+  useEffect(() => {
+    if (productId) {
+      const isProductComponent = componentProductIds.has(productId);
+      const matchesCurrentView = viewMode === 'productos' ? !isProductComponent : isProductComponent;
+      if (!matchesCurrentView) {
+        setProductId("");
+        setProductDetail(null);
+      }
+    }
+  }, [viewMode, componentProductIds, productId]);
 
   // Fetch product detail when productId changes
   useEffect(() => {
@@ -900,27 +942,49 @@ export default function ProductTestPage() {
             </Button>
           </div>
           <h1 className="text-3xl font-bold">
-            {selectedProduct ? getProductLabel(selectedProduct) : "Prueba de productos"}
+            {selectedProduct ? getProductLabel(selectedProduct) : `Prueba de ${viewMode}`}
           </h1>
         </div>
       </div>
 
+      {/* Tabs: Productos / Componentes */}
+      <div className="flex items-center gap-2">
+        <Button 
+          variant={viewMode === 'productos' ? 'default' : 'outline'} 
+          size="sm"
+          onClick={() => setViewMode('productos')}
+          className="flex items-center gap-2"
+        >
+          <Package className="h-4 w-4" />
+          Productos
+        </Button>
+        <Button 
+          variant={viewMode === 'componentes' ? 'default' : 'outline'} 
+          size="sm"
+          onClick={() => setViewMode('componentes')}
+          className="flex items-center gap-2"
+        >
+          <Boxes className="h-4 w-4" />
+          Componentes
+        </Button>
+      </div>
+
       {isLoading ? <div className="text-center py-8">
-          <p>Cargando productos...</p>
+          <p>Cargando {viewMode}...</p>
         </div> : <div className="grid lg:grid-cols-3 gap-6">
           {/* Product Selection & Configuration */}
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Selección de producto</CardTitle>
+                <CardTitle>Selección de {viewMode === 'productos' ? 'producto' : 'componente'}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Product Selection */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Producto</label>
+                  <label className="text-sm font-medium">{viewMode === 'productos' ? 'Producto' : 'Componente'}</label>
                   <Select value={productId} onValueChange={setProductId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un producto..." />
+                      <SelectValue placeholder={`Selecciona un ${viewMode === 'productos' ? 'producto' : 'componente'}...`} />
                     </SelectTrigger>
                     <SelectContent>
                       {products.map((product: any) => <SelectItem key={product.id} value={product.id}>
