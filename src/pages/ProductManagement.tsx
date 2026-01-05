@@ -434,6 +434,26 @@ export default function ProductManagement() {
     select: (data) => data instanceof Set ? data : new Set<string>()
   });
 
+  // Query para obtener IDs de productos compuestos (encuadernado)
+  const { data: compositeProductIds = new Set<string>() } = useQuery({
+    queryKey: ['composite-product-ids', organizationId],
+    queryFn: async () => {
+      if (!organizationId) return new Set<string>();
+      const { data, error } = await supabase
+        .from('product_component_settings')
+        .select('easyquote_product_id')
+        .eq('organization_id', organizationId)
+        .eq('is_composite', true);
+      if (error) {
+        console.error("Error fetching composite IDs:", error);
+        return new Set<string>();
+      }
+      return new Set((data || []).map(d => d.easyquote_product_id));
+    },
+    enabled: !!organizationId,
+    select: (data) => data instanceof Set ? data : new Set<string>()
+  });
+
   // Mutación para cambiar si un producto es componente
   const toggleComponentMutation = useMutation({
     mutationFn: async ({ productId, isComponent }: { productId: string; isComponent: boolean }) => {
@@ -2057,6 +2077,7 @@ export default function ProductManagement() {
               onEditProduct={handleEditProduct} 
               onDuplicateProduct={handleDuplicateProduct}
               componentProductIds={componentProductIds}
+              compositeProductIds={compositeProductIds}
               onToggleComponent={(productId, isComponent) => toggleComponentMutation.mutate({ productId, isComponent })}
               isTogglingComponent={toggleComponentMutation.isPending}
             />}
