@@ -295,7 +295,8 @@ export default function ProductManagement() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [subcategoryFilter, setSubcategoryFilter] = useState<string>("all");
   const [includeInactive, setIncludeInactive] = useState(false);
-  const [viewMode, setViewMode] = useState<'productos' | 'componentes'>('productos');
+  const initialViewMode = searchParams.get('view') === 'componentes' ? 'componentes' : 'productos';
+  const [viewMode, setViewMode] = useState<'productos' | 'componentes'>(initialViewMode);
   const [selectedProduct, setSelectedProduct] = useState<EasyQuoteProduct | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [hasToken, setHasToken] = useState<boolean | null>(null);
@@ -1903,7 +1904,7 @@ export default function ProductManagement() {
             <span className="hidden sm:inline">Crear {viewMode === 'productos' ? 'producto' : 'componente'}</span>
             <span className="sm:hidden">Crear</span>
           </Button>
-          <Button onClick={() => navigate("/admin/productos/test")} variant="outline" className="flex items-center gap-2 w-full sm:w-auto" size="sm">
+          <Button onClick={() => navigate(`/admin/productos/test?view=${viewMode}`)} variant="outline" className="flex items-center gap-2 w-full sm:w-auto" size="sm">
             <TestTube className="h-4 w-4" />
             <span className="hidden sm:inline">Probar {viewMode === 'productos' ? 'productos' : 'componentes'}</span>
             <span className="sm:hidden">Probar</span>
