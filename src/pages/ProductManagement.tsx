@@ -2096,8 +2096,11 @@ export default function ProductManagement() {
                       <SelectContent>
                         <SelectItem value="sencillo">Sencillo</SelectItem>
                         <SelectItem value="encuadernado">Encuadernado</SelectItem>
-                        <SelectItem value="compuesto" disabled>
-                          Compuesto (no disponible)
+                        <SelectItem 
+                          value="compuesto" 
+                          disabled={organizationId !== 'f95d535e-5a8f-4fef-9dda-75071d5b0e9e'}
+                        >
+                          Compuesto {organizationId !== 'f95d535e-5a8f-4fef-9dda-75071d5b0e9e' ? '(no disponible)' : ''}
                         </SelectItem>
                       </SelectContent>
                     </Select>
