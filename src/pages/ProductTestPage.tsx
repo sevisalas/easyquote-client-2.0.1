@@ -1161,8 +1161,8 @@ export default function ProductTestPage() {
                           </div>
                         )}
 
-                        {/* Botón para activar edición */}
-                        {!isEditingPrice && (
+                        {/* Botón para activar edición - solo para admins */}
+                        {!isEditingPrice && (isSuperAdmin || isOrgAdmin) && (
                           <Button
                             size="sm"
                             variant="ghost"
@@ -1177,8 +1177,8 @@ export default function ProductTestPage() {
                           </Button>
                         )}
 
-                        {/* Botón para quitar precio modificado */}
-                        {modifiedPrice !== null && !isEditingPrice && (
+                        {/* Botón para quitar precio modificado - solo para admins */}
+                        {modifiedPrice !== null && !isEditingPrice && (isSuperAdmin || isOrgAdmin) && (
                           <Button
                             size="sm"
                             variant="ghost"
