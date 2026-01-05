@@ -288,7 +288,8 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
     return org.client_user_limit + org.client_user_extra;
   };
 
-  const isOrgAdmin = organization !== null || membership?.role === 'admin' || isSuperAdmin;
+  // isOrgAdmin: solo es true si es el dueño de la organización (api_user_id) o tiene rol admin
+  const isOrgAdmin = (organization !== null) || membership?.role === 'admin';
 
   // Funciones para determinar el tipo de suscripción basadas en plan_id
   const isAPISubscription = () => {
