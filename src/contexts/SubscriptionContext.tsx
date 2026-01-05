@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useMemo, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -289,7 +289,10 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   };
 
   // isOrgAdmin: solo es true si es el dueño de la organización (api_user_id) o tiene rol admin
-  const isOrgAdmin = (organization !== null) || membership?.role === 'admin';
+  // Usamos useMemo para que se recalcule cuando organization o membership cambien
+  const isOrgAdmin = useMemo(() => {
+    return (organization !== null) || membership?.role === 'admin';
+  }, [organization, membership]);
 
   // Funciones para determinar el tipo de suscripción basadas en plan_id
   const isAPISubscription = () => {
