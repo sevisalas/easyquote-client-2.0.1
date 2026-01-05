@@ -289,15 +289,15 @@ export default function ComponentsManagement() {
 
               <div className="space-y-2">
                 <Label htmlFor="product">Producto EasyQuote (Excel)</Label>
-                <Select
-                  value={formData.easyquote_product_id}
-                  onValueChange={(value) => setFormData({ ...formData, easyquote_product_id: value })}
+              <Select
+                  value={formData.easyquote_product_id || "none"}
+                  onValueChange={(value) => setFormData({ ...formData, easyquote_product_id: value === "none" ? "" : value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar producto..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin vincular</SelectItem>
+                    <SelectItem value="none">Sin vincular</SelectItem>
                     {easyquoteProducts.filter(p => p.isActive).map(product => (
                       <SelectItem key={product.id} value={product.id}>
                         {product.name}
