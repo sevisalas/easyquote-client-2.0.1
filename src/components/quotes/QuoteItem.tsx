@@ -1983,17 +1983,21 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                                       {hasModified && (
                                         <div className="text-xs text-muted-foreground line-through">{formattedCalculated} €</div>
                                       )}
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setLocalMultiPriceInput(displayPrice.toFixed(2).replace(".", ","));
-                                          setEditingMultiPriceIdx(idx);
-                                        }}
-                                        className="text-sm font-semibold hover:text-primary transition-colors"
-                                      >
-                                        {formattedPrice} €
-                                      </button>
-                                      {hasModified && (
+                                      {canEditPrice ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setLocalMultiPriceInput(displayPrice.toFixed(2).replace(".", ","));
+                                            setEditingMultiPriceIdx(idx);
+                                          }}
+                                          className="text-sm font-semibold hover:text-primary transition-colors"
+                                        >
+                                          {formattedPrice} €
+                                        </button>
+                                      ) : (
+                                        <span className="text-sm font-semibold">{formattedPrice} €</span>
+                                      )}
+                                      {hasModified && canEditPrice && (
                                         <button
                                           type="button"
                                           onClick={() => setMultiModifiedPrices(prev => ({ ...prev, [idx]: null }))}
