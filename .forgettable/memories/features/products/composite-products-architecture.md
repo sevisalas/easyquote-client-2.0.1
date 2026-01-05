@@ -19,7 +19,18 @@ Los productos compuestos ("Encuadernados") permiten configurar productos que est
 - Se envían a la API como inputs para el cálculo de precios
 - Se muestran en la sección "General" (columna izquierda), NO en las pestañas de componentes
 
-**Ejemplos:**
+**Datos Generales para Encuadernados:**
+
+| Campo | Descripción | Visibilidad |
+|-------|-------------|-------------|
+| **Cantidad de ejemplares** | Número de copias del producto completo | Siempre visible |
+| **Formato** | Tamaño del producto (A4, A5, Personalizado...) | Siempre visible |
+| **Formato personalizado** | Ancho y Alto en mm | Solo si Formato = "Personalizado" |
+| **Tipo de encuadernación** | Rústica, Tapa dura, Wire-O, etc. | Siempre visible |
+
+> **Nota:** El campo "Formato" puede no ser general en otros tipos de productos compuestos.
+
+**Otros ejemplos de datos generales (no específicos de encuadernados):**
 - **Cantidad de ejemplares**: El número de copias es el mismo para cubierta e interiores
 - **Fecha de entrega**: Aplica al producto completo
 - **Cliente/Referencia**: Información del pedido global
