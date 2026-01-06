@@ -26,12 +26,31 @@ interface Version {
 
 const versions: Version[] = [
   {
-    version: "2.4.3",
+    version: "2.4.5",
     date: "En desarrollo",
     isDevelopment: true,
     changes: {
+      added: [],
+    },
+  },
+  {
+    version: "2.4.4",
+    date: "2026-01-06",
+    changes: {
       added: [
         "Productos compuestos (encuadernados con portada + interiores)",
+      ],
+      fixed: [
+        "Filtro admin_only en prompts ahora funciona correctamente en productos no compuestos",
+      ],
+    },
+  },
+  {
+    version: "2.4.3",
+    date: "2026-01-03",
+    changes: {
+      fixed: [
+        "Formato de año dinámico en numeración muestra el año actual",
       ],
     },
   },
