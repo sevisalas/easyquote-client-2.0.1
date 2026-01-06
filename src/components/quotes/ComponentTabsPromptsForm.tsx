@@ -116,7 +116,9 @@ export default function ComponentTabsPromptsForm({
       }
       return Array.isArray(data) ? data : [];
     },
-    enabled: isComposite && !!productId,
+    // Necesitamos las definiciones también en productos NO compuestos para poder mapear UUID -> celda
+    // y así aplicar correctamente la restricción admin_only (sin depender de labels).
+    enabled: !!productId,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false
   });
