@@ -123,20 +123,6 @@ export default function ComponentTabsPromptsForm({
 
   // Usamos siempre los prompts del producto (pricing) porque tienen los labels (promptText) y currentValue.
   // Las definiciones (promptDefinitions) solo se usan para mapear UUID -> celda (B12, B36...) para la agrupación.
-  // Filtramos los prompts admin_only si el usuario no es admin
-  const prompts = useMemo(() => {
-    const allPrompts = extractPrompts(product);
-    
-    // Si el usuario es admin, mostrar todos los prompts
-    if (isAdmin) return allPrompts;
-    
-    // Filtrar prompts que son admin_only
-    return allPrompts.filter(prompt => {
-      const promptId = String(prompt.id);
-      // Verificar usando el id del prompt (que puede ser la celda como B12)
-      return !isPromptAdminOnly(promptId);
-    });
-  }, [product, isAdmin, isPromptAdminOnly]);
 
   // Construir lookup: UUID -> promptCell (celda normalizada)
   const promptCellLookup = useMemo(() => {
@@ -158,6 +144,28 @@ export default function ComponentTabsPromptsForm({
 
     return map;
   }, [promptDefinitions]);
+
+  const getPromptAdminKey = (prompt: PromptDef): string => {
+    const idStr = String(prompt.id);
+    const idNorm = extractCellRef(idStr) ?? normalizePromptName(idStr);
+    const labelCell = extractCellRef((prompt as any)?.label);
+
+    const cellFromId = idNorm ? promptCellLookup.get(idNorm) : undefined;
+    const cellFromLabel = labelCell ? (promptCellLookup.get(labelCell) ?? labelCell) : undefined;
+
+    // Importante: NO usar el texto del label (p.ej. "Tarifa"); solo referencias de celda/ids.
+    return cellFromId ?? cellFromLabel ?? extractCellRef(idStr) ?? labelCell ?? idNorm ?? idStr;
+  };
+
+  // Filtramos los prompts admin_only si el usuario no es admin
+  const prompts = useMemo(() => {
+    const allPrompts = extractPrompts(product);
+
+    // Si el usuario es admin, mostrar todos los prompts
+    if (isAdmin) return allPrompts;
+
+    return allPrompts.filter((prompt) => !isPromptAdminOnly(getPromptAdminKey(prompt)));
+  }, [product, isAdmin, isPromptAdminOnly, promptCellLookup]);
 
   // Construir lista de componentes disponibles: siempre "general" + los habilitados ordenados
   // Pero filtrados por boundProductConfig si está definido
@@ -303,7 +311,9 @@ export default function ComponentTabsPromptsForm({
   // Si NO es un producto compuesto (o está cargando), renderizar el formulario normal
   // (pero aseguramos que los hooks se llamen siempre para evitar "Rendered more hooks")
   if (!isComposite || isLoading) {
-    return <PromptsForm product={product} values={values} onChange={onChange} onCommit={onCommit} showAllPrompts={showAllPrompts} />;
+    // Para productos NO compuestos, también aplicamos el filtro admin_only (sin depender de nombres/labels).
+    const productForForm = product ? { ...product, prompts } : product;
+    return <PromptsForm product={productForForm} values={values} onChange={onChange} onCommit={onCommit} showAllPrompts={showAllPrompts} />;
   }
 
   // Si no hay componentes (solo general), mostramos el título y el formulario general a ancho completo
