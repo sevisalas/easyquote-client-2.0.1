@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PromptsForm, { extractPrompts, type PromptDef } from "./PromptsForm";
 import { GENERAL_COMPONENT, useProductComponentSettings } from "@/hooks/useProductComponentSettings";
+import { useProductPromptSettings } from "@/hooks/useProductPromptSettings";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 import { type BoundProductConfig, getActiveComponents } from "./BoundProductConfigSelector";
 
@@ -16,6 +17,8 @@ interface ComponentTabsPromptsFormProps {
   onComponentChange?: (component: string) => void;
   /** Configuración de producto encuadernado (filtra qué componentes mostrar) */
   boundProductConfig?: BoundProductConfig | null;
+  /** Si el usuario es admin (puede ver prompts admin_only) */
+  isAdmin?: boolean;
 }
 
 // Labels dinámicos para componentes según la configuración
@@ -73,7 +76,8 @@ export default function ComponentTabsPromptsForm({
   onCommit,
   showAllPrompts = false,
   onComponentChange,
-  boundProductConfig
+  boundProductConfig,
+  isAdmin = false
 }: ComponentTabsPromptsFormProps) {
   const {
     isComposite,
@@ -81,6 +85,9 @@ export default function ComponentTabsPromptsForm({
     getPromptComponent,
     isLoading
   } = useProductComponentSettings(productId);
+
+  // Obtener configuración de prompts (admin_only, hide_in_documents)
+  const { isPromptAdminOnly } = useProductPromptSettings(productId);
 
   // Obtener componentes activos según la configuración de producto encuadernado
   const activeComponents = useMemo(() => {
@@ -116,7 +123,20 @@ export default function ComponentTabsPromptsForm({
 
   // Usamos siempre los prompts del producto (pricing) porque tienen los labels (promptText) y currentValue.
   // Las definiciones (promptDefinitions) solo se usan para mapear UUID -> celda (B12, B36...) para la agrupación.
-  const prompts = useMemo(() => extractPrompts(product), [product]);
+  // Filtramos los prompts admin_only si el usuario no es admin
+  const prompts = useMemo(() => {
+    const allPrompts = extractPrompts(product);
+    
+    // Si el usuario es admin, mostrar todos los prompts
+    if (isAdmin) return allPrompts;
+    
+    // Filtrar prompts que son admin_only
+    return allPrompts.filter(prompt => {
+      const promptId = String(prompt.id);
+      // Verificar usando el id del prompt (que puede ser la celda como B12)
+      return !isPromptAdminOnly(promptId);
+    });
+  }, [product, isAdmin, isPromptAdminOnly]);
 
   // Construir lookup: UUID -> promptCell (celda normalizada)
   const promptCellLookup = useMemo(() => {

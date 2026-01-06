@@ -1064,6 +1064,7 @@ export default function ProductTestPage() {
                         onCommit={handlePromptCommit}
                         onComponentChange={setSelectedComponent}
                         boundProductConfig={boundProductConfig}
+                        isAdmin={isSuperAdmin || isOrgAdmin}
                       />
                     ) : null}
                   </div>}

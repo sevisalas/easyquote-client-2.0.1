@@ -23,6 +23,7 @@ export type PromptDef = {
   default?: any;
   visibility?: any; // show if conditions
   hiddenWhen?: any; // hide if conditions
+  adminOnly?: boolean; // only visible to admins
 };
 
 function isHexColor(v: string) {
