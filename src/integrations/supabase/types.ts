@@ -1285,6 +1285,7 @@ export type Database = {
       }
       product_prompt_settings: {
         Row: {
+          admin_only: boolean
           created_at: string
           easyquote_product_id: string
           hide_in_documents: boolean
@@ -1294,6 +1295,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_only?: boolean
           created_at?: string
           easyquote_product_id: string
           hide_in_documents?: boolean
@@ -1303,6 +1305,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_only?: boolean
           created_at?: string
           easyquote_product_id?: string
           hide_in_documents?: boolean

@@ -1726,6 +1726,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                         showAllPrompts={!!initialData}
                         onComponentChange={setActiveComponent}
                         boundProductConfig={boundProductConfig}
+                        isAdmin={isSuperAdmin || isOrgAdmin}
                       />
                     ) : (
                       <p className="text-sm text-muted-foreground">Cargando opciones…</p>

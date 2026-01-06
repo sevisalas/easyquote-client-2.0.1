@@ -545,11 +545,13 @@ export default function ProductManagement() {
     mutationFn: async ({
       productId,
       promptName,
-      hideInDocuments
+      hideInDocuments,
+      adminOnly
     }: {
       productId: string;
       promptName: string;
-      hideInDocuments: boolean;
+      hideInDocuments?: boolean;
+      adminOnly?: boolean;
     }) => {
       const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
       const promptKey = normalizePromptKey(promptName);
@@ -558,22 +560,28 @@ export default function ProductManagement() {
         orgId,
         productId,
         promptName: promptKey,
-        hideInDocuments
+        hideInDocuments,
+        adminOnly
       });
       if (!orgId) throw new Error("No organization selected");
 
       // First try to find existing record
       const {
         data: existing
-      } = await supabase.from("product_prompt_settings").select("id").eq("organization_id", orgId).eq("easyquote_product_id", productId).eq("prompt_name", promptKey).maybeSingle();
+      } = await supabase.from("product_prompt_settings").select("id, hide_in_documents, admin_only").eq("organization_id", orgId).eq("easyquote_product_id", productId).eq("prompt_name", promptKey).maybeSingle();
+      
+      // Build update object with only provided fields
+      const updateData: { hide_in_documents?: boolean; admin_only?: boolean; updated_at: string } = {
+        updated_at: new Date().toISOString()
+      };
+      if (hideInDocuments !== undefined) updateData.hide_in_documents = hideInDocuments;
+      if (adminOnly !== undefined) updateData.admin_only = adminOnly;
+
       if (existing) {
         // Update existing record
         const {
           error
-        } = await supabase.from("product_prompt_settings").update({
-          hide_in_documents: hideInDocuments,
-          updated_at: new Date().toISOString()
-        }).eq("id", existing.id);
+        } = await supabase.from("product_prompt_settings").update(updateData).eq("id", existing.id);
         if (error) throw error;
       } else {
         // Insert new record
@@ -583,7 +591,8 @@ export default function ProductManagement() {
           organization_id: orgId,
           easyquote_product_id: productId,
           prompt_name: promptKey,
-          hide_in_documents: hideInDocuments
+          hide_in_documents: hideInDocuments ?? false,
+          admin_only: adminOnly ?? false
         });
         if (error) throw error;
       }
@@ -611,6 +620,14 @@ export default function ProductManagement() {
     const key = normalizePromptKey(promptName);
     const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
     return setting?.hide_in_documents || false;
+  };
+
+  // Helper to check if prompt is admin only
+  const isPromptAdminOnly = (promptName: string): boolean => {
+    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+    const key = normalizePromptKey(promptName);
+    const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
+    return setting?.admin_only || false;
   };
 
   // ALL HOOKS MUST BE DECLARED BEFORE ANY CONDITIONAL LOGIC
@@ -2506,6 +2523,18 @@ export default function ProductManagement() {
                                     productId: selectedProduct.id,
                                     promptName: prompt.promptCell,
                                     hideInDocuments: checked
+                                  });
+                                }
+                              }} />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Label className="text-sm font-medium whitespace-nowrap">Solo admin</Label>
+                                <Switch checked={isPromptAdminOnly(prompt.promptCell)} onCheckedChange={checked => {
+                                if (selectedProduct) {
+                                  upsertPromptSettingMutation.mutate({
+                                    productId: selectedProduct.id,
+                                    promptName: prompt.promptCell,
+                                    adminOnly: checked
                                   });
                                 }
                               }} />
