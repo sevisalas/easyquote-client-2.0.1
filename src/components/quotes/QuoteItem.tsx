@@ -347,7 +347,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     p?.name ?? p?.title ?? p?.displayName ?? p?.productName ?? p?.product_name ?? p?.nombre ?? p?.Nombre ?? p?.description ?? "Producto sin nombre";
 
   // Obtener productos que son componentes (para excluirlos de la selección)
-  const { data: componentProductIds } = useQuery({
+  const { data: componentProductIds, isLoading: isLoadingComponents } = useQuery({
     queryKey: ["component-product-ids", organizationId],
     queryFn: async () => {
       if (!organizationId) return [];
@@ -374,12 +374,15 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   });
 
   // Filtrar componentes de la lista de productos para selección
+  // Esperamos a que componentProductIds esté cargado para aplicar el filtro correctamente
   const products = useMemo(() => {
     if (!allProducts) return [];
+    // Si aún no tenemos organizationId o está cargando componentes, esperamos
+    if (organizationId && isLoadingComponents) return [];
     const componentIds = Array.isArray(componentProductIds) ? componentProductIds : [];
-    if (componentIds.length === 0) return allProducts;
+    // Filtrar componentes de la lista
     return allProducts.filter((p: any) => !componentIds.includes(p.id));
-  }, [allProducts, componentProductIds]);
+  }, [allProducts, componentProductIds, organizationId, isLoadingComponents]);
 
   // Auto-fill product description cuando se selecciona un producto se maneja en el useEffect principal (líneas 712-722)
 
