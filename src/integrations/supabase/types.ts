@@ -26,6 +26,7 @@ export type Database = {
           is_active: boolean
           is_discount: boolean
           name: string
+          organization_id: string
           price: number
           task_exclude_values: string[] | null
           task_name: string | null
@@ -45,6 +46,7 @@ export type Database = {
           is_active?: boolean
           is_discount?: boolean
           name: string
+          organization_id: string
           price?: number
           task_exclude_values?: string[] | null
           task_name?: string | null
@@ -64,6 +66,7 @@ export type Database = {
           is_active?: boolean
           is_discount?: boolean
           name?: string
+          organization_id?: string
           price?: number
           task_exclude_values?: string[] | null
           task_name?: string | null
@@ -73,6 +76,20 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "additionals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "additionals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "additionals_task_phase_id_fkey"
             columns: ["task_phase_id"]
