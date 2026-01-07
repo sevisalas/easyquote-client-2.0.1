@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
+import { useSubscription } from "@/contexts/SubscriptionContext"
 import { Plus, Edit, Trash2 } from "lucide-react"
 
 interface Additional {
@@ -73,6 +74,8 @@ export default function Additionals() {
 
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const { organization, membership } = useSubscription()
+  const organizationId = organization?.id || membership?.organization_id
 
   const { data: additionals = [], isLoading } = useQuery({
     queryKey: ["additionals"],
@@ -97,6 +100,7 @@ export default function Additionals() {
     mutationFn: async (newAdditional: AdditionalForm) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
+      if (!organizationId) throw new Error("No organization found");
 
       const { data, error } = await supabase
         .from("additionals")
@@ -104,7 +108,8 @@ export default function Additionals() {
           ...newAdditional,
           // Convertir strings vacíos a null para campos UUID
           task_phase_id: newAdditional.task_phase_id || null,
-          user_id: user.id
+          user_id: user.id,
+          organization_id: organizationId
         })
         .select()
         .single()
