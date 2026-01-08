@@ -307,9 +307,11 @@ export default function ProductTestPage() {
     }
   }, [viewMode, componentProductIds, productId]);
 
-  // Fetch product detail when productId changes
+  // Fetch product detail when productId changes - with retries for transient errors
   useEffect(() => {
-    const fetchProductDetail = async () => {
+    const fetchProductDetail = async (retryCount = 0) => {
+      const MAX_RETRIES = 2;
+      
       if (!productId) {
         console.log("🔴 No productId selected");
         setProductDetail(null);
@@ -323,13 +325,15 @@ export default function ProductTestPage() {
         return;
       }
       
-      console.log("🟢 Starting to fetch product detail for:", productId);
+      console.log("🟢 Starting to fetch product detail for:", productId, retryCount > 0 ? `(retry ${retryCount})` : "");
       setIsLoadingProduct(true);
-      setIsInitialLoad(true);
-      setHasUserModifiedPrompts(false);
-      setDiagnosticResult(null);
-      setProductLoadError(null);
-      setBoundProductConfig(null); // Reset configuración de producto encuadernado
+      if (retryCount === 0) {
+        setIsInitialLoad(true);
+        setHasUserModifiedPrompts(false);
+        setDiagnosticResult(null);
+        setProductLoadError(null);
+        setBoundProductConfig(null); // Reset configuración de producto encuadernado
+      }
       
       // Use getEasyQuoteToken which validates and auto-refreshes expired tokens
       const token = await getEasyQuoteToken();
@@ -365,6 +369,7 @@ export default function ProductTestPage() {
         console.log("✅ Pricing data received:", pricingData);
         console.log("📋 Prompts from pricing:", pricingData?.prompts?.length || 0);
         setProductDetail(pricingData);
+        setProductLoadError(null); // Clear any previous error
 
         // Reset prompt values with current values from pricing
         const currentValues: Record<string, any> = {};
@@ -381,9 +386,18 @@ export default function ProductTestPage() {
         setTimeout(() => {
           console.log("✅ Initial load complete");
           setIsInitialLoad(false);
-        }, 300); // Reduced from 1000ms
+        }, 300);
       } catch (error: any) {
         console.error("🔴 Error fetching product detail:", error);
+        
+        // Retry on transient errors
+        if (retryCount < MAX_RETRIES) {
+          const delay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Backoff: 1s, 2s, max 5s
+          console.log(`⏳ Reintentando en ${delay}ms...`);
+          setTimeout(() => fetchProductDetail(retryCount + 1), delay);
+          return;
+        }
+        
         const msg = error?.message || "Error al cargar el producto";
         setProductLoadError(msg);
         toast({ title: "Error al cargar el producto", description: msg, variant: "destructive" });
@@ -391,7 +405,9 @@ export default function ProductTestPage() {
         setPromptValues({});
         setIsInitialLoad(false);
       } finally {
-        setIsLoadingProduct(false);
+        if (retryCount >= MAX_RETRIES || !productLoadError) {
+          setIsLoadingProduct(false);
+        }
       }
     };
     fetchProductDetail();
