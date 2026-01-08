@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "@/hooks/use-toast";
 import { AlertTriangle, Copy, FileSpreadsheet, Loader2, Link2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
+
 
 const ERROR_RE = /^#(N\/?A|REF!|VALUE!|DIV\/0!|NAME\?|NULL!|NUM!|SPILL!|CALC!)$/i;
 
@@ -19,28 +19,7 @@ const SHEET_REF_RE = /(?:^|[,(])\s*'?([A-Za-z_][A-Za-z0-9_ ]*)'?!(\$?[A-Z]+\$?\d
 // Regex to detect external file references [filename]
 const EXTERNAL_REF_RE = /\[([^\]]+)\]/g;
 
-// Functions not supported or problematic in PHPExcel (used by WooCommerce Price Calculator)
-// These cause "internal error" or "Formula Error: An unexpected error occured"
-const PHPEXCEL_UNSUPPORTED_FUNCTIONS = [
-  // Dynamic array functions (Excel 365+)
-  "FILTER", "SORT", "SORTBY", "UNIQUE", "SEQUENCE", "RANDARRAY", "LET", "LAMBDA",
-  "XLOOKUP", "XMATCH", "CHOOSECOLS", "CHOOSEROWS", "DROP", "TAKE", "EXPAND",
-  "TEXTSPLIT", "TEXTBEFORE", "TEXTAFTER", "VALUETOTEXT", "ARRAYTOTEXT",
-  "WRAPROWS", "WRAPCOLS", "TOCOL", "TOROW", "VSTACK", "HSTACK", "BYCOL", "BYROW",
-  "MAKEARRAY", "MAP", "REDUCE", "SCAN", "ISOMITTED",
-  // IFS variants
-  "IFS", "SWITCH", "MAXIFS", "MINIFS",
-  // Text functions
-  "CONCAT", "TEXTJOIN", "STOCKHISTORY",
-  // Web/data functions
-  "WEBSERVICE", "FILTERXML", "ENCODEURL",
-  // Image functions
-  "IMAGE",
-  // Other newer functions
-  "FORMULATEXT", "ISFORMULA", "SHEET", "SHEETS", "IFNA",
-  // Functions that may have issues
-  "AGGREGATE", "NUMBERVALUE", "UNICHAR", "UNICODE",
-];
+// (PHPExcel check removed - we use Syncfusion)
 
 // Functions not supported for calculation in Syncfusion XlsIO
 // These formulas are preserved but their result cannot be calculated
@@ -67,7 +46,7 @@ const SYNCFUSION_UNSUPPORTED_FUNCTIONS = [
 // Regex to extract function names from formulas
 const FUNCTION_RE = /([A-Z][A-Z0-9_.]+)\s*\(/gi;
 
-type IssueType = "error" | "missing_sheet" | "external_ref" | "circular_suspect" | "phpexcel_unsupported" | "syncfusion_unsupported";
+type IssueType = "error" | "missing_sheet" | "external_ref" | "circular_suspect" | "syncfusion_unsupported";
 
 type ExcelCellIssue = {
   sheet: string;
@@ -141,21 +120,6 @@ function extractExternalRefs(formula: string): string[] {
   return refs;
 }
 
-// Extract functions that are not supported by PHPExcel
-function extractPhpExcelUnsupportedFunctions(formula: string): string[] {
-  const funcs: string[] = [];
-  const seen = new Set<string>();
-  let match;
-  const regex = new RegExp(FUNCTION_RE.source, "gi");
-  while ((match = regex.exec(formula)) !== null) {
-    const funcName = match[1].toUpperCase();
-    if (!seen.has(funcName) && PHPEXCEL_UNSUPPORTED_FUNCTIONS.includes(funcName)) {
-      seen.add(funcName);
-      funcs.push(funcName);
-    }
-  }
-  return funcs;
-}
 
 // Extract functions that are not supported by Syncfusion XlsIO
 function extractSyncfusionUnsupportedFunctions(formula: string): string[] {
@@ -236,7 +200,6 @@ function traceRefChain(
 const TYPE_LABELS: Record<IssueType, { label: string; variant: "destructive" | "secondary" | "outline" | "default" }> = {
   error: { label: "Error", variant: "destructive" },
   syncfusion_unsupported: { label: "Syncfusion", variant: "destructive" },
-  phpexcel_unsupported: { label: "PHPExcel", variant: "secondary" },
   missing_sheet: { label: "Hoja no existe", variant: "secondary" },
   external_ref: { label: "Ref externa", variant: "outline" },
   circular_suspect: { label: "Ref circular?", variant: "default" },
@@ -248,7 +211,7 @@ export function ExcelErrorScannerDialog() {
   const [isScanning, setIsScanning] = useState(false);
   const [hasScanned, setHasScanned] = useState(false);
   const [issues, setIssues] = useState<ExcelCellIssue[]>([]);
-  const [checkPhpExcel, setCheckPhpExcel] = useState(false); // Desactivado por defecto (usamos Syncfusion)
+  
 
   const sheetCounts = useMemo(() => {
     const map = new Map<string, number>();
@@ -350,19 +313,6 @@ export function ExcelErrorScannerDialog() {
             });
           }
           
-          // 5. Check for PHPExcel unsupported functions (only if enabled)
-          if (checkPhpExcel) {
-            const phpExcelUnsupported = extractPhpExcelUnsupportedFunctions(formula);
-            if (phpExcelUnsupported.length > 0) {
-              found.push({
-                sheet: sheetName,
-                cell: addr,
-                error: `No soportada por PHPExcel: ${phpExcelUnsupported.join(", ")}`,
-                formula,
-                type: "phpexcel_unsupported",
-              });
-            }
-          }
         }
       }
 
@@ -390,10 +340,9 @@ export function ExcelErrorScannerDialog() {
         const typePriority: Record<IssueType, number> = { 
           error: 0, 
           syncfusion_unsupported: 1,
-          phpexcel_unsupported: 2, 
-          missing_sheet: 3, 
-          external_ref: 4, 
-          circular_suspect: 5 
+          missing_sheet: 2, 
+          external_ref: 3, 
+          circular_suspect: 4 
         };
         if (a.type !== b.type) return typePriority[a.type] - typePriority[b.type];
         if (a.sheet !== b.sheet) return a.sheet.localeCompare(b.sheet);
@@ -468,16 +417,6 @@ export function ExcelErrorScannerDialog() {
                   <span className="break-all">{fileName}</span>
                 </div>
               ) : <div />}
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="check-phpexcel"
-                  checked={checkPhpExcel}
-                  onCheckedChange={(checked) => setCheckPhpExcel(checked === true)}
-                />
-                <Label htmlFor="check-phpexcel" className="text-sm text-muted-foreground cursor-pointer">
-                  Verificar compatibilidad PHPExcel (WooCommerce)
-                </Label>
-              </div>
             </div>
           </div>
 
