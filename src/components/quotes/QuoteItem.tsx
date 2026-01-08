@@ -494,7 +494,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       console.log("✅ Query enabled: producto con prompts");
       return true;
     })(),
-    retry: false,
+    retry: 2, // Reintentar 2 veces en errores transitorios
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000), // Backoff: 1s, 2s, max 5s
     placeholderData: isNewProduct ? undefined : keepPreviousData,
     refetchOnWindowFocus: false,
     staleTime: 30000, // 30 segundos - evita re-fetches inmediatos
