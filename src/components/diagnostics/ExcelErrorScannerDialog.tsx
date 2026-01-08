@@ -42,10 +42,17 @@ const PHPEXCEL_UNSUPPORTED_FUNCTIONS = [
   "AGGREGATE", "NUMBERVALUE", "UNICHAR", "UNICODE",
 ];
 
+// Functions not supported for calculation in Syncfusion XlsIO
+// These formulas are preserved but their result cannot be calculated
+const SYNCFUSION_UNSUPPORTED_FUNCTIONS = [
+  "ARRAYTOTEXT",
+  "VALUETOTEXT",
+];
+
 // Regex to extract function names from formulas
 const FUNCTION_RE = /([A-Z][A-Z0-9_.]+)\s*\(/gi;
 
-type IssueType = "error" | "missing_sheet" | "external_ref" | "circular_suspect" | "phpexcel_unsupported";
+type IssueType = "error" | "missing_sheet" | "external_ref" | "circular_suspect" | "phpexcel_unsupported" | "syncfusion_unsupported";
 
 type ExcelCellIssue = {
   sheet: string;
@@ -120,7 +127,7 @@ function extractExternalRefs(formula: string): string[] {
 }
 
 // Extract functions that are not supported by PHPExcel
-function extractUnsupportedFunctions(formula: string): string[] {
+function extractPhpExcelUnsupportedFunctions(formula: string): string[] {
   const funcs: string[] = [];
   const seen = new Set<string>();
   let match;
@@ -128,6 +135,22 @@ function extractUnsupportedFunctions(formula: string): string[] {
   while ((match = regex.exec(formula)) !== null) {
     const funcName = match[1].toUpperCase();
     if (!seen.has(funcName) && PHPEXCEL_UNSUPPORTED_FUNCTIONS.includes(funcName)) {
+      seen.add(funcName);
+      funcs.push(funcName);
+    }
+  }
+  return funcs;
+}
+
+// Extract functions that are not supported by Syncfusion XlsIO
+function extractSyncfusionUnsupportedFunctions(formula: string): string[] {
+  const funcs: string[] = [];
+  const seen = new Set<string>();
+  let match;
+  const regex = new RegExp(FUNCTION_RE.source, "gi");
+  while ((match = regex.exec(formula)) !== null) {
+    const funcName = match[1].toUpperCase();
+    if (!seen.has(funcName) && SYNCFUSION_UNSUPPORTED_FUNCTIONS.includes(funcName)) {
       seen.add(funcName);
       funcs.push(funcName);
     }
@@ -197,7 +220,8 @@ function traceRefChain(
 
 const TYPE_LABELS: Record<IssueType, { label: string; variant: "destructive" | "secondary" | "outline" | "default" }> = {
   error: { label: "Error", variant: "destructive" },
-  phpexcel_unsupported: { label: "PHPExcel", variant: "destructive" },
+  syncfusion_unsupported: { label: "Syncfusion", variant: "destructive" },
+  phpexcel_unsupported: { label: "PHPExcel", variant: "secondary" },
   missing_sheet: { label: "Hoja no existe", variant: "secondary" },
   external_ref: { label: "Ref externa", variant: "outline" },
   circular_suspect: { label: "Ref circular?", variant: "default" },
@@ -299,14 +323,26 @@ export function ExcelErrorScannerDialog() {
             });
           }
           
-          // 4. Check for PHPExcel unsupported functions (only if enabled)
+          // 4. Check for Syncfusion unsupported functions (always)
+          const syncfusionUnsupported = extractSyncfusionUnsupportedFunctions(formula);
+          if (syncfusionUnsupported.length > 0) {
+            found.push({
+              sheet: sheetName,
+              cell: addr,
+              error: `No soportada por Syncfusion: ${syncfusionUnsupported.join(", ")}`,
+              formula,
+              type: "syncfusion_unsupported",
+            });
+          }
+          
+          // 5. Check for PHPExcel unsupported functions (only if enabled)
           if (checkPhpExcel) {
-            const unsupportedFuncs = extractUnsupportedFunctions(formula);
-            if (unsupportedFuncs.length > 0) {
+            const phpExcelUnsupported = extractPhpExcelUnsupportedFunctions(formula);
+            if (phpExcelUnsupported.length > 0) {
               found.push({
                 sheet: sheetName,
                 cell: addr,
-                error: `Función no soportada: ${unsupportedFuncs.join(", ")}`,
+                error: `No soportada por PHPExcel: ${phpExcelUnsupported.join(", ")}`,
                 formula,
                 type: "phpexcel_unsupported",
               });
@@ -338,10 +374,11 @@ export function ExcelErrorScannerDialog() {
         // Sort by type priority, then sheet, then cell
         const typePriority: Record<IssueType, number> = { 
           error: 0, 
-          phpexcel_unsupported: 1, 
-          missing_sheet: 2, 
-          external_ref: 3, 
-          circular_suspect: 4 
+          syncfusion_unsupported: 1,
+          phpexcel_unsupported: 2, 
+          missing_sheet: 3, 
+          external_ref: 4, 
+          circular_suspect: 5 
         };
         if (a.type !== b.type) return typePriority[a.type] - typePriority[b.type];
         if (a.sheet !== b.sheet) return a.sheet.localeCompare(b.sheet);
