@@ -44,9 +44,24 @@ const PHPEXCEL_UNSUPPORTED_FUNCTIONS = [
 
 // Functions not supported for calculation in Syncfusion XlsIO
 // These formulas are preserved but their result cannot be calculated
+// Source: https://help.syncfusion.com/file-formats/xlsio/working-with-formulas#supported-functions
 const SYNCFUSION_UNSUPPORTED_FUNCTIONS = [
+  // Dynamic array functions (Excel 365/2021)
+  "XLOOKUP", "BUSCARX",           // Not supported - use HLOOKUP/VLOOKUP instead
+  "XMATCH", "COINCIDIRX",         // Not supported - use MATCH instead
+  "FILTER", "FILTRAR",            // Dynamic array
+  "SORT", "ORDENAR",              // Dynamic array  
+  "SORTBY", "ORDENARPOR",         // Dynamic array
+  "UNIQUE", "UNICOS",             // Dynamic array
+  "SEQUENCE", "SECUENCIA",        // Dynamic array
+  "RANDARRAY",                    // Dynamic array
+  "LET",                          // Named expressions
+  "LAMBDA",                       // Custom functions
+  // Other unsupported
   "ARRAYTOTEXT",
   "VALUETOTEXT",
+  "STOCKHISTORY",
+  "IMAGE",
 ];
 
 // Regex to extract function names from formulas
