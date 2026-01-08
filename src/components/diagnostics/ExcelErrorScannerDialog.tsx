@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "@/hooks/use-toast";
 import { AlertTriangle, Copy, FileSpreadsheet, Loader2, Link2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const ERROR_RE = /^#(N\/?A|REF!|VALUE!|DIV\/0!|NAME\?|NULL!|NUM!|SPILL!|CALC!)$/i;
 
@@ -208,6 +209,7 @@ export function ExcelErrorScannerDialog() {
   const [isScanning, setIsScanning] = useState(false);
   const [hasScanned, setHasScanned] = useState(false);
   const [issues, setIssues] = useState<ExcelCellIssue[]>([]);
+  const [checkPhpExcel, setCheckPhpExcel] = useState(false); // Desactivado por defecto (usamos Syncfusion)
 
   const sheetCounts = useMemo(() => {
     const map = new Map<string, number>();
@@ -297,16 +299,18 @@ export function ExcelErrorScannerDialog() {
             });
           }
           
-          // 4. Check for PHPExcel unsupported functions
-          const unsupportedFuncs = extractUnsupportedFunctions(formula);
-          if (unsupportedFuncs.length > 0) {
-            found.push({
-              sheet: sheetName,
-              cell: addr,
-              error: `Función no soportada: ${unsupportedFuncs.join(", ")}`,
-              formula,
-              type: "phpexcel_unsupported",
-            });
+          // 4. Check for PHPExcel unsupported functions (only if enabled)
+          if (checkPhpExcel) {
+            const unsupportedFuncs = extractUnsupportedFunctions(formula);
+            if (unsupportedFuncs.length > 0) {
+              found.push({
+                sheet: sheetName,
+                cell: addr,
+                error: `Función no soportada: ${unsupportedFuncs.join(", ")}`,
+                formula,
+                type: "phpexcel_unsupported",
+              });
+            }
           }
         }
       }
@@ -391,7 +395,7 @@ export function ExcelErrorScannerDialog() {
         <DialogHeader>
           <DialogTitle>Analizador de errores de Excel</DialogTitle>
           <DialogDescription>
-            Detecta errores (#N/A, #REF!), funciones no soportadas por PHPExcel (WooCommerce), referencias a hojas inexistentes, referencias externas y cadenas de referencias problemáticas.
+            Detecta errores (#N/A, #REF!), referencias a hojas inexistentes, referencias externas y cadenas de referencias problemáticas.
           </DialogDescription>
         </DialogHeader>
 
@@ -405,12 +409,24 @@ export function ExcelErrorScannerDialog() {
               onChange={(e) => handlePickFile(e.target.files?.[0] ?? null)}
               disabled={isScanning}
             />
-            {fileName ? (
-              <div className="text-sm text-muted-foreground flex items-center gap-2">
-                <FileSpreadsheet className="h-4 w-4" />
-                <span className="break-all">{fileName}</span>
+            <div className="flex items-center justify-between">
+              {fileName ? (
+                <div className="text-sm text-muted-foreground flex items-center gap-2">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  <span className="break-all">{fileName}</span>
+                </div>
+              ) : <div />}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="check-phpexcel"
+                  checked={checkPhpExcel}
+                  onCheckedChange={(checked) => setCheckPhpExcel(checked === true)}
+                />
+                <Label htmlFor="check-phpexcel" className="text-sm text-muted-foreground cursor-pointer">
+                  Verificar compatibilidad PHPExcel (WooCommerce)
+                </Label>
               </div>
-            ) : null}
+            </div>
           </div>
 
           <div className="grid lg:grid-cols-4 gap-4">
