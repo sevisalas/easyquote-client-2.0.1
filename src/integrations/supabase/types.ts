@@ -363,6 +363,98 @@ export type Database = {
           },
         ]
       }
+      development_sprints: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          name: string
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      development_tasks: {
+        Row: {
+          actual_hours: number | null
+          category: string
+          created_at: string
+          description: string | null
+          estimated_hours: number | null
+          id: string
+          notes: string | null
+          priority: string
+          related_version: string | null
+          sort_order: number | null
+          sprint_id: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_hours?: number | null
+          category: string
+          created_at?: string
+          description?: string | null
+          estimated_hours?: number | null
+          id?: string
+          notes?: string | null
+          priority?: string
+          related_version?: string | null
+          sort_order?: number | null
+          sprint_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_hours?: number | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          estimated_hours?: number | null
+          id?: string
+          notes?: string | null
+          priority?: string
+          related_version?: string | null
+          sort_order?: number | null
+          sprint_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "development_tasks_sprint_id_fkey"
+            columns: ["sprint_id"]
+            isOneToOne: false
+            referencedRelation: "development_sprints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       easyquote_credentials: {
         Row: {
           api_password_encrypted: string

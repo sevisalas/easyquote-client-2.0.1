@@ -25,6 +25,7 @@ import NuevoSuscriptor from "./pages/SubscriberNew";
 import GestionPlanes from "./pages/PlansManagement";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SuperAdminUsers from "./pages/SuperAdminUsers";
+import SuperAdminRoadmap from "./pages/SuperAdminRoadmap";
 import SettingsRenumberDocuments from "./pages/SettingsRenumberDocuments";
 import Integrations from "./pages/Integrations";
 import IntegrationAccess from "./pages/IntegrationAccess";
@@ -501,6 +502,16 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <ApiHome />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/superadmin/roadmap"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SuperAdminRoadmap />
             </AppLayout>
           </ProtectedRoute>
         }
