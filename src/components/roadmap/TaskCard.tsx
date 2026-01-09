@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Task, Sprint } from "@/hooks/useRoadmap";
 import { TaskCategoryBadge, getPriorityColor, getPriorityLabel } from "./TaskCategoryBadge";
-import { Clock, Zap, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Clock, Zap, MoreVertical, Pencil, Trash2, Coins } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,17 +67,25 @@ export const TaskCard = ({ task, sprint, onEdit, onDelete, isDragging }: TaskCar
           </p>
         )}
 
-        {/* Footer with sprint and hours */}
+        {/* Footer with sprint and hours/credits */}
         <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-          <span className="truncate max-w-[120px]">
+          <span className="truncate max-w-[100px]">
             {sprint ? sprint.name : "Sin sprint"}
           </span>
-          {task.estimated_hours && (
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {task.estimated_hours}h
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {task.estimated_hours && (
+              <>
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {task.estimated_hours}h
+                </span>
+                <span className="flex items-center gap-1 text-amber-600">
+                  <Coins className="h-3 w-3" />
+                  {task.estimated_hours * 10}
+                </span>
+              </>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -164,6 +164,8 @@ const SuperAdminRoadmap = () => {
   const totalTasks = tasks.length;
   const doneTasks = tasks.filter((t) => t.status === "done").length;
   const activeSprint = sprints.find((s) => s.status === "active");
+  const totalHours = tasks.reduce((sum, t) => sum + (t.estimated_hours || 0), 0);
+  const totalCredits = totalHours * 10;
 
   if (!isSuperAdmin) return null;
 
@@ -212,7 +214,7 @@ const SuperAdminRoadmap = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="bg-card rounded-lg p-4 border">
             <p className="text-sm text-muted-foreground">Total tareas</p>
             <p className="text-2xl font-bold">{totalTasks}</p>
@@ -220,6 +222,14 @@ const SuperAdminRoadmap = () => {
           <div className="bg-card rounded-lg p-4 border">
             <p className="text-sm text-muted-foreground">Completadas</p>
             <p className="text-2xl font-bold text-green-600">{doneTasks}</p>
+          </div>
+          <div className="bg-card rounded-lg p-4 border">
+            <p className="text-sm text-muted-foreground">Horas est.</p>
+            <p className="text-2xl font-bold">{totalHours}h</p>
+          </div>
+          <div className="bg-card rounded-lg p-4 border">
+            <p className="text-sm text-muted-foreground">Créditos est.</p>
+            <p className="text-2xl font-bold text-amber-600">{totalCredits.toLocaleString()}</p>
           </div>
           <div className="bg-card rounded-lg p-4 border">
             <p className="text-sm text-muted-foreground">Sprint activo</p>
