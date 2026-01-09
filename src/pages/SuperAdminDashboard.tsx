@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Building2, Network, BarChart3 } from "lucide-react";
+import { Users, Building2, Network, BarChart3, Kanban } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -199,6 +199,26 @@ const SuperAdminDashboard = () => {
                 className="w-full bg-primary hover:bg-primary/90"
               >
                 Gestionar SuperAdmins
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-primary/20 hover:border-primary/50 transition-all duration-300 hover-scale flex flex-col">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Kanban className="h-5 w-5 text-primary" />
+                Roadmap
+              </CardTitle>
+              <CardDescription>
+                Gestiona el backlog de desarrollo
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 flex items-end">
+              <Button
+                onClick={() => navigate('/superadmin/roadmap')}
+                className="w-full bg-primary hover:bg-primary/90"
+              >
+                Ver Roadmap
               </Button>
             </CardContent>
           </Card>
