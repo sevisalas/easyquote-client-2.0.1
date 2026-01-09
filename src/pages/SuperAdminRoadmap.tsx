@@ -183,7 +183,7 @@ const SuperAdminRoadmap = () => {
           <div className="flex flex-wrap gap-2">
             {tasks.length === 0 && !isLoading && (
               <Button
-                variant="secondary"
+                variant="outline"
                 onClick={loadInitialTasks}
                 disabled={createTask.isPending}
               >
@@ -191,6 +191,15 @@ const SuperAdminRoadmap = () => {
                 {createTask.isPending ? 'Cargando...' : 'Cargar tareas iniciales'}
               </Button>
             )}
+            <Button
+              onClick={() => {
+                setEditingTask(null);
+                setTaskDialogOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nueva Tarea
+            </Button>
             <Button
               variant="secondary"
               onClick={() => {
@@ -200,15 +209,6 @@ const SuperAdminRoadmap = () => {
             >
               <Calendar className="h-4 w-4 mr-2" />
               Nuevo Sprint
-            </Button>
-            <Button
-              onClick={() => {
-                setEditingTask(null);
-                setTaskDialogOpen(true);
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Tarea
             </Button>
           </div>
         </div>
