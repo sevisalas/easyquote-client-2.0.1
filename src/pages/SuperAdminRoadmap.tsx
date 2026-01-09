@@ -231,15 +231,15 @@ const SuperAdminRoadmap = () => {
             <p className="text-sm text-muted-foreground">Créditos est.</p>
             <p className="text-2xl font-bold text-amber-600">{totalCredits.toLocaleString()}</p>
           </div>
-          <div className="bg-card rounded-lg p-4 border">
-            <p className="text-sm text-muted-foreground">Sprint activo</p>
-            <p className="text-lg font-semibold truncate">
+          <div className="bg-secondary rounded-lg p-4 border border-secondary-foreground/10">
+            <p className="text-sm text-secondary-foreground/70">Sprint activo</p>
+            <p className="text-lg font-semibold truncate text-secondary-foreground">
               {activeSprint?.name || "Ninguno"}
             </p>
           </div>
-          <div className="bg-card rounded-lg p-4 border">
-            <p className="text-sm text-muted-foreground">Sprints</p>
-            <p className="text-2xl font-bold">{sprints.length}</p>
+          <div className="bg-secondary rounded-lg p-4 border border-secondary-foreground/10">
+            <p className="text-sm text-secondary-foreground/70">Sprints</p>
+            <p className="text-2xl font-bold text-secondary-foreground">{sprints.length}</p>
           </div>
         </div>
 
