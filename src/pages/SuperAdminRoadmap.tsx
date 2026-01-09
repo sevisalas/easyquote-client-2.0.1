@@ -20,7 +20,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, LayoutList, Calendar } from "lucide-react";
+import { Plus, LayoutList, Calendar, Download } from "lucide-react";
+import { toast } from "sonner";
 
 const SuperAdminRoadmap = () => {
   const navigate = useNavigate();
@@ -138,6 +139,27 @@ const SuperAdminRoadmap = () => {
     await updateTaskStatus.mutateAsync({ id: taskId, status });
   };
 
+  // Load initial backlog tasks
+  const loadInitialTasks = async () => {
+    const initialTasks = [
+      { title: 'Plugin WooCommerce', description: 'Centralizar código PHP/CSS/JS del plugin de WooCommerce. Incluye shortcodes, widget de precios, y sincronización con EasyQuote API.', category: 'integration' as TaskCategory, priority: 'high' as TaskPriority, status: 'backlog' as TaskStatus, estimated_hours: 40, sort_order: 1, sprint_id: null, actual_hours: null, notes: null, related_version: null },
+      { title: 'Integración Shopify', description: 'Widget de precios para tiendas Shopify. Motor de cálculo integrado y sincronización de productos.', category: 'integration' as TaskCategory, priority: 'medium' as TaskPriority, status: 'backlog' as TaskStatus, estimated_hours: 60, sort_order: 2, sprint_id: null, actual_hours: null, notes: null, related_version: null },
+      { title: 'Comparador de Precios', description: 'Herramienta para comparar precios con Helloprint, Onlineprinters y otros competidores. Scraping y análisis automático.', category: 'feature' as TaskCategory, priority: 'low' as TaskPriority, status: 'backlog' as TaskStatus, estimated_hours: 30, sort_order: 3, sprint_id: null, actual_hours: null, notes: null, related_version: null },
+      { title: 'Control n8n', description: 'Panel para gestionar workflows de n8n (Woo2Holded, sincronizaciones). Visualizar estado, logs y métricas.', category: 'integration' as TaskCategory, priority: 'medium' as TaskPriority, status: 'backlog' as TaskStatus, estimated_hours: 25, sort_order: 4, sprint_id: null, actual_hours: null, notes: null, related_version: null },
+      { title: 'Dashboard Automatizaciones', description: 'Dashboard centralizado de logs de automatizaciones, métricas de sincronización WooCommerce-Holded, y alertas.', category: 'feature' as TaskCategory, priority: 'medium' as TaskPriority, status: 'backlog' as TaskStatus, estimated_hours: 35, sort_order: 5, sprint_id: null, actual_hours: null, notes: null, related_version: null },
+      { title: 'Cola de Preflight', description: 'Gestión de cola de archivos pre-prensa. UI para ver estado de procesamiento, descargas y errores.', category: 'feature' as TaskCategory, priority: 'low' as TaskPriority, status: 'backlog' as TaskStatus, estimated_hours: 20, sort_order: 6, sprint_id: null, actual_hours: null, notes: null, related_version: null },
+    ];
+
+    try {
+      for (const task of initialTasks) {
+        await createTask.mutateAsync(task);
+      }
+      toast.success('6 tareas iniciales cargadas correctamente');
+    } catch (error) {
+      toast.error('Error al cargar tareas iniciales');
+    }
+  };
+
   // Stats
   const totalTasks = tasks.length;
   const doneTasks = tasks.filter((t) => t.status === "done").length;
@@ -156,7 +178,17 @@ const SuperAdminRoadmap = () => {
               Gestiona sprints y tareas del backlog de desarrollo
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {tasks.length === 0 && !isLoading && (
+              <Button
+                variant="secondary"
+                onClick={loadInitialTasks}
+                disabled={createTask.isPending}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {createTask.isPending ? 'Cargando...' : 'Cargar tareas iniciales'}
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => {
