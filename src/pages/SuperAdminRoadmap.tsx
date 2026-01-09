@@ -192,7 +192,7 @@ const SuperAdminRoadmap = () => {
               </Button>
             )}
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => {
                 setEditingSprint(null);
                 setSprintDialogOpen(true);
