@@ -10,22 +10,14 @@ import { SprintCard } from "@/components/roadmap/SprintCard";
 import { TaskDialog } from "@/components/roadmap/TaskDialog";
 import { SprintDialog } from "@/components/roadmap/SprintDialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, LayoutList, Calendar, Download } from "lucide-react";
 import { toast } from "sonner";
-
 const SuperAdminRoadmap = () => {
   const navigate = useNavigate();
-  const { isSuperAdmin } = useSubscription();
+  const {
+    isSuperAdmin
+  } = useSubscription();
   const {
     sprints,
     tasks,
@@ -37,7 +29,7 @@ const SuperAdminRoadmap = () => {
     updateTask,
     deleteTask,
     updateTaskStatus,
-    getSprintStats,
+    getSprintStats
   } = useRoadmap();
 
   // Filters
@@ -53,7 +45,6 @@ const SuperAdminRoadmap = () => {
   const [editingSprint, setEditingSprint] = useState<Sprint | null>(null);
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [deleteSprintId, setDeleteSprintId] = useState<string | null>(null);
-
   useEffect(() => {
     document.title = "Roadmap | EasyQuote SuperAdmin";
     if (!isSuperAdmin) {
@@ -63,7 +54,7 @@ const SuperAdminRoadmap = () => {
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
+    return tasks.filter(task => {
       if (search && !task.title.toLowerCase().includes(search.toLowerCase())) {
         return false;
       }
@@ -82,7 +73,6 @@ const SuperAdminRoadmap = () => {
       return true;
     });
   }, [tasks, search, categoryFilter, priorityFilter, sprintFilter]);
-
   const clearFilters = () => {
     setSearch("");
     setCategoryFilter("all");
@@ -95,61 +85,128 @@ const SuperAdminRoadmap = () => {
     setEditingTask(task);
     setTaskDialogOpen(true);
   };
-
   const handleEditSprint = (sprint: Sprint) => {
     setEditingSprint(sprint);
     setSprintDialogOpen(true);
   };
-
   const handleSaveTask = async (taskData: Partial<Task>) => {
     if (taskData.id) {
-      await updateTask.mutateAsync({ id: taskData.id, ...taskData });
+      await updateTask.mutateAsync({
+        id: taskData.id,
+        ...taskData
+      });
     } else {
       await createTask.mutateAsync(taskData as Omit<Task, "id" | "created_at" | "updated_at">);
     }
     setTaskDialogOpen(false);
     setEditingTask(null);
   };
-
   const handleSaveSprint = async (sprintData: Partial<Sprint>) => {
     if (sprintData.id) {
-      await updateSprint.mutateAsync({ id: sprintData.id, ...sprintData });
+      await updateSprint.mutateAsync({
+        id: sprintData.id,
+        ...sprintData
+      });
     } else {
       await createSprint.mutateAsync(sprintData as Omit<Sprint, "id" | "created_at" | "updated_at">);
     }
     setSprintDialogOpen(false);
     setEditingSprint(null);
   };
-
   const handleDeleteTask = async () => {
     if (deleteTaskId) {
       await deleteTask.mutateAsync(deleteTaskId);
       setDeleteTaskId(null);
     }
   };
-
   const handleDeleteSprint = async () => {
     if (deleteSprintId) {
       await deleteSprint.mutateAsync(deleteSprintId);
       setDeleteSprintId(null);
     }
   };
-
   const handleTaskStatusChange = async (taskId: string, status: TaskStatus) => {
-    await updateTaskStatus.mutateAsync({ id: taskId, status });
+    await updateTaskStatus.mutateAsync({
+      id: taskId,
+      status
+    });
   };
 
   // Load initial backlog tasks
   const loadInitialTasks = async () => {
-    const initialTasks = [
-      { title: 'Plugin WooCommerce', description: 'Centralizar código PHP/CSS/JS del plugin de WooCommerce. Incluye shortcodes, widget de precios, y sincronización con EasyQuote API.', category: 'integration' as TaskCategory, priority: 'high' as TaskPriority, status: 'backlog' as TaskStatus, estimated_hours: 40, sort_order: 1, sprint_id: null, actual_hours: null, notes: null, related_version: null },
-      { title: 'Integración Shopify', description: 'Widget de precios para tiendas Shopify. Motor de cálculo integrado y sincronización de productos.', category: 'integration' as TaskCategory, priority: 'medium' as TaskPriority, status: 'backlog' as TaskStatus, estimated_hours: 60, sort_order: 2, sprint_id: null, actual_hours: null, notes: null, related_version: null },
-      { title: 'Comparador de Precios', description: 'Herramienta para comparar precios con Helloprint, Onlineprinters y otros competidores. Scraping y análisis automático.', category: 'feature' as TaskCategory, priority: 'low' as TaskPriority, status: 'backlog' as TaskStatus, estimated_hours: 30, sort_order: 3, sprint_id: null, actual_hours: null, notes: null, related_version: null },
-      { title: 'Control n8n', description: 'Panel para gestionar workflows de n8n (Woo2Holded, sincronizaciones). Visualizar estado, logs y métricas.', category: 'integration' as TaskCategory, priority: 'medium' as TaskPriority, status: 'backlog' as TaskStatus, estimated_hours: 25, sort_order: 4, sprint_id: null, actual_hours: null, notes: null, related_version: null },
-      { title: 'Dashboard Automatizaciones', description: 'Dashboard centralizado de logs de automatizaciones, métricas de sincronización WooCommerce-Holded, y alertas.', category: 'feature' as TaskCategory, priority: 'medium' as TaskPriority, status: 'backlog' as TaskStatus, estimated_hours: 35, sort_order: 5, sprint_id: null, actual_hours: null, notes: null, related_version: null },
-      { title: 'Cola de Preflight', description: 'Gestión de cola de archivos pre-prensa. UI para ver estado de procesamiento, descargas y errores.', category: 'feature' as TaskCategory, priority: 'low' as TaskPriority, status: 'backlog' as TaskStatus, estimated_hours: 20, sort_order: 6, sprint_id: null, actual_hours: null, notes: null, related_version: null },
-    ];
-
+    const initialTasks = [{
+      title: 'Plugin WooCommerce',
+      description: 'Centralizar código PHP/CSS/JS del plugin de WooCommerce. Incluye shortcodes, widget de precios, y sincronización con EasyQuote API.',
+      category: 'integration' as TaskCategory,
+      priority: 'high' as TaskPriority,
+      status: 'backlog' as TaskStatus,
+      estimated_hours: 40,
+      sort_order: 1,
+      sprint_id: null,
+      actual_hours: null,
+      notes: null,
+      related_version: null
+    }, {
+      title: 'Integración Shopify',
+      description: 'Widget de precios para tiendas Shopify. Motor de cálculo integrado y sincronización de productos.',
+      category: 'integration' as TaskCategory,
+      priority: 'medium' as TaskPriority,
+      status: 'backlog' as TaskStatus,
+      estimated_hours: 60,
+      sort_order: 2,
+      sprint_id: null,
+      actual_hours: null,
+      notes: null,
+      related_version: null
+    }, {
+      title: 'Comparador de Precios',
+      description: 'Herramienta para comparar precios con Helloprint, Onlineprinters y otros competidores. Scraping y análisis automático.',
+      category: 'feature' as TaskCategory,
+      priority: 'low' as TaskPriority,
+      status: 'backlog' as TaskStatus,
+      estimated_hours: 30,
+      sort_order: 3,
+      sprint_id: null,
+      actual_hours: null,
+      notes: null,
+      related_version: null
+    }, {
+      title: 'Control n8n',
+      description: 'Panel para gestionar workflows de n8n (Woo2Holded, sincronizaciones). Visualizar estado, logs y métricas.',
+      category: 'integration' as TaskCategory,
+      priority: 'medium' as TaskPriority,
+      status: 'backlog' as TaskStatus,
+      estimated_hours: 25,
+      sort_order: 4,
+      sprint_id: null,
+      actual_hours: null,
+      notes: null,
+      related_version: null
+    }, {
+      title: 'Dashboard Automatizaciones',
+      description: 'Dashboard centralizado de logs de automatizaciones, métricas de sincronización WooCommerce-Holded, y alertas.',
+      category: 'feature' as TaskCategory,
+      priority: 'medium' as TaskPriority,
+      status: 'backlog' as TaskStatus,
+      estimated_hours: 35,
+      sort_order: 5,
+      sprint_id: null,
+      actual_hours: null,
+      notes: null,
+      related_version: null
+    }, {
+      title: 'Cola de Preflight',
+      description: 'Gestión de cola de archivos pre-prensa. UI para ver estado de procesamiento, descargas y errores.',
+      category: 'feature' as TaskCategory,
+      priority: 'low' as TaskPriority,
+      status: 'backlog' as TaskStatus,
+      estimated_hours: 20,
+      sort_order: 6,
+      sprint_id: null,
+      actual_hours: null,
+      notes: null,
+      related_version: null
+    }];
     try {
       for (const task of initialTasks) {
         await createTask.mutateAsync(task);
@@ -162,53 +219,39 @@ const SuperAdminRoadmap = () => {
 
   // Stats
   const totalTasks = tasks.length;
-  const doneTasks = tasks.filter((t) => t.status === "done").length;
-  const activeSprint = sprints.find((s) => s.status === "active");
+  const doneTasks = tasks.filter(t => t.status === "done").length;
+  const activeSprint = sprints.find(s => s.status === "active");
   const totalHours = tasks.reduce((sum, t) => sum + (t.estimated_hours || 0), 0);
   const totalCredits = totalHours * 10;
-
   if (!isSuperAdmin) return null;
-
-  return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-secondary/5 via-background to-secondary/10 px-6 py-8">
+  return <div className="w-full min-h-screen bg-gradient-to-br from-secondary/5 via-background to-secondary/10 px-6 py-8">
       <div className="max-w-[1600px] mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Roadmap de Desarrollo</h1>
+            <h1 className="text-3xl font-bold text-foreground">Roadmap de desarrollo</h1>
             <p className="text-muted-foreground">
               Gestiona sprints y tareas del backlog de desarrollo
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {tasks.length === 0 && !isLoading && (
-              <Button
-                variant="outline"
-                onClick={loadInitialTasks}
-                disabled={createTask.isPending}
-              >
+            {tasks.length === 0 && !isLoading && <Button variant="outline" onClick={loadInitialTasks} disabled={createTask.isPending}>
                 <Download className="h-4 w-4 mr-2" />
                 {createTask.isPending ? 'Cargando...' : 'Cargar tareas iniciales'}
-              </Button>
-            )}
-            <Button
-              onClick={() => {
-                setEditingTask(null);
-                setTaskDialogOpen(true);
-              }}
-            >
+              </Button>}
+            <Button onClick={() => {
+            setEditingTask(null);
+            setTaskDialogOpen(true);
+          }}>
               <Plus className="h-4 w-4 mr-2" />
-              Nueva Tarea
+              Nueva tarea
             </Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setEditingSprint(null);
-                setSprintDialogOpen(true);
-              }}
-            >
+            <Button variant="secondary" onClick={() => {
+            setEditingSprint(null);
+            setSprintDialogOpen(true);
+          }}>
               <Calendar className="h-4 w-4 mr-2" />
-              Nuevo Sprint
+              Nuevo sprint
             </Button>
           </div>
         </div>
@@ -257,97 +300,40 @@ const SuperAdminRoadmap = () => {
           </TabsList>
 
           <TabsContent value="kanban" className="space-y-4">
-            <RoadmapFilters
-              search={search}
-              onSearchChange={setSearch}
-              categoryFilter={categoryFilter}
-              onCategoryChange={setCategoryFilter}
-              priorityFilter={priorityFilter}
-              onPriorityChange={setPriorityFilter}
-              sprintFilter={sprintFilter}
-              onSprintChange={setSprintFilter}
-              sprints={sprints}
-              onClearFilters={clearFilters}
-            />
+            <RoadmapFilters search={search} onSearchChange={setSearch} categoryFilter={categoryFilter} onCategoryChange={setCategoryFilter} priorityFilter={priorityFilter} onPriorityChange={setPriorityFilter} sprintFilter={sprintFilter} onSprintChange={setSprintFilter} sprints={sprints} onClearFilters={clearFilters} />
 
-            {isLoading ? (
-              <div className="flex gap-4">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} className="w-72 h-96 flex-shrink-0" />
-                ))}
-              </div>
-            ) : (
-              <RoadmapKanban
-                tasks={filteredTasks}
-                sprints={sprints}
-                onTaskStatusChange={handleTaskStatusChange}
-                onEditTask={handleEditTask}
-                onDeleteTask={setDeleteTaskId}
-              />
-            )}
+            {isLoading ? <div className="flex gap-4">
+                {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="w-72 h-96 flex-shrink-0" />)}
+              </div> : <RoadmapKanban tasks={filteredTasks} sprints={sprints} onTaskStatusChange={handleTaskStatusChange} onEditTask={handleEditTask} onDeleteTask={setDeleteTaskId} />}
           </TabsContent>
 
           <TabsContent value="sprints">
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-48" />
-                ))}
-              </div>
-            ) : sprints.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
+            {isLoading ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-48" />)}
+              </div> : sprints.length === 0 ? <div className="text-center py-12 text-muted-foreground">
                 <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No hay sprints creados</p>
-                <Button
-                  variant="outline"
-                  className="mt-4"
-                  onClick={() => {
-                    setEditingSprint(null);
-                    setSprintDialogOpen(true);
-                  }}
-                >
+                <Button variant="outline" className="mt-4" onClick={() => {
+              setEditingSprint(null);
+              setSprintDialogOpen(true);
+            }}>
                   <Plus className="h-4 w-4 mr-2" />
                   Crear primer sprint
                 </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {sprints.map((sprint) => (
-                  <SprintCard
-                    key={sprint.id}
-                    sprint={sprint}
-                    stats={getSprintStats(sprint.id)}
-                    onEdit={handleEditSprint}
-                    onDelete={setDeleteSprintId}
-                    onViewTasks={(sprintId) => {
-                      setSprintFilter(sprintId);
-                    }}
-                  />
-                ))}
-              </div>
-            )}
+              </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {sprints.map(sprint => <SprintCard key={sprint.id} sprint={sprint} stats={getSprintStats(sprint.id)} onEdit={handleEditSprint} onDelete={setDeleteSprintId} onViewTasks={sprintId => {
+              setSprintFilter(sprintId);
+            }} />)}
+              </div>}
           </TabsContent>
         </Tabs>
       </div>
 
       {/* Task Dialog */}
-      <TaskDialog
-        open={taskDialogOpen}
-        onOpenChange={setTaskDialogOpen}
-        task={editingTask}
-        sprints={sprints}
-        onSave={handleSaveTask}
-        isLoading={createTask.isPending || updateTask.isPending}
-      />
+      <TaskDialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen} task={editingTask} sprints={sprints} onSave={handleSaveTask} isLoading={createTask.isPending || updateTask.isPending} />
 
       {/* Sprint Dialog */}
-      <SprintDialog
-        open={sprintDialogOpen}
-        onOpenChange={setSprintDialogOpen}
-        sprint={editingSprint}
-        onSave={handleSaveSprint}
-        isLoading={createSprint.isPending || updateSprint.isPending}
-      />
+      <SprintDialog open={sprintDialogOpen} onOpenChange={setSprintDialogOpen} sprint={editingSprint} onSave={handleSaveSprint} isLoading={createSprint.isPending || updateSprint.isPending} />
 
       {/* Delete Task Confirmation */}
       <AlertDialog open={!!deleteTaskId} onOpenChange={() => setDeleteTaskId(null)}>
@@ -384,8 +370,6 @@ const SuperAdminRoadmap = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
+    </div>;
 };
-
 export default SuperAdminRoadmap;
