@@ -1730,92 +1730,118 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       {/* Expandable content - only show when expanded */}
       {productId && isExpanded && (
         <div className="grid gap-6 md:grid-cols-5 items-start">
-          <Card className="md:col-span-3 self-start">
-            <CardHeader>
-              <CardTitle>{isCustomProduct ? "Detalles" : "Opciones"}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isCustomProduct ? (
-                /* Custom product fields */
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="custom-description">Descripción</Label>
-                    <Textarea
-                      id="custom-description"
-                      value={itemDescription}
-                      onChange={(e) => setItemDescription(e.target.value)}
-                      placeholder="Describe el artículo..."
-                      rows={2}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <Label htmlFor="custom-quantity" className="text-xs">Cantidad</Label>
-                      <Input
-                        id="custom-quantity"
-                        type="number"
-                        min="1"
-                        value={customQuantity}
-                        onChange={(e) => setCustomQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+          {/* Left column: options + additionals stack */}
+          <div className="md:col-span-3 self-start space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>{isCustomProduct ? "Detalles" : "Opciones"}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isCustomProduct ? (
+                  /* Custom product fields */
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="custom-description">Descripción</Label>
+                      <Textarea
+                        id="custom-description"
+                        value={itemDescription}
+                        onChange={(e) => setItemDescription(e.target.value)}
+                        placeholder="Describe el artículo..."
+                        rows={2}
                       />
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="custom-price" className="text-xs">Precio (€)</Label>
-                      <Input
-                        id="custom-price"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={customPrice}
-                        onChange={(e) => setCustomPrice(Math.max(0, parseFloat(e.target.value) || 0))}
-                      />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="custom-quantity" className="text-xs">Cantidad</Label>
+                        <Input
+                          id="custom-quantity"
+                          type="number"
+                          min="1"
+                          value={customQuantity}
+                          onChange={(e) => setCustomQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="custom-price" className="text-xs">Precio (€)</Label>
+                        <Input
+                          id="custom-price"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={customPrice}
+                          onChange={(e) => setCustomPrice(Math.max(0, parseFloat(e.target.value) || 0))}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ) : isPricingError && pricingError ? (
-                <Alert variant="destructive">
-                  <AlertTitle>Error al cargar este producto</AlertTitle>
-                  <AlertDescription className="space-y-2">
-                    <p>Este producto tiene problemas de configuración en EasyQuote.</p>
-                    <p className="text-xs text-muted-foreground">
-                      {pricingError instanceof Error ? pricingError.message : "Error desconocido"}
-                    </p>
-                    <p className="font-semibold">Por favor, selecciona otro producto o contacta al administrador.</p>
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <div className="space-y-4">
-                  {/* Selector de configuración - mostrar INMEDIATAMENTE sin esperar API */}
-                  {needsConfigSelector && !boundProductConfig && (
-                    <BoundProductConfigSelector
-                      enabledComponents={enabledComponents}
-                      value={boundProductConfig}
-                      onChange={setBoundProductConfig}
-                    />
+                ) : isPricingError && pricingError ? (
+                  <Alert variant="destructive">
+                    <AlertTitle>Error al cargar este producto</AlertTitle>
+                    <AlertDescription className="space-y-2">
+                      <p>Este producto tiene problemas de configuración en EasyQuote.</p>
+                      <p className="text-xs text-muted-foreground">
+                        {pricingError instanceof Error ? pricingError.message : "Error desconocido"}
+                      </p>
+                      <p className="font-semibold">Por favor, selecciona otro producto o contacta al administrador.</p>
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Selector de configuración - mostrar INMEDIATAMENTE sin esperar API */}
+                    {needsConfigSelector && !boundProductConfig && (
+                      <BoundProductConfigSelector
+                        enabledComponents={enabledComponents}
+                        value={boundProductConfig}
+                        onChange={setBoundProductConfig}
+                      />
+                    )}
+
+                    {/* Mostrar prompts solo si no requiere configuración O ya se seleccionó una */}
+                    {(!needsConfigSelector || boundProductConfig) ? (
+                      pricing ? (
+                        <ComponentTabsPromptsForm
+                          product={pricing}
+                          productId={productId}
+                          values={promptValues}
+                          onChange={handlePromptChange}
+                          onCommit={handlePromptCommit}
+                          showAllPrompts={!!initialData}
+                          onComponentChange={setActiveComponent}
+                          boundProductConfig={boundProductConfig}
+                          isAdmin={isSuperAdmin || isOrgAdmin}
+                        />
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Cargando opciones…</p>
+                      )
+                    ) : null}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Additionals Section (kept in left column to avoid blank space) */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg">Ajustes del artículo</CardTitle>
+                  {Array.isArray(itemAdditionals) && itemAdditionals.length > 0 && (
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                      {itemAdditionals.length} activos
+                    </span>
                   )}
-                  
-                  {/* Mostrar prompts solo si no requiere configuración O ya se seleccionó una */}
-                  {(!needsConfigSelector || boundProductConfig) ? (
-                    pricing ? (
-                      <ComponentTabsPromptsForm 
-                        product={pricing} 
-                        productId={productId}
-                        values={promptValues} 
-                        onChange={handlePromptChange}
-                        onCommit={handlePromptCommit}
-                        showAllPrompts={!!initialData}
-                        onComponentChange={setActiveComponent}
-                        boundProductConfig={boundProductConfig}
-                        isAdmin={isSuperAdmin || isOrgAdmin}
-                      />
-                    ) : (
-                      <p className="text-sm text-muted-foreground">Cargando opciones…</p>
-                    )
-                  ) : null}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent>
+                <AdditionalsSelector
+                  selectedAdditionals={Array.isArray(itemAdditionals) ? itemAdditionals : []}
+                  onChange={setItemAdditionals}
+                  quantity={isCustomProduct ? customQuantity : (qtyPrompt && promptValues[qtyPrompt]
+                    ? parseFloat(String((promptValues[qtyPrompt] as any)?.value ?? promptValues[qtyPrompt]).replace(/\./g, "").replace(",", ".")) || 1
+                    : 1)}
+                />
+              </CardContent>
+            </Card>
+          </div>
 
           <div className="md:col-span-2 md:sticky md:top-6 self-start space-y-3">
             {!isCustomProduct && isPricingError && pricingError && (
@@ -2127,32 +2153,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             )}
           </div>
         </div>
-      )}
-
-
-      {/* Additionals Section */}
-      {productId && isExpanded && (
-        <Card className="max-w-2xl mt-6">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-lg">Ajustes del artículo</CardTitle>
-              {Array.isArray(itemAdditionals) && itemAdditionals.length > 0 && (
-                <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                  {itemAdditionals.length} activos
-                </span>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            <AdditionalsSelector 
-              selectedAdditionals={Array.isArray(itemAdditionals) ? itemAdditionals : []}
-              onChange={setItemAdditionals}
-              quantity={isCustomProduct ? customQuantity : (qtyPrompt && promptValues[qtyPrompt] 
-                  ? parseFloat(String((promptValues[qtyPrompt] as any)?.value ?? promptValues[qtyPrompt]).replace(/\./g, "").replace(",", ".")) || 1 
-                  : 1)}
-            />
-          </CardContent>
-        </Card>
       )}
     </div>
 
