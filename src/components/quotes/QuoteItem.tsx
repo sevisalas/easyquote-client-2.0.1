@@ -1433,7 +1433,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       productName: originalProductName, // Nombre original del producto API
       itemDescription: isCustomProduct ? (itemDescription || "Artículo personalizado") : "", // Solo para productos custom
       itemAdditionals,
-      isFinalized: initialData?.isFinalized,
+      // Preservar isFinalized del padre (initialData) - NO sobrescribirlo aquí
       boundProductConfig, // Guardar configuración de producto encuadernado
     };
     
