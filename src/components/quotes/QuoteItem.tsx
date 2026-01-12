@@ -1357,66 +1357,66 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       return;
     }
     
-    // Para productos de API, verificar que haya prompts antes de sincronizar
-    if (!isCustomProduct && Object.keys(promptValues).length === 0) {
-      console.log('⏸️ syncToParent bloqueado: sin prompts para producto de API');
-      return;
-    }
-    
+    // Para productos de API, si aún no tenemos promptValues (por ejemplo,
+    // justo tras seleccionar el producto), intentamos derivarlos del pricing
+    // para poder sincronizar precio/outputs al padre y que el subtotal se actualice.
+    const hasPromptValues = Object.keys(promptValues).length > 0;
+    const pricingPrompts = Array.isArray((pricing as any)?.prompts) ? ((pricing as any).prompts as any[]) : [];
+
     console.log('🔄 syncToParent ejecutándose:', {
       productId,
       isCustomProduct,
+      hasPromptValues,
+      pricingPromptsCount: pricingPrompts.length,
       promptValuesKeys: Object.keys(promptValues),
       promptValuesCount: Object.keys(promptValues).length,
       promptValues,
-      hasOutputs: outputs && outputs.length > 0
+      hasOutputs: outputs && outputs.length > 0,
     });
-    
+
     let promptsArray: any[] = [];
-    
+
     // For custom products, create synthetic prompts for quantity and price
     if (isCustomProduct) {
       promptsArray = [
         { id: 'custom_quantity', label: 'Cantidad', value: customQuantity, order: 1 },
-        { id: 'custom_unit_price', label: 'Precio unitario', value: customPrice, order: 2 }
+        { id: 'custom_unit_price', label: 'Precio unitario', value: customPrice, order: 2 },
       ];
-    } else {
-      // Extraer las definiciones de prompts del producto para obtener reglas de visibilidad
-      const promptDefs = extractPrompts(pricing as any);
-      
-      // Convertir promptValues a formato Record para evaluar visibilidad
-      const currentValues: Record<string, any> = {};
+    } else if (hasPromptValues) {
+      // Guardar TODOS los prompts basándonos en promptValues (fuente de verdad)
       Object.entries(promptValues).forEach(([id, promptData]) => {
-        const value = (typeof promptData === 'object' && promptData !== null && 'value' in promptData) 
-          ? promptData.value 
-          : promptData;
-        currentValues[id] = value;
-      });
-      
-      // Guardar TODOS los prompts sin filtros
-      Object.entries(promptValues).forEach(([id, promptData]) => {
-        // promptData puede ser un objeto {label, value, order} o un valor simple
         if (typeof promptData === 'object' && promptData !== null && 'value' in promptData) {
-          const value = promptData.value;
-          
           promptsArray.push({
             id,
-            label: promptData.label || id,
-            value: promptData.value,
-            order: promptData.order ?? 999
+            label: (promptData as any).label || id,
+            value: (promptData as any).value,
+            order: (promptData as any).order ?? 999,
           });
         } else {
-          // Valor simple (fallback) - guardar sin filtrar
           promptsArray.push({
             id,
             label: id,
             value: promptData,
-            order: 999
+            order: 999,
           });
         }
       });
+    } else if (pricingPrompts.length > 0) {
+      // Fallback: aún no se han inicializado promptValues pero sí tenemos
+      // definiciones/valores desde EasyQuote (GET inicial). Los usamos para
+      // sincronizar y actualizar el subtotal.
+      promptsArray = pricingPrompts
+        .filter((p: any) => !!p?.id)
+        .map((p: any) => ({
+          id: p.id,
+          label: p.promptText || p.label || p.id,
+          value: p.currentValue,
+          order: p.promptSequence ?? p.order ?? 999,
+        }));
     }
-    
+
+    // Si seguimos sin prompts, no bloqueamos: permitimos sincronizar outputs/precio.
+
     // Obtener nombre original del producto API
     const originalProductName = products?.find((p: any) => String(p.id) === String(productId)) 
       ? getProductLabel(products.find((p: any) => String(p.id) === String(productId))) 
@@ -1454,7 +1454,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const isCalculating = isPricingLoading || multiLoading;
   const isComplete = productId && !isCalculating && ((isCustomProduct && customPrice > 0 && itemDescription) || (priceOutput && finalPrice > 0));
 
-  // Sincronizar automáticamente cuando cambien los prompts o campos personalizados (excepto durante inicialización o cálculo)
+  // Sincronizar automáticamente cuando cambien los prompts/cálculo (excepto durante inicialización o cálculo)
   useEffect(() => {
     if (!isInitializing && !isPricingLoading && productId) {
       // Para productos personalizados, sincronizar cuando cambien los campos
@@ -1462,13 +1462,26 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         console.log('🔄 Auto-sincronizando cambios de producto personalizado');
         syncToParent();
       }
-      // Para productos de API, sincronizar cuando cambien los prompts Y haya datos
-      else if (!isCustomProduct && Object.keys(promptValues).length > 0) {
-        console.log('🔄 Auto-sincronizando cambios de prompts');
+      // Para productos de API, sincronizar también en la carga inicial (aunque promptValues esté vacío)
+      else if (!isCustomProduct) {
+        console.log('🔄 Auto-sincronizando producto de API (prompts/pricing)');
         syncToParent();
       }
     }
-  }, [promptValues, isInitializing, productId, syncToParent, isCustomProduct, itemDescription, customPrice, customQuantity, isPricingLoading, userEditedPrice, boundProductConfig]);
+  }, [
+    productId,
+    isCustomProduct,
+    itemDescription,
+    promptValues,
+    customPrice,
+    customQuantity,
+    userEditedPrice,
+    boundProductConfig,
+    pricing,
+    isInitializing,
+    isPricingLoading,
+    syncToParent,
+  ]);
 
   // Debug logging para el botón Finalizar
   useEffect(() => {
