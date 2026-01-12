@@ -1176,27 +1176,22 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     return type === "price" || name.includes("precio") || name.includes("price");
   };
 
-  // En productos compuestos puede haber varios outputs de tipo "price" (Cubierta/Interior...).
-  // Para las tarjetas multi-cantidad necesitamos el TOTAL, no el primero.
-  // IMPORTANTE: Si existe "Precio Total", usarlo directamente (NO sumar, ya incluye todo).
+  // EasyQuote ya devuelve el precio final calculado. NO sumamos parciales nunca.
+  // Si hay varios outputs de precio (Cubierta/Interior/Total), priorizamos "Total".
+  // Si no existe, usamos el mayor valor numérico (suele ser el total) como fallback seguro.
   const getCalculatedPriceFromOutputs = (outs: any[]): number => {
     const prices = (Array.isArray(outs) ? outs : []).filter(isPriceOutput);
     if (prices.length === 0) return NaN;
 
-    // 1) Si existe un "Precio Total" explícito, usarlo directamente (ya es el total).
     const totalLike = prices.find((o: any) => /total/i.test(String(o?.name ?? "")));
     if (totalLike) return parseEsNumber(totalLike.value);
 
-    // 2) Si solo hay un precio, usarlo.
-    if (prices.length === 1) return parseEsNumber(prices[0]?.value);
+    const nums = prices
+      .map((o: any) => parseEsNumber(o?.value))
+      .filter((n: number) => Number.isFinite(n));
 
-    // 3) En compuestos SIN "Precio Total", sumar los parciales (Cubierta + Interior...).
-    if (isComposite) {
-      return prices.reduce((sum: number, o: any) => sum + (parseEsNumber(o?.value) || 0), 0);
-    }
-
-    // 4) Productos simples: usar el primero.
-    return parseEsNumber(prices[0]?.value);
+    if (nums.length === 0) return NaN;
+    return Math.max(...nums);
   };
 
   const multiRows = useMemo(() => {
