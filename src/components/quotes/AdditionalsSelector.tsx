@@ -31,11 +31,10 @@ interface SelectedAdditional {
 interface AdditionalsSelectorProps {
   selectedAdditionals: SelectedAdditional[]
   onChange: (additionals: SelectedAdditional[]) => void
-  quantity?: number // Total quantity (fallback)
-  quantities?: number[] // Multi quantities: per-row quantities
+  quantity?: number
 }
 
-export default function AdditionalsSelector({ selectedAdditionals, onChange, quantity = 1, quantities }: AdditionalsSelectorProps) {
+export default function AdditionalsSelector({ selectedAdditionals, onChange, quantity = 1 }: AdditionalsSelectorProps) {
   const [newAdditionalId, setNewAdditionalId] = useState<string>("")
   const [predefinedType, setPredefinedType] = useState<"net_amount" | "quantity_multiplier" | "capacity_divider">("net_amount")
   const [predefinedValue, setPredefinedValue] = useState<number>(0)
@@ -140,9 +139,6 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
       {selectedAdditionals.length > 0 && (
         <div className="space-y-1.5">
           {selectedAdditionals.map((additional) => {
-            const qtyList = Array.isArray(quantities) && quantities.length > 0 ? quantities : [quantity];
-            const totalQty = qtyList.reduce((sum, q) => sum + (Number(q) || 0), 0) || 1;
-
             // Calculate subtotal for this additional
             let subtotal = 0;
             let subtotalLabel = "";
@@ -151,14 +147,13 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
               subtotal = additional.value;
               subtotalLabel = `${subtotal.toFixed(2)} €`;
             } else if (additional.type === "quantity_multiplier") {
-              subtotal = additional.value * totalQty;
-              subtotalLabel = `${totalQty} × ${additional.value.toFixed(2)} = ${subtotal.toFixed(2)} €`;
+              subtotal = additional.value * quantity;
+              subtotalLabel = `${subtotal.toFixed(2)} €`;
             } else if (additional.type === "capacity_divider") {
               const capacity = additional.capacity_value || 1;
-              // IMPORTANT: in multi-quantity mode, capacity is calculated per quantity (ceil per row)
-              const unitsNeeded = qtyList.reduce((sum, q) => sum + Math.ceil((Number(q) || 0) / capacity), 0);
+              const unitsNeeded = Math.ceil(quantity / capacity);
               subtotal = additional.value * unitsNeeded;
-              subtotalLabel = `${unitsNeeded} × ${additional.value.toFixed(2)} = ${subtotal.toFixed(2)} €`;
+              subtotalLabel = `${subtotal.toFixed(2)} €`;
             }
             
             return (
