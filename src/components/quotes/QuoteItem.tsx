@@ -1203,8 +1203,20 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     let additionalsTotal = 0;
     
     // Get quantity from prompts or multi for additionals calculation
-    const quantity = multiEnabled && multiRows.length > 0 ? 
-      multiRows.reduce((sum, row) => sum + row.qty, 0) : 1;
+    let quantity = 1;
+    if (multiEnabled && multiRows.length > 0) {
+      quantity = multiRows.reduce((sum, row) => sum + row.qty, 0);
+    } else if (qtyPrompt && promptValues[qtyPrompt]) {
+      // Get quantity from the selected quantity prompt
+      const qtyValue = promptValues[qtyPrompt];
+      const rawQty = (qtyValue && typeof qtyValue === 'object' && 'value' in qtyValue) 
+        ? qtyValue.value 
+        : qtyValue;
+      const parsedQty = parseFloat(String(rawQty).replace(/\./g, "").replace(",", "."));
+      if (!isNaN(parsedQty) && parsedQty > 0) {
+        quantity = parsedQty;
+      }
+    }
     
     if (Array.isArray(itemAdditionals)) {
       itemAdditionals.forEach((additional) => {
