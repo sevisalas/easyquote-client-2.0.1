@@ -1241,7 +1241,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     const rows = (multiResults as any[] | undefined) || [];
     return rows.map((r: any) => {
       const outs: any[] = Array.isArray(r?.data?.outputValues) ? r.data.outputValues : [];
-      const totalNum = getCalculatedPriceFromOutputs(outs);
+      // Usar pricing.price directamente si existe (es el precio final calculado por la API)
+      const apiPrice = r?.data?.price;
+      const totalNum = apiPrice !== undefined && apiPrice !== null 
+        ? parseEsNumber(apiPrice) 
+        : getCalculatedPriceFromOutputs(outs);
       const unit = r.qty > 0 && Number.isFinite(totalNum) ? totalNum / r.qty : NaN;
       return { qty: r.qty, outs, totalStr: totalNum, unit };
     });
@@ -1272,8 +1276,15 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       return basePrice + additionalsTotal;
     }
     
-    // For API products, use priceOutput
-    const basePrice = parseFloat(String((priceOutput as any)?.value ?? 0).replace(/\./g, "").replace(",", ".")) || 0;
+    // For API products, use pricing.price directly if available (already the final calculated price)
+    // Fallback to priceOutput only if pricing.price is not available
+    const pricingPrice = (pricing as any)?.price;
+    let basePrice: number;
+    if (pricingPrice !== undefined && pricingPrice !== null) {
+      basePrice = parseFloat(String(pricingPrice).replace(/\./g, "").replace(",", ".")) || 0;
+    } else {
+      basePrice = parseFloat(String((priceOutput as any)?.value ?? 0).replace(/\./g, "").replace(",", ".")) || 0;
+    }
     let additionalsTotal = 0;
     
     // Get quantity from Q1 only (first row or prompt value) - alternatives are independent
@@ -1961,18 +1972,24 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                         onPriceChange={(price) => setUserEditedPrice(price)}
                         multiEnabled={multiEnabled}
                         canEditPrice={canEditPrice}
-                        renderPrice={() => (
-                          priceOutput ? (
+                        renderPrice={() => {
+                          // Usar pricing.price directamente si existe (es el precio final de la API)
+                          const pricingPrice = (pricing as any)?.price;
+                          const displayPrice = pricingPrice !== undefined && pricingPrice !== null 
+                            ? pricingPrice 
+                            : (priceOutput as any)?.value;
+                          
+                          return displayPrice !== undefined && displayPrice !== null ? (
                             <div className="p-3 rounded-md border bg-card/50">
                               <div className="flex items-center justify-between">
                                 <span className="text-sm text-muted-foreground">Precio</span>
                                 <span className="px-2 py-1 rounded-full bg-accent text-accent-foreground text-lg font-semibold">
-                                  {formatEUR((priceOutput as any).value)}
+                                  {formatEUR(displayPrice)}
                                 </span>
                               </div>
                             </div>
-                          ) : (!pricingError ? <p className="text-sm text-muted-foreground">Selecciona opciones para ver el resultado.</p> : null)
-                        )}
+                          ) : (!pricingError ? <p className="text-sm text-muted-foreground">Selecciona opciones para ver el resultado.</p> : null);
+                        }}
                         renderImages={(images) => (
                           <section className={images.length === 1 ? "flex justify-center" : "grid grid-cols-2 gap-3"}>
                             {images.map((o: any, idx: number) => (
