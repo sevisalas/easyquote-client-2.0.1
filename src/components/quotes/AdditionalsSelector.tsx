@@ -31,9 +31,10 @@ interface SelectedAdditional {
 interface AdditionalsSelectorProps {
   selectedAdditionals: SelectedAdditional[]
   onChange: (additionals: SelectedAdditional[]) => void
+  quantity?: number // Quantity for calculating subtotals
 }
 
-export default function AdditionalsSelector({ selectedAdditionals, onChange }: AdditionalsSelectorProps) {
+export default function AdditionalsSelector({ selectedAdditionals, onChange, quantity = 1 }: AdditionalsSelectorProps) {
   const [newAdditionalId, setNewAdditionalId] = useState<string>("")
   const [predefinedType, setPredefinedType] = useState<"net_amount" | "quantity_multiplier" | "capacity_divider">("net_amount")
   const [predefinedValue, setPredefinedValue] = useState<number>(0)
@@ -137,53 +138,76 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange }: A
       {/* Selected Additionals */}
       {selectedAdditionals.length > 0 && (
         <div className="space-y-1.5">
-          {selectedAdditionals.map((additional) => (
-            <div key={additional.id} className="flex items-center gap-2 p-1.5 border rounded">
-              <div className="w-64">
-                <div className="text-sm font-medium">
-                  {additional.name}
-                  {additional.is_discount && (
-                    <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
-                      Descuento
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {additional.type === "net_amount" ? "Importe neto" : 
-                   additional.type === "quantity_multiplier" ? "Precio unidad" :
-                   additional.type === "capacity_divider" ? `Por capacidad (${additional.capacity_value || '?'} uds)` : "Personalizado"}
-                </div>
-              </div>
-              <div className="w-28" />
-              <div className="flex items-center gap-1 w-24">
-                {additional.isCustom ? (
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={additional.value}
-                    onChange={(e) => updateAdditionalValue(additional.id, parseFloat(e.target.value) || 0)}
-                    className="w-full h-9"
-                  />
-                ) : (
-                  <div className="w-full h-9 flex items-center justify-end px-3 border rounded bg-muted/50">
-                    <span className="font-medium">{additional.value}</span>
+          {selectedAdditionals.map((additional) => {
+            // Calculate subtotal for this additional
+            let subtotal = 0;
+            let subtotalLabel = "";
+            if (additional.type === "net_amount") {
+              subtotal = additional.value;
+              subtotalLabel = `${subtotal.toFixed(2)} €`;
+            } else if (additional.type === "quantity_multiplier") {
+              subtotal = additional.value * quantity;
+              subtotalLabel = `${quantity} × ${additional.value.toFixed(2)} = ${subtotal.toFixed(2)} €`;
+            } else if (additional.type === "capacity_divider") {
+              const capacity = additional.capacity_value || 1;
+              const unitsNeeded = Math.ceil(quantity / capacity);
+              subtotal = additional.value * unitsNeeded;
+              subtotalLabel = `${unitsNeeded} × ${additional.value.toFixed(2)} = ${subtotal.toFixed(2)} €`;
+            }
+            
+            return (
+              <div key={additional.id} className="flex items-center gap-2 p-1.5 border rounded">
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium">
+                    {additional.name}
+                    {additional.is_discount && (
+                      <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
+                        Descuento
+                      </span>
+                    )}
                   </div>
-                )}
-                <span className="text-sm text-muted-foreground">
-                  {additional.type === "net_amount" ? "€" : 
-                   additional.type === "capacity_divider" ? "€/ud" : "x"}
-                </span>
+                  <div className="text-xs text-muted-foreground">
+                    {additional.type === "net_amount" ? "Importe neto" : 
+                     additional.type === "quantity_multiplier" ? "Precio unidad" :
+                     additional.type === "capacity_divider" ? `Por capacidad (${additional.capacity_value || '?'} uds)` : "Personalizado"}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 w-24">
+                  {additional.isCustom ? (
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={additional.value}
+                      onChange={(e) => updateAdditionalValue(additional.id, parseFloat(e.target.value) || 0)}
+                      className="w-full h-9"
+                    />
+                  ) : (
+                    <div className="w-full h-9 flex items-center justify-end px-3 border rounded bg-muted/50">
+                      <span className="font-medium">{additional.value}</span>
+                    </div>
+                  )}
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">
+                    {additional.type === "net_amount" ? "€" : 
+                     additional.type === "capacity_divider" ? "€/ud" : "x"}
+                  </span>
+                </div>
+                {/* Subtotal column */}
+                <div className="w-32 text-right">
+                  <span className="text-sm font-semibold text-primary">
+                    {subtotalLabel}
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={() => removeAdditional(additional.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9"
-                onClick={() => removeAdditional(additional.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

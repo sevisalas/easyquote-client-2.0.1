@@ -2073,6 +2073,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             <AdditionalsSelector 
               selectedAdditionals={Array.isArray(itemAdditionals) ? itemAdditionals : []}
               onChange={setItemAdditionals}
+              quantity={isCustomProduct ? customQuantity : (multiEnabled && multiRows.length > 0 
+                ? multiRows.reduce((sum, row) => sum + row.qty, 0) 
+                : (qtyPrompt && promptValues[qtyPrompt] 
+                    ? parseFloat(String((promptValues[qtyPrompt] as any)?.value ?? promptValues[qtyPrompt]).replace(/\./g, "").replace(",", ".")) || 1 
+                    : 1))}
             />
           </CardContent>
         </Card>
