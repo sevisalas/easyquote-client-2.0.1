@@ -364,22 +364,22 @@ export default function ComponentTabsPromptsForm({
       </div>
 
       {/* Contenido: dos columnas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         {/* Columna izquierda: General (siempre visible) */}
         {generalPrompts.length > 0 && (
-          <div className="rounded-lg border border-border bg-card p-4">
-            <PromptsForm 
-              product={createComponentProduct(generalPrompts)} 
-              values={values} 
-              onChange={onChange} 
-              onCommit={onCommit} 
-              showAllPrompts={showAllPrompts} 
+          <div className="rounded-lg border border-border bg-card p-4 self-start">
+            <PromptsForm
+              product={createComponentProduct(generalPrompts)}
+              values={values}
+              onChange={onChange}
+              onCommit={onCommit}
+              showAllPrompts={showAllPrompts}
             />
           </div>
         )}
 
         {/* Columna derecha: Componentes con contenido de pestañas */}
-        <div className="rounded-lg border border-border bg-card p-4">
+        <div className="rounded-lg border border-border bg-card p-4 self-start">
           {tabComponents.map(comp => {
             const componentPrompts = promptsByComponent[comp] || [];
             const labels = getComponentLabels(boundProductConfig);
@@ -390,12 +390,12 @@ export default function ComponentTabsPromptsForm({
                     No hay campos asignados a {labels[comp] || comp}.
                   </p>
                 ) : (
-                  <PromptsForm 
-                    product={createComponentProduct(componentPrompts)} 
-                    values={values} 
-                    onChange={onChange} 
-                    onCommit={onCommit} 
-                    showAllPrompts={showAllPrompts} 
+                  <PromptsForm
+                    product={createComponentProduct(componentPrompts)}
+                    values={values}
+                    onChange={onChange}
+                    onCommit={onCommit}
+                    showAllPrompts={showAllPrompts}
                   />
                 )}
               </TabsContent>
