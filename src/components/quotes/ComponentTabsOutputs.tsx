@@ -519,20 +519,7 @@ export default function ComponentTabsOutputs({
 
     return (
       <div className="p-3 rounded-md border bg-card/50 space-y-3">
-        {/* Desglose por componente - solo si hay más de 1 */}
-        {componentCount > 1 && (
-          <>
-            <div className="space-y-1">
-              {Object.entries(pricesByComponent).map(([comp, price]) => (
-                <div key={comp} className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{componentLabels[comp] || comp}</span>
-                  <span className="font-medium">{formatEUR(price)}</span>
-                </div>
-              ))}
-            </div>
-            <div className="border-t border-border" />
-          </>
-        )}
+        {/* Desglose por componente eliminado - solo mostramos precio total */}
         
         {/* Precio calculado */}
         <div className="flex items-center justify-between">
