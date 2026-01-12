@@ -20,21 +20,19 @@ import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 import { getEasyQuoteToken } from "@/lib/easyquoteApi";
 import { useNumberingFormat, generateDocumentNumber } from "@/hooks/useNumberingFormat";
-
 type ItemSnapshot = {
   productId: string;
   prompts: Record<string, any>;
   outputs: any[];
   price?: number;
   multi?: any;
-  displayName?: string;  // Nombre a mostrar (editable)
-  productName?: string;  // Nombre original del producto API
-  itemDescription?: string;  // Descripción (solo para productos custom)
+  displayName?: string; // Nombre a mostrar (editable)
+  productName?: string; // Nombre original del producto API
+  itemDescription?: string; // Descripción (solo para productos custom)
   itemAdditionals?: any[];
   needsRecalculation?: boolean;
   isFinalized?: boolean; // Track if item is finalized
 };
-
 type SelectedAdditional = {
   id: string;
   name: string;
@@ -42,7 +40,6 @@ type SelectedAdditional = {
   value: number;
   isCustom?: boolean;
 };
-
 export default function QuoteNew() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -60,16 +57,24 @@ export default function QuoteNew() {
   const [isImportingContacts, setIsImportingContacts] = useState(false);
 
   // Holded integration
-  const { isHoldedActive } = useHoldedIntegration();
-  const { organization, membership } = useSubscription();
+  const {
+    isHoldedActive
+  } = useHoldedIntegration();
+  const {
+    organization,
+    membership
+  } = useSubscription();
   const currentOrganization = organization || membership?.organization;
 
   // Numbering format
-  const { data: quoteFormat, isLoading: isLoadingFormat } = useNumberingFormat('quote');
+  const {
+    data: quoteFormat,
+    isLoading: isLoadingFormat
+  } = useNumberingFormat('quote');
 
   // Generate next item ID
   const nextItemId = useMemo(() => Math.max(0, ...Object.keys(items).map(k => Number(k) || 0)) + 1, [items]);
-  
+
   // Track the last added item to keep it expanded
   const [lastAddedItemId, setLastAddedItemId] = useState<number | null>(null);
 
@@ -77,32 +82,22 @@ export default function QuoteNew() {
   const allItemsComplete = useMemo(() => {
     const itemsArray = Object.values(items);
     if (itemsArray.length === 0) return true; // No items means we can add
-    return itemsArray.every(item => 
-      item.productId && 
-      item.price && 
-      item.price > 0 && 
-      item.isFinalized === true
-    );
+    return itemsArray.every(item => item.productId && item.price && item.price > 0 && item.isFinalized === true);
   }, [items]);
-  
+
   // Check if there's an item being edited (has productId but not finalized)
   const hasItemBeingEdited = useMemo(() => {
-    return Object.values(items).some(item => 
-      item.productId && !item.isFinalized
-    );
+    return Object.values(items).some(item => item.productId && !item.isFinalized);
   }, [items]);
 
   // Check if any item has multiple quantities enabled
   const hasMultiQuantities = useMemo(() => {
-    return Object.values(items).some(item => 
-      item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1
-    );
+    return Object.values(items).some(item => item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1);
   }, [items]);
 
   // Check and validate EasyQuote token
   const [hasToken, setHasToken] = useState<boolean | null>(null);
   const [tokenChecking, setTokenChecking] = useState(true);
-
   useEffect(() => {
     const validateToken = async () => {
       setTokenChecking(true);
@@ -116,46 +111,46 @@ export default function QuoteNew() {
         setTokenChecking(false);
       }
     };
-    
     validateToken();
   }, []);
 
   // Load quote for duplication with items
-  const { data: duplicateQuote } = useQuery({
+  const {
+    data: duplicateQuote
+  } = useQuery({
     queryKey: ["quote-duplicate", duplicateFromId],
     queryFn: async () => {
-      const { data: quote, error: quoteError } = await supabase
-        .from("quotes")
-        .select("*")
-        .eq("id", duplicateFromId)
-        .single();
-      
+      const {
+        data: quote,
+        error: quoteError
+      } = await supabase.from("quotes").select("*").eq("id", duplicateFromId).single();
       if (quoteError) throw quoteError;
-      
+
       // Load quote items
-      const { data: items, error: itemsError } = await supabase
-        .from("quote_items")
-        .select("*")
-        .eq("quote_id", duplicateFromId)
-        .order("position", { ascending: true });
-      
+      const {
+        data: items,
+        error: itemsError
+      } = await supabase.from("quote_items").select("*").eq("quote_id", duplicateFromId).order("position", {
+        ascending: true
+      });
       if (itemsError) throw itemsError;
-      
-      return { ...quote, items };
+      return {
+        ...quote,
+        items
+      };
     },
-    enabled: !!duplicateFromId,
+    enabled: !!duplicateFromId
   });
 
   // Initialize form from duplicate quote
   useEffect(() => {
     if (!duplicateQuote) return;
-    
     setCustomerId(duplicateQuote.customer_id || "");
     setTitle(duplicateQuote.title || "");
     setDescription(duplicateQuote.description || "");
     setNotes(duplicateQuote.notes || "");
     setValidUntil(duplicateQuote.valid_until || "");
-    
+
     // Load quote additionals
     if (duplicateQuote.quote_additionals) {
       const additionals = Array.isArray(duplicateQuote.quote_additionals) ? duplicateQuote.quote_additionals : [];
@@ -177,19 +172,21 @@ export default function QuoteNew() {
             };
           });
         }
-
         itemsData[index] = {
           productId: item.product_id || "",
           prompts: promptsObj,
           outputs: item.outputs || [],
           price: item.price,
           multi: item.multi,
-          displayName: item.name || item.product_name || "",  // Nombre a mostrar
-          productName: item.product_name || "",  // Nombre original del producto API
-          itemDescription: item.description || "",  // Descripción (solo para productos custom)
+          displayName: item.name || item.product_name || "",
+          // Nombre a mostrar
+          productName: item.product_name || "",
+          // Nombre original del producto API
+          itemDescription: item.description || "",
+          // Descripción (solo para productos custom)
           itemAdditionals: item.item_additionals || [],
           needsRecalculation: true,
-          isFinalized: true,
+          isFinalized: true
         };
       });
       setItems(itemsData);
@@ -201,7 +198,6 @@ export default function QuoteNew() {
     if (!quoteFormat) {
       throw new Error("No se pudo obtener el formato de numeración");
     }
-
     const nextNumber = Math.max(1, (quoteFormat.last_sequential_number || 0) + 1);
     return generateDocumentNumber(quoteFormat, nextNumber);
   };
@@ -209,13 +205,13 @@ export default function QuoteNew() {
   // Calculate totals
   const totals = useMemo(() => {
     let subtotal = 0;
-    
+
     // Sum items prices
     Object.values(items).forEach(item => {
       if (typeof item.price === 'number') {
         subtotal += item.price;
       }
-    })
+    });
 
     // Add quote-level additionals
     let additionalsTotal = 0;
@@ -227,139 +223,144 @@ export default function QuoteNew() {
         additionalsTotal += additional.value;
       } else if (additional.type === 'percentage') {
         // For percentage type, apply to subtotal
-        additionalsTotal += (subtotal * additional.value) / 100;
+        additionalsTotal += subtotal * additional.value / 100;
       }
     });
-    
     const finalSubtotal = subtotal + additionalsTotal;
     const taxAmount = 0; // TODO: Implement tax calculation
     const discountAmount = 0; // TODO: Implement discount
     const finalPrice = finalSubtotal + taxAmount - discountAmount;
-
     return {
       subtotal: finalSubtotal,
       taxAmount,
       discountAmount,
-      finalPrice,
+      finalPrice
     };
   }, [items, quoteAdditionals]);
-
   const formatEUR = (amount: number) => {
     return new Intl.NumberFormat("es-ES", {
       style: "currency",
       currency: "EUR",
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 2
     }).format(amount);
   };
-
   const handleItemChange = (id: string | number, snapshot: ItemSnapshot) => {
     setItems(prev => ({
       ...prev,
       [id]: snapshot
     }));
   };
-
   const handleItemRemove = (id: string | number) => {
     setItems(prev => {
-      const next = { ...prev };
+      const next = {
+        ...prev
+      };
       delete next[id];
       return next;
     });
   };
-
   const addNewItem = () => {
     const newId = nextItemId;
-    setItems(prev => ({ ...prev, [newId]: {
-      productId: "",
-      prompts: {},
-      outputs: [],
-      itemDescription: "",
-      itemAdditionals: [],
-      isFinalized: false,
-    }}));
+    setItems(prev => ({
+      ...prev,
+      [newId]: {
+        productId: "",
+        prompts: {},
+        outputs: [],
+        itemDescription: "",
+        itemAdditionals: [],
+        isFinalized: false
+      }
+    }));
     setLastAddedItemId(newId);
   };
-  
   const handleFinishItem = (itemId: string | number) => {
     setItems(prev => {
       const updated = {
         ...prev,
-        [itemId]: { ...prev[itemId], isFinalized: true }
+        [itemId]: {
+          ...prev[itemId],
+          isFinalized: true
+        }
       };
       return updated;
     });
     setLastAddedItemId(null);
   };
-
   const handleImportContacts = async () => {
     if (!currentOrganization?.id) {
       toast({
         title: "Error",
         description: "No se encontró la organización",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     setIsImportingContacts(true);
-    
+
     // Mostrar aviso sobre el tiempo de importación
     toast({
       title: "Importando contactos...",
-      description: "Este proceso puede tardar aproximadamente 1 minuto. El proceso se ejecuta en segundo plano.",
+      description: "Este proceso puede tardar aproximadamente 1 minuto. El proceso se ejecuta en segundo plano."
     });
-    
     try {
-      const { data, error } = await supabase.functions.invoke('holded-import-contacts', {
-        body: { organizationId: currentOrganization.id }
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('holded-import-contacts', {
+        body: {
+          organizationId: currentOrganization.id
+        }
       });
-
       if (error) throw error;
-
       toast({
         title: "Importación completada",
-        description: "Los contactos de Holded han sido actualizados. Ya puedes buscar el nuevo cliente.",
+        description: "Los contactos de Holded han sido actualizados. Ya puedes buscar el nuevo cliente."
       });
     } catch (error: any) {
       console.error('Error importing Holded contacts:', error);
       toast({
         title: "Error",
         description: error.message || "No se pudieron importar los contactos",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsImportingContacts(false);
     }
   };
-
   const handleSave = async (status: "draft" | "sent" = "draft") => {
     if (!customerId) {
-      toast({ title: "Error", description: "Debes seleccionar un cliente", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Debes seleccionar un cliente",
+        variant: "destructive"
+      });
       return;
     }
-
     if (Object.keys(items).length === 0) {
-      toast({ title: "Error", description: "Debes agregar al menos un producto", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Debes agregar al menos un producto",
+        variant: "destructive"
+      });
       return;
     }
-
     setSaving(true);
-
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuario no autenticado");
-
       const quoteNumber = await generateQuoteNumber();
       const itemsArray = Object.values(items);
 
       // Extract UUID from "holded:" prefix if present
-      const actualCustomerId = customerId.startsWith('holded:') 
-        ? customerId.replace('holded:', '') 
-        : customerId;
+      const actualCustomerId = customerId.startsWith('holded:') ? customerId.replace('holded:', '') : customerId;
 
       // Obtener organization_id del sessionStorage
       const organizationId = sessionStorage.getItem('selected_organization_id');
-      
       const quoteData = {
         user_id: user.id,
         customer_id: actualCustomerId,
@@ -376,35 +377,32 @@ export default function QuoteNew() {
         terms_conditions: "",
         selections: itemsArray,
         quote_additionals: quoteAdditionals,
-        organization_id: organizationId,
+        organization_id: organizationId
       };
-
-      const { data: quote, error } = await supabase
-        .from("quotes")
-        .insert(quoteData)
-        .select()
-        .single();
-
+      const {
+        data: quote,
+        error
+      } = await supabase.from("quotes").insert(quoteData).select().single();
       if (error) throw error;
 
       // Create quote_items records with prompts and outputs
       const quoteItemsData = itemsArray.map((item, index) => {
         // Convert prompts object to sorted array and keep order field
-        const promptsArray = Object.entries(item.prompts || {})
-          .map(([id, promptData]: [string, any]) => ({
-            id,
-            label: promptData.label,
-            value: promptData.value,
-            order: promptData.order ?? 999
-          }))
-          .sort((a, b) => a.order - b.order);
-
+        const promptsArray = Object.entries(item.prompts || {}).map(([id, promptData]: [string, any]) => ({
+          id,
+          label: promptData.label,
+          value: promptData.value,
+          order: promptData.order ?? 999
+        })).sort((a, b) => a.order - b.order);
         return {
           quote_id: quote.id,
           product_id: item.productId,
-          product_name: item.productName || item.displayName || "",  // Nombre original del producto API
-          name: item.displayName || item.productName || "",  // Nombre a mostrar (editable)
-          description: item.itemDescription || "",  // Descripción (solo para productos custom)
+          product_name: item.productName || item.displayName || "",
+          // Nombre original del producto API
+          name: item.displayName || item.productName || "",
+          // Nombre a mostrar (editable)
+          description: item.itemDescription || "",
+          // Descripción (solo para productos custom)
           prompts: promptsArray,
           outputs: item.outputs || [],
           multi: item.multi || null,
@@ -415,29 +413,29 @@ export default function QuoteNew() {
           item_additionals: item.itemAdditionals || []
         };
       });
-
-      const { error: itemsError } = await supabase
-        .from("quote_items")
-        .insert(quoteItemsData);
-
+      const {
+        error: itemsError
+      } = await supabase.from("quote_items").insert(quoteItemsData);
       if (itemsError) throw itemsError;
 
       // Update last_sequential_number in numbering_formats
       if (quoteFormat && 'id' in quoteFormat && quoteFormat.id) {
         const nextSequential = quoteFormat.last_sequential_number + 1;
-        await supabase
-          .from('numbering_formats')
-          .update({ last_sequential_number: nextSequential })
-          .eq('id', quoteFormat.id as string);
+        await supabase.from('numbering_formats').update({
+          last_sequential_number: nextSequential
+        }).eq('id', quoteFormat.id as string);
       }
 
       // Si el estado es "sent" y Holded está activo, exportar a Holded automáticamente
       if (status === 'sent' && isHoldedActive) {
         try {
-          const { error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
-            body: { quoteId: quote.id }
+          const {
+            error: holdedError
+          } = await supabase.functions.invoke('holded-export-estimate', {
+            body: {
+              quoteId: quote.id
+            }
           });
-
           if (holdedError) {
             console.error('Error exporting to Holded:', holdedError);
             toast({
@@ -460,28 +458,25 @@ export default function QuoteNew() {
           });
         }
       } else {
-        toast({ 
-          title: "Presupuesto guardado", 
-          description: `Presupuesto ${quoteNumber} ${status === 'draft' ? 'guardado como borrador' : 'enviado'} correctamente` 
+        toast({
+          title: "Presupuesto guardado",
+          description: `Presupuesto ${quoteNumber} ${status === 'draft' ? 'guardado como borrador' : 'enviado'} correctamente`
         });
       }
-      
       navigate(`/presupuestos/${quote.id}`);
     } catch (error: any) {
       console.error("Error saving quote:", error);
-      toast({ 
-        title: "Error al guardar", 
-        description: error.message || "No se pudo guardar el presupuesto", 
-        variant: "destructive" 
+      toast({
+        title: "Error al guardar",
+        description: error.message || "No se pudo guardar el presupuesto",
+        variant: "destructive"
       });
     } finally {
       setSaving(false);
     }
   };
-
   if (tokenChecking || hasToken === null || isLoadingFormat) {
-    return (
-      <div className="container mx-auto py-8">
+    return <div className="container mx-auto py-8">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -500,13 +495,10 @@ export default function QuoteNew() {
             </div>
           </CardContent>
         </Card>
-      </div>
-    );
+      </div>;
   }
-
   if (!hasToken) {
-    return (
-      <div className="container mx-auto py-8">
+    return <div className="container mx-auto py-8">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -528,35 +520,22 @@ export default function QuoteNew() {
             </div>
           </CardContent>
         </Card>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="container mx-auto py-4 space-y-3">
+  return <div className="container mx-auto py-4 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold">
             {duplicateFromId ? "Duplicar presupuesto" : "Nuevo presupuesto"}
-            {duplicateFromId && (
-              <Badge variant="secondary" className="ml-2">
+            {duplicateFromId && <Badge variant="secondary" className="ml-2">
                 Duplicando
-              </Badge>
-            )}
+              </Badge>}
           </h1>
-          {isHoldedActive && (
-            <Button
-              onClick={handleImportContacts}
-              disabled={isImportingContacts}
-              variant="outline"
-              size="sm"
-              className="text-xs h-7"
-            >
+          {isHoldedActive && <Button onClick={handleImportContacts} disabled={isImportingContacts} variant="outline" size="sm" className="text-xs h-7">
               <Download className="w-3 h-3 mr-1" />
               {isImportingContacts ? "Importando..." : "Actualizar contactos"}
-            </Button>
-          )}
+            </Button>}
         </div>
         <Button onClick={() => navigate(-1)} variant="outline" size="sm">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -571,54 +550,30 @@ export default function QuoteNew() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <CustomerSelector
-              value={customerId}
-              onValueChange={setCustomerId}
-              label="Cliente *"
-              placeholder="Seleccionar cliente..."
-            />
+            <CustomerSelector value={customerId} onValueChange={setCustomerId} label="Cliente *" placeholder="Seleccionar cliente..." />
             
             <div className="space-y-2">
               <Label htmlFor="valid-until">Válido hasta</Label>
-              <Input
-                id="valid-until"
-                type="date"
-                value={validUntil}
-                onChange={(e) => setValidUntil(e.target.value)}
-              />
+              <Input id="valid-until" type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="description">Descripción</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Descripción del presupuesto..."
-                rows={3}
-              />
+              <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Descripción del presupuesto..." rows={3} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="notes">Notas internas</Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Notas para uso interno..."
-                rows={2}
-              />
+              <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notas para uso interno..." rows={2} />
             </div>
           </div>
 
-          {isHoldedActive && hasMultiQuantities && (
-            <div className="pt-2">
+          {isHoldedActive && hasMultiQuantities && <div className="pt-2">
               <p className="text-sm text-muted-foreground">
                 (Este presupuesto tiene múltiples cantidades, cada cantidad se exportará como un artículo separado en Holded)
               </p>
-            </div>
-          )}
+            </div>}
 
         </CardContent>
       </Card>
@@ -628,40 +583,24 @@ export default function QuoteNew() {
         <CardHeader className="py-3 px-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Productos</CardTitle>
-            {(Object.keys(items).length === 0 || allItemsComplete) && !hasItemBeingEdited && (
-              <Button onClick={addNewItem} variant="secondary" size="sm">
+            {(Object.keys(items).length === 0 || allItemsComplete) && !hasItemBeingEdited && <Button onClick={addNewItem} variant="secondary" size="sm">
                 <Plus className="w-4 h-4 mr-2" />
                 Agregar producto
-              </Button>
-            )}
+              </Button>}
           </div>
         </CardHeader>
         <CardContent className="space-y-2">
-          {Object.keys(items).length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+          {Object.keys(items).length === 0 ? <div className="text-center py-8 text-muted-foreground">
               <p>No hay productos agregados.</p>
               <p className="text-sm mt-2">Haz clic en "Agregar producto" para comenzar.</p>
-            </div>
-          ) : (
-            Object.entries(items).map(([id, item], index) => {
-              const isLastAdded = Number(id) === lastAddedItemId;
-              const isComplete = item.productId && item.price && item.price > 0;
-              const shouldExpand = !item.isFinalized;
-              return (
-                <div key={id}>
-                  <QuoteItem
-                    hasToken={hasToken}
-                    id={id}
-                    initialData={item}
-                    onChange={handleItemChange}
-                    onRemove={handleItemRemove}
-                    onFinishEdit={handleFinishItem}
-                    shouldExpand={shouldExpand}
-                  />
-                </div>
-              );
-            })
-          )}
+            </div> : Object.entries(items).map(([id, item], index) => {
+          const isLastAdded = Number(id) === lastAddedItemId;
+          const isComplete = item.productId && item.price && item.price > 0;
+          const shouldExpand = !item.isFinalized;
+          return <div key={id}>
+                  <QuoteItem hasToken={hasToken} id={id} initialData={item} onChange={handleItemChange} onRemove={handleItemRemove} onFinishEdit={handleFinishItem} shouldExpand={shouldExpand} />
+                </div>;
+        })}
         </CardContent>
       </Card>
 
@@ -672,10 +611,7 @@ export default function QuoteNew() {
         </CardHeader>
         <CardContent>
           <div className="bg-muted/30 p-4 rounded-lg border border-border">
-            <QuoteAdditionalsSelector
-              selectedAdditionals={quoteAdditionals}
-              onChange={setQuoteAdditionals}
-            />
+            <QuoteAdditionalsSelector selectedAdditionals={quoteAdditionals} onChange={setQuoteAdditionals} />
           </div>
         </CardContent>
       </Card>
@@ -688,25 +624,21 @@ export default function QuoteNew() {
         <CardContent>
           <div className="space-y-3">
             <div className="flex justify-between">
-              <span>subtotal:</span>
+              <span>Subtotal:</span>
               <span>{formatEUR(totals.subtotal)}</span>
             </div>
-            {totals.taxAmount > 0 && (
-              <div className="flex justify-between">
+            {totals.taxAmount > 0 && <div className="flex justify-between">
                 <span>IVA:</span>
                 <span>{formatEUR(totals.taxAmount)}</span>
-              </div>
-            )}
-            {totals.discountAmount > 0 && (
-              <div className="flex justify-between text-green-600">
+              </div>}
+            {totals.discountAmount > 0 && <div className="flex justify-between text-green-600">
                 <span>Descuento:</span>
                 <span>-{formatEUR(totals.discountAmount)}</span>
-              </div>
-            )}
+              </div>}
             <Separator />
             <div className="bg-card rounded-lg p-4 border border-border border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
               <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold text-foreground">total:</span>
+                <span className="text-lg font-semibold text-foreground">Total:</span>
                 <span className="text-2xl font-bold text-secondary">{formatEUR(totals.finalPrice)}</span>
               </div>
             </div>
@@ -718,24 +650,16 @@ export default function QuoteNew() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex gap-4 justify-end">
-            <Button
-              onClick={() => handleSave("draft")}
-              disabled={loading || !quoteFormat}
-              variant="outline"
-            >
+            <Button onClick={() => handleSave("draft")} disabled={loading || !quoteFormat} variant="outline">
               <Save className="w-4 h-4 mr-2" />
               Guardar borrador
             </Button>
-            <Button
-              onClick={() => handleSave("sent")}
-              disabled={loading || !quoteFormat}
-            >
+            <Button onClick={() => handleSave("sent")} disabled={loading || !quoteFormat}>
               <Save className="w-4 h-4 mr-2" />
               Guardar y enviar
             </Button>
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 }
