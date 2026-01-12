@@ -1234,7 +1234,43 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     }
     
     return basePrice + additionalsTotal;
-  }, [priceOutput, itemAdditionals, multiEnabled, multiRows, isCustomProduct, customPrice, customQuantity]);
+  }, [priceOutput, itemAdditionals, multiEnabled, multiRows, isCustomProduct, customPrice, customQuantity, qtyPrompt, promptValues]);
+
+  // Calculate additionals breakdown for a specific quantity
+  const calculateAdditionalsForQty = useMemo(() => {
+    return (qty: number) => {
+      if (!Array.isArray(itemAdditionals) || itemAdditionals.length === 0) {
+        return { total: 0, breakdown: [] };
+      }
+      
+      const breakdown: { name: string; value: number; type: string }[] = [];
+      let total = 0;
+      
+      itemAdditionals.forEach((additional) => {
+        let additionalValue = 0;
+        if (additional.type === 'net_amount') {
+          additionalValue = additional.value;
+        } else if (additional.type === 'quantity_multiplier') {
+          additionalValue = additional.value * qty;
+        } else if (additional.type === 'capacity_divider') {
+          const capacity = additional.capacity_value || 1;
+          const unitsNeeded = Math.ceil(qty / capacity);
+          additionalValue = additional.value * unitsNeeded;
+        }
+        
+        if (additionalValue !== 0) {
+          breakdown.push({
+            name: additional.name,
+            value: additionalValue,
+            type: additional.type
+          });
+          total += additionalValue;
+        }
+      });
+      
+      return { total, breakdown };
+    };
+  }, [itemAdditionals]);
 
   // This useEffect is now redundant - removed to prevent duplicate onChange calls
 
@@ -1970,9 +2006,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                               const formattedPrice = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(displayPrice);
                               const formattedCalculated = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedPrice);
                               
+                              // Calculate additionals for this specific quantity
+                              const additionals = calculateAdditionalsForQty(r.qty);
+                              const hasAdditionals = additionals.breakdown.length > 0;
+                              const totalWithAdditionals = displayPrice + additionals.total;
+                              
                               return (
                                 <div key={idx} className="border rounded p-2 space-y-1">
-                                  <div className="text-xs text-muted-foreground mb-1 font-medium">Q{idx + 1}</div>
+                                  <div className="text-xs text-muted-foreground mb-1 font-medium">Q{idx + 1} ({r.qty} uds)</div>
                                   
                                   {editingMultiPriceIdx === idx ? (
                                     <div className="space-y-1">
@@ -2035,6 +2076,24 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                                         >
                                           Usar calculado
                                         </button>
+                                      )}
+                                      
+                                      {/* Additionals breakdown for this quantity */}
+                                      {hasAdditionals && (
+                                        <div className="mt-2 pt-2 border-t border-dashed space-y-1">
+                                          {additionals.breakdown.map((add, addIdx) => (
+                                            <div key={addIdx} className="flex justify-between text-[10px] text-muted-foreground">
+                                              <span className="truncate max-w-[80px]">{add.name}</span>
+                                              <span className={add.value >= 0 ? "" : "text-green-600"}>
+                                                {add.value >= 0 ? "+" : ""}{new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(add.value)} €
+                                              </span>
+                                            </div>
+                                          ))}
+                                          <div className="flex justify-between text-xs font-medium pt-1 border-t">
+                                            <span>Total</span>
+                                            <span>{new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalWithAdditionals)} €</span>
+                                          </div>
+                                        </div>
                                       )}
                                     </>
                                   )}
