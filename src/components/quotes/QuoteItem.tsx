@@ -1729,7 +1729,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
       {/* Expandable content - only show when expanded */}
       {productId && isExpanded && (
-        <div className="grid gap-6 md:grid-cols-5">
+        <div className="grid gap-6 md:grid-cols-5 items-start">
           <Card className="md:col-span-3">
             <CardHeader>
               <CardTitle>{isCustomProduct ? "Detalles" : "Opciones"}</CardTitle>
