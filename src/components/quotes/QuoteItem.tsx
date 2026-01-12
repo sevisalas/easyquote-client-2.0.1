@@ -1160,6 +1160,21 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   };
 
   const multiRows = useMemo(() => {
+    // First, check if we have saved multi data from initialData
+    if (initialData?.multi?.rows && Array.isArray(initialData.multi.rows) && !multiResults) {
+      // Use saved data
+      return initialData.multi.rows.map((r: any) => {
+        const outs: any[] = Array.isArray(r?.outs) ? r.outs : [];
+        return { 
+          qty: r.qty, 
+          outs, 
+          totalStr: r.totalStr ?? "", 
+          unit: r.unit ?? NaN 
+        };
+      });
+    }
+    
+    // Otherwise use fresh query results
     const rows = (multiResults as any[] | undefined) || [];
     return rows.map((r: any) => {
       const outs: any[] = Array.isArray(r?.data?.outputValues) ? r.data.outputValues : [];
@@ -1171,7 +1186,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       const unit = r.qty > 0 && !Number.isNaN(totalNum) ? totalNum / r.qty : NaN;
       return { qty: r.qty, outs, totalStr, unit };
     });
-  }, [multiResults]);
+  }, [multiResults, initialData?.multi?.rows]);
 
   // Calculate final price with additionals
   const finalPrice = useMemo(() => {
