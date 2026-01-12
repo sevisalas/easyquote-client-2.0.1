@@ -1225,9 +1225,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         } else if (additional.type === 'quantity_multiplier') {
           additionalsTotal += additional.value * quantity;
         } else if (additional.type === 'capacity_divider') {
-          // Calculate how many units are needed based on capacity
+          // Calculate how many units are needed based on capacity.
+          // IMPORTANT: if there are multiple quantities, capacity is calculated per quantity (ceil per row)
           const capacity = additional.capacity_value || 1;
-          const unitsNeeded = Math.ceil(quantity / capacity);
+          const unitsNeeded = (multiEnabled && multiRows.length > 0)
+            ? multiRows.reduce((sum, row) => sum + Math.ceil(row.qty / capacity), 0)
+            : Math.ceil(quantity / capacity);
           additionalsTotal += additional.value * unitsNeeded;
         }
       });
@@ -2078,6 +2081,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 : (qtyPrompt && promptValues[qtyPrompt] 
                     ? parseFloat(String((promptValues[qtyPrompt] as any)?.value ?? promptValues[qtyPrompt]).replace(/\./g, "").replace(",", ".")) || 1 
                     : 1))}
+              quantities={multiEnabled && multiRows.length > 0 ? multiRows.map((r) => r.qty) : undefined}
             />
           </CardContent>
         </Card>
