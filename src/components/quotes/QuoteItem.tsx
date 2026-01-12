@@ -963,10 +963,38 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     () => sortedOutputs.filter((o: any) => /^https?:\/\//i.test(String(o?.value ?? ""))),
     [sortedOutputs]
   );
-  const priceOutput = useMemo(
-    () => sortedOutputs.find((o: any) => String(o?.type || "").toLowerCase() === "price"),
-    [sortedOutputs]
-  );
+
+  // EasyQuote devuelve varios outputs de precio (parciales y/o total).
+  // Para evitar discrepancias (p.ej. Q1 en multi vs precio principal), escogemos el TOTAL si existe.
+  // Fallback: el mayor valor numérico entre los outputs de precio.
+  const priceOutput = useMemo(() => {
+    const isPriceLike = (o: any) => {
+      const type = String(o?.type || "").toLowerCase();
+      const name = String(o?.name || "").toLowerCase();
+      return type === "price" || name.includes("precio") || name.includes("price");
+    };
+
+    const parseEsNumberInline = (val: any): number => {
+      if (typeof val === "number") return val;
+      const n = parseFloat(String(val ?? "").replace(/\./g, "").replace(",", "."));
+      return Number.isFinite(n) ? n : NaN;
+    };
+
+    const prices = sortedOutputs.filter(isPriceLike);
+    if (prices.length === 0) return undefined;
+
+    const totalLike = prices.find((o: any) => /total/i.test(String(o?.name ?? "")));
+    if (totalLike) return totalLike;
+
+    const nums = prices
+      .map((o: any) => parseEsNumberInline(o?.value))
+      .filter((n: number) => Number.isFinite(n));
+
+    if (nums.length === 0) return prices[0];
+
+    const max = Math.max(...nums);
+    return prices.find((o: any) => parseEsNumberInline(o?.value) === max) ?? prices[0];
+  }, [sortedOutputs]);
   const otherOutputs = useMemo(
     () =>
       sortedOutputs.filter((o: any) => {
