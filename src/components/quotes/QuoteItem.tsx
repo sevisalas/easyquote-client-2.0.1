@@ -1202,12 +1202,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     const basePrice = parseFloat(String((priceOutput as any)?.value ?? 0).replace(/\./g, "").replace(",", ".")) || 0;
     let additionalsTotal = 0;
     
-    // Get quantity from prompts or multi for additionals calculation
+    // Get quantity from Q1 only (first row or prompt value) - alternatives are independent
     let quantity = 1;
     if (multiEnabled && multiRows.length > 0) {
-      quantity = multiRows.reduce((sum, row) => sum + row.qty, 0);
+      // Use only Q1 (first row) for additionals calculation
+      quantity = multiRows[0]?.qty || 1;
     } else if (qtyPrompt && promptValues[qtyPrompt]) {
-      // Get quantity from the selected quantity prompt
       const qtyValue = promptValues[qtyPrompt];
       const rawQty = (qtyValue && typeof qtyValue === 'object' && 'value' in qtyValue) 
         ? qtyValue.value 
@@ -1225,12 +1225,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         } else if (additional.type === 'quantity_multiplier') {
           additionalsTotal += additional.value * quantity;
         } else if (additional.type === 'capacity_divider') {
-          // Calculate how many units are needed based on capacity.
-          // IMPORTANT: if there are multiple quantities, capacity is calculated per quantity (ceil per row)
+          // Use Q1 only for capacity calculation
           const capacity = additional.capacity_value || 1;
-          const unitsNeeded = (multiEnabled && multiRows.length > 0)
-            ? multiRows.reduce((sum, row) => sum + Math.ceil(row.qty / capacity), 0)
-            : Math.ceil(quantity / capacity);
+          const unitsNeeded = Math.ceil(quantity / capacity);
           additionalsTotal += additional.value * unitsNeeded;
         }
       });
