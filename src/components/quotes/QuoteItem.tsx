@@ -1042,6 +1042,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         qtysToFetch,
       });
 
+      const q1Qty = qtysToFetch[0];
+
       const fetched = await Promise.all(
         qtysToFetch.map(async (qty) => {
           const replaced = list
@@ -1054,7 +1056,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             inputs: replaced,
           });
           if (error) throw error;
-          return { qty, data };
+
+          // Optimización: para Q2..Qn solo necesitamos outputValues (reduce memoria y render lento)
+          const slimData = qty === q1Qty ? data : { outputValues: (data as any)?.outputValues };
+          return { qty, data: slimData };
         })
       );
 
@@ -1159,6 +1164,37 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
   };
 
+  const parseEsNumber = (val: any): number => {
+    if (typeof val === "number") return val;
+    const n = parseFloat(String(val ?? "").replace(/\./g, "").replace(",", "."));
+    return Number.isFinite(n) ? n : NaN;
+  };
+
+  const isPriceOutput = (o: any) => {
+    const type = String(o?.type || "").toLowerCase();
+    const name = String(o?.name || "").toLowerCase();
+    return type === "price" || name.includes("precio") || name.includes("price");
+  };
+
+  // En productos compuestos puede haber varios outputs de tipo "price" (Cubierta/Interior...).
+  // Para las tarjetas multi-cantidad necesitamos el TOTAL, no el primero.
+  const getCalculatedPriceFromOutputs = (outs: any[]): number => {
+    const prices = (Array.isArray(outs) ? outs : []).filter(isPriceOutput);
+    if (prices.length === 0) return NaN;
+    if (prices.length === 1) return parseEsNumber(prices[0]?.value);
+
+    // Si existe un "Precio Total" explícito, priorizarlo.
+    const totalLike = prices.find((o: any) => /total/i.test(String(o?.name ?? "")));
+    if (totalLike) return parseEsNumber(totalLike.value);
+
+    // Si no, en compuestos sumamos; en simples usamos el primero.
+    if (isComposite) {
+      return prices.reduce((sum: number, o: any) => sum + (parseEsNumber(o?.value) || 0), 0);
+    }
+
+    return parseEsNumber(prices[0]?.value);
+  };
+
   const multiRows = useMemo(() => {
     // First, check if we have saved multi data from initialData
     if (initialData?.multi?.rows && Array.isArray(initialData.multi.rows) && !multiResults) {
@@ -1178,13 +1214,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     const rows = (multiResults as any[] | undefined) || [];
     return rows.map((r: any) => {
       const outs: any[] = Array.isArray(r?.data?.outputValues) ? r.data.outputValues : [];
-      const priceOut = outs.find(
-        (o: any) => String(o?.type || "").toLowerCase() === "price" || String(o?.name || "").toLowerCase().includes("precio") || String(o?.name || "").toLowerCase().includes("price")
-      );
-      const totalStr = priceOut?.value ?? "";
-      const totalNum = typeof totalStr === "number" ? totalStr : parseFloat(String(totalStr).replace(/\./g, "").replace(",", "."));
-      const unit = r.qty > 0 && !Number.isNaN(totalNum) ? totalNum / r.qty : NaN;
-      return { qty: r.qty, outs, totalStr, unit };
+      const totalNum = getCalculatedPriceFromOutputs(outs);
+      const unit = r.qty > 0 && Number.isFinite(totalNum) ? totalNum / r.qty : NaN;
+      return { qty: r.qty, outs, totalStr: totalNum, unit };
     });
   }, [multiResults, initialData?.multi?.rows]);
 
@@ -2039,8 +2071,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                         <>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                             {multiRows.map((r, idx) => {
-                              const priceOut = (r.outs || []).find((o:any)=> String(o?.type||'').toLowerCase()==='price' || String(o?.name||'').toLowerCase().includes('precio') || String(o?.name||'').toLowerCase().includes('price'));
-                              const calculatedPrice = typeof priceOut?.value === "number" ? priceOut.value : parseFloat(String(priceOut?.value).replace(/\./g, "").replace(",", ".")) || 0;
+                              const calculatedPriceRaw = getCalculatedPriceFromOutputs(r.outs || []);
+                              const calculatedPrice = Number.isFinite(calculatedPriceRaw) ? calculatedPriceRaw : 0;
                               const modifiedPrice = multiModifiedPrices[idx];
                               const hasModified = modifiedPrice !== null && modifiedPrice !== undefined && modifiedPrice !== calculatedPrice;
                               const displayPrice = hasModified ? modifiedPrice : calculatedPrice;
