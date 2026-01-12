@@ -1178,20 +1178,24 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // En productos compuestos puede haber varios outputs de tipo "price" (Cubierta/Interior...).
   // Para las tarjetas multi-cantidad necesitamos el TOTAL, no el primero.
+  // IMPORTANTE: Si existe "Precio Total", usarlo directamente (NO sumar, ya incluye todo).
   const getCalculatedPriceFromOutputs = (outs: any[]): number => {
     const prices = (Array.isArray(outs) ? outs : []).filter(isPriceOutput);
     if (prices.length === 0) return NaN;
-    if (prices.length === 1) return parseEsNumber(prices[0]?.value);
 
-    // Si existe un "Precio Total" explícito, priorizarlo.
+    // 1) Si existe un "Precio Total" explícito, usarlo directamente (ya es el total).
     const totalLike = prices.find((o: any) => /total/i.test(String(o?.name ?? "")));
     if (totalLike) return parseEsNumber(totalLike.value);
 
-    // Si no, en compuestos sumamos; en simples usamos el primero.
+    // 2) Si solo hay un precio, usarlo.
+    if (prices.length === 1) return parseEsNumber(prices[0]?.value);
+
+    // 3) En compuestos SIN "Precio Total", sumar los parciales (Cubierta + Interior...).
     if (isComposite) {
       return prices.reduce((sum: number, o: any) => sum + (parseEsNumber(o?.value) || 0), 0);
     }
 
+    // 4) Productos simples: usar el primero.
     return parseEsNumber(prices[0]?.value);
   };
 
