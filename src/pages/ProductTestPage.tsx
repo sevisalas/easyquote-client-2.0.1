@@ -18,7 +18,7 @@ import BoundProductConfigSelector, {
   getActiveComponents
 } from "@/components/quotes/BoundProductConfigSelector";
 import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
-import { ArrowLeft, AlertCircle, Package, Boxes, RefreshCw } from "lucide-react";
+import { ArrowLeft, AlertCircle, Package, Boxes } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const fetchProducts = async () => {
@@ -307,9 +307,6 @@ export default function ProductTestPage() {
     }
   }, [viewMode, componentProductIds, productId]);
 
-  // Force reload counter - increment to force a fresh fetch of the same product
-  const [forceReloadCounter, setForceReloadCounter] = useState(0);
-
   // Fetch product detail when productId changes - with retries for transient errors
   useEffect(() => {
     const fetchProductDetail = async (retryCount = 0) => {
@@ -333,8 +330,7 @@ export default function ProductTestPage() {
       console.log(
         "🟢 Starting to fetch product detail for:",
         productId,
-        retryCount > 0 ? `(retry ${retryCount})` : "",
-        forceReloadCounter > 0 ? `(force reload #${forceReloadCounter})` : ""
+        retryCount > 0 ? `(retry ${retryCount})` : ""
       );
 
       setIsLoadingProduct(true);
@@ -437,12 +433,7 @@ export default function ProductTestPage() {
       }
     };
     fetchProductDetail();
-  }, [productId, products, forceReloadCounter]);
-
-  // Function to force reload the current product (useful after modifying prompts in EasyQuote)
-  const handleForceReload = () => {
-    setForceReloadCounter(c => c + 1);
-  };
+  }, [productId, products]);
 
   // Fetch pricing data ONLY when user modifies prompts (not on initial load)
   const {
@@ -1041,17 +1032,6 @@ export default function ProductTestPage() {
                           </SelectItem>)}
                       </SelectContent>
                     </Select>
-                    {productId && (
-                      <Button 
-                        variant="outline" 
-                        size="icon"
-                        onClick={handleForceReload}
-                        disabled={isLoadingProduct}
-                        title="Recargar producto (útil después de modificar prompts en EasyQuote)"
-                      >
-                        <RefreshCw className={`h-4 w-4 ${isLoadingProduct ? 'animate-spin' : ''}`} />
-                      </Button>
-                    )}
                   </div>
                 </div>
 
@@ -1077,9 +1057,6 @@ export default function ProductTestPage() {
                     <AlertDescription className="space-y-3">
                       <p className="text-sm">{productLoadError}</p>
                       <div className="flex gap-2">
-                        <Button onClick={handleForceReload} size="sm" variant="outline">
-                          🔄 Reintentar
-                        </Button>
                         <Button onClick={handleDiagnoseProduct} disabled={isDiagnosing} size="sm" variant="outline">
                           {isDiagnosing ? "Diagnosticando..." : "🔍 Diagnosticar"}
                         </Button>
