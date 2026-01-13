@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 
 interface ApproveQuoteParams {
   quoteId: string;
@@ -11,7 +12,8 @@ interface ApproveQuoteParams {
 
 export const useQuoteApproval = () => {
   const { toast } = useToast();
-  const { membership } = useSubscription();
+  const { membership, organization } = useSubscription();
+  const { canExportOrders } = useHoldedIntegration();
   const [loading, setLoading] = useState(false);
 
   const approveQuote = async ({ quoteId, selectedItemIds, itemQuantities }: ApproveQuoteParams) => {
@@ -141,6 +143,7 @@ export const useQuoteApproval = () => {
           quote_id: quoteId,
           customer_id: quote.customer_id,
           user_id: quote.user_id,
+          organization_id: quote.organization_id,
           status: 'pending',
           title: quote.title,
           description: quote.description,
@@ -236,10 +239,42 @@ export const useQuoteApproval = () => {
 
       if (updateQuoteError) throw updateQuoteError;
 
-      toast({
-        title: "Presupuesto aprobado",
-        description: `Presupuesto ${quote.quote_number} → Pedido ${orderNumber}`,
-      });
+      // Export to Holded if integration is active
+      if (canExportOrders) {
+        try {
+          console.log('🚀 Exporting new order to Holded:', salesOrder.id);
+          const { error: holdedError } = await supabase.functions.invoke('holded-export-order', {
+            body: { orderId: salesOrder.id }
+          });
+
+          if (holdedError) {
+            console.error('❌ Error exporting to Holded:', holdedError);
+            toast({
+              title: "Presupuesto aprobado",
+              description: `Pedido ${orderNumber} creado, pero hubo un error al exportar a Holded`,
+              variant: "default",
+            });
+          } else {
+            console.log('✅ Successfully exported to Holded');
+            toast({
+              title: "Presupuesto aprobado y exportado",
+              description: `Presupuesto ${quote.quote_number} → Pedido ${orderNumber} (exportado a Holded)`,
+            });
+          }
+        } catch (holdedError) {
+          console.error('Error exporting to Holded:', holdedError);
+          toast({
+            title: "Presupuesto aprobado",
+            description: `Pedido ${orderNumber} creado, pero hubo un error al exportar a Holded`,
+            variant: "default",
+          });
+        }
+      } else {
+        toast({
+          title: "Presupuesto aprobado",
+          description: `Presupuesto ${quote.quote_number} → Pedido ${orderNumber}`,
+        });
+      }
 
       return salesOrder;
     } catch (error: any) {
