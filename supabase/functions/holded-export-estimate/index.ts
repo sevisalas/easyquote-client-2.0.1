@@ -354,17 +354,10 @@ Deno.serve(async (req) => {
             }
           }
           
-          // Get price from this specific row
-          const priceOut = (row.outs || []).find((o: any) => 
-            String(o?.type || '').toLowerCase() === 'price' ||
-            String(o?.name || '').toLowerCase().includes('precio') ||
-            String(o?.name || '').toLowerCase().includes('price')
-          );
-          
-          const priceValue = priceOut?.value;
-          let price = typeof priceValue === "number" 
-            ? priceValue 
-            : parseFloat(String(priceValue || 0).replace(/\./g, "").replace(",", ".")) || 0;
+          // Get price directly from row.price (comes from pricing.price - base without VAT)
+          let price = typeof row.price === "number" 
+            ? row.price 
+            : parseFloat(String(row.price || 0).replace(/\./g, "").replace(",", ".")) || 0;
           
           // Apply item additionals to the price and calculate discounts
           let discountAmount = 0;
