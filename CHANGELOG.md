@@ -5,10 +5,10 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
-## [2.4.6] - En desarrollo
+## [2.4.6] - 2026-01-13
 
-### En desarrollo
-- (próximas mejoras)
+### Cambiado
+- Deshabilitada opción de múltiples cantidades para productos compuestos (en desarrollo)
 
 ---
 
