@@ -10,6 +10,9 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 ### Cambiado
 - Deshabilitada opción de múltiples cantidades para productos compuestos (en desarrollo)
 
+### Corregido
+- Control manual del último número secuencial: el sistema ya no sobrescribe automáticamente el valor configurado en formatos de numeración
+
 ---
 
 ## [2.4.5] - 2026-01-06

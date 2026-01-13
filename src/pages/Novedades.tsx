@@ -28,10 +28,12 @@ const versions: Version[] = [
   {
     version: "2.4.6",
     date: "2026-01-13",
-    isDevelopment: false,
     changes: {
       changed: [
         "Deshabilitada opción de múltiples cantidades para productos compuestos (en desarrollo)",
+      ],
+      fixed: [
+        "Control manual del último número secuencial: ya no se sobrescribe automáticamente",
       ],
     },
   },
