@@ -2,21 +2,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useIntegrationAccess } from "@/hooks/useIntegrationAccess";
-import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
+import { useHoldedIntegration, HoldedExportMode } from "@/hooks/useHoldedIntegration";
 import { useWooCommerceIntegration } from "@/hooks/useWooCommerceIntegration";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Download, Trash2, ShoppingCart } from "lucide-react";
+import { Download, Trash2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { WooCommerceCsvUpload } from "@/components/integrations/WooCommerceCsvUpload";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function Integrations() {
   const { hasIntegrationAccess, loading } = useIntegrationAccess();
-  const { hasHoldedAccess, isHoldedActive, loading: holdedLoading, refreshIntegration: refreshHolded } = useHoldedIntegration();
+  const { hasHoldedAccess, isHoldedActive, exportMode, loading: holdedLoading, refreshIntegration: refreshHolded } = useHoldedIntegration();
   const { hasWooCommerceAccess, isWooCommerceActive, loading: wooLoading, refreshIntegration: refreshWoo } = useWooCommerceIntegration();
   const { organization, membership } = useSubscription();
   const [apiKey, setApiKey] = useState("");
@@ -30,6 +30,8 @@ export default function Integrations() {
   const [loadingApiKey, setLoadingApiKey] = useState(true);
   const [generatingApiKey, setGeneratingApiKey] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [selectedExportMode, setSelectedExportMode] = useState<HoldedExportMode>('all');
+  const [savingExportMode, setSavingExportMode] = useState(false);
   const { toast } = useToast();
 
   const currentOrganization = organization || membership?.organization;
@@ -41,6 +43,10 @@ export default function Integrations() {
     }
   }, [isHoldedActive, currentOrganization]);
 
+  // Sync export mode from hook
+  useEffect(() => {
+    setSelectedExportMode(exportMode);
+  }, [exportMode]);
 
   useEffect(() => {
     if (currentOrganization?.id) {
@@ -379,6 +385,52 @@ export default function Integrations() {
     }
   };
 
+  const handleSaveExportMode = async (mode: HoldedExportMode) => {
+    if (!currentOrganization?.id) return;
+    
+    setSavingExportMode(true);
+    try {
+      // Get Holded integration ID
+      const { data: integrationData, error: integrationError } = await supabase
+        .from('integrations')
+        .select('id')
+        .eq('name', 'Holded')
+        .single();
+      
+      if (integrationError) throw integrationError;
+
+      // Update configuration
+      const { error } = await supabase
+        .from('organization_integration_access')
+        .update({ 
+          configuration: { export_mode: mode }
+        })
+        .eq('organization_id', currentOrganization.id)
+        .eq('integration_id', integrationData.id);
+
+      if (error) throw error;
+
+      setSelectedExportMode(mode);
+      refreshHolded();
+      
+      toast({
+        title: "Configuración guardada",
+        description: mode === 'orders_only' 
+          ? "Solo se exportarán pedidos a Holded" 
+          : "Se exportarán presupuestos y pedidos a Holded",
+      });
+    } catch (error) {
+      console.error('Error saving export mode:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar la configuración",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingExportMode(false);
+    }
+  };
+
   if (loading || holdedLoading || wooLoading) {
     return (
       <div className="container mx-auto py-8">
@@ -553,6 +605,37 @@ export default function Integrations() {
                 >
                   Actualizar API Key
                 </Button>
+
+                <Separator className="my-6" />
+
+                {/* Export Mode Configuration */}
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold mb-2">Modo de exportación</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Selecciona qué documentos se exportarán automáticamente a Holded
+                    </p>
+                    <RadioGroup 
+                      value={selectedExportMode} 
+                      onValueChange={(value) => handleSaveExportMode(value as HoldedExportMode)}
+                      disabled={savingExportMode}
+                      className="space-y-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="all" id="export-all" />
+                        <Label htmlFor="export-all" className="cursor-pointer">
+                          Presupuestos y pedidos
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="orders_only" id="export-orders" />
+                        <Label htmlFor="export-orders" className="cursor-pointer">
+                          Solo pedidos
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                </div>
 
                 <Separator className="my-6" />
 

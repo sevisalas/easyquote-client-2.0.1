@@ -58,7 +58,8 @@ export default function QuoteNew() {
 
   // Holded integration
   const {
-    isHoldedActive
+    isHoldedActive,
+    canExportQuotes
   } = useHoldedIntegration();
   const {
     organization,
@@ -426,8 +427,8 @@ export default function QuoteNew() {
         }).eq('id', quoteFormat.id as string);
       }
 
-      // Si el estado es "sent" y Holded está activo, exportar a Holded automáticamente
-      if (status === 'sent' && isHoldedActive) {
+      // Si el estado es "sent" y se permite exportar presupuestos a Holded, exportar automáticamente
+      if (status === 'sent' && canExportQuotes) {
         try {
           const {
             error: holdedError
