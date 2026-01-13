@@ -435,10 +435,25 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Query principal de pricing
   // NOTA: forceRecalculate NO está en queryKey - se usa refetch() manual
-  const pricingQueryKey = useMemo(
-    () => ["easyquote-pricing", productId, debouncedPromptValues, isNewProduct] as const,
-    [productId, debouncedPromptValues, isNewProduct]
-  );
+  const pricingQueryKey = useMemo(() => {
+    // Evitar llamadas duplicadas al seleccionar producto:
+    // - Mientras es producto nuevo (GET inicial) o mientras el usuario NO ha confirmado cambios,
+    //   mantenemos la key estable por productId.
+    // - Solo añadimos los inputs a la key cuando el usuario confirma cambios (onBlur/Enter)
+    //   para disparar PATCH.
+
+    if (!productId) return ["easyquote-pricing", "__no_product__"] as const;
+
+    // Para artículos guardados: los inputs forman parte natural de la key desde el principio.
+    if (initialData) return ["easyquote-pricing", productId, debouncedPromptValues, "saved"] as const;
+
+    const hasInputs = !!debouncedPromptValues && Object.keys(debouncedPromptValues).length > 0;
+    const includeInputsInKey = !isNewProduct && hasInputs && userHasChangedCurrentProduct;
+
+    return includeInputsInKey
+      ? (["easyquote-pricing", productId, debouncedPromptValues] as const)
+      : (["easyquote-pricing", productId] as const);
+  }, [productId, debouncedPromptValues, isNewProduct, userHasChangedCurrentProduct, initialData]);
 
   const { data: pricing, error: pricingError, refetch: refetchPricing, isError: isPricingError, isFetching: isPricingLoading } = useQuery({
     queryKey: pricingQueryKey,
@@ -490,6 +505,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         return true;
       }
       
+      // Para productos NO guardados, evitamos un PATCH automático tras el GET inicial.
+      // Solo recalculamos cuando el usuario confirma algún cambio (onBlur/Enter).
+      if (!initialData && !userHasChangedCurrentProduct) {
+        console.log("ℹ️ Query disabled: producto sin cambios del usuario");
+        return false;
+      }
+
       // Query normal para productos con prompts
       console.log("✅ Query enabled: producto con prompts");
       return true;
