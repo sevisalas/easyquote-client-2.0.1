@@ -311,21 +311,27 @@ export default function ProductTestPage() {
   useEffect(() => {
     const fetchProductDetail = async (retryCount = 0) => {
       const MAX_RETRIES = 2;
-      
+      let scheduledRetry = false;
+
       if (!productId) {
         console.log("🔴 No productId selected");
         setProductDetail(null);
         setIsLoadingProduct(false);
         return;
       }
-      
+
       // SKIP if we already have this product loaded
       if (productDetail?.productId === productId || productDetail?.id === productId) {
         console.log("⏭️ Product already loaded, skipping fetch:", productId);
         return;
       }
-      
-      console.log("🟢 Starting to fetch product detail for:", productId, retryCount > 0 ? `(retry ${retryCount})` : "");
+
+      console.log(
+        "🟢 Starting to fetch product detail for:",
+        productId,
+        retryCount > 0 ? `(retry ${retryCount})` : ""
+      );
+
       setIsLoadingProduct(true);
       if (retryCount === 0) {
         setIsInitialLoad(true);
@@ -334,38 +340,45 @@ export default function ProductTestPage() {
         setProductLoadError(null);
         setBoundProductConfig(null); // Reset configuración de producto encuadernado
       }
-      
+
       // Use getEasyQuoteToken which validates and auto-refreshes expired tokens
       const token = await getEasyQuoteToken();
       if (!token) {
         console.error("🔴 No EasyQuote token available");
+        setProductLoadError("Falta token de EasyQuote. Inicia sesión de nuevo.");
+        setProductDetail(null);
+        setPromptValues({});
+        setIsInitialLoad(false);
         setIsLoadingProduct(false);
         return;
       }
+
       console.log("✅ EasyQuote token obtained");
       try {
-        // Get product details
         const selectedProduct = products.find((p: any) => p.id === productId);
         if (!selectedProduct) {
-          console.error("🔴 Product not found in products list:", productId);
-          return;
+          // Esto puede pasar si la lista de productos aún no ha cargado o si el filtro de viewMode lo excluye
+          throw new Error(
+            "Producto no encontrado en la lista actual. Espera a que cargue la lista o revisa el modo Productos/Componentes."
+          );
         }
         console.log("✅ Selected product:", selectedProduct.productName || selectedProduct.name);
 
         // Get pricing data (which includes prompts)
         console.log("📡 Calling easyquote-pricing...");
-        const {
-          data: pricingData,
-          error: pricingError
-        } = await invokeEasyQuoteFunction("easyquote-pricing", {
-          token,
-          productId: productId,
-          inputs: []
-        });
+        const { data: pricingData, error: pricingError } = await invokeEasyQuoteFunction(
+          "easyquote-pricing",
+          {
+            token,
+            productId: productId,
+            inputs: [],
+          }
+        );
         if (pricingError) {
           console.error("🔴 Pricing error:", pricingError);
           throw pricingError;
         }
+
         console.log("✅ Pricing data received:", pricingData);
         console.log("📋 Prompts from pricing:", pricingData?.prompts?.length || 0);
         setProductDetail(pricingData);
@@ -389,23 +402,29 @@ export default function ProductTestPage() {
         }, 300);
       } catch (error: any) {
         console.error("🔴 Error fetching product detail:", error);
-        
+
         // Retry on transient errors
         if (retryCount < MAX_RETRIES) {
           const delay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Backoff: 1s, 2s, max 5s
           console.log(`⏳ Reintentando en ${delay}ms...`);
+          scheduledRetry = true;
           setTimeout(() => fetchProductDetail(retryCount + 1), delay);
           return;
         }
-        
+
         const msg = error?.message || "Error al cargar el producto";
         setProductLoadError(msg);
-        toast({ title: "Error al cargar el producto", description: msg, variant: "destructive" });
+        toast({
+          title: "Error al cargar el producto",
+          description: msg,
+          variant: "destructive",
+        });
         setProductDetail(null);
         setPromptValues({});
         setIsInitialLoad(false);
       } finally {
-        if (retryCount >= MAX_RETRIES || !productLoadError) {
+        // No depender de productLoadError (state) aquí: puede estar stale y dejar la UI bloqueada en "Cargando..."
+        if (!scheduledRetry) {
           setIsLoadingProduct(false);
         }
       }
