@@ -27,10 +27,12 @@ interface Version {
 const versions: Version[] = [
   {
     version: "2.4.6",
-    date: "En desarrollo",
-    isDevelopment: true,
+    date: "2026-01-13",
+    isDevelopment: false,
     changes: {
-      added: [],
+      changed: [
+        "Deshabilitada opción de múltiples cantidades para productos compuestos (en desarrollo)",
+      ],
     },
   },
   {
