@@ -208,7 +208,8 @@ export default function SettingsNumberingFormats() {
           title: "Formatos guardados",
           description: "Los formatos de numeración se han guardado correctamente.",
         });
-        await loadFormats();
+        // NO llamar a loadFormats() aquí porque recalcula last_sequential_number
+        // y sobrescribiría el valor que el usuario acaba de guardar manualmente
       } else {
         throw new Error('Failed to save formats');
       }
