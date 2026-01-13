@@ -63,19 +63,7 @@ export default function SettingsNumberingFormats() {
       // Obtener organization_id del sessionStorage para filtrar por tenant
       const organizationId = sessionStorage.getItem('selected_organization_id');
 
-      // Actualizar automáticamente los últimos números usados desde la base de datos
-      await Promise.all([
-        supabase.rpc('update_last_sequential_number', {
-          p_user_id: user.id,
-          p_document_type: 'quote',
-          p_organization_id: organizationId
-        }),
-        supabase.rpc('update_last_sequential_number', {
-          p_user_id: user.id,
-          p_document_type: 'order',
-          p_organization_id: organizationId
-        })
-      ]);
+      // NO recalcular automáticamente - respetar siempre el valor manual del usuario
 
       // Filtrar por organization_id si existe, sino por user_id (legacy)
       let query = supabase
