@@ -18,7 +18,7 @@ import BoundProductConfigSelector, {
   getActiveComponents
 } from "@/components/quotes/BoundProductConfigSelector";
 import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
-import { ArrowLeft, AlertCircle, Package, Boxes } from "lucide-react";
+import { ArrowLeft, AlertCircle, Package, Boxes, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const fetchProducts = async () => {
@@ -307,6 +307,9 @@ export default function ProductTestPage() {
     }
   }, [viewMode, componentProductIds, productId]);
 
+  // Force reload counter - increment to force a fresh fetch of the same product
+  const [forceReloadCounter, setForceReloadCounter] = useState(0);
+
   // Fetch product detail when productId changes - with retries for transient errors
   useEffect(() => {
     const fetchProductDetail = async (retryCount = 0) => {
@@ -320,16 +323,18 @@ export default function ProductTestPage() {
         return;
       }
 
-      // SKIP if we already have this product loaded
-      if (productDetail?.productId === productId || productDetail?.id === productId) {
-        console.log("⏭️ Product already loaded, skipping fetch:", productId);
-        return;
+      // Clear previous state immediately when starting a new fetch
+      // This ensures we don't send stale prompt IDs from a previous product
+      if (retryCount === 0) {
+        setPromptValues({});
+        setDebouncedPromptValues({});
       }
 
       console.log(
         "🟢 Starting to fetch product detail for:",
         productId,
-        retryCount > 0 ? `(retry ${retryCount})` : ""
+        retryCount > 0 ? `(retry ${retryCount})` : "",
+        forceReloadCounter > 0 ? `(force reload #${forceReloadCounter})` : ""
       );
 
       setIsLoadingProduct(true);
@@ -338,10 +343,10 @@ export default function ProductTestPage() {
         setHasUserModifiedPrompts(false);
         setDiagnosticResult(null);
         setProductLoadError(null);
-        setBoundProductConfig(null); // Reset configuración de producto encuadernado
+        setBoundProductConfig(null);
+        setProductDetail(null); // Clear previous product detail
       }
 
-      // Use getEasyQuoteToken which validates and auto-refreshes expired tokens
       const token = await getEasyQuoteToken();
       if (!token) {
         console.error("🔴 No EasyQuote token available");
@@ -357,14 +362,12 @@ export default function ProductTestPage() {
       try {
         const selectedProduct = products.find((p: any) => p.id === productId);
         if (!selectedProduct) {
-          // Esto puede pasar si la lista de productos aún no ha cargado o si el filtro de viewMode lo excluye
           throw new Error(
             "Producto no encontrado en la lista actual. Espera a que cargue la lista o revisa el modo Productos/Componentes."
           );
         }
         console.log("✅ Selected product:", selectedProduct.productName || selectedProduct.name);
 
-        // Get pricing data (which includes prompts)
         console.log("📡 Calling easyquote-pricing...");
         const { data: pricingData, error: pricingError } = await invokeEasyQuoteFunction(
           "easyquote-pricing",
@@ -381,8 +384,15 @@ export default function ProductTestPage() {
 
         console.log("✅ Pricing data received:", pricingData);
         console.log("📋 Prompts from pricing:", pricingData?.prompts?.length || 0);
+        
+        // Validate that we got fresh data with productId
+        const responseProductId = pricingData?.productID || pricingData?.productId;
+        if (responseProductId && responseProductId !== productId) {
+          console.warn("⚠️ Response productId mismatch:", responseProductId, "vs", productId);
+        }
+        
         setProductDetail(pricingData);
-        setProductLoadError(null); // Clear any previous error
+        setProductLoadError(null);
 
         // Reset prompt values with current values from pricing
         const currentValues: Record<string, any> = {};
@@ -395,7 +405,6 @@ export default function ProductTestPage() {
         setPromptValues(currentValues);
         setDebouncedPromptValues(currentValues);
 
-        // Mark initial load as complete after a brief delay to prevent immediate refetch
         setTimeout(() => {
           console.log("✅ Initial load complete");
           setIsInitialLoad(false);
@@ -403,9 +412,8 @@ export default function ProductTestPage() {
       } catch (error: any) {
         console.error("🔴 Error fetching product detail:", error);
 
-        // Retry on transient errors
         if (retryCount < MAX_RETRIES) {
-          const delay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Backoff: 1s, 2s, max 5s
+          const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
           console.log(`⏳ Reintentando en ${delay}ms...`);
           scheduledRetry = true;
           setTimeout(() => fetchProductDetail(retryCount + 1), delay);
@@ -423,14 +431,18 @@ export default function ProductTestPage() {
         setPromptValues({});
         setIsInitialLoad(false);
       } finally {
-        // No depender de productLoadError (state) aquí: puede estar stale y dejar la UI bloqueada en "Cargando..."
         if (!scheduledRetry) {
           setIsLoadingProduct(false);
         }
       }
     };
     fetchProductDetail();
-  }, [productId, products, productDetail?.productId, productDetail?.id]);
+  }, [productId, products, forceReloadCounter]);
+
+  // Function to force reload the current product (useful after modifying prompts in EasyQuote)
+  const handleForceReload = () => {
+    setForceReloadCounter(c => c + 1);
+  };
 
   // Fetch pricing data ONLY when user modifies prompts (not on initial load)
   const {
@@ -1018,16 +1030,29 @@ export default function ProductTestPage() {
                 {/* Product Selection */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">{viewMode === 'productos' ? 'Producto' : 'Componente'}</label>
-                  <Select value={productId} onValueChange={setProductId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={`Selecciona un ${viewMode === 'productos' ? 'producto' : 'componente'}...`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {products.map((product: any) => <SelectItem key={product.id} value={product.id}>
-                          {getProductLabel(product)}
-                        </SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2">
+                    <Select value={productId} onValueChange={setProductId}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder={`Selecciona un ${viewMode === 'productos' ? 'producto' : 'componente'}...`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {products.map((product: any) => <SelectItem key={product.id} value={product.id}>
+                            {getProductLabel(product)}
+                          </SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    {productId && (
+                      <Button 
+                        variant="outline" 
+                        size="icon"
+                        onClick={handleForceReload}
+                        disabled={isLoadingProduct}
+                        title="Recargar producto (útil después de modificar prompts en EasyQuote)"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${isLoadingProduct ? 'animate-spin' : ''}`} />
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Selector de configuración - mostrar INMEDIATAMENTE cuando se selecciona producto */}
@@ -1051,9 +1076,14 @@ export default function ProductTestPage() {
                     <AlertTitle>Error al cargar el producto</AlertTitle>
                     <AlertDescription className="space-y-3">
                       <p className="text-sm">{productLoadError}</p>
-                      <Button onClick={handleDiagnoseProduct} disabled={isDiagnosing} size="sm" variant="outline">
-                        {isDiagnosing ? "Diagnosticando..." : "🔍 Diagnosticar Producto"}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button onClick={handleForceReload} size="sm" variant="outline">
+                          🔄 Reintentar
+                        </Button>
+                        <Button onClick={handleDiagnoseProduct} disabled={isDiagnosing} size="sm" variant="outline">
+                          {isDiagnosing ? "Diagnosticando..." : "🔍 Diagnosticar"}
+                        </Button>
+                      </div>
                     </AlertDescription>
                   </Alert>}
 
