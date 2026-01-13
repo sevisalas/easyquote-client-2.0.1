@@ -124,7 +124,7 @@ export default function QuoteEdit() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
-  const { isHoldedActive } = useHoldedIntegration();
+  const { isHoldedActive, canExportQuotes } = useHoldedIntegration();
 
   const [formData, setFormData] = useState<Partial<Quote>>({});
   const [items, setItems] = useState<QuoteItem[]>([]);
@@ -666,8 +666,8 @@ export default function QuoteEdit() {
       // Guardar automáticamente con el nuevo estado y esperar a que se complete
       await updateQuoteMutation.mutateAsync(updatedFormData);
 
-      // Si el estado es "sent" y Holded está activo, exportar a Holded automáticamente
-      if (newStatus === 'sent' && isHoldedActive && id) {
+      // Si el estado es "sent" y se permite exportar presupuestos a Holded, exportar automáticamente
+      if (newStatus === 'sent' && canExportQuotes && id) {
         console.log('🚀 Attempting to export to Holded after status change to sent');
         const { error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
           body: { quoteId: id }

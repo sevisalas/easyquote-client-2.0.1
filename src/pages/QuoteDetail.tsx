@@ -70,7 +70,7 @@ export default function QuoteDetail() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
-  const { isHoldedActive } = useHoldedIntegration();
+  const { isHoldedActive, canExportQuotes } = useHoldedIntegration();
   const { membership } = useSubscription();
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -272,8 +272,8 @@ export default function QuoteDetail() {
 
       if (error) throw error;
 
-      // Si el estado es "sent" y Holded está activo, exportar automáticamente
-      if (status === 'sent' && isHoldedActive) {
+      // Si el estado es "sent" y se permite exportar presupuestos a Holded, exportar automáticamente
+      if (status === 'sent' && canExportQuotes) {
         console.log('🚀 Attempting to export to Holded after status change to sent');
         const { error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
           body: { quoteId }
@@ -287,7 +287,7 @@ export default function QuoteDetail() {
       }
     },
     onSuccess: (_, variables) => {
-      if (variables.status === 'sent' && isHoldedActive) {
+      if (variables.status === 'sent' && canExportQuotes) {
         toast.success('Estado actualizado y presupuesto exportado a Holded');
       } else {
         toast.success('Estado actualizado correctamente');
