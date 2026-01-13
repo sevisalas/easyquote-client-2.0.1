@@ -26,6 +26,15 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.4.8",
+    date: "2026-01-13",
+    changes: {
+      fixed: [
+        "Exportación a Holded: el precio de artículos con múltiples cantidades ahora usa correctamente la base imponible (sin IVA)",
+      ],
+    },
+  },
+  {
     version: "2.4.6",
     date: "2026-01-13",
     changes: {
