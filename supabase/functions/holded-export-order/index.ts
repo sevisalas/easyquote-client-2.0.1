@@ -350,18 +350,29 @@ Deno.serve(async (req) => {
         totalPrice = parseFloat(item.price) || 0;
       }
       
-      // Detect quantity: first from output type Quantity, then from prompts
+      // Detect quantity: first from output type Quantity, then from output name, then from prompts
       if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
-        const quantityOut = item.outputs.find((o: any) => 
+        // 1) Buscar output con type=Quantity
+        let quantityOut = item.outputs.find((o: any) => 
           String(o?.type || '').toLowerCase() === 'quantity'
         );
+        
+        // 2) Si no hay type=Quantity, buscar por nombre que contenga "unidades", "cantidad", "units", "quantity"
+        if (!quantityOut) {
+          quantityOut = item.outputs.find((o: any) => {
+            const name = String(o?.name || '').toLowerCase();
+            return name.includes('unidades') || name.includes('cantidad') || 
+                   name.includes('units') || name.includes('quantity') ||
+                   name.includes('ejemplares') || name.includes('copias');
+          });
+        }
         
         if (quantityOut) {
           const qtyValue = quantityOut.value;
           units = typeof qtyValue === "number" 
             ? qtyValue 
             : parseInt(String(qtyValue || 1).replace(/\./g, "").replace(",", ".")) || 1;
-          console.log('📊 Quantity from output:', { units, outputName: quantityOut.name });
+          console.log('📊 Quantity from output:', { units, outputName: quantityOut.name, outputType: quantityOut.type });
         }
       }
       
