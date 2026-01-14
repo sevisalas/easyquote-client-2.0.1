@@ -55,6 +55,9 @@ export default function ProductTestPage() {
   const [isEditingPrice, setIsEditingPrice] = useState(false);
   const [localPriceInput, setLocalPriceInput] = useState("");
   const [tokenReady, setTokenReady] = useState(!!sessionStorage.getItem("easyquote_token"));
+  
+  // Ref para el timeout del debounce de commit de prompts
+  const commitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialView = searchParams.get('view') === 'componentes' ? 'componentes' : 'productos';
   const [viewMode, setViewMode] = useState<'productos' | 'componentes'>(initialView);
   const {
@@ -272,6 +275,15 @@ export default function ProductTestPage() {
     window.addEventListener('easyquote-token-updated', handleTokenUpdate);
     return () => window.removeEventListener('easyquote-token-updated', handleTokenUpdate);
   }, [queryClient]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (commitTimeoutRef.current) {
+        clearTimeout(commitTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Fetch products - with aggressive caching (separate key to avoid conflicts)
   const {
@@ -918,17 +930,6 @@ export default function ProductTestPage() {
     }));
   };
 
-  // Ref para el timeout del debounce
-  const commitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (commitTimeoutRef.current) {
-        clearTimeout(commitTimeoutRef.current);
-      }
-    };
-  }, []);
   
   // Llamado cuando el usuario termina de editar (blur/enter o selección)
   const handlePromptCommit = (id: string, value: any) => {
