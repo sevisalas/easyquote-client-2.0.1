@@ -321,11 +321,13 @@ Deno.serve(async (req) => {
         }
       }
       
-      // Get price from outputs type "Price" first, fallback to item.price
+      // Get price ONLY from outputs type "Price" (sin IVA)
       let totalPrice = 0;
       let units = 1;
       
-      // Priority: find Price output (the real calculated price from EasyQuote)
+      console.log('🔍 Item outputs:', JSON.stringify(item.outputs, null, 2));
+      
+      // MUST find Price output (the real calculated price from EasyQuote, sin IVA)
       if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
         const priceOutput = item.outputs.find((o: any) => 
           String(o?.type || '').toLowerCase() === 'price'
@@ -336,14 +338,16 @@ Deno.serve(async (req) => {
           totalPrice = typeof priceValue === "number" 
             ? priceValue 
             : parseFloat(String(priceValue || 0).replace(/\./g, "").replace(",", ".")) || 0;
-          console.log('💰 Price from output:', { totalPrice, outputName: priceOutput.name });
+          console.log('💰 Price from output type=Price (sin IVA):', { totalPrice, outputName: priceOutput.name, outputType: priceOutput.type });
+        } else {
+          console.log('⚠️ No output with type=Price found! Available types:', item.outputs.map((o: any) => ({ type: o.type, name: o.name })));
+          // Fallback: use item.price but it might include IVA
+          totalPrice = parseFloat(item.price) || 0;
+          console.log('⚠️ Using item.price as fallback (may include IVA):', totalPrice);
         }
-      }
-      
-      // Fallback to item.price if no Price output found
-      if (totalPrice === 0) {
+      } else {
+        console.log('⚠️ No outputs available, using item.price fallback');
         totalPrice = parseFloat(item.price) || 0;
-        console.log('💰 Price from item.price fallback:', { totalPrice });
       }
       
       // Detect quantity: first from output type Quantity, then from prompts
