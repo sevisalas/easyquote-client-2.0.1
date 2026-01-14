@@ -989,11 +989,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // EasyQuote devuelve varios outputs de precio (parciales y/o total).
   // Para evitar discrepancias (p.ej. Q1 en multi vs precio principal), escogemos el TOTAL si existe.
   // Fallback: el mayor valor numérico entre los outputs de precio.
+  // EasyQuote devuelve varios outputs de precio (parciales y/o total).
+  // Para evitar discrepancias, SIEMPRE priorizamos outputs con type="Price".
+  // Solo si no existe ninguno, hacemos fallback a nombres que contengan "precio/price".
   const priceOutput = useMemo(() => {
-    const isPriceLike = (o: any) => {
-      const type = String(o?.type || "").toLowerCase();
+    const isStrictPriceType = (o: any) => String(o?.type || "").toLowerCase() === "price";
+    const isNamePriceLike = (o: any) => {
       const name = String(o?.name || "").toLowerCase();
-      return type === "price" || name.includes("precio") || name.includes("price");
+      return name.includes("precio") || name.includes("price");
     };
 
     const parseEsNumberInline = (val: any): number => {
@@ -1002,7 +1005,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       return Number.isFinite(n) ? n : NaN;
     };
 
-    const prices = sortedOutputs.filter(isPriceLike);
+    // 1) Preferir type=Price
+    let prices = sortedOutputs.filter(isStrictPriceType);
+
+    // 2) Fallback: outputs con nombre tipo precio
+    if (prices.length === 0) prices = sortedOutputs.filter(isNamePriceLike);
+
     if (prices.length === 0) return undefined;
 
     const totalLike = prices.find((o: any) => /total/i.test(String(o?.name ?? "")));
@@ -1221,16 +1229,24 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   };
 
   const isPriceOutput = (o: any) => {
-    const type = String(o?.type || "").toLowerCase();
-    const name = String(o?.name || "").toLowerCase();
-    return type === "price" || name.includes("precio") || name.includes("price");
+    // STRICT: priorizar type=Price para evitar coger "Precio (IVA incluido)" por el nombre.
+    return String(o?.type || "").toLowerCase() === "price";
   };
 
   // EasyQuote ya devuelve el precio final calculado. NO sumamos parciales nunca.
   // Si hay varios outputs de precio (Cubierta/Interior/Total), priorizamos "Total".
   // Si no existe, usamos el mayor valor numérico (suele ser el total) como fallback seguro.
+  // Si no hay ningún output con type=Price, hacemos fallback a nombres tipo "precio/price".
   const getCalculatedPriceFromOutputs = (outs: any[]): number => {
-    const prices = (Array.isArray(outs) ? outs : []).filter(isPriceOutput);
+    const arr = Array.isArray(outs) ? outs : [];
+    const strict = arr.filter(isPriceOutput);
+
+    const nameFallback = arr.filter((o: any) => {
+      const name = String(o?.name || "").toLowerCase();
+      return name.includes("precio") || name.includes("price");
+    });
+
+    const prices = strict.length > 0 ? strict : nameFallback;
     if (prices.length === 0) return NaN;
 
     const totalLike = prices.find((o: any) => /total/i.test(String(o?.name ?? "")));
@@ -1263,11 +1279,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     const rows = (multiResults as any[] | undefined) || [];
     return rows.map((r: any) => {
       const outs: any[] = Array.isArray(r?.data?.outputValues) ? r.data.outputValues : [];
-      // Usar pricing.price directamente si existe (es el precio final calculado por la API)
-      const apiPrice = r?.data?.price;
-      const totalNum = apiPrice !== undefined && apiPrice !== null 
-        ? parseEsNumber(apiPrice) 
-        : getCalculatedPriceFromOutputs(outs);
+
+      // Para multi-cantidades, NO usar r.data.price (a veces viene con IVA).
+      // Usamos el output type=Price (o fallback por nombre si no existe).
+      const totalNum = getCalculatedPriceFromOutputs(outs);
+
       const unit = r.qty > 0 && Number.isFinite(totalNum) ? totalNum / r.qty : NaN;
       return { qty: r.qty, outs, totalStr: totalNum, unit };
     });
@@ -1298,14 +1314,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       return basePrice + additionalsTotal;
     }
     
-    // For API products, use pricing.price directly if available (already the final calculated price)
-    // Fallback to priceOutput only if pricing.price is not available
+    // Para productos API: el precio que queremos mostrar/guardar es el output con type=Price.
+    // pricing.price a veces viene con IVA, así que solo lo usamos como fallback.
+    const outputPrice = (priceOutput as any)?.value;
     const pricingPrice = (pricing as any)?.price;
+
     let basePrice: number;
-    if (pricingPrice !== undefined && pricingPrice !== null) {
-      basePrice = parseFloat(String(pricingPrice).replace(/\./g, "").replace(",", ".")) || 0;
+    if (outputPrice !== undefined && outputPrice !== null) {
+      basePrice = parseFloat(String(outputPrice).replace(/\./g, "").replace(",", ".")) || 0;
     } else {
-      basePrice = parseFloat(String((priceOutput as any)?.value ?? 0).replace(/\./g, "").replace(",", ".")) || 0;
+      basePrice = parseFloat(String(pricingPrice ?? 0).replace(/\./g, "").replace(",", ".")) || 0;
     }
     let additionalsTotal = 0;
     
@@ -1995,11 +2013,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                         multiEnabled={multiEnabled}
                         canEditPrice={canEditPrice}
                         renderPrice={() => {
-                          // Usar pricing.price directamente si existe (es el precio final de la API)
+                          // MOSTRAR SIEMPRE el output con type=Price (sin IVA). Fallback: pricing.price.
+                          const outputPrice = (priceOutput as any)?.value;
                           const pricingPrice = (pricing as any)?.price;
-                          const displayPrice = pricingPrice !== undefined && pricingPrice !== null 
-                            ? pricingPrice 
-                            : (priceOutput as any)?.value;
+                          const displayPrice = outputPrice !== undefined && outputPrice !== null
+                            ? outputPrice
+                            : pricingPrice;
                           
                           return displayPrice !== undefined && displayPrice !== null ? (
                             <div className="p-3 rounded-md border bg-card/50">
