@@ -257,141 +257,159 @@ export default function PromptsForm({
     return <p className="text-sm text-muted-foreground">Este producto no define opciones.</p>;
   }
 
-  return (
-    <div className="space-y-2">
-      {visiblePrompts.map((p) => (
-        <div key={p.id} className="space-y-1">
-          <Label htmlFor={p.id} className="text-sm">{p.label}{p.required ? " *" : ""}</Label>
-          {p.description && (
-            <p className="text-xs text-muted-foreground">{p.description}</p>
-          )}
+  // Separate prompts into grid (number, integer, text, select) and full-width (image, color)
+  const gridPrompts = visiblePrompts.filter(p => ['number', 'integer', 'text', 'select'].includes(p.type));
+  const fullWidthPrompts = visiblePrompts.filter(p => ['image', 'color'].includes(p.type));
 
-          {/* Number / Integer - commits on blur/enter */}
-          {(p.type === "number" || p.type === "integer") && (
-            <Input
-              id={p.id}
-              type="number"
-              inputMode={p.type === "integer" ? "numeric" : "decimal"}
-              step={p.step}
-              min={p.min}
-              max={p.max}
-              value={effectiveValues[p.id] ?? ""}
-              onChange={(e) => onChange(p.id, e.target.value, p.label)}
-              onBlur={(e) => handleCommit(p.id, e.target.value, p.label)}
-              onKeyDown={(e) => handleKeyDown(e, p.id, (e.target as HTMLInputElement).value, p.label)}
-            />
-          )}
+  const renderPrompt = (p: PromptDef) => (
+    <div key={p.id} className="space-y-1">
+      <Label htmlFor={p.id} className="text-sm">{p.label}{p.required ? " *" : ""}</Label>
+      {p.description && (
+        <p className="text-xs text-muted-foreground">{p.description}</p>
+      )}
 
-          {/* Text - commits on blur/enter */}
-          {p.type === "text" && (
-            <Input
-              id={p.id}
-              type="text"
-              value={effectiveValues[p.id] ?? ""}
-              onChange={(e) => onChange(p.id, e.target.value, p.label)}
-              onBlur={(e) => handleCommit(p.id, e.target.value, p.label)}
-              onKeyDown={(e) => handleKeyDown(e, p.id, (e.target as HTMLInputElement).value, p.label)}
-            />
-          )}
+      {/* Number / Integer - commits on blur/enter */}
+      {(p.type === "number" || p.type === "integer") && (
+        <Input
+          id={p.id}
+          type="number"
+          inputMode={p.type === "integer" ? "numeric" : "decimal"}
+          step={p.step}
+          min={p.min}
+          max={p.max}
+          value={effectiveValues[p.id] ?? ""}
+          onChange={(e) => onChange(p.id, e.target.value, p.label)}
+          onBlur={(e) => handleCommit(p.id, e.target.value, p.label)}
+          onKeyDown={(e) => handleKeyDown(e, p.id, (e.target as HTMLInputElement).value, p.label)}
+        />
+      )}
 
-          {/* Select (dropdown) - commits immediately */}
-          {p.type === "select" && (() => {
-            // Crear valores únicos cuando hay duplicados
-            const seenValues = new Map<string, number>();
-            const uniqueOptions = p.options?.map((o, idx) => {
-              const count = seenValues.get(o.value) || 0;
-              seenValues.set(o.value, count + 1);
-              const uniqueValue = count > 0 ? `${o.value}__dup${count}` : o.value;
-              return { ...o, uniqueValue, originalValue: o.value };
-            });
-            
-            // Encontrar el valor actual en las opciones únicas
-            const currentValue = effectiveValues[p.id];
-            const matchingOption = uniqueOptions?.find(o => o.originalValue === currentValue);
-            const displayValue = matchingOption?.uniqueValue ?? currentValue;
-            
+      {/* Text - commits on blur/enter */}
+      {p.type === "text" && (
+        <Input
+          id={p.id}
+          type="text"
+          value={effectiveValues[p.id] ?? ""}
+          onChange={(e) => onChange(p.id, e.target.value, p.label)}
+          onBlur={(e) => handleCommit(p.id, e.target.value, p.label)}
+          onKeyDown={(e) => handleKeyDown(e, p.id, (e.target as HTMLInputElement).value, p.label)}
+        />
+      )}
+
+      {/* Select (dropdown) - commits immediately */}
+      {p.type === "select" && (() => {
+        // Crear valores únicos cuando hay duplicados
+        const seenValues = new Map<string, number>();
+        const uniqueOptions = p.options?.map((o, idx) => {
+          const count = seenValues.get(o.value) || 0;
+          seenValues.set(o.value, count + 1);
+          const uniqueValue = count > 0 ? `${o.value}__dup${count}` : o.value;
+          return { ...o, uniqueValue, originalValue: o.value };
+        });
+        
+        // Encontrar el valor actual en las opciones únicas
+        const currentValue = effectiveValues[p.id];
+        const matchingOption = uniqueOptions?.find(o => o.originalValue === currentValue);
+        const displayValue = matchingOption?.uniqueValue ?? currentValue;
+        
+        return (
+          <Select value={displayValue as any} onValueChange={(v) => {
+            // Encontrar el valor original
+            const selected = uniqueOptions?.find(o => o.uniqueValue === v);
+            const originalValue = selected?.originalValue ?? v;
+            onChange(p.id, originalValue, p.label);
+            handleCommit(p.id, originalValue, p.label); // Commit immediately for selects
+          }}>
+            <SelectTrigger id={p.id}>
+              <SelectValue placeholder="Selecciona una opción" />
+            </SelectTrigger>
+            <SelectContent className="z-50 bg-popover">
+              {uniqueOptions?.map((o, idx) => (
+                <SelectItem key={`${o.uniqueValue}-${idx}`} value={o.uniqueValue}>
+                  {o.label ?? o.originalValue}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        );
+      })()}
+
+      {/* Image picker - commits immediately */}
+      {p.type === "image" && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {p.options?.map((o) => {
+            const selected = (effectiveValues[p.id]) === o.value;
             return (
-              <Select value={displayValue as any} onValueChange={(v) => {
-                // Encontrar el valor original
-                const selected = uniqueOptions?.find(o => o.uniqueValue === v);
-                const originalValue = selected?.originalValue ?? v;
-                onChange(p.id, originalValue, p.label);
-                handleCommit(p.id, originalValue, p.label); // Commit immediately for selects
-              }}>
-                <SelectTrigger id={p.id}>
-                  <SelectValue placeholder="Selecciona una opción" />
-                </SelectTrigger>
-                <SelectContent className="z-50 bg-popover">
-                  {uniqueOptions?.map((o, idx) => (
-                    <SelectItem key={`${o.uniqueValue}-${idx}`} value={o.uniqueValue}>
-                      {o.label ?? o.originalValue}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            );
-          })()}
-
-          {/* Image picker - commits immediately */}
-          {p.type === "image" && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {p.options?.map((o) => {
-                const selected = (effectiveValues[p.id]) === o.value;
-                return (
-                  <button
-                    key={o.value}
-                    type="button"
-                    onClick={() => {
-                      onChange(p.id, o.value, p.label);
-                      handleCommit(p.id, o.value, p.label);
-                    }}
-                    className={`relative overflow-hidden rounded-md border transition-shadow focus:outline-none focus:ring-2 focus:ring-primary w-30 h-30 ${selected ? "ring-2 ring-primary" : "hover:shadow"}`}
-                    aria-pressed={selected}
-                    aria-label={o.label ?? o.value}
-                  >
-                    {o.imageUrl ? (
-                      <img
-                        src={o.imageUrl}
-                        alt={`Opción ${o.label ?? o.value}`}
-                        loading="lazy"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground p-2">
-                        {o.label ?? o.value}
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Color picker - commits immediately */}
-          {p.type === "color" && (
-            <div className="flex flex-wrap gap-2">
-              {p.options?.map((o) => {
-                const selected = (effectiveValues[p.id]) === o.value;
-                const color = o.color ?? o.value;
-                return (
-                  <button
-                    key={o.value}
-                    type="button"
-                    onClick={() => {
-                      onChange(p.id, o.value, p.label);
-                      handleCommit(p.id, o.value, p.label);
-                    }}
-                    className={`h-9 w-9 rounded-md border shadow-sm transition focus:outline-none focus:ring-2 focus:ring-primary ${selected ? "ring-2 ring-primary" : "hover:brightness-105"}`}
-                    aria-label={`Color ${o.label ?? o.value}`}
-                    title={o.label ?? o.value}
-                    style={{ backgroundColor: color }}
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => {
+                  onChange(p.id, o.value, p.label);
+                  handleCommit(p.id, o.value, p.label);
+                }}
+                className={`relative overflow-hidden rounded-md border transition-shadow focus:outline-none focus:ring-2 focus:ring-primary w-30 h-30 ${selected ? "ring-2 ring-primary" : "hover:shadow"}`}
+                aria-pressed={selected}
+                aria-label={o.label ?? o.value}
+              >
+                {o.imageUrl ? (
+                  <img
+                    src={o.imageUrl}
+                    alt={`Opción ${o.label ?? o.value}`}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
                   />
-                );
-              })}
-            </div>
-          )}
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground p-2">
+                    {o.label ?? o.value}
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
-      ))}
+      )}
+
+      {/* Color picker - commits immediately */}
+      {p.type === "color" && (
+        <div className="flex flex-wrap gap-2">
+          {p.options?.map((o) => {
+            const selected = (effectiveValues[p.id]) === o.value;
+            const color = o.color ?? o.value;
+            return (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => {
+                  onChange(p.id, o.value, p.label);
+                  handleCommit(p.id, o.value, p.label);
+                }}
+                className={`h-9 w-9 rounded-md border shadow-sm transition focus:outline-none focus:ring-2 focus:ring-primary ${selected ? "ring-2 ring-primary" : "hover:brightness-105"}`}
+                aria-label={`Color ${o.label ?? o.value}`}
+                title={o.label ?? o.value}
+                style={{ backgroundColor: color }}
+              />
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* Grid layout for number, integer, text, select fields - 2 columns on md+ */}
+      {gridPrompts.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+          {gridPrompts.map(renderPrompt)}
+        </div>
+      )}
+      
+      {/* Full width for image and color pickers */}
+      {fullWidthPrompts.length > 0 && (
+        <div className="space-y-3">
+          {fullWidthPrompts.map(renderPrompt)}
+        </div>
+      )}
     </div>
   );
 }
