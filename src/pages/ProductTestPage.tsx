@@ -308,6 +308,7 @@ export default function ProductTestPage() {
   }, [viewMode, componentProductIds, productId]);
 
   // Fetch product detail when productId changes - with retries for transient errors
+  // Note: We only depend on productId, not products, to avoid re-fetching on every products array change
   useEffect(() => {
     const fetchProductDetail = async (retryCount = 0) => {
       const MAX_RETRIES = 2;
@@ -356,14 +357,6 @@ export default function ProductTestPage() {
 
       console.log("✅ EasyQuote token obtained");
       try {
-        const selectedProduct = products.find((p: any) => p.id === productId);
-        if (!selectedProduct) {
-          throw new Error(
-            "Producto no encontrado en la lista actual. Espera a que cargue la lista o revisa el modo Productos/Componentes."
-          );
-        }
-        console.log("✅ Selected product:", selectedProduct.productName || selectedProduct.name);
-
         console.log("📡 Calling easyquote-pricing...");
         const { data: pricingData, error: pricingError } = await invokeEasyQuoteFunction(
           "easyquote-pricing",
@@ -400,11 +393,7 @@ export default function ProductTestPage() {
         console.log("📋 Initial prompt values:", currentValues);
         setPromptValues(currentValues);
         setDebouncedPromptValues(currentValues);
-
-        setTimeout(() => {
-          console.log("✅ Initial load complete");
-          setIsInitialLoad(false);
-        }, 300);
+        setIsInitialLoad(false);
       } catch (error: any) {
         console.error("🔴 Error fetching product detail:", error);
 
@@ -433,7 +422,8 @@ export default function ProductTestPage() {
       }
     };
     fetchProductDetail();
-  }, [productId, products]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId]);
 
   // Fetch pricing data ONLY when user modifies prompts (not on initial load)
   const {
