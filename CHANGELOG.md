@@ -5,6 +5,13 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.4.10] - 2026-01-14
+
+### Cambiado
+- **Layout de prompts en productos compuestos**: Los campos de cada componente (pestañas) y sección general ahora se muestran en una sola columna para mejor legibilidad en tablets
+
+---
+
 ## [2.4.9] - 2026-01-14
 
 ### Corregido
