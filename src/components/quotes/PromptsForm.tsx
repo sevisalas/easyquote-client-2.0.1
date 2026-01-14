@@ -257,12 +257,14 @@ export default function PromptsForm({
     return <p className="text-sm text-muted-foreground">Este producto no define opciones.</p>;
   }
 
-  // Separate prompts into grid (number, integer, text, select) and full-width (image, color)
-  const gridPrompts = visiblePrompts.filter(p => ['number', 'integer', 'text', 'select'].includes(p.type));
-  const fullWidthPrompts = visiblePrompts.filter(p => ['image', 'color'].includes(p.type));
+  // Check if prompt should span full width (image/color types)
+  const isFullWidth = (type: PromptDef["type"]) => ['image', 'color'].includes(type);
 
   const renderPrompt = (p: PromptDef) => (
-    <div key={p.id} className="space-y-1">
+    <div 
+      key={p.id} 
+      className={`space-y-1 ${isFullWidth(p.type) ? 'md:col-span-2' : ''}`}
+    >
       <Label htmlFor={p.id} className="text-sm">{p.label}{p.required ? " *" : ""}</Label>
       {p.description && (
         <p className="text-xs text-muted-foreground">{p.description}</p>
@@ -336,7 +338,7 @@ export default function PromptsForm({
 
       {/* Image picker - commits immediately */}
       {p.type === "image" && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
           {p.options?.map((o) => {
             const selected = (effectiveValues[p.id]) === o.value;
             return (
@@ -396,20 +398,8 @@ export default function PromptsForm({
   );
 
   return (
-    <div className="space-y-4">
-      {/* Grid layout for number, integer, text, select fields - 2 columns on md+ */}
-      {gridPrompts.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
-          {gridPrompts.map(renderPrompt)}
-        </div>
-      )}
-      
-      {/* Full width for image and color pickers */}
-      {fullWidthPrompts.length > 0 && (
-        <div className="space-y-3">
-          {fullWidthPrompts.map(renderPrompt)}
-        </div>
-      )}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+      {visiblePrompts.map(renderPrompt)}
     </div>
   );
 }
