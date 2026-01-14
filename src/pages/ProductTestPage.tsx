@@ -938,14 +938,14 @@ export default function ProductTestPage() {
       clearTimeout(commitTimeoutRef.current);
     }
     
-    // Debounce: wait 500ms before triggering API call
+    // Debounce: wait 150ms before triggering API call (prevents rapid duplicate calls)
     commitTimeoutRef.current = setTimeout(() => {
       setHasUserModifiedPrompts(true);
       setDebouncedPromptValues(prev => ({
         ...prev,
         [id]: value
       }));
-    }, 500);
+    }, 150);
   };
   const handleDiagnoseProduct = async () => {
     if (!productId) return;
