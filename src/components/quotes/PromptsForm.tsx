@@ -208,12 +208,14 @@ export default function PromptsForm({
   onChange,
   onCommit,
   showAllPrompts = false,
+  singleColumn = false,
 }: {
   product: any;
   values: Record<string, any>;
   onChange: (id: string, value: any, label: string) => void;
   onCommit?: (id: string, value: any, label: string) => void; // Called on blur/enter for API calls
   showAllPrompts?: boolean;
+  singleColumn?: boolean; // Force single column layout (for composite products in tabs)
 }) {
   const prompts = useMemo(() => extractPrompts(product), [product]);
   const defaultsMap = useMemo(() => Object.fromEntries(prompts.map((p) => [p.id, p.default])), [prompts]);
@@ -397,8 +399,13 @@ export default function PromptsForm({
     </div>
   );
 
+  // Use single column for composite products (tabs), two columns for simple products
+  const gridClass = singleColumn 
+    ? "space-y-3" 
+    : "grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3";
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+    <div className={gridClass}>
       {visiblePrompts.map(renderPrompt)}
     </div>
   );

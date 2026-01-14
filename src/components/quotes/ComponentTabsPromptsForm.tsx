@@ -331,7 +331,8 @@ export default function ComponentTabsPromptsForm({
             values={values} 
             onChange={onChange} 
             onCommit={onCommit} 
-            showAllPrompts={showAllPrompts} 
+            showAllPrompts={showAllPrompts}
+            singleColumn
           />
         )}
       </div>
@@ -396,6 +397,7 @@ export default function ComponentTabsPromptsForm({
                     onChange={onChange}
                     onCommit={onCommit}
                     showAllPrompts={showAllPrompts}
+                    singleColumn
                   />
                 )}
               </TabsContent>
