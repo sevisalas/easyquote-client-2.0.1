@@ -375,6 +375,7 @@ export default function ComponentTabsPromptsForm({
               onChange={onChange}
               onCommit={onCommit}
               showAllPrompts={showAllPrompts}
+              singleColumn
             />
           </div>
         )}
