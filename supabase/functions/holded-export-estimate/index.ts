@@ -505,9 +505,30 @@ Deno.serve(async (req) => {
           }
         }
         
-        // Get price from outputs or fallback to item.price
-        let totalPrice = parseFloat(item.price) || 0;
+        // Get price from outputs type "Price" first, fallback to item.price
+        let totalPrice = 0;
         let units = 1;
+        
+        // Priority: find Price output (the real calculated price from EasyQuote)
+        if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
+          const priceOutput = item.outputs.find((o: any) => 
+            String(o?.type || '').toLowerCase() === 'price'
+          );
+          
+          if (priceOutput) {
+            const priceValue = priceOutput.value;
+            totalPrice = typeof priceValue === "number" 
+              ? priceValue 
+              : parseFloat(String(priceValue || 0).replace(/\./g, "").replace(",", ".")) || 0;
+            console.log('💰 Price from output:', { totalPrice, outputName: priceOutput.name });
+          }
+        }
+        
+        // Fallback to item.price if no Price output found
+        if (totalPrice === 0) {
+          totalPrice = parseFloat(item.price) || 0;
+          console.log('💰 Price from item.price fallback:', { totalPrice });
+        }
         
         // Detect quantity: first from output type Quantity, then from prompts
         if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
