@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -918,14 +918,33 @@ export default function ProductTestPage() {
     }));
   };
 
+  // Ref para el timeout del debounce
+  const commitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (commitTimeoutRef.current) {
+        clearTimeout(commitTimeoutRef.current);
+      }
+    };
+  }, []);
+  
   // Llamado cuando el usuario termina de editar (blur/enter o selección)
   const handlePromptCommit = (id: string, value: any) => {
-    setHasUserModifiedPrompts(true);
-    // El valor ya está en promptValues, solo marcamos que hay cambios
-    setDebouncedPromptValues(prev => ({
-      ...prev,
-      [id]: value
-    }));
+    // Clear any pending timeout to debounce rapid changes
+    if (commitTimeoutRef.current) {
+      clearTimeout(commitTimeoutRef.current);
+    }
+    
+    // Debounce: wait 500ms before triggering API call
+    commitTimeoutRef.current = setTimeout(() => {
+      setHasUserModifiedPrompts(true);
+      setDebouncedPromptValues(prev => ({
+        ...prev,
+        [id]: value
+      }));
+    }, 500);
   };
   const handleDiagnoseProduct = async () => {
     if (!productId) return;
