@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useMemo, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useMemo, useRef, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -73,7 +73,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   const [allOrganizations, setAllOrganizations] = useState<Organization[]>([]);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false); // Prevent concurrent refreshes
+  const isRefreshingRef = useRef(false); // Prevent concurrent refreshes
   const { toast } = useToast();
 
   const fetchAllUserOrganizations = async (userId: string): Promise<Organization[]> => {
@@ -110,17 +110,17 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   };
 
   const refreshData = async () => {
-    // Prevent concurrent refresh calls
-    if (isRefreshing) {
+    // Prevent concurrent refresh calls using ref (not state, to avoid stale closure issues)
+    if (isRefreshingRef.current) {
       return;
     }
-    setIsRefreshing(true);
+    isRefreshingRef.current = true;
     
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setLoading(false);
-        setIsRefreshing(false);
+        isRefreshingRef.current = false;
         return;
       }
 
@@ -204,7 +204,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       console.error('❌ Error fetching subscription data:', error);
     } finally {
       setLoading(false);
-      setIsRefreshing(false);
+      isRefreshingRef.current = false;
     }
   };
 
