@@ -341,8 +341,14 @@ export default function ProductTestPage() {
       // Clear previous state immediately when starting a new fetch
       // This ensures we don't send stale prompt IDs from a previous product
       if (retryCount === 0) {
+        // Cancel any pending commit timeout to prevent stale API calls
+        if (commitTimeoutRef.current) {
+          clearTimeout(commitTimeoutRef.current);
+          commitTimeoutRef.current = null;
+        }
         setPromptValues({});
         setDebouncedPromptValues({});
+        setForceResultPrompts([]); // Clear force result prompts from previous product
       }
 
       console.log(
@@ -465,6 +471,13 @@ export default function ProductTestPage() {
       // Use getEasyQuoteToken which validates and auto-refreshes expired tokens
       const token = await getEasyQuoteToken();
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
+      
+      // CRITICAL: Verify productDetail matches current productId to avoid sending stale prompt IDs
+      if (!productDetail || productDetail.productID !== productId) {
+        console.warn("⚠️ Skipping pricing call - productDetail doesn't match current productId");
+        return null;
+      }
+      
       console.log("Making pricing call with inputs:", debouncedPromptValues);
 
       // CRITICAL: EasyQuote API PATCH requires ALL prompts to be sent, not just modified ones
