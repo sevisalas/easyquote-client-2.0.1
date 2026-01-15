@@ -121,6 +121,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [activeComponent, setActiveComponent] = useState<string>("cubierta");
   const [boundProductConfig, setBoundProductConfig] = useState<BoundProductConfig | null>(null);
   const [userEditedPrice, setUserEditedPrice] = useState<number | null>(null); // Precio editado por usuario
+  const [forceResultPrompts, setForceResultPrompts] = useState<PromptDef[]>([]); // Prompts marcados como "Opc. restrictiva"
   const initialStateRef = useRef<string>("");
   
   // Cache de opciones de prompts: se cargan una vez por producto y no se recargan en cada PATCH
@@ -1919,11 +1920,89 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                           onComponentChange={setActiveComponent}
                           boundProductConfig={boundProductConfig}
                           isAdmin={isSuperAdmin || isOrgAdmin}
+                          onForceResultPrompts={setForceResultPrompts}
                         />
                       ) : (
                         <p className="text-sm text-muted-foreground">Cargando opciones…</p>
                       )
                     ) : null}
+                    
+                    {/* Sección: Opciones restrictivas (prompts marcados como force_result) */}
+                    {forceResultPrompts.length > 0 && (
+                      <div className="border-t pt-4 mt-4">
+                        <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+                          Opciones restrictivas
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2">
+                          {forceResultPrompts.map((prompt) => {
+                            const effectiveValue = promptValues[prompt.id];
+                            const value = effectiveValue && typeof effectiveValue === 'object' && 'value' in effectiveValue 
+                              ? effectiveValue.value 
+                              : effectiveValue ?? prompt.default;
+                            
+                            // Checkbox type
+                            if (prompt.type === 'checkbox') {
+                              const isChecked = value === true || value === "true" || value === "Sí" || value === "Si" || value === 1 || value === "1";
+                              return (
+                                <div key={prompt.id} className="flex items-center gap-2 py-1">
+                                  <span className="text-sm">{prompt.label}</span>
+                                  <Checkbox
+                                    id={`restrictive-${prompt.id}`}
+                                    checked={isChecked}
+                                    onCheckedChange={(checked) => {
+                                      const newValue = checked ? "Sí" : "No";
+                                      handlePromptChange(prompt.id, newValue, prompt.label);
+                                      handlePromptCommit(prompt.id, newValue, prompt.label);
+                                    }}
+                                  />
+                                </div>
+                              );
+                            }
+                            
+                            // Select type
+                            if (prompt.type === 'select' && prompt.options?.length) {
+                              return (
+                                <div key={prompt.id} className="flex items-center gap-2 py-1">
+                                  <span className="text-sm">{prompt.label}</span>
+                                  <Select 
+                                    value={String(value ?? '')} 
+                                    onValueChange={(v) => {
+                                      handlePromptChange(prompt.id, v, prompt.label);
+                                      handlePromptCommit(prompt.id, v, prompt.label);
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-8 w-auto min-w-[100px]">
+                                      <SelectValue placeholder="—" />
+                                    </SelectTrigger>
+                                    <SelectContent className="z-50 bg-popover">
+                                      {prompt.options.map((o, idx) => (
+                                        <SelectItem key={`${o.value}-${idx}`} value={o.value}>
+                                          {o.label ?? o.value}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              );
+                            }
+                            
+                            // Number/Integer/Text type
+                            return (
+                              <div key={prompt.id} className="flex items-center gap-2 py-1">
+                                <span className="text-sm">{prompt.label}</span>
+                                <Input
+                                  type={prompt.type === 'number' || prompt.type === 'integer' ? 'number' : 'text'}
+                                  className="h-8 w-24"
+                                  value={value ?? ''}
+                                  onChange={(e) => handlePromptChange(prompt.id, e.target.value, prompt.label)}
+                                  onBlur={(e) => handlePromptCommit(prompt.id, e.target.value, prompt.label)}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>
