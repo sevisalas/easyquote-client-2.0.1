@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export type PromptOption = {
   value: string;
@@ -13,7 +14,7 @@ export type PromptOption = {
 export type PromptDef = {
   id: string;
   label: string;
-  type: "number" | "integer" | "text" | "select" | "image" | "color";
+  type: "number" | "integer" | "text" | "select" | "image" | "color" | "checkbox" | "quantity";
   description?: string;
   required?: boolean;
   min?: number;
@@ -150,6 +151,8 @@ function extractPrompts(product: any): PromptDef[] {
     let type: PromptDef["type"] = "text";
     if (rawType.includes("image")) type = "image";
     else if (rawType.includes("color")) type = "color";
+    else if (rawType.includes("checkbox") || rawType.includes("boolean") || rawType.includes("check")) type = "checkbox";
+    else if (rawType.includes("quantity") || rawType.includes("cantidad")) type = "quantity";
     else if (rawType.includes("drop") || rawType.includes("select")) type = "select";
     else if (rawType.includes("number") || rawType.includes("decimal") || rawType.includes("float") || rawType.includes("int")) {
       const allowedDecimals = Number(f.allowedDecimals);
@@ -267,7 +270,10 @@ export default function PromptsForm({
       key={p.id} 
       className={`space-y-1 ${isFullWidth(p.type) ? 'md:col-span-2' : ''}`}
     >
-      <Label htmlFor={p.id} className="text-sm">{p.label}{p.required ? " *" : ""}</Label>
+      {/* Hide label for checkbox since it's inline */}
+      {p.type !== "checkbox" && (
+        <Label htmlFor={p.id} className="text-sm">{p.label}{p.required ? " *" : ""}</Label>
+      )}
       {p.description && (
         <p className="text-xs text-muted-foreground">{p.description}</p>
       )}
@@ -286,6 +292,43 @@ export default function PromptsForm({
           onBlur={(e) => handleCommit(p.id, e.target.value, p.label)}
           onKeyDown={(e) => handleKeyDown(e, p.id, (e.target as HTMLInputElement).value, p.label)}
         />
+      )}
+
+      {/* Quantity - same as integer but with step=1 */}
+      {p.type === "quantity" && (
+        <Input
+          id={p.id}
+          type="number"
+          inputMode="numeric"
+          step={1}
+          min={p.min ?? 1}
+          max={p.max}
+          value={effectiveValues[p.id] ?? ""}
+          onChange={(e) => onChange(p.id, e.target.value, p.label)}
+          onBlur={(e) => handleCommit(p.id, e.target.value, p.label)}
+          onKeyDown={(e) => handleKeyDown(e, p.id, (e.target as HTMLInputElement).value, p.label)}
+        />
+      )}
+
+      {/* Checkbox - commits immediately */}
+      {p.type === "checkbox" && (
+        <div className="flex items-center space-x-2 pt-1">
+          <Checkbox
+            id={p.id}
+            checked={effectiveValues[p.id] === true || effectiveValues[p.id] === "true" || effectiveValues[p.id] === "Sí" || effectiveValues[p.id] === 1 || effectiveValues[p.id] === "1"}
+            onCheckedChange={(checked) => {
+              const value = checked ? "Sí" : "No";
+              onChange(p.id, value, p.label);
+              handleCommit(p.id, value, p.label);
+            }}
+          />
+          <label
+            htmlFor={p.id}
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+          >
+            {p.label}
+          </label>
+        </div>
       )}
 
       {/* Text - commits on blur/enter */}
