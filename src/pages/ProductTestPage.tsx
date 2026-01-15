@@ -1155,29 +1155,18 @@ export default function ProductTestPage() {
                             <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                               Opciones restrictivas
                             </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
-                              {forceResultPrompts.map((prompt) => {
-                                const effectiveValue = promptValues[prompt.id];
-                                const value = effectiveValue && typeof effectiveValue === 'object' && 'value' in effectiveValue 
-                                  ? effectiveValue.value 
-                                  : effectiveValue ?? prompt.default;
-                                const isChecked = value === true || value === "true" || value === "Sí" || value === "Si" || value === 1 || value === "1";
-                                
-                                return (
-                                  <div key={prompt.id} className="flex items-center justify-between gap-2 py-1">
-                                    <span className="text-sm truncate">{prompt.label}</span>
-                                    <Checkbox
-                                      id={`restrictive-${prompt.id}`}
-                                      checked={isChecked}
-                                      onCheckedChange={(checked) => {
-                                        const newValue = checked ? "Sí" : "No";
-                                        handlePromptChange(prompt.id, newValue);
-                                        handlePromptCommit(prompt.id, newValue);
-                                      }}
-                                    />
-                                  </div>
-                                );
-                              })}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
+                              {forceResultPrompts.map((prompt) => (
+                                <div key={prompt.id}>
+                                  <PromptsForm
+                                    product={{ prompts: [prompt] }}
+                                    values={promptValues}
+                                    onChange={handlePromptChange}
+                                    onCommit={handlePromptCommit}
+                                    singleColumn
+                                  />
+                                </div>
+                              ))}
                             </div>
                           </div>
                         )}
