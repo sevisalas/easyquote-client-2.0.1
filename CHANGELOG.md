@@ -5,6 +5,18 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.4.11] - 2026-01-15
+
+### Añadido
+- **Opciones restrictivas**: Nueva sección para campos de prompts marcados como "Opc. restrictiva" (force_result), visible en página de pruebas, presupuestos y pedidos
+- Configuración por prompt en gestión de productos para activar/desactivar opción restrictiva
+
+### Cambiado
+- Layout de opciones restrictivas: rótulo y valor en la misma línea, checkbox a la derecha, grid de 3 columnas
+- Optimización de prompts en página de test: grid de 2 columnas para productos simples
+
+---
+
 ## [2.4.10] - 2026-01-14
 
 ### Cambiado
