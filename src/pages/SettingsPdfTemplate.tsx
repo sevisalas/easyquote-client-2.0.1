@@ -10,6 +10,7 @@ import { usePdfAccess } from "@/hooks/usePdfAccess";
 import { usePdfConfiguration } from "@/hooks/usePdfConfiguration";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { LogoUploader } from "@/components/images/LogoUploader";
 
 export default function SettingsPdfTemplate() {
   const { hasPdfAccess, loading: pdfAccessLoading } = usePdfAccess();
@@ -151,8 +152,12 @@ export default function SettingsPdfTemplate() {
             <Input type="color" value={brandColor} onChange={(e) => setBrandColor(e.target.value)} className="h-8 mt-1" />
           </div>
           <div className="sm:col-span-2">
-            <Label className="text-xs">Logo (URL)</Label>
-            <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://.../logo.png" className="h-8 text-sm mt-1" />
+            <Label className="text-xs">Logo de la empresa</Label>
+            <LogoUploader 
+              currentLogoUrl={logoUrl} 
+              onLogoChange={setLogoUrl}
+              className="mt-1"
+            />
           </div>
           <div className="sm:col-span-2">
             <Label className="text-xs">Texto de pie</Label>

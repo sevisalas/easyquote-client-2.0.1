@@ -9,49 +9,6 @@ export interface PDFGeneratorOptions {
   quality?: number;
 }
 
-// Convert external URL to base64 data URL to avoid CORS issues
-const urlToBase64 = async (url: string): Promise<string> => {
-  if (!url || !url.startsWith('http')) return url;
-  
-  try {
-    // Try to fetch via proxy to avoid CORS
-    const response = await fetch(url, { mode: 'cors' });
-    if (!response.ok) throw new Error('Failed to fetch');
-    
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    // If direct fetch fails, try creating an image and drawing to canvas
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL('image/png'));
-          } else {
-            resolve(url); // Fallback to original URL
-          }
-        } catch {
-          resolve(url); // Fallback to original URL
-        }
-      };
-      img.onerror = () => resolve(url); // Fallback to original URL
-      img.src = url;
-    });
-  }
-};
-
 // Get saved template configuration from Supabase
 const getTemplateConfig = async () => {
   const { data: { user } } = await supabase.auth.getUser();
@@ -64,13 +21,10 @@ const getTemplateConfig = async () => {
       .maybeSingle();
     
     if (!error && data) {
-      // Convert logo URL to base64 for PDF generation
-      const logoBase64 = data.logo_url ? await urlToBase64(data.logo_url) : '';
-      
       return {
         selectedTemplate: data.selected_template || 1,
         companyName: data.company_name || '',
-        logoUrl: logoBase64,
+        logoUrl: data.logo_url || '',
         brandColor: data.brand_color || '#0ea5e9',
         footerText: data.footer_text || ''
       };
