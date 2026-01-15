@@ -1154,13 +1154,19 @@ export default function ProductTestPage() {
                             <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                               Opciones restrictivas
                             </h3>
-                            <PromptsForm
-                              product={{ prompts: forceResultPrompts }}
-                              values={promptValues}
-                              onChange={handlePromptChange}
-                              onCommit={handlePromptCommit}
-                              singleColumn
-                            />
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                              {forceResultPrompts.map((prompt) => (
+                                <div key={prompt.id} className="space-y-1">
+                                  <PromptsForm
+                                    product={{ prompts: [prompt] }}
+                                    values={promptValues}
+                                    onChange={handlePromptChange}
+                                    onCommit={handlePromptCommit}
+                                    singleColumn
+                                  />
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </>

@@ -2553,7 +2553,7 @@ export default function ProductManagement() {
                               }} />
                               </div>
                               <div className="flex items-center gap-2">
-                                <Label className="text-sm font-medium whitespace-nowrap">Forzar resultado</Label>
+                                <Label className="text-sm font-medium whitespace-nowrap">Opc. restrictiva</Label>
                                 <Switch checked={isPromptForceResult(prompt.promptCell)} onCheckedChange={checked => {
                                 if (selectedProduct) {
                                   upsertPromptSettingMutation.mutate({
