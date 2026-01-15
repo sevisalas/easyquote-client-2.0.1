@@ -926,15 +926,19 @@ export default function ProductTestPage() {
   };
   const handlePromptChange = (id: string, value: any) => {
     // Solo actualiza el estado local, sin disparar API
-    setPromptValues(prev => ({
-      ...prev,
-      [id]: value
-    }));
+    console.log(`🔵 handlePromptChange: id="${id}" (type: ${typeof id}), value="${value}" (type: ${typeof value})`);
+    setPromptValues(prev => {
+      const next = { ...prev, [id]: value };
+      console.log(`🔵 promptValues updated:`, next);
+      return next;
+    });
   };
 
   
   // Llamado cuando el usuario termina de editar (blur/enter o selección)
   const handlePromptCommit = (id: string, value: any) => {
+    console.log(`🟡 handlePromptCommit: id="${id}" (type: ${typeof id}), value="${value}" (type: ${typeof value})`);
+    
     // Clear any pending timeout to debounce rapid changes
     if (commitTimeoutRef.current) {
       clearTimeout(commitTimeoutRef.current);
@@ -942,11 +946,13 @@ export default function ProductTestPage() {
     
     // Debounce: wait 150ms before triggering API call (prevents rapid duplicate calls)
     commitTimeoutRef.current = setTimeout(() => {
+      console.log(`🟢 Setting debouncedPromptValues: id="${id}", value="${value}"`);
       setHasUserModifiedPrompts(true);
-      setDebouncedPromptValues(prev => ({
-        ...prev,
-        [id]: value
-      }));
+      setDebouncedPromptValues(prev => {
+        const next = { ...prev, [id]: value };
+        console.log(`🟢 debouncedPromptValues updated:`, next);
+        return next;
+      });
     }, 150);
   };
   const handleDiagnoseProduct = async () => {
