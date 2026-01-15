@@ -47,7 +47,7 @@ export default function Template4({ data }: Template4Props) {
       <header className="bg-white p-4 shadow-sm">
         <div className="flex justify-between items-center mb-2">
           {config.logoUrl && (
-            <img src={config.logoUrl} alt="Logo" className="h-10" />
+            <img src={config.logoUrl} alt="Logo" className="h-10" crossOrigin="anonymous" />
           )}
           <div className="text-right">
             <h1 className="text-lg font-serif font-bold" style={{ color: accentColor }}>

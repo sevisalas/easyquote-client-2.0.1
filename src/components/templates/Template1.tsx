@@ -45,7 +45,7 @@ export default function Template1({ data }: Template1Props) {
       <header className="flex justify-between items-start mb-4 pb-2 border-b-2" style={{ borderColor: config.brandColor || '#0ea5e9' }}>
         <div>
           {config.logoUrl && (
-            <img src={config.logoUrl} alt="Logo" className="h-12 mb-1" />
+            <img src={config.logoUrl} alt="Logo" className="h-12 mb-1" crossOrigin="anonymous" />
           )}
           <h1 className="text-xl font-bold" style={{ color: config.brandColor || '#0ea5e9' }}>
             {config.companyName || 'Mi Empresa'}
