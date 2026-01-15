@@ -1155,7 +1155,7 @@ export default function ProductTestPage() {
                             <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                               Opciones restrictivas
                             </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2">
                               {forceResultPrompts.map((prompt) => {
                                 const effectiveValue = promptValues[prompt.id];
                                 const value = effectiveValue && typeof effectiveValue === 'object' && 'value' in effectiveValue 
@@ -1166,8 +1166,8 @@ export default function ProductTestPage() {
                                 if (prompt.type === 'checkbox') {
                                   const isChecked = value === true || value === "true" || value === "Sí" || value === "Si" || value === 1 || value === "1";
                                   return (
-                                    <div key={prompt.id} className="flex items-center justify-between gap-2 py-1">
-                                      <span className="text-sm truncate">{prompt.label}</span>
+                                    <div key={prompt.id} className="flex items-center gap-2 py-1">
+                                      <span className="text-sm">{prompt.label}</span>
                                       <Checkbox
                                         id={`restrictive-${prompt.id}`}
                                         checked={isChecked}
@@ -1184,8 +1184,8 @@ export default function ProductTestPage() {
                                 // Select type
                                 if (prompt.type === 'select' && prompt.options?.length) {
                                   return (
-                                    <div key={prompt.id} className="flex items-center justify-between gap-2 py-1">
-                                      <span className="text-sm truncate shrink-0">{prompt.label}</span>
+                                    <div key={prompt.id} className="flex items-center gap-2 py-1">
+                                      <span className="text-sm">{prompt.label}</span>
                                       <Select 
                                         value={String(value ?? '')} 
                                         onValueChange={(v) => {
@@ -1210,8 +1210,8 @@ export default function ProductTestPage() {
                                 
                                 // Number/Integer/Text type
                                 return (
-                                  <div key={prompt.id} className="flex items-center justify-between gap-2 py-1">
-                                    <span className="text-sm truncate shrink-0">{prompt.label}</span>
+                                  <div key={prompt.id} className="flex items-center gap-2 py-1">
+                                    <span className="text-sm">{prompt.label}</span>
                                     <Input
                                       type={prompt.type === 'number' || prompt.type === 'integer' ? 'number' : 'text'}
                                       className="h-8 w-24"
