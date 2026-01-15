@@ -75,6 +75,8 @@ export function useProductComponentSettings(easyquoteProductId?: string) {
       return data as ProductComponentSettings | null;
     },
     enabled: !!easyquoteProductId && !!organizationId,
+    staleTime: 5 * 60 * 1000, // 5 minutos - la configuración de componentes cambia raramente
+    refetchOnWindowFocus: false,
   });
 
   // Obtener asignaciones de prompts a componentes
@@ -93,6 +95,8 @@ export function useProductComponentSettings(easyquoteProductId?: string) {
       return data as ProductPromptComponent[];
     },
     enabled: !!easyquoteProductId && !!organizationId,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: false,
   });
 
   // Crear o actualizar configuración de componentes

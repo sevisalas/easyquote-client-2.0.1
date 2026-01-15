@@ -123,7 +123,8 @@ export default function ProductTestPage() {
       return data?.output_order || null;
     },
     enabled: !!productId && !!organizationId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 60 * 1000, // 10 minutos - el orden raramente cambia
+    refetchOnWindowFocus: false,
   });
 
   // Fetch output definitions so we can map calculated outputs back to their stable IDs
@@ -149,7 +150,9 @@ export default function ProductTestPage() {
       return Array.isArray(list) ? list : [];
     },
     enabled: !!productId && tokenReady,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 60 * 1000, // 30 minutos - las definiciones de outputs casi nunca cambian
+    gcTime: 60 * 60 * 1000, // 1 hora en cache
+    refetchOnWindowFocus: false,
   });
 
   // Output definitions NO incluyen el nombre/label; solo outputTypeId + celdas.
