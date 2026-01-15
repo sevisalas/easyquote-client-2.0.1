@@ -19,6 +19,8 @@ interface ComponentTabsPromptsFormProps {
   boundProductConfig?: BoundProductConfig | null;
   /** Si el usuario es admin (puede ver prompts admin_only) */
   isAdmin?: boolean;
+  /** Callback para devolver los prompts marcados como "force_result" para mostrarlos en sección aparte */
+  onForceResultPrompts?: (prompts: PromptDef[]) => void;
 }
 
 // Labels dinámicos para componentes según la configuración
@@ -77,7 +79,8 @@ export default function ComponentTabsPromptsForm({
   showAllPrompts = false,
   onComponentChange,
   boundProductConfig,
-  isAdmin = false
+  isAdmin = false,
+  onForceResultPrompts
 }: ComponentTabsPromptsFormProps) {
   const {
     isComposite,
@@ -86,8 +89,8 @@ export default function ComponentTabsPromptsForm({
     isLoading
   } = useProductComponentSettings(productId);
 
-  // Obtener configuración de prompts (admin_only, hide_in_documents)
-  const { isPromptAdminOnly } = useProductPromptSettings(productId);
+  // Obtener configuración de prompts (admin_only, hide_in_documents, force_result)
+  const { isPromptAdminOnly, isPromptForceResult } = useProductPromptSettings(productId);
 
   // Obtener componentes activos según la configuración de producto encuadernado
   const activeComponents = useMemo(() => {
@@ -159,15 +162,37 @@ export default function ComponentTabsPromptsForm({
     return cellFromId ?? cellFromLabel ?? extractCellRef(idStr) ?? labelCell ?? idNorm ?? idStr;
   };
 
-  // Filtramos los prompts admin_only si el usuario no es admin
-  const prompts = useMemo(() => {
+  // Separar prompts: regulares vs force_result
+  const { prompts, forceResultPrompts } = useMemo(() => {
     const allPrompts = extractPrompts(product);
 
-    // Si el usuario es admin, mostrar todos los prompts
-    if (isAdmin) return allPrompts;
+    // Filtrar admin_only si no es admin
+    const accessiblePrompts = isAdmin 
+      ? allPrompts 
+      : allPrompts.filter((prompt) => !isPromptAdminOnly(getPromptAdminKey(prompt)));
 
-    return allPrompts.filter((prompt) => !isPromptAdminOnly(getPromptAdminKey(prompt)));
-  }, [product, isAdmin, isPromptAdminOnly, promptCellLookup]);
+    // Separar prompts normales de force_result
+    const regular: PromptDef[] = [];
+    const forceResult: PromptDef[] = [];
+
+    for (const prompt of accessiblePrompts) {
+      const key = getPromptAdminKey(prompt);
+      if (isPromptForceResult(key)) {
+        forceResult.push(prompt);
+      } else {
+        regular.push(prompt);
+      }
+    }
+
+    return { prompts: regular, forceResultPrompts: forceResult };
+  }, [product, isAdmin, isPromptAdminOnly, isPromptForceResult, promptCellLookup]);
+
+  // Notificar los prompts force_result al componente padre
+  useEffect(() => {
+    if (onForceResultPrompts) {
+      onForceResultPrompts(forceResultPrompts);
+    }
+  }, [forceResultPrompts, onForceResultPrompts]);
 
   // Construir lista de componentes disponibles: siempre "general" + los habilitados ordenados
   // Pero filtrados por boundProductConfig si está definido
