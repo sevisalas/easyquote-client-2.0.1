@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import PromptsForm from "@/components/quotes/PromptsForm";
+import PromptsForm, { type PromptDef } from "@/components/quotes/PromptsForm";
 import ComponentTabsPromptsForm, { COMPONENT_LABELS } from "@/components/quotes/ComponentTabsPromptsForm";
 import BoundProductConfigSelector, { 
   type BoundProductConfig, 
@@ -58,6 +58,7 @@ export default function ProductTestPage() {
   const [isEditingPrice, setIsEditingPrice] = useState(false);
   const [localPriceInput, setLocalPriceInput] = useState("");
   const [tokenReady, setTokenReady] = useState(!!sessionStorage.getItem("easyquote_token"));
+  const [forceResultPrompts, setForceResultPrompts] = useState<PromptDef[]>([]);
   
   // Ref para el timeout del debounce de commit de prompts
   const commitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1134,16 +1135,35 @@ export default function ProductTestPage() {
                     
                     {/* Mostrar prompts solo si no requiere configuración O ya se seleccionó una */}
                     {(!needsConfigSelector || boundProductConfig) ? (
-                      <ComponentTabsPromptsForm 
-                        product={productDetail} 
-                        productId={productId} 
-                        values={promptValues} 
-                        onChange={handlePromptChange} 
-                        onCommit={handlePromptCommit}
-                        onComponentChange={setSelectedComponent}
-                        boundProductConfig={boundProductConfig}
-                        isAdmin={isSuperAdmin || isOrgAdmin}
-                      />
+                      <>
+                        <ComponentTabsPromptsForm 
+                          product={productDetail} 
+                          productId={productId} 
+                          values={promptValues} 
+                          onChange={handlePromptChange} 
+                          onCommit={handlePromptCommit}
+                          onComponentChange={setSelectedComponent}
+                          boundProductConfig={boundProductConfig}
+                          isAdmin={isSuperAdmin || isOrgAdmin}
+                          onForceResultPrompts={setForceResultPrompts}
+                        />
+
+                        {/* Sección: Opciones restrictivas (prompts marcados como force_result) */}
+                        {forceResultPrompts.length > 0 && (
+                          <div className="border-t pt-4 mt-4">
+                            <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+                              Opciones restrictivas
+                            </h3>
+                            <PromptsForm
+                              product={{ prompts: forceResultPrompts }}
+                              values={promptValues}
+                              onChange={handlePromptChange}
+                              onCommit={handlePromptCommit}
+                              singleColumn
+                            />
+                          </div>
+                        )}
+                      </>
                     ) : null}
                   </div>}
               </CardContent>
