@@ -126,22 +126,6 @@ serve(async (req: Request): Promise<Response> => {
       return true;
     });
 
-        // Filter out strings that are only special characters without alphanumeric content
-        if (trimmed.length < 3 && /^[^\w\s]+$/.test(trimmed)) {
-          console.log(`⚠️ Filtering out prompt ${input.id}: only special characters (${value})`);
-          return false;
-        }
-      }
-
-      // For numbers, check if it's valid
-      if (typeof value === "number" && !isFinite(value)) {
-        console.log(`⚠️ Filtering out prompt ${input.id}: invalid number`);
-        return false;
-      }
-
-      return true;
-    });
-
     // Convert decimal numbers to strings with comma (Spanish format) for EasyQuote API
     // The API interprets "15.5" as "155" if sent as a number with decimal point
     const formattedInputsList = inputsList.map(input => {
