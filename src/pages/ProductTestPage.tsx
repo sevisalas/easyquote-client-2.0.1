@@ -481,8 +481,8 @@ export default function ProductTestPage() {
       // Now normalize all values for the API
       const norm: Record<string, any> = {};
       Object.entries(allPromptValues).forEach(([k, v]) => {
-        // Skip empty/undefined/null - empty means "don't force, let Excel calculate"
-        if (v === "" || v === undefined || v === null) return;
+        // Skip undefined/null but ALLOW empty strings (need to send "" to Excel)
+        if (v === undefined || v === null) return;
 
         // Find the prompt to check its type (compare as strings for consistent matching)
         const prompt = productDetail?.prompts?.find((p: any) => String(p.id) === k);
@@ -490,8 +490,11 @@ export default function ProductTestPage() {
         if (typeof v === "string") {
           const trimmed = v.trim();
 
-          // Skip empty strings - empty means "don't force, let Excel calculate"
-          if (trimmed === "") return;
+          // Allow empty strings - they need to be sent to Excel
+          if (trimmed === "") {
+            norm[k] = "";
+            return;
+          }
 
           // Skip strings that are only special characters without meaningful content
           // (e.g., "," or "." or "-" by themselves)
