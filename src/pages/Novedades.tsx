@@ -26,6 +26,41 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.4.11",
+    date: "2026-01-15",
+    changes: {
+      added: [
+        "Opciones restrictivas: Nueva sección para campos de prompts marcados como 'Opc. restrictiva' (force_result)",
+        "Configuración por prompt en gestión de productos para activar/desactivar opción restrictiva",
+        "Logos de empresa ahora se suben a Supabase Storage para compatibilidad con PDF",
+      ],
+      changed: [
+        "Layout de opciones restrictivas: rótulo y valor en la misma línea, checkbox a la derecha",
+        "Optimización de prompts en página de test: grid de 2 columnas",
+        "Selector de estado en presupuestos: Eliminada opción 'Aprobado' del selector manual",
+      ],
+    },
+  },
+  {
+    version: "2.4.10",
+    date: "2026-01-14",
+    changes: {
+      changed: [
+        "Layout de prompts en productos compuestos: campos en una sola columna para mejor legibilidad",
+      ],
+    },
+  },
+  {
+    version: "2.4.9",
+    date: "2026-01-14",
+    changes: {
+      fixed: [
+        "Precio en presupuestos: Ahora se muestra siempre el output con type=Price (sin IVA)",
+        "Exportación a Holded: El precio unitario se calcula como PRICE / UNIDADES correctamente",
+      ],
+    },
+  },
+  {
     version: "2.4.8",
     date: "2026-01-13",
     changes: {
