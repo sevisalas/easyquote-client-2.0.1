@@ -388,6 +388,11 @@ export default function ProductTestPage() {
 
         console.log("✅ Pricing data received:", pricingData);
         console.log("📋 Prompts from pricing:", pricingData?.prompts?.length || 0);
+        console.log("📋 Prompt types:", (pricingData?.prompts || []).map((p: any) => ({
+          id: p.id,
+          type: p.promptType,
+          text: p.promptText?.substring(0, 30)
+        })));
         
         // Validate that we got fresh data with productId
         const responseProductId = pricingData?.productID || pricingData?.productId;
