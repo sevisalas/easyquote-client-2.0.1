@@ -9,6 +9,7 @@ export interface ProductPromptSetting {
   prompt_name: string;
   hide_in_documents: boolean;
   admin_only: boolean;
+  force_result: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -72,6 +73,12 @@ export function useProductPromptSettings(easyquoteProductId?: string) {
     return setting?.hide_in_documents ?? false;
   };
 
+  // Helper: verificar si un prompt es "forzar resultado"
+  const isPromptForceResult = (promptName: string): boolean => {
+    const setting = settingsByPromptName.get(normalizePromptName(promptName));
+    return setting?.force_result ?? false;
+  };
+
   // Helper: obtener la configuración completa de un prompt
   const getPromptSetting = (promptName: string): ProductPromptSetting | undefined => {
     return settingsByPromptName.get(normalizePromptName(promptName));
@@ -83,6 +90,7 @@ export function useProductPromptSettings(easyquoteProductId?: string) {
     organizationId,
     isPromptAdminOnly,
     isPromptHiddenInDocuments,
+    isPromptForceResult,
     getPromptSetting,
   };
 }

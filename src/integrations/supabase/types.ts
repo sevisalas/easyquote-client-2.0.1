@@ -1397,6 +1397,7 @@ export type Database = {
           admin_only: boolean
           created_at: string
           easyquote_product_id: string
+          force_result: boolean
           hide_in_documents: boolean
           id: string
           organization_id: string
@@ -1407,6 +1408,7 @@ export type Database = {
           admin_only?: boolean
           created_at?: string
           easyquote_product_id: string
+          force_result?: boolean
           hide_in_documents?: boolean
           id?: string
           organization_id: string
@@ -1417,6 +1419,7 @@ export type Database = {
           admin_only?: boolean
           created_at?: string
           easyquote_product_id?: string
+          force_result?: boolean
           hide_in_documents?: boolean
           id?: string
           organization_id?: string
