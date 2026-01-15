@@ -148,10 +148,17 @@ function extractPrompts(product: any): PromptDef[] {
     const hasImages = options.some((o) => !!o.imageUrl);
     const hasColors = (options?.length ?? 0) > 0 && options.every((o) => !!o.color || isHexColor(String(o.value)));
 
+    // Detect Yes/No dropdown pattern for checkbox rendering
+    const isYesNoDropdown = rawType.includes("drop") && 
+      options.length === 2 && 
+      options.some(o => o.value === "Sí" || o.value === "Si" || o.value === "Yes") &&
+      options.some(o => o.value === "No");
+
     let type: PromptDef["type"] = "text";
     if (rawType.includes("image")) type = "image";
     else if (rawType.includes("color")) type = "color";
     else if (rawType.includes("checkbox") || rawType.includes("boolean") || rawType.includes("check")) type = "checkbox";
+    else if (isYesNoDropdown) type = "checkbox"; // Treat Yes/No dropdowns as checkboxes
     else if (rawType.includes("quantity") || rawType.includes("cantidad")) type = "quantity";
     else if (rawType.includes("drop") || rawType.includes("select")) type = "select";
     else if (rawType.includes("number") || rawType.includes("decimal") || rawType.includes("float") || rawType.includes("int")) {
