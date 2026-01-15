@@ -122,7 +122,8 @@ export default function ComponentTabsPromptsForm({
     // Necesitamos las definiciones también en productos NO compuestos para poder mapear UUID -> celda
     // y así aplicar correctamente la restricción admin_only (sin depender de labels).
     enabled: !!productId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 60 * 1000, // 30 minutos - las definiciones de prompts casi nunca cambian
+    gcTime: 60 * 60 * 1000, // 1 hora en cache
     refetchOnWindowFocus: false
   });
 

@@ -47,7 +47,8 @@ export function useProductPromptSettings(easyquoteProductId?: string) {
       return data as ProductPromptSetting[];
     },
     enabled: !!easyquoteProductId && !!organizationId,
-    staleTime: 2 * 60 * 1000, // 2 minutos
+    staleTime: 5 * 60 * 1000, // 5 minutos - la configuración de prompts cambia raramente
+    refetchOnWindowFocus: false,
   });
 
   const normalizePromptName = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
