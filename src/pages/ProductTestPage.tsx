@@ -1155,18 +1155,73 @@ export default function ProductTestPage() {
                             <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                               Opciones restrictivas
                             </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
-                              {forceResultPrompts.map((prompt) => (
-                                <div key={prompt.id}>
-                                  <PromptsForm
-                                    product={{ prompts: [prompt] }}
-                                    values={promptValues}
-                                    onChange={handlePromptChange}
-                                    onCommit={handlePromptCommit}
-                                    singleColumn
-                                  />
-                                </div>
-                              ))}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
+                              {forceResultPrompts.map((prompt) => {
+                                const effectiveValue = promptValues[prompt.id];
+                                const value = effectiveValue && typeof effectiveValue === 'object' && 'value' in effectiveValue 
+                                  ? effectiveValue.value 
+                                  : effectiveValue ?? prompt.default;
+                                
+                                // Checkbox type
+                                if (prompt.type === 'checkbox') {
+                                  const isChecked = value === true || value === "true" || value === "Sí" || value === "Si" || value === 1 || value === "1";
+                                  return (
+                                    <div key={prompt.id} className="flex items-center justify-between gap-2 py-1">
+                                      <span className="text-sm truncate">{prompt.label}</span>
+                                      <Checkbox
+                                        id={`restrictive-${prompt.id}`}
+                                        checked={isChecked}
+                                        onCheckedChange={(checked) => {
+                                          const newValue = checked ? "Sí" : "No";
+                                          handlePromptChange(prompt.id, newValue);
+                                          handlePromptCommit(prompt.id, newValue);
+                                        }}
+                                      />
+                                    </div>
+                                  );
+                                }
+                                
+                                // Select type
+                                if (prompt.type === 'select' && prompt.options?.length) {
+                                  return (
+                                    <div key={prompt.id} className="flex items-center justify-between gap-2 py-1">
+                                      <span className="text-sm truncate shrink-0">{prompt.label}</span>
+                                      <Select 
+                                        value={String(value ?? '')} 
+                                        onValueChange={(v) => {
+                                          handlePromptChange(prompt.id, v);
+                                          handlePromptCommit(prompt.id, v);
+                                        }}
+                                      >
+                                        <SelectTrigger className="h-8 w-auto min-w-[100px]">
+                                          <SelectValue placeholder="—" />
+                                        </SelectTrigger>
+                                        <SelectContent className="z-50 bg-popover">
+                                          {prompt.options.map((o, idx) => (
+                                            <SelectItem key={`${o.value}-${idx}`} value={o.value}>
+                                              {o.label ?? o.value}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  );
+                                }
+                                
+                                // Number/Integer/Text type
+                                return (
+                                  <div key={prompt.id} className="flex items-center justify-between gap-2 py-1">
+                                    <span className="text-sm truncate shrink-0">{prompt.label}</span>
+                                    <Input
+                                      type={prompt.type === 'number' || prompt.type === 'integer' ? 'number' : 'text'}
+                                      className="h-8 w-24"
+                                      value={value ?? ''}
+                                      onChange={(e) => handlePromptChange(prompt.id, e.target.value)}
+                                      onBlur={(e) => handlePromptCommit(prompt.id, e.target.value)}
+                                    />
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         )}
