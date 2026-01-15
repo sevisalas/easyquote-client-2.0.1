@@ -62,13 +62,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     // Verificar sesión inicial
     checkSession();
 
-    // Timeout de seguridad para evitar loading infinito
+    // Timeout de seguridad para evitar loading infinito (reducido de 5s a 3s)
     const timeout = setTimeout(() => {
       if (isMounted && loading) {
-        console.warn("ProtectedRoute: Loading timeout, forcing check");
         setLoading(false);
       }
-    }, 5000);
+    }, 3000);
 
     return () => {
       isMounted = false;

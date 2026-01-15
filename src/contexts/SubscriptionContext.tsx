@@ -68,12 +68,12 @@ interface SubscriptionProviderProps {
 }
 
 export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) => {
-  console.log('SubscriptionProvider rendering with children:', !!children);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [membership, setMembership] = useState<OrganizationMember | null>(null);
   const [allOrganizations, setAllOrganizations] = useState<Organization[]>([]);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false); // Prevent concurrent refreshes
   const { toast } = useToast();
 
   const fetchAllUserOrganizations = async (userId: string): Promise<Organization[]> => {
@@ -110,11 +110,17 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   };
 
   const refreshData = async () => {
+    // Prevent concurrent refresh calls
+    if (isRefreshing) {
+      return;
+    }
+    setIsRefreshing(true);
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('🔐 Current user:', user?.id);
       if (!user) {
         setLoading(false);
+        setIsRefreshing(false);
         return;
       }
 
@@ -128,16 +134,13 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       ]);
       
       const roles = rolesResult.data;
-      console.log('👥 User roles:', roles);
       
       const isSuperAdminUser = roles?.some(r => r.role === 'superadmin') || false;
-      console.log('🔑 Is superadmin?', isSuperAdminUser);
       setIsSuperAdmin(isSuperAdminUser);
 
       // Get user's organization (as API user) - solo si no es superadmin
       if (!isSuperAdminUser) {
         setAllOrganizations(allOrgs);
-        console.log('🏢 All user organizations:', allOrgs);
 
         // Check if there's a selected organization in sessionStorage
         const savedOrgId = sessionStorage.getItem('selected_organization_id');
@@ -146,11 +149,9 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
 
         if (savedOrgId) {
           selectedOrg = allOrgs.find(org => org.id === savedOrgId) || null;
-          console.log('🔍 Looking for saved org:', savedOrgId, 'Found:', !!selectedOrg);
           
           // If saved org not found in user's orgs, clear it
           if (!selectedOrg && savedOrgId) {
-            console.log('⚠️ Saved org not found in user orgs, clearing...');
             sessionStorage.removeItem('selected_organization_id');
           }
         }
@@ -160,7 +161,6 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
           const isOnAuthPage = window.location.pathname === '/auth';
           
           if (pendingSelection && !isOnAuthPage) {
-            console.log('🔄 Clearing pending selection (not on auth page) and auto-selecting...');
             sessionStorage.removeItem('pending_org_selection');
           }
           
@@ -169,9 +169,6 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
           if (shouldAutoSelect) {
             selectedOrg = allOrgs[0];
             sessionStorage.setItem('selected_organization_id', selectedOrg.id);
-            console.log('📌 Auto-selected first org:', selectedOrg.name);
-          } else if (pendingSelection && isOnAuthPage) {
-            console.log('⏳ Waiting for user to select organization...');
           }
         }
 
@@ -207,6 +204,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       console.error('❌ Error fetching subscription data:', error);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
