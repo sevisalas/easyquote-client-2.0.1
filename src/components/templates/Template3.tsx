@@ -46,7 +46,7 @@ export default function Template3({ data }: Template3Props) {
         <div className="flex justify-between items-start border-b border-gray-900 pb-3">
           <div>
             {config.logoUrl && (
-              <img src={config.logoUrl} alt="Logo" className="h-10 mb-2" />
+              <img src={config.logoUrl} alt="Logo" className="h-10 mb-2" crossOrigin="anonymous" />
             )}
             <h1 className="text-xs font-light tracking-widest uppercase text-gray-500">Presupuesto</h1>
             <p className="text-2xl font-light mt-0.5">{quote.quote_number || '-'}</p>

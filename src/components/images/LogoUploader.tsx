@@ -46,16 +46,16 @@ export const LogoUploader: React.FC<LogoUploaderProps> = ({
           throw new Error("No hay sesión activa");
         }
 
-        // Generate unique filename
+        // Generate unique filename with user_id as folder (required by RLS policy)
         const fileExt = file.name.split('.').pop();
-        const fileName = `logo_${session.user.id}_${Date.now()}.${fileExt}`;
-        const filePath = `logos/${fileName}`;
+        const fileName = `${session.user.id}/logo_${Date.now()}.${fileExt}`;
+        const filePath = fileName;
 
         setUploadProgress(30);
 
-        // Upload to Supabase Storage
+        // Upload to Supabase Storage - logos bucket
         const { error: uploadError } = await supabase.storage
-          .from('images')
+          .from('logos')
           .upload(filePath, file, {
             cacheControl: '3600',
             upsert: true
@@ -67,9 +67,9 @@ export const LogoUploader: React.FC<LogoUploaderProps> = ({
 
         setUploadProgress(70);
 
-        // Get public URL
+        // Get public URL from logos bucket
         const { data: { publicUrl } } = supabase.storage
-          .from('images')
+          .from('logos')
           .getPublicUrl(filePath);
 
         setUploadProgress(100);
