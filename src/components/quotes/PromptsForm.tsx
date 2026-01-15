@@ -275,13 +275,13 @@ export default function PromptsForm({
   const renderPrompt = (p: PromptDef) => (
     <div 
       key={p.id} 
-      className={`space-y-1 ${isFullWidth(p.type) ? 'md:col-span-2' : ''}`}
+      className={`${p.type === "checkbox" ? "flex items-center" : "space-y-1"} ${isFullWidth(p.type) ? 'md:col-span-2' : ''}`}
     >
       {/* Hide label for checkbox since it's inline */}
       {p.type !== "checkbox" && (
         <Label htmlFor={p.id} className="text-sm">{p.label}{p.required ? " *" : ""}</Label>
       )}
-      {p.description && (
+      {p.type !== "checkbox" && p.description && (
         <p className="text-xs text-muted-foreground">{p.description}</p>
       )}
 
@@ -319,10 +319,10 @@ export default function PromptsForm({
 
       {/* Checkbox - commits immediately */}
       {p.type === "checkbox" && (
-        <div className="flex items-center space-x-2 pt-1">
+        <>
           <Checkbox
             id={p.id}
-            checked={effectiveValues[p.id] === true || effectiveValues[p.id] === "true" || effectiveValues[p.id] === "Sí" || effectiveValues[p.id] === 1 || effectiveValues[p.id] === "1"}
+            checked={effectiveValues[p.id] === true || effectiveValues[p.id] === "true" || effectiveValues[p.id] === "Sí" || effectiveValues[p.id] === "Si" || effectiveValues[p.id] === 1 || effectiveValues[p.id] === "1"}
             onCheckedChange={(checked) => {
               const value = checked ? "Sí" : "No";
               onChange(p.id, value, p.label);
@@ -331,11 +331,11 @@ export default function PromptsForm({
           />
           <label
             htmlFor={p.id}
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+            className="text-sm font-medium leading-none cursor-pointer ml-2"
           >
             {p.label}
           </label>
-        </div>
+        </>
       )}
 
       {/* Text - commits on blur/enter */}
