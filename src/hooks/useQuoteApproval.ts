@@ -136,6 +136,7 @@ export const useQuoteApproval = () => {
       const finalPrice = subtotal - discountAmount + taxAmount;
 
       // Create sales order - EXACT COPY of quote (mark as NOT from scratch)
+      // Note: sales_orders table does NOT have a 'title' column
       const { data: salesOrder, error: orderError } = await supabase
         .from('sales_orders')
         .insert({
@@ -145,7 +146,6 @@ export const useQuoteApproval = () => {
           user_id: quote.user_id,
           organization_id: quote.organization_id,
           status: 'pending',
-          title: quote.title,
           description: quote.description,
           terms_conditions: quote.terms_conditions,
           valid_until: quote.valid_until,
@@ -229,15 +229,22 @@ export const useQuoteApproval = () => {
         .from('sales_order_items')
         .insert(orderItems);
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        // Rollback: delete the sales order if items failed
+        await supabase.from('sales_orders').delete().eq('id', salesOrder.id);
+        throw itemsError;
+      }
 
-      // Update quote status to approved
+      // Update quote status to approved ONLY after order and items are created successfully
       const { error: updateQuoteError } = await supabase
         .from('quotes')
         .update({ status: 'approved' })
         .eq('id', quoteId);
 
-      if (updateQuoteError) throw updateQuoteError;
+      if (updateQuoteError) {
+        console.error('Error updating quote status, but order was created:', updateQuoteError);
+        // Don't throw - the order was created successfully
+      }
 
       // Export to Holded if integration is active
       if (canExportOrders) {
