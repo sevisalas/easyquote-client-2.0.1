@@ -14,6 +14,7 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 ### Cambiado
 - Layout de opciones restrictivas: rótulo y valor en la misma línea, checkbox a la derecha, grid de 3 columnas
 - Optimización de prompts en página de test: grid de 2 columnas para productos simples
+- **Selector de estado en presupuestos**: Eliminada opción "Aprobado" del selector manual (solo se activa mediante aprobación de artículos)
 
 ---
 
