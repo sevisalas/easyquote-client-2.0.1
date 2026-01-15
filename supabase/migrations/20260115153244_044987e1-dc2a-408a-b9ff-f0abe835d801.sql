@@ -1,0 +1,1 @@
+UPDATE quotes SET status = 'draft' WHERE id = 'f8cefdf6-524a-4534-9c47-5e4d5af765b8'
