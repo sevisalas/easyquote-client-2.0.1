@@ -498,7 +498,6 @@ export default function QuoteDetail() {
                   <SelectContent>
                     <SelectItem value="draft">Borrador</SelectItem>
                     <SelectItem value="sent">Enviado</SelectItem>
-                    <SelectItem value="approved">Aprobado</SelectItem>
                     <SelectItem value="rejected">Rechazado</SelectItem>
                   </SelectContent>
                 </Select>
