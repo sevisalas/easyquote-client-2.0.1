@@ -459,16 +459,18 @@ export default function ProductTestPage() {
 
       // CRITICAL: EasyQuote API PATCH requires ALL prompts to be sent, not just modified ones
       // Start with all prompt values from productDetail (current values from API)
+      // IMPORTANT: Always use string keys to ensure consistent matching with debouncedPromptValues
       const allPromptValues: Record<string, any> = {};
 
-      // First, collect all current values from the product prompts
+      // First, collect all current values from the product prompts (using string keys)
       (productDetail?.prompts || []).forEach((p: any) => {
         if (p.currentValue !== undefined && p.currentValue !== null) {
-          allPromptValues[p.id] = p.currentValue;
+          const key = String(p.id); // Normalize to string
+          allPromptValues[key] = p.currentValue;
         }
       });
 
-      // Override with user-modified values
+      // Override with user-modified values (keys are already strings from state)
       Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
         if (v !== undefined && v !== null) {
           allPromptValues[k] = v;
@@ -481,8 +483,8 @@ export default function ProductTestPage() {
       Object.entries(allPromptValues).forEach(([k, v]) => {
         if (v === "" || v === undefined || v === null) return;
 
-        // Find the prompt to check its type
-        const prompt = productDetail?.prompts?.find((p: any) => p.id === k);
+        // Find the prompt to check its type (compare as strings for consistent matching)
+        const prompt = productDetail?.prompts?.find((p: any) => String(p.id) === k);
         const promptType = prompt?.promptType;
         if (typeof v === "string") {
           const trimmed = v.trim();
