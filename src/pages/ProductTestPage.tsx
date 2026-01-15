@@ -42,6 +42,9 @@ export default function ProductTestPage() {
   const [productId, setProductId] = useState<string>("");
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
   const [debouncedPromptValues, setDebouncedPromptValues] = useState<Record<string, any>>({});
+  // Prompts que el usuario ha "limpiado" explícitamente (para que NO se envíen en el PATCH)
+  // Importante: EasyQuote valida el PATCH y rechaza value: "" en prompts numéricos.
+  const [clearedPromptIds, setClearedPromptIds] = useState<Record<string, true>>({});
   const [productDetail, setProductDetail] = useState<any>(null);
   const [productLoadError, setProductLoadError] = useState<string | null>(null);
   const [isLoadingProduct, setIsLoadingProduct] = useState(false);
@@ -930,33 +933,39 @@ export default function ProductTestPage() {
   };
   const handlePromptChange = (id: string, value: any) => {
     // Solo actualiza el estado local, sin disparar API
-    console.log(`🔵 handlePromptChange: id="${id}" (type: ${typeof id}), value="${value}" (type: ${typeof value})`);
-    setPromptValues(prev => {
-      const next = { ...prev, [id]: value };
-      console.log(`🔵 promptValues updated:`, next);
-      return next;
-    });
+    const key = String(id);
+    setPromptValues((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
   };
 
   
   // Llamado cuando el usuario termina de editar (blur/enter o selección)
   const handlePromptCommit = (id: string, value: any) => {
-    console.log(`🟡 handlePromptCommit: id="${id}" (type: ${typeof id}), value="${value}" (type: ${typeof value})`);
-    
+    const key = String(id);
+
+    // Track "cleared" prompts so we can omit them from the PATCH payload
+    const isCleared = typeof value === "string" && value.trim() === "";
+    setClearedPromptIds((prev) => {
+      if (isCleared) return { ...prev, [key]: true };
+      if (!prev[key]) return prev;
+      const { [key]: _removed, ...rest } = prev;
+      return rest as Record<string, true>;
+    });
+
     // Clear any pending timeout to debounce rapid changes
     if (commitTimeoutRef.current) {
       clearTimeout(commitTimeoutRef.current);
     }
-    
+
     // Debounce: wait 150ms before triggering API call (prevents rapid duplicate calls)
     commitTimeoutRef.current = setTimeout(() => {
-      console.log(`🟢 Setting debouncedPromptValues: id="${id}", value="${value}"`);
       setHasUserModifiedPrompts(true);
-      setDebouncedPromptValues(prev => {
-        const next = { ...prev, [id]: value };
-        console.log(`🟢 debouncedPromptValues updated:`, next);
-        return next;
-      });
+      setDebouncedPromptValues((prev) => ({
+        ...prev,
+        [key]: value,
+      }));
     }, 150);
   };
   const handleDiagnoseProduct = async () => {
