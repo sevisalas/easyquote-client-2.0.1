@@ -546,12 +546,14 @@ export default function ProductManagement() {
       productId,
       promptName,
       hideInDocuments,
-      adminOnly
+      adminOnly,
+      forceResult
     }: {
       productId: string;
       promptName: string;
       hideInDocuments?: boolean;
       adminOnly?: boolean;
+      forceResult?: boolean;
     }) => {
       const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
       const promptKey = normalizePromptKey(promptName);
@@ -561,21 +563,23 @@ export default function ProductManagement() {
         productId,
         promptName: promptKey,
         hideInDocuments,
-        adminOnly
+        adminOnly,
+        forceResult
       });
       if (!orgId) throw new Error("No organization selected");
 
       // First try to find existing record
       const {
         data: existing
-      } = await supabase.from("product_prompt_settings").select("id, hide_in_documents, admin_only").eq("organization_id", orgId).eq("easyquote_product_id", productId).eq("prompt_name", promptKey).maybeSingle();
+      } = await supabase.from("product_prompt_settings").select("id, hide_in_documents, admin_only, force_result").eq("organization_id", orgId).eq("easyquote_product_id", productId).eq("prompt_name", promptKey).maybeSingle();
       
       // Build update object with only provided fields
-      const updateData: { hide_in_documents?: boolean; admin_only?: boolean; updated_at: string } = {
+      const updateData: { hide_in_documents?: boolean; admin_only?: boolean; force_result?: boolean; updated_at: string } = {
         updated_at: new Date().toISOString()
       };
       if (hideInDocuments !== undefined) updateData.hide_in_documents = hideInDocuments;
       if (adminOnly !== undefined) updateData.admin_only = adminOnly;
+      if (forceResult !== undefined) updateData.force_result = forceResult;
 
       if (existing) {
         // Update existing record
@@ -592,7 +596,8 @@ export default function ProductManagement() {
           easyquote_product_id: productId,
           prompt_name: promptKey,
           hide_in_documents: hideInDocuments ?? false,
-          admin_only: adminOnly ?? false
+          admin_only: adminOnly ?? false,
+          force_result: forceResult ?? false
         });
         if (error) throw error;
       }
@@ -628,6 +633,14 @@ export default function ProductManagement() {
     const key = normalizePromptKey(promptName);
     const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
     return setting?.admin_only || false;
+  };
+
+  // Helper to check if prompt is "force result"
+  const isPromptForceResult = (promptName: string): boolean => {
+    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+    const key = normalizePromptKey(promptName);
+    const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
+    return setting?.force_result || false;
   };
 
   // ALL HOOKS MUST BE DECLARED BEFORE ANY CONDITIONAL LOGIC
@@ -2535,6 +2548,18 @@ export default function ProductManagement() {
                                     productId: selectedProduct.id,
                                     promptName: prompt.promptCell,
                                     adminOnly: checked
+                                  });
+                                }
+                              }} />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Label className="text-sm font-medium whitespace-nowrap">Forzar resultado</Label>
+                                <Switch checked={isPromptForceResult(prompt.promptCell)} onCheckedChange={checked => {
+                                if (selectedProduct) {
+                                  upsertPromptSettingMutation.mutate({
+                                    productId: selectedProduct.id,
+                                    promptName: prompt.promptCell,
+                                    forceResult: checked
                                   });
                                 }
                               }} />
