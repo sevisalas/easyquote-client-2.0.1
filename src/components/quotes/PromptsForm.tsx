@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
 
 export type PromptOption = {
   value: string;
@@ -264,10 +265,18 @@ export default function PromptsForm({
   // Handle commit (blur or enter) - triggers API call with clamped value
   const handleNumericCommit = (id: string, value: any, label: string, min?: number, max?: number) => {
     const clampedValue = clampValue(value, min, max);
-    // Update the displayed value if it was clamped
-    if (clampedValue !== value && clampedValue !== parseFloat(value)) {
+    const originalNum = parseFloat(value);
+    
+    // Show toast if value was clamped
+    if (!isNaN(originalNum) && clampedValue !== originalNum) {
+      if (min !== undefined && originalNum < min) {
+        toast.info(`${label}: valor mínimo es ${min}`);
+      } else if (max !== undefined && originalNum > max) {
+        toast.info(`${label}: valor máximo es ${max}`);
+      }
       onChange(id, clampedValue, label);
     }
+    
     if (onCommit) {
       onCommit(id, clampedValue, label);
     }
