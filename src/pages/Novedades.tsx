@@ -26,6 +26,16 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.4.12",
+    date: "2026-01-16",
+    changes: {
+      changed: [
+        "Validación de límites en campos numéricos: los inputs fuerzan valores mínimo/máximo al salir del campo",
+        "Notificación discreta cuando un valor es ajustado automáticamente al límite permitido",
+      ],
+    },
+  },
+  {
     version: "2.4.11",
     date: "2026-01-15",
     changes: {
