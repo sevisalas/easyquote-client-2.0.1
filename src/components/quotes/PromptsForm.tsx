@@ -250,6 +250,29 @@ export default function PromptsForm({
     return prompts;
   }, [prompts]);
 
+  // Clamp numeric value to min/max range
+  const clampValue = (value: any, min?: number, max?: number): any => {
+    if (value === "" || value === null || value === undefined) return value;
+    const num = parseFloat(value);
+    if (isNaN(num)) return value;
+    let clamped = num;
+    if (min !== undefined && num < min) clamped = min;
+    if (max !== undefined && num > max) clamped = max;
+    return clamped;
+  };
+
+  // Handle commit (blur or enter) - triggers API call with clamped value
+  const handleNumericCommit = (id: string, value: any, label: string, min?: number, max?: number) => {
+    const clampedValue = clampValue(value, min, max);
+    // Update the displayed value if it was clamped
+    if (clampedValue !== value && clampedValue !== parseFloat(value)) {
+      onChange(id, clampedValue, label);
+    }
+    if (onCommit) {
+      onCommit(id, clampedValue, label);
+    }
+  };
+
   // Handle commit (blur or enter) - triggers API call
   const handleCommit = (id: string, value: any, label: string) => {
     if (onCommit) {
@@ -296,7 +319,7 @@ export default function PromptsForm({
           max={p.max}
           value={effectiveValues[p.id] ?? ""}
           onChange={(e) => onChange(p.id, e.target.value, p.label)}
-          onBlur={(e) => handleCommit(p.id, e.target.value, p.label)}
+          onBlur={(e) => handleNumericCommit(p.id, e.target.value, p.label, p.min, p.max)}
           onKeyDown={(e) => handleKeyDown(e, p.id, (e.target as HTMLInputElement).value, p.label)}
         />
       )}
@@ -312,7 +335,7 @@ export default function PromptsForm({
           max={p.max}
           value={effectiveValues[p.id] ?? ""}
           onChange={(e) => onChange(p.id, e.target.value, p.label)}
-          onBlur={(e) => handleCommit(p.id, e.target.value, p.label)}
+          onBlur={(e) => handleNumericCommit(p.id, e.target.value, p.label, p.min ?? 1, p.max)}
           onKeyDown={(e) => handleKeyDown(e, p.id, (e.target as HTMLInputElement).value, p.label)}
         />
       )}
