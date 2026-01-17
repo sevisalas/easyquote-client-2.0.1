@@ -9,6 +9,7 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ### Corregido
 - **Precisión de precios en Holded**: Aumentada la precisión de precios unitarios de 2 a 6 decimales para evitar descuadres en totales
+- **Duplicación de presupuestos**: Los precios guardados se mantienen al duplicar, sin recalcular automáticamente
 
 ---
 
