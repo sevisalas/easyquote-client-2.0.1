@@ -398,9 +398,9 @@ Deno.serve(async (req) => {
             });
           }
           
-          // Round to 2 decimals for Holded compatibility
-          price = Math.round(price * 100) / 100;
-          discountAmount = Math.round(discountAmount * 100) / 100;
+          // Round to 6 decimals for Holded compatibility (supports up to 6)
+          price = Math.round(price * 1000000) / 1000000;
+          discountAmount = Math.round(discountAmount * 1000000) / 1000000;
           
           const itemData: any = {
             name: `${item.product_name || 'Producto'} (${qtyLabel})`,
@@ -624,9 +624,9 @@ Deno.serve(async (req) => {
         // Calculate unit price from total price and units
         const unitPrice = units > 0 ? totalPrice / units : totalPrice;
         
-        // Round to 2 decimals for Holded compatibility
-        const roundedUnitPrice = Math.round(unitPrice * 100) / 100;
-        discountAmount = Math.round(discountAmount * 100) / 100;
+        // Round to 6 decimals for Holded compatibility (supports up to 6)
+        const roundedUnitPrice = Math.round(unitPrice * 1000000) / 1000000;
+        discountAmount = Math.round(discountAmount * 1000000) / 1000000;
         
         console.log('💰 Price calculation:', { totalPrice, units, unitPrice: roundedUnitPrice, productName: item.product_name });
         
