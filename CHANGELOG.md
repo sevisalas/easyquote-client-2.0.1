@@ -5,7 +5,7 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
-## [2.4.13] - 2026-01-17
+## [2.4.14] - 2026-01-17
 
 ### Corregido
 - **Precisión de precios en Holded**: Aumentada la precisión de precios unitarios de 2 a 6 decimales para evitar descuadres en totales
