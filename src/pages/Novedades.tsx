@@ -31,6 +31,7 @@ const versions: Version[] = [
     changes: {
       fixed: [
         "Precisión de precios en Holded: aumentada de 2 a 6 decimales para evitar descuadres en totales",
+        "Duplicación de presupuestos: los precios guardados se mantienen sin recalcular automáticamente",
       ],
     },
   },
