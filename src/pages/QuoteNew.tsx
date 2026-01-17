@@ -186,7 +186,7 @@ export default function QuoteNew() {
           itemDescription: item.description || "",
           // Descripción (solo para productos custom)
           itemAdditionals: item.item_additionals || [],
-          needsRecalculation: true,
+          needsRecalculation: false,
           isFinalized: true
         };
       });
