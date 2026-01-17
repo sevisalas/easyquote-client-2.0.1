@@ -26,6 +26,15 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.4.13",
+    date: "2026-01-17",
+    changes: {
+      fixed: [
+        "Precisión de precios en Holded: aumentada de 2 a 6 decimales para evitar descuadres en totales",
+      ],
+    },
+  },
+  {
     version: "2.4.12",
     date: "2026-01-16",
     changes: {

@@ -400,7 +400,8 @@ Deno.serve(async (req) => {
       
       // Calculate unit price from total price and units
       const unitPrice = units > 0 ? totalPrice / units : totalPrice;
-      const roundedUnitPrice = Math.round(unitPrice * 100) / 100;
+      // Round to 6 decimals for Holded compatibility (supports up to 6)
+      const roundedUnitPrice = Math.round(unitPrice * 1000000) / 1000000;
       
       console.log('💰 Price calculation:', { totalPrice, units, unitPrice: roundedUnitPrice, productName: item.product_name });
       
@@ -427,11 +428,11 @@ Deno.serve(async (req) => {
           const subtotal = items.reduce((sum, item) => sum + (item.subtotal * item.units), 0);
           
           if (additional.type === 'percentage') {
-            price = Math.round((subtotal * value / 100) * 100) / 100;
+            price = Math.round((subtotal * value / 100) * 1000000) / 1000000;
           } else if (additional.type === 'quantity_multiplier' || additional.type === 'multiplier') {
-            price = Math.round((subtotal * (value - 1)) * 100) / 100;
+            price = Math.round((subtotal * (value - 1)) * 1000000) / 1000000;
           } else {
-            price = Math.round(parseFloat(String(value)) * 100) / 100;
+            price = Math.round(parseFloat(String(value)) * 1000000) / 1000000;
           }
           
           // Remove "Ajuste sobre el presupuesto/pedido" from name
