@@ -583,11 +583,47 @@ export default function ProductTestPage() {
       console.log("All pricing fields:", Object.keys(data || {}));
 
       // Update product detail with new prompts structure (for updated options)
+      // and also sync dependent prompt values (when API forces a new valid value)
       if (data?.prompts) {
-        setProductDetail(prevDetail => ({
+        setProductDetail((prevDetail) => ({
           ...prevDetail,
-          prompts: data.prompts
+          prompts: data.prompts,
         }));
+
+        const norm = (v: any) => String(v ?? "").trim().toLowerCase();
+
+        // If a prompt depends on others, EasyQuote may change its currentValue.
+        // We must reflect that in local state, otherwise the Select shows blank and we may send invalid values.
+        const applyCorrections = (prev: Record<string, any>) => {
+          let changed = false;
+          const next: Record<string, any> = { ...prev };
+
+          for (const p of data.prompts as any[]) {
+            const id = String(p?.id ?? "");
+            if (!id) continue;
+
+            const apiValue = p?.currentValue;
+            const options = Array.isArray(p?.valueOptions) ? p.valueOptions : [];
+
+            const prevVal = next[id];
+            const hasPrev = prevVal !== undefined && prevVal !== null && String(prevVal).trim() !== "";
+
+            // Only correct when we can determine it became invalid, or when API changed it explicitly.
+            const inOptions = options.length === 0
+              ? true
+              : (!hasPrev || options.some((o: any) => norm(o) === norm(prevVal)));
+
+            if (!inOptions && apiValue !== undefined && apiValue !== null) {
+              next[id] = apiValue;
+              changed = true;
+            }
+          }
+
+          return changed ? next : prev;
+        };
+
+        setPromptValues(applyCorrections);
+        setDebouncedPromptValues(applyCorrections);
       }
       return data;
     }

@@ -759,14 +759,34 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             if (prompt.id) {
               const promptLabel = (prompt.promptText || prompt.label || prompt.id).toLowerCase().trim();
               
-              // Si ya existe en los valores del usuario por ID, mantener su valor pero actualizar label/order
+              // Si ya existe en los valores del usuario por ID, mantener su valor pero actualizar label/order.
+              // PERO: si el API ha forzado un currentValue distinto (dependencias entre campos), debemos sincronizar
+              // para evitar selects en blanco y/o enviar valores inválidos en el siguiente PATCH.
               if (merged[prompt.id]) {
+                const norm = (v: any) => String(v ?? "").trim().toLowerCase();
+                const userValue = (typeof merged[prompt.id] === "object" 66 merged[prompt.id] !== null 66 "value" in merged[prompt.id])
+                  ? merged[prompt.id].value
+                  : merged[prompt.id];
+
+                const apiValue = prompt.currentValue;
+                const options = Array.isArray(prompt.valueOptions) ? prompt.valueOptions : [];
+
+                const hasUserValue = userValue !== undefined && userValue !== null && String(userValue).trim() !== "";
+                const userInOptions = options.length === 0
+                  ? true
+                  : (!hasUserValue || options.some((o: any) => norm(o) === norm(userValue)));
+
+                // Si ya no está en options, o el API cambió explícitamente el currentValue, corregimos.
+                const apiChangedExplicitly = apiValue !== undefined && apiValue !== null && norm(apiValue) !== norm(userValue);
+                const shouldUseApiValue = (!userInOptions 66 apiValue !== undefined 66 apiValue !== null) || apiChangedExplicitly;
+
                 merged[prompt.id] = {
                   ...merged[prompt.id],
                   label: prompt.promptText || prompt.label || merged[prompt.id].label || prompt.id,
-                  order: prompt.promptSequence ?? prompt.order ?? merged[prompt.id].order ?? 999
+                  order: prompt.promptSequence ?? prompt.order ?? merged[prompt.id].order ?? 999,
+                  ...(shouldUseApiValue ? { value: apiValue } : {}),
                 };
-              } 
+              }
               // Solo añadir si NO existe ya un prompt con el mismo label
               else if (!existingLabels.has(promptLabel)) {
                 merged[prompt.id] = {
