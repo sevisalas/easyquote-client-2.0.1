@@ -379,13 +379,28 @@ export default function PromptsForm({
       {/* Select (dropdown) - commits immediately */}
       {p.type === "select" && (() => {
         // Filter out empty/invalid options first
-        const filteredOptions = p.options?.filter(o => 
+        const filteredOptions = p.options?.filter((o) =>
           o.value !== '' && o.value !== undefined && o.value !== null
         ) ?? [];
-        
-        // Create unique values for duplicates
+
+        // Remove exact duplicates (same value + same label) to avoid UI artifacts like "NoNo"
+        const norm = (v: any) => String(v ?? "").trim().toLowerCase();
+        const dedupedOptions = (() => {
+          const seen = new Set<string>();
+          const out: typeof filteredOptions = [];
+          for (const o of filteredOptions) {
+            const label = (o.label ?? o.value);
+            const key = `${norm(o.value)}||${norm(label)}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            out.push(o);
+          }
+          return out;
+        })();
+
+        // Create unique values for remaining duplicates (same value, different label)
         const seenValues = new Map<string, number>();
-        const uniqueOptions = filteredOptions.map((o, idx) => {
+        const uniqueOptions = dedupedOptions.map((o) => {
           const count = seenValues.get(o.value) || 0;
           seenValues.set(o.value, count + 1);
           const uniqueValue = count > 0 ? `${o.value}__dup${count}` : o.value;
