@@ -764,7 +764,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               // para evitar selects en blanco y/o enviar valores inválidos en el siguiente PATCH.
               if (merged[prompt.id]) {
                 const norm = (v: any) => String(v ?? "").trim().toLowerCase();
-                const userValue = (typeof merged[prompt.id] === "object" 66 merged[prompt.id] !== null 66 "value" in merged[prompt.id])
+                const userValue = (typeof merged[prompt.id] === "object" && merged[prompt.id] !== null && "value" in merged[prompt.id])
                   ? merged[prompt.id].value
                   : merged[prompt.id];
 
@@ -778,7 +778,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
                 // Si ya no está en options, o el API cambió explícitamente el currentValue, corregimos.
                 const apiChangedExplicitly = apiValue !== undefined && apiValue !== null && norm(apiValue) !== norm(userValue);
-                const shouldUseApiValue = (!userInOptions 66 apiValue !== undefined 66 apiValue !== null) || apiChangedExplicitly;
+                const shouldUseApiValue = (!userInOptions && apiValue !== undefined && apiValue !== null) || apiChangedExplicitly;
 
                 merged[prompt.id] = {
                   ...merged[prompt.id],
