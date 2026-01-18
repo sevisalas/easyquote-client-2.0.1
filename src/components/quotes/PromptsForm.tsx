@@ -389,10 +389,28 @@ export default function PromptsForm({
         // Find current value in unique options
         const currentValue = effectiveValues[p.id];
         const matchingOption = uniqueOptions?.find(o => o.originalValue === currentValue);
-        const displayValue = matchingOption?.uniqueValue ?? currentValue;
+        
+        // Auto-select first valid option if current value is not in available options
+        // This handles cases where dependent fields lose their valid selection
+        const isCurrentValueValid = matchingOption !== undefined || currentValue === undefined || currentValue === '';
+        const effectiveDisplayValue = isCurrentValueValid 
+          ? (matchingOption?.uniqueValue ?? currentValue)
+          : (uniqueOptions[0]?.uniqueValue ?? '');
+        
+        // If current value became invalid, auto-select first option and notify parent
+        if (!isCurrentValueValid && uniqueOptions.length > 0) {
+          const firstOption = uniqueOptions[0];
+          // Use setTimeout to avoid updating during render
+          setTimeout(() => {
+            onChange(p.id, firstOption.originalValue, p.label);
+            if (onCommit) {
+              onCommit(p.id, firstOption.originalValue, p.label);
+            }
+          }, 0);
+        }
         
         return (
-          <Select value={displayValue as any} onValueChange={(v) => {
+          <Select value={effectiveDisplayValue as any} onValueChange={(v) => {
             const selected = uniqueOptions?.find(o => o.uniqueValue === v);
             const originalValue = selected?.originalValue ?? v;
             onChange(p.id, originalValue, p.label);
@@ -400,9 +418,11 @@ export default function PromptsForm({
           }}>
             <SelectTrigger id={p.id}>
               {(() => {
+                // Use the effective value (which may be auto-corrected) for label lookup
+                const valueForLabel = isCurrentValueValid ? currentValue : uniqueOptions[0]?.originalValue;
                 const currentLabel = getOptionLabel(
                   uniqueOptions?.map((o: any) => ({ value: o.originalValue, label: o.label })) as any,
-                  currentValue
+                  valueForLabel
                 );
 
                 // If we provide children, Radix won't try to infer/concatenate text.
