@@ -840,13 +840,21 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             valueOptions: p.valueOptions || []
           }));
         } else {
-          // Cargas posteriores: restaurar las opciones del cache para reducir tamaño de datos procesados
+          // Cargas posteriores: el API puede devolver opciones actualizadas para prompts dependientes.
+          // SOLO usar cache cuando el API no devuelve opciones (vacías o undefined).
+          // Si el API devuelve opciones, usarlas (pueden haber cambiado dinámicamente).
           const cachedOptions = promptOptionsCache.current[cacheKey];
           if (cachedOptions && cachedOptions.length > 0) {
             data.prompts.forEach((prompt: any) => {
               const cached = cachedOptions.find((c: any) => c.id === prompt.id);
-              if (cached && (!prompt.valueOptions || prompt.valueOptions.length === 0)) {
+              const apiHasOptions = prompt.valueOptions && prompt.valueOptions.length > 0;
+              
+              if (!apiHasOptions && cached && cached.valueOptions?.length > 0) {
+                // API no devolvió opciones -> restaurar del cache
                 prompt.valueOptions = cached.valueOptions;
+              } else if (apiHasOptions && cached) {
+                // API devolvió opciones nuevas -> actualizar cache con las nuevas opciones
+                cached.valueOptions = prompt.valueOptions;
               }
             });
           }
