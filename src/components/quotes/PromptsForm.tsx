@@ -348,9 +348,61 @@ export default function PromptsForm({
         <>
           <Checkbox
             id={p.id}
-            checked={effectiveValues[p.id] === true || effectiveValues[p.id] === "true" || effectiveValues[p.id] === "Sí" || effectiveValues[p.id] === "Si" || effectiveValues[p.id] === 1 || effectiveValues[p.id] === "1"}
+            checked={(() => {
+              const raw = effectiveValues[p.id];
+              const opts = p.options ?? [];
+
+              // Infer checkbox "true/false" values from API options when available
+              const norm = (v: any) => String(v ?? "").trim().toLowerCase();
+              const isTruthyToken = (v: any) => ["sí", "si", "yes", "true", "1", "on"].includes(norm(v));
+              const isFalsyToken = (v: any) => ["no", "false", "0", "off"].includes(norm(v));
+
+              let trueValue = "Sí";
+              let falseValue = "No";
+              if (opts.length >= 2) {
+                const a = opts[0]?.value;
+                const b = opts[1]?.value;
+                if (isTruthyToken(a) || isFalsyToken(b)) {
+                  trueValue = String(a);
+                  falseValue = String(b);
+                } else if (isTruthyToken(b) || isFalsyToken(a)) {
+                  trueValue = String(b);
+                  falseValue = String(a);
+                } else {
+                  // Fallback to first/second
+                  trueValue = String(a);
+                  falseValue = String(b);
+                }
+              }
+
+              if (typeof raw === "boolean") return raw;
+              if (raw === 1 || raw === "1") return true;
+              return String(raw ?? "") === trueValue || isTruthyToken(raw);
+            })()}
             onCheckedChange={(checked) => {
-              const value = checked ? "Sí" : "No";
+              const opts = p.options ?? [];
+              const norm = (v: any) => String(v ?? "").trim().toLowerCase();
+              const isTruthyToken = (v: any) => ["sí", "si", "yes", "true", "1", "on"].includes(norm(v));
+              const isFalsyToken = (v: any) => ["no", "false", "0", "off"].includes(norm(v));
+
+              let trueValue = "Sí";
+              let falseValue = "No";
+              if (opts.length >= 2) {
+                const a = opts[0]?.value;
+                const b = opts[1]?.value;
+                if (isTruthyToken(a) || isFalsyToken(b)) {
+                  trueValue = String(a);
+                  falseValue = String(b);
+                } else if (isTruthyToken(b) || isFalsyToken(a)) {
+                  trueValue = String(b);
+                  falseValue = String(a);
+                } else {
+                  trueValue = String(a);
+                  falseValue = String(b);
+                }
+              }
+
+              const value = checked ? trueValue : falseValue;
               onChange(p.id, value, p.label);
               handleCommit(p.id, value, p.label);
             }}
