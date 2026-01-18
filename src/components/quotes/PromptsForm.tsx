@@ -149,17 +149,11 @@ function extractPrompts(product: any): PromptDef[] {
     const hasImages = options.some((o) => !!o.imageUrl);
     const hasColors = (options?.length ?? 0) > 0 && options.every((o) => !!o.color || isHexColor(String(o.value)));
 
-    // Detect Yes/No dropdown pattern for checkbox rendering
-    const isYesNoDropdown = rawType.includes("drop") && 
-      options.length === 2 && 
-      options.some(o => o.value === "Sí" || o.value === "Si" || o.value === "Yes") &&
-      options.some(o => o.value === "No");
-
+    // Type detection - rely on API-defined types, no automatic conversion
     let type: PromptDef["type"] = "text";
     if (rawType.includes("image")) type = "image";
     else if (rawType.includes("color")) type = "color";
     else if (rawType.includes("checkbox") || rawType.includes("boolean") || rawType.includes("check")) type = "checkbox";
-    else if (isYesNoDropdown) type = "checkbox"; // Treat Yes/No dropdowns as checkboxes
     else if (rawType.includes("quantity") || rawType.includes("cantidad")) type = "quantity";
     else if (rawType.includes("drop") || rawType.includes("select")) type = "select";
     else if (rawType.includes("number") || rawType.includes("decimal") || rawType.includes("float") || rawType.includes("int")) {
@@ -384,33 +378,37 @@ export default function PromptsForm({
 
       {/* Select (dropdown) - commits immediately */}
       {p.type === "select" && (() => {
-        // Crear valores únicos cuando hay duplicados
+        // Filter out empty/invalid options first
+        const filteredOptions = p.options?.filter(o => 
+          o.value !== '' && o.value !== undefined && o.value !== null
+        ) ?? [];
+        
+        // Create unique values for duplicates
         const seenValues = new Map<string, number>();
-        const uniqueOptions = p.options?.map((o, idx) => {
+        const uniqueOptions = filteredOptions.map((o, idx) => {
           const count = seenValues.get(o.value) || 0;
           seenValues.set(o.value, count + 1);
           const uniqueValue = count > 0 ? `${o.value}__dup${count}` : o.value;
           return { ...o, uniqueValue, originalValue: o.value };
         });
         
-        // Encontrar el valor actual en las opciones únicas
+        // Find current value in unique options
         const currentValue = effectiveValues[p.id];
         const matchingOption = uniqueOptions?.find(o => o.originalValue === currentValue);
         const displayValue = matchingOption?.uniqueValue ?? currentValue;
         
         return (
           <Select value={displayValue as any} onValueChange={(v) => {
-            // Encontrar el valor original
             const selected = uniqueOptions?.find(o => o.uniqueValue === v);
             const originalValue = selected?.originalValue ?? v;
             onChange(p.id, originalValue, p.label);
-            handleCommit(p.id, originalValue, p.label); // Commit immediately for selects
+            handleCommit(p.id, originalValue, p.label);
           }}>
             <SelectTrigger id={p.id}>
               <SelectValue placeholder="Selecciona una opción" />
             </SelectTrigger>
             <SelectContent className="z-50 bg-popover">
-              {uniqueOptions?.map((o, idx) => (
+              {uniqueOptions.map((o, idx) => (
                 <SelectItem key={`${o.uniqueValue}-${idx}`} value={o.uniqueValue}>
                   {o.label ?? o.originalValue}
                 </SelectItem>
