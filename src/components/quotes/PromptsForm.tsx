@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 export type PromptOption = {
@@ -153,7 +152,11 @@ function extractPrompts(product: any): PromptDef[] {
     let type: PromptDef["type"] = "text";
     if (rawType.includes("image")) type = "image";
     else if (rawType.includes("color")) type = "color";
-    else if (rawType.includes("checkbox") || rawType.includes("boolean") || rawType.includes("check")) type = "checkbox";
+    // We don't render checkboxes in the UI (they caused confusion/"NoNo" issues).
+    // Treat boolean/checkbox prompts as selects when options exist.
+    else if (rawType.includes("checkbox") || rawType.includes("boolean") || rawType.includes("check")) {
+      type = (options?.length ?? 0) > 0 ? "select" : "text";
+    }
     else if (rawType.includes("quantity") || rawType.includes("cantidad")) type = "quantity";
     else if (rawType.includes("drop") || rawType.includes("select")) type = "select";
     else if (rawType.includes("number") || rawType.includes("decimal") || rawType.includes("float") || rawType.includes("int")) {
@@ -301,13 +304,10 @@ export default function PromptsForm({
   const renderPrompt = (p: PromptDef) => (
     <div 
       key={p.id} 
-      className={`${p.type === "checkbox" ? "flex items-center" : "space-y-1"} ${isFullWidth(p.type) ? 'md:col-span-2' : ''}`}
+      className={`space-y-1 ${isFullWidth(p.type) ? 'md:col-span-2' : ''}`}
     >
-      {/* Hide label for checkbox since it's inline */}
-      {p.type !== "checkbox" && (
-        <Label htmlFor={p.id} className="text-sm">{p.label}{p.required ? " *" : ""}</Label>
-      )}
-      {p.type !== "checkbox" && p.description && (
+      <Label htmlFor={p.id} className="text-sm">{p.label}{p.required ? " *" : ""}</Label>
+      {p.description && (
         <p className="text-xs text-muted-foreground">{p.description}</p>
       )}
 
@@ -343,79 +343,6 @@ export default function PromptsForm({
         />
       )}
 
-      {/* Checkbox - commits immediately */}
-      {p.type === "checkbox" && (
-        <>
-          <Checkbox
-            id={p.id}
-            checked={(() => {
-              const raw = effectiveValues[p.id];
-              const opts = p.options ?? [];
-
-              // Infer checkbox "true/false" values from API options when available
-              const norm = (v: any) => String(v ?? "").trim().toLowerCase();
-              const isTruthyToken = (v: any) => ["sí", "si", "yes", "true", "1", "on"].includes(norm(v));
-              const isFalsyToken = (v: any) => ["no", "false", "0", "off"].includes(norm(v));
-
-              let trueValue = "Sí";
-              let falseValue = "No";
-              if (opts.length >= 2) {
-                const a = opts[0]?.value;
-                const b = opts[1]?.value;
-                if (isTruthyToken(a) || isFalsyToken(b)) {
-                  trueValue = String(a);
-                  falseValue = String(b);
-                } else if (isTruthyToken(b) || isFalsyToken(a)) {
-                  trueValue = String(b);
-                  falseValue = String(a);
-                } else {
-                  // Fallback to first/second
-                  trueValue = String(a);
-                  falseValue = String(b);
-                }
-              }
-
-              if (typeof raw === "boolean") return raw;
-              if (raw === 1 || raw === "1") return true;
-              return String(raw ?? "") === trueValue || isTruthyToken(raw);
-            })()}
-            onCheckedChange={(checked) => {
-              const opts = p.options ?? [];
-              const norm = (v: any) => String(v ?? "").trim().toLowerCase();
-              const isTruthyToken = (v: any) => ["sí", "si", "yes", "true", "1", "on"].includes(norm(v));
-              const isFalsyToken = (v: any) => ["no", "false", "0", "off"].includes(norm(v));
-
-              let trueValue = "Sí";
-              let falseValue = "No";
-              if (opts.length >= 2) {
-                const a = opts[0]?.value;
-                const b = opts[1]?.value;
-                if (isTruthyToken(a) || isFalsyToken(b)) {
-                  trueValue = String(a);
-                  falseValue = String(b);
-                } else if (isTruthyToken(b) || isFalsyToken(a)) {
-                  trueValue = String(b);
-                  falseValue = String(a);
-                } else {
-                  trueValue = String(a);
-                  falseValue = String(b);
-                }
-              }
-
-              const value = checked ? trueValue : falseValue;
-              onChange(p.id, value, p.label);
-              handleCommit(p.id, value, p.label);
-            }}
-          />
-          <label
-            htmlFor={p.id}
-            className="text-sm font-medium leading-none cursor-pointer ml-2"
-          >
-            {p.label}
-          </label>
-        </>
-      )}
-
       {/* Text - commits on blur/enter */}
       {p.type === "text" && (
         <Input
@@ -429,7 +356,7 @@ export default function PromptsForm({
       )}
 
       {/* Select (dropdown) - commits immediately */}
-      {p.type === "select" && (() => {
+      {(p.type === "select" || p.type === "checkbox") && (() => {
         // Filter out empty/invalid options first
         const filteredOptions = p.options?.filter((o) =>
           o.value !== '' && o.value !== undefined && o.value !== null
