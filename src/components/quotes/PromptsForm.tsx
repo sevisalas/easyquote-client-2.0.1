@@ -386,29 +386,31 @@ export default function PromptsForm({
           return { ...o, uniqueValue, originalValue: o.value };
         });
         
-        // Find current value in unique options
-        const currentValue = effectiveValues[p.id];
-        const matchingOption = uniqueOptions?.find(o => o.originalValue === currentValue);
-        
-        // Auto-select first valid option if current value is not in available options
-        // This handles cases where dependent fields lose their valid selection
-        const isCurrentValueValid = matchingOption !== undefined || currentValue === undefined || currentValue === '';
-        const effectiveDisplayValue = isCurrentValueValid 
-          ? (matchingOption?.uniqueValue ?? currentValue)
-          : (uniqueOptions[0]?.uniqueValue ?? '');
-        
+        // Find current value in unique options (normalize to avoid number/string mismatches)
+        const currentValueRaw = effectiveValues[p.id];
+        const currentValue = (currentValueRaw === undefined || currentValueRaw === null) ? "" : String(currentValueRaw);
+        const matchingOption = uniqueOptions?.find((o) => norm(o.originalValue) === norm(currentValue));
+
+        // Auto-select first valid option if current value is not in available options.
+        // This handles dependent fields losing their valid selection.
+        const isEmpty = currentValue === "";
+        const isCurrentValueValid = isEmpty || matchingOption !== undefined;
+
+        // IMPORTANT: the Select `value` must match a SelectItem value (uniqueValue) or be "" for placeholder.
+        const effectiveDisplayValue = isCurrentValueValid
+          ? (matchingOption?.uniqueValue ?? "")
+          : (uniqueOptions[0]?.uniqueValue ?? "");
+
         // If current value became invalid, auto-select first option and notify parent
         if (!isCurrentValueValid && uniqueOptions.length > 0) {
           const firstOption = uniqueOptions[0];
           // Use setTimeout to avoid updating during render
           setTimeout(() => {
             onChange(p.id, firstOption.originalValue, p.label);
-            if (onCommit) {
-              onCommit(p.id, firstOption.originalValue, p.label);
-            }
+            if (onCommit) onCommit(p.id, firstOption.originalValue, p.label);
           }, 0);
         }
-        
+
         return (
           <Select value={effectiveDisplayValue as any} onValueChange={(v) => {
             const selected = uniqueOptions?.find(o => o.uniqueValue === v);
