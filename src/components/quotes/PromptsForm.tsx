@@ -399,7 +399,17 @@ export default function PromptsForm({
             handleCommit(p.id, originalValue, p.label);
           }}>
             <SelectTrigger id={p.id}>
-              <SelectValue placeholder="Selecciona una opción" />
+              {(() => {
+                const currentLabel = getOptionLabel(
+                  uniqueOptions?.map((o: any) => ({ value: o.originalValue, label: o.label })) as any,
+                  currentValue
+                );
+
+                // If we provide children, Radix won't try to infer/concatenate text.
+                return currentLabel
+                  ? <SelectValue placeholder="Selecciona una opción">{currentLabel}</SelectValue>
+                  : <SelectValue placeholder="Selecciona una opción" />;
+              })()}
             </SelectTrigger>
             <SelectContent className="z-50 bg-popover">
               {uniqueOptions.map((o, idx) => (
