@@ -79,134 +79,9 @@ const SYNCFUSION_RISKY_FUNCTIONS = [
   "ISFORMULA",                    // May not work correctly
 ];
 
-// ============================================================
-// RUNTIME ERROR PATTERNS
-// Formulas that can cause errors during calculation (not syntax errors)
-// ============================================================
-const RUNTIME_ERROR_PATTERNS: Array<{
-  pattern: RegExp;
-  severity: "error" | "warning";
-  description: string;
-  suggestion: string;
-}> = [
-  // Division by zero risks
-  {
-    pattern: /\/\s*([A-Z]+\d+|\([^)]*\)|0)/i,
-    severity: "warning",
-    description: "Posible división por cero",
-    suggestion: "Usar IFERROR o validar el divisor antes"
-  },
-  // Empty range in aggregate functions
-  {
-    pattern: /\b(AVERAGE|AVERAGEIF|AVERAGEIFS)\s*\(\s*([A-Z]+\d+)\s*\)/i,
-    severity: "warning", 
-    description: "AVERAGE de celda única puede fallar si está vacía",
-    suggestion: "Usar rango o IFERROR"
-  },
-  // INDIRECT with string concatenation (dynamic references)
-  {
-    pattern: /\bINDIRECT\s*\(/i,
-    severity: "warning",
-    description: "INDIRECT puede fallar si la referencia es inválida",
-    suggestion: "Verificar que la cadena genera una referencia válida"
-  },
-  // OFFSET with zero or negative dimensions
-  {
-    pattern: /\bOFFSET\s*\([^)]*,\s*0\s*,\s*0\s*\)/i,
-    severity: "warning",
-    description: "OFFSET con dimensiones 0 puede causar #REF!",
-    suggestion: "Asegurar que ancho y alto sean > 0"
-  },
-  // LOG or LN with potentially zero/negative input
-  {
-    pattern: /\b(LOG|LOG10|LN)\s*\(\s*[A-Z]+\d+\s*\)/i,
-    severity: "warning",
-    description: "LOG/LN de celda puede fallar si es ≤0",
-    suggestion: "Validar que el valor sea positivo"
-  },
-  // SQRT with potentially negative input
-  {
-    pattern: /\bSQRT\s*\(\s*[A-Z]+\d+\s*\)/i,
-    severity: "warning",
-    description: "SQRT de celda puede fallar si es negativo",
-    suggestion: "Usar ABS() o validar el valor"
-  },
-  // VLOOKUP/HLOOKUP without IFERROR
-  {
-    pattern: /(?<!IFERROR\s*\(\s*)\b(VLOOKUP|HLOOKUP|BUSCARV|BUSCARH)\s*\(/i,
-    severity: "warning",
-    description: "LOOKUP sin IFERROR puede dar #N/A",
-    suggestion: "Envolver en IFERROR para manejar valores no encontrados"
-  },
-  // INDEX/MATCH without error handling
-  {
-    pattern: /(?<!IFERROR\s*\(\s*)INDEX\s*\([^)]*MATCH/i,
-    severity: "warning",
-    description: "INDEX/MATCH sin IFERROR puede dar #N/A",
-    suggestion: "Envolver en IFERROR"
-  },
-  // Very long formulas (complexity risk)
-  {
-    pattern: /.{500,}/,
-    severity: "warning",
-    description: "Fórmula muy larga (>500 chars) - riesgo de complejidad",
-    suggestion: "Dividir en celdas auxiliares para depurar"
-  },
-  // Nested IF depth (more than 5)
-  {
-    pattern: /IF\s*\([^)]*IF\s*\([^)]*IF\s*\([^)]*IF\s*\([^)]*IF\s*\(/i,
-    severity: "warning",
-    description: "IFs anidados (5+ niveles) - difícil de mantener",
-    suggestion: "Usar tabla auxiliar o IFS/SWITCH"
-  },
-  // Array formula indicators that might cause issues
-  {
-    pattern: /^\{.*\}$/,
-    severity: "warning",
-    description: "Fórmula array (legacy) - puede comportarse diferente",
-    suggestion: "Verificar que el resultado es correcto"
-  },
-];
+// Runtime error patterns removed - too many false positives on working files
 
-// ============================================================
-// INPUT/OUTPUT VALIDATION PATTERNS
-// Patterns that might cause issues with EasyQuote API data flow
-// ============================================================
-const DATA_FLOW_PATTERNS: Array<{
-  pattern: RegExp;
-  severity: "error" | "warning";
-  description: string;
-  context: string;
-}> = [
-  // Text functions that might fail with numbers
-  {
-    pattern: /\b(LEFT|RIGHT|MID|IZQUIERDA|DERECHA|EXTRAE)\s*\(\s*[A-Z]+\d+/i,
-    severity: "warning",
-    description: "Función de texto aplicada a celda - puede fallar con números",
-    context: "Si la celda de entrada es numérica, convertir primero con TEXT()"
-  },
-  // VALUE function with text that might not be numeric
-  {
-    pattern: /\bVALUE\s*\(\s*[A-Z]+\d+\s*\)/i,
-    severity: "warning",
-    description: "VALUE() puede fallar si el texto no es numérico",
-    context: "Verificar que la entrada siempre sea convertible a número"
-  },
-  // DATEVALUE with potentially invalid date strings
-  {
-    pattern: /\bDATEVALUE\s*\(\s*[A-Z]+\d+\s*\)/i,
-    severity: "warning",
-    description: "DATEVALUE puede fallar con formatos de fecha inválidos",
-    context: "Asegurar formato de fecha consistente"
-  },
-  // Multiplication/division with text cells
-  {
-    pattern: /[A-Z]+\d+\s*[*/]\s*[A-Z]+\d+/i,
-    severity: "warning",
-    description: "Operación aritmética entre celdas - puede fallar si hay texto",
-    context: "Verificar que ambas celdas sean numéricas"
-  },
-];
+// Data flow patterns removed - too many false positives on working files
 
 // Regex to extract function names from formulas
 const FUNCTION_RE = /([A-Z][A-Z0-9_.]+)\s*\(/gi;
@@ -217,9 +92,7 @@ type IssueType =
   | "external_ref" 
   | "circular_suspect" 
   | "syncfusion_unsupported"
-  | "syncfusion_risky"
-  | "runtime_risk"
-  | "data_flow_risk";
+  | "syncfusion_risky";
 
 type IssueSeverity = "error" | "warning" | "info";
 
@@ -329,39 +202,6 @@ function extractSyncfusionRiskyFunctions(formula: string): string[] {
   return funcs;
 }
 
-// Check for runtime error patterns
-function checkRuntimePatterns(formula: string): Array<{ description: string; severity: "error" | "warning"; suggestion: string }> {
-  const issues: Array<{ description: string; severity: "error" | "warning"; suggestion: string }> = [];
-  
-  for (const pattern of RUNTIME_ERROR_PATTERNS) {
-    if (pattern.pattern.test(formula)) {
-      issues.push({
-        description: pattern.description,
-        severity: pattern.severity,
-        suggestion: pattern.suggestion
-      });
-    }
-  }
-  
-  return issues;
-}
-
-// Check for data flow patterns
-function checkDataFlowPatterns(formula: string): Array<{ description: string; severity: "error" | "warning"; context: string }> {
-  const issues: Array<{ description: string; severity: "error" | "warning"; context: string }> = [];
-  
-  for (const pattern of DATA_FLOW_PATTERNS) {
-    if (pattern.pattern.test(formula)) {
-      issues.push({
-        description: pattern.description,
-        severity: pattern.severity,
-        context: pattern.context
-      });
-    }
-  }
-  
-  return issues;
-}
 
 // Build a reference graph and detect potential circular references
 function buildRefGraph(wb: XLSX.WorkBook): Map<string, { formula: string; refs: string[] }> {
@@ -449,8 +289,6 @@ const TYPE_LABELS: Record<IssueType, { label: string; variant: "destructive" | "
   error: { label: "Error", variant: "destructive" },
   syncfusion_unsupported: { label: "No soportada", variant: "destructive" },
   syncfusion_risky: { label: "Riesgo", variant: "secondary" },
-  runtime_risk: { label: "Runtime", variant: "secondary" },
-  data_flow_risk: { label: "Datos", variant: "outline" },
   missing_sheet: { label: "Hoja falta", variant: "secondary" },
   external_ref: { label: "Ref externa", variant: "outline" },
   circular_suspect: { label: "Circular?", variant: "default" },
@@ -629,33 +467,7 @@ export function ExcelErrorScannerDialog() {
             });
           }
           
-          // 6. Check for runtime error patterns
-          const runtimeIssues = checkRuntimePatterns(formula);
-          for (const issue of runtimeIssues) {
-            found.push({
-              sheet: sheetName,
-              cell: addr,
-              error: issue.description,
-              formula,
-              type: "runtime_risk",
-              severity: issue.severity,
-              suggestion: issue.suggestion
-            });
-          }
-          
-          // 7. Check for data flow patterns
-          const dataFlowIssues = checkDataFlowPatterns(formula);
-          for (const issue of dataFlowIssues) {
-            found.push({
-              sheet: sheetName,
-              cell: addr,
-              error: issue.description,
-              formula,
-              type: "data_flow_risk",
-              severity: issue.severity,
-              suggestion: issue.context
-            });
-          }
+          // Runtime and data flow checks removed - too many false positives
         }
         
         sheets.push({ name: sheetName, cells: cellCount, formulas: formulaCount });
@@ -691,9 +503,7 @@ export function ExcelErrorScannerDialog() {
           missing_sheet: 2,
           external_ref: 3,
           syncfusion_risky: 4,
-          runtime_risk: 5,
-          data_flow_risk: 6,
-          circular_suspect: 7
+          circular_suspect: 5
         };
         if (a.type !== b.type) return typePriority[a.type] - typePriority[b.type];
         if (a.sheet !== b.sheet) return a.sheet.localeCompare(b.sheet);
