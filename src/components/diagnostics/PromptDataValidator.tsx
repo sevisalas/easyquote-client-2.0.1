@@ -324,8 +324,8 @@ export function PromptDataValidator() {
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="flex items-center gap-2 w-full sm:w-auto">
           <Search className="h-4 w-4" />
-          <span className="hidden sm:inline">Validar Prompts</span>
-          <span className="sm:hidden">Prompts</span>
+          <span className="hidden sm:inline">Validar Datos de Entrada</span>
+          <span className="sm:hidden">Datos</span>
         </Button>
       </DialogTrigger>
 
@@ -333,7 +333,7 @@ export function PromptDataValidator() {
         <DialogHeader>
           <DialogTitle>Validador de datos de entrada</DialogTitle>
           <DialogDescription>
-            Analiza los valores actuales de los prompts de un producto para detectar datos que pueden causar errores en la API.
+            Analiza los valores actuales de los datos de entrada de un producto para detectar valores que pueden causar errores en la API.
           </DialogDescription>
         </DialogHeader>
 
@@ -360,7 +360,7 @@ export function PromptDataValidator() {
             <div className="grid grid-cols-3 gap-4">
               <div className="rounded-md border p-3 text-center">
                 <div className="text-2xl font-bold">{prompts.length}</div>
-                <div className="text-xs text-muted-foreground">Prompts</div>
+                <div className="text-xs text-muted-foreground">Campos</div>
               </div>
               <div className="rounded-md border p-3 text-center">
                 <div className={`text-2xl font-bold ${errorCount > 0 ? "text-destructive" : "text-green-600"}`}>
@@ -387,7 +387,7 @@ export function PromptDataValidator() {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-[80px]">Tipo</TableHead>
-                        <TableHead className="w-[180px]">Prompt</TableHead>
+                        <TableHead className="w-[180px]">Campo</TableHead>
                         <TableHead className="w-[120px]">Valor</TableHead>
                         <TableHead>Problema</TableHead>
                         <TableHead>Sugerencia</TableHead>
@@ -426,7 +426,7 @@ export function PromptDataValidator() {
           {prompts.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <div className="text-sm font-medium">Todos los prompts ({productName}):</div>
+                <div className="text-sm font-medium">Todos los campos ({productName}):</div>
                 <Button variant="ghost" size="sm" onClick={copyPromptData}>
                   <Copy className="h-4 w-4 mr-1" /> Copiar JSON
                 </Button>
