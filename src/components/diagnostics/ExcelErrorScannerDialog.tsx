@@ -19,7 +19,43 @@ const SHEET_REF_RE = /(?:^|[,(])\s*'?([A-Za-z_][A-Za-z0-9_ ]*)'?!(\$?[A-Z]+\$?\d
 // Regex to detect external file references [filename]
 const EXTERNAL_REF_RE = /\[([^\]]+)\]/g;
 
-// (PHPExcel check removed - we use Syncfusion)
+// Functions not supported for calculation in PHPExcel/PhpSpreadsheet
+// Used by WooCommerce Price Calculator and similar plugins
+// Source: PHPExcel documentation and error reports
+const PHPEXCEL_UNSUPPORTED_FUNCTIONS = [
+  // Modern Excel functions not in PHPExcel
+  "XLOOKUP", "BUSCARX",
+  "XMATCH", "COINCIDIRX", 
+  "FILTER", "FILTRAR",
+  "SORT", "ORDENAR",
+  "SORTBY", "ORDENARPOR",
+  "UNIQUE", "UNICOS",
+  "SEQUENCE", "SECUENCIA",
+  "RANDARRAY",
+  "LET",
+  "LAMBDA",
+  "IFS", "SI.CONJUNTO",           // Excel 2016+
+  "SWITCH", "CAMBIAR",            // Excel 2016+
+  "MAXIFS", "MAX.SI.CONJUNTO",    // Excel 2016+
+  "MINIFS", "MIN.SI.CONJUNTO",    // Excel 2016+
+  "TEXTJOIN", "UNIRCADENAS",      // Excel 2016+
+  "CONCAT",                       // Excel 2016+ (use CONCATENATE)
+  "FORMULATEXT", "FORMULATEXTO",
+  "ISFORMULA", "ESFORMULA",
+  "SHEETS", "HOJAS",
+  "SHEET", "HOJA",
+  "NUMBERVALUE",
+  "UNICHAR", "UNICAR",
+  "UNICODE",
+  "WEBSERVICE",
+  "ENCODEURL",
+  "FILTERXML",
+  // Image/stock functions
+  "STOCKHISTORY",
+  "IMAGE",
+  "ARRAYTOTEXT",
+  "VALUETOTEXT",
+];
 
 // Functions not supported for calculation in Syncfusion XlsIO
 // These formulas are preserved but their result cannot be calculated
@@ -46,7 +82,7 @@ const SYNCFUSION_UNSUPPORTED_FUNCTIONS = [
 // Regex to extract function names from formulas
 const FUNCTION_RE = /([A-Z][A-Z0-9_.]+)\s*\(/gi;
 
-type IssueType = "error" | "missing_sheet" | "external_ref" | "circular_suspect" | "syncfusion_unsupported";
+type IssueType = "error" | "missing_sheet" | "external_ref" | "circular_suspect" | "syncfusion_unsupported" | "phpexcel_unsupported";
 
 type ExcelCellIssue = {
   sheet: string;
@@ -137,6 +173,25 @@ function extractSyncfusionUnsupportedFunctions(formula: string): string[] {
   return funcs;
 }
 
+// Extract functions that are not supported by PHPExcel/PhpSpreadsheet
+function extractPhpExcelUnsupportedFunctions(formula: string): string[] {
+  const funcs: string[] = [];
+  const seen = new Set<string>();
+  let match;
+  const regex = new RegExp(FUNCTION_RE.source, "gi");
+  while ((match = regex.exec(formula)) !== null) {
+    const funcName = match[1].toUpperCase();
+    // Only add if it's PHP-specific (not already in Syncfusion list)
+    if (!seen.has(funcName) && 
+        PHPEXCEL_UNSUPPORTED_FUNCTIONS.includes(funcName) && 
+        !SYNCFUSION_UNSUPPORTED_FUNCTIONS.includes(funcName)) {
+      seen.add(funcName);
+      funcs.push(funcName);
+    }
+  }
+  return funcs;
+}
+
 // Build a reference graph and detect potential circular references
 function buildRefGraph(
   wb: XLSX.WorkBook
@@ -200,6 +255,7 @@ function traceRefChain(
 const TYPE_LABELS: Record<IssueType, { label: string; variant: "destructive" | "secondary" | "outline" | "default" }> = {
   error: { label: "Error", variant: "destructive" },
   syncfusion_unsupported: { label: "Syncfusion", variant: "destructive" },
+  phpexcel_unsupported: { label: "PHPExcel", variant: "destructive" },
   missing_sheet: { label: "Hoja no existe", variant: "secondary" },
   external_ref: { label: "Ref externa", variant: "outline" },
   circular_suspect: { label: "Ref circular?", variant: "default" },
@@ -313,6 +369,18 @@ export function ExcelErrorScannerDialog() {
             });
           }
           
+          // 5. Check for PHPExcel unsupported functions (WooCommerce calculator)
+          const phpExcelUnsupported = extractPhpExcelUnsupportedFunctions(formula);
+          if (phpExcelUnsupported.length > 0) {
+            found.push({
+              sheet: sheetName,
+              cell: addr,
+              error: `No soportada por PHPExcel: ${phpExcelUnsupported.join(", ")}`,
+              formula,
+              type: "phpexcel_unsupported",
+            });
+          }
+          
         }
       }
 
@@ -340,9 +408,10 @@ export function ExcelErrorScannerDialog() {
         const typePriority: Record<IssueType, number> = { 
           error: 0, 
           syncfusion_unsupported: 1,
-          missing_sheet: 2, 
-          external_ref: 3, 
-          circular_suspect: 4 
+          phpexcel_unsupported: 2,
+          missing_sheet: 3, 
+          external_ref: 4, 
+          circular_suspect: 5 
         };
         if (a.type !== b.type) return typePriority[a.type] - typePriority[b.type];
         if (a.sheet !== b.sheet) return a.sheet.localeCompare(b.sheet);
