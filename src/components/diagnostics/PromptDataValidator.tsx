@@ -259,6 +259,17 @@ export function PromptDataValidator() {
     }
   }, [open]);
 
+  const getProductLabel = (p: any) =>
+    p?.name ??
+    p?.title ??
+    p?.displayName ??
+    p?.productName ??
+    p?.product_name ??
+    p?.nombre ??
+    p?.Nombre ??
+    p?.description ??
+    "";
+
   const fetchProducts = async () => {
     setLoadingProducts(true);
     try {
@@ -269,8 +280,12 @@ export function PromptDataValidator() {
       if (error || !data) return;
       
       const activeProducts = data
-        .filter((p: any) => p.isActive !== false)
-        .map((p: any) => ({ id: p.id, name: p.name || p.id, isActive: p.isActive }))
+        .filter((p: any) => p?.isActive === true)
+        .map((p: any) => ({
+          id: p.id,
+          name: getProductLabel(p) || p.id,
+          isActive: p.isActive,
+        }))
         .sort((a: Product, b: Product) => a.name.localeCompare(b.name));
       
       setProducts(activeProducts);
@@ -316,7 +331,8 @@ export function PromptDataValidator() {
 
       const promptsData = data?.prompts || data?.inputs || [];
       setPrompts(promptsData);
-      setProductName(data?.productName || productId);
+      const selectedProduct = products.find((p) => p.id === productId);
+      setProductName(data?.productName || selectedProduct?.name || productId);
 
       // Validate all prompts
       const allIssues: ValidationIssue[] = [];
