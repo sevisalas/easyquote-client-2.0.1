@@ -5,6 +5,13 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.4.15] - 2026-01-19
+
+### Corregido
+- **Cache de opciones dinámicas**: Las opciones de prompts dependientes (ej: "Tira y retira") ahora se actualizan correctamente cuando cambian otros campos relacionados (ej: "tintas")
+
+---
+
 ## [2.4.14] - 2026-01-17
 
 ### Corregido
