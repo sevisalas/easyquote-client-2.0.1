@@ -92,38 +92,101 @@ serve(async (req: Request): Promise<Response> => {
     
     inputsList = filteredInputsList;
     
-    // Filter out invalid values that could cause EasyQuote API to crash
+    // Filter and sanitize values to prevent EasyQuote API errors
+    // Known causes of API crashes:
+    // 1. null/undefined values
+    // 2. Empty strings
+    // 3. Strings with only special characters
+    // 4. Invalid numbers (NaN, Infinity)
+    // 5. Strings that look like formulas (starting with =)
+    // 6. Strings with problematic characters for Excel (|, \, newlines)
+    // 7. Very long strings (>1000 chars)
+    // 8. Strings with control characters
+    
     inputsList = inputsList.filter((input) => {
       const value = input.value;
+      const id = input.id;
 
       // Remove null or undefined
       if (value === null || value === undefined) {
-        console.log(`⚠️ Filtering out prompt ${input.id}: value is null/undefined`);
+        console.log(`⚠️ Filtering out prompt ${id}: value is null/undefined`);
         return false;
       }
 
-      // For strings, filter out empty/whitespace-only and "only special characters"
+      // For strings, apply comprehensive validation
       if (typeof value === "string") {
         const trimmed = value.trim();
+        
+        // Filter empty strings
         if (trimmed === "") {
-          console.log(`⚠️ Filtering out prompt ${input.id}: empty string`);
+          console.log(`⚠️ Filtering out prompt ${id}: empty string`);
           return false;
         }
 
-        // Filter out strings that are only special characters without alphanumeric content
+        // Filter strings that are only special characters (no alphanumeric content)
         if (trimmed.length < 3 && /^[^\w\s]+$/.test(trimmed)) {
-          console.log(`⚠️ Filtering out prompt ${input.id}: only special characters (${value})`);
+          console.log(`⚠️ Filtering out prompt ${id}: only special characters (${value})`);
+          return false;
+        }
+        
+        // Filter strings that look like formulas (could cause Excel injection)
+        if (/^[=+\-@]/.test(trimmed)) {
+          console.log(`⚠️ WARNING: prompt ${id} starts with formula character: "${trimmed.substring(0, 20)}"`);
+          // Don't filter, but log for debugging - the API should handle this
+        }
+        
+        // Filter very long strings that could cause issues
+        if (trimmed.length > 1000) {
+          console.log(`⚠️ Filtering out prompt ${id}: string too long (${trimmed.length} chars)`);
+          return false;
+        }
+        
+        // Filter strings with control characters (except common whitespace)
+        if (/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/.test(trimmed)) {
+          console.log(`⚠️ Filtering out prompt ${id}: contains control characters`);
           return false;
         }
       }
 
       // For numbers, check if it's valid
-      if (typeof value === "number" && !isFinite(value)) {
-        console.log(`⚠️ Filtering out prompt ${input.id}: invalid number`);
-        return false;
+      if (typeof value === "number") {
+        if (!isFinite(value)) {
+          console.log(`⚠️ Filtering out prompt ${id}: invalid number (NaN/Infinity)`);
+          return false;
+        }
+        // Filter extremely large numbers that could cause overflow
+        if (Math.abs(value) > 1e15) {
+          console.log(`⚠️ Filtering out prompt ${id}: number too large (${value})`);
+          return false;
+        }
       }
 
       return true;
+    });
+    
+    // Sanitize string values: replace problematic characters
+    inputsList = inputsList.map((input) => {
+      if (typeof input.value === "string") {
+        let sanitized = input.value
+          .trim()
+          // Replace pipe characters (can break CSV-like parsing)
+          .replace(/\|/g, "-")
+          // Replace backslashes (can cause escape issues)
+          .replace(/\\/g, "/")
+          // Replace newlines and carriage returns
+          .replace(/[\r\n]+/g, " ")
+          // Replace tabs
+          .replace(/\t/g, " ")
+          // Collapse multiple spaces
+          .replace(/\s{2,}/g, " ");
+        
+        if (sanitized !== input.value) {
+          console.log(`📝 Sanitized prompt ${input.id}: "${input.value.substring(0, 30)}" → "${sanitized.substring(0, 30)}"`);
+        }
+        
+        return { ...input, value: sanitized };
+      }
+      return input;
     });
 
     // Convert decimal numbers to strings with comma (Spanish format) for EasyQuote API
