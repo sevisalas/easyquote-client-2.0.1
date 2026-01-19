@@ -1,15 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle2, XCircle, Search, Copy } from "lucide-react";
-import { getEasyQuoteToken } from "@/lib/easyquoteApi";
+import { AlertTriangle, CheckCircle2, XCircle, Search, Copy, Loader2 } from "lucide-react";
+import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 import { supabase } from "@/integrations/supabase/client";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+type Product = {
+  id: string;
+  name: string;
+  isActive?: boolean;
+};
 
 type ValidationIssue = {
   promptId: string;
@@ -243,10 +249,41 @@ export function PromptDataValidator() {
   const [prompts, setPrompts] = useState<PromptData[]>([]);
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
   const [productName, setProductName] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+
+  // Fetch products when dialog opens
+  useEffect(() => {
+    if (open && products.length === 0) {
+      fetchProducts();
+    }
+  }, [open]);
+
+  const fetchProducts = async () => {
+    setLoadingProducts(true);
+    try {
+      const token = await getEasyQuoteToken();
+      if (!token) return;
+      
+      const { data, error } = await invokeEasyQuoteFunction<any[]>("easyquote-products", { token });
+      if (error || !data) return;
+      
+      const activeProducts = data
+        .filter((p: any) => p.isActive !== false)
+        .map((p: any) => ({ id: p.id, name: p.name || p.id, isActive: p.isActive }))
+        .sort((a: Product, b: Product) => a.name.localeCompare(b.name));
+      
+      setProducts(activeProducts);
+    } catch (err) {
+      console.error("Error fetching products:", err);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
 
   const analyzeProduct = async () => {
-    if (!productId.trim()) {
-      toast({ title: "Introduce un ID de producto", variant: "destructive" });
+    if (!productId) {
+      toast({ title: "Selecciona un producto", variant: "destructive" });
       return;
     }
 
@@ -338,20 +375,30 @@ export function PromptDataValidator() {
         </DialogHeader>
 
         <div className="grid gap-4">
-          {/* Input */}
+          {/* Product selector */}
           <div className="flex gap-2 items-end">
             <div className="flex-1">
-              <Label htmlFor="product-id">ID del producto (UUID)</Label>
-              <Input
-                id="product-id"
-                placeholder="ej: 6a8c133a-2c54-4059-9e6b-d21575f6abf3"
-                value={productId}
-                onChange={(e) => setProductId(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && analyzeProduct()}
-              />
+              <Label>Seleccionar producto</Label>
+              <Select value={productId} onValueChange={setProductId} disabled={loadingProducts}>
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingProducts ? "Cargando productos..." : "Selecciona un producto"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {products.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Button onClick={analyzeProduct} disabled={isLoading}>
-              {isLoading ? "Analizando..." : "Analizar"}
+            <Button onClick={analyzeProduct} disabled={isLoading || !productId}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Analizando...
+                </>
+              ) : "Analizar"}
             </Button>
           </div>
 
