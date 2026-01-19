@@ -2629,7 +2629,7 @@ export default function ProductManagement() {
                 {/* Alerta sobre output PRICE obligatorio */}
                 {(() => {
                   const priceOutputs = productOutputs.filter(o => {
-                    const typeName = outputTypes.find(t => t.id === o.outputType)?.outputType?.toLowerCase();
+                    const typeName = outputTypes.find(t => t.id === o.outputTypeId)?.outputType?.toLowerCase();
                     return typeName === 'price';
                   });
                   const hasPriceOutput = priceOutputs.length === 1;
