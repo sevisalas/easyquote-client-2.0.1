@@ -582,52 +582,59 @@ export default function ProductTestPage() {
       console.log("Pricing price field:", data?.price);
       console.log("All pricing fields:", Object.keys(data || {}));
 
-      // Update product detail with new prompts structure (for updated options)
-      // and also sync dependent prompt values (when API forces a new valid value)
-      if (data?.prompts) {
-        setProductDetail((prevDetail) => ({
-          ...prevDetail,
-          prompts: data.prompts,
-        }));
-
-        const norm = (v: any) => String(v ?? "").trim().toLowerCase();
-
-        // If a prompt depends on others, EasyQuote may change its currentValue.
-        // We must reflect that in local state, otherwise the Select shows blank and we may send invalid values.
-        const applyCorrections = (prev: Record<string, any>) => {
-          let changed = false;
-          const next: Record<string, any> = { ...prev };
-
-          for (const p of data.prompts as any[]) {
-            const id = String(p?.id ?? "");
-            if (!id) continue;
-
-            const apiValue = p?.currentValue;
-            const options = Array.isArray(p?.valueOptions) ? p.valueOptions : [];
-
-            const prevVal = next[id];
-            const hasPrev = prevVal !== undefined && prevVal !== null && String(prevVal).trim() !== "";
-
-            // Only correct when we can determine it became invalid, or when API changed it explicitly.
-            const inOptions = options.length === 0
-              ? true
-              : (!hasPrev || options.some((o: any) => norm(o) === norm(prevVal)));
-
-            if (!inOptions && apiValue !== undefined && apiValue !== null) {
-              next[id] = apiValue;
-              changed = true;
-            }
-          }
-
-          return changed ? next : prev;
-        };
-
-        setPromptValues(applyCorrections);
-        setDebouncedPromptValues(applyCorrections);
-      }
+      // Nota: la sincronización de prompts/currentValue se gestiona en un useEffect
+      // para que funcione también cuando React Query devuelve datos desde caché.
       return data;
     }
   });
+
+  // Cuando `pricing` viene de caché, la queryFn no se ejecuta.
+  // Aquí sincronizamos igualmente:
+  // - la estructura de prompts (valueOptions)
+  // - los valores forzados por el API (currentValue)
+  useEffect(() => {
+    if (!pricing?.prompts || !Array.isArray(pricing.prompts)) return;
+
+    setProductDetail((prev) => {
+      if (!prev) return prev;
+      if (prev.productID && String(prev.productID) !== String(productId)) return prev;
+      return { ...prev, prompts: pricing.prompts };
+    });
+
+    const norm = (v: any) => String(v ?? "").trim().toLowerCase();
+
+    const applyCorrections = (prev: Record<string, any>) => {
+      let changed = false;
+      const next: Record<string, any> = { ...prev };
+
+      for (const p of pricing.prompts as any[]) {
+        const id = String(p?.id ?? "");
+        if (!id) continue;
+
+        const apiValue = p?.currentValue;
+        const options = Array.isArray(p?.valueOptions) ? p.valueOptions : [];
+
+        const prevVal = next[id];
+        const hasPrev = prevVal !== undefined && prevVal !== null && String(prevVal).trim() !== "";
+
+        // Si deja de ser válido, o el API cambió explícitamente el currentValue, corregimos.
+        const inOptions = options.length === 0
+          ? true
+          : (!hasPrev || options.some((o: any) => norm(o) === norm(prevVal)));
+        const apiChangedExplicitly = apiValue !== undefined && apiValue !== null && norm(apiValue) !== norm(prevVal);
+
+        if ((!inOptions || apiChangedExplicitly) && apiValue !== undefined && apiValue !== null) {
+          next[id] = apiValue;
+          changed = true;
+        }
+      }
+
+      return changed ? next : prev;
+    };
+
+    setPromptValues(applyCorrections);
+    setDebouncedPromptValues(applyCorrections);
+  }, [pricing?.prompts, productId]);
 
   // Auto-select product if productId is in URL params
   useEffect(() => {
@@ -639,6 +646,14 @@ export default function ProductTestPage() {
       }
     }
   }, [searchParams, products]);
+
+  const productForPrompts = useMemo(() => {
+    if (!productDetail) return null;
+    if (pricing?.prompts && Array.isArray(pricing.prompts)) {
+      return { ...productDetail, prompts: pricing.prompts };
+    }
+    return productDetail;
+  }, [productDetail, pricing?.prompts]);
 
   // Derive outputs from pricing data - based on real API response structure
   const outputs = useMemo(() => {
@@ -1190,7 +1205,7 @@ export default function ProductTestPage() {
                     {(!needsConfigSelector || boundProductConfig) ? (
                       <>
                         <ComponentTabsPromptsForm 
-                          product={productDetail} 
+                          product={productForPrompts ?? productDetail}
                           productId={productId} 
                           values={promptValues} 
                           onChange={handlePromptChange} 
