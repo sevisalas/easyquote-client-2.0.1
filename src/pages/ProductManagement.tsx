@@ -31,6 +31,7 @@ import { BulkOutputsDialog } from "@/components/quotes/BulkOutputsDialog";
 import { useSearchParams } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ExcelErrorScannerDialog } from "@/components/diagnostics/ExcelErrorScannerDialog";
+import { PromptDataValidator } from "@/components/diagnostics/PromptDataValidator";
 import { useProductComponentSettings, COMPONENT_PRESETS, GENERAL_COMPONENT } from "@/hooks/useProductComponentSettings";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
@@ -1928,6 +1929,7 @@ export default function ProductManagement() {
           </p>
         </div>
         <div className="flex-shrink-0 flex gap-2">
+          <PromptDataValidator />
           <ExcelErrorScannerDialog />
           <Button onClick={() => navigate("/admin/productos/nuevo")} className="flex items-center gap-2 w-full sm:w-auto" size="sm">
             <Plus className="h-4 w-4" />
