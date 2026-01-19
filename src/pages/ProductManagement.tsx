@@ -31,7 +31,6 @@ import { BulkOutputsDialog } from "@/components/quotes/BulkOutputsDialog";
 import { useSearchParams } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ExcelErrorScannerDialog } from "@/components/diagnostics/ExcelErrorScannerDialog";
-import { PromptDataValidator } from "@/components/diagnostics/PromptDataValidator";
 import { useProductComponentSettings, COMPONENT_PRESETS, GENERAL_COMPONENT } from "@/hooks/useProductComponentSettings";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
@@ -1929,7 +1928,6 @@ export default function ProductManagement() {
           </p>
         </div>
         <div className="flex-shrink-0 flex gap-2">
-          <PromptDataValidator />
           <ExcelErrorScannerDialog />
           <Button onClick={() => navigate("/admin/productos/nuevo")} className="flex items-center gap-2 w-full sm:w-auto" size="sm">
             <Plus className="h-4 w-4" />
@@ -2628,6 +2626,41 @@ export default function ProductManagement() {
               </TabsContent>
 
               <TabsContent value="outputs" className="space-y-4">
+                {/* Alerta sobre output PRICE obligatorio */}
+                {(() => {
+                  const priceOutputs = productOutputs.filter(o => {
+                    const typeName = outputTypes.find(t => t.id === o.outputType)?.outputType?.toLowerCase();
+                    return typeName === 'price';
+                  });
+                  const hasPriceOutput = priceOutputs.length === 1;
+                  const hasMultiplePriceOutputs = priceOutputs.length > 1;
+                  
+                  if (!hasPriceOutput || hasMultiplePriceOutputs) {
+                    return (
+                      <Alert variant="destructive" className="border-2 border-destructive bg-destructive/10">
+                        <AlertCircle className="h-5 w-5" />
+                        <AlertTitle className="text-lg font-bold">
+                          ⚠️ Configuración de precio incorrecta
+                        </AlertTitle>
+                        <AlertDescription className="text-base mt-2">
+                          {hasMultiplePriceOutputs ? (
+                            <span>
+                              Este producto tiene <strong>{priceOutputs.length} outputs de tipo PRICE</strong>. 
+                              Solo debe tener <strong>exactamente uno</strong> para que el sistema pueda calcular el precio correctamente.
+                            </span>
+                          ) : (
+                            <span>
+                              Este producto <strong>no tiene ningún output de tipo PRICE</strong>. 
+                              Debes añadir <strong>exactamente uno</strong> para que el sistema pueda obtener el precio del producto.
+                            </span>
+                          )}
+                        </AlertDescription>
+                      </Alert>
+                    );
+                  }
+                  return null;
+                })()}
+                
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className="text-lg font-medium">Datos de salida del Producto</h3>

@@ -22,7 +22,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { EasyQuoteConnectivityTest } from "@/components/diagnostics/EasyQuoteConnectivityTest";
 import { ExcelErrorScannerDialog } from "@/components/diagnostics/ExcelErrorScannerDialog";
-import { PromptDataValidator } from "@/components/diagnostics/PromptDataValidator";
 import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
 interface EasyQuoteExcelFile {
   id: string;
@@ -1090,7 +1089,6 @@ export default function ExcelFiles() {
               </CardDescription>
             </div>
             <div className="flex items-center gap-3">
-              <PromptDataValidator />
               <ExcelErrorScannerDialog />
               <div className="flex items-center gap-2">
                 <Label htmlFor="include-inactive" className="text-sm font-medium">
