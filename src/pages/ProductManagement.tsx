@@ -2645,12 +2645,12 @@ export default function ProductManagement() {
                         <AlertDescription className="text-base mt-2">
                           {hasMultiplePriceOutputs ? (
                             <span>
-                              Este producto tiene <strong>{priceOutputs.length} outputs de tipo PRICE</strong>. 
+                              Este producto tiene <strong>{priceOutputs.length} datos de salida de tipo PRICE</strong>. 
                               Solo debe tener <strong>exactamente uno</strong> para que el sistema pueda calcular el precio correctamente.
                             </span>
                           ) : (
                             <span>
-                              Este producto <strong>no tiene ningún output de tipo PRICE</strong>. 
+                              Este producto <strong>no tiene ningún dato de salida de tipo PRICE</strong>. 
                               Debes añadir <strong>exactamente uno</strong> para que el sistema pueda obtener el precio del producto.
                             </span>
                           )}
