@@ -156,8 +156,11 @@ export const useImageManagement = () => {
       setUploadProgress(100);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Pequeña espera para que EasyQuote indexe la imagen antes de refrescar
+      await new Promise((r) => setTimeout(r, 500));
       queryClient.invalidateQueries({ queryKey: ["user-images", organizationId] });
+      await queryClient.refetchQueries({ queryKey: ["user-images", organizationId] });
       toast.success("Imagen subida a EasyQuote correctamente");
       setUploadProgress(0);
     },
