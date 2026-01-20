@@ -97,8 +97,9 @@ export const useImageManagement = () => {
   const { data: imagesRaw, isLoading, error } = useQuery({
     queryKey: ["user-images", organizationId],
     queryFn: async () => {
+      // Use GET method - invoke without body defaults to GET
       const { data, error } = await supabase.functions.invoke("easyquote-images", {
-        body: { action: "list" },
+        method: "GET",
         headers: orgHeaders,
       });
 
