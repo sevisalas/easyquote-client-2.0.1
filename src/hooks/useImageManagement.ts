@@ -86,9 +86,12 @@ export const useImageManagement = () => {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   const organizationId = sessionStorage.getItem("selected_organization_id") || null;
-  const orgHeaders: Record<string, string> = organizationId
-    ? { "X-Organization-Id": organizationId }
-    : {};
+  const easyquoteToken = sessionStorage.getItem("easyquote_token") || null;
+  
+  const orgHeaders: Record<string, string> = {
+    ...(organizationId && { "X-Organization-Id": organizationId }),
+    ...(easyquoteToken && { "X-EasyQuote-Token": easyquoteToken }),
+  };
 
   // Fetch organization images
   const { data: imagesRaw, isLoading, error } = useQuery({
