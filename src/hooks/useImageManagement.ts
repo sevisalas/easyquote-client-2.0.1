@@ -204,6 +204,7 @@ export const useImageManagement = () => {
     error,
     uploadProgress,
     uploadImage: uploadImageMutation.mutate,
+    uploadImageAsync: uploadImageMutation.mutateAsync,
     deleteImage: deleteImageMutation.mutate,
     fetchImageDetails,
     isUploading: uploadImageMutation.isPending,

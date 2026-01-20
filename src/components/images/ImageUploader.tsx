@@ -24,7 +24,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   defaultCategoryId,
   defaultSubcategoryId,
 }) => {
-  const { uploadImage, isUploading, uploadProgress } = useImageManagement();
+  const { uploadImageAsync, isUploading, uploadProgress } = useImageManagement();
   const { categories } = useImageCategories();
   const { subcategories } = useImageSubcategories();
   const { assignCategory } = useImageCategoryAssignments();
@@ -38,11 +38,12 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   );
 
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
+    async (acceptedFiles: File[]) => {
       const filesToUpload = multiple ? acceptedFiles : acceptedFiles.slice(0, 1);
-      
-      filesToUpload.forEach((file) => {
-        uploadImage(
+
+      // Subida secuencial (EasyQuote no soporta bien “varias de golpe”)
+      for (const file of filesToUpload) {
+        await uploadImageAsync(
           { file },
           {
             onSuccess: (data) => {
@@ -58,9 +59,9 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             },
           }
         );
-      });
+      }
     },
-    [uploadImage, multiple, onUploadComplete, selectedCategoryId, selectedSubcategoryId, assignCategory]
+    [uploadImageAsync, multiple, onUploadComplete, selectedCategoryId, selectedSubcategoryId, assignCategory]
   );
 
   const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
