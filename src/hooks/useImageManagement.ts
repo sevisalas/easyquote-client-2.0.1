@@ -97,17 +97,32 @@ export const useImageManagement = () => {
   const { data: imagesRaw, isLoading, error } = useQuery({
     queryKey: ["user-images", organizationId],
     queryFn: async () => {
-      // Use GET method - invoke without body defaults to GET
-      const { data, error } = await supabase.functions.invoke("easyquote-images", {
-        method: "GET",
-        headers: orgHeaders,
-      });
+      // Get session for auth header
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No session");
 
-      if (error) throw error;
-      return data;
+      // Use direct fetch with GET - supabase.functions.invoke always sends POST
+      const response = await fetch(
+        "https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/easyquote-images",
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+            ...orgHeaders,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      return response.json();
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos - no refetch innecesarios
-    refetchOnWindowFocus: false, // No refetch al volver a la ventana
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const images = normalizeEasyQuoteImageList(imagesRaw);
