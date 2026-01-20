@@ -1,12 +1,16 @@
 import React, { useState } from "react";
-import { Trash2, Eye, Copy, Check } from "lucide-react";
+import { Trash2, Eye, Copy, Check, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { useImageManagement, ImageData } from "@/hooks/useImageManagement";
+import { useImageCategories } from "@/hooks/useImageCategories";
+import { useImageCategoryAssignments } from "@/hooks/useImageCategoryAssignments";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 interface ImageGalleryProps {
   onImageSelect?: (image: ImageData) => void;
@@ -14,6 +18,7 @@ interface ImageGalleryProps {
   selectionMode?: boolean;
   className?: string;
   images?: ImageData[];
+  showCategoryAssignment?: boolean;
 }
 
 export const ImageGallery: React.FC<ImageGalleryProps> = ({
@@ -22,9 +27,11 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
   selectionMode = false,
   className = "",
   images: propImages,
+  showCategoryAssignment = false,
 }) => {
-  // Solo usar el hook si no nos pasan imágenes por props
   const { images: hookImages, isLoading, deleteImage, isDeleting, fetchImageDetails } = useImageManagement();
+  const { categories } = useImageCategories();
+  const { getCategoryForImage, assignCategory, isAssigning } = useImageCategoryAssignments();
   const images = propImages ?? hookImages;
   
   const [viewingImage, setViewingImage] = useState<any | null>(null);
@@ -63,9 +70,36 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     setTimeout(() => setCopiedUrl(""), 2000);
   };
 
-  // Get the best available URL for display
   const getImageUrl = (image: ImageData) => {
     return image.url || image.variants?.original?.medium || image.variants?.square?.medium;
+  };
+
+  const handleCategoryChange = (imageId: string, categoryId: string) => {
+    assignCategory({
+      imageId,
+      categoryId: categoryId === "none" ? null : categoryId,
+    });
+  };
+
+  const getCategoryBadge = (imageId: string) => {
+    const categoryId = getCategoryForImage(imageId);
+    if (!categoryId) return null;
+    const category = categories.find((c) => c.id === categoryId);
+    if (!category) return null;
+    return (
+      <Badge 
+        variant="secondary" 
+        className="text-xs gap-1"
+        style={{ 
+          backgroundColor: category.color + "20",
+          borderColor: category.color,
+          color: category.color,
+        }}
+      >
+        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: category.color }} />
+        {category.name}
+      </Badge>
+    );
   };
 
   if (isLoading && !propImages) {
@@ -103,6 +137,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
       <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ${className}`}>
         {images.map((image) => {
           const imageUrl = getImageUrl(image);
+          const categoryBadge = getCategoryBadge(image.id);
           return (
             <Card 
               key={image.id} 
@@ -123,6 +158,11 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                   ) : (
                     <div className="w-full h-full bg-muted flex items-center justify-center">
                       <Eye className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                  )}
+                  {categoryBadge && (
+                    <div className="absolute bottom-2 left-2">
+                      {categoryBadge}
                     </div>
                   )}
                   {!selectionMode && (
@@ -161,9 +201,35 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                     {image.filename || image.original_filename || 'Sin nombre'}
                   </p>
                   {image.dateCreated && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground mb-2">
                       {new Date(image.dateCreated).toLocaleDateString()}
                     </p>
+                  )}
+                  {showCategoryAssignment && (
+                    <Select
+                      value={getCategoryForImage(image.id) || "none"}
+                      onValueChange={(value) => handleCategoryChange(image.id, value)}
+                      disabled={isAssigning}
+                    >
+                      <SelectTrigger className="h-8 text-xs" onClick={(e) => e.stopPropagation()}>
+                        <Tag className="w-3 h-3 mr-1" />
+                        <SelectValue placeholder="Sin categoría" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sin categoría</SelectItem>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: cat.color }}
+                              />
+                              {cat.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
                 </div>
               </CardContent>
@@ -198,6 +264,35 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                   className="max-w-full max-h-48 object-contain rounded-lg"
                 />
               </div>
+
+              {showCategoryAssignment && (
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Categoría</h4>
+                  <Select
+                    value={getCategoryForImage(viewingImage.id) || "none"}
+                    onValueChange={(value) => handleCategoryChange(viewingImage.id, value)}
+                    disabled={isAssigning}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Sin categoría" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin categoría</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: cat.color }}
+                            />
+                            {cat.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               
               <div>
                 <h4 className="text-lg font-semibold mb-3">Variantes disponibles</h4>
