@@ -37,61 +37,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Get EasyQuote credentials for the user
-    let easyQuoteToken = null
-    try {
-      const { data: credentials, error: credError } = await supabaseAdmin.rpc('get_user_credentials', {
-        p_user_id: user.id
-      })
-
-      if (credError) {
-        console.error('Error getting user credentials:', credError)
-        return new Response(
-          JSON.stringify({ error: 'Unable to get EasyQuote credentials' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      if (credentials && credentials.length > 0) {
-        const userCredentials = credentials[0]
-        if (userCredentials.api_username && userCredentials.api_password) {
-          // Get fresh EasyQuote token
-          const authResponse = await fetch(`${supabaseUrl}/functions/v1/easyquote-auth`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              email: userCredentials.api_username,
-              password: userCredentials.api_password
-            })
-          })
-
-          if (authResponse.ok) {
-            const authData = await authResponse.json()
-            easyQuoteToken = authData.token
-          }
-        }
-      }
-
-      if (!easyQuoteToken) {
-        return new Response(
-          JSON.stringify({ error: 'EasyQuote authentication failed' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-    } catch (authError) {
-      console.error('Error authenticating with EasyQuote:', authError)
-      return new Response(
-        JSON.stringify({ error: 'EasyQuote authentication failed' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // EasyQuote API configuration
-    const easyQuoteApiUrl = 'https://api.easyquote.cloud/api/v1/images'
-
+    // Parse URL to get image ID if present
     const url = new URL(req.url)
     const pathSegments = url.pathname.split('/').filter(Boolean)
     const imageId = pathSegments[pathSegments.length - 1]
@@ -100,79 +46,86 @@ Deno.serve(async (req) => {
     switch (req.method) {
       case 'GET':
         if (imageId && imageId !== 'easyquote-images') {
-          const response = await fetch(`${easyQuoteApiUrl}/${imageId}`, {
-            headers: {
-              'Authorization': `Bearer ${easyQuoteToken}`,
-              'Accept': '*/*'
-            }
-          })
+          // Get single image from local database
+          const { data: image, error: fetchError } = await supabaseAdmin
+            .from('images')
+            .select('*')
+            .eq('id', imageId)
+            .eq('user_id', user.id)
+            .single()
 
-          if (!response.ok) {
+          if (fetchError || !image) {
             return new Response(
               JSON.stringify({ error: 'Image not found' }),
               { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
           }
 
-          const image = await response.json()
+          // Get signed URL for the image
+          const { data: urlData } = await supabaseAdmin.storage
+            .from('product-images')
+            .createSignedUrl(image.storage_path, 3600) // 1 hour expiry
 
           return new Response(
             JSON.stringify({
               id: image.id,
-              filename: image.name,
-              original_filename: image.name,
-              dateCreated: image.dateCreated,
+              filename: image.filename,
+              original_filename: image.original_filename,
+              dateCreated: image.created_at,
+              url: urlData?.signedUrl || null,
+              mime_type: image.mime_type,
+              file_size: image.file_size,
+              width: image.width,
+              height: image.height,
+              tags: image.tags || [],
+              description: image.description,
               variants: {
                 original: {
-                  xSmall: image.xSmallImageOriginal,
-                  small: image.smallImageOriginal,
-                  medium: image.mediumImageOriginal,
-                  large: image.largeImageOriginal,
-                  xLarge: image.xLargeImageOriginal,
-                  xxLarge: image.xxLargeImageOriginal,
+                  medium: urlData?.signedUrl || null,
                 },
                 square: {
-                  xSmall: image.xSmallImageSquare,
-                  small: image.smallImageSquare,
-                  medium: image.mediumImageSquare,
-                  large: image.largeImageSquare,
-                  xLarge: image.xLargeImageSquare,
-                  xxLarge: image.xxLargeImageSquare,
+                  medium: urlData?.signedUrl || null,
                 }
               }
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           )
         } else {
-          // List all images
-          const response = await fetch(easyQuoteApiUrl, {
-            headers: {
-              'Authorization': `Bearer ${easyQuoteToken}`,
-              'Accept': '*/*'
-            }
-          })
+          // List all images from local database
+          const { data: images, error: listError } = await supabaseAdmin
+            .from('images')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
 
-          if (!response.ok) {
-            console.error('Error fetching images from EasyQuote API:', response.status, response.statusText)
-            throw new Error(`Failed to fetch images: ${response.status}`)
+          if (listError) {
+            console.error('Error fetching images from database:', listError)
+            throw new Error(`Failed to fetch images: ${listError.message}`)
           }
 
-          const images = await response.json()
+          // Get signed URLs for all images
+          const transformedImages = await Promise.all(
+            (images || []).map(async (image: any) => {
+              const { data: urlData } = await supabaseAdmin.storage
+                .from('product-images')
+                .createSignedUrl(image.storage_path, 3600)
 
-          // Transform the images to match expected format
-          const transformedImages = images.map((image: any) => ({
-            id: image.id,
-            filename: image.name,
-            original_filename: image.name,
-            url: image.mediumImage || image.smallImage,
-            mime_type: 'image/jpeg',
-            file_size: null,
-            width: null,
-            height: null,
-            tags: [],
-            description: null,
-            created_at: image.dateCreated
-          }))
+              return {
+                id: image.id,
+                filename: image.filename,
+                original_filename: image.original_filename,
+                url: urlData?.signedUrl || null,
+                mime_type: image.mime_type,
+                file_size: image.file_size,
+                width: image.width,
+                height: image.height,
+                tags: image.tags || [],
+                description: image.description,
+                created_at: image.created_at
+              }
+            })
+          )
 
           return new Response(
             JSON.stringify(transformedImages),
