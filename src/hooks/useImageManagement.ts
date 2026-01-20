@@ -18,6 +18,12 @@ export interface ImageData {
   created_at: string;
   updated_at: string;
   url?: string;
+  category_id?: string;
+  category?: {
+    id: string;
+    name: string;
+    color: string;
+  };
 }
 
 interface UploadImageData {
@@ -119,15 +125,18 @@ export const useImageManagement = () => {
     mutationFn: async ({ 
       imageId, 
       tags, 
-      description 
+      description,
+      category_id 
     }: { 
       imageId: string; 
       tags?: string[]; 
-      description?: string; 
+      description?: string;
+      category_id?: string | null;
     }) => {
       const updateData: any = {};
       if (tags !== undefined) updateData.tags = tags;
       if (description !== undefined) updateData.description = description;
+      if (category_id !== undefined) updateData.category_id = category_id;
 
       const { data, error } = await supabase.functions.invoke(`easyquote-images/${imageId}`, {
         method: 'PATCH',

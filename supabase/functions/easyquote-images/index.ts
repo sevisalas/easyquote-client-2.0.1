@@ -285,6 +285,39 @@ Deno.serve(async (req) => {
           { status: existingImage ? 200 : 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
 
+      case 'PATCH':
+        // Update image metadata
+        if (!imageId || imageId === 'easyquote-images') {
+          return new Response(
+            JSON.stringify({ error: 'Image ID is required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        const updateBody = await req.json()
+        const updateFields: any = {}
+        
+        if (updateBody.tags !== undefined) updateFields.tags = updateBody.tags
+        if (updateBody.description !== undefined) updateFields.description = updateBody.description
+        if (updateBody.category_id !== undefined) updateFields.category_id = updateBody.category_id
+
+        const { data: updatedImg, error: updateErr } = await supabaseAdmin
+          .from('images')
+          .update(updateFields)
+          .eq('id', imageId)
+          .eq('user_id', user.id)
+          .select()
+          .single()
+
+        if (updateErr) {
+          throw updateErr
+        }
+
+        return new Response(
+          JSON.stringify(updatedImg),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+
       case 'DELETE':
         if (!imageId || imageId === 'easyquote-images') {
           return new Response(

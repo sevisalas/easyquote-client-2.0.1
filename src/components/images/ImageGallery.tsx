@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Trash2, Edit, Tag, Eye, Copy, Check } from "lucide-react";
+import { Trash2, Edit, Eye, Copy, Check, Folder } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useImageManagement, ImageData } from "@/hooks/useImageManagement";
+import { ImageCategory } from "@/hooks/useImageCategories";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
@@ -17,6 +19,8 @@ interface ImageGalleryProps {
   selectedImageId?: string;
   selectionMode?: boolean;
   className?: string;
+  images?: ImageData[];
+  categories?: ImageCategory[];
 }
 
 export const ImageGallery: React.FC<ImageGalleryProps> = ({
@@ -24,19 +28,25 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
   selectedImageId,
   selectionMode = false,
   className = "",
+  images: propImages,
+  categories = [],
 }) => {
-  const { images, isLoading, deleteImage, updateImage, isDeleting, fetchImageDetails } = useImageManagement();
+  const { images: hookImages, isLoading, deleteImage, updateImage, isDeleting, fetchImageDetails } = useImageManagement();
+  const images = propImages || hookImages;
+  
   const [editingImage, setEditingImage] = useState<ImageData | null>(null);
   const [viewingImage, setViewingImage] = useState<any | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [editTags, setEditTags] = useState<string>("");
   const [editDescription, setEditDescription] = useState<string>("");
+  const [editCategoryId, setEditCategoryId] = useState<string>("");
   const [copiedUrl, setCopiedUrl] = useState<string>("");
 
   const handleEditImage = (image: ImageData) => {
     setEditingImage(image);
     setEditTags(image.tags.join(", "));
     setEditDescription(image.description || "");
+    setEditCategoryId(image.category_id || "none");
   };
 
   const handleViewImage = async (image: ImageData) => {
@@ -64,6 +74,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
       imageId: editingImage.id,
       tags,
       description: editDescription,
+      category_id: editCategoryId === "none" ? null : editCategoryId,
     });
 
     setEditingImage(null);
@@ -88,15 +99,12 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     setTimeout(() => setCopiedUrl(""), 2000);
   };
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  const getCategoryForImage = (categoryId?: string) => {
+    if (!categoryId) return null;
+    return categories.find(c => c.id === categoryId);
   };
 
-  if (isLoading) {
+  if (isLoading && !propImages) {
     return (
       <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ${className}`}>
         {Array.from({ length: 8 }).map((_, index) => (
@@ -129,93 +137,112 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
   return (
     <>
       <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ${className}`}>
-        {images.map((image) => (
-          <Card 
-            key={image.id} 
-            className={`overflow-hidden cursor-pointer transition-all hover:shadow-md ${
-              selectedImageId === image.id ? "ring-2 ring-primary" : ""
-            }`}
-            onClick={() => selectionMode && onImageSelect?.(image)}
-          >
-            <CardContent className="p-0">
-              <div className="aspect-square relative">
-                <img
-                  src={image.url}
-                  alt={image.original_filename}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-                {!selectionMode && (
-                  <div className="absolute top-2 right-2 flex space-x-1">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="h-8 w-8 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleViewImage(image);
-                      }}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="h-8 w-8 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditImage(image);
-                      }}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="h-8 w-8 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm("¿Estás seguro de que quieres eliminar esta imagen?")) {
-                          deleteImage(image.id);
-                        }
-                      }}
-                      disabled={isDeleting}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-              
-              <div className="p-3">
-                <p className="text-sm font-medium truncate mb-1">
-                  {image.original_filename}
-                </p>
-                
-                {image.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {image.tags.slice(0, 2).map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
-                        {tag}
+        {images.map((image) => {
+          const category = getCategoryForImage(image.category_id);
+          return (
+            <Card 
+              key={image.id} 
+              className={`overflow-hidden cursor-pointer transition-all hover:shadow-md ${
+                selectedImageId === image.id ? "ring-2 ring-primary" : ""
+              }`}
+              onClick={() => selectionMode && onImageSelect?.(image)}
+            >
+              <CardContent className="p-0">
+                <div className="aspect-square relative">
+                  <img
+                    src={image.url}
+                    alt={image.original_filename}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  {category && (
+                    <div className="absolute top-2 left-2">
+                      <Badge 
+                        variant="secondary" 
+                        className="text-xs gap-1"
+                        style={{ 
+                          backgroundColor: category.color + '20',
+                          borderColor: category.color,
+                          color: category.color
+                        }}
+                      >
+                        <Folder className="w-3 h-3" />
+                        {category.name}
                       </Badge>
-                    ))}
-                    {image.tags.length > 2 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{image.tags.length - 2}
-                      </Badge>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  )}
+                  {!selectionMode && (
+                    <div className="absolute top-2 right-2 flex space-x-1">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="h-8 w-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewImage(image);
+                        }}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="h-8 w-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditImage(image);
+                        }}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="h-8 w-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm("¿Estás seguro de que quieres eliminar esta imagen?")) {
+                            deleteImage(image.id);
+                          }
+                        }}
+                        disabled={isDeleting}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
                 
-                {image.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-2">
-                    {image.description}
+                <div className="p-3">
+                  <p className="text-sm font-medium truncate mb-1">
+                    {image.original_filename}
                   </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                  
+                  {image.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {image.tags.slice(0, 2).map((tag) => (
+                        <Badge key={tag} variant="secondary" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                      {image.tags.length > 2 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{image.tags.length - 2}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                  
+                  {image.description && (
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {image.description}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Edit Dialog */}
@@ -226,6 +253,29 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
           </DialogHeader>
           
           <div className="space-y-4">
+            <div>
+              <Label htmlFor="category">Categoría</Label>
+              <Select value={editCategoryId} onValueChange={setEditCategoryId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin categoría</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: cat.color }}
+                        />
+                        {cat.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <Label htmlFor="tags">Etiquetas (separadas por comas)</Label>
               <Input
@@ -280,7 +330,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
             <div className="space-y-6">
               <div className="flex justify-center">
                 <img
-                  src={viewingImage.variants?.original?.medium || viewingImage.variants?.original?.small}
+                  src={viewingImage.variants?.original?.medium || viewingImage.variants?.original?.small || viewingImage.url}
                   alt={viewingImage.filename}
                   className="max-w-full max-h-48 object-contain rounded-lg"
                 />
