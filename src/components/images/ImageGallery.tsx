@@ -54,18 +54,6 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     }
   };
 
-  const getPreviewSize = (size: string) => {
-    const sizes = {
-      xsmall: "w-6 h-6",
-      small: "w-8 h-8", 
-      medium: "w-12 h-12",
-      large: "w-16 h-16",
-      xlarge: "w-20 h-20",
-      xxlarge: "w-24 h-24"
-    };
-    return sizes[size.toLowerCase() as keyof typeof sizes] || "w-12 h-12";
-  };
-
   const copyToClipboard = (url: string) => {
     navigator.clipboard.writeText(url);
     setCopiedUrl(url);
@@ -369,76 +357,111 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
               )}
               
               <div>
-                <h4 className="text-lg font-semibold mb-3">Variantes disponibles</h4>
+                <h4 className="text-lg font-semibold mb-3">Versiones disponibles</h4>
                 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {viewingImage.variants?.original && Object.keys(viewingImage.variants.original).length > 0 && (
                     <div>
-                      <h5 className="text-md font-medium mb-3">Originales</h5>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {Object.entries(viewingImage.variants.original).map(([size, url]) => (
-                          url && (
-                            <div key={size} className="flex flex-col items-center gap-2 p-3 border rounded-lg">
-                              <div className="flex items-center justify-center w-40 h-24 bg-gray-50">
+                      <h5 className="text-md font-medium mb-3 flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-primary"></span>
+                        Originales ({Object.keys(viewingImage.variants.original).filter(k => viewingImage.variants.original[k]).length} tamaños)
+                      </h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {(['xsmall', 'small', 'medium', 'large', 'xlarge', 'xxlarge'] as const).map((size) => {
+                          const url = viewingImage.variants?.original?.[size];
+                          if (!url) return null;
+                          const sizeLabels: Record<string, string> = {
+                            xsmall: 'XS - Extra pequeño',
+                            small: 'S - Pequeño',
+                            medium: 'M - Mediano',
+                            large: 'L - Grande',
+                            xlarge: 'XL - Extra grande',
+                            xxlarge: 'XXL - Máximo'
+                          };
+                          return (
+                            <div key={size} className="flex flex-col gap-2 p-3 border rounded-lg bg-muted/30">
+                              <div className="flex items-center justify-center h-20 bg-background rounded">
                                 <img 
-                                  src={url as string} 
-                                  alt={`${size} preview`}
-                                  className={`${getPreviewSize(size)} object-contain`}
+                                  src={url} 
+                                  alt={`Original ${size}`}
+                                  className="max-h-16 max-w-full object-contain"
                                 />
                               </div>
-                              <span className="text-sm font-medium capitalize">{size}</span>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => copyToClipboard(url as string)}
-                                className="h-7 px-2 w-full"
-                              >
-                                {copiedUrl === url ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
-                                <span className="text-xs">
-                                  {copiedUrl === url ? 'Copiado' : 'Copiar URL'}
-                                </span>
-                              </Button>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium">{sizeLabels[size]}</span>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => copyToClipboard(url)}
+                                  className="h-7 px-2"
+                                >
+                                  {copiedUrl === url ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3" />}
+                                </Button>
+                              </div>
+                              <code className="text-xs text-muted-foreground break-all line-clamp-2 bg-background px-2 py-1 rounded">
+                                {url}
+                              </code>
                             </div>
-                          )
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
                   
-                  {viewingImage.variants?.square && Object.keys(viewingImage.variants.square).length > 0 && (
+                  {viewingImage.variants?.square && Object.keys(viewingImage.variants.square).filter(k => viewingImage.variants.square[k]).length > 0 && (
                     <>
                       <Separator />
                       <div>
-                        <h5 className="text-md font-medium mb-3">Cuadradas</h5>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          {Object.entries(viewingImage.variants.square).map(([size, url]) => (
-                            url && (
-                              <div key={size} className="flex flex-col items-center gap-2 p-3 border rounded-lg">
-                                <div className="flex items-center justify-center w-40 h-24 bg-gray-50">
+                        <h5 className="text-md font-medium mb-3 flex items-center gap-2">
+                          <span className="w-3 h-3 rounded bg-secondary"></span>
+                          Cuadradas ({Object.keys(viewingImage.variants.square).filter(k => viewingImage.variants.square[k]).length} tamaños)
+                        </h5>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {(['xsmall', 'small', 'medium', 'large', 'xlarge', 'xxlarge'] as const).map((size) => {
+                            const url = viewingImage.variants?.square?.[size];
+                            if (!url) return null;
+                            const sizeLabels: Record<string, string> = {
+                              xsmall: 'XS - Extra pequeño',
+                              small: 'S - Pequeño',
+                              medium: 'M - Mediano',
+                              large: 'L - Grande',
+                              xlarge: 'XL - Extra grande',
+                              xxlarge: 'XXL - Máximo'
+                            };
+                            return (
+                              <div key={size} className="flex flex-col gap-2 p-3 border rounded-lg bg-muted/30">
+                                <div className="flex items-center justify-center h-20 bg-background rounded">
                                   <img 
-                                    src={url as string} 
-                                    alt={`${size} square preview`}
-                                    className={`${getPreviewSize(size)} object-contain`}
+                                    src={url} 
+                                    alt={`Square ${size}`}
+                                    className="max-h-16 max-w-full object-contain"
                                   />
                                 </div>
-                                <span className="text-sm font-medium capitalize">{size}</span>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => copyToClipboard(url as string)}
-                                  className="h-7 px-2 w-full"
-                                >
-                                  {copiedUrl === url ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
-                                  <span className="text-xs">
-                                    {copiedUrl === url ? 'Copiado' : 'Copiar URL'}
-                                  </span>
-                                </Button>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium">{sizeLabels[size]}</span>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => copyToClipboard(url)}
+                                    className="h-7 px-2"
+                                  >
+                                    {copiedUrl === url ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3" />}
+                                  </Button>
+                                </div>
+                                <code className="text-xs text-muted-foreground break-all line-clamp-2 bg-background px-2 py-1 rounded">
+                                  {url}
+                                </code>
                               </div>
-                            )
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     </>
+                  )}
+
+                  {(!viewingImage.variants?.original || Object.keys(viewingImage.variants.original).filter(k => viewingImage.variants.original[k]).length === 0) &&
+                   (!viewingImage.variants?.square || Object.keys(viewingImage.variants.square).filter(k => viewingImage.variants.square[k]).length === 0) && (
+                    <p className="text-muted-foreground text-center py-4">No hay versiones disponibles para esta imagen</p>
                   )}
                 </div>
               </div>

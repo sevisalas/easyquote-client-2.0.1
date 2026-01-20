@@ -13,6 +13,20 @@ export interface ImageData {
   mediumImage?: string;
   dateCreated?: string;
 
+  // EasyQuote detail fields - all versions
+  xSmallImageOriginal?: string;
+  smallImageOriginal?: string;
+  mediumImageOriginal?: string;
+  largeImageOriginal?: string;
+  xLargeImageOriginal?: string;
+  xxLargeImageOriginal?: string;
+  xSmallImageSquare?: string;
+  smallImageSquare?: string;
+  mediumImageSquare?: string;
+  largeImageSquare?: string;
+  xLargeImageSquare?: string;
+  xxLargeImageSquare?: string;
+
   // Local-app friendly aliases
   filename?: string;
   original_filename?: string;
@@ -40,30 +54,48 @@ type EasyQuoteImageListItem = {
 };
 
 function normalizeEasyQuoteImage(item: any): ImageData {
-  const i = item as EasyQuoteImageListItem;
-  const filename = i?.name;
-  const url = i?.mediumImage || i?.smallImage;
+  const filename = item?.name;
+  const url = item?.mediumImage || item?.smallImage || item?.mediumImageOriginal || item?.smallImageOriginal;
+
+  // Build variants from detail API response (all sizes)
+  const variants: ImageData['variants'] = {
+    original: {},
+    square: {},
+  };
+
+  // Map original versions
+  if (item?.xSmallImageOriginal) variants.original!.xsmall = item.xSmallImageOriginal;
+  if (item?.smallImageOriginal) variants.original!.small = item.smallImageOriginal;
+  if (item?.mediumImageOriginal) variants.original!.medium = item.mediumImageOriginal;
+  if (item?.largeImageOriginal) variants.original!.large = item.largeImageOriginal;
+  if (item?.xLargeImageOriginal) variants.original!.xlarge = item.xLargeImageOriginal;
+  if (item?.xxLargeImageOriginal) variants.original!.xxlarge = item.xxLargeImageOriginal;
+
+  // Map square versions
+  if (item?.xSmallImageSquare) variants.square!.xsmall = item.xSmallImageSquare;
+  if (item?.smallImageSquare) variants.square!.small = item.smallImageSquare;
+  if (item?.mediumImageSquare) variants.square!.medium = item.mediumImageSquare;
+  if (item?.largeImageSquare) variants.square!.large = item.largeImageSquare;
+  if (item?.xLargeImageSquare) variants.square!.xlarge = item.xLargeImageSquare;
+  if (item?.xxLargeImageSquare) variants.square!.xxlarge = item.xxLargeImageSquare;
+
+  // Fallback for list API (only has smallImage/mediumImage)
+  if (Object.keys(variants.original!).length === 0 && (item?.smallImage || item?.mediumImage)) {
+    if (item?.smallImage) variants.original!.small = item.smallImage;
+    if (item?.mediumImage) variants.original!.medium = item.mediumImage;
+  }
 
   return {
     ...item,
-    id: i.id,
-    name: i.name,
-    dateCreated: i.dateCreated,
-    smallImage: i.smallImage,
-    mediumImage: i.mediumImage,
-
-    // aliases expected by the UI
-    filename: filename,
+    id: item.id,
+    name: item.name,
+    dateCreated: item.dateCreated,
+    smallImage: item.smallImage,
+    mediumImage: item.mediumImage,
+    filename,
     original_filename: filename,
     url,
-
-    // minimal variants so the dialog/gallery can show something
-    variants: {
-      original: {
-        small: i.smallImage,
-        medium: i.mediumImage,
-      },
-    },
+    variants,
   };
 }
 
