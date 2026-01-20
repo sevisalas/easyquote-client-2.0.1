@@ -23,8 +23,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
   className = "",
   images: propImages,
 }) => {
+  // Solo usar el hook si no nos pasan imágenes por props
   const { images: hookImages, isLoading, deleteImage, isDeleting, fetchImageDetails } = useImageManagement();
-  const images = propImages || hookImages;
+  const images = propImages ?? hookImages;
   
   const [viewingImage, setViewingImage] = useState<any | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);

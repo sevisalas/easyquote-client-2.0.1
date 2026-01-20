@@ -105,6 +105,8 @@ export const useImageManagement = () => {
       if (error) throw error;
       return data;
     },
+    staleTime: 5 * 60 * 1000, // 5 minutos - no refetch innecesarios
+    refetchOnWindowFocus: false, // No refetch al volver a la ventana
   });
 
   const images = normalizeEasyQuoteImageList(imagesRaw);
