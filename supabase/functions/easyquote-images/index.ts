@@ -15,14 +15,25 @@ const EASYQUOTE_API_BASE = 'https://api.easyquote.cloud/api/v1'
 
 async function getEasyQuoteToken(userId: string): Promise<string | null> {
   try {
-    const { data, error } = await supabaseAdmin.rpc('get_easyquote_credentials', {
+    // Use the organization-aware credentials function
+    const { data, error } = await supabaseAdmin.rpc('get_organization_easyquote_credentials', {
       p_user_id: userId
     })
 
-    if (error || !data) {
+    if (error) {
       console.error('Error getting EasyQuote credentials:', error)
       return null
     }
+
+    // RPC returns an array, get first row
+    const credentials = Array.isArray(data) ? data[0] : data
+    
+    if (!credentials || !credentials.api_username || !credentials.api_password) {
+      console.error('No EasyQuote credentials found for user:', userId)
+      return null
+    }
+
+    console.log('Got credentials for user, authenticating with EasyQuote...')
 
     // Authenticate with EasyQuote API
     const authResponse = await fetch(`${EASYQUOTE_API_BASE}/auth/login`, {
@@ -31,17 +42,19 @@ async function getEasyQuoteToken(userId: string): Promise<string | null> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        username: data.username,
-        password: data.password,
+        username: credentials.api_username,
+        password: credentials.api_password,
       }),
     })
 
     if (!authResponse.ok) {
-      console.error('EasyQuote auth failed:', authResponse.status)
+      const errorText = await authResponse.text()
+      console.error('EasyQuote auth failed:', authResponse.status, errorText)
       return null
     }
 
     const authData = await authResponse.json()
+    console.log('EasyQuote auth successful')
     return authData.token || authData.access_token || null
   } catch (err) {
     console.error('Error authenticating with EasyQuote:', err)
