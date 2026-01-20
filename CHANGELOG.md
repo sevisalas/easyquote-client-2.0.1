@@ -5,6 +5,15 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.0] - 2026-01-20
+
+### Añadido
+- **Gestión de imágenes integrada con EasyQuote**: Nueva funcionalidad para listar, subir y eliminar imágenes directamente desde la API de EasyQuote
+- Sistema de categorización local de imágenes con categorías y subcategorías por organización
+- Edge Function `easyquote-images` como proxy para la API externa con autenticación automática
+
+---
+
 ## [2.4.16] - 2026-01-19
 
 ### Corregido
