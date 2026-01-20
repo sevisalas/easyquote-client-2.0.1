@@ -26,6 +26,17 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.5.0",
+    date: "2026-01-20",
+    changes: {
+      added: [
+        "Gestión de imágenes integrada con EasyQuote: listar, subir y eliminar imágenes directamente desde la API externa",
+        "Sistema de categorización local de imágenes con categorías y subcategorías por organización",
+        "Edge Function como proxy para la API de imágenes con autenticación automática",
+      ],
+    },
+  },
+  {
     version: "2.4.14",
     date: "2026-01-17",
     changes: {
