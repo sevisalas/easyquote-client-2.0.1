@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4'
+import { encodeBase64 } from 'https://deno.land/std@0.224.0/encoding/base64.ts'
 import { corsHeaders } from '../_shared/cors.ts'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -237,17 +238,17 @@ Deno.serve(async (req) => {
         }
 
         // Forward the file to EasyQuote API
-        // EasyQuote API may expect the field name to be 'Image' or 'image' instead of 'file'
-        const uploadFormData = new FormData()
-        
-        // Create a new Blob from the file to ensure proper handling
+        // EasyQuote API expects a JSON payload (Swagger shows application/json-patch+json)
         const fileBuffer = await file.arrayBuffer()
-        const fileBlob = new Blob([fileBuffer], { type: file.type })
-        
-        // Try with 'Image' as the field name (common in .NET APIs)
-        uploadFormData.append('Image', fileBlob, file.name)
-        
-        console.log('Uploading to EasyQuote:', {
+        const fileBytes = new Uint8Array(fileBuffer)
+        const fileBase64 = encodeBase64(fileBytes)
+
+        const payload = {
+          fileName: file.name,
+          file: fileBase64,
+        }
+
+        console.log('Uploading to EasyQuote (JSON):', {
           filename: file.name,
           type: file.type,
           size: file.size,
@@ -257,9 +258,9 @@ Deno.serve(async (req) => {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${easyquoteToken}`,
-            // Don't set Content-Type manually - let fetch set it with the boundary
+            'Content-Type': 'application/json-patch+json',
           },
-          body: uploadFormData,
+          body: JSON.stringify(payload),
         })
 
         if (!uploadResponse.ok) {
