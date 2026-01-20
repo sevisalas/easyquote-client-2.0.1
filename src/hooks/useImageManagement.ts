@@ -43,8 +43,15 @@ export const useImageManagement = () => {
   const { data: images = [], isLoading, error } = useQuery({
     queryKey: ["user-images"],
     queryFn: async () => {
+      const organizationId = sessionStorage.getItem('selectedOrganization');
+      const headers: Record<string, string> = {};
+      if (organizationId) {
+        headers['X-Organization-Id'] = organizationId;
+      }
+      
       const { data, error } = await supabase.functions.invoke('easyquote-images', {
-        method: 'GET'
+        method: 'GET',
+        headers
       });
 
       if (error) throw error;
@@ -66,6 +73,13 @@ export const useImageManagement = () => {
 
       setUploadProgress(0);
 
+      // Get organization ID
+      const organizationId = sessionStorage.getItem('selectedOrganization');
+      const headers: Record<string, string> = {};
+      if (organizationId) {
+        headers['X-Organization-Id'] = organizationId;
+      }
+
       // Create form data
       const formData = new FormData();
       formData.append('file', file);
@@ -74,7 +88,8 @@ export const useImageManagement = () => {
 
       const { data, error } = await supabase.functions.invoke('easyquote-images', {
         method: 'POST',
-        body: formData
+        body: formData,
+        headers
       });
 
       if (error) throw error;
@@ -96,8 +111,15 @@ export const useImageManagement = () => {
   // Delete image mutation
   const deleteImageMutation = useMutation({
     mutationFn: async (imageId: string) => {
+      const organizationId = sessionStorage.getItem('selectedOrganization');
+      const headers: Record<string, string> = {};
+      if (organizationId) {
+        headers['X-Organization-Id'] = organizationId;
+      }
+      
       const { error } = await supabase.functions.invoke(`easyquote-images/${imageId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers
       });
 
       if (error) throw error;
