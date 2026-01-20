@@ -13,9 +13,16 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
 
 const EASYQUOTE_API_BASE = 'https://api.easyquote.cloud/api/v1'
 
-async function getEasyQuoteToken(userId: string): Promise<string | null> {
+async function getEasyQuoteToken(userId: string, providedToken: string | null): Promise<string | null> {
+  // If a valid token was provided by the frontend, use it directly
+  if (providedToken) {
+    console.log('Using provided EasyQuote token from frontend')
+    return providedToken
+  }
+
+  // Fallback: authenticate using stored credentials
+  console.log('No token provided, authenticating with stored credentials...')
   try {
-    // Use the organization-aware credentials function
     const { data, error } = await supabaseAdmin.rpc('get_organization_easyquote_credentials', {
       p_user_id: userId
     })
@@ -25,7 +32,6 @@ async function getEasyQuoteToken(userId: string): Promise<string | null> {
       return null
     }
 
-    // RPC returns an array, get first row
     const credentials = Array.isArray(data) ? data[0] : data
     
     if (!credentials || !credentials.api_username || !credentials.api_password) {
@@ -33,14 +39,9 @@ async function getEasyQuoteToken(userId: string): Promise<string | null> {
       return null
     }
 
-    console.log('Got credentials for user, authenticating with EasyQuote...')
-
-    // Authenticate with EasyQuote API (correct endpoint: /users/authenticate with email field)
     const authResponse = await fetch(`${EASYQUOTE_API_BASE}/users/authenticate`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: credentials.api_username,
         password: credentials.api_password,
@@ -54,7 +55,6 @@ async function getEasyQuoteToken(userId: string): Promise<string | null> {
     }
 
     const authData = await authResponse.json()
-    console.log('EasyQuote auth successful')
     return authData.token || authData.access_token || null
   } catch (err) {
     console.error('Error authenticating with EasyQuote:', err)
@@ -88,10 +88,10 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Get EasyQuote token
-    const easyquoteToken = await getEasyQuoteToken(user.id)
+    // Get EasyQuote token - prefer the one from frontend header
+    const providedToken = req.headers.get('X-EasyQuote-Token')
+    const easyquoteToken = await getEasyQuoteToken(user.id, providedToken)
     if (!easyquoteToken) {
-      // Use 502 Bad Gateway instead of 401 to avoid triggering session logout
       return new Response(
         JSON.stringify({ error: 'Could not authenticate with EasyQuote API', code: 'EASYQUOTE_AUTH_FAILED' }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
