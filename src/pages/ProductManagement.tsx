@@ -2922,10 +2922,13 @@ export default function ProductManagement() {
             <Button variant="outline" onClick={() => setIsNewPromptDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={createNewPrompt}>
+            <Button onClick={createNewPrompt} disabled={!newPromptData.promptSheet}>
               Crear valor de entrada
             </Button>
           </div>
+          {!newPromptData.promptSheet && (
+            <p className="text-sm text-destructive mt-2">⚠️ Debes seleccionar una hoja del Excel</p>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -3010,10 +3013,13 @@ export default function ProductManagement() {
             <Button variant="outline" onClick={() => setIsNewOutputDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={createNewOutput}>
+            <Button onClick={createNewOutput} disabled={!newOutputData.sheet}>
               Crear Output
             </Button>
           </div>
+          {!newOutputData.sheet && (
+            <p className="text-sm text-destructive mt-2">⚠️ Debes seleccionar una hoja del Excel</p>
+          )}
         </DialogContent>
       </Dialog>
 
