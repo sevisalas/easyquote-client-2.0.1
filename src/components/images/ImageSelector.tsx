@@ -43,11 +43,13 @@ export const ImageSelector: React.FC<ImageSelectorProps> = ({
             {selectedImage ? (
               <div className="flex items-center space-x-2">
                 <img
-                  src={selectedImage.url}
-                  alt={selectedImage.original_filename}
+                  src={selectedImage.url || selectedImage.mediumImage || selectedImage.smallImage || ""}
+                  alt={selectedImage.original_filename || selectedImage.filename || selectedImage.name || "Imagen"}
                   className="w-6 h-6 rounded object-cover"
                 />
-                <span className="truncate">{selectedImage.original_filename}</span>
+                <span className="truncate">
+                  {selectedImage.original_filename || selectedImage.filename || selectedImage.name}
+                </span>
               </div>
             ) : (
               <div className="flex items-center space-x-2">
