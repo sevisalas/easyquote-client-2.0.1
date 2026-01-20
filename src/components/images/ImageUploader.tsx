@@ -1,22 +1,41 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { useImageManagement } from "@/hooks/useImageManagement";
+import { useImageCategories } from "@/hooks/useImageCategories";
+import { useImageSubcategories } from "@/hooks/useImageSubcategories";
+import { useImageCategoryAssignments } from "@/hooks/useImageCategoryAssignments";
 
 interface ImageUploaderProps {
   onUploadComplete?: (imageId: string) => void;
   multiple?: boolean;
   className?: string;
+  defaultCategoryId?: string;
+  defaultSubcategoryId?: string;
 }
 
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
   onUploadComplete,
   multiple = false,
   className = "",
+  defaultCategoryId,
+  defaultSubcategoryId,
 }) => {
   const { uploadImage, isUploading, uploadProgress } = useImageManagement();
+  const { categories } = useImageCategories();
+  const { subcategories } = useImageSubcategories();
+  const { assignCategory } = useImageCategoryAssignments();
+
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(defaultCategoryId || "");
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>(defaultSubcategoryId || "");
+
+  // Filter subcategories by selected category
+  const filteredSubcategories = subcategories.filter(
+    (sub) => sub.category_id === selectedCategoryId
+  );
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -27,13 +46,21 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
           { file },
           {
             onSuccess: (data) => {
+              // Assign category if selected
+              if (selectedCategoryId && data?.id) {
+                assignCategory({
+                  imageId: data.id,
+                  categoryId: selectedCategoryId,
+                  subcategoryId: selectedSubcategoryId || null,
+                });
+              }
               onUploadComplete?.(data.id);
             },
           }
         );
       });
     },
-    [uploadImage, multiple, onUploadComplete]
+    [uploadImage, multiple, onUploadComplete, selectedCategoryId, selectedSubcategoryId, assignCategory]
   );
 
   const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
@@ -46,8 +73,60 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     disabled: isUploading,
   });
 
+  // Reset subcategory when category changes
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategoryId(value);
+    setSelectedSubcategoryId("");
+  };
+
   return (
     <div className={`space-y-4 ${className}`}>
+      {/* Category and Subcategory selectors */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="upload-category">Categoría</Label>
+          <Select value={selectedCategoryId} onValueChange={handleCategoryChange}>
+            <SelectTrigger id="upload-category">
+              <SelectValue placeholder="Seleccionar categoría" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: cat.color }} 
+                    />
+                    {cat.name}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="upload-subcategory">Subcategoría</Label>
+          <Select 
+            value={selectedSubcategoryId} 
+            onValueChange={setSelectedSubcategoryId}
+            disabled={!selectedCategoryId || filteredSubcategories.length === 0}
+          >
+            <SelectTrigger id="upload-subcategory">
+              <SelectValue placeholder={filteredSubcategories.length === 0 ? "Sin subcategorías" : "Seleccionar"} />
+            </SelectTrigger>
+            <SelectContent>
+              {filteredSubcategories.map((sub) => (
+                <SelectItem key={sub.id} value={sub.id}>
+                  {sub.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Dropzone */}
       <div
         {...getRootProps()}
         className={`
