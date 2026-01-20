@@ -626,6 +626,52 @@ export type Database = {
           },
         ]
       }
+      image_category_assignments: {
+        Row: {
+          category_id: string
+          created_at: string
+          easyquote_image_id: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          easyquote_image_id: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          easyquote_image_id?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "image_category_assignments_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "image_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "image_category_assignments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "image_category_assignments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       images: {
         Row: {
           category_id: string | null
