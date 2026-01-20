@@ -63,12 +63,19 @@ async function getEasyQuoteToken(userId: string, providedToken: string | null): 
 }
 
 Deno.serve(async (req) => {
+  console.log('=== easyquote-images request ===')
+  console.log('Method:', req.method)
+  console.log('URL:', req.url)
+  
   // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    // Log headers for debugging
+    const providedToken = req.headers.get('X-EasyQuote-Token')
+    console.log('X-EasyQuote-Token present:', !!providedToken)
     // Get user from JWT token
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
