@@ -14,8 +14,10 @@ export interface ImageCategory {
 export const useImageCategories = () => {
   const queryClient = useQueryClient();
 
+  const organizationId = sessionStorage.getItem("selected_organization_id") || null;
+
   const { data: categories = [], isLoading } = useQuery({
-    queryKey: ["image-categories"],
+    queryKey: ["image-categories", organizationId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("image_categories")
@@ -32,7 +34,6 @@ export const useImageCategories = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No autenticado");
 
-      const organizationId = sessionStorage.getItem('selectedOrganization');
       if (!organizationId) throw new Error("No hay organización seleccionada");
 
       const { data, error } = await supabase
@@ -51,7 +52,7 @@ export const useImageCategories = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["image-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["image-categories", organizationId] });
       toast.success("Categoría creada");
     },
     onError: (error: any) => {
@@ -81,7 +82,7 @@ export const useImageCategories = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["image-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["image-categories", organizationId] });
       toast.success("Categoría actualizada");
     },
     onError: (error: any) => {
@@ -100,8 +101,8 @@ export const useImageCategories = () => {
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["image-categories"] });
-      queryClient.invalidateQueries({ queryKey: ["user-images"] });
+      queryClient.invalidateQueries({ queryKey: ["image-categories", organizationId] });
+      queryClient.invalidateQueries({ queryKey: ["user-images", organizationId] });
       toast.success("Categoría eliminada");
     },
     onError: (error: any) => {

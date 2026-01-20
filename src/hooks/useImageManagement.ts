@@ -39,19 +39,18 @@ export const useImageManagement = () => {
   const queryClient = useQueryClient();
   const [uploadProgress, setUploadProgress] = useState<number>(0);
 
-  // Fetch user images
+  const organizationId = sessionStorage.getItem("selected_organization_id") || null;
+  const orgHeaders: Record<string, string> = organizationId
+    ? { "X-Organization-Id": organizationId }
+    : {};
+
+  // Fetch organization images
   const { data: images = [], isLoading, error } = useQuery({
-    queryKey: ["user-images"],
+    queryKey: ["user-images", organizationId],
     queryFn: async () => {
-      const organizationId = sessionStorage.getItem('selectedOrganization');
-      const headers: Record<string, string> = {};
-      if (organizationId) {
-        headers['X-Organization-Id'] = organizationId;
-      }
-      
-      const { data, error } = await supabase.functions.invoke('easyquote-images', {
-        method: 'GET',
-        headers
+      const { data, error } = await supabase.functions.invoke("easyquote-images", {
+        method: "GET",
+        headers: orgHeaders,
       });
 
       if (error) throw error;
@@ -73,32 +72,25 @@ export const useImageManagement = () => {
 
       setUploadProgress(0);
 
-      // Get organization ID
-      const organizationId = sessionStorage.getItem('selectedOrganization');
-      const headers: Record<string, string> = {};
-      if (organizationId) {
-        headers['X-Organization-Id'] = organizationId;
-      }
-
       // Create form data
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('tags', JSON.stringify(tags));
-      if (description) formData.append('description', description);
+      formData.append("file", file);
+      formData.append("tags", JSON.stringify(tags));
+      if (description) formData.append("description", description);
 
-      const { data, error } = await supabase.functions.invoke('easyquote-images', {
-        method: 'POST',
+      const { data, error } = await supabase.functions.invoke("easyquote-images", {
+        method: "POST",
         body: formData,
-        headers
+        headers: orgHeaders,
       });
 
       if (error) throw error;
-      
+
       setUploadProgress(100);
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user-images"] });
+      queryClient.invalidateQueries({ queryKey: ["user-images", organizationId] });
       toast.success("Imagen subida correctamente");
       setUploadProgress(0);
     },
@@ -111,22 +103,16 @@ export const useImageManagement = () => {
   // Delete image mutation
   const deleteImageMutation = useMutation({
     mutationFn: async (imageId: string) => {
-      const organizationId = sessionStorage.getItem('selectedOrganization');
-      const headers: Record<string, string> = {};
-      if (organizationId) {
-        headers['X-Organization-Id'] = organizationId;
-      }
-      
       const { error } = await supabase.functions.invoke(`easyquote-images/${imageId}`, {
-        method: 'DELETE',
-        headers
+        method: "DELETE",
+        headers: orgHeaders,
       });
 
       if (error) throw error;
       return imageId;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user-images"] });
+      queryClient.invalidateQueries({ queryKey: ["user-images", organizationId] });
       toast.success("Imagen eliminada correctamente");
     },
     onError: (error: any) => {
@@ -137,21 +123,23 @@ export const useImageManagement = () => {
   // Fetch single image details
   const fetchImageDetails = async (imageId: string) => {
     const { data, error } = await supabase.functions.invoke(`easyquote-images/${imageId}`, {
-      method: 'GET'
+      method: "GET",
+      headers: orgHeaders,
     });
 
     if (error) throw error;
     return data;
   };
+
   const updateImageMutation = useMutation({
-    mutationFn: async ({ 
-      imageId, 
-      tags, 
+    mutationFn: async ({
+      imageId,
+      tags,
       description,
-      category_id 
-    }: { 
-      imageId: string; 
-      tags?: string[]; 
+      category_id,
+    }: {
+      imageId: string;
+      tags?: string[];
       description?: string;
       category_id?: string | null;
     }) => {
@@ -161,15 +149,16 @@ export const useImageManagement = () => {
       if (category_id !== undefined) updateData.category_id = category_id;
 
       const { data, error } = await supabase.functions.invoke(`easyquote-images/${imageId}`, {
-        method: 'PATCH',
-        body: updateData
+        method: "PATCH",
+        body: updateData,
+        headers: orgHeaders,
       });
 
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user-images"] });
+      queryClient.invalidateQueries({ queryKey: ["user-images", organizationId] });
       toast.success("Imagen actualizada correctamente");
     },
     onError: (error: any) => {
