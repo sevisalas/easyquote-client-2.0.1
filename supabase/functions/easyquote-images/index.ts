@@ -151,6 +151,58 @@ Deno.serve(async (req) => {
         }
 
       case 'POST':
+        // Check if this is a list request or file upload
+        const contentType = req.headers.get('content-type') || ''
+        
+        if (contentType.includes('application/json')) {
+          // Handle JSON body - list or get single image
+          const body = await req.json()
+          
+          if (body.action === 'list') {
+            // List all images from EasyQuote API
+            const response = await fetch(`${EASYQUOTE_API_BASE}/images`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${easyquoteToken}`,
+              },
+            })
+
+            if (!response.ok) {
+              throw new Error(`EasyQuote API error: ${response.status}`)
+            }
+
+            const images = await response.json()
+            return new Response(
+              JSON.stringify(images),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+          } else if (body.action === 'get' && body.imageId) {
+            // Get single image
+            const response = await fetch(`${EASYQUOTE_API_BASE}/images/${body.imageId}`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${easyquoteToken}`,
+              },
+            })
+
+            if (!response.ok) {
+              if (response.status === 404) {
+                return new Response(
+                  JSON.stringify({ error: 'Image not found' }),
+                  { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                )
+              }
+              throw new Error(`EasyQuote API error: ${response.status}`)
+            }
+
+            const imageData = await response.json()
+            return new Response(
+              JSON.stringify(imageData),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+          }
+        }
+        
         // Upload image to EasyQuote API
         const formData = await req.formData()
         const file = formData.get('file') as File

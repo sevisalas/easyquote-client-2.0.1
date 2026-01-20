@@ -95,7 +95,7 @@ export const useImageManagement = () => {
     queryKey: ["user-images", organizationId],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("easyquote-images", {
-        method: "GET",
+        body: { action: "list" },
         headers: orgHeaders,
       });
 
@@ -168,8 +168,8 @@ export const useImageManagement = () => {
 
   // Fetch single image details
   const fetchImageDetails = async (imageId: string) => {
-    const { data, error } = await supabase.functions.invoke(`easyquote-images/${imageId}`, {
-      method: "GET",
+    const { data, error } = await supabase.functions.invoke("easyquote-images", {
+      body: { action: "get", imageId },
       headers: orgHeaders,
     });
 
