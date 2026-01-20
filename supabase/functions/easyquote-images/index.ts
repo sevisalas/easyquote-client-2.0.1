@@ -150,6 +150,7 @@ Deno.serve(async (req) => {
           }
 
           const images = await response.json()
+          console.log('EasyQuote images list count:', Array.isArray(images) ? images.length : 'not array', 'first:', images?.[0]?.id)
           return new Response(
             JSON.stringify(images),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
