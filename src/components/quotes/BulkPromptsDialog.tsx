@@ -360,7 +360,10 @@ export function BulkPromptsDialog({
             <Plus className="h-4 w-4 mr-2" />
             Añadir
           </Button>
-          <Button onClick={handleSave} disabled={isSaving || prompts.length === 0}>
+          <Button 
+            onClick={handleSave} 
+            disabled={isSaving || prompts.length === 0 || prompts.some(p => !p.sheet)}
+          >
             {isSaving ? (
               <>
                 <Save className="h-4 w-4 mr-2 animate-spin" />
@@ -373,6 +376,9 @@ export function BulkPromptsDialog({
               </>
             )}
           </Button>
+          {prompts.some(p => !p.sheet) && prompts.length > 0 && (
+            <p className="text-sm text-destructive">⚠️ Todos los datos deben tener una hoja asignada</p>
+          )}
         </div>
       </DialogContent>
     </Dialog>

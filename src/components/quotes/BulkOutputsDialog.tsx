@@ -259,7 +259,10 @@ export function BulkOutputsDialog({
             <Plus className="h-4 w-4 mr-2" />
             Añadir
           </Button>
-          <Button onClick={handleSave} disabled={isSaving || outputs.length === 0}>
+          <Button 
+            onClick={handleSave} 
+            disabled={isSaving || outputs.length === 0 || outputs.some(o => !o.sheet)}
+          >
             {isSaving ? (
               <>
                 <Save className="h-4 w-4 mr-2 animate-spin" />
@@ -272,6 +275,9 @@ export function BulkOutputsDialog({
               </>
             )}
           </Button>
+          {outputs.some(o => !o.sheet) && outputs.length > 0 && (
+            <p className="text-sm text-destructive">⚠️ Todos los datos deben tener una hoja asignada</p>
+          )}
         </div>
       </DialogContent>
     </Dialog>
