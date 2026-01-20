@@ -73,9 +73,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Log headers for debugging
-    const providedToken = req.headers.get('X-EasyQuote-Token')
-    console.log('X-EasyQuote-Token present:', !!providedToken)
     // Get user from JWT token
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
@@ -97,6 +94,7 @@ Deno.serve(async (req) => {
 
     // Get EasyQuote token - prefer the one from frontend header
     const providedToken = req.headers.get('X-EasyQuote-Token')
+    console.log('X-EasyQuote-Token present:', !!providedToken)
     const easyquoteToken = await getEasyQuoteToken(user.id, providedToken)
     if (!easyquoteToken) {
       return new Response(
