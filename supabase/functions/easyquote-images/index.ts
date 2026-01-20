@@ -164,67 +164,125 @@ Deno.serve(async (req) => {
           )
         }
 
-        // Generate unique filename
-        const fileExt = file.name.split('.').pop()
-        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-
-        // Upload to storage
-        const { error: uploadError } = await supabaseAdmin.storage
-          .from('product-images')
-          .upload(fileName, file, {
-            cacheControl: '3600',
-            upsert: false,
-          })
-
-        if (uploadError) {
-          throw uploadError
-        }
-
-        // Get image dimensions (simplified - in a real implementation you'd use a proper image library)
-        const dimensions = { width: null, height: null }
-
-        // Save metadata to database
-        const { data: newImage, error: dbError } = await supabaseAdmin
+        // Check if image with same original_filename already exists for this user
+        const { data: existingImage } = await supabaseAdmin
           .from('images')
-          .insert({
-            user_id: user.id,
-            filename: fileName.split('/').pop() || fileName,
-            original_filename: file.name,
-            file_size: file.size,
-            mime_type: file.type,
-            width: dimensions.width,
-            height: dimensions.height,
-            storage_path: fileName,
-            tags,
-            description,
-          })
-          .select()
+          .select('id, storage_path')
+          .eq('user_id', user.id)
+          .eq('original_filename', file.name)
           .single()
 
-        if (dbError) {
-          throw dbError
+        let fileName: string
+        let resultImage: any
+
+        if (existingImage) {
+          // Update existing image: delete old file from storage
+          await supabaseAdmin.storage
+            .from('product-images')
+            .remove([existingImage.storage_path])
+
+          // Generate new filename
+          const fileExt = file.name.split('.').pop()
+          fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+
+          // Upload new file
+          const { error: uploadError } = await supabaseAdmin.storage
+            .from('product-images')
+            .upload(fileName, file, {
+              cacheControl: '3600',
+              upsert: false,
+            })
+
+          if (uploadError) {
+            throw uploadError
+          }
+
+          // Update database record
+          const { data: updatedImage, error: updateError } = await supabaseAdmin
+            .from('images')
+            .update({
+              filename: fileName.split('/').pop() || fileName,
+              file_size: file.size,
+              mime_type: file.type,
+              storage_path: fileName,
+              tags: tags.length > 0 ? tags : undefined,
+              description: description || undefined,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existingImage.id)
+            .select()
+            .single()
+
+          if (updateError) {
+            throw updateError
+          }
+
+          resultImage = updatedImage
+          console.log(`Image updated: ${file.name} (replaced existing)`)
+        } else {
+          // Create new image
+          const fileExt = file.name.split('.').pop()
+          fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+
+          // Upload to storage
+          const { error: uploadError } = await supabaseAdmin.storage
+            .from('product-images')
+            .upload(fileName, file, {
+              cacheControl: '3600',
+              upsert: false,
+            })
+
+          if (uploadError) {
+            throw uploadError
+          }
+
+          // Save metadata to database
+          const { data: newImage, error: dbError } = await supabaseAdmin
+            .from('images')
+            .insert({
+              user_id: user.id,
+              filename: fileName.split('/').pop() || fileName,
+              original_filename: file.name,
+              file_size: file.size,
+              mime_type: file.type,
+              width: null,
+              height: null,
+              storage_path: fileName,
+              tags,
+              description,
+            })
+            .select()
+            .single()
+
+          if (dbError) {
+            throw dbError
+          }
+
+          resultImage = newImage
+          console.log(`New image created: ${file.name}`)
         }
 
-        // Get public URL for response
-        const { data: urlData } = supabaseAdmin.storage
+        // Get signed URL for response
+        const { data: urlData } = await supabaseAdmin.storage
           .from('product-images')
-          .getPublicUrl(fileName)
+          .createSignedUrl(fileName, 3600)
 
         return new Response(
           JSON.stringify({
-            id: newImage.id,
-            filename: newImage.filename,
-            original_filename: newImage.original_filename,
-            url: urlData.publicUrl,
-            mime_type: newImage.mime_type,
-            file_size: newImage.file_size,
-            width: newImage.width,
-            height: newImage.height,
-            tags: newImage.tags,
-            description: newImage.description,
-            created_at: newImage.created_at
+            id: resultImage.id,
+            filename: resultImage.filename,
+            original_filename: resultImage.original_filename,
+            url: urlData?.signedUrl || null,
+            mime_type: resultImage.mime_type,
+            file_size: resultImage.file_size,
+            width: resultImage.width,
+            height: resultImage.height,
+            tags: resultImage.tags,
+            description: resultImage.description,
+            created_at: resultImage.created_at,
+            updated: !!existingImage
           }),
-          { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: existingImage ? 200 : 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
 
       case 'DELETE':
