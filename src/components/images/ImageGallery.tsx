@@ -378,13 +378,21 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                             xlarge: 'XL - Extra grande',
                             xxlarge: 'XXL - Máximo'
                           };
+                          const previewSizes: Record<string, string> = {
+                            xsmall: 'w-8 h-8',
+                            small: 'w-12 h-12',
+                            medium: 'w-16 h-16',
+                            large: 'w-20 h-20',
+                            xlarge: 'w-24 h-24',
+                            xxlarge: 'w-28 h-28'
+                          };
                           return (
-                            <div key={size} className="flex items-center gap-3 p-2 border rounded-lg bg-muted/30">
-                              <div className="flex items-center justify-center w-12 h-12 bg-background rounded shrink-0">
+                            <div key={size} className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30">
+                              <div className={`flex items-center justify-center ${previewSizes[size]} bg-background rounded shrink-0`}>
                                 <img 
                                   src={url} 
                                   alt={`Original ${size}`}
-                                  className="max-h-10 max-w-10 object-contain"
+                                  className="max-h-full max-w-full object-contain"
                                 />
                               </div>
                               <span className="text-sm font-medium flex-1">{sizeLabels[size]}</span>
@@ -424,13 +432,21 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                               xlarge: 'XL - Extra grande',
                               xxlarge: 'XXL - Máximo'
                             };
+                            const previewSizes: Record<string, string> = {
+                              xsmall: 'w-8 h-8',
+                              small: 'w-12 h-12',
+                              medium: 'w-16 h-16',
+                              large: 'w-20 h-20',
+                              xlarge: 'w-24 h-24',
+                              xxlarge: 'w-28 h-28'
+                            };
                             return (
-                              <div key={size} className="flex items-center gap-3 p-2 border rounded-lg bg-muted/30">
-                                <div className="flex items-center justify-center w-12 h-12 bg-background rounded shrink-0">
+                              <div key={size} className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30">
+                                <div className={`flex items-center justify-center ${previewSizes[size]} bg-background rounded shrink-0`}>
                                   <img 
                                     src={url} 
                                     alt={`Square ${size}`}
-                                    className="max-h-10 max-w-10 object-contain"
+                                    className="max-h-full max-w-full object-contain"
                                   />
                                 </div>
                                 <span className="text-sm font-medium flex-1">{sizeLabels[size]}</span>
