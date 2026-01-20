@@ -237,13 +237,27 @@ Deno.serve(async (req) => {
         }
 
         // Forward the file to EasyQuote API
+        // EasyQuote API may expect the field name to be 'Image' or 'image' instead of 'file'
         const uploadFormData = new FormData()
-        uploadFormData.append('file', file)
+        
+        // Create a new Blob from the file to ensure proper handling
+        const fileBuffer = await file.arrayBuffer()
+        const fileBlob = new Blob([fileBuffer], { type: file.type })
+        
+        // Try with 'Image' as the field name (common in .NET APIs)
+        uploadFormData.append('Image', fileBlob, file.name)
+        
+        console.log('Uploading to EasyQuote:', {
+          filename: file.name,
+          type: file.type,
+          size: file.size,
+        })
 
         const uploadResponse = await fetch(`${EASYQUOTE_API_BASE}/images`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${easyquoteToken}`,
+            // Don't set Content-Type manually - let fetch set it with the boundary
           },
           body: uploadFormData,
         })
