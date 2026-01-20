@@ -6,11 +6,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Separator } from "@/components/ui/separator";
 import { useImageManagement, ImageData } from "@/hooks/useImageManagement";
 import { useImageCategories } from "@/hooks/useImageCategories";
+import { useImageSubcategories } from "@/hooks/useImageSubcategories";
 import { useImageCategoryAssignments } from "@/hooks/useImageCategoryAssignments";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 
 interface ImageGalleryProps {
   onImageSelect?: (image: ImageData) => void;
@@ -31,7 +33,8 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
 }) => {
   const { images: hookImages, isLoading, deleteImage, isDeleting, fetchImageDetails } = useImageManagement();
   const { categories } = useImageCategories();
-  const { getCategoryForImage, assignCategory, isAssigning } = useImageCategoryAssignments();
+  const { subcategories, getSubcategoriesForCategory } = useImageSubcategories();
+  const { getCategoryForImage, getSubcategoryForImage, assignCategory, isAssigning } = useImageCategoryAssignments();
   const images = propImages ?? hookImages;
   
   const [viewingImage, setViewingImage] = useState<any | null>(null);
@@ -74,31 +77,47 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     return image.url || image.variants?.original?.medium || image.variants?.square?.medium;
   };
 
-  const handleCategoryChange = (imageId: string, categoryId: string) => {
+  const handleCategoryChange = (imageId: string, categoryId: string, subcategoryId?: string) => {
     assignCategory({
       imageId,
       categoryId: categoryId === "none" ? null : categoryId,
+      subcategoryId: subcategoryId === "none" ? null : subcategoryId,
     });
+  };
+
+  const getAvailableSubcategories = (categoryId: string | null) => {
+    if (!categoryId) return [];
+    return getSubcategoriesForCategory(categoryId);
   };
 
   const getCategoryBadge = (imageId: string) => {
     const categoryId = getCategoryForImage(imageId);
+    const subcategoryId = getSubcategoryForImage(imageId);
     if (!categoryId) return null;
     const category = categories.find((c) => c.id === categoryId);
     if (!category) return null;
+    const subcategory = subcategoryId ? subcategories.find((s) => s.id === subcategoryId) : null;
+    
     return (
-      <Badge 
-        variant="secondary" 
-        className="text-xs gap-1"
-        style={{ 
-          backgroundColor: category.color + "20",
-          borderColor: category.color,
-          color: category.color,
-        }}
-      >
-        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: category.color }} />
-        {category.name}
-      </Badge>
+      <div className="flex flex-col gap-0.5">
+        <Badge 
+          variant="secondary" 
+          className="text-xs gap-1"
+          style={{ 
+            backgroundColor: category.color + "20",
+            borderColor: category.color,
+            color: category.color,
+          }}
+        >
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: category.color }} />
+          {category.name}
+        </Badge>
+        {subcategory && (
+          <Badge variant="outline" className="text-xs">
+            {subcategory.name}
+          </Badge>
+        )}
+      </div>
     );
   };
 
@@ -206,30 +225,56 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                     </p>
                   )}
                   {showCategoryAssignment && (
-                    <Select
-                      value={getCategoryForImage(image.id) || "none"}
-                      onValueChange={(value) => handleCategoryChange(image.id, value)}
-                      disabled={isAssigning}
-                    >
-                      <SelectTrigger className="h-8 text-xs" onClick={(e) => e.stopPropagation()}>
-                        <Tag className="w-3 h-3 mr-1" />
-                        <SelectValue placeholder="Sin categoría" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Sin categoría</SelectItem>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            <div className="flex items-center gap-2">
-                              <div
-                                className="w-3 h-3 rounded-full"
-                                style={{ backgroundColor: cat.color }}
-                              />
-                              {cat.name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                      <Select
+                        value={getCategoryForImage(image.id) || "none"}
+                        onValueChange={(value) => handleCategoryChange(image.id, value)}
+                        disabled={isAssigning}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <Tag className="w-3 h-3 mr-1" />
+                          <SelectValue placeholder="Categoría" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Sin categoría</SelectItem>
+                          {categories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-3 h-3 rounded-full"
+                                  style={{ backgroundColor: cat.color }}
+                                />
+                                {cat.name}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {(() => {
+                        const catId = getCategoryForImage(image.id);
+                        const subs = catId ? getAvailableSubcategories(catId) : [];
+                        if (subs.length === 0) return null;
+                        return (
+                          <Select
+                            value={getSubcategoryForImage(image.id) || "none"}
+                            onValueChange={(value) => handleCategoryChange(image.id, catId!, value)}
+                            disabled={isAssigning}
+                          >
+                            <SelectTrigger className="h-7 text-xs">
+                              <SelectValue placeholder="Subcategoría" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Sin subcategoría</SelectItem>
+                              {subs.map((sub) => (
+                                <SelectItem key={sub.id} value={sub.id}>
+                                  {sub.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        );
+                      })()}
+                    </div>
                   )}
                 </div>
               </CardContent>
@@ -266,31 +311,60 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
               </div>
 
               {showCategoryAssignment && (
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Categoría</h4>
-                  <Select
-                    value={getCategoryForImage(viewingImage.id) || "none"}
-                    onValueChange={(value) => handleCategoryChange(viewingImage.id, value)}
-                    disabled={isAssigning}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Sin categoría" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Sin categoría</SelectItem>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: cat.color }}
-                            />
-                            {cat.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium mb-2">Categoría</Label>
+                    <Select
+                      value={getCategoryForImage(viewingImage.id) || "none"}
+                      onValueChange={(value) => handleCategoryChange(viewingImage.id, value)}
+                      disabled={isAssigning}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Sin categoría" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sin categoría</SelectItem>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: cat.color }}
+                              />
+                              {cat.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {(() => {
+                    const catId = getCategoryForImage(viewingImage.id);
+                    const subs = catId ? getAvailableSubcategories(catId) : [];
+                    if (subs.length === 0) return null;
+                    return (
+                      <div>
+                        <Label className="text-sm font-medium mb-2">Subcategoría</Label>
+                        <Select
+                          value={getSubcategoryForImage(viewingImage.id) || "none"}
+                          onValueChange={(value) => handleCategoryChange(viewingImage.id, catId!, value)}
+                          disabled={isAssigning}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Sin subcategoría" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Sin subcategoría</SelectItem>
+                            {subs.map((sub) => (
+                              <SelectItem key={sub.id} value={sub.id}>
+                                {sub.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
               

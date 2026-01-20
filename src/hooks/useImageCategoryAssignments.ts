@@ -6,6 +6,7 @@ export interface ImageCategoryAssignment {
   id: string;
   easyquote_image_id: string;
   category_id: string;
+  subcategory_id: string | null;
   organization_id: string;
   created_at: string;
 }
@@ -14,7 +15,6 @@ export const useImageCategoryAssignments = () => {
   const queryClient = useQueryClient();
   const organizationId = sessionStorage.getItem("selected_organization_id") || null;
 
-  // Fetch all assignments for the organization
   const { data: assignments = [], isLoading } = useQuery({
     queryKey: ["image-category-assignments", organizationId],
     queryFn: async () => {
@@ -31,32 +31,41 @@ export const useImageCategoryAssignments = () => {
     enabled: !!organizationId,
   });
 
-  // Get category for a specific image
   const getCategoryForImage = (imageId: string): string | null => {
     const assignment = assignments.find((a) => a.easyquote_image_id === imageId);
     return assignment?.category_id || null;
   };
 
-  // Get all images for a specific category
+  const getSubcategoryForImage = (imageId: string): string | null => {
+    const assignment = assignments.find((a) => a.easyquote_image_id === imageId);
+    return assignment?.subcategory_id || null;
+  };
+
   const getImagesForCategory = (categoryId: string): string[] => {
     return assignments
       .filter((a) => a.category_id === categoryId)
       .map((a) => a.easyquote_image_id);
   };
 
-  // Assign or update category for an image
+  const getImagesForSubcategory = (subcategoryId: string): string[] => {
+    return assignments
+      .filter((a) => a.subcategory_id === subcategoryId)
+      .map((a) => a.easyquote_image_id);
+  };
+
   const assignCategoryMutation = useMutation({
     mutationFn: async ({
       imageId,
       categoryId,
+      subcategoryId,
     }: {
       imageId: string;
       categoryId: string | null;
+      subcategoryId?: string | null;
     }) => {
       if (!organizationId) throw new Error("No hay organización seleccionada");
 
       if (categoryId === null) {
-        // Remove assignment
         const { error } = await supabase
           .from("image_category_assignments")
           .delete()
@@ -67,13 +76,13 @@ export const useImageCategoryAssignments = () => {
         return null;
       }
 
-      // Upsert assignment
       const { data, error } = await supabase
         .from("image_category_assignments")
         .upsert(
           {
             easyquote_image_id: imageId,
             category_id: categoryId,
+            subcategory_id: subcategoryId || null,
             organization_id: organizationId,
           },
           {
@@ -100,7 +109,9 @@ export const useImageCategoryAssignments = () => {
     assignments,
     isLoading,
     getCategoryForImage,
+    getSubcategoryForImage,
     getImagesForCategory,
+    getImagesForSubcategory,
     assignCategory: assignCategoryMutation.mutate,
     isAssigning: assignCategoryMutation.isPending,
   };

@@ -633,6 +633,7 @@ export type Database = {
           easyquote_image_id: string
           id: string
           organization_id: string
+          subcategory_id: string | null
         }
         Insert: {
           category_id: string
@@ -640,6 +641,7 @@ export type Database = {
           easyquote_image_id: string
           id?: string
           organization_id: string
+          subcategory_id?: string | null
         }
         Update: {
           category_id?: string
@@ -647,6 +649,7 @@ export type Database = {
           easyquote_image_id?: string
           id?: string
           organization_id?: string
+          subcategory_id?: string | null
         }
         Relationships: [
           {
@@ -665,6 +668,65 @@ export type Database = {
           },
           {
             foreignKeyName: "image_category_assignments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "image_category_assignments_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "image_subcategories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      image_subcategories: {
+        Row: {
+          category_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "image_subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "image_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "image_subcategories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "image_subcategories_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"

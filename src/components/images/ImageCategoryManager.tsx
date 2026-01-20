@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useImageCategories, ImageCategory } from "@/hooks/useImageCategories";
+import { useImageSubcategories, ImageSubcategory } from "@/hooks/useImageSubcategories";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -21,29 +21,31 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Folder } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Plus, Pencil, Trash2, Folder, ChevronRight, ChevronDown } from "lucide-react";
 
 const PRESET_COLORS = [
-  "#6366f1", // Indigo
-  "#8b5cf6", // Violet
-  "#ec4899", // Pink
-  "#ef4444", // Red
-  "#f97316", // Orange
-  "#eab308", // Yellow
-  "#22c55e", // Green
-  "#14b8a6", // Teal
-  "#06b6d4", // Cyan
-  "#3b82f6", // Blue
+  "#6366f1", "#8b5cf6", "#ec4899", "#ef4444", "#f97316",
+  "#eab308", "#22c55e", "#14b8a6", "#06b6d4", "#3b82f6",
 ];
 
 export const ImageCategoryManager: React.FC = () => {
   const { categories, isLoading, createCategory, updateCategory, deleteCategory, isCreating } = useImageCategories();
-  
+  const { subcategories, getSubcategoriesForCategory, createSubcategory, updateSubcategory, deleteSubcategory, isCreating: isCreatingSub } = useImageSubcategories();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSubDialogOpen, setIsSubDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ImageCategory | null>(null);
-  const [categoryToDelete, setCategoryToDelete] = useState<ImageCategory | null>(null);
-  
+  const [editingSubcategory, setEditingSubcategory] = useState<ImageSubcategory | null>(null);
+  const [parentCategoryId, setParentCategoryId] = useState<string | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<{ type: "category" | "subcategory"; item: ImageCategory | ImageSubcategory } | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState(PRESET_COLORS[0]);
@@ -53,9 +55,11 @@ export const ImageCategoryManager: React.FC = () => {
     setDescription("");
     setColor(PRESET_COLORS[0]);
     setEditingCategory(null);
+    setEditingSubcategory(null);
+    setParentCategoryId(null);
   };
 
-  const handleOpenDialog = (category?: ImageCategory) => {
+  const handleOpenCategoryDialog = (category?: ImageCategory) => {
     if (category) {
       setEditingCategory(category);
       setName(category.name);
@@ -67,12 +71,26 @@ export const ImageCategoryManager: React.FC = () => {
     setIsDialogOpen(true);
   };
 
+  const handleOpenSubcategoryDialog = (categoryId: string, subcategory?: ImageSubcategory) => {
+    setParentCategoryId(categoryId);
+    if (subcategory) {
+      setEditingSubcategory(subcategory);
+      setName(subcategory.name);
+      setDescription(subcategory.description || "");
+    } else {
+      setName("");
+      setDescription("");
+    }
+    setIsSubDialogOpen(true);
+  };
+
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
+    setIsSubDialogOpen(false);
     resetForm();
   };
 
-  const handleSubmit = () => {
+  const handleSubmitCategory = () => {
     if (!name.trim()) return;
 
     if (editingCategory) {
@@ -92,17 +110,52 @@ export const ImageCategoryManager: React.FC = () => {
     handleCloseDialog();
   };
 
-  const handleDeleteClick = (category: ImageCategory) => {
-    setCategoryToDelete(category);
+  const handleSubmitSubcategory = () => {
+    if (!name.trim() || !parentCategoryId) return;
+
+    if (editingSubcategory) {
+      updateSubcategory({
+        id: editingSubcategory.id,
+        name: name.trim(),
+        description: description.trim() || undefined,
+      });
+    } else {
+      createSubcategory({
+        categoryId: parentCategoryId,
+        name: name.trim(),
+        description: description.trim() || undefined,
+      });
+    }
+    handleCloseDialog();
+  };
+
+  const handleDeleteClick = (type: "category" | "subcategory", item: ImageCategory | ImageSubcategory) => {
+    setCategoryToDelete({ type, item });
     setIsDeleteDialogOpen(true);
   };
 
   const handleConfirmDelete = () => {
     if (categoryToDelete) {
-      deleteCategory(categoryToDelete.id);
+      if (categoryToDelete.type === "category") {
+        deleteCategory(categoryToDelete.item.id);
+      } else {
+        deleteSubcategory(categoryToDelete.item.id);
+      }
     }
     setIsDeleteDialogOpen(false);
     setCategoryToDelete(null);
+  };
+
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+      return next;
+    });
   };
 
   if (isLoading) {
@@ -117,7 +170,7 @@ export const ImageCategoryManager: React.FC = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Categorías de imágenes</h3>
-        <Button onClick={() => handleOpenDialog()} size="sm">
+        <Button onClick={() => handleOpenCategoryDialog()} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Nueva categoría
         </Button>
@@ -130,46 +183,117 @@ export const ImageCategoryManager: React.FC = () => {
           <p className="text-sm">Crea categorías para organizar tus imágenes</p>
         </div>
       ) : (
-        <div className="grid gap-2">
-          {categories.map((category) => (
-            <div
-              key={category.id}
-              className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-4 h-4 rounded-full"
-                  style={{ backgroundColor: category.color }}
-                />
-                <div>
-                  <p className="font-medium">{category.name}</p>
-                  {category.description && (
-                    <p className="text-sm text-muted-foreground">{category.description}</p>
-                  )}
+        <div className="space-y-2">
+          {categories.map((category) => {
+            const subs = getSubcategoriesForCategory(category.id);
+            const isExpanded = expandedCategories.has(category.id);
+
+            return (
+              <Collapsible key={category.id} open={isExpanded} onOpenChange={() => toggleCategory(category.id)}>
+                <div className="rounded-lg border bg-card">
+                  <div className="flex items-center justify-between p-3 hover:bg-accent/50 transition-colors">
+                    <div className="flex items-center gap-3 flex-1">
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                          {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        </Button>
+                      </CollapsibleTrigger>
+                      <div
+                        className="w-4 h-4 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: category.color }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium">{category.name}</p>
+                        {category.description && (
+                          <p className="text-sm text-muted-foreground truncate">{category.description}</p>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                        {subs.length} sub
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 ml-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleOpenSubcategoryDialog(category.id)}
+                        title="Añadir subcategoría"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleOpenCategoryDialog(category)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleDeleteClick("category", category)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <CollapsibleContent>
+                    {subs.length > 0 && (
+                      <div className="border-t px-3 py-2 space-y-1 bg-muted/30">
+                        {subs.map((sub) => (
+                          <div
+                            key={sub.id}
+                            className="flex items-center justify-between py-2 px-3 rounded hover:bg-accent/50 transition-colors"
+                          >
+                            <div className="flex items-center gap-2 ml-6">
+                              <div className="w-2 h-2 rounded-full bg-muted-foreground/50" />
+                              <div>
+                                <p className="text-sm font-medium">{sub.name}</p>
+                                {sub.description && (
+                                  <p className="text-xs text-muted-foreground">{sub.description}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => handleOpenSubcategoryDialog(category.id, sub)}
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => handleDeleteClick("subcategory", sub)}
+                              >
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {subs.length === 0 && (
+                      <div className="border-t px-3 py-4 text-center text-sm text-muted-foreground bg-muted/30">
+                        Sin subcategorías
+                      </div>
+                    )}
+                  </CollapsibleContent>
                 </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleOpenDialog(category)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDeleteClick(category)}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </div>
-            </div>
-          ))}
+              </Collapsible>
+            );
+          })}
         </div>
       )}
 
-      {/* Create/Edit Dialog */}
+      {/* Category Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -179,18 +303,18 @@ export const ImageCategoryManager: React.FC = () => {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nombre *</Label>
+              <Label htmlFor="cat-name">Nombre *</Label>
               <Input
-                id="name"
+                id="cat-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ej: Fly Banners, Roll Ups..."
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Descripción</Label>
+              <Label htmlFor="cat-description">Descripción</Label>
               <Input
-                id="description"
+                id="cat-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Descripción opcional"
@@ -219,8 +343,47 @@ export const ImageCategoryManager: React.FC = () => {
             <Button variant="outline" onClick={handleCloseDialog}>
               Cancelar
             </Button>
-            <Button onClick={handleSubmit} disabled={!name.trim() || isCreating}>
+            <Button onClick={handleSubmitCategory} disabled={!name.trim() || isCreating}>
               {editingCategory ? "Guardar" : "Crear"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Subcategory Dialog */}
+      <Dialog open={isSubDialogOpen} onOpenChange={setIsSubDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingSubcategory ? "Editar subcategoría" : "Nueva subcategoría"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="sub-name">Nombre *</Label>
+              <Input
+                id="sub-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ej: 80x200, 100x200..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="sub-description">Descripción</Label>
+              <Input
+                id="sub-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Descripción opcional"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseDialog}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSubmitSubcategory} disabled={!name.trim() || isCreatingSub}>
+              {editingSubcategory ? "Guardar" : "Crear"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -230,9 +393,13 @@ export const ImageCategoryManager: React.FC = () => {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar categoría?</AlertDialogTitle>
+            <AlertDialogTitle>
+              ¿Eliminar {categoryToDelete?.type === "category" ? "categoría" : "subcategoría"}?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Se eliminará la categoría "{categoryToDelete?.name}". Las imágenes asignadas a esta categoría quedarán sin clasificar.
+              {categoryToDelete?.type === "category"
+                ? `Se eliminará la categoría "${(categoryToDelete?.item as ImageCategory)?.name}" y todas sus subcategorías. Las imágenes asignadas quedarán sin clasificar.`
+                : `Se eliminará la subcategoría "${(categoryToDelete?.item as ImageSubcategory)?.name}". Las imágenes asignadas mantendrán su categoría padre.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
