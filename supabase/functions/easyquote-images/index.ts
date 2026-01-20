@@ -11,6 +11,44 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   }
 })
 
+const EASYQUOTE_API_BASE = 'https://api.easyquote.cloud/api/v1'
+
+async function getEasyQuoteToken(userId: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabaseAdmin.rpc('get_easyquote_credentials', {
+      p_user_id: userId
+    })
+
+    if (error || !data) {
+      console.error('Error getting EasyQuote credentials:', error)
+      return null
+    }
+
+    // Authenticate with EasyQuote API
+    const authResponse = await fetch(`${EASYQUOTE_API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: data.username,
+        password: data.password,
+      }),
+    })
+
+    if (!authResponse.ok) {
+      console.error('EasyQuote auth failed:', authResponse.status)
+      return null
+    }
+
+    const authData = await authResponse.json()
+    return authData.token || authData.access_token || null
+  } catch (err) {
+    console.error('Error authenticating with EasyQuote:', err)
+    return null
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -37,28 +75,12 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Get user's organization from sessionStorage header or organization_members
-    const orgIdHeader = req.headers.get('X-Organization-Id')
-    let organizationId: string | null = null
-
-    if (orgIdHeader) {
-      organizationId = orgIdHeader
-    } else {
-      // Fallback: get first organization from membership
-      const { data: membership } = await supabaseAdmin
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', user.id)
-        .limit(1)
-        .single()
-      
-      organizationId = membership?.organization_id || null
-    }
-
-    if (!organizationId) {
+    // Get EasyQuote token
+    const easyquoteToken = await getEasyQuoteToken(user.id)
+    if (!easyquoteToken) {
       return new Response(
-        JSON.stringify({ error: 'Organization not found for user' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Could not authenticate with EasyQuote API' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -71,101 +93,53 @@ Deno.serve(async (req) => {
     switch (req.method) {
       case 'GET':
         if (imageId && imageId !== 'easyquote-images') {
-          // Get single image from local database
-          const { data: image, error: fetchError } = await supabaseAdmin
-            .from('images')
-            .select('*')
-            .eq('id', imageId)
-            .eq('organization_id', organizationId)
-            .single()
+          // Get single image from EasyQuote API
+          const response = await fetch(`${EASYQUOTE_API_BASE}/images/${imageId}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${easyquoteToken}`,
+            },
+          })
 
-          if (fetchError || !image) {
-            return new Response(
-              JSON.stringify({ error: 'Image not found' }),
-              { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
+          if (!response.ok) {
+            if (response.status === 404) {
+              return new Response(
+                JSON.stringify({ error: 'Image not found' }),
+                { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              )
+            }
+            throw new Error(`EasyQuote API error: ${response.status}`)
           }
 
-          // Get signed URL for the image
-          const { data: urlData } = await supabaseAdmin.storage
-            .from('product-images')
-            .createSignedUrl(image.storage_path, 3600) // 1 hour expiry
-
+          const imageData = await response.json()
           return new Response(
-            JSON.stringify({
-              id: image.id,
-              filename: image.filename,
-              original_filename: image.original_filename,
-              dateCreated: image.created_at,
-              url: urlData?.signedUrl || null,
-              mime_type: image.mime_type,
-              file_size: image.file_size,
-              width: image.width,
-              height: image.height,
-              tags: image.tags || [],
-              description: image.description,
-              variants: {
-                original: {
-                  medium: urlData?.signedUrl || null,
-                },
-                square: {
-                  medium: urlData?.signedUrl || null,
-                }
-              }
-            }),
+            JSON.stringify(imageData),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           )
         } else {
-          // List all images from local database
-          const { data: images, error: listError } = await supabaseAdmin
-            .from('images')
-            .select('*, category:image_categories(id, name, color)')
-            .eq('organization_id', organizationId)
-            .eq('is_active', true)
-            .order('created_at', { ascending: false })
+          // List all images from EasyQuote API
+          const response = await fetch(`${EASYQUOTE_API_BASE}/images`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${easyquoteToken}`,
+            },
+          })
 
-          if (listError) {
-            console.error('Error fetching images from database:', listError)
-            throw new Error(`Failed to fetch images: ${listError.message}`)
+          if (!response.ok) {
+            throw new Error(`EasyQuote API error: ${response.status}`)
           }
 
-          // Get signed URLs for all images
-          const transformedImages = await Promise.all(
-            (images || []).map(async (image: any) => {
-              const { data: urlData } = await supabaseAdmin.storage
-                .from('product-images')
-                .createSignedUrl(image.storage_path, 3600)
-
-              return {
-                id: image.id,
-                filename: image.filename,
-                original_filename: image.original_filename,
-                url: urlData?.signedUrl || null,
-                mime_type: image.mime_type,
-                file_size: image.file_size,
-                width: image.width,
-                category_id: image.category_id,
-                category: image.category,
-                height: image.height,
-                tags: image.tags || [],
-                description: image.description,
-                created_at: image.created_at
-              }
-            })
-          )
-
+          const images = await response.json()
           return new Response(
-            JSON.stringify(transformedImages),
+            JSON.stringify(images),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           )
         }
 
       case 'POST':
-        // Upload image
+        // Upload image to EasyQuote API
         const formData = await req.formData()
         const file = formData.get('file') as File
-        const tags = formData.get('tags') ? JSON.parse(formData.get('tags') as string) : []
-        const description = formData.get('description') as string || undefined
 
         if (!file) {
           return new Response(
@@ -191,159 +165,33 @@ Deno.serve(async (req) => {
           )
         }
 
-        // Check if image with same original_filename already exists for this organization
-        const { data: existingImage } = await supabaseAdmin
-          .from('images')
-          .select('id, storage_path')
-          .eq('organization_id', organizationId)
-          .eq('original_filename', file.name)
-          .single()
+        // Forward the file to EasyQuote API
+        const uploadFormData = new FormData()
+        uploadFormData.append('file', file)
 
-        let fileName: string
-        let resultImage: any
+        const uploadResponse = await fetch(`${EASYQUOTE_API_BASE}/images`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${easyquoteToken}`,
+          },
+          body: uploadFormData,
+        })
 
-        if (existingImage) {
-          // Update existing image: delete old file from storage
-          await supabaseAdmin.storage
-            .from('product-images')
-            .remove([existingImage.storage_path])
-
-          // Generate new filename using organization ID for better isolation
-          const fileExt = file.name.split('.').pop()
-          fileName = `${organizationId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-
-          // Upload new file
-          const { error: uploadError } = await supabaseAdmin.storage
-            .from('product-images')
-            .upload(fileName, file, {
-              cacheControl: '3600',
-              upsert: false,
-            })
-
-          if (uploadError) {
-            throw uploadError
-          }
-
-          // Update database record
-          const { data: updatedImage, error: updateError } = await supabaseAdmin
-            .from('images')
-            .update({
-              filename: fileName.split('/').pop() || fileName,
-              file_size: file.size,
-              mime_type: file.type,
-              storage_path: fileName,
-              tags: tags.length > 0 ? tags : undefined,
-              description: description || undefined,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', existingImage.id)
-            .select()
-            .single()
-
-          if (updateError) {
-            throw updateError
-          }
-
-          resultImage = updatedImage
-          console.log(`Image updated: ${file.name} (replaced existing)`)
-        } else {
-          // Create new image
-          const fileExt = file.name.split('.').pop()
-          fileName = `${organizationId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-
-          // Upload to storage
-          const { error: uploadError } = await supabaseAdmin.storage
-            .from('product-images')
-            .upload(fileName, file, {
-              cacheControl: '3600',
-              upsert: false,
-            })
-
-          if (uploadError) {
-            throw uploadError
-          }
-
-          // Save metadata to database
-          const { data: newImage, error: dbError } = await supabaseAdmin
-            .from('images')
-            .insert({
-              user_id: user.id,
-              organization_id: organizationId,
-              filename: fileName.split('/').pop() || fileName,
-              original_filename: file.name,
-              file_size: file.size,
-              mime_type: file.type,
-              width: null,
-              height: null,
-              storage_path: fileName,
-              tags,
-              description,
-            })
-            .select()
-            .single()
-
-          if (dbError) {
-            throw dbError
-          }
-
-          resultImage = newImage
-          console.log(`New image created: ${file.name}`)
-        }
-
-        // Get signed URL for response
-        const { data: urlData } = await supabaseAdmin.storage
-          .from('product-images')
-          .createSignedUrl(fileName, 3600)
-
-        return new Response(
-          JSON.stringify({
-            id: resultImage.id,
-            filename: resultImage.filename,
-            original_filename: resultImage.original_filename,
-            url: urlData?.signedUrl || null,
-            mime_type: resultImage.mime_type,
-            file_size: resultImage.file_size,
-            width: resultImage.width,
-            height: resultImage.height,
-            tags: resultImage.tags,
-            description: resultImage.description,
-            created_at: resultImage.created_at,
-            updated: !!existingImage
-          }),
-          { status: existingImage ? 200 : 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-
-      case 'PATCH':
-        // Update image metadata
-        if (!imageId || imageId === 'easyquote-images') {
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text()
+          console.error('EasyQuote upload error:', errorText)
           return new Response(
-            JSON.stringify({ error: 'Image ID is required' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            JSON.stringify({ error: `Upload failed: ${uploadResponse.status}` }),
+            { status: uploadResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           )
         }
 
-        const updateBody = await req.json()
-        const updateFields: any = {}
-        
-        if (updateBody.tags !== undefined) updateFields.tags = updateBody.tags
-        if (updateBody.description !== undefined) updateFields.description = updateBody.description
-        if (updateBody.category_id !== undefined) updateFields.category_id = updateBody.category_id
-
-        const { data: updatedImg, error: updateErr } = await supabaseAdmin
-          .from('images')
-          .update(updateFields)
-          .eq('id', imageId)
-          .eq('organization_id', organizationId)
-          .select()
-          .single()
-
-        if (updateErr) {
-          throw updateErr
-        }
+        const uploadResult = await uploadResponse.json()
+        console.log('Image uploaded to EasyQuote:', uploadResult)
 
         return new Response(
-          JSON.stringify(updatedImg),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify(uploadResult),
+          { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
 
       case 'DELETE':
@@ -354,39 +202,22 @@ Deno.serve(async (req) => {
           )
         }
 
-        // Get image to delete
-        const { data: imageToDelete, error: fetchError } = await supabaseAdmin
-          .from('images')
-          .select('storage_path')
-          .eq('id', imageId)
-          .eq('organization_id', organizationId)
-          .single()
+        // Delete from EasyQuote API
+        const deleteResponse = await fetch(`${EASYQUOTE_API_BASE}/images/${imageId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${easyquoteToken}`,
+          },
+        })
 
-        if (fetchError || !imageToDelete) {
-          return new Response(
-            JSON.stringify({ error: 'Image not found' }),
-            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
-        }
-
-        // Delete from storage
-        const { error: storageError } = await supabaseAdmin.storage
-          .from('product-images')
-          .remove([imageToDelete.storage_path])
-
-        if (storageError) {
-          console.error('Storage deletion error:', storageError)
-        }
-
-        // Delete from database
-        const { error: deleteError } = await supabaseAdmin
-          .from('images')
-          .delete()
-          .eq('id', imageId)
-          .eq('organization_id', organizationId)
-
-        if (deleteError) {
-          throw deleteError
+        if (!deleteResponse.ok) {
+          if (deleteResponse.status === 404) {
+            return new Response(
+              JSON.stringify({ error: 'Image not found' }),
+              { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+          }
+          throw new Error(`EasyQuote API error: ${deleteResponse.status}`)
         }
 
         return new Response(

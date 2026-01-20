@@ -1,16 +1,10 @@
 import React, { useState } from "react";
-import { Trash2, Edit, Eye, Copy, Check, Folder } from "lucide-react";
+import { Trash2, Eye, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useImageManagement, ImageData } from "@/hooks/useImageManagement";
-import { ImageCategory } from "@/hooks/useImageCategories";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
@@ -20,7 +14,6 @@ interface ImageGalleryProps {
   selectionMode?: boolean;
   className?: string;
   images?: ImageData[];
-  categories?: ImageCategory[];
 }
 
 export const ImageGallery: React.FC<ImageGalleryProps> = ({
@@ -29,25 +22,13 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
   selectionMode = false,
   className = "",
   images: propImages,
-  categories = [],
 }) => {
-  const { images: hookImages, isLoading, deleteImage, updateImage, isDeleting, fetchImageDetails } = useImageManagement();
+  const { images: hookImages, isLoading, deleteImage, isDeleting, fetchImageDetails } = useImageManagement();
   const images = propImages || hookImages;
   
-  const [editingImage, setEditingImage] = useState<ImageData | null>(null);
   const [viewingImage, setViewingImage] = useState<any | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
-  const [editTags, setEditTags] = useState<string>("");
-  const [editDescription, setEditDescription] = useState<string>("");
-  const [editCategoryId, setEditCategoryId] = useState<string>("");
   const [copiedUrl, setCopiedUrl] = useState<string>("");
-
-  const handleEditImage = (image: ImageData) => {
-    setEditingImage(image);
-    setEditTags(image.tags.join(", "));
-    setEditDescription(image.description || "");
-    setEditCategoryId(image.category_id || "none");
-  };
 
   const handleViewImage = async (image: ImageData) => {
     setLoadingDetails(true);
@@ -60,24 +41,6 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     } finally {
       setLoadingDetails(false);
     }
-  };
-
-  const handleSaveEdit = () => {
-    if (!editingImage) return;
-
-    const tags = editTags
-      .split(",")
-      .map(tag => tag.trim())
-      .filter(tag => tag.length > 0);
-
-    updateImage({
-      imageId: editingImage.id,
-      tags,
-      description: editDescription,
-      category_id: editCategoryId === "none" ? null : editCategoryId,
-    });
-
-    setEditingImage(null);
   };
 
   const getPreviewSize = (size: string) => {
@@ -99,9 +62,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     setTimeout(() => setCopiedUrl(""), 2000);
   };
 
-  const getCategoryForImage = (categoryId?: string) => {
-    if (!categoryId) return null;
-    return categories.find(c => c.id === categoryId);
+  // Get the best available URL for display
+  const getImageUrl = (image: ImageData) => {
+    return image.url || image.variants?.original?.medium || image.variants?.square?.medium;
   };
 
   if (isLoading && !propImages) {
@@ -138,7 +101,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     <>
       <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ${className}`}>
         {images.map((image) => {
-          const category = getCategoryForImage(image.category_id);
+          const imageUrl = getImageUrl(image);
           return (
             <Card 
               key={image.id} 
@@ -149,26 +112,16 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
             >
               <CardContent className="p-0">
                 <div className="aspect-square relative">
-                  <img
-                    src={image.url}
-                    alt={image.original_filename}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                  {category && (
-                    <div className="absolute top-2 left-2">
-                      <Badge 
-                        variant="secondary" 
-                        className="text-xs gap-1"
-                        style={{ 
-                          backgroundColor: category.color + '20',
-                          borderColor: category.color,
-                          color: category.color
-                        }}
-                      >
-                        <Folder className="w-3 h-3" />
-                        {category.name}
-                      </Badge>
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt={image.filename || image.original_filename || 'Image'}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                      <Eye className="w-8 h-8 text-muted-foreground" />
                     </div>
                   )}
                   {!selectionMode && (
@@ -183,17 +136,6 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                         }}
                       >
                         <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="h-8 w-8 p-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditImage(image);
-                        }}
-                      >
-                        <Edit className="w-4 h-4" />
                       </Button>
                       <Button
                         size="sm"
@@ -215,27 +157,11 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                 
                 <div className="p-3">
                   <p className="text-sm font-medium truncate mb-1">
-                    {image.original_filename}
+                    {image.filename || image.original_filename || 'Sin nombre'}
                   </p>
-                  
-                  {image.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-2">
-                      {image.tags.slice(0, 2).map((tag) => (
-                        <Badge key={tag} variant="secondary" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                      {image.tags.length > 2 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{image.tags.length - 2}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-                  
-                  {image.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {image.description}
+                  {image.dateCreated && (
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(image.dateCreated).toLocaleDateString()}
                     </p>
                   )}
                 </div>
@@ -244,70 +170,6 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
           );
         })}
       </div>
-
-      {/* Edit Dialog */}
-      <Dialog open={!!editingImage} onOpenChange={() => setEditingImage(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar imagen</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="category">Categoría</Label>
-              <Select value={editCategoryId} onValueChange={setEditCategoryId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar categoría" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin categoría</SelectItem>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: cat.color }}
-                        />
-                        {cat.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="tags">Etiquetas (separadas por comas)</Label>
-              <Input
-                id="tags"
-                value={editTags}
-                onChange={(e) => setEditTags(e.target.value)}
-                placeholder="producto, categoría, color"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="description">Descripción</Label>
-              <Textarea
-                id="description"
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                placeholder="Descripción de la imagen"
-                rows={3}
-              />
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setEditingImage(null)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSaveEdit}>
-                Guardar cambios
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* View Dialog */}
       <Dialog open={!!viewingImage} onOpenChange={() => setViewingImage(null)}>
@@ -340,69 +202,74 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                 <h4 className="text-lg font-semibold mb-3">Variantes disponibles</h4>
                 
                 <div className="space-y-4">
-                  <div>
-                    <h5 className="text-md font-medium mb-3">Originales</h5>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {Object.entries(viewingImage.variants?.original || {}).map(([size, url]) => (
-                        url && (
-                          <div key={size} className="flex flex-col items-center gap-2 p-3 border rounded-lg">
-                            <div className="flex items-center justify-center w-40 h-24 bg-gray-50">
-                              <img 
-                                src={url as string} 
-                                alt={`${size} preview`}
-                                className={`${getPreviewSize(size)} object-contain`}
-                              />
+                  {viewingImage.variants?.original && Object.keys(viewingImage.variants.original).length > 0 && (
+                    <div>
+                      <h5 className="text-md font-medium mb-3">Originales</h5>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {Object.entries(viewingImage.variants.original).map(([size, url]) => (
+                          url && (
+                            <div key={size} className="flex flex-col items-center gap-2 p-3 border rounded-lg">
+                              <div className="flex items-center justify-center w-40 h-24 bg-gray-50">
+                                <img 
+                                  src={url as string} 
+                                  alt={`${size} preview`}
+                                  className={`${getPreviewSize(size)} object-contain`}
+                                />
+                              </div>
+                              <span className="text-sm font-medium capitalize">{size}</span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => copyToClipboard(url as string)}
+                                className="h-7 px-2 w-full"
+                              >
+                                {copiedUrl === url ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
+                                <span className="text-xs">
+                                  {copiedUrl === url ? 'Copiado' : 'Copiar URL'}
+                                </span>
+                              </Button>
                             </div>
-                            <span className="text-sm font-medium capitalize">{size}</span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => copyToClipboard(url as string)}
-                              className="h-7 px-2 w-full"
-                            >
-                              {copiedUrl === url ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
-                              <span className="text-xs">
-                                {copiedUrl === url ? 'Copiado' : 'Copiar URL'}
-                              </span>
-                            </Button>
-                          </div>
-                        )
-                      ))}
+                          )
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                   
-                  <Separator />
-                  
-                  <div>
-                    <h5 className="text-md font-medium mb-3">Cuadradas</h5>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {Object.entries(viewingImage.variants?.square || {}).map(([size, url]) => (
-                        url && (
-                          <div key={size} className="flex flex-col items-center gap-2 p-3 border rounded-lg">
-                            <div className="flex items-center justify-center w-40 h-24 bg-gray-50">
-                              <img 
-                                src={url as string} 
-                                alt={`${size} square preview`}
-                                className={`${getPreviewSize(size)} object-contain`}
-                              />
-                            </div>
-                            <span className="text-sm font-medium capitalize">{size}</span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => copyToClipboard(url as string)}
-                              className="h-7 px-2 w-full"
-                            >
-                              {copiedUrl === url ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
-                              <span className="text-xs">
-                                {copiedUrl === url ? 'Copiado' : 'Copiar URL'}
-                              </span>
-                            </Button>
-                          </div>
-                        )
-                      ))}
-                    </div>
-                  </div>
+                  {viewingImage.variants?.square && Object.keys(viewingImage.variants.square).length > 0 && (
+                    <>
+                      <Separator />
+                      <div>
+                        <h5 className="text-md font-medium mb-3">Cuadradas</h5>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          {Object.entries(viewingImage.variants.square).map(([size, url]) => (
+                            url && (
+                              <div key={size} className="flex flex-col items-center gap-2 p-3 border rounded-lg">
+                                <div className="flex items-center justify-center w-40 h-24 bg-gray-50">
+                                  <img 
+                                    src={url as string} 
+                                    alt={`${size} square preview`}
+                                    className={`${getPreviewSize(size)} object-contain`}
+                                  />
+                                </div>
+                                <span className="text-sm font-medium capitalize">{size}</span>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => copyToClipboard(url as string)}
+                                  className="h-7 px-2 w-full"
+                                >
+                                  {copiedUrl === url ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
+                                  <span className="text-xs">
+                                    {copiedUrl === url ? 'Copiado' : 'Copiar URL'}
+                                  </span>
+                                </Button>
+                              </div>
+                            )
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

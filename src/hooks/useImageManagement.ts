@@ -3,26 +3,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// Interface adapted for EasyQuote API response
 export interface ImageData {
   id: string;
-  filename: string;
-  original_filename: string;
-  file_size: number;
-  mime_type: string;
+  filename?: string;
+  original_filename?: string;
+  file_size?: number;
+  mime_type?: string;
   width?: number;
   height?: number;
-  storage_path: string;
-  tags: string[];
-  description?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  dateCreated?: string;
   url?: string;
-  category_id?: string;
-  category?: {
-    id: string;
-    name: string;
-    color: string;
+  variants?: {
+    original?: { medium?: string };
+    square?: { medium?: string };
   };
 }
 
@@ -60,7 +54,7 @@ export const useImageManagement = () => {
 
   // Upload image mutation
   const uploadImageMutation = useMutation({
-    mutationFn: async ({ file, tags = [], description }: UploadImageData) => {
+    mutationFn: async ({ file }: UploadImageData) => {
       // Validate file
       if (file.size > MAX_FILE_SIZE) {
         throw new Error("El archivo es demasiado grande. Máximo 10MB.");
@@ -72,11 +66,9 @@ export const useImageManagement = () => {
 
       setUploadProgress(0);
 
-      // Create form data
+      // Create form data - only file, EasyQuote API doesn't support tags/description
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("tags", JSON.stringify(tags));
-      if (description) formData.append("description", description);
 
       const { data, error } = await supabase.functions.invoke("easyquote-images", {
         method: "POST",
@@ -91,11 +83,11 @@ export const useImageManagement = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-images", organizationId] });
-      toast.success("Imagen subida correctamente");
+      toast.success("Imagen subida a EasyQuote correctamente");
       setUploadProgress(0);
     },
     onError: (error: any) => {
-      toast.error(error.message || "Error al subir la imagen");
+      toast.error(error.message || "Error al subir la imagen a EasyQuote");
       setUploadProgress(0);
     },
   });
@@ -113,10 +105,10 @@ export const useImageManagement = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-images", organizationId] });
-      toast.success("Imagen eliminada correctamente");
+      toast.success("Imagen eliminada de EasyQuote correctamente");
     },
     onError: (error: any) => {
-      toast.error(error.message || "Error al eliminar la imagen");
+      toast.error(error.message || "Error al eliminar la imagen de EasyQuote");
     },
   });
 
@@ -131,41 +123,6 @@ export const useImageManagement = () => {
     return data;
   };
 
-  const updateImageMutation = useMutation({
-    mutationFn: async ({
-      imageId,
-      tags,
-      description,
-      category_id,
-    }: {
-      imageId: string;
-      tags?: string[];
-      description?: string;
-      category_id?: string | null;
-    }) => {
-      const updateData: any = {};
-      if (tags !== undefined) updateData.tags = tags;
-      if (description !== undefined) updateData.description = description;
-      if (category_id !== undefined) updateData.category_id = category_id;
-
-      const { data, error } = await supabase.functions.invoke(`easyquote-images/${imageId}`, {
-        method: "PATCH",
-        body: updateData,
-        headers: orgHeaders,
-      });
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user-images", organizationId] });
-      toast.success("Imagen actualizada correctamente");
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Error al actualizar la imagen");
-    },
-  });
-
   return {
     images,
     isLoading,
@@ -173,11 +130,9 @@ export const useImageManagement = () => {
     uploadProgress,
     uploadImage: uploadImageMutation.mutate,
     deleteImage: deleteImageMutation.mutate,
-    updateImage: updateImageMutation.mutate,
     fetchImageDetails,
     isUploading: uploadImageMutation.isPending,
     isDeleting: deleteImageMutation.isPending,
-    isUpdating: updateImageMutation.isPending,
   };
 };
 
