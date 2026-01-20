@@ -379,28 +379,24 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                             xxlarge: 'XXL - Máximo'
                           };
                           return (
-                            <div key={size} className="flex flex-col gap-2 p-3 border rounded-lg bg-muted/30">
-                              <div className="flex items-center justify-center h-20 bg-background rounded">
+                            <div key={size} className="flex items-center gap-3 p-2 border rounded-lg bg-muted/30">
+                              <div className="flex items-center justify-center w-12 h-12 bg-background rounded shrink-0">
                                 <img 
                                   src={url} 
                                   alt={`Original ${size}`}
-                                  className="max-h-16 max-w-full object-contain"
+                                  className="max-h-10 max-w-10 object-contain"
                                 />
                               </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium">{sizeLabels[size]}</span>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => copyToClipboard(url)}
-                                  className="h-7 px-2"
-                                >
-                                  {copiedUrl === url ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3" />}
-                                </Button>
-                              </div>
-                              <code className="text-xs text-muted-foreground break-all line-clamp-2 bg-background px-2 py-1 rounded">
-                                {url}
-                              </code>
+                              <span className="text-sm font-medium flex-1">{sizeLabels[size]}</span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => copyToClipboard(url)}
+                                className="h-7 px-2 gap-1"
+                              >
+                                {copiedUrl === url ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                <span className="text-xs">{copiedUrl === url ? 'Copiado' : 'Copiar URL'}</span>
+                              </Button>
                             </div>
                           );
                         })}
@@ -429,28 +425,24 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                               xxlarge: 'XXL - Máximo'
                             };
                             return (
-                              <div key={size} className="flex flex-col gap-2 p-3 border rounded-lg bg-muted/30">
-                                <div className="flex items-center justify-center h-20 bg-background rounded">
+                              <div key={size} className="flex items-center gap-3 p-2 border rounded-lg bg-muted/30">
+                                <div className="flex items-center justify-center w-12 h-12 bg-background rounded shrink-0">
                                   <img 
                                     src={url} 
                                     alt={`Square ${size}`}
-                                    className="max-h-16 max-w-full object-contain"
+                                    className="max-h-10 max-w-10 object-contain"
                                   />
                                 </div>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium">{sizeLabels[size]}</span>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => copyToClipboard(url)}
-                                    className="h-7 px-2"
-                                  >
-                                    {copiedUrl === url ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3" />}
-                                  </Button>
-                                </div>
-                                <code className="text-xs text-muted-foreground break-all line-clamp-2 bg-background px-2 py-1 rounded">
-                                  {url}
-                                </code>
+                                <span className="text-sm font-medium flex-1">{sizeLabels[size]}</span>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => copyToClipboard(url)}
+                                  className="h-7 px-2 gap-1"
+                                >
+                                  {copiedUrl === url ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                  <span className="text-xs">{copiedUrl === url ? 'Copiado' : 'Copiar URL'}</span>
+                                </Button>
                               </div>
                             );
                           })}
