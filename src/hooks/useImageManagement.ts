@@ -6,18 +6,70 @@ import { toast } from "sonner";
 // Interface adapted for EasyQuote API response
 export interface ImageData {
   id: string;
+
+  // EasyQuote list fields
+  name?: string;
+  smallImage?: string;
+  mediumImage?: string;
+  dateCreated?: string;
+
+  // Local-app friendly aliases
   filename?: string;
   original_filename?: string;
+  url?: string;
+
+  // Optional variants structure used by UI
+  variants?: {
+    original?: Record<string, string | undefined>;
+    square?: Record<string, string | undefined>;
+  };
+
+  // Local-only metadata (when available)
   file_size?: number;
   mime_type?: string;
   width?: number;
   height?: number;
+}
+
+type EasyQuoteImageListItem = {
+  id: string;
+  name?: string;
   dateCreated?: string;
-  url?: string;
-  variants?: {
-    original?: { medium?: string };
-    square?: { medium?: string };
+  smallImage?: string;
+  mediumImage?: string;
+};
+
+function normalizeEasyQuoteImage(item: any): ImageData {
+  const i = item as EasyQuoteImageListItem;
+  const filename = i?.name;
+  const url = i?.mediumImage || i?.smallImage;
+
+  return {
+    ...item,
+    id: i.id,
+    name: i.name,
+    dateCreated: i.dateCreated,
+    smallImage: i.smallImage,
+    mediumImage: i.mediumImage,
+
+    // aliases expected by the UI
+    filename: filename,
+    original_filename: filename,
+    url,
+
+    // minimal variants so the dialog/gallery can show something
+    variants: {
+      original: {
+        small: i.smallImage,
+        medium: i.mediumImage,
+      },
+    },
   };
+}
+
+function normalizeEasyQuoteImageList(data: any): ImageData[] {
+  if (!Array.isArray(data)) return [];
+  return data.filter(Boolean).map(normalizeEasyQuoteImage);
 }
 
 interface UploadImageData {
@@ -27,7 +79,7 @@ interface UploadImageData {
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 export const useImageManagement = () => {
   const queryClient = useQueryClient();
@@ -39,7 +91,7 @@ export const useImageManagement = () => {
     : {};
 
   // Fetch organization images
-  const { data: images = [], isLoading, error } = useQuery({
+  const { data: imagesRaw, isLoading, error } = useQuery({
     queryKey: ["user-images", organizationId],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("easyquote-images", {
@@ -48,9 +100,11 @@ export const useImageManagement = () => {
       });
 
       if (error) throw error;
-      return data as ImageData[];
+      return data;
     },
   });
+
+  const images = normalizeEasyQuoteImageList(imagesRaw);
 
   // Upload image mutation
   const uploadImageMutation = useMutation({
@@ -120,7 +174,7 @@ export const useImageManagement = () => {
     });
 
     if (error) throw error;
-    return data;
+    return data ? normalizeEasyQuoteImage(data) : null;
   };
 
   return {
