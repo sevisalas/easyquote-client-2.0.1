@@ -585,6 +585,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          organization_id: string | null
           updated_at: string
           user_id: string
         }
@@ -594,6 +595,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          organization_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -603,10 +605,26 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          organization_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "image_categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "image_categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       images: {
         Row: {
@@ -619,6 +637,7 @@ export type Database = {
           id: string
           is_active: boolean
           mime_type: string
+          organization_id: string | null
           original_filename: string
           storage_path: string
           tags: string[] | null
@@ -636,6 +655,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           mime_type: string
+          organization_id?: string | null
           original_filename: string
           storage_path: string
           tags?: string[] | null
@@ -653,6 +673,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           mime_type?: string
+          organization_id?: string | null
           original_filename?: string
           storage_path?: string
           tags?: string[] | null
@@ -666,6 +687,20 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "image_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "images_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "images_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]

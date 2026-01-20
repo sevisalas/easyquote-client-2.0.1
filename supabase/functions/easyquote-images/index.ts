@@ -37,6 +37,31 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Get user's organization from sessionStorage header or organization_members
+    const orgIdHeader = req.headers.get('X-Organization-Id')
+    let organizationId: string | null = null
+
+    if (orgIdHeader) {
+      organizationId = orgIdHeader
+    } else {
+      // Fallback: get first organization from membership
+      const { data: membership } = await supabaseAdmin
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .single()
+      
+      organizationId = membership?.organization_id || null
+    }
+
+    if (!organizationId) {
+      return new Response(
+        JSON.stringify({ error: 'Organization not found for user' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Parse URL to get image ID if present
     const url = new URL(req.url)
     const pathSegments = url.pathname.split('/').filter(Boolean)
@@ -51,7 +76,7 @@ Deno.serve(async (req) => {
             .from('images')
             .select('*')
             .eq('id', imageId)
-            .eq('user_id', user.id)
+            .eq('organization_id', organizationId)
             .single()
 
           if (fetchError || !image) {
@@ -94,8 +119,8 @@ Deno.serve(async (req) => {
           // List all images from local database
           const { data: images, error: listError } = await supabaseAdmin
             .from('images')
-            .select('*')
-            .eq('user_id', user.id)
+            .select('*, category:image_categories(id, name, color)')
+            .eq('organization_id', organizationId)
             .eq('is_active', true)
             .order('created_at', { ascending: false })
 
@@ -119,6 +144,8 @@ Deno.serve(async (req) => {
                 mime_type: image.mime_type,
                 file_size: image.file_size,
                 width: image.width,
+                category_id: image.category_id,
+                category: image.category,
                 height: image.height,
                 tags: image.tags || [],
                 description: image.description,
@@ -164,11 +191,11 @@ Deno.serve(async (req) => {
           )
         }
 
-        // Check if image with same original_filename already exists for this user
+        // Check if image with same original_filename already exists for this organization
         const { data: existingImage } = await supabaseAdmin
           .from('images')
           .select('id, storage_path')
-          .eq('user_id', user.id)
+          .eq('organization_id', organizationId)
           .eq('original_filename', file.name)
           .single()
 
@@ -181,9 +208,9 @@ Deno.serve(async (req) => {
             .from('product-images')
             .remove([existingImage.storage_path])
 
-          // Generate new filename
+          // Generate new filename using organization ID for better isolation
           const fileExt = file.name.split('.').pop()
-          fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+          fileName = `${organizationId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
 
           // Upload new file
           const { error: uploadError } = await supabaseAdmin.storage
@@ -222,7 +249,7 @@ Deno.serve(async (req) => {
         } else {
           // Create new image
           const fileExt = file.name.split('.').pop()
-          fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+          fileName = `${organizationId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
 
           // Upload to storage
           const { error: uploadError } = await supabaseAdmin.storage
@@ -241,6 +268,7 @@ Deno.serve(async (req) => {
             .from('images')
             .insert({
               user_id: user.id,
+              organization_id: organizationId,
               filename: fileName.split('/').pop() || fileName,
               original_filename: file.name,
               file_size: file.size,
@@ -305,7 +333,7 @@ Deno.serve(async (req) => {
           .from('images')
           .update(updateFields)
           .eq('id', imageId)
-          .eq('user_id', user.id)
+          .eq('organization_id', organizationId)
           .select()
           .single()
 
@@ -331,7 +359,7 @@ Deno.serve(async (req) => {
           .from('images')
           .select('storage_path')
           .eq('id', imageId)
-          .eq('user_id', user.id)
+          .eq('organization_id', organizationId)
           .single()
 
         if (fetchError || !imageToDelete) {
@@ -355,7 +383,7 @@ Deno.serve(async (req) => {
           .from('images')
           .delete()
           .eq('id', imageId)
-          .eq('user_id', user.id)
+          .eq('organization_id', organizationId)
 
         if (deleteError) {
           throw deleteError

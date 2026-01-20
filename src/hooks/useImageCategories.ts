@@ -32,10 +32,14 @@ export const useImageCategories = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No autenticado");
 
+      const organizationId = sessionStorage.getItem('selectedOrganization');
+      if (!organizationId) throw new Error("No hay organización seleccionada");
+
       const { data, error } = await supabase
         .from("image_categories")
         .insert({
           user_id: user.id,
+          organization_id: organizationId,
           name,
           description,
           color: color || "#6366f1",
