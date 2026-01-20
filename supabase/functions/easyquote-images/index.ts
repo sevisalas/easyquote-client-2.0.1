@@ -35,14 +35,14 @@ async function getEasyQuoteToken(userId: string): Promise<string | null> {
 
     console.log('Got credentials for user, authenticating with EasyQuote...')
 
-    // Authenticate with EasyQuote API
-    const authResponse = await fetch(`${EASYQUOTE_API_BASE}/auth/login`, {
+    // Authenticate with EasyQuote API (correct endpoint: /users/authenticate with email field)
+    const authResponse = await fetch(`${EASYQUOTE_API_BASE}/users/authenticate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        username: credentials.api_username,
+        email: credentials.api_username,
         password: credentials.api_password,
       }),
     })
@@ -91,9 +91,10 @@ Deno.serve(async (req) => {
     // Get EasyQuote token
     const easyquoteToken = await getEasyQuoteToken(user.id)
     if (!easyquoteToken) {
+      // Use 502 Bad Gateway instead of 401 to avoid triggering session logout
       return new Response(
-        JSON.stringify({ error: 'Could not authenticate with EasyQuote API' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Could not authenticate with EasyQuote API', code: 'EASYQUOTE_AUTH_FAILED' }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
