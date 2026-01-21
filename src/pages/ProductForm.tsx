@@ -50,23 +50,70 @@ export default function ProductForm() {
     select: (files) => files.filter((f) => f.isActive),
   });
 
-  // Función para guardar configuración de producto según su tipo
+  // Función para crear producto compuesto (solo en base de datos local, sin EasyQuote API)
+  const createCompositeProductMutation = useMutation({
+    mutationFn: async (data: { productName: string }) => {
+      if (!userRole?.organization_id) throw new Error("No se pudo obtener la organización");
+
+      // Generar un ID único para el producto compuesto (prefijo 'comp_' para distinguirlo)
+      const compositeId = `comp_${crypto.randomUUID()}`;
+
+      // Guardar en product_component_settings como producto compuesto
+      const { error } = await supabase
+        .from('product_component_settings')
+        .upsert({
+          organization_id: userRole.organization_id,
+          easyquote_product_id: compositeId,
+          is_composite: true,
+          is_component: false,
+          enabled_components: [],
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'organization_id,easyquote_product_id',
+        });
+
+      if (error) throw error;
+
+      // Guardar el nombre del producto en una tabla de metadatos o usar composite_product_prompts
+      // Por ahora guardamos el nombre como un "prompt" especial de tipo metadata
+      // TODO: Considerar crear una tabla composite_products para metadatos
+      
+      return { id: compositeId, productName: data.productName };
+    },
+    onSuccess: async (data) => {
+      toast({
+        title: "Producto compuesto creado",
+        description: "El contenedor se ha creado. Ahora define los inputs/outputs generales.",
+      });
+      
+      await queryClient.invalidateQueries({ queryKey: ["easyquote-products"] });
+      await queryClient.invalidateQueries({ queryKey: ["product-component-settings"] });
+      
+      // Navegar a la gestión de productos para configurar el compuesto
+      navigate(`/admin/productos?editProduct=${data.id}`);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Función para guardar configuración de producto según su tipo (para simple/encuadernado)
   const saveProductTypeSettings = async (productId: string) => {
-    if (productType === 'simple' || !userRole?.organization_id) return;
+    if (productType === 'simple' || productType === 'composite' || !userRole?.organization_id) return;
 
-    const isComposite = productType === 'composite' || productType === 'encuadernado';
-    const enabledComponents = productType === 'encuadernado' 
-      ? ['cubierta', 'interior_1'] // Preset encuadernado por defecto
-      : [];
-
+    // Solo para encuadernado
     const { error } = await supabase
       .from('product_component_settings')
       .upsert({
         organization_id: userRole.organization_id,
         easyquote_product_id: productId,
-        is_composite: isComposite,
+        is_composite: true,
         is_component: false,
-        enabled_components: enabledComponents,
+        enabled_components: ['cubierta', 'interior_1'], // Preset encuadernado por defecto
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'organization_id,easyquote_product_id',
@@ -248,13 +295,17 @@ export default function ProductForm() {
       return;
     }
 
-    // Para productos compuestos, el Excel es opcional (la arquitectura flexible no lo requiere estrictamente)
-    // pero la API de EasyQuote sí necesita un excelfileId, así que validamos solo para simple/encuadernado
-    const requiresExcel = productType !== 'composite';
+    // Para productos compuestos: crear solo en base de datos local (sin Excel, sin EasyQuote API)
+    if (productType === 'composite') {
+      createCompositeProductMutation.mutate({
+        productName: formData.productName,
+      });
+      return;
+    }
 
-    // Si se va a subir un nuevo archivo
+    // Para productos simple/encuadernado: requieren Excel y EasyQuote API
     if (useNewFile) {
-      if (requiresExcel && !uploadedFile) {
+      if (!uploadedFile) {
         toast({
           title: "Error",
           description: "Debes seleccionar un archivo Excel",
@@ -263,41 +314,16 @@ export default function ProductForm() {
         return;
       }
 
-      // Para compuesto sin archivo, mostrar advertencia pero permitir continuar con uno existente
-      if (productType === 'composite' && !uploadedFile) {
-        // Intentar usar archivo existente o mostrar error
-        if (!formData.excelfileId) {
-          toast({
-            title: "Archivo Excel requerido",
-            description: "Los productos compuestos también necesitan un archivo Excel base (puede ser un placeholder). Selecciona uno existente o sube uno nuevo.",
-            variant: "destructive",
-          });
-          return;
-        }
-        // Usar archivo existente
-        createProductMutation.mutate({
-          productName: formData.productName,
-          excelfileId: formData.excelfileId,
-          currency: formData.currency,
-        });
-        return;
-      }
-
-      if (uploadedFile) {
-        createProductWithNewFileMutation.mutate({
-          productName: formData.productName,
-          file: uploadedFile,
-          currency: formData.currency,
-        });
-      }
+      createProductWithNewFileMutation.mutate({
+        productName: formData.productName,
+        file: uploadedFile,
+        currency: formData.currency,
+      });
     } else {
-      // Si se usa un archivo existente
       if (!formData.excelfileId) {
         toast({
           title: "Error",
-          description: productType === 'composite' 
-            ? "Los productos compuestos necesitan un archivo Excel base (puede ser un placeholder)"
-            : "Debes seleccionar un archivo Excel existente",
+          description: "Debes seleccionar un archivo Excel existente",
           variant: "destructive",
         });
         return;
@@ -314,6 +340,10 @@ export default function ProductForm() {
   const handleChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  const isCreating = createProductMutation.isPending || 
+                     createProductWithNewFileMutation.isPending || 
+                     createCompositeProductMutation.isPending;
 
   return (
     <div className="container mx-auto py-6 max-w-4xl">
@@ -338,57 +368,52 @@ export default function ProductForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Selección del modo de archivo Excel */}
-            <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
-              <div className="flex items-center justify-between">
-                <div>
+            {/* Selección del modo de archivo Excel - Solo para simple/encuadernado */}
+            {productType !== 'composite' && (
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                <div className="flex items-center justify-between">
                   <Label className="text-base font-semibold">Archivo Excel (Calculadora)</Label>
-                  {productType === 'composite' && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Para productos compuestos, puedes usar un Excel placeholder o vacío
-                    </p>
-                  )}
+                  <Button type="button" variant="outline" size="sm" onClick={() => setUseNewFile(!useNewFile)}>
+                    {useNewFile ? "Usar Excel Existente" : "Subir Nuevo Excel"}
+                  </Button>
                 </div>
-                <Button type="button" variant="outline" size="sm" onClick={() => setUseNewFile(!useNewFile)}>
-                  {useNewFile ? "Usar Excel Existente" : "Subir Nuevo Excel"}
-                </Button>
-              </div>
 
-              {useNewFile ? (
-                <div className="space-y-2">
-                  <Label htmlFor="uploadFile">Seleccionar archivo desde el ordenador</Label>
-                  <Input
-                    id="uploadFile"
-                    type="file"
-                    accept=".xlsx,.xls,.csv"
-                    onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
-                  />
-                  {uploadedFile && (
-                    <p className="text-sm text-muted-foreground">Archivo seleccionado: {uploadedFile.name}</p>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Label htmlFor="excelfileId">Seleccionar archivo existente</Label>
-                  <Select
-                    value={formData.excelfileId || "none"}
-                    onValueChange={(value) => handleChange("excelfileId", value === "none" ? "" : value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un archivo Excel..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Selecciona un archivo...</SelectItem>
-                      {excelFiles.map((file) => (
-                        <SelectItem key={file.id} value={file.id}>
-                          {file.fileName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
+                {useNewFile ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="uploadFile">Seleccionar archivo desde el ordenador</Label>
+                    <Input
+                      id="uploadFile"
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
+                    />
+                    {uploadedFile && (
+                      <p className="text-sm text-muted-foreground">Archivo seleccionado: {uploadedFile.name}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor="excelfileId">Seleccionar archivo existente</Label>
+                    <Select
+                      value={formData.excelfileId || "none"}
+                      onValueChange={(value) => handleChange("excelfileId", value === "none" ? "" : value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un archivo Excel..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Selecciona un archivo...</SelectItem>
+                        {excelFiles.map((file) => (
+                          <SelectItem key={file.id} value={file.id}>
+                            {file.fileName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="productName">
@@ -511,15 +536,15 @@ export default function ProductForm() {
                 type="button"
                 variant="outline"
                 onClick={() => navigate("/admin/productos")}
-                disabled={createProductMutation.isPending || createProductWithNewFileMutation.isPending}
+                disabled={isCreating}
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                disabled={createProductMutation.isPending || createProductWithNewFileMutation.isPending}
+                disabled={isCreating}
               >
-                {createProductMutation.isPending || createProductWithNewFileMutation.isPending ? (
+                {isCreating ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Creando...
@@ -527,7 +552,7 @@ export default function ProductForm() {
                 ) : (
                   <>
                     <Save className="h-4 w-4 mr-2" />
-                    Crear producto
+                    {productType === 'composite' ? 'Crear contenedor' : 'Crear producto'}
                   </>
                 )}
               </Button>
