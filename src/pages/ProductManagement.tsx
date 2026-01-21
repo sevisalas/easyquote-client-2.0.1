@@ -488,9 +488,8 @@ export default function ProductManagement() {
           id: setting.easyquote_product_id,
           productName: mapping?.product_name || 'Producto compuesto',
           isActive: true,
-          description: 'Producto compuesto (local)',
           category: mapping?.category_id || undefined,
-          isLocalComposite: true, // Marcador para identificar productos locales
+          isLocalComposite: true,
         } as EasyQuoteProduct & { isLocalComposite?: boolean };
       });
     },
