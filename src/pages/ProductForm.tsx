@@ -460,14 +460,16 @@ export default function ProductForm() {
                   </p>
                 </div>
 
-                {/* Compuesto personalizado - próximamente */}
+                {/* Compuesto personalizado */}
                 <div 
-                  className="p-4 border rounded-lg opacity-50 cursor-not-allowed relative"
+                  className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                    productType === 'composite' 
+                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
+                      : 'hover:border-muted-foreground/50'
+                  }`}
+                  onClick={() => setProductType('composite')}
                 >
-                  <div className="absolute top-1 right-1 px-1.5 py-0.5 bg-muted text-muted-foreground text-[10px] rounded">
-                    Próximamente
-                  </div>
-                  <div className="font-medium text-muted-foreground">Compuesto</div>
+                  <div className="font-medium">Compuesto</div>
                   <p className="text-xs text-muted-foreground mt-1">
                     Define tus propios componentes
                   </p>
