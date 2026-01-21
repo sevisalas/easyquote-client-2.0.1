@@ -514,7 +514,7 @@ export default function ProductForm() {
               {productType === 'composite' && (
                 <div className="p-4 border rounded-lg bg-primary/5 border-primary/20 space-y-2">
                   <p className="text-sm text-foreground">
-                    <strong>Producto Compuesto</strong>
+                    <strong>Producto compuesto</strong>
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Los datos de entrada y salida se definen directamente en la app. Después de crearlo podrás:
@@ -555,7 +555,7 @@ export default function ProductForm() {
                 ) : (
                   <>
                     <Save className="h-4 w-4 mr-2" />
-                    {productType === 'composite' ? 'Crear contenedor' : 'Crear producto'}
+                    Crear producto
                   </>
                 )}
               </Button>
