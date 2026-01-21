@@ -1,10 +1,8 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -13,7 +11,6 @@ import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Edit, ChevronDown } from "lucide-react";
-import { format } from "date-fns";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 import QuoteItem from "@/components/quotes/QuoteItem";
 import { CustomerSelector } from "@/components/quotes/CustomerSelector";
@@ -105,13 +102,13 @@ const fetchQuote = async (id: string): Promise<Quote> => {
 //   return data;
 // };
 
-const statusOptions = [
-  { value: "draft", label: "Borrador" },
-  { value: "pending", label: "Pendiente" },
-  { value: "sent", label: "Enviado" },
-  { value: "approved", label: "Aprobado" },
-  { value: "rejected", label: "Rechazado" },
-];
+const statusLabels: Record<string, string> = {
+  draft: "Borrador",
+  pending: "Pendiente",
+  sent: "Enviado",
+  approved: "Aprobado",
+  rejected: "Rechazado",
+};
 
 const fmtEUR = (amount: number) => {
   return new Intl.NumberFormat("es-ES", {
@@ -728,7 +725,7 @@ export default function QuoteEdit() {
             <p className="text-destructive font-medium">Este presupuesto no se puede editar</p>
             <p className="text-sm text-muted-foreground">
               Los presupuestos en estado "
-              {statusOptions.find((opt) => opt.value === quote.status)?.label || quote.status}" no pueden ser
+              {statusLabels[quote.status] || quote.status}" no pueden ser
               modificados. Si necesitas realizar cambios, puedes duplicarlo como una nueva versión.
             </p>
             <div className="flex gap-2">
@@ -780,21 +777,35 @@ export default function QuoteEdit() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="status" className="text-xs">
-                estado
-              </Label>
-              <Select value={formData.status || "draft"} onValueChange={handleStatusChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="text-xs">estado</Label>
+              <div className="flex items-center gap-2 h-10">
+                <Badge variant={formData.status === 'draft' ? 'secondary' : formData.status === 'sent' ? 'outline' : 'default'}>
+                  {statusLabels[formData.status || 'draft']}
+                </Badge>
+                {/* Action buttons based on current status */}
+                {formData.status === 'draft' && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleStatusChange('sent')}
+                    className="h-7 text-xs"
+                  >
+                    Marcar enviado
+                  </Button>
+                )}
+                {formData.status === 'pending' && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleStatusChange('sent')}
+                    className="h-7 text-xs"
+                  >
+                    Marcar enviado
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="space-y-1.5">
