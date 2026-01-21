@@ -512,14 +512,17 @@ export default function ProductForm() {
 
               {/* Info para producto compuesto */}
               {productType === 'composite' && (
-                <div className="p-4 border rounded-lg bg-muted/50 space-y-2">
+                <div className="p-4 border rounded-lg bg-primary/5 border-primary/20 space-y-2">
                   <p className="text-sm text-foreground">
-                    <strong>Producto Compuesto:</strong> Después de crearlo, podrás:
+                    <strong>Producto Compuesto:</strong> Contenedor sin Excel asociado.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Los inputs/outputs se definen directamente en la app. Después de crearlo podrás:
                   </p>
                   <ol className="text-xs text-muted-foreground list-decimal list-inside space-y-1">
-                    <li>Definir los datos de entrada generales (ej: Cantidad ejemplares)</li>
+                    <li>Definir los datos de entrada generales (ej: Cantidad, Formato)</li>
                     <li>Definir los datos de salida generales (ej: Precio Total)</li>
-                    <li>Asociar componentes EasyQuote y configurar las conexiones</li>
+                    <li>Asociar componentes EasyQuote que harán los cálculos</li>
                   </ol>
                 </div>
               )}
