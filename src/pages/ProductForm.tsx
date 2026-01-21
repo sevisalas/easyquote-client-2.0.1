@@ -7,109 +7,131 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Save, Loader2, Layers } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useEasyQuoteExcelFiles } from "@/hooks/useEasyQuoteExcelFiles";
 import { supabase } from "@/integrations/supabase/client";
+
 export default function ProductForm() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const {
-    id
-  } = useParams();
+  const { id } = useParams();
   const isEdit = !!id;
+
   const [formData, setFormData] = useState({
     productName: "",
     isActive: true,
     excelfileId: "",
-    currency: "USD"
+    currency: "USD",
   });
+
   const [useNewFile, setUseNewFile] = useState(true);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-
-  // Estado para tipo de producto
-  type ProductType = 'simple' | 'composite' | 'preset';
+  
+  // Estado para tipo de producto: simple, encuadernado o compuesto
+  type ProductType = 'simple' | 'encuadernado' | 'composite';
   const [productType, setProductType] = useState<ProductType>('simple');
-  const [selectedPreset, setSelectedPreset] = useState<string>('encuadernado');
-  const [customComponents, setCustomComponents] = useState<string[]>([]);
-  const [newComponentName, setNewComponentName] = useState('');
-
-  // Presets predefinidos
-  const PRESETS = {
-    encuadernado: {
-      label: 'Encuadernado',
-      description: 'Cubierta + Interior(es)',
-      components: ['cubierta', 'interior_1', 'interior_2'],
-      defaultEnabled: ['cubierta', 'interior_1']
-    }
-  };
-
-  // Componentes habilitados según el preset
-  const [presetEnabledComponents, setPresetEnabledComponents] = useState<string[]>(['cubierta', 'interior_1']);
 
   // Obtener organization_id del usuario actual
-  const {
-    data: userRole
-  } = useQuery({
+  const { data: userRole } = useQuery({
     queryKey: ['current-user-role'],
     queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.rpc('get_current_user_role');
+      const { data, error } = await supabase.rpc('get_current_user_role');
       if (error) throw error;
       return data?.[0] || null;
     },
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch Excel files for dropdown (cacheado vía edge function)
-  const {
-    data: excelFiles = []
-  } = useEasyQuoteExcelFiles({
-    select: files => files.filter(f => f.isActive)
+  const { data: excelFiles = [] } = useEasyQuoteExcelFiles({
+    select: (files) => files.filter((f) => f.isActive),
   });
 
-  // Función para guardar configuración de componentes
-  const saveComponentSettings = async (productId: string) => {
-    if (productType === 'simple' || !userRole?.organization_id) return;
-    let components: string[] = [];
-    if (productType === 'preset') {
-      components = presetEnabledComponents;
-    } else if (productType === 'composite') {
-      components = customComponents;
-    }
-    if (components.length === 0) return;
-    const {
-      error
-    } = await supabase.from('product_component_settings').upsert({
-      organization_id: userRole.organization_id,
-      easyquote_product_id: productId,
-      is_composite: true,
-      enabled_components: components,
-      updated_at: new Date().toISOString()
-    }, {
-      onConflict: 'organization_id,easyquote_product_id'
-    });
+  // Función para crear producto compuesto (solo en base de datos local, sin EasyQuote API)
+  const createCompositeProductMutation = useMutation({
+    mutationFn: async (data: { productName: string }) => {
+      if (!userRole?.organization_id) throw new Error("No se pudo obtener la organización");
+
+      // Generar un ID único para el producto compuesto (prefijo 'comp_' para distinguirlo)
+      const compositeId = `comp_${crypto.randomUUID()}`;
+
+      // Guardar en product_component_settings como producto compuesto
+      const { error } = await supabase
+        .from('product_component_settings')
+        .upsert({
+          organization_id: userRole.organization_id,
+          easyquote_product_id: compositeId,
+          is_composite: true,
+          is_component: false,
+          enabled_components: [],
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'organization_id,easyquote_product_id',
+        });
+
+      if (error) throw error;
+
+      // Guardar el nombre del producto en una tabla de metadatos o usar composite_product_prompts
+      // Por ahora guardamos el nombre como un "prompt" especial de tipo metadata
+      // TODO: Considerar crear una tabla composite_products para metadatos
+      
+      return { id: compositeId, productName: data.productName };
+    },
+    onSuccess: async (data) => {
+      toast({
+        title: "Producto compuesto creado",
+        description: "El contenedor se ha creado. Ahora define los datos de entrada y salida generales.",
+      });
+      
+      await queryClient.invalidateQueries({ queryKey: ["easyquote-products"] });
+      await queryClient.invalidateQueries({ queryKey: ["product-component-settings"] });
+      
+      // Navegar a la gestión de productos para configurar el compuesto
+      navigate(`/admin/productos?editProduct=${data.id}`);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Función para guardar configuración de producto según su tipo (para simple/encuadernado)
+  const saveProductTypeSettings = async (productId: string) => {
+    if (productType === 'simple' || productType === 'composite' || !userRole?.organization_id) return;
+
+    // Solo para encuadernado
+    const { error } = await supabase
+      .from('product_component_settings')
+      .upsert({
+        organization_id: userRole.organization_id,
+        easyquote_product_id: productId,
+        is_composite: true,
+        is_component: false,
+        enabled_components: ['cubierta', 'interior_1'], // Preset encuadernado por defecto
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'organization_id,easyquote_product_id',
+      });
+
     if (error) {
-      console.error('Error saving component settings:', error);
+      console.error('Error saving product type settings:', error);
       toast({
         title: "Advertencia",
-        description: "El producto se creó pero hubo un error al guardar la configuración de componentes",
-        variant: "destructive"
+        description: "El producto se creó pero hubo un error al guardar la configuración",
+        variant: "destructive",
       });
     }
   };
 
   // Upload Excel and create product with new file
   const createProductWithNewFileMutation = useMutation({
-    mutationFn: async (data: {
-      productName: string;
-      file: File;
-      currency: string;
-    }) => {
+    mutationFn: async (data: { productName: string; file: File; currency: string }) => {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No hay token de EasyQuote disponible");
 
@@ -124,17 +146,19 @@ export default function ProductForm() {
         };
         reader.onerror = reject;
       });
+
       const uploadResponse = await fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           fileName: data.file.name,
-          file: base64
-        })
+          file: base64,
+        }),
       });
+
       if (!uploadResponse.ok) {
         const errorData = await uploadResponse.text();
         throw new Error(`Error al subir archivo: ${errorData}`);
@@ -143,6 +167,7 @@ export default function ProductForm() {
       // La API puede devolver un string simple con el ID o un objeto JSON
       const uploadResponseText = await uploadResponse.text();
       let fileId: string;
+      
       try {
         const uploadResult = JSON.parse(uploadResponseText);
         fileId = typeof uploadResult === 'string' ? uploadResult : uploadResult.id;
@@ -156,19 +181,21 @@ export default function ProductForm() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           productName: data.productName,
           excelfileId: fileId,
           currency: data.currency,
-          isActive: true
-        })
+          isActive: true,
+        }),
       });
+
       if (!productResponse.ok) {
         const errorText = await productResponse.text();
         throw new Error(`Error al crear producto: ${errorText}`);
       }
+
       const productResponseText = await productResponse.text();
       try {
         return JSON.parse(productResponseText);
@@ -176,55 +203,55 @@ export default function ProductForm() {
         return productResponseText.replace(/['"]/g, '').trim();
       }
     },
-    onSuccess: async data => {
-      await saveComponentSettings(data);
-      const typeLabel = productType === 'simple' ? '' : productType === 'preset' ? ` (${PRESETS[selectedPreset as keyof typeof PRESETS]?.label})` : ' (compuesto)';
+    onSuccess: async (data) => {
+      await saveProductTypeSettings(data);
+      
+      const typeLabel = productType === 'composite' ? ' (compuesto)' : productType === 'encuadernado' ? ' (encuadernado)' : '';
+      
       toast({
         title: "Producto creado",
-        description: `El producto${typeLabel} se ha creado correctamente.`
+        description: `El producto${typeLabel} se ha creado correctamente.`,
       });
-
+      
       // Invalidate products cache before navigating
-      await queryClient.invalidateQueries({
-        queryKey: ["easyquote-products"]
-      });
+      await queryClient.invalidateQueries({ queryKey: ["easyquote-products"] });
+      
       navigate(`/admin/productos?editProduct=${data}`);
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Create product with existing Excel file
   const createProductMutation = useMutation({
-    mutationFn: async (productData: {
-      productName: string;
-      excelfileId: string;
-      currency: string;
-    }) => {
+    mutationFn: async (productData: { productName: string; excelfileId: string; currency: string }) => {
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No hay token de EasyQuote disponible");
+
       const response = await fetch("https://api.easyquote.cloud/api/v1/products", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           productName: productData.productName,
           excelfileId: productData.excelfileId,
           currency: productData.currency,
-          isActive: true
-        })
+          isActive: true,
+        }),
       });
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Error al crear producto: ${errorText}`);
       }
+
       const responseText = await response.text();
       try {
         return JSON.parse(responseText);
@@ -232,91 +259,94 @@ export default function ProductForm() {
         return responseText.replace(/['"]/g, '').trim();
       }
     },
-    onSuccess: async data => {
-      await saveComponentSettings(data);
-      const typeLabel = productType === 'simple' ? '' : productType === 'preset' ? ` (${PRESETS[selectedPreset as keyof typeof PRESETS]?.label})` : ' (compuesto)';
+    onSuccess: async (data) => {
+      await saveProductTypeSettings(data);
+      
+      const typeLabel = productType === 'composite' ? ' (compuesto)' : productType === 'encuadernado' ? ' (encuadernado)' : '';
+      
       toast({
         title: "Producto creado",
-        description: `El producto${typeLabel} se ha creado correctamente.`
+        description: `El producto${typeLabel} se ha creado correctamente.`,
       });
-
+      
       // Invalidate products cache before navigating
-      await queryClient.invalidateQueries({
-        queryKey: ["easyquote-products"]
-      });
+      await queryClient.invalidateQueries({ queryKey: ["easyquote-products"] });
+      
       navigate(`/admin/productos?editProduct=${data}`);
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!formData.productName.trim()) {
       toast({
         title: "Error",
         description: "El nombre del producto es obligatorio",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
-    // Si se va a subir un nuevo archivo
+    // Para productos compuestos: crear solo en base de datos local (sin Excel, sin EasyQuote API)
+    if (productType === 'composite') {
+      createCompositeProductMutation.mutate({
+        productName: formData.productName,
+      });
+      return;
+    }
+
+    // Para productos simple/encuadernado: requieren Excel y EasyQuote API
     if (useNewFile) {
       if (!uploadedFile) {
         toast({
           title: "Error",
           description: "Debes seleccionar un archivo Excel",
-          variant: "destructive"
+          variant: "destructive",
         });
         return;
       }
+
       createProductWithNewFileMutation.mutate({
         productName: formData.productName,
         file: uploadedFile,
-        currency: formData.currency
+        currency: formData.currency,
       });
     } else {
-      // Si se usa un archivo existente
       if (!formData.excelfileId) {
         toast({
           title: "Error",
           description: "Debes seleccionar un archivo Excel existente",
-          variant: "destructive"
+          variant: "destructive",
         });
         return;
       }
+
       createProductMutation.mutate({
         productName: formData.productName,
         excelfileId: formData.excelfileId,
-        currency: formData.currency
+        currency: formData.currency,
       });
     }
   };
+
   const handleChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
-  const handlePresetComponentToggle = (component: string) => {
-    setPresetEnabledComponents(prev => prev.includes(component) ? prev.filter(c => c !== component) : [...prev, component]);
-  };
-  const addCustomComponent = () => {
-    const name = newComponentName.trim().toLowerCase().replace(/\s+/g, '_');
-    if (name && !customComponents.includes(name)) {
-      setCustomComponents(prev => [...prev, name]);
-      setNewComponentName('');
-    }
-  };
-  const removeCustomComponent = (component: string) => {
-    setCustomComponents(prev => prev.filter(c => c !== component));
-  };
-  return <div className="container mx-auto py-6 max-w-4xl">
+
+  const isCreating = createProductMutation.isPending || 
+                     createProductWithNewFileMutation.isPending || 
+                     createCompositeProductMutation.isPending;
+
+  return (
+    <div className="container mx-auto py-6 max-w-4xl">
       <div className="mb-6">
         <Button variant="ghost" onClick={() => navigate("/admin/productos")} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -325,7 +355,9 @@ export default function ProductForm() {
 
         <h1 className="text-3xl font-bold">{isEdit ? "Editar producto" : "Crear nuevo producto"}</h1>
         <p className="text-muted-foreground mt-2">
-          {isEdit ? "Modifica la información del producto existente" : "Crea un nuevo producto en el catálogo de EasyQuote"}
+          {isEdit
+            ? "Modifica la información del producto existente"
+            : "Crea un nuevo producto en el catálogo de EasyQuote"}
         </p>
       </div>
 
@@ -336,44 +368,72 @@ export default function ProductForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Selección del modo de archivo Excel */}
-            <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
-              <div className="flex items-center justify-between">
-                <Label className="text-base font-semibold">Archivo Excel (Calculadora)</Label>
-                <Button type="button" variant="outline" size="sm" onClick={() => setUseNewFile(!useNewFile)}>
-                  {useNewFile ? "Usar Excel Existente" : "Subir Nuevo Excel"}
-                </Button>
-              </div>
+            {/* Selección del modo de archivo Excel - Solo para simple/encuadernado */}
+            {productType !== 'composite' && (
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-semibold">Archivo Excel (Calculadora)</Label>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setUseNewFile(!useNewFile)}>
+                    {useNewFile ? "Usar Excel Existente" : "Subir Nuevo Excel"}
+                  </Button>
+                </div>
 
-              {useNewFile ? <div className="space-y-2">
-                  <Label htmlFor="uploadFile">Seleccionar archivo desde el ordenador</Label>
-                  <Input id="uploadFile" type="file" accept=".xlsx,.xls,.csv" onChange={e => setUploadedFile(e.target.files?.[0] || null)} />
-                  {uploadedFile && <p className="text-sm text-muted-foreground">Archivo seleccionado: {uploadedFile.name}</p>}
-                </div> : <div className="space-y-2">
-                  <Label htmlFor="excelfileId">Seleccionar archivo existente</Label>
-                  <Select value={formData.excelfileId || "none"} onValueChange={value => handleChange("excelfileId", value === "none" ? "" : value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un archivo Excel..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Selecciona un archivo...</SelectItem>
-                      {excelFiles.map(file => <SelectItem key={file.id} value={file.id}>
-                          {file.fileName}
-                        </SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>}
-            </div>
+                {useNewFile ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="uploadFile">Seleccionar archivo desde el ordenador</Label>
+                    <Input
+                      id="uploadFile"
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
+                    />
+                    {uploadedFile && (
+                      <p className="text-sm text-muted-foreground">Archivo seleccionado: {uploadedFile.name}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor="excelfileId">Seleccionar archivo existente</Label>
+                    <Select
+                      value={formData.excelfileId || "none"}
+                      onValueChange={(value) => handleChange("excelfileId", value === "none" ? "" : value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un archivo Excel..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Selecciona un archivo...</SelectItem>
+                        {excelFiles.map((file) => (
+                          <SelectItem key={file.id} value={file.id}>
+                            {file.fileName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="productName">
                 Nombre del producto <span className="text-destructive">*</span>
               </Label>
-              <Input id="productName" value={formData.productName} onChange={e => handleChange("productName", e.target.value)} placeholder="Pon aquí le nombre del nuevo producto" required />
+              <Input
+                id="productName"
+                value={formData.productName}
+                onChange={(e) => handleChange("productName", e.target.value)}
+                placeholder="Pon aquí le nombre del nuevo producto"
+                required
+              />
             </div>
 
             <div className="flex items-center space-x-2">
-              <Switch id="isActive" checked={formData.isActive} onCheckedChange={checked => handleChange("isActive", checked)} />
+              <Switch
+                id="isActive"
+                checked={formData.isActive}
+                onCheckedChange={(checked) => handleChange("isActive", checked)}
+              />
               <Label htmlFor="isActive" className="cursor-pointer">
                 Producto activo
               </Label>
@@ -388,94 +448,84 @@ export default function ProductForm() {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* Simple */}
-                <div className={`p-4 border rounded-lg cursor-pointer transition-all ${productType === 'simple' ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'hover:border-muted-foreground/50'}`} onClick={() => setProductType('simple')}>
+                <div 
+                  className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                    productType === 'simple' 
+                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
+                      : 'hover:border-muted-foreground/50'
+                  }`}
+                  onClick={() => setProductType('simple')}
+                >
                   <div className="font-medium">Simple</div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Producto estándar sin componentes
+                    Producto estándar con su propio Excel de cálculo
                   </p>
                 </div>
 
-                {/* Preset */}
-                <div className={`p-4 border rounded-lg cursor-pointer transition-all ${productType === 'preset' ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'hover:border-muted-foreground/50'}`} onClick={() => setProductType('preset')}>
+                {/* Encuadernado (preset predefinido) */}
+                <div 
+                  className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                    productType === 'encuadernado' 
+                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
+                      : 'hover:border-muted-foreground/50'
+                  }`}
+                  onClick={() => setProductType('encuadernado')}
+                >
                   <div className="font-medium">Encuadernado</div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Cubierta + Interior(es)
+                    Preset con Cubierta + Interiores predefinidos
                   </p>
                 </div>
 
-                {/* Compuesto personalizado */}
-                <div className={`p-4 border rounded-lg cursor-pointer transition-all ${productType === 'composite' ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'hover:border-muted-foreground/50'}`} onClick={() => setProductType('composite')}>
+                {/* Compuesto (arquitectura flexible) */}
+                <div 
+                  className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                    productType === 'composite' 
+                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
+                      : 'hover:border-muted-foreground/50'
+                  }`}
+                  onClick={() => setProductType('composite')}
+                >
                   <div className="font-medium">Compuesto</div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Define tus propios componentes
+                    Contenedor flexible con componentes personalizados
                   </p>
                 </div>
               </div>
 
-              {/* Configuración de preset Encuadernado */}
-              {productType === 'preset' && <div className="p-4 border rounded-lg bg-muted/30 space-y-3">
-                  <Label className="text-sm font-medium text-muted-foreground">
-                    Componentes del encuadernado:
-                  </Label>
-                  <div className="space-y-3">
-                    {PRESETS.encuadernado.components.map(comp => {
-                  const labels: Record<string, {
-                    name: string;
-                    hint?: string;
-                  }> = {
-                    cubierta: {
-                      name: 'Cubierta',
-                      hint: 'papel o acabado distinto al interior'
-                    },
-                    interior_1: {
-                      name: 'Interior 1'
-                    },
-                    interior_2: {
-                      name: 'Interior 2'
-                    }
-                  };
-                  const isRequired = comp === 'interior_1';
-                  const labelData = labels[comp];
-                  return <div key={comp} className="flex items-center space-x-2">
-                          <Checkbox id={`preset-${comp}`} checked={presetEnabledComponents.includes(comp)} disabled={isRequired} onCheckedChange={() => !isRequired && handlePresetComponentToggle(comp)} />
-                          <Label htmlFor={`preset-${comp}`} className={`cursor-pointer font-normal ${isRequired ? 'text-muted-foreground' : ''}`}>
-                            {labelData.name}
-                            {labelData.hint && <span className="text-xs text-muted-foreground ml-1">({labelData.hint})</span>}
-                            {isRequired && <span className="text-xs ml-1">(obligatorio)</span>}
-                          </Label>
-                        </div>;
-                })}
-                  </div>
-                </div>}
+              {/* Info para producto encuadernado */}
+              {productType === 'encuadernado' && (
+                <div className="p-4 border rounded-lg bg-muted/50 space-y-2">
+                  <p className="text-sm text-foreground">
+                    <strong>Encuadernado:</strong> Producto con componentes predefinidos:
+                  </p>
+                  <ul className="text-xs text-muted-foreground list-disc list-inside space-y-1">
+                    <li><strong>Cubierta:</strong> papel o acabado distinto al interior</li>
+                    <li><strong>Interior 1:</strong> páginas interiores principales</li>
+                    <li><strong>Interior 2:</strong> segundas páginas interiores (opcional)</li>
+                  </ul>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Podrás asignar prompts y outputs a cada componente después de crear el producto.
+                  </p>
+                </div>
+              )}
 
-              {/* Configuración de componentes personalizados */}
-              {productType === 'composite' && <div className="p-4 border rounded-lg bg-muted/30 space-y-3">
-                  <Label className="text-sm font-medium text-muted-foreground">
-                    Componentes personalizados:
-                  </Label>
-                  
-                  {/* Añadir nuevo componente */}
-                  <div className="flex gap-2">
-                    <Input placeholder="Nombre del componente..." value={newComponentName} onChange={e => setNewComponentName(e.target.value)} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCustomComponent())} />
-                    <Button type="button" variant="outline" size="sm" onClick={addCustomComponent}>
-                      Añadir
-                    </Button>
-                  </div>
-
-                  {/* Lista de componentes */}
-                  {customComponents.length > 0 ? <div className="flex flex-wrap gap-2 mt-2">
-                      {customComponents.map(comp => <div key={comp} className="flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
-                          {comp}
-                          <button type="button" onClick={() => removeCustomComponent(comp)} className="ml-1 hover:text-destructive">Crear producto</button>
-                        </div>)}
-                    </div> : <p className="text-xs text-muted-foreground">
-                      Añade componentes para crear un producto compuesto personalizado
-                    </p>}
-                </div>}
-
-              {productType !== 'simple' && <p className="text-xs text-muted-foreground">
-                  Después de crear el producto, podrás asignar cada dato de entrada y de salida a su componente.
-                </p>}
+              {/* Info para producto compuesto */}
+              {productType === 'composite' && (
+                <div className="p-4 border rounded-lg bg-primary/5 border-primary/20 space-y-2">
+                  <p className="text-sm text-foreground">
+                    <strong>Producto Compuesto</strong>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Los datos de entrada y salida se definen directamente en la app. Después de crearlo podrás:
+                  </p>
+                  <ol className="text-xs text-muted-foreground list-decimal list-inside space-y-1">
+                    <li>Definir los datos de entrada generales (ej: Cantidad, Formato)</li>
+                    <li>Definir los datos de salida generales (ej: Precio Total)</li>
+                    <li>Asociar componentes EasyQuote que harán los cálculos</li>
+                  </ol>
+                </div>
+              )}
             </div>
 
             <Alert>
@@ -485,21 +535,34 @@ export default function ProductForm() {
             </Alert>
 
             <div className="flex gap-3 justify-end pt-4">
-              <Button type="button" variant="outline" onClick={() => navigate("/admin/productos")} disabled={createProductMutation.isPending || createProductWithNewFileMutation.isPending}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate("/admin/productos")}
+                disabled={isCreating}
+              >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={createProductMutation.isPending || createProductWithNewFileMutation.isPending}>
-                {createProductMutation.isPending || createProductWithNewFileMutation.isPending ? <>
+              <Button
+                type="submit"
+                disabled={isCreating}
+              >
+                {isCreating ? (
+                  <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Creando...
-                  </> : <>
+                  </>
+                ) : (
+                  <>
                     <Save className="h-4 w-4 mr-2" />
-                    Crear producto
-                  </>}
+                    {productType === 'composite' ? 'Crear contenedor' : 'Crear producto'}
+                  </>
+                )}
               </Button>
             </div>
           </form>
         </CardContent>
       </Card>
-    </div>;
+    </div>
+  );
 }
