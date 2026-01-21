@@ -514,7 +514,7 @@ export default function ProductForm() {
               {productType === 'composite' && (
                 <div className="p-4 border rounded-lg bg-primary/5 border-primary/20 space-y-2">
                   <p className="text-sm text-foreground">
-                    <strong>Producto Compuesto:</strong> Contenedor sin Excel asociado.
+                    <strong>Producto Compuesto</strong>
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Los inputs/outputs se definen directamente en la app. Después de crearlo podrás:
