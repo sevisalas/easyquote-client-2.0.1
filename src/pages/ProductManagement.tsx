@@ -33,6 +33,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ExcelErrorScannerDialog } from "@/components/diagnostics/ExcelErrorScannerDialog";
 import { useProductComponentSettings, COMPONENT_PRESETS, GENERAL_COMPONENT } from "@/hooks/useProductComponentSettings";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CompositeProductConfig } from "@/components/products/CompositeProductConfig";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -2133,11 +2134,12 @@ export default function ProductManagement() {
           
           {selectedProduct && <div>
             <Tabs defaultValue="general" className="w-full">
-              <TabsList className={`grid w-full ${productType === 'sencillo' ? 'grid-cols-3' : 'grid-cols-4'}`}>
+              <TabsList className={`grid w-full ${productType === 'sencillo' ? 'grid-cols-3' : productType === 'compuesto' ? 'grid-cols-4' : 'grid-cols-4'}`}>
                 <TabsTrigger value="general">General</TabsTrigger>
                 <TabsTrigger value="prompts">Datos de entrada ({productPrompts.length})</TabsTrigger>
                 <TabsTrigger value="outputs">Datos de salida ({productOutputs.length})</TabsTrigger>
-                {productType !== 'sencillo' && <TabsTrigger value="components">Componentes</TabsTrigger>}
+                {productType === 'encuadernado' && <TabsTrigger value="components">Componentes</TabsTrigger>}
+                {productType === 'compuesto' && <TabsTrigger value="composite-config">Configuración</TabsTrigger>}
               </TabsList>
               
               <TabsContent value="general" className="space-y-4">
@@ -2706,9 +2708,10 @@ export default function ProductManagement() {
                   </ScrollArea>}
               </TabsContent>
 
+              {/* Pestaña para Encuadernado (preset predefinido) */}
               <TabsContent value="components" className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-medium">Configuración de Componentes</h3>
+                  <h3 className="text-lg font-medium">Configuración de Componentes (Encuadernado)</h3>
                   <p className="text-sm text-muted-foreground">
                     Configura las partes del producto (cubierta, interior, etc.) y asigna cada dato de entrada a su componente.
                   </p>
@@ -2759,6 +2762,14 @@ export default function ProductManagement() {
                     </div>
                   </div>
                 </div>
+              </TabsContent>
+
+              {/* Pestaña para Compuesto (arquitectura flexible) */}
+              <TabsContent value="composite-config" className="space-y-4">
+                <CompositeProductConfig 
+                  easyquoteProductId={selectedProduct.id}
+                  productName={selectedProduct.productName}
+                />
               </TabsContent>
             </Tabs>
 
