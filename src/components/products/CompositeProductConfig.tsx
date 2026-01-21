@@ -50,20 +50,20 @@ export function CompositeProductConfig({ easyquoteProductId, productName }: Comp
         </p>
       </div>
 
-      <Tabs defaultValue="inputs" className="space-y-4">
+      <Tabs defaultValue="fields" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="inputs" className="flex items-center gap-2">
+          <TabsTrigger value="fields" className="flex items-center gap-2">
             <FileInput className="h-4 w-4" />
-            Inputs Generales
+            Campos
             {prompts.length > 0 && (
               <span className="ml-1 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
                 {prompts.length}
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="outputs" className="flex items-center gap-2">
+          <TabsTrigger value="results" className="flex items-center gap-2">
             <FileOutput className="h-4 w-4" />
-            Outputs Generales
+            Resultados
             {outputs.length > 0 && (
               <span className="ml-1 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
                 {outputs.length}
@@ -81,11 +81,10 @@ export function CompositeProductConfig({ easyquoteProductId, productName }: Comp
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="inputs" className="space-y-4">
+        <TabsContent value="fields" className="space-y-4">
           <Alert>
             <AlertDescription>
-              Los <strong>Inputs Generales</strong> son los campos que el usuario verá primero al configurar 
-              este producto. Estos valores se pueden propagar a los componentes individuales.
+              Define los <strong>campos generales</strong> que se usarán para este producto.
             </AlertDescription>
           </Alert>
           <CompositePromptEditor
@@ -101,11 +100,10 @@ export function CompositeProductConfig({ easyquoteProductId, productName }: Comp
           />
         </TabsContent>
 
-        <TabsContent value="outputs" className="space-y-4">
+        <TabsContent value="results" className="space-y-4">
           <Alert>
             <AlertDescription>
-              Los <strong>Outputs Generales</strong> son los resultados finales que se mostrarán al usuario, 
-              como el precio total calculado a partir de todos los componentes.
+              Define los <strong>resultados</strong> que se mostrarán al usuario (por ejemplo, precio total).
             </AlertDescription>
           </Alert>
           <CompositeOutputEditor
@@ -125,7 +123,7 @@ export function CompositeProductConfig({ easyquoteProductId, productName }: Comp
           <Alert>
             <AlertDescription>
               Asocia productos EasyQuote como <strong>componentes</strong> de este producto compuesto. 
-              Cada componente aportará su precio y outputs al cálculo total.
+              Cada componente aportará su precio y resultados al cálculo total.
             </AlertDescription>
           </Alert>
           <div className="text-center py-12 border rounded-lg bg-muted/30">

@@ -95,7 +95,7 @@ export function CompositeOutputEditor({
           formula: editingOutput.formula || null,
           display_order: outputs.length,
         });
-        toast({ title: "Output creado", description: "El campo de salida se ha añadido correctamente" });
+        toast({ title: "Resultado creado", description: "El resultado se ha añadido correctamente" });
       } else if (editingOutput.id) {
         await onUpdate({
           id: editingOutput.id,
@@ -104,14 +104,14 @@ export function CompositeOutputEditor({
           type: editingOutput.type,
           formula: editingOutput.formula || null,
         });
-        toast({ title: "Output actualizado", description: "El campo de salida se ha actualizado" });
+        toast({ title: "Resultado actualizado", description: "El resultado se ha actualizado" });
       }
       handleCancel();
     } catch (error) {
       console.error("Error saving output:", error);
       toast({
         title: "Error",
-        description: "No se pudo guardar el campo de salida",
+        description: "No se pudo guardar el resultado",
         variant: "destructive",
       });
     }
@@ -120,12 +120,12 @@ export function CompositeOutputEditor({
   const handleDelete = async (id: string) => {
     try {
       await onDelete(id);
-      toast({ title: "Output eliminado", description: "El campo de salida se ha eliminado" });
+      toast({ title: "Resultado eliminado", description: "El resultado se ha eliminado" });
     } catch (error) {
       console.error("Error deleting output:", error);
       toast({
         title: "Error",
-        description: "No se pudo eliminar el campo de salida",
+        description: "No se pudo eliminar el resultado",
         variant: "destructive",
       });
     }
@@ -137,23 +137,23 @@ export function CompositeOutputEditor({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-medium">Datos de Salida Generales</h3>
+          <h3 className="text-lg font-medium">Resultados</h3>
           <p className="text-sm text-muted-foreground">
             Resultados que se mostrarán al usuario (precio total, descripción, etc.)
           </p>
         </div>
-        <Button onClick={handleStartCreate} size="sm" disabled={editingOutput !== null}>
+          <Button onClick={handleStartCreate} size="sm" disabled={editingOutput !== null}>
           <Plus className="h-4 w-4 mr-2" />
-          Añadir Output
+            Añadir resultado
         </Button>
       </div>
 
       {/* List of existing outputs */}
       {outputs.length === 0 && !editingOutput && (
         <div className="text-center py-8 border rounded-lg bg-muted/30">
-          <p className="text-muted-foreground">No hay campos de salida definidos</p>
+          <p className="text-muted-foreground">No hay resultados definidos</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Añade outputs como "Precio Total", "Descripción", etc.
+            Añade resultados como "Precio Total", "Descripción", etc.
           </p>
         </div>
       )}
@@ -213,7 +213,7 @@ export function CompositeOutputEditor({
       {isCreating && editingOutput && (
         <Card className="ring-2 ring-primary">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Nuevo Output</CardTitle>
+            <CardTitle className="text-base">Nuevo resultado</CardTitle>
           </CardHeader>
           <CardContent>
             <OutputForm

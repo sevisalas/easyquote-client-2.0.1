@@ -83,7 +83,7 @@ export default function ProductForm() {
     onSuccess: async (data) => {
       toast({
         title: "Producto compuesto creado",
-        description: "El contenedor se ha creado. Ahora define los inputs/outputs generales.",
+        description: "El contenedor se ha creado. Ya puedes configurarlo desde la ficha del producto.",
       });
       
       await queryClient.invalidateQueries({ queryKey: ["easyquote-products"] });
@@ -512,18 +512,13 @@ export default function ProductForm() {
 
               {/* Info para producto compuesto */}
               {productType === 'composite' && (
-                <div className="p-4 border rounded-lg bg-primary/5 border-primary/20 space-y-2">
+                <div className="p-4 border rounded-lg bg-muted/50 space-y-2">
                   <p className="text-sm text-foreground">
                     <strong>Producto Compuesto</strong>
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Los inputs/outputs se definen directamente en la app. Después de crearlo podrás:
+                    Después de crearlo, podrás configurarlo desde la ficha del producto.
                   </p>
-                  <ol className="text-xs text-muted-foreground list-decimal list-inside space-y-1">
-                    <li>Definir los datos de entrada generales (ej: Cantidad, Formato)</li>
-                    <li>Definir los datos de salida generales (ej: Precio Total)</li>
-                    <li>Asociar componentes EasyQuote que harán los cálculos</li>
-                  </ol>
                 </div>
               )}
             </div>

@@ -103,7 +103,7 @@ export function CompositePromptEditor({
           options: editingPrompt.type === "select" ? editingPrompt.options : null,
           display_order: prompts.length,
         });
-        toast({ title: "Input creado", description: "El campo de entrada se ha añadido correctamente" });
+        toast({ title: "Campo creado", description: "El campo se ha añadido correctamente" });
       } else if (editingPrompt.id) {
         await onUpdate({
           id: editingPrompt.id,
@@ -114,14 +114,14 @@ export function CompositePromptEditor({
           is_required: editingPrompt.is_required,
           options: editingPrompt.type === "select" ? editingPrompt.options : null,
         });
-        toast({ title: "Input actualizado", description: "El campo de entrada se ha actualizado" });
+        toast({ title: "Campo actualizado", description: "El campo se ha actualizado" });
       }
       handleCancel();
     } catch (error) {
       console.error("Error saving prompt:", error);
       toast({
         title: "Error",
-        description: "No se pudo guardar el campo de entrada",
+        description: "No se pudo guardar el campo",
         variant: "destructive",
       });
     }
@@ -130,12 +130,12 @@ export function CompositePromptEditor({
   const handleDelete = async (id: string) => {
     try {
       await onDelete(id);
-      toast({ title: "Input eliminado", description: "El campo de entrada se ha eliminado" });
+      toast({ title: "Campo eliminado", description: "El campo se ha eliminado" });
     } catch (error) {
       console.error("Error deleting prompt:", error);
       toast({
         title: "Error",
-        description: "No se pudo eliminar el campo de entrada",
+        description: "No se pudo eliminar el campo",
         variant: "destructive",
       });
     }
@@ -170,23 +170,23 @@ export function CompositePromptEditor({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-medium">Datos de Entrada Generales</h3>
+          <h3 className="text-lg font-medium">Campos generales</h3>
           <p className="text-sm text-muted-foreground">
             Campos que el usuario completará para todo el producto compuesto
           </p>
         </div>
-        <Button onClick={handleStartCreate} size="sm" disabled={editingPrompt !== null}>
+          <Button onClick={handleStartCreate} size="sm" disabled={editingPrompt !== null}>
           <Plus className="h-4 w-4 mr-2" />
-          Añadir Input
+            Añadir campo
         </Button>
       </div>
 
       {/* List of existing prompts */}
       {prompts.length === 0 && !editingPrompt && (
         <div className="text-center py-8 border rounded-lg bg-muted/30">
-          <p className="text-muted-foreground">No hay campos de entrada definidos</p>
+          <p className="text-muted-foreground">No hay campos definidos</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Añade inputs como "Cantidad", "Formato", etc.
+            Añade campos como "Cantidad", "Formato", etc.
           </p>
         </div>
       )}
@@ -249,7 +249,7 @@ export function CompositePromptEditor({
       {isCreating && editingPrompt && (
         <Card className="ring-2 ring-primary">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Nuevo Input</CardTitle>
+            <CardTitle className="text-base">Nuevo campo</CardTitle>
           </CardHeader>
           <CardContent>
             <PromptForm
