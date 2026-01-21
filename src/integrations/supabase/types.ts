@@ -201,6 +201,162 @@ export type Database = {
           },
         ]
       }
+      composite_product_components: {
+        Row: {
+          component_alias: string
+          component_product_id: string
+          composite_product_id: string
+          created_at: string
+          display_order: number
+          id: string
+          is_optional: boolean
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          component_alias: string
+          component_product_id: string
+          composite_product_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_optional?: boolean
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          component_alias?: string
+          component_product_id?: string
+          composite_product_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_optional?: boolean
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      composite_product_outputs: {
+        Row: {
+          created_at: string
+          display_order: number
+          easyquote_product_id: string
+          formula: string | null
+          id: string
+          label: string
+          name: string
+          organization_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          easyquote_product_id: string
+          formula?: string | null
+          id?: string
+          label: string
+          name: string
+          organization_id: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          easyquote_product_id?: string
+          formula?: string | null
+          id?: string
+          label?: string
+          name?: string
+          organization_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      composite_product_prompts: {
+        Row: {
+          created_at: string
+          default_value: string | null
+          display_order: number
+          easyquote_product_id: string
+          id: string
+          is_required: boolean
+          label: string
+          name: string
+          options: Json | null
+          organization_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_value?: string | null
+          display_order?: number
+          easyquote_product_id: string
+          id?: string
+          is_required?: boolean
+          label: string
+          name: string
+          options?: Json | null
+          organization_id: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_value?: string | null
+          display_order?: number
+          easyquote_product_id?: string
+          id?: string
+          is_required?: boolean
+          label?: string
+          name?: string
+          options?: Json | null
+          organization_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      composite_prompt_connections: {
+        Row: {
+          composite_product_id: string
+          created_at: string
+          id: string
+          organization_id: string
+          source_prompt_name: string
+          target_component_id: string
+          target_prompt_name: string
+          transform_formula: string | null
+          updated_at: string
+        }
+        Insert: {
+          composite_product_id: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          source_prompt_name: string
+          target_component_id: string
+          target_prompt_name: string
+          transform_formula?: string | null
+          updated_at?: string
+        }
+        Update: {
+          composite_product_id?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          source_prompt_name?: string
+          target_component_id?: string
+          target_prompt_name?: string
+          transform_formula?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_access_logs: {
         Row: {
           accessed_at: string
