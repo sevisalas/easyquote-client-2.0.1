@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { Edit, TestTube, ShoppingCart, ExternalLink, Copy } from "lucide-react";
+import { Edit, TestTube, ShoppingCart, ExternalLink, Copy, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useWooCommerceLink } from "@/hooks/useWooCommerceLink";
 import { useWooCommerceIntegration } from "@/hooks/useWooCommerceIntegration";
@@ -39,13 +39,14 @@ interface ProductTableProps {
   getProductMapping: (productId: string) => ProductMapping | undefined;
   onEditProduct: (product: EasyQuoteProduct) => void;
   onDuplicateProduct?: (product: EasyQuoteProduct) => void;
+  onDeleteLocalProduct?: (productId: string) => void;
   componentProductIds?: Set<string>;
   compositeProductIds?: Set<string>;
   onToggleComponent?: (productId: string, isComponent: boolean) => void;
   isTogglingComponent?: boolean;
 }
 
-export function ProductTable({ products, getProductMapping, onEditProduct, onDuplicateProduct, componentProductIds, compositeProductIds, onToggleComponent, isTogglingComponent }: ProductTableProps) {
+export function ProductTable({ products, getProductMapping, onEditProduct, onDuplicateProduct, onDeleteLocalProduct, componentProductIds, compositeProductIds, onToggleComponent, isTogglingComponent }: ProductTableProps) {
   const navigate = useNavigate();
   const { isWooCommerceActive, loading: wooIntegrationLoading } = useWooCommerceIntegration();
   const productIds = products.map((p) => p.id);
@@ -64,8 +65,10 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
     return acc;
   }, {});
 
-  const getExcelFileName = (excelfileId?: string) => {
-    if (!excelfileId) return "Sin archivo";
+  const getExcelFileName = (excelfileId?: string, productId?: string) => {
+    // No mostrar nada para productos compuestos locales
+    if (productId?.startsWith('comp_')) return null;
+    if (!excelfileId) return null;
     return excelFileMap[excelfileId] || "Archivo no encontrado";
   };
 
@@ -118,9 +121,11 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
                     </div>
                   </TableCell>
                   <TableCell className="py-1.5 px-3 max-w-[220px]">
-                    <span className="font-mono text-xs text-muted-foreground break-words block">
-                      {getExcelFileName(product.excelfileId)}
-                    </span>
+                    {getExcelFileName(product.excelfileId, product.id) && (
+                      <span className="font-mono text-xs text-muted-foreground break-words block">
+                        {getExcelFileName(product.excelfileId, product.id)}
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className="py-1.5 px-3">
                     <Badge variant={compositeProductIds?.has(product.id) ? "default" : "outline"} className="text-xs px-2 py-0 h-5">
@@ -251,7 +256,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
                       >
                         <Edit className="h-3.5 w-3.5" />
                       </Button>
-                      {onDuplicateProduct && (
+                      {onDuplicateProduct && !product.id.startsWith('comp_') && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -260,6 +265,17 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
                           className="h-7 w-7 p-0"
                         >
                           <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      {onDeleteLocalProduct && product.id.startsWith('comp_') && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onDeleteLocalProduct(product.id)}
+                          title="Eliminar producto compuesto"
+                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       )}
                     </div>

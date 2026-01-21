@@ -521,6 +521,54 @@ export default function ProductManagement() {
     }
   });
 
+  // Mutación para eliminar productos compuestos locales
+  const deleteLocalProductMutation = useMutation({
+    mutationFn: async (productId: string) => {
+      if (!organizationId) throw new Error('No organization');
+      
+      // Eliminar de product_component_settings
+      const { error: settingsError } = await supabase
+        .from('product_component_settings')
+        .delete()
+        .eq('organization_id', organizationId)
+        .eq('easyquote_product_id', productId);
+      
+      if (settingsError) throw settingsError;
+
+      // Eliminar de product_category_mappings
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        await supabase
+          .from('product_category_mappings')
+          .delete()
+          .eq('user_id', userData.user.id)
+          .eq('easyquote_product_id', productId);
+      }
+
+      // Eliminar prompts y outputs del producto compuesto
+      await supabase
+        .from('composite_product_prompts')
+        .delete()
+        .eq('organization_id', organizationId)
+        .eq('easyquote_product_id', productId);
+
+      await supabase
+        .from('composite_product_outputs')
+        .delete()
+        .eq('organization_id', organizationId)
+        .eq('easyquote_product_id', productId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['local-composite-products'] });
+      queryClient.invalidateQueries({ queryKey: ['composite-product-ids'] });
+      queryClient.invalidateQueries({ queryKey: ['product-category-mappings'] });
+      toast({ title: "Producto eliminado" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error al eliminar", description: error.message, variant: "destructive" });
+    }
+  });
+
   // Helper to get current organization ID from sessionStorage or fetch it
   const getCurrentOrganizationIdAsync = async (): Promise<string | null> => {
     // First try sessionStorage
@@ -2162,6 +2210,7 @@ export default function ProductManagement() {
               getProductMapping={getProductMapping} 
               onEditProduct={handleEditProduct} 
               onDuplicateProduct={handleDuplicateProduct}
+              onDeleteLocalProduct={(productId) => deleteLocalProductMutation.mutate(productId)}
               componentProductIds={componentProductIds}
               compositeProductIds={compositeProductIds}
               onToggleComponent={(productId, isComponent) => toggleComponentMutation.mutate({ productId, isComponent })}
