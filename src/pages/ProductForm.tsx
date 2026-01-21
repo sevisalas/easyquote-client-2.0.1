@@ -59,7 +59,7 @@ export default function ProductForm() {
       const compositeId = `comp_${crypto.randomUUID()}`;
 
       // Guardar en product_component_settings como producto compuesto
-      const { error } = await supabase
+      const { error: settingsError } = await supabase
         .from('product_component_settings')
         .upsert({
           organization_id: userRole.organization_id,
@@ -72,11 +72,25 @@ export default function ProductForm() {
           onConflict: 'organization_id,easyquote_product_id',
         });
 
-      if (error) throw error;
+      if (settingsError) throw settingsError;
 
-      // Guardar el nombre del producto en una tabla de metadatos o usar composite_product_prompts
-      // Por ahora guardamos el nombre como un "prompt" especial de tipo metadata
-      // TODO: Considerar crear una tabla composite_products para metadatos
+      // Obtener el user_id para guardar en product_category_mappings
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("No se pudo obtener el usuario");
+
+      // Guardar el nombre del producto en product_category_mappings
+      const { error: mappingError } = await supabase
+        .from('product_category_mappings')
+        .upsert({
+          user_id: userData.user.id,
+          easyquote_product_id: compositeId,
+          product_name: data.productName,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,easyquote_product_id',
+        });
+
+      if (mappingError) throw mappingError;
       
       return { id: compositeId, productName: data.productName };
     },
@@ -88,6 +102,9 @@ export default function ProductForm() {
       
       await queryClient.invalidateQueries({ queryKey: ["easyquote-products"] });
       await queryClient.invalidateQueries({ queryKey: ["product-component-settings"] });
+      await queryClient.invalidateQueries({ queryKey: ["local-composite-products"] });
+      await queryClient.invalidateQueries({ queryKey: ["composite-product-ids"] });
+      await queryClient.invalidateQueries({ queryKey: ["product-category-mappings"] });
       
       // Navegar a la gestión de productos para configurar el compuesto
       navigate(`/admin/productos?editProduct=${data.id}`);
