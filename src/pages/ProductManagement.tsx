@@ -436,7 +436,7 @@ export default function ProductManagement() {
     select: (data) => data instanceof Set ? data : new Set<string>()
   });
 
-  // Query para obtener IDs de productos compuestos (encuadernado)
+  // Query para obtener IDs de productos compuestos
   const { data: compositeProductIds = new Set<string>() } = useQuery({
     queryKey: ['composite-product-ids', organizationId],
     queryFn: async () => {
@@ -454,6 +454,47 @@ export default function ProductManagement() {
     },
     enabled: !!organizationId,
     select: (data) => data instanceof Set ? data : new Set<string>()
+  });
+
+  // Query para obtener productos compuestos locales (los que tienen prefijo 'comp_')
+  const { data: localCompositeProducts = [] } = useQuery({
+    queryKey: ['local-composite-products', organizationId],
+    queryFn: async () => {
+      if (!organizationId) return [];
+      
+      // Obtener los IDs de productos compuestos locales
+      const { data: compositeSettings, error: settingsError } = await supabase
+        .from('product_component_settings')
+        .select('easyquote_product_id, created_at')
+        .eq('organization_id', organizationId)
+        .eq('is_composite', true)
+        .like('easyquote_product_id', 'comp_%');
+      
+      if (settingsError || !compositeSettings?.length) return [];
+      
+      // Obtener los nombres de los productos desde product_category_mappings
+      const productIds = compositeSettings.map(s => s.easyquote_product_id);
+      const { data: mappings } = await supabase
+        .from('product_category_mappings')
+        .select('easyquote_product_id, product_name, category_id')
+        .in('easyquote_product_id', productIds);
+      
+      const mappingsByProductId = new Map((mappings || []).map(m => [m.easyquote_product_id, m]));
+      
+      // Construir productos compatibles con EasyQuoteProduct
+      return compositeSettings.map(setting => {
+        const mapping = mappingsByProductId.get(setting.easyquote_product_id);
+        return {
+          id: setting.easyquote_product_id,
+          productName: mapping?.product_name || 'Producto compuesto',
+          isActive: true,
+          description: 'Producto compuesto (local)',
+          category: mapping?.category_id || undefined,
+          isLocalComposite: true, // Marcador para identificar productos locales
+        } as EasyQuoteProduct & { isLocalComposite?: boolean };
+      });
+    },
+    enabled: !!organizationId,
   });
 
   // Mutación para cambiar si un producto es componente
@@ -1134,8 +1175,16 @@ export default function ProductManagement() {
     retry: false
   });
 
+  // Combinar productos de EasyQuote con productos compuestos locales
+  const allProducts = useMemo(() => {
+    // Evitar duplicados: si un producto local tiene el mismo ID que uno de EasyQuote, preferir el de EasyQuote
+    const easyquoteIds = new Set(products.map(p => p.id));
+    const uniqueLocalProducts = localCompositeProducts.filter(p => !easyquoteIds.has(p.id));
+    return [...products, ...uniqueLocalProducts];
+  }, [products, localCompositeProducts]);
+
   // Filtrar productos localmente
-  const filteredProducts = products.filter(product => {
+  const filteredProducts = allProducts.filter(product => {
     // Filtrar por vista: productos vs componentes (nunca se mezclan)
     const isProductComponent = componentProductIds.has(product.id);
     if (viewMode === 'productos' && isProductComponent) return false;
