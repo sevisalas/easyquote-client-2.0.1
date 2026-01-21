@@ -5,6 +5,18 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.2] - 2026-01-21
+
+### Corregido
+- **Numeración secuencial**: Corregida condición de carrera en la generación de números de presupuestos y pedidos que causaba duplicados (violación de clave única)
+- **Cálculo en tiempo real**: El sistema ahora consulta la base de datos para obtener el máximo secuencial justo antes de insertar, evitando conflictos entre usuarios concurrentes
+
+### Cambiado
+- **Estados de presupuestos simplificados**: Eliminado el desplegable de estados y reemplazado por botones de acción contextuales según el estado actual
+- **Texto dinámico "Enviar a Holded"**: Los botones de envío ahora muestran "Enviar a Holded" o "Guardar y enviar a Holded" cuando la organización tiene la integración activa con modo de exportación de presupuestos habilitado
+
+---
+
 ## [2.5.0] - 2026-01-20
 
 ### Añadido
