@@ -64,26 +64,60 @@ export const useQuoteApproval = () => {
         }
       }
 
-      // Generate sales order number (format: SO-YYYY-NNNN)
-      const year = new Date().getFullYear();
+      // Generate sales order number based on configured format
+      const organizationId = quote.organization_id || sessionStorage.getItem('selected_organization_id');
       
-      const { data: yearOrders } = await supabase
+      // Get numbering format for orders
+      const { data: orderFormat } = await supabase
+        .from('numbering_formats')
+        .select('*')
+        .eq('document_type', 'order')
+        .eq('organization_id', organizationId)
+        .maybeSingle();
+      
+      // Build prefix with year if configured
+      let prefix = orderFormat?.prefix || 'SO-';
+      const useYear = orderFormat?.use_year ?? true;
+      const yearFormat = orderFormat?.year_format || 'YYYY';
+      const sequentialDigits = orderFormat?.sequential_digits || 4;
+      const suffix = orderFormat?.suffix || '';
+      
+      if (useYear) {
+        const year = new Date().getFullYear();
+        const yearStr = yearFormat === 'YY' ? year.toString().slice(-2) : year.toString();
+        prefix += yearStr + '-';
+      }
+      
+      // Query existing orders with this prefix in this organization
+      const { data: existingOrders } = await supabase
         .from('sales_orders')
         .select('order_number')
-        .like('order_number', `SO-${year}-%`)
+        .eq('organization_id', organizationId)
+        .like('order_number', `${prefix}%`)
         .order('order_number', { ascending: false })
-        .limit(1);
-
-      let sequentialNumber = 1;
-      if (yearOrders && yearOrders.length > 0) {
-        const lastNumber = yearOrders[0].order_number;
-        const parts = lastNumber.split('-');
-        if (parts.length === 3) {
-          sequentialNumber = parseInt(parts[2]) + 1;
+        .limit(100);
+      
+      // Extract max sequential number
+      let maxSequential = 0;
+      for (const order of existingOrders || []) {
+        const on = order.order_number || '';
+        let seqPart = on.replace(prefix, '');
+        if (suffix && seqPart.endsWith(suffix)) {
+          seqPart = seqPart.slice(0, -suffix.length);
+        }
+        const seqNum = parseInt(seqPart, 10);
+        if (!isNaN(seqNum) && seqNum > maxSequential) {
+          maxSequential = seqNum;
         }
       }
-
-      const orderNumber = `SO-${year}-${String(sequentialNumber).padStart(4, '0')}`;
+      
+      const nextSequential = maxSequential + 1;
+      let orderNumber = prefix + nextSequential.toString().padStart(sequentialDigits, '0');
+      if (suffix) {
+        orderNumber += suffix;
+      }
+      
+      console.log(`📋 Approval order numbering: prefix="${prefix}", maxFound=${maxSequential}, next=${nextSequential}, number="${orderNumber}"`);
 
       // Fetch quote additionals
       const { data: quoteAdditionals } = await supabase
@@ -161,6 +195,13 @@ export const useQuoteApproval = () => {
 
       if (orderError) throw orderError;
 
+      // Update last_sequential_number in numbering_formats
+      if (orderFormat?.id) {
+        await supabase
+          .from('numbering_formats')
+          .update({ last_sequential_number: nextSequential })
+          .eq('id', orderFormat.id);
+      }
       // Copy quote additionals to sales order additionals
       if (quoteAdditionals && quoteAdditionals.length > 0) {
         const orderAdditionals = quoteAdditionals.map((qa: any) => ({

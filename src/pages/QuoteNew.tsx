@@ -194,13 +194,66 @@ export default function QuoteNew() {
     }
   }, [duplicateQuote]);
 
-  // Generate quote number using configured format
-  const generateQuoteNumber = async (): Promise<string> => {
+  // Generate quote number using configured format - calculates from DB to avoid race conditions
+  const generateQuoteNumber = async (): Promise<{ quoteNumber: string; nextSequential: number }> => {
     if (!quoteFormat) {
       throw new Error("No se pudo obtener el formato de numeración");
     }
-    const nextNumber = Math.max(1, (quoteFormat.last_sequential_number || 0) + 1);
-    return generateDocumentNumber(quoteFormat, nextNumber);
+    
+    // Get organization_id for filtering
+    const organizationId = sessionStorage.getItem('selected_organization_id');
+    if (!organizationId) {
+      throw new Error("No se pudo obtener la organización");
+    }
+    
+    // Build the prefix pattern for the current year if use_year is enabled
+    let prefix = quoteFormat.prefix || '';
+    if (quoteFormat.use_year) {
+      const year = new Date().getFullYear();
+      const yearStr = quoteFormat.year_format === 'YY' 
+        ? year.toString().slice(-2) 
+        : year.toString();
+      prefix += yearStr + '-';
+    }
+    
+    // Query the max sequential number from existing quotes with this prefix pattern
+    const { data: existingQuotes, error } = await supabase
+      .from('quotes')
+      .select('quote_number')
+      .eq('organization_id', organizationId)
+      .like('quote_number', `${prefix}%`)
+      .order('quote_number', { ascending: false })
+      .limit(100);
+    
+    if (error) {
+      console.error('Error fetching existing quotes:', error);
+      throw new Error("Error al obtener numeración");
+    }
+    
+    // Extract sequential numbers from existing quote numbers
+    let maxSequential = 0;
+    const digits = quoteFormat.sequential_digits || 4;
+    const suffix = quoteFormat.suffix || '';
+    
+    for (const quote of existingQuotes || []) {
+      const qn = quote.quote_number || '';
+      // Remove prefix and suffix to get the sequential part
+      let seqPart = qn.replace(prefix, '');
+      if (suffix && seqPart.endsWith(suffix)) {
+        seqPart = seqPart.slice(0, -suffix.length);
+      }
+      const seqNum = parseInt(seqPart, 10);
+      if (!isNaN(seqNum) && seqNum > maxSequential) {
+        maxSequential = seqNum;
+      }
+    }
+    
+    const nextSequential = maxSequential + 1;
+    const quoteNumber = generateDocumentNumber(quoteFormat, nextSequential);
+    
+    console.log(`📋 Quote numbering: prefix="${prefix}", maxFound=${maxSequential}, next=${nextSequential}, number="${quoteNumber}"`);
+    
+    return { quoteNumber, nextSequential };
   };
 
   // Calculate totals
@@ -354,7 +407,9 @@ export default function QuoteNew() {
         }
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuario no autenticado");
-      const quoteNumber = await generateQuoteNumber();
+      const result = await generateQuoteNumber();
+      const quoteNumber = result.quoteNumber;
+      const nextSequential = result.nextSequential;
       const itemsArray = Object.values(items);
 
       // Extract UUID from "holded:" prefix if present
@@ -421,7 +476,6 @@ export default function QuoteNew() {
 
       // Update last_sequential_number in numbering_formats
       if (quoteFormat && 'id' in quoteFormat && quoteFormat.id) {
-        const nextSequential = quoteFormat.last_sequential_number + 1;
         await supabase.from('numbering_formats').update({
           last_sequential_number: nextSequential
         }).eq('id', quoteFormat.id as string);

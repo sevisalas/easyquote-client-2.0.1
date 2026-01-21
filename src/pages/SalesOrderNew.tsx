@@ -139,14 +139,66 @@ export default function SalesOrderNew() {
     validateToken();
   }, []);
 
-  // Generate order number using configured format
-  const generateOrderNumber = async (): Promise<string> => {
+  // Generate order number using configured format - calculates from DB to avoid race conditions
+  const generateOrderNumber = async (): Promise<{ orderNumber: string; nextSequential: number }> => {
     if (!orderFormat) {
       throw new Error("No se pudo obtener el formato de numeración");
     }
 
-    const nextNumber = Math.max(1, (orderFormat.last_sequential_number || 0) + 1);
-    return generateDocumentNumber(orderFormat, nextNumber);
+    // Get organization_id for filtering
+    const organizationId = sessionStorage.getItem('selected_organization_id');
+    if (!organizationId) {
+      throw new Error("No se pudo obtener la organización");
+    }
+
+    // Build the prefix pattern for the current year if use_year is enabled
+    let prefix = orderFormat.prefix || '';
+    if (orderFormat.use_year) {
+      const year = new Date().getFullYear();
+      const yearStr = orderFormat.year_format === 'YY' 
+        ? year.toString().slice(-2) 
+        : year.toString();
+      prefix += yearStr + '-';
+    }
+
+    // Query the max sequential number from existing orders with this prefix pattern
+    const { data: existingOrders, error } = await supabase
+      .from('sales_orders')
+      .select('order_number')
+      .eq('organization_id', organizationId)
+      .like('order_number', `${prefix}%`)
+      .order('order_number', { ascending: false })
+      .limit(100);
+
+    if (error) {
+      console.error('Error fetching existing orders:', error);
+      throw new Error("Error al obtener numeración");
+    }
+
+    // Extract sequential numbers from existing order numbers
+    let maxSequential = 0;
+    const digits = orderFormat.sequential_digits || 4;
+    const suffix = orderFormat.suffix || '';
+
+    for (const order of existingOrders || []) {
+      const on = order.order_number || '';
+      // Remove prefix and suffix to get the sequential part
+      let seqPart = on.replace(prefix, '');
+      if (suffix && seqPart.endsWith(suffix)) {
+        seqPart = seqPart.slice(0, -suffix.length);
+      }
+      const seqNum = parseInt(seqPart, 10);
+      if (!isNaN(seqNum) && seqNum > maxSequential) {
+        maxSequential = seqNum;
+      }
+    }
+
+    const nextSequential = maxSequential + 1;
+    const orderNumber = generateDocumentNumber(orderFormat, nextSequential);
+
+    console.log(`📋 Order numbering: prefix="${prefix}", maxFound=${maxSequential}, next=${nextSequential}, number="${orderNumber}"`);
+
+    return { orderNumber, nextSequential };
   };
 
   // Calculate totals
@@ -334,10 +386,13 @@ export default function SalesOrderNew() {
       let order = null;
       let attempts = 0;
       const maxAttempts = 3;
+      let lastNextSequential = 0;
       
       while (!order && attempts < maxAttempts) {
         attempts++;
-        const orderNumber = await generateOrderNumber();
+        const result = await generateOrderNumber();
+        const orderNumber = result.orderNumber;
+        lastNextSequential = result.nextSequential;
         
         const orderData = {
           user_id: user.id,
@@ -549,11 +604,10 @@ export default function SalesOrderNew() {
       }
 
       // Update last_sequential_number in numbering_formats
-      if (orderFormat && 'id' in orderFormat && orderFormat.id) {
-        const nextSequential = orderFormat.last_sequential_number + 1;
+      if (orderFormat && 'id' in orderFormat && orderFormat.id && lastNextSequential > 0) {
         await supabase
           .from('numbering_formats')
-          .update({ last_sequential_number: nextSequential })
+          .update({ last_sequential_number: lastNextSequential })
           .eq('id', orderFormat.id as string);
       }
 
