@@ -170,7 +170,7 @@ export function CompositePromptEditor({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-medium">Campos generales</h3>
+          <h3 className="text-lg font-medium">Datos de Entrada Generales</h3>
           <p className="text-sm text-muted-foreground">
             Campos que el usuario completará para todo el producto compuesto
           </p>

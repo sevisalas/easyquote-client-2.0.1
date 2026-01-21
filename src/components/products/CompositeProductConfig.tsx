@@ -54,7 +54,7 @@ export function CompositeProductConfig({ easyquoteProductId, productName }: Comp
         <TabsList>
           <TabsTrigger value="fields" className="flex items-center gap-2">
             <FileInput className="h-4 w-4" />
-            Campos
+            Datos de Entrada
             {prompts.length > 0 && (
               <span className="ml-1 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
                 {prompts.length}
@@ -63,7 +63,7 @@ export function CompositeProductConfig({ easyquoteProductId, productName }: Comp
           </TabsTrigger>
           <TabsTrigger value="results" className="flex items-center gap-2">
             <FileOutput className="h-4 w-4" />
-            Resultados
+            Datos de Salida
             {outputs.length > 0 && (
               <span className="ml-1 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
                 {outputs.length}
@@ -84,7 +84,7 @@ export function CompositeProductConfig({ easyquoteProductId, productName }: Comp
         <TabsContent value="fields" className="space-y-4">
           <Alert>
             <AlertDescription>
-              Define los <strong>campos generales</strong> que se usarán para este producto.
+              Define los <strong>datos de entrada generales</strong> que el usuario completará para este producto.
             </AlertDescription>
           </Alert>
           <CompositePromptEditor
@@ -103,7 +103,7 @@ export function CompositeProductConfig({ easyquoteProductId, productName }: Comp
         <TabsContent value="results" className="space-y-4">
           <Alert>
             <AlertDescription>
-              Define los <strong>resultados</strong> que se mostrarán al usuario (por ejemplo, precio total).
+              Define los <strong>datos de salida generales</strong> que se mostrarán al usuario (ej: Precio Total).
             </AlertDescription>
           </Alert>
           <CompositeOutputEditor

@@ -137,9 +137,9 @@ export function CompositeOutputEditor({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-medium">Resultados</h3>
+          <h3 className="text-lg font-medium">Datos de Salida Generales</h3>
           <p className="text-sm text-muted-foreground">
-            Resultados que se mostrarán al usuario (precio total, descripción, etc.)
+            Datos que se mostrarán al usuario (precio total, descripción, etc.)
           </p>
         </div>
           <Button onClick={handleStartCreate} size="sm" disabled={editingOutput !== null}>
