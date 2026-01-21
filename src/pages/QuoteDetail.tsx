@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Edit, Download, Copy, CheckCircle, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
@@ -486,21 +487,33 @@ export default function QuoteDetail() {
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground">estado</label>
-              <div className="mt-0.5">
-                <Select 
-                  value={quote.status} 
-                  onValueChange={(value) => updateStatusMutation.mutate({ quoteId: quote.id, status: value })}
-                  disabled={updateStatusMutation.isPending || (isComercial && !isOwnQuote)}
-                >
-                  <SelectTrigger className="h-7 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Borrador</SelectItem>
-                    <SelectItem value="sent">Enviado</SelectItem>
-                    <SelectItem value="rejected">Rechazado</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="mt-0.5 flex items-center gap-2">
+                <Badge variant={getStatusVariant(quote.status)}>
+                  {statusLabel(quote.status)}
+                </Badge>
+                {/* Action buttons based on current status */}
+                {quote.status === 'draft' && (!isComercial || isOwnQuote) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => updateStatusMutation.mutate({ quoteId: quote.id, status: 'sent' })}
+                    disabled={updateStatusMutation.isPending}
+                    className="h-6 text-xs px-2"
+                  >
+                    Enviar
+                  </Button>
+                )}
+                {quote.status === 'sent' && (!isComercial || isOwnQuote) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => updateStatusMutation.mutate({ quoteId: quote.id, status: 'rejected' })}
+                    disabled={updateStatusMutation.isPending}
+                    className="h-6 text-xs px-2"
+                  >
+                    Rechazar
+                  </Button>
+                )}
               </div>
             </div>
             <div>
