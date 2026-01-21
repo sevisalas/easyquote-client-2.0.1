@@ -248,9 +248,13 @@ export default function ProductForm() {
       return;
     }
 
+    // Para productos compuestos, el Excel es opcional (la arquitectura flexible no lo requiere estrictamente)
+    // pero la API de EasyQuote sí necesita un excelfileId, así que validamos solo para simple/encuadernado
+    const requiresExcel = productType !== 'composite';
+
     // Si se va a subir un nuevo archivo
     if (useNewFile) {
-      if (!uploadedFile) {
+      if (requiresExcel && !uploadedFile) {
         toast({
           title: "Error",
           description: "Debes seleccionar un archivo Excel",
@@ -259,17 +263,41 @@ export default function ProductForm() {
         return;
       }
 
-      createProductWithNewFileMutation.mutate({
-        productName: formData.productName,
-        file: uploadedFile,
-        currency: formData.currency,
-      });
+      // Para compuesto sin archivo, mostrar advertencia pero permitir continuar con uno existente
+      if (productType === 'composite' && !uploadedFile) {
+        // Intentar usar archivo existente o mostrar error
+        if (!formData.excelfileId) {
+          toast({
+            title: "Archivo Excel requerido",
+            description: "Los productos compuestos también necesitan un archivo Excel base (puede ser un placeholder). Selecciona uno existente o sube uno nuevo.",
+            variant: "destructive",
+          });
+          return;
+        }
+        // Usar archivo existente
+        createProductMutation.mutate({
+          productName: formData.productName,
+          excelfileId: formData.excelfileId,
+          currency: formData.currency,
+        });
+        return;
+      }
+
+      if (uploadedFile) {
+        createProductWithNewFileMutation.mutate({
+          productName: formData.productName,
+          file: uploadedFile,
+          currency: formData.currency,
+        });
+      }
     } else {
       // Si se usa un archivo existente
       if (!formData.excelfileId) {
         toast({
           title: "Error",
-          description: "Debes seleccionar un archivo Excel existente",
+          description: productType === 'composite' 
+            ? "Los productos compuestos necesitan un archivo Excel base (puede ser un placeholder)"
+            : "Debes seleccionar un archivo Excel existente",
           variant: "destructive",
         });
         return;
@@ -313,7 +341,14 @@ export default function ProductForm() {
             {/* Selección del modo de archivo Excel */}
             <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
               <div className="flex items-center justify-between">
-                <Label className="text-base font-semibold">Archivo Excel (Calculadora)</Label>
+                <div>
+                  <Label className="text-base font-semibold">Archivo Excel (Calculadora)</Label>
+                  {productType === 'composite' && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Para productos compuestos, puedes usar un Excel placeholder o vacío
+                    </p>
+                  )}
+                </div>
                 <Button type="button" variant="outline" size="sm" onClick={() => setUseNewFile(!useNewFile)}>
                   {useNewFile ? "Usar Excel Existente" : "Subir Nuevo Excel"}
                 </Button>
