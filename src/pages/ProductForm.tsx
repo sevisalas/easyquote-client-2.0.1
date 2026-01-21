@@ -528,11 +528,6 @@ export default function ProductForm() {
               )}
             </div>
 
-            <Alert>
-              <AlertDescription>
-                Los campos marcados con <span className="text-destructive">*</span> son obligatorios
-              </AlertDescription>
-            </Alert>
 
             <div className="flex gap-3 justify-end pt-4">
               <Button
