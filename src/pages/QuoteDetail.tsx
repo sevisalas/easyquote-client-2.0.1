@@ -500,7 +500,7 @@ export default function QuoteDetail() {
                     disabled={updateStatusMutation.isPending}
                     className="h-6 text-xs px-2"
                   >
-                    Enviar
+                    {canExportQuotes ? 'Enviar a Holded' : 'Enviar'}
                   </Button>
                 )}
                 {quote.status === 'sent' && (!isComercial || isOwnQuote) && (

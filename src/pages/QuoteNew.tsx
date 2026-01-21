@@ -711,7 +711,7 @@ export default function QuoteNew() {
             </Button>
             <Button onClick={() => handleSave("sent")} disabled={loading || !quoteFormat}>
               <Save className="w-4 h-4 mr-2" />
-              Guardar y enviar
+              {canExportQuotes ? 'Guardar y enviar a Holded' : 'Guardar y enviar'}
             </Button>
           </div>
         </CardContent>
