@@ -783,7 +783,7 @@ export default function QuoteEdit() {
                   {statusLabels[formData.status || 'draft']}
                 </Badge>
                 {/* Action buttons based on current status */}
-                {formData.status === 'draft' && (
+                {(formData.status === 'draft' || formData.status === 'pending') && (
                   <Button
                     type="button"
                     size="sm"
@@ -791,18 +791,7 @@ export default function QuoteEdit() {
                     onClick={() => handleStatusChange('sent')}
                     className="h-7 text-xs"
                   >
-                    Enviar
-                  </Button>
-                )}
-                {formData.status === 'pending' && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleStatusChange('sent')}
-                    className="h-7 text-xs"
-                  >
-                    Enviar
+                    {canExportQuotes ? 'Enviar a Holded' : 'Enviar'}
                   </Button>
                 )}
               </div>
