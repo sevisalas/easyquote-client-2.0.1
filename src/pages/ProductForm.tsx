@@ -30,8 +30,8 @@ export default function ProductForm() {
   const [useNewFile, setUseNewFile] = useState(true);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   
-  // Estado para tipo de producto: simple o compuesto
-  type ProductType = 'simple' | 'composite';
+  // Estado para tipo de producto: simple, encuadernado o compuesto
+  type ProductType = 'simple' | 'encuadernado' | 'composite';
   const [productType, setProductType] = useState<ProductType>('simple');
 
   // Obtener organization_id del usuario actual
@@ -50,29 +50,33 @@ export default function ProductForm() {
     select: (files) => files.filter((f) => f.isActive),
   });
 
-  // Función para guardar configuración de producto compuesto
-  const saveCompositeSettings = async (productId: string) => {
+  // Función para guardar configuración de producto según su tipo
+  const saveProductTypeSettings = async (productId: string) => {
     if (productType === 'simple' || !userRole?.organization_id) return;
 
-    // Marcar el producto como compuesto en product_component_settings
+    const isComposite = productType === 'composite' || productType === 'encuadernado';
+    const enabledComponents = productType === 'encuadernado' 
+      ? ['cubierta', 'interior_1'] // Preset encuadernado por defecto
+      : [];
+
     const { error } = await supabase
       .from('product_component_settings')
       .upsert({
         organization_id: userRole.organization_id,
         easyquote_product_id: productId,
-        is_composite: true,
+        is_composite: isComposite,
         is_component: false,
-        enabled_components: [],
+        enabled_components: enabledComponents,
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'organization_id,easyquote_product_id',
       });
 
     if (error) {
-      console.error('Error saving composite settings:', error);
+      console.error('Error saving product type settings:', error);
       toast({
         title: "Advertencia",
-        description: "El producto se creó pero hubo un error al guardarlo como compuesto",
+        description: "El producto se creó pero hubo un error al guardar la configuración",
         variant: "destructive",
       });
     }
@@ -153,9 +157,9 @@ export default function ProductForm() {
       }
     },
     onSuccess: async (data) => {
-      await saveCompositeSettings(data);
+      await saveProductTypeSettings(data);
       
-      const typeLabel = productType === 'composite' ? ' (compuesto)' : '';
+      const typeLabel = productType === 'composite' ? ' (compuesto)' : productType === 'encuadernado' ? ' (encuadernado)' : '';
       
       toast({
         title: "Producto creado",
@@ -209,9 +213,9 @@ export default function ProductForm() {
       }
     },
     onSuccess: async (data) => {
-      await saveCompositeSettings(data);
+      await saveProductTypeSettings(data);
       
-      const typeLabel = productType === 'composite' ? ' (compuesto)' : '';
+      const typeLabel = productType === 'composite' ? ' (compuesto)' : productType === 'encuadernado' ? ' (encuadernado)' : '';
       
       toast({
         title: "Producto creado",
@@ -382,7 +386,7 @@ export default function ProductForm() {
                 Tipo de producto
               </Label>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* Simple */}
                 <div 
                   className={`p-4 border rounded-lg cursor-pointer transition-all ${
@@ -398,7 +402,22 @@ export default function ProductForm() {
                   </p>
                 </div>
 
-                {/* Compuesto */}
+                {/* Encuadernado (preset predefinido) */}
+                <div 
+                  className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                    productType === 'encuadernado' 
+                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
+                      : 'hover:border-muted-foreground/50'
+                  }`}
+                  onClick={() => setProductType('encuadernado')}
+                >
+                  <div className="font-medium">Encuadernado</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Preset con Cubierta + Interiores predefinidos
+                  </p>
+                </div>
+
+                {/* Compuesto (arquitectura flexible) */}
                 <div 
                   className={`p-4 border rounded-lg cursor-pointer transition-all ${
                     productType === 'composite' 
@@ -409,10 +428,27 @@ export default function ProductForm() {
                 >
                   <div className="font-medium">Compuesto</div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Contenedor que agrupa varios componentes EasyQuote
+                    Contenedor flexible con componentes personalizados
                   </p>
                 </div>
               </div>
+
+              {/* Info para producto encuadernado */}
+              {productType === 'encuadernado' && (
+                <div className="p-4 border rounded-lg bg-muted/50 space-y-2">
+                  <p className="text-sm text-foreground">
+                    <strong>Encuadernado:</strong> Producto con componentes predefinidos:
+                  </p>
+                  <ul className="text-xs text-muted-foreground list-disc list-inside space-y-1">
+                    <li><strong>Cubierta:</strong> papel o acabado distinto al interior</li>
+                    <li><strong>Interior 1:</strong> páginas interiores principales</li>
+                    <li><strong>Interior 2:</strong> segundas páginas interiores (opcional)</li>
+                  </ul>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Podrás asignar prompts y outputs a cada componente después de crear el producto.
+                  </p>
+                </div>
+              )}
 
               {/* Info para producto compuesto */}
               {productType === 'composite' && (
