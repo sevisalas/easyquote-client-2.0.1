@@ -1472,14 +1472,27 @@ export default function ProductManagement() {
   });
   const handleSaveProduct = () => {
     if (selectedProduct) {
-      // Determinar acción: delete si está inactivo, update si está activo
-      const action = selectedProduct.isActive ? 'update' : 'delete';
+      // Los productos compuestos locales (comp_*) solo existen en Supabase, no en EasyQuote
+      const isLocalComposite = selectedProduct.id.startsWith('comp_');
+      
+      if (!isLocalComposite) {
+        // Determinar acción: delete si está inactivo, update si está activo
+        const action = selectedProduct.isActive ? 'update' : 'delete';
 
-      // Actualizar producto en EasyQuote
-      updateProductMutation.mutate({
-        product: selectedProduct,
-        action
-      });
+        // Actualizar producto en EasyQuote
+        updateProductMutation.mutate({
+          product: selectedProduct,
+          action
+        });
+      } else {
+        // Para productos locales, solo mostramos confirmación y cerramos
+        toast({
+          title: "Producto actualizado",
+          description: "El producto compuesto se ha actualizado correctamente."
+        });
+        setIsEditDialogOpen(false);
+        setSelectedProduct(null);
+      }
 
       // Actualizar categoría en Supabase
       if (selectedCategoryId || selectedSubcategoryId) {
