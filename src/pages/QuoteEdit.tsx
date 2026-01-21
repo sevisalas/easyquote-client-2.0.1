@@ -791,7 +791,7 @@ export default function QuoteEdit() {
                     onClick={() => handleStatusChange('sent')}
                     className="h-7 text-xs"
                   >
-                    Marcar enviado
+                    Enviar
                   </Button>
                 )}
                 {formData.status === 'pending' && (
@@ -802,7 +802,7 @@ export default function QuoteEdit() {
                     onClick={() => handleStatusChange('sent')}
                     className="h-7 text-xs"
                   >
-                    Marcar enviado
+                    Enviar
                   </Button>
                 )}
               </div>
