@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Link, Link2Off, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -57,25 +56,28 @@ export function ComponentPromptMappingDialog({
   onSave,
   isSaving,
 }: ComponentPromptMappingDialogProps) {
-  // Cargar los prompts del componente (producto EasyQuote)
+  // Cargar los prompts del componente desde la API de pricing (que devuelve labels reales)
   const { data: componentPrompts = [], isLoading } = useQuery({
-    queryKey: ["component-prompts", component.component_product_id],
+    queryKey: ["component-prompts-pricing", component.component_product_id],
     queryFn: async () => {
       const token = await getEasyQuoteToken();
       if (!token) return [];
-      const { data, error } = await invokeEasyQuoteFunction<any[]>("easyquote-prompts", {
+      // Usamos easyquote-pricing GET para obtener los prompts con labels reales
+      const { data, error } = await invokeEasyQuoteFunction<any>("easyquote-pricing", {
         token,
         productId: component.component_product_id,
+        method: "GET",
       });
       if (error) {
         console.error("Error fetching component prompts:", error);
         return [];
       }
-      // Normalizar los prompts
-      return (data || []).map((p: any) => ({
+      // Los prompts vienen en data.prompts con su label/texto real
+      const prompts = data?.prompts || [];
+      return prompts.map((p: any) => ({
         id: p.id,
-        name: p.promptCell || p.name || p.id,
-        label: p.promptText || p.name || p.id,
+        name: p.id, // Usamos el ID para las conexiones (consistente con el padre)
+        label: p.promptText || p.promptCell || p.id,
         promptCell: p.promptCell,
       })) as ComponentPromptDef[];
     },
@@ -184,18 +186,34 @@ export function ComponentPromptMappingDialog({
                     >
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{cp.label}</p>
-                        <p className="text-xs text-muted-foreground truncate">{cp.name}</p>
+                        {cp.promptCell && cp.promptCell !== cp.label && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            Celda: {cp.promptCell}
+                          </p>
+                        )}
                       </div>
 
                       <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
 
-                      <div className="w-48">
+                      <div className="w-56">
                         <Select
                           value={currentMapping}
                           onValueChange={(v) => handleMappingChange(cp.name, v)}
                         >
                           <SelectTrigger className="h-9">
-                            <SelectValue />
+                            <SelectValue>
+                              {currentMapping === USER_EDITABLE ? (
+                                <span className="flex items-center gap-2">
+                                  <Link2Off className="h-3.5 w-3.5" />
+                                  Editable por usuario
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-2">
+                                  <Link className="h-3.5 w-3.5 text-primary" />
+                                  {parentPrompts.find(pp => pp.name === currentMapping)?.label || currentMapping}
+                                </span>
+                              )}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value={USER_EDITABLE}>
@@ -208,7 +226,7 @@ export function ComponentPromptMappingDialog({
                               <SelectItem key={pp.name} value={pp.name}>
                                 <span className="flex items-center gap-2">
                                   <Link className="h-3.5 w-3.5 text-primary" />
-                                  {pp.label || pp.name}
+                                  {pp.label}
                                 </span>
                               </SelectItem>
                             ))}
