@@ -1,18 +1,30 @@
-import { Loader2, Puzzle, Info } from "lucide-react";
+import { Loader2, Info } from "lucide-react";
 import { useCompositeProductConfig } from "@/hooks/useCompositeProductConfig";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CompatibleComponentsEditor } from "./CompatibleComponentsEditor";
 
 interface CompositeProductConfigProps {
   easyquoteProductId: string;
   productName: string;
+  availableProducts: { id: string; name: string }[];
 }
 
-export function CompositeProductConfig({ easyquoteProductId, productName }: CompositeProductConfigProps) {
+export function CompositeProductConfig({ 
+  easyquoteProductId, 
+  productName,
+  availableProducts,
+}: CompositeProductConfigProps) {
   const {
     components,
+    availableComponentProducts,
     organizationId,
     isLoading,
-    componentsLoading,
+    addComponent,
+    updateComponent,
+    deleteComponent,
+    isAddingComponent,
+    isUpdatingComponent,
+    isDeletingComponent,
   } = useCompositeProductConfig(easyquoteProductId);
 
   if (isLoading || !organizationId) {
@@ -22,6 +34,11 @@ export function CompositeProductConfig({ easyquoteProductId, productName }: Comp
       </div>
     );
   }
+
+  // Filtrar solo los productos que están marcados como componentes
+  const componentProducts = availableProducts.filter(
+    (p) => availableComponentProducts.includes(p.id)
+  );
 
   return (
     <div className="space-y-6">
@@ -41,32 +58,18 @@ export function CompositeProductConfig({ easyquoteProductId, productName }: Comp
         </AlertDescription>
       </Alert>
 
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Puzzle className="h-5 w-5 text-muted-foreground" />
-          <h3 className="font-medium">Componentes</h3>
-          {components.length > 0 && (
-            <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
-              {components.length}
-            </span>
-          )}
-        </div>
-        
-        <Alert>
-          <AlertDescription>
-            Asocia productos EasyQuote como <strong>componentes</strong> de este producto compuesto. 
-            Cada componente aportará su precio y resultados al cálculo total.
-          </AlertDescription>
-        </Alert>
-        
-        <div className="text-center py-12 border rounded-lg bg-muted/30">
-          <Puzzle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <p className="text-muted-foreground">Próximamente</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            La asociación de componentes estará disponible en la siguiente fase
-          </p>
-        </div>
-      </div>
+      <CompatibleComponentsEditor
+        easyquoteProductId={easyquoteProductId}
+        organizationId={organizationId}
+        components={components}
+        availableProducts={componentProducts}
+        onAdd={addComponent}
+        onUpdate={updateComponent}
+        onDelete={deleteComponent}
+        isAdding={isAddingComponent}
+        isUpdating={isUpdatingComponent}
+        isDeleting={isDeletingComponent}
+      />
     </div>
   );
 }
