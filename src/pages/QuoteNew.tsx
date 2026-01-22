@@ -197,66 +197,25 @@ export default function QuoteNew() {
     }
   }, [duplicateQuote]);
 
-  // Generate quote number using configured format - calculates from DB to avoid race conditions
-  const generateQuoteNumber = async (): Promise<{ quoteNumber: string; nextSequential: number }> => {
-    if (!quoteFormat) {
-      throw new Error("No se pudo obtener el formato de numeración");
+  // Generate quote number using atomic DB function (prevents duplicates on concurrent saves)
+  const generateQuoteNumberAtomic = async (organizationId: string): Promise<{ quoteNumber: string; nextSequential: number }> => {
+    const { data, error } = await supabase.rpc('next_document_number' as any, {
+      p_organization_id: organizationId,
+      p_document_type: 'quote',
+    }) as { data: { document_number: string; sequential_number: number }[] | null; error: any };
+    
+    if (error || !data || data.length === 0) {
+      console.error('Error generating quote number:', error);
+      throw new Error("Error al generar el número de presupuesto");
     }
     
-    // Get organization_id for filtering
-    const organizationId = sessionStorage.getItem('selected_organization_id');
-    if (!organizationId) {
-      throw new Error("No se pudo obtener la organización");
-    }
+    const result = data[0];
+    console.log(`📋 Atomic quote number generated: ${result.document_number} (seq: ${result.sequential_number})`);
     
-    // Build the prefix pattern for the current year if use_year is enabled
-    let prefix = quoteFormat.prefix || '';
-    if (quoteFormat.use_year) {
-      const year = new Date().getFullYear();
-      const yearStr = quoteFormat.year_format === 'YY' 
-        ? year.toString().slice(-2) 
-        : year.toString();
-      prefix += yearStr + '-';
-    }
-    
-    // Query the max sequential number from existing quotes with this prefix pattern
-    const { data: existingQuotes, error } = await supabase
-      .from('quotes')
-      .select('quote_number')
-      .eq('organization_id', organizationId)
-      .like('quote_number', `${prefix}%`)
-      .order('quote_number', { ascending: false })
-      .limit(100);
-    
-    if (error) {
-      console.error('Error fetching existing quotes:', error);
-      throw new Error("Error al obtener numeración");
-    }
-    
-    // Extract sequential numbers from existing quote numbers
-    let maxSequential = 0;
-    const digits = quoteFormat.sequential_digits || 4;
-    const suffix = quoteFormat.suffix || '';
-    
-    for (const quote of existingQuotes || []) {
-      const qn = quote.quote_number || '';
-      // Remove prefix and suffix to get the sequential part
-      let seqPart = qn.replace(prefix, '');
-      if (suffix && seqPart.endsWith(suffix)) {
-        seqPart = seqPart.slice(0, -suffix.length);
-      }
-      const seqNum = parseInt(seqPart, 10);
-      if (!isNaN(seqNum) && seqNum > maxSequential) {
-        maxSequential = seqNum;
-      }
-    }
-    
-    const nextSequential = maxSequential + 1;
-    const quoteNumber = generateDocumentNumber(quoteFormat, nextSequential);
-    
-    console.log(`📋 Quote numbering: prefix="${prefix}", maxFound=${maxSequential}, next=${nextSequential}, number="${quoteNumber}"`);
-    
-    return { quoteNumber, nextSequential };
+    return {
+      quoteNumber: result.document_number,
+      nextSequential: result.sequential_number,
+    };
   };
 
   // Calculate totals
@@ -386,65 +345,48 @@ export default function QuoteNew() {
     }
   };
 
-  const isDuplicateQuoteNumberError = (err: any) => {
-    const msg = String(err?.message || "");
-    return err?.code === "23505" || msg.includes('quotes_organization_id_quote_number_key');
-  };
-
-  const insertQuoteWithRetry = async (
+  const insertQuote = async (
     quoteDataBase: Omit<QuotesInsert, "quote_number" | "title">,
     titleValue: string,
   ): Promise<{ quote: any; quoteNumber: string; nextSequential: number }> => {
-    const MAX_ATTEMPTS = 3;
-    let lastError: any = null;
+    const organizationId = quoteDataBase.organization_id;
+    if (!organizationId) {
+      throw new Error("No se pudo obtener la organización");
+    }
 
-    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-      const { quoteNumber, nextSequential } = await generateQuoteNumber();
-      
-      // Construir el objeto completo para evitar problemas de tipado con spread
-      const quoteData: QuotesInsert = {
-        user_id: quoteDataBase.user_id,
-        quote_number: quoteNumber,
-        title: titleValue || `Presupuesto ${quoteNumber}`,
-        customer_id: quoteDataBase.customer_id,
-        description: quoteDataBase.description,
-        status: quoteDataBase.status,
-        subtotal: quoteDataBase.subtotal,
-        tax_amount: quoteDataBase.tax_amount,
-        discount_amount: quoteDataBase.discount_amount,
-        final_price: quoteDataBase.final_price,
-        valid_until: quoteDataBase.valid_until,
-        notes: quoteDataBase.notes,
-        terms_conditions: quoteDataBase.terms_conditions,
-        selections: quoteDataBase.selections,
-        quote_additionals: quoteDataBase.quote_additionals,
-        organization_id: quoteDataBase.organization_id,
-      };
+    // Atomic call generates + reserves the number in one shot
+    const { quoteNumber, nextSequential } = await generateQuoteNumberAtomic(organizationId);
 
-      const { data: quote, error } = await supabase
-        .from("quotes")
-        .insert(quoteData)
-        .select()
-        .single();
+    const quoteData: QuotesInsert = {
+      user_id: quoteDataBase.user_id,
+      quote_number: quoteNumber,
+      title: titleValue || `Presupuesto ${quoteNumber}`,
+      customer_id: quoteDataBase.customer_id,
+      description: quoteDataBase.description,
+      status: quoteDataBase.status,
+      subtotal: quoteDataBase.subtotal,
+      tax_amount: quoteDataBase.tax_amount,
+      discount_amount: quoteDataBase.discount_amount,
+      final_price: quoteDataBase.final_price,
+      valid_until: quoteDataBase.valid_until,
+      notes: quoteDataBase.notes,
+      terms_conditions: quoteDataBase.terms_conditions,
+      selections: quoteDataBase.selections,
+      quote_additionals: quoteDataBase.quote_additionals,
+      organization_id: quoteDataBase.organization_id,
+    };
 
-      if (!error) {
-        return { quote, quoteNumber, nextSequential };
-      }
+    const { data: quote, error } = await supabase
+      .from("quotes")
+      .insert(quoteData)
+      .select()
+      .single();
 
-      lastError = error;
-
-      if (isDuplicateQuoteNumberError(error) && attempt < MAX_ATTEMPTS) {
-        console.warn(
-          `[QuoteNew] Duplicate quote_number "${quoteNumber}" (attempt ${attempt}/${MAX_ATTEMPTS}). Retrying...`,
-          error,
-        );
-        continue;
-      }
-
+    if (error) {
       throw error;
     }
 
-    throw lastError || new Error("No se pudo generar un número de presupuesto único");
+    return { quote, quoteNumber, nextSequential };
   };
 
   const handleSave = async (status: "draft" | "sent" = "draft") => {
@@ -500,7 +442,7 @@ export default function QuoteNew() {
         organization_id: organizationId
       };
 
-      const { quote, quoteNumber, nextSequential } = await insertQuoteWithRetry(
+      const { quote, quoteNumber } = await insertQuote(
         quoteDataBase,
         title,
       );
@@ -538,12 +480,7 @@ export default function QuoteNew() {
       } = await supabase.from("quote_items").insert(quoteItemsData);
       if (itemsError) throw itemsError;
 
-      // Update last_sequential_number in numbering_formats
-      if (quoteFormat && 'id' in quoteFormat && quoteFormat.id) {
-        await supabase.from('numbering_formats').update({
-          last_sequential_number: nextSequential
-        }).eq('id', quoteFormat.id as string);
-      }
+      // (Sequential update now handled atomically inside next_document_number)
 
       // Si el estado es "sent" y se permite exportar presupuestos a Holded, exportar automáticamente
       if (status === 'sent' && canExportQuotes) {
