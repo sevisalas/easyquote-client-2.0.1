@@ -87,9 +87,11 @@ export default function CompositeComponentTabs({
         // Calcular valores de prompts para este componente basado en las conexiones
         const componentInputs: { id: string; value: any }[] = [];
         
-        // Filtrar conexiones para ESTE componente específico (por id, no por component_product_id)
+        // Filtrar conexiones para ESTE componente (por id O por component_product_id)
         const connections = promptConnections.filter(
-          (conn: any) => conn.target_component_id === component.id
+          (conn: any) => 
+            conn.target_component_id === component.id || 
+            conn.target_component_id === component.component_product_id
         );
 
         for (const conn of connections as any[]) {
@@ -101,6 +103,13 @@ export default function CompositeComponentTabs({
             });
           }
         }
+        
+        console.log("[CompositeComponentTabs] API inputs for component", {
+          componentId: component.id,
+          componentProductId: component.component_product_id,
+          inputs: componentInputs,
+          parentPromptValues,
+        });
 
         const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
           token,
