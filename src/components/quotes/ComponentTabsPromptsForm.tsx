@@ -136,8 +136,20 @@ export default function ComponentTabsPromptsForm({
   const promptCellLookup = useMemo(() => {
     const map = new Map<string, string>();
 
+    console.log("[ComponentTabs] Building promptCellLookup from", promptDefinitions?.length, "definitions");
+
     for (const p of promptDefinitions as any[]) {
-      const cell = extractCellRef(getPromptCell(p)) ?? normalizePromptName(getPromptCell(p));
+      const rawCell = getPromptCell(p);
+      const cell = extractCellRef(rawCell) ?? normalizePromptName(rawCell);
+      
+      console.log("[ComponentTabs] Prompt def:", { 
+        id: p?.id, 
+        rawCell, 
+        cell, 
+        name: p?.name,
+        promptText: p?.promptText 
+      });
+      
       if (!cell) continue;
 
       // Indexar por UUID (la clave principal que viene del pricing)
@@ -159,6 +171,7 @@ export default function ComponentTabsPromptsForm({
       map.set(cell, cell);
     }
 
+    console.log("[ComponentTabs] promptCellLookup size:", map.size);
     return map;
   }, [promptDefinitions]);
 
@@ -167,7 +180,10 @@ export default function ComponentTabsPromptsForm({
     
     // Primero intentar buscar por UUID directamente (la clave más confiable)
     const cellFromUuid = promptCellLookup.get(idStr);
-    if (cellFromUuid) return cellFromUuid;
+    if (cellFromUuid) {
+      console.log("[ComponentTabs] getPromptAdminKey found by UUID:", { id: idStr, cell: cellFromUuid });
+      return cellFromUuid;
+    }
     
     // Fallback: intentar extraer celda del id o label
     const idNorm = extractCellRef(idStr) ?? normalizePromptName(idStr);
@@ -176,8 +192,11 @@ export default function ComponentTabsPromptsForm({
     const cellFromId = idNorm ? promptCellLookup.get(idNorm) : undefined;
     const cellFromLabel = labelCell ? (promptCellLookup.get(labelCell) ?? labelCell) : undefined;
 
+    const result = cellFromId ?? cellFromLabel ?? extractCellRef(idStr) ?? labelCell ?? idNorm ?? idStr;
+    console.log("[ComponentTabs] getPromptAdminKey fallback:", { id: idStr, result, idNorm, labelCell });
+    
     // Importante: NO usar el texto del label (p.ej. "Tarifa"); solo referencias de celda/ids.
-    return cellFromId ?? cellFromLabel ?? extractCellRef(idStr) ?? labelCell ?? idNorm ?? idStr;
+    return result;
   };
 
   // Separar prompts: regulares vs force_result
