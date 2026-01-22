@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ActiveComponent } from "./CompositeComponentsSelector";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
@@ -40,13 +40,12 @@ export interface ComponentPricingData {
 export type ComponentsDataMap = Record<string, ComponentPricingData>;
 
 /**
- * Componente que replica el layout del sistema legacy:
- * - IZQUIERDA: Prompts del producto padre (formulario editable)
- * - TABS arriba a la derecha: Selector de componente
- * - DERECHA (panel Resultados externo): Outputs del componente seleccionado
+ * Layout de productos compuestos:
+ * - IZQUIERDA: Prompts del producto padre (generales)
+ * - DERECHA: Prompts del componente seleccionado (tabs para cambiar componente)
  * 
- * Los datos heredados se propagan automáticamente a los componentes según las conexiones
- * configuradas en la base de datos - NO se muestran como texto estático.
+ * Los prompts heredados se muestran en el padre; en el componente se ven
+ * los prompts NO mapeados (editables por usuario) + los mapeados como readonly.
  */
 export default function CompositeComponentTabs({
   parentProductId,
@@ -179,44 +178,120 @@ export default function CompositeComponentTabs({
     return productNames.get(component.component_product_id) || component.component_alias;
   };
 
+  // Obtener IDs de prompts mapeados para un componente
+  const getMappedPromptIds = (componentId: string): Set<string> => {
+    const connections = promptConnections.filter(
+      (conn: any) => conn.target_component_id === componentId
+    );
+    return new Set(connections.map((conn: any) => conn.target_prompt_name));
+  };
+
+  // Crear producto virtual para el componente (solo prompts NO mapeados son editables)
+  const createComponentProduct = (componentId: string) => {
+    const componentData = componentsData[componentId];
+    if (!componentData) return null;
+
+    const mappedIds = getMappedPromptIds(componentId);
+    
+    // Todos los prompts, pero marcando los mapeados
+    const prompts = componentData.prompts.map((p: any) => ({
+      ...p,
+      // Si está mapeado, agregar flag para mostrarlo diferente (readonly)
+      isMapped: mappedIds.has(String(p.id)),
+    }));
+
+    return { prompts };
+  };
+
+  // Obtener valores de prompts para un componente específico
+  const getComponentPromptValues = (componentId: string): Record<string, any> => {
+    const componentData = componentsData[componentId];
+    if (!componentData) return {};
+
+    const values: Record<string, any> = {};
+    for (const prompt of componentData.prompts) {
+      values[prompt.id] = prompt.currentValue ?? prompt.default ?? "";
+    }
+    return values;
+  };
+
+  // El componente activo actual
+  const activeComponentData = activeTab ? componentsData[activeTab] : null;
+
   return (
     <div className="space-y-4">
-      {/* Header con título y tabs de componentes */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h3 className="font-medium whitespace-nowrap">Configuración del producto</h3>
+      {/* Header con título */}
+      <h3 className="font-medium">Configuración del producto</h3>
 
-        {activeComponents.length > 0 && (
-          <Tabs value={activeTab} onValueChange={handleTabChange}>
-            <TabsList className="flex-wrap h-auto gap-1">
-              {activeComponents.map((component) => (
-                <TabsTrigger 
-                  key={component.id} 
-                  value={component.id}
-                  className="relative flex items-center gap-1.5"
-                >
-                  {getComponentLabel(component)}
-                  {componentsData[component.id]?.isLoading && (
-                    <span className="text-xs text-muted-foreground">...</span>
-                  )}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        )}
-      </div>
-
-      {/* Formulario de prompts del padre - ocupa todo el ancho */}
-      {parentProduct?.prompts && (
-        <div className="rounded-lg border border-border bg-card p-4">
-          <PromptsForm
-            product={parentProduct}
-            values={parentPromptValues}
-            onChange={onParentPromptChange}
-            onCommit={onParentPromptCommit}
-            showAllPrompts={isAdmin}
-          />
+      {/* Layout de dos columnas: Izquierda=Padre, Derecha=Componente */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        {/* COLUMNA IZQUIERDA: Prompts del producto padre (generales) */}
+        <div className="rounded-lg border border-border bg-card p-4 self-start">
+          <h4 className="text-sm font-medium text-muted-foreground mb-3">Datos generales</h4>
+          {parentProduct?.prompts ? (
+            <PromptsForm
+              product={parentProduct}
+              values={parentPromptValues}
+              onChange={onParentPromptChange}
+              onCommit={onParentPromptCommit}
+              showAllPrompts={isAdmin}
+              singleColumn
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">Sin prompts configurados</p>
+          )}
         </div>
-      )}
+
+        {/* COLUMNA DERECHA: Prompts del componente seleccionado */}
+        <div className="rounded-lg border border-border bg-card p-4 self-start">
+          {activeComponents.length > 0 ? (
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+              <TabsList className="flex-wrap h-auto gap-1 mb-4">
+                {activeComponents.map((component) => (
+                  <TabsTrigger 
+                    key={component.id} 
+                    value={component.id}
+                    className="relative flex items-center gap-1.5"
+                  >
+                    {getComponentLabel(component)}
+                    {componentsData[component.id]?.isLoading && (
+                      <span className="text-xs text-muted-foreground">...</span>
+                    )}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              {activeComponents.map((component) => {
+                const componentProduct = createComponentProduct(component.id);
+                const componentValues = getComponentPromptValues(component.id);
+                const isLoading = componentsData[component.id]?.isLoading;
+
+                return (
+                  <TabsContent key={component.id} value={component.id} className="mt-0">
+                    {isLoading ? (
+                      <p className="text-sm text-muted-foreground">Cargando...</p>
+                    ) : componentProduct?.prompts?.length ? (
+                      <PromptsForm
+                        product={componentProduct}
+                        values={componentValues}
+                        onChange={() => {/* Los prompts del componente son calculados, no editables */}}
+                        showAllPrompts={isAdmin}
+                        singleColumn
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Sin opciones para este componente
+                      </p>
+                    )}
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
+          ) : (
+            <p className="text-sm text-muted-foreground">No hay componentes activos</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
