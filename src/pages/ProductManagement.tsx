@@ -2785,6 +2785,10 @@ export default function ProductManagement() {
                   easyquoteProductId={selectedProduct.id}
                   productName={selectedProduct.productName}
                   availableProducts={products.map(p => ({ id: p.id, name: p.productName }))}
+                  parentPrompts={productPrompts.map((p: any) => ({
+                    name: p.promptCell || p.id,
+                    label: p.promptText || p.promptCell || p.id
+                  }))}
                 />
               </TabsContent>
             </Tabs>
