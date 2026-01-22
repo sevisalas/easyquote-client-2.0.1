@@ -382,6 +382,53 @@ export default function QuoteNew() {
       setIsImportingContacts(false);
     }
   };
+
+  const isDuplicateQuoteNumberError = (err: any) => {
+    const msg = String(err?.message || "");
+    return err?.code === "23505" || msg.includes('quotes_organization_id_quote_number_key');
+  };
+
+  const insertQuoteWithRetry = async (
+    quoteDataBase: Record<string, any>,
+    titleValue: string,
+  ): Promise<{ quote: any; quoteNumber: string; nextSequential: number }> => {
+    const MAX_ATTEMPTS = 3;
+    let lastError: any = null;
+
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      const { quoteNumber, nextSequential } = await generateQuoteNumber();
+      const quoteData: Record<string, any> = {
+        ...quoteDataBase,
+        quote_number: quoteNumber,
+        title: titleValue || `Presupuesto ${quoteNumber}`,
+      };
+
+      // Nota: casteo a any para evitar fricción con tipos generados cuando construimos el payload dinámicamente
+      const { data: quote, error } = await (supabase.from("quotes") as any)
+        .insert(quoteData)
+        .select()
+        .single();
+
+      if (!error) {
+        return { quote, quoteNumber, nextSequential };
+      }
+
+      lastError = error;
+
+      if (isDuplicateQuoteNumberError(error) && attempt < MAX_ATTEMPTS) {
+        console.warn(
+          `[QuoteNew] Duplicate quote_number "${quoteNumber}" (attempt ${attempt}/${MAX_ATTEMPTS}). Retrying...`,
+          error,
+        );
+        continue;
+      }
+
+      throw error;
+    }
+
+    throw lastError || new Error("No se pudo generar un número de presupuesto único");
+  };
+
   const handleSave = async (status: "draft" | "sent" = "draft") => {
     if (!customerId) {
       toast({
@@ -407,9 +454,6 @@ export default function QuoteNew() {
         }
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuario no autenticado");
-      const result = await generateQuoteNumber();
-      const quoteNumber = result.quoteNumber;
-      const nextSequential = result.nextSequential;
       const itemsArray = Object.values(items);
 
       // Extract UUID from "holded:" prefix if present
@@ -417,11 +461,13 @@ export default function QuoteNew() {
 
       // Obtener organization_id del sessionStorage
       const organizationId = sessionStorage.getItem('selected_organization_id');
-      const quoteData = {
+      if (!organizationId) {
+        throw new Error("No se pudo obtener la organización");
+      }
+
+      const quoteDataBase = {
         user_id: user.id,
         customer_id: actualCustomerId,
-        quote_number: quoteNumber,
-        title: title || `Presupuesto ${quoteNumber}`,
         description: description || itemsArray[0]?.itemDescription || "",
         status,
         subtotal: totals.subtotal,
@@ -435,11 +481,11 @@ export default function QuoteNew() {
         quote_additionals: quoteAdditionals,
         organization_id: organizationId
       };
-      const {
-        data: quote,
-        error
-      } = await supabase.from("quotes").insert(quoteData).select().single();
-      if (error) throw error;
+
+      const { quote, quoteNumber, nextSequential } = await insertQuoteWithRetry(
+        quoteDataBase,
+        title,
+      );
 
       // Create quote_items records with prompts and outputs
       const quoteItemsData = itemsArray.map((item, index) => {
