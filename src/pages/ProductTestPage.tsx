@@ -1324,7 +1324,11 @@ export default function ProductTestPage() {
                   {/* Precio (simple = API / compuesto = suma de componentes) + opción de modificar */}
                   {(() => {
                     const basePrice = isComposite ? calculatedTotalPrice : apiPrice;
-                    if (!(basePrice > 0)) return null;
+                    // Mostrar siempre el precio si hay outputs procesados (incluso si es 0)
+                    const hasPriceOutput = generalOutputs.some(
+                      (o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price"
+                    );
+                    if (!hasPriceOutput && basePrice === 0) return null;
 
                     const title = isComposite ? "Precio Total" : "Precio";
 
