@@ -2145,21 +2145,17 @@ export default function ProductManagement() {
           </DialogHeader>
           
           {selectedProduct && <div>
-            <Tabs defaultValue={productType === 'compuesto' ? 'composite-config' : 'general'} className="w-full">
-              {/* Productos compuestos locales: solo General + Configuración */}
-              {productType === 'compuesto' ? (
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="general">General</TabsTrigger>
-                  <TabsTrigger value="composite-config">Configuración</TabsTrigger>
-                </TabsList>
-              ) : (
-                <TabsList className={`grid w-full ${productType === 'sencillo' ? 'grid-cols-3' : 'grid-cols-4'}`}>
-                  <TabsTrigger value="general">General</TabsTrigger>
-                  <TabsTrigger value="prompts">Datos de entrada ({productPrompts.length})</TabsTrigger>
-                  <TabsTrigger value="outputs">Datos de salida ({productOutputs.length})</TabsTrigger>
-                  {productType === 'encuadernado' && <TabsTrigger value="components">Componentes</TabsTrigger>}
-                </TabsList>
-              )}
+            <Tabs defaultValue="general" className="w-full">
+              {/* Todos los tipos de producto muestran General + Datos de entrada + Datos de salida */}
+              {/* Productos compuestos y encuadernados añaden pestaña de Componentes */}
+              <TabsList className={`grid w-full ${productType === 'sencillo' ? 'grid-cols-3' : 'grid-cols-4'}`}>
+                <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="prompts">Datos de entrada ({productPrompts.length})</TabsTrigger>
+                <TabsTrigger value="outputs">Datos de salida ({productOutputs.length})</TabsTrigger>
+                {(productType === 'encuadernado' || productType === 'compuesto') && (
+                  <TabsTrigger value="composite-config">Componentes</TabsTrigger>
+                )}
+              </TabsList>
               
               <TabsContent value="general" className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
