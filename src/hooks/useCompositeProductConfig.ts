@@ -42,6 +42,18 @@ export interface CompositeComponent {
   updated_at: string;
 }
 
+export interface PromptConnection {
+  id: string;
+  organization_id: string;
+  composite_product_id: string;
+  source_prompt_name: string;
+  target_component_id: string;
+  target_prompt_name: string;
+  transform_formula: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export const PROMPT_TYPES = [
   { value: "text", label: "Texto" },
   { value: "number", label: "Número" },
@@ -129,6 +141,26 @@ export function useCompositeProductConfig(easyquoteProductId?: string) {
         .order("display_order", { ascending: true });
       if (error) throw error;
       return (data || []) as CompositeComponent[];
+    },
+    enabled: !!easyquoteProductId && !!organizationId,
+  });
+
+  // Fetch prompt connections for composite product
+  const {
+    data: promptConnections = [],
+    isLoading: connectionsLoading,
+    refetch: refetchConnections,
+  } = useQuery({
+    queryKey: ["composite-prompt-connections", easyquoteProductId, organizationId],
+    queryFn: async () => {
+      if (!easyquoteProductId || !organizationId) return [];
+      const { data, error } = await supabase
+        .from("composite_prompt_connections")
+        .select("*")
+        .eq("organization_id", organizationId)
+        .eq("composite_product_id", easyquoteProductId);
+      if (error) throw error;
+      return (data || []) as PromptConnection[];
     },
     enabled: !!easyquoteProductId && !!organizationId,
   });
@@ -293,11 +325,59 @@ export function useCompositeProductConfig(easyquoteProductId?: string) {
     },
   });
 
+  // Upsert prompt connection mutation
+  const upsertConnectionMutation = useMutation({
+    mutationFn: async (connection: Omit<PromptConnection, "id" | "created_at" | "updated_at">) => {
+      const { data, error } = await supabase
+        .from("composite_prompt_connections")
+        .upsert(connection, {
+          onConflict: "organization_id,composite_product_id,target_component_id,target_prompt_name",
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["composite-prompt-connections", easyquoteProductId] });
+    },
+  });
+
+  // Delete prompt connection mutation
+  const deleteConnectionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("composite_prompt_connections")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["composite-prompt-connections", easyquoteProductId] });
+    },
+  });
+
+  // Delete connections by target component
+  const deleteConnectionsByComponentMutation = useMutation({
+    mutationFn: async (targetComponentId: string) => {
+      const { error } = await supabase
+        .from("composite_prompt_connections")
+        .delete()
+        .eq("composite_product_id", easyquoteProductId)
+        .eq("target_component_id", targetComponentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["composite-prompt-connections", easyquoteProductId] });
+    },
+  });
+
   return {
     // Data
     prompts,
     outputs,
     components,
+    promptConnections,
     availableComponentProducts,
     organizationId,
 
@@ -305,13 +385,15 @@ export function useCompositeProductConfig(easyquoteProductId?: string) {
     promptsLoading,
     outputsLoading,
     componentsLoading,
+    connectionsLoading,
     availableComponentsLoading,
-    isLoading: promptsLoading || outputsLoading || componentsLoading,
+    isLoading: promptsLoading || outputsLoading || componentsLoading || connectionsLoading,
 
     // Refetch
     refetchPrompts,
     refetchOutputs,
     refetchComponents,
+    refetchConnections,
 
     // Prompt mutations
     addPrompt: addPromptMutation.mutateAsync,
@@ -336,5 +418,12 @@ export function useCompositeProductConfig(easyquoteProductId?: string) {
     isAddingComponent: addComponentMutation.isPending,
     isUpdatingComponent: updateComponentMutation.isPending,
     isDeletingComponent: deleteComponentMutation.isPending,
+
+    // Connection mutations
+    upsertConnection: upsertConnectionMutation.mutateAsync,
+    deleteConnection: deleteConnectionMutation.mutateAsync,
+    deleteConnectionsByComponent: deleteConnectionsByComponentMutation.mutateAsync,
+    isUpsertingConnection: upsertConnectionMutation.isPending,
+    isDeletingConnection: deleteConnectionMutation.isPending,
   };
 }

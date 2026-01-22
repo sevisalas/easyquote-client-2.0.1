@@ -1,30 +1,38 @@
 import { Loader2, Info } from "lucide-react";
-import { useCompositeProductConfig } from "@/hooks/useCompositeProductConfig";
+import { useCompositeProductConfig, type PromptConnection } from "@/hooks/useCompositeProductConfig";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CompatibleComponentsEditor } from "./CompatibleComponentsEditor";
+import { toast } from "sonner";
 
 interface CompositeProductConfigProps {
   easyquoteProductId: string;
   productName: string;
   availableProducts: { id: string; name: string }[];
+  /** Prompts del producto padre (desde el Excel) para mapear a componentes */
+  parentPrompts?: { name: string; label: string }[];
 }
 
 export function CompositeProductConfig({ 
   easyquoteProductId, 
   productName,
   availableProducts,
+  parentPrompts = [],
 }: CompositeProductConfigProps) {
   const {
     components,
+    promptConnections,
     availableComponentProducts,
     organizationId,
     isLoading,
     addComponent,
     updateComponent,
     deleteComponent,
+    upsertConnection,
+    deleteConnectionsByComponent,
     isAddingComponent,
     isUpdatingComponent,
     isDeletingComponent,
+    isUpsertingConnection,
   } = useCompositeProductConfig(easyquoteProductId);
 
   if (isLoading || !organizationId) {
@@ -39,6 +47,25 @@ export function CompositeProductConfig({
   const componentProducts = availableProducts.filter(
     (p) => availableComponentProducts.includes(p.id)
   );
+
+  // Guardar conexiones para un componente específico
+  const handleSaveConnections = async (
+    componentProductId: string, 
+    connections: Omit<PromptConnection, "id" | "created_at" | "updated_at">[]
+  ) => {
+    try {
+      // Primero eliminar todas las conexiones existentes para este componente
+      await deleteConnectionsByComponent(componentProductId);
+      
+      // Luego insertar las nuevas conexiones
+      for (const connection of connections) {
+        await upsertConnection(connection);
+      }
+    } catch (error) {
+      console.error("Error saving connections:", error);
+      throw error;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -63,12 +90,16 @@ export function CompositeProductConfig({
         organizationId={organizationId}
         components={components}
         availableProducts={componentProducts}
+        parentPrompts={parentPrompts}
+        promptConnections={promptConnections}
         onAdd={addComponent}
         onUpdate={updateComponent}
         onDelete={deleteComponent}
+        onSaveConnections={handleSaveConnections}
         isAdding={isAddingComponent}
         isUpdating={isUpdatingComponent}
         isDeleting={isDeletingComponent}
+        isSavingConnections={isUpsertingConnection}
       />
     </div>
   );
