@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Package } from "lucide-react";
 import { ActiveComponent } from "./CompositeComponentsSelector";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
@@ -42,9 +41,11 @@ export interface ComponentPricingData {
 export type ComponentsDataMap = Record<string, ComponentPricingData>;
 
 /**
- * Componente que muestra tabs con los datos de entrada (prompts)
- * de cada componente activo. Similar al sistema legacy de encuadernados.
- * Los datos de salida se exponen vía callback para mostrarse en el panel lateral de Resultados.
+ * Componente que muestra:
+ * - IZQUIERDA: Prompts del producto padre (General)
+ * - DERECHA: Tabs con componentes, mostrando datos heredados (automáticos) del componente seleccionado
+ * 
+ * Los outputs/resultados se exponen vía callback para mostrarse en el panel lateral de Resultados.
  */
 export default function CompositeComponentTabs({
   parentProductId,
@@ -58,7 +59,7 @@ export default function CompositeComponentTabs({
   onComponentChange,
   onComponentsDataChange,
 }: CompositeComponentTabsProps) {
-  const [activeTab, setActiveTab] = useState<string>("general");
+  const [activeTab, setActiveTab] = useState<string>("");
 
   // Fetch prompt connections from database
   const { data: promptConnections = [] } = useQuery({
@@ -158,7 +159,7 @@ export default function CompositeComponentTabs({
 
   // Auto-seleccionar el primer componente al cargar
   useEffect(() => {
-    if (activeComponents.length > 0 && activeTab === "general") {
+    if (activeComponents.length > 0 && !activeTab) {
       const firstComponentId = activeComponents[0].id;
       setActiveTab(firstComponentId);
       onComponentChange?.(firstComponentId);
@@ -176,95 +177,157 @@ export default function CompositeComponentTabs({
     return productNames.get(component.component_product_id) || component.component_alias;
   };
 
+  // Renderizar contenido del componente seleccionado
+  const renderComponentContent = () => {
+    if (!activeTab || !componentsData[activeTab]) {
+      return (
+        <p className="text-sm text-muted-foreground">Selecciona un componente</p>
+      );
+    }
+
+    const data = componentsData[activeTab];
+    
+    if (data.isLoading) {
+      return (
+        <p className="text-sm text-muted-foreground">Cargando datos del componente...</p>
+      );
+    }
+
+    // Mostrar prompts heredados (los que vienen de las conexiones)
+    const connections = promptConnections.filter(
+      (conn: any) => conn.target_component_id === activeTab
+    );
+
+    // Datos heredados del padre
+    const inheritedData = connections.map((conn: any) => {
+      const parentValue = parentPromptValues[conn.source_prompt_name];
+      // Buscar el label del prompt del padre
+      const parentPrompt = parentProduct?.prompts?.find(
+        (p: any) => p.id === conn.source_prompt_name || p.name === conn.source_prompt_name
+      );
+      const label = parentPrompt?.promptText || parentPrompt?.label || conn.source_prompt_name;
+      return {
+        label,
+        value: parentValue ?? "—",
+        targetPrompt: conn.target_prompt_name,
+      };
+    });
+
+    return (
+      <div className="space-y-4">
+        {/* Datos heredados del padre */}
+        {inheritedData.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-sm font-medium">Datos heredados del padre</span>
+              <Badge variant="secondary" className="text-xs">Automático</Badge>
+            </div>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+              {inheritedData.map((item: any, idx: number) => (
+                <div key={idx} className="flex justify-between gap-2">
+                  <span className="text-muted-foreground truncate">{item.label}</span>
+                  <span className="font-medium">{String(item.value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Datos propios del componente (no heredados) */}
+        {data.prompts.length > 0 && (
+          <div className="pt-3 border-t">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-sm font-medium">Datos del componente</span>
+            </div>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+              {data.prompts.slice(0, 12).map((prompt: any, idx: number) => {
+                // Verificar si este prompt es heredado
+                const isInherited = connections.some(
+                  (conn: any) => conn.target_prompt_name === prompt.id
+                );
+                if (isInherited) return null; // Ya se mostró arriba
+                
+                return (
+                  <div key={`${prompt.id}-${idx}`} className="flex justify-between gap-2">
+                    <span className="text-muted-foreground truncate">
+                      {prompt.promptText || prompt.label || prompt.name || prompt.id}
+                    </span>
+                    <span className="font-medium">
+                      {String(prompt.currentValue ?? prompt.defaultValue ?? "—")}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Si no hay componentes activos, solo mostrar prompts del padre
+  if (activeComponents.length === 0) {
+    return (
+      <div className="space-y-4">
+        <h3 className="font-medium">Configuración del producto</h3>
+        {parentProduct?.prompts && (
+          <PromptsForm
+            product={parentProduct}
+            values={parentPromptValues}
+            onChange={onParentPromptChange}
+            onCommit={onParentPromptCommit}
+            showAllPrompts={isAdmin}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
-    <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-      {/* Header con tabs de componentes */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-muted-foreground">
-          Configuración del producto
-        </h3>
-        {activeComponents.length > 0 && (
-          <TabsList>
+    <div className="space-y-4">
+      {/* Header con título y tabs de componentes */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <h3 className="font-medium whitespace-nowrap">Configuración del producto</h3>
+
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <TabsList className="flex-wrap h-auto gap-1">
             {activeComponents.map((component) => (
               <TabsTrigger 
                 key={component.id} 
-                value={component.id} 
-                className="gap-1.5"
+                value={component.id}
+                className="relative flex items-center gap-1.5"
               >
                 {getComponentLabel(component)}
                 {componentsData[component.id]?.isLoading && (
-                  <span className="ml-1 text-xs text-muted-foreground">...</span>
+                  <span className="text-xs text-muted-foreground">...</span>
                 )}
               </TabsTrigger>
             ))}
           </TabsList>
-        )}
+        </Tabs>
       </div>
 
-      {/* Prompts del padre - siempre visibles */}
-      {parentProduct?.prompts && (
-        <PromptsForm
-          product={parentProduct}
-          values={parentPromptValues}
-          onChange={onParentPromptChange}
-          onCommit={onParentPromptCommit}
-          showAllPrompts={isAdmin}
-        />
-      )}
+      {/* Contenido: dos columnas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        {/* Columna izquierda: Prompts del padre (General) */}
+        {parentProduct?.prompts && (
+          <div className="rounded-lg border border-border bg-card p-4 self-start">
+            <PromptsForm
+              product={parentProduct}
+              values={parentPromptValues}
+              onChange={onParentPromptChange}
+              onCommit={onParentPromptCommit}
+              showAllPrompts={isAdmin}
+              singleColumn
+            />
+          </div>
+        )}
 
-      {/* Contenido de cada tab de componente */}
-      {activeComponents.map((component) => (
-        <TabsContent key={component.id} value={component.id} className="mt-4">
-          {(() => {
-            const data = componentsData[component.id];
-            if (!data) return null;
-            
-            const displayPrompts = (data.prompts || []).map((p: any) => ({
-              id: p.id,
-              label: p.promptText || p.label || p.name || "",
-              value: p.currentValue ?? p.defaultValue ?? "",
-            }));
-
-            if (data.isLoading) {
-              return (
-                <div className="border rounded-lg p-4 bg-muted/30">
-                  <p className="text-sm text-muted-foreground">Cargando datos del componente...</p>
-                </div>
-              );
-            }
-
-            if (displayPrompts.length === 0) {
-              return (
-                <div className="border rounded-lg p-4 bg-muted/30">
-                  <p className="text-sm text-muted-foreground">Sin parámetros adicionales para este componente</p>
-                </div>
-              );
-            }
-
-            return (
-              <div className="border rounded-lg p-4 bg-muted/30">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-sm font-medium">Datos heredados</span>
-                  <Badge variant="secondary" className="text-xs">Automático</Badge>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 text-sm">
-                  {displayPrompts.slice(0, 12).map((prompt: any, idx: number) => (
-                    <div key={`${prompt.id}-${idx}`} className="flex justify-between gap-2">
-                      <span className="text-muted-foreground truncate">{prompt.label}</span>
-                      <span className="font-medium">{String(prompt.value ?? "—")}</span>
-                    </div>
-                  ))}
-                </div>
-                {displayPrompts.length > 12 && (
-                  <p className="text-xs text-muted-foreground pt-2 mt-2 border-t">
-                    +{displayPrompts.length - 12} parámetros más...
-                  </p>
-                )}
-              </div>
-            );
-          })()}
-        </TabsContent>
-      ))}
-    </Tabs>
+        {/* Columna derecha: Datos del componente seleccionado */}
+        <div className="rounded-lg border border-border bg-card p-4 self-start min-h-[200px]">
+          {renderComponentContent()}
+        </div>
+      </div>
+    </div>
   );
 }
