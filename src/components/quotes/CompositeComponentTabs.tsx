@@ -179,14 +179,23 @@ export default function CompositeComponentTabs({
   };
 
   // Obtener IDs de prompts mapeados para un componente
+  // NOTA: Las conexiones pueden usar target_component_id como el ID del registro O el product_id
   const getMappedPromptIds = (componentId: string): Set<string> => {
+    // Buscar el component_product_id correspondiente a este componentId
+    const component = activeComponents.find(c => c.id === componentId);
+    const componentProductId = component?.component_product_id;
+    
+    // Buscar conexiones por ambos: el ID del registro y el product_id
     const connections = promptConnections.filter(
-      (conn: any) => conn.target_component_id === componentId
+      (conn: any) => 
+        conn.target_component_id === componentId || 
+        conn.target_component_id === componentProductId
     );
     const mappedIds = new Set(connections.map((conn: any) => conn.target_prompt_name));
     
     console.log("[CompositeComponentTabs] getMappedPromptIds", {
       componentId,
+      componentProductId,
       allConnections: promptConnections.length,
       matchingConnections: connections.length,
       mappedIds: Array.from(mappedIds),
