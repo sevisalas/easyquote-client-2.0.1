@@ -1479,56 +1479,71 @@ export default function ProductTestPage() {
                           </div>
 
                           {/* Resultados del componente seleccionado */}
-                          {selectedComponent && selectedComponent !== "general" && compositeComponentsData[selectedComponent] && (
-                            <div className="border-t pt-4 mt-4 space-y-4">
-                              <h4 className="font-semibold text-sm">{compositeComponentsData[selectedComponent]?.alias || selectedComponent}</h4>
+                          {(() => {
+                            // Usar el componente seleccionado si existe en los datos, 
+                            // o el primer componente disponible como fallback
+                            const activeComponentId = compositeComponentsData[selectedComponent] 
+                              ? selectedComponent 
+                              : Object.keys(compositeComponentsData)[0];
+                            
+                            const componentData = activeComponentId ? compositeComponentsData[activeComponentId] : null;
+                            
+                            if (!componentData) {
+                              return (
+                                <p className="text-sm text-muted-foreground mt-4">
+                                  Cargando datos del componente...
+                                </p>
+                              );
+                            }
 
-                              {/* Precio del componente */}
-                              <div className="flex justify-between text-sm">
-                                <span>Precio</span>
-                                <span className="font-semibold">{formatCurrency(compositeComponentsData[selectedComponent]?.price ?? 0)}</span>
+                            const outputs = componentData.outputs || [];
+                            const textOuts = outputs.filter((o: any) => {
+                              const value = String(o?.value ?? "");
+                              const type = String(o?.type || o?.outputType || "").toLowerCase();
+                              return !/^https?:\/\//i.test(value) && type !== "price";
+                            });
+                            const imgOuts = outputs.filter((o: any) => /^https?:\/\//i.test(String(o?.value ?? "")));
+
+                            return (
+                              <div className="border-t pt-4 mt-4 space-y-4">
+                                <h4 className="font-semibold text-sm">{componentData.alias}</h4>
+
+                                {/* Precio del componente */}
+                                <div className="flex justify-between text-sm">
+                                  <span>Precio</span>
+                                  <span className="font-semibold">{formatCurrency(componentData.price ?? 0)}</span>
+                                </div>
+
+                                {/* Outputs de texto */}
+                                {textOuts.length > 0 && (
+                                  <div className="space-y-2 text-sm">
+                                    {textOuts.map((output: any, index: number) => (
+                                      <div key={index} className="flex justify-between">
+                                        <span>{output.label || output.name}</span>
+                                        <span className="font-medium">{output.value}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Imágenes */}
+                                {imgOuts.length > 0 && (
+                                  <div className="space-y-3 pt-2">
+                                    {imgOuts.map((output: any, index: number) => (
+                                      <div key={`img-${index}`} className="space-y-2">
+                                        <div className="text-sm font-medium">{output.label || output.name}</div>
+                                        <img src={output.value} alt={output.label || output.name || `Imagen ${index + 1}`} className="w-full max-w-md rounded border" />
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {textOuts.length === 0 && imgOuts.length === 0 && !componentData.isLoading && (
+                                  <p className="text-sm text-muted-foreground">Sin resultados adicionales</p>
+                                )}
                               </div>
-
-                              {/* Outputs de texto */}
-                              {(() => {
-                                const outputs = compositeComponentsData[selectedComponent]?.outputs || [];
-                                const textOuts = outputs.filter((o: any) => {
-                                  const value = String(o?.value ?? "");
-                                  const type = String(o?.type || o?.outputType || "").toLowerCase();
-                                  return !/^https?:\/\//i.test(value) && type !== "price";
-                                });
-                                const imgOuts = outputs.filter((o: any) => /^https?:\/\//i.test(String(o?.value ?? "")));
-
-                                return (
-                                  <>
-                                    {textOuts.length > 0 && (
-                                      <div className="space-y-2 text-sm">
-                                        {textOuts.map((output: any, index: number) => (
-                                          <div key={index} className="flex justify-between">
-                                            <span>{output.label || output.name}</span>
-                                            <span className="font-medium">{output.value}</span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                    {imgOuts.length > 0 && (
-                                      <div className="space-y-3 pt-2">
-                                        {imgOuts.map((output: any, index: number) => (
-                                          <div key={`img-${index}`} className="space-y-2">
-                                            <div className="text-sm font-medium">{output.label || output.name}</div>
-                                            <img src={output.value} alt={output.label || output.name || `Imagen ${index + 1}`} className="w-full max-w-md rounded border" />
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                    {textOuts.length === 0 && imgOuts.length === 0 && (
-                                      <p className="text-sm text-muted-foreground">Sin resultados para este componente</p>
-                                    )}
-                                  </>
-                                );
-                              })()}
-                            </div>
-                          )}
+                            );
+                          })()}
                         </>
                       ) : (
                         /* ======= Sistema legacy ======= */
