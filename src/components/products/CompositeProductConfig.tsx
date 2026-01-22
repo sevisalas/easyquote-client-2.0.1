@@ -1,8 +1,5 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, FileInput, FileOutput, Puzzle } from "lucide-react";
+import { Loader2, Puzzle, Info } from "lucide-react";
 import { useCompositeProductConfig } from "@/hooks/useCompositeProductConfig";
-import { CompositePromptEditor } from "./CompositePromptEditor";
-import { CompositeOutputEditor } from "./CompositeOutputEditor";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface CompositeProductConfigProps {
@@ -12,25 +9,10 @@ interface CompositeProductConfigProps {
 
 export function CompositeProductConfig({ easyquoteProductId, productName }: CompositeProductConfigProps) {
   const {
-    prompts,
-    outputs,
     components,
     organizationId,
     isLoading,
-    promptsLoading,
-    outputsLoading,
-    addPrompt,
-    updatePrompt,
-    deletePrompt,
-    isAddingPrompt,
-    isUpdatingPrompt,
-    isDeletingPrompt,
-    addOutput,
-    updateOutput,
-    deleteOutput,
-    isAddingOutput,
-    isUpdatingOutput,
-    isDeletingOutput,
+    componentsLoading,
   } = useCompositeProductConfig(easyquoteProductId);
 
   if (isLoading || !organizationId) {
@@ -44,97 +26,47 @@ export function CompositeProductConfig({ easyquoteProductId, productName }: Comp
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold">Configuración del Producto Compuesto</h2>
+        <h2 className="text-xl font-semibold">Configuración del producto compuesto</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Define los campos generales y asocia componentes para "{productName}"
+          Asocia componentes para "{productName}"
         </p>
       </div>
 
-      <Tabs defaultValue="fields" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="fields" className="flex items-center gap-2">
-            <FileInput className="h-4 w-4" />
-            Datos de Entrada
-            {prompts.length > 0 && (
-              <span className="ml-1 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
-                {prompts.length}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="results" className="flex items-center gap-2">
-            <FileOutput className="h-4 w-4" />
-            Datos de Salida
-            {outputs.length > 0 && (
-              <span className="ml-1 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
-                {outputs.length}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="components" className="flex items-center gap-2">
-            <Puzzle className="h-4 w-4" />
-            Componentes
-            {components.length > 0 && (
-              <span className="ml-1 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
-                {components.length}
-              </span>
-            )}
-          </TabsTrigger>
-        </TabsList>
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          Los <strong>datos de entrada</strong> y <strong>datos de salida</strong> de este producto 
+          se definen en el Excel asociado, igual que cualquier otro producto. 
+          Usa las pestañas superiores para configurarlos.
+        </AlertDescription>
+      </Alert>
 
-        <TabsContent value="fields" className="space-y-4">
-          <Alert>
-            <AlertDescription>
-              Define los <strong>datos de entrada generales</strong> que el usuario completará para este producto.
-            </AlertDescription>
-          </Alert>
-          <CompositePromptEditor
-            prompts={prompts}
-            organizationId={organizationId}
-            easyquoteProductId={easyquoteProductId}
-            onAdd={addPrompt}
-            onUpdate={updatePrompt}
-            onDelete={deletePrompt}
-            isAdding={isAddingPrompt}
-            isUpdating={isUpdatingPrompt}
-            isDeleting={isDeletingPrompt}
-          />
-        </TabsContent>
-
-        <TabsContent value="results" className="space-y-4">
-          <Alert>
-            <AlertDescription>
-              Define los <strong>datos de salida generales</strong> que se mostrarán al usuario (ej: Precio Total).
-            </AlertDescription>
-          </Alert>
-          <CompositeOutputEditor
-            outputs={outputs}
-            organizationId={organizationId}
-            easyquoteProductId={easyquoteProductId}
-            onAdd={addOutput}
-            onUpdate={updateOutput}
-            onDelete={deleteOutput}
-            isAdding={isAddingOutput}
-            isUpdating={isUpdatingOutput}
-            isDeleting={isDeletingOutput}
-          />
-        </TabsContent>
-
-        <TabsContent value="components" className="space-y-4">
-          <Alert>
-            <AlertDescription>
-              Asocia productos EasyQuote como <strong>componentes</strong> de este producto compuesto. 
-              Cada componente aportará su precio y resultados al cálculo total.
-            </AlertDescription>
-          </Alert>
-          <div className="text-center py-12 border rounded-lg bg-muted/30">
-            <Puzzle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">Próximamente</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              La asociación de componentes estará disponible en la siguiente fase
-            </p>
-          </div>
-        </TabsContent>
-      </Tabs>
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Puzzle className="h-5 w-5 text-muted-foreground" />
+          <h3 className="font-medium">Componentes</h3>
+          {components.length > 0 && (
+            <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+              {components.length}
+            </span>
+          )}
+        </div>
+        
+        <Alert>
+          <AlertDescription>
+            Asocia productos EasyQuote como <strong>componentes</strong> de este producto compuesto. 
+            Cada componente aportará su precio y resultados al cálculo total.
+          </AlertDescription>
+        </Alert>
+        
+        <div className="text-center py-12 border rounded-lg bg-muted/30">
+          <Puzzle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <p className="text-muted-foreground">Próximamente</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            La asociación de componentes estará disponible en la siguiente fase
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
