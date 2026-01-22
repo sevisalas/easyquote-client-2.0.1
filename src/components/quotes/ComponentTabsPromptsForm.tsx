@@ -131,6 +131,8 @@ export default function ComponentTabsPromptsForm({
   // Las definiciones (promptDefinitions) solo se usan para mapear UUID -> celda (B12, B36...) para la agrupación.
 
   // Construir lookup: UUID -> promptCell (celda normalizada)
+  // Clave primaria: el UUID del prompt
+  // Valor: la celda normalizada (ej: "B10")
   const promptCellLookup = useMemo(() => {
     const map = new Map<string, string>();
 
@@ -138,7 +140,16 @@ export default function ComponentTabsPromptsForm({
       const cell = extractCellRef(getPromptCell(p)) ?? normalizePromptName(getPromptCell(p));
       if (!cell) continue;
 
-      const keys = [p?.id, p?.key, p?.code, p?.slug, p?.name, getPromptCell(p)];
+      // Indexar por UUID (la clave principal que viene del pricing)
+      const uuid = String(p?.id ?? "").trim();
+      if (uuid) {
+        map.set(uuid, cell);
+        map.set(uuid.toUpperCase(), cell);
+        map.set(uuid.toLowerCase(), cell);
+      }
+
+      // También indexar por otras claves para compatibilidad
+      const keys = [p?.key, p?.code, p?.slug, p?.name, getPromptCell(p)];
       for (const k of keys) {
         const kn = extractCellRef(k) ?? normalizePromptName(k);
         if (kn) map.set(kn, cell);
@@ -152,7 +163,13 @@ export default function ComponentTabsPromptsForm({
   }, [promptDefinitions]);
 
   const getPromptAdminKey = (prompt: PromptDef): string => {
-    const idStr = String(prompt.id);
+    const idStr = String(prompt.id).trim();
+    
+    // Primero intentar buscar por UUID directamente (la clave más confiable)
+    const cellFromUuid = promptCellLookup.get(idStr);
+    if (cellFromUuid) return cellFromUuid;
+    
+    // Fallback: intentar extraer celda del id o label
     const idNorm = extractCellRef(idStr) ?? normalizePromptName(idStr);
     const labelCell = extractCellRef((prompt as any)?.label);
 
@@ -310,8 +327,12 @@ export default function ComponentTabsPromptsForm({
     };
   };
 
-  // Componentes para pestañas (sin "general") y prompts generales
-  const tabComponents = useMemo(() => availableComponents.filter(c => c !== GENERAL_COMPONENT.value), [availableComponents]);
+  // Componentes para pestañas (sin "general") - SOLO mostrar tabs que tengan prompts asignados
+  const tabComponents = useMemo(() => {
+    return availableComponents
+      .filter(c => c !== GENERAL_COMPONENT.value)
+      .filter(c => (promptsByComponent[c]?.length || 0) > 0);
+  }, [availableComponents, promptsByComponent]);
   const generalPrompts = useMemo(() => promptsByComponent[GENERAL_COMPONENT.value] || [], [promptsByComponent]);
   const initialTab = useMemo(() => {
     for (const comp of tabComponents) {
