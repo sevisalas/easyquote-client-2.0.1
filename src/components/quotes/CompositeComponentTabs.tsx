@@ -177,8 +177,8 @@ export default function CompositeComponentTabs({
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header con tabs de componentes - alineado a la derecha como en legacy */}
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+      {/* Header con tabs de componentes */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-muted-foreground">
           Configuración del producto
@@ -190,8 +190,6 @@ export default function CompositeComponentTabs({
                 key={component.id} 
                 value={component.id} 
                 className="gap-1.5"
-                onClick={() => handleTabChange(component.id)}
-                data-state={activeTab === component.id ? "active" : "inactive"}
               >
                 {getComponentLabel(component)}
                 {componentsData[component.id]?.isLoading && (
@@ -214,11 +212,11 @@ export default function CompositeComponentTabs({
         />
       )}
 
-      {/* Datos heredados del componente seleccionado */}
-      {activeComponents.length > 0 && activeTab !== "general" && (
-        <div className="border rounded-lg p-4 bg-muted/30 mt-4">
+      {/* Contenido de cada tab de componente */}
+      {activeComponents.map((component) => (
+        <TabsContent key={component.id} value={component.id} className="mt-4">
           {(() => {
-            const data = componentsData[activeTab];
+            const data = componentsData[component.id];
             if (!data) return null;
             
             const displayPrompts = (data.prompts || []).map((p: any) => ({
@@ -228,15 +226,23 @@ export default function CompositeComponentTabs({
             }));
 
             if (data.isLoading) {
-              return <p className="text-sm text-muted-foreground">Cargando datos del componente...</p>;
+              return (
+                <div className="border rounded-lg p-4 bg-muted/30">
+                  <p className="text-sm text-muted-foreground">Cargando datos del componente...</p>
+                </div>
+              );
             }
 
             if (displayPrompts.length === 0) {
-              return <p className="text-sm text-muted-foreground">Sin parámetros adicionales para este componente</p>;
+              return (
+                <div className="border rounded-lg p-4 bg-muted/30">
+                  <p className="text-sm text-muted-foreground">Sin parámetros adicionales para este componente</p>
+                </div>
+              );
             }
 
             return (
-              <>
+              <div className="border rounded-lg p-4 bg-muted/30">
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-sm font-medium">Datos heredados</span>
                   <Badge variant="secondary" className="text-xs">Automático</Badge>
@@ -254,12 +260,11 @@ export default function CompositeComponentTabs({
                     +{displayPrompts.length - 12} parámetros más...
                   </p>
                 )}
-              </>
+              </div>
             );
           })()}
-        </div>
-      )}
-
-    </div>
+        </TabsContent>
+      ))}
+    </Tabs>
   );
 }
