@@ -1,7 +1,8 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles, Monitor, ListChecks, TrendingUp, Building2, Kanban } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles, Monitor, ListChecks, TrendingUp, Building2, Kanban, Check } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, SidebarRail, useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -449,19 +450,34 @@ export function AppSidebar() {
         <SidebarMenu>
           {/* Selector de organización - Solo si hay múltiples organizaciones */}
           {!isSuperAdmin && allOrganizations.length > 1 && <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={currentOrgName} className="h-8 px-2">
-                <button onClick={() => {
-              // Mostrar un dropdown o dialog para seleccionar org
-              const nextOrgIndex = (allOrganizations.findIndex(o => o.id === currentOrgId) + 1) % allOrganizations.length;
-              switchOrganization(allOrganizations[nextOrgIndex].id);
-            }} className="w-full flex items-center text-xs">
-                  <Building2 className="mr-2 h-4 w-4" />
-                  {!isCollapsed && <div className="flex flex-col items-start truncate">
-                      <span className="truncate max-w-[120px] font-medium">{currentOrgName}</span>
-                      <span className="text-[10px] text-muted-foreground">Cambiar empresa </span>
-                    </div>}
-                </button>
-              </SidebarMenuButton>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton tooltip={currentOrgName} className="h-8 px-2 w-full">
+                    <Building2 className="mr-2 h-4 w-4 shrink-0" />
+                    {!isCollapsed && <div className="flex flex-col items-start truncate flex-1 min-w-0">
+                        <span className="truncate max-w-[120px] font-medium text-xs">{currentOrgName}</span>
+                        <span className="text-[10px] text-muted-foreground">Cambiar empresa</span>
+                      </div>}
+                    {!isCollapsed && <ChevronRight className="ml-auto h-3 w-3 shrink-0" />}
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  side="right" 
+                  align="end" 
+                  className="w-56 bg-popover border shadow-lg z-50"
+                >
+                  {allOrganizations.map((org) => (
+                    <DropdownMenuItem 
+                      key={org.id}
+                      onClick={() => switchOrganization(org.id)}
+                      className="cursor-pointer flex items-center justify-between"
+                    >
+                      <span className="truncate">{org.name}</span>
+                      {org.id === currentOrgId && <Check className="h-4 w-4 text-primary shrink-0" />}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </SidebarMenuItem>}
           {isSuperAdmin && <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Novedades" className="h-7 px-2">
