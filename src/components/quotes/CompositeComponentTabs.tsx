@@ -186,19 +186,15 @@ export default function CompositeComponentTabs({
     return new Set(connections.map((conn: any) => conn.target_prompt_name));
   };
 
-  // Crear producto virtual para el componente (solo prompts NO mapeados son editables)
+  // Crear producto virtual para el componente (SOLO prompts NO mapeados - los heredados se excluyen)
   const createComponentProduct = (componentId: string) => {
     const componentData = componentsData[componentId];
     if (!componentData) return null;
 
     const mappedIds = getMappedPromptIds(componentId);
     
-    // Todos los prompts, pero marcando los mapeados
-    const prompts = componentData.prompts.map((p: any) => ({
-      ...p,
-      // Si está mapeado, agregar flag para mostrarlo diferente (readonly)
-      isMapped: mappedIds.has(String(p.id)),
-    }));
+    // Filtrar: solo prompts NO mapeados (los mapeados vienen del padre)
+    const prompts = componentData.prompts.filter((p: any) => !mappedIds.has(String(p.id)));
 
     return { prompts };
   };
