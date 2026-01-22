@@ -408,16 +408,16 @@ export default function ProductManagement() {
   } = useProductComponentSettings(selectedProduct?.id);
 
   // Sincronizar productType con isComposite cuando cambia
-  // Productos con ID que empieza con 'comp_' son productos compuestos locales (sin Excel/EasyQuote)
   useEffect(() => {
-    if (selectedProduct?.id?.startsWith('comp_')) {
-      setProductType('compuesto');
-    } else if (isComposite) {
-      setProductType('encuadernado');
+    if (isComposite) {
+      // Los productos compuestos tienen is_composite: true en product_component_settings
+      // La diferencia entre 'encuadernado' y 'compuesto' la determinamos por enabledComponents
+      const hasPresetComponents = enabledComponents.includes('cubierta') || enabledComponents.includes('interior_1');
+      setProductType(hasPresetComponents ? 'encuadernado' : 'compuesto');
     } else {
       setProductType('sencillo');
     }
-  }, [isComposite, selectedProduct?.id]);
+  }, [isComposite, enabledComponents]);
 
   // Query para obtener IDs de productos que son componentes
   const { data: componentProductIds = new Set<string>(), refetch: refetchComponentIds } = useQuery({
@@ -459,45 +459,8 @@ export default function ProductManagement() {
     select: (data) => data instanceof Set ? data : new Set<string>()
   });
 
-  // Query para obtener productos compuestos locales (los que tienen prefijo 'comp_')
-  const { data: localCompositeProducts = [] } = useQuery({
-    queryKey: ['local-composite-products', organizationId],
-    queryFn: async () => {
-      if (!organizationId) return [];
-      
-      // Obtener los IDs de productos compuestos locales
-      const { data: compositeSettings, error: settingsError } = await supabase
-        .from('product_component_settings')
-        .select('easyquote_product_id, created_at')
-        .eq('organization_id', organizationId)
-        .eq('is_composite', true)
-        .like('easyquote_product_id', 'comp_%');
-      
-      if (settingsError || !compositeSettings?.length) return [];
-      
-      // Obtener los nombres de los productos desde product_category_mappings
-      const productIds = compositeSettings.map(s => s.easyquote_product_id);
-      const { data: mappings } = await supabase
-        .from('product_category_mappings')
-        .select('easyquote_product_id, product_name, category_id')
-        .in('easyquote_product_id', productIds);
-      
-      const mappingsByProductId = new Map((mappings || []).map(m => [m.easyquote_product_id, m]));
-      
-      // Construir productos compatibles con EasyQuoteProduct
-      return compositeSettings.map(setting => {
-        const mapping = mappingsByProductId.get(setting.easyquote_product_id);
-        return {
-          id: setting.easyquote_product_id,
-          productName: mapping?.product_name || 'Producto compuesto',
-          isActive: true,
-          category: mapping?.category_id || undefined,
-          isLocalComposite: true,
-        } as EasyQuoteProduct & { isLocalComposite?: boolean };
-      });
-    },
-    enabled: !!organizationId,
-  });
+  // Ya no necesitamos query para productos compuestos locales (comp_*)
+  // Todos los productos compuestos ahora vienen de EasyQuote con Excel
 
   // Mutación para cambiar si un producto es componente
   const toggleComponentMutation = useMutation({
@@ -524,53 +487,7 @@ export default function ProductManagement() {
     }
   });
 
-  // Mutación para eliminar productos compuestos locales
-  const deleteLocalProductMutation = useMutation({
-    mutationFn: async (productId: string) => {
-      if (!organizationId) throw new Error('No organization');
-      
-      // Eliminar de product_component_settings
-      const { error: settingsError } = await supabase
-        .from('product_component_settings')
-        .delete()
-        .eq('organization_id', organizationId)
-        .eq('easyquote_product_id', productId);
-      
-      if (settingsError) throw settingsError;
-
-      // Eliminar de product_category_mappings
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData.user) {
-        await supabase
-          .from('product_category_mappings')
-          .delete()
-          .eq('user_id', userData.user.id)
-          .eq('easyquote_product_id', productId);
-      }
-
-      // Eliminar prompts y outputs del producto compuesto
-      await supabase
-        .from('composite_product_prompts')
-        .delete()
-        .eq('organization_id', organizationId)
-        .eq('easyquote_product_id', productId);
-
-      await supabase
-        .from('composite_product_outputs')
-        .delete()
-        .eq('organization_id', organizationId)
-        .eq('easyquote_product_id', productId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['local-composite-products'] });
-      queryClient.invalidateQueries({ queryKey: ['composite-product-ids'] });
-      queryClient.invalidateQueries({ queryKey: ['product-category-mappings'] });
-      toast({ title: "Producto eliminado" });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error al eliminar", description: error.message, variant: "destructive" });
-    }
-  });
+  // Ya no necesitamos la mutación para eliminar productos locales comp_*
 
   // Helper to get current organization ID from sessionStorage or fetch it
   const getCurrentOrganizationIdAsync = async (): Promise<string | null> => {
@@ -782,13 +699,6 @@ export default function ProductManagement() {
     queryFn: async () => {
       if (!selectedProduct?.id) return [];
       
-      // Para productos compuestos locales, no llamar a la API de EasyQuote
-      if (selectedProduct.id.startsWith('comp_')) {
-        // Los prompts de productos compuestos se obtienen de Supabase
-        // a través de useCompositeProductConfig hook
-        return [];
-      }
-      
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
       const {
@@ -817,13 +727,6 @@ export default function ProductManagement() {
     queryKey: ["product-outputs", selectedProduct?.id],
     queryFn: async () => {
       if (!selectedProduct?.id) return [];
-      
-      // Para productos compuestos locales, no llamar a la API de EasyQuote
-      if (selectedProduct.id.startsWith('comp_')) {
-        // Los outputs de productos compuestos se obtienen de Supabase
-        // a través de useCompositeProductConfig hook
-        return [];
-      }
       
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
@@ -1241,13 +1144,8 @@ export default function ProductManagement() {
     retry: false
   });
 
-  // Combinar productos de EasyQuote con productos compuestos locales
-  const allProducts = useMemo(() => {
-    // Evitar duplicados: si un producto local tiene el mismo ID que uno de EasyQuote, preferir el de EasyQuote
-    const easyquoteIds = new Set(products.map(p => p.id));
-    const uniqueLocalProducts = localCompositeProducts.filter(p => !easyquoteIds.has(p.id));
-    return [...products, ...uniqueLocalProducts];
-  }, [products, localCompositeProducts]);
+  // Todos los productos vienen de EasyQuote (ya no hay productos locales comp_*)
+  const allProducts = products;
 
   // Filtrar productos localmente
   const filteredProducts = allProducts.filter(product => {
@@ -1491,27 +1389,13 @@ export default function ProductManagement() {
   });
   const handleSaveProduct = () => {
     if (selectedProduct) {
-      // Los productos compuestos locales (comp_*) solo existen en Supabase, no en EasyQuote
-      const isLocalComposite = selectedProduct.id.startsWith('comp_');
-      
-      if (!isLocalComposite) {
-        // Determinar acción: delete si está inactivo, update si está activo
-        const action = selectedProduct.isActive ? 'update' : 'delete';
+      // Todos los productos se actualizan en EasyQuote (ya no hay productos locales comp_*)
+      const action = selectedProduct.isActive ? 'update' : 'delete';
 
-        // Actualizar producto en EasyQuote
-        updateProductMutation.mutate({
-          product: selectedProduct,
-          action
-        });
-      } else {
-        // Para productos locales, solo mostramos confirmación y cerramos
-        toast({
-          title: "Producto actualizado",
-          description: "El producto compuesto se ha actualizado correctamente."
-        });
-        setIsEditDialogOpen(false);
-        setSelectedProduct(null);
-      }
+      updateProductMutation.mutate({
+        product: selectedProduct,
+        action
+      });
 
       // Actualizar categoría en Supabase
       if (selectedCategoryId || selectedSubcategoryId) {
@@ -2242,7 +2126,6 @@ export default function ProductManagement() {
               getProductMapping={getProductMapping} 
               onEditProduct={handleEditProduct} 
               onDuplicateProduct={handleDuplicateProduct}
-              onDeleteLocalProduct={(productId) => deleteLocalProductMutation.mutate(productId)}
               componentProductIds={componentProductIds}
               compositeProductIds={compositeProductIds}
               onToggleComponent={(productId, isComponent) => toggleComponentMutation.mutate({ productId, isComponent })}
