@@ -400,10 +400,25 @@ export default function QuoteNew() {
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       const { quoteNumber, nextSequential } = await generateQuoteNumber();
+      
+      // Construir el objeto completo para evitar problemas de tipado con spread
       const quoteData: QuotesInsert = {
-        ...quoteDataBase,
+        user_id: quoteDataBase.user_id,
         quote_number: quoteNumber,
         title: titleValue || `Presupuesto ${quoteNumber}`,
+        customer_id: quoteDataBase.customer_id,
+        description: quoteDataBase.description,
+        status: quoteDataBase.status,
+        subtotal: quoteDataBase.subtotal,
+        tax_amount: quoteDataBase.tax_amount,
+        discount_amount: quoteDataBase.discount_amount,
+        final_price: quoteDataBase.final_price,
+        valid_until: quoteDataBase.valid_until,
+        notes: quoteDataBase.notes,
+        terms_conditions: quoteDataBase.terms_conditions,
+        selections: quoteDataBase.selections,
+        quote_additionals: quoteDataBase.quote_additionals,
+        organization_id: quoteDataBase.organization_id,
       };
 
       const { data: quote, error } = await supabase
