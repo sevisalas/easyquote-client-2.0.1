@@ -23,7 +23,7 @@ import CompositeComponentsSelector, {
   getInitialActiveComponents,
   hasRequiredComponents,
 } from "@/components/quotes/CompositeComponentsSelector";
-import CompositeComponentTabs from "@/components/quotes/CompositeComponentTabs";
+import CompositeComponentTabs, { type ComponentsDataMap } from "@/components/quotes/CompositeComponentTabs";
 import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { useCompositeProductConfig } from "@/hooks/useCompositeProductConfig";
 import { ArrowLeft, AlertCircle, Package, Boxes } from "lucide-react";
@@ -68,6 +68,8 @@ export default function ProductTestPage() {
   const [localPriceInput, setLocalPriceInput] = useState("");
   const [tokenReady, setTokenReady] = useState(!!sessionStorage.getItem("easyquote_token"));
   const [forceResultPrompts, setForceResultPrompts] = useState<PromptDef[]>([]);
+  const [compositeComponentsData, setCompositeComponentsData] = useState<ComponentsDataMap>({});
+  const [compositeTotalPrice, setCompositeTotalPrice] = useState<number>(0);
   
   // Ref para el timeout del debounce de commit de prompts
   const commitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1268,6 +1270,11 @@ export default function ProductTestPage() {
                             onParentPromptCommit={handlePromptCommit}
                             parentProduct={productForPrompts ?? productDetail}
                             isAdmin={isSuperAdmin || isOrgAdmin}
+                            onComponentChange={setSelectedComponent}
+                            onComponentsDataChange={(data, total) => {
+                              setCompositeComponentsData(data);
+                              setCompositeTotalPrice(total);
+                            }}
                           />
                         ) : (
                           /* Sistema legacy para productos encuadernados */
@@ -1367,196 +1374,328 @@ export default function ProductTestPage() {
             </Card>
           </div>
 
-          {/* Results - Solo para sistema legacy, ya que el nuevo sistema muestra resultados en CompositeComponentTabs */}
-          {!hasConfiguredComponents && (
-            <div>
-              {productId && <Card>
-                  <CardHeader>
-                    <CardTitle>Resultados</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Si el producto compuesto no está listo, mostrar mensaje */}
-                    {!isCompositeReady && needsConfigSelector && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <p>Selecciona el tipo de producto para ver los resultados</p>
-                      </div>
-                    )}
-                    
-                    {/* Solo mostrar resultados si el producto compuesto está listo */}
-                    {isCompositeReady && (
-                      <>
-                        {pricingLoading && <div className="text-center py-8 text-muted-foreground">
-                            <p>Calculando resultados...</p>
-                          </div>}
+          {/* Results - Panel lateral de resultados */}
+          <div>
+            {productId && <Card>
+                <CardHeader>
+                  <CardTitle>Resultados</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Si el producto compuesto no está listo, mostrar mensaje */}
+                  {!isCompositeReady && needsConfigSelector && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Selecciona el tipo de producto para ver los resultados</p>
+                    </div>
+                  )}
+                  
+                  {/* Solo mostrar resultados si el producto compuesto está listo */}
+                  {isCompositeReady && (
+                    <>
+                      {/* ======= Nuevo sistema de productos compuestos ======= */}
+                      {hasConfiguredComponents ? (
+                        <>
+                          {/* Precio Total del producto compuesto */}
+                          <div className="p-3 rounded-md border bg-accent/10 mb-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-muted-foreground">
+                                {modifiedPrice !== null ? "Precio calculado" : "Precio Total"}
+                              </span>
+                              <span
+                                className={
+                                  modifiedPrice !== null
+                                    ? "text-sm text-muted-foreground line-through"
+                                    : "text-lg font-semibold"
+                                }
+                              >
+                                {formatCurrency(compositeTotalPrice)}
+                              </span>
+                            </div>
 
+                            {modifiedPrice !== null && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-muted-foreground">Precio modificado</span>
+                                <span className="text-lg font-semibold text-primary">{formatCurrency(modifiedPrice)}</span>
+                              </div>
+                            )}
 
-                    {/* Precio (simple = API / compuesto = suma de componentes) + opción de modificar */}
-                    {(() => {
-                      const basePrice = isComposite ? calculatedTotalPrice : apiPrice;
-                      // Mostrar siempre el precio si hay outputs procesados (incluso si es 0)
-                      const hasPriceOutput = generalOutputs.some(
-                        (o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price"
-                      );
-                      if (!hasPriceOutput && basePrice === 0) return null;
+                            {isEditingPrice && (
+                              <div className="flex items-center gap-2 pt-2 border-t">
+                                <Input
+                                  type="text"
+                                  value={localPriceInput}
+                                  onChange={(e) => setLocalPriceInput(e.target.value)}
+                                  placeholder="Nuevo precio"
+                                  className="flex-1"
+                                  autoFocus
+                                />
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    const parsed = parseFloat(localPriceInput.replace(/\./g, "").replace(",", ".")) || 0;
+                                    setModifiedPrice(parsed > 0 ? parsed : null);
+                                    setIsEditingPrice(false);
+                                  }}
+                                >
+                                  Aplicar
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setIsEditingPrice(false);
+                                    setLocalPriceInput("");
+                                  }}
+                                >
+                                  Cancelar
+                                </Button>
+                              </div>
+                            )}
 
-                      const title = isComposite ? "Precio Total" : "Precio";
+                            {!isEditingPrice && (isSuperAdmin || isOrgAdmin) && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="w-full text-xs"
+                                onClick={() => {
+                                  const prefill = (modifiedPrice ?? compositeTotalPrice).toFixed(2).replace(".", ",");
+                                  setLocalPriceInput(prefill);
+                                  setIsEditingPrice(true);
+                                }}
+                              >
+                                {modifiedPrice !== null ? "Editar precio modificado" : "Modificar precio final"}
+                              </Button>
+                            )}
 
-                      return (
-                        <div className="p-3 rounded-md border bg-accent/10 mb-4 space-y-3">
-                          {/* Precio calculado */}
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-muted-foreground">
-                              {modifiedPrice !== null ? "Precio calculado" : title}
-                            </span>
-                            <span
-                              className={
-                                modifiedPrice !== null
-                                  ? "text-sm text-muted-foreground line-through"
-                                  : "text-lg font-semibold"
-                              }
-                            >
-                              {formatCurrency(basePrice)}
-                            </span>
+                            {modifiedPrice !== null && !isEditingPrice && (isSuperAdmin || isOrgAdmin) && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="w-full text-xs text-muted-foreground"
+                                onClick={() => setModifiedPrice(null)}
+                              >
+                                Usar precio calculado
+                              </Button>
+                            )}
                           </div>
 
-                          {/* Precio modificado (si existe) */}
-                          {modifiedPrice !== null && (
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-muted-foreground">Precio modificado</span>
-                              <span className="text-lg font-semibold text-primary">{formatCurrency(modifiedPrice)}</span>
-                            </div>
-                          )}
+                          {/* Resultados del componente seleccionado */}
+                          {selectedComponent && selectedComponent !== "general" && compositeComponentsData[selectedComponent] && (
+                            <div className="border-t pt-4 mt-4 space-y-4">
+                              <h4 className="font-semibold text-sm">{compositeComponentsData[selectedComponent]?.alias || selectedComponent}</h4>
 
-                          {/* Campo de edición */}
-                          {isEditingPrice && (
-                            <div className="flex items-center gap-2 pt-2 border-t">
-                              <Input
-                                type="text"
-                                value={localPriceInput}
-                                onChange={(e) => setLocalPriceInput(e.target.value)}
-                                placeholder="Nuevo precio"
-                                className="flex-1"
-                                autoFocus
-                              />
-                              <Button
-                                size="sm"
-                                onClick={() => {
-                                  const parsed =
-                                    parseFloat(localPriceInput.replace(/\./g, "").replace(",", ".")) || 0;
-                                  setModifiedPrice(parsed > 0 ? parsed : null);
-                                  setIsEditingPrice(false);
-                                }}
-                              >
-                                Aplicar
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setIsEditingPrice(false);
-                                  setLocalPriceInput("");
-                                }}
-                              >
-                                Cancelar
-                              </Button>
-                            </div>
-                          )}
-
-                          {/* Botón para activar edición - solo para admins */}
-                          {!isEditingPrice && (isSuperAdmin || isOrgAdmin) && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="w-full text-xs"
-                              onClick={() => {
-                                const prefill = (modifiedPrice ?? basePrice).toFixed(2).replace(".", ",");
-                                setLocalPriceInput(prefill);
-                                setIsEditingPrice(true);
-                              }}
-                            >
-                              {modifiedPrice !== null ? "Editar precio modificado" : "Modificar precio final"}
-                            </Button>
-                          )}
-
-                          {/* Botón para quitar precio modificado - solo para admins */}
-                          {modifiedPrice !== null && !isEditingPrice && (isSuperAdmin || isOrgAdmin) && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="w-full text-xs text-muted-foreground"
-                              onClick={() => setModifiedPrice(null)}
-                            >
-                              Usar precio calculado
-                            </Button>
-                          )}
-                        </div>
-                      );
-                    })()}
-
-
-                    {/* Text outputs - General (sin precio) */}
-                    {textOutputs.length > 0 && <div className="space-y-2 text-sm">
-                        {textOutputs.map((output, index) => <div key={index} className="flex justify-between">
-                            <span>{output.label || output.name}</span>
-                            <span className="font-medium">{output.value}</span>
-                          </div>)}
-                      </div>}
-
-                    {/* Image outputs - General */}
-                    {imageOutputs.length > 0 && <div className="space-y-3 border-t pt-4">
-                        {imageOutputs.map((output, index) => <div key={`${output.value}-${index}`} className="space-y-2">
-                            <div className="text-sm font-medium">{output.label || output.name}</div>
-                            <img key={output.value} src={output.value} alt={output.label || output.name || `Imagen ${index + 1}`} className="w-full max-w-md rounded border" />
-                          </div>)}
-                      </div>}
-
-                    {/* Resultados del componente seleccionado */}
-                    {selectedComponent !== "general" && (
-                      <div className="border-t pt-4 mt-4 space-y-4">
-                        <h4 className="font-semibold text-sm">{dynamicComponentLabels[selectedComponent] || COMPONENT_LABELS[selectedComponent] || selectedComponent}</h4>
-
-                        {selectedTextOutputs.length === 0 && selectedImageOutputs.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">Sin resultados para este componente</p>
-                        ) : (
-                          <>
-                            {selectedTextOutputs.length > 0 && (
-                              <div className="space-y-2 text-sm">
-                                {selectedTextOutputs.map((output, index) => (
-                                  <div key={`sel-${index}`} className="flex justify-between">
-                                    <span>{output.label || output.name}</span>
-                                    <span className="font-medium">{output.value}</span>
-                                  </div>
-                                ))}
+                              {/* Precio del componente */}
+                              <div className="flex justify-between text-sm">
+                                <span>Precio</span>
+                                <span className="font-semibold">{formatCurrency(compositeComponentsData[selectedComponent]?.price ?? 0)}</span>
                               </div>
-                            )}
 
-                            {selectedImageOutputs.length > 0 && (
-                              <div className="space-y-3 pt-2">
-                                {selectedImageOutputs.map((output, index) => (
-                                  <div key={`sel-img-${output.value}-${index}`} className="space-y-2">
-                                    <div className="text-sm font-medium">{output.label || output.name}</div>
-                                    <img
-                                      key={output.value}
-                                      src={output.value}
-                                      alt={output.label || output.name || `Imagen ${index + 1}`}
-                                      className="w-full max-w-md rounded border"
+                              {/* Outputs de texto */}
+                              {(() => {
+                                const outputs = compositeComponentsData[selectedComponent]?.outputs || [];
+                                const textOuts = outputs.filter((o: any) => {
+                                  const value = String(o?.value ?? "");
+                                  const type = String(o?.type || o?.outputType || "").toLowerCase();
+                                  return !/^https?:\/\//i.test(value) && type !== "price";
+                                });
+                                const imgOuts = outputs.filter((o: any) => /^https?:\/\//i.test(String(o?.value ?? "")));
+
+                                return (
+                                  <>
+                                    {textOuts.length > 0 && (
+                                      <div className="space-y-2 text-sm">
+                                        {textOuts.map((output: any, index: number) => (
+                                          <div key={index} className="flex justify-between">
+                                            <span>{output.label || output.name}</span>
+                                            <span className="font-medium">{output.value}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {imgOuts.length > 0 && (
+                                      <div className="space-y-3 pt-2">
+                                        {imgOuts.map((output: any, index: number) => (
+                                          <div key={`img-${index}`} className="space-y-2">
+                                            <div className="text-sm font-medium">{output.label || output.name}</div>
+                                            <img src={output.value} alt={output.label || output.name || `Imagen ${index + 1}`} className="w-full max-w-md rounded border" />
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {textOuts.length === 0 && imgOuts.length === 0 && (
+                                      <p className="text-sm text-muted-foreground">Sin resultados para este componente</p>
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        /* ======= Sistema legacy ======= */
+                        <>
+                          {pricingLoading && <div className="text-center py-8 text-muted-foreground">
+                              <p>Calculando resultados...</p>
+                            </div>}
+
+                          {/* Precio (simple = API / compuesto = suma de componentes) + opción de modificar */}
+                          {(() => {
+                            const basePrice = isComposite ? calculatedTotalPrice : apiPrice;
+                            const hasPriceOutput = generalOutputs.some(
+                              (o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price"
+                            );
+                            if (!hasPriceOutput && basePrice === 0) return null;
+
+                            const title = isComposite ? "Precio Total" : "Precio";
+
+                            return (
+                              <div className="p-3 rounded-md border bg-accent/10 mb-4 space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium text-muted-foreground">
+                                    {modifiedPrice !== null ? "Precio calculado" : title}
+                                  </span>
+                                  <span
+                                    className={
+                                      modifiedPrice !== null
+                                        ? "text-sm text-muted-foreground line-through"
+                                        : "text-lg font-semibold"
+                                    }
+                                  >
+                                    {formatCurrency(basePrice)}
+                                  </span>
+                                </div>
+
+                                {modifiedPrice !== null && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium text-muted-foreground">Precio modificado</span>
+                                    <span className="text-lg font-semibold text-primary">{formatCurrency(modifiedPrice)}</span>
+                                  </div>
+                                )}
+
+                                {isEditingPrice && (
+                                  <div className="flex items-center gap-2 pt-2 border-t">
+                                    <Input
+                                      type="text"
+                                      value={localPriceInput}
+                                      onChange={(e) => setLocalPriceInput(e.target.value)}
+                                      placeholder="Nuevo precio"
+                                      className="flex-1"
+                                      autoFocus
                                     />
+                                    <Button
+                                      size="sm"
+                                      onClick={() => {
+                                        const parsed = parseFloat(localPriceInput.replace(/\./g, "").replace(",", ".")) || 0;
+                                        setModifiedPrice(parsed > 0 ? parsed : null);
+                                        setIsEditingPrice(false);
+                                      }}
+                                    >
+                                      Aplicar
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setIsEditingPrice(false);
+                                        setLocalPriceInput("");
+                                      }}
+                                    >
+                                      Cancelar
+                                    </Button>
                                   </div>
-                                ))}
+                                )}
+
+                                {!isEditingPrice && (isSuperAdmin || isOrgAdmin) && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="w-full text-xs"
+                                    onClick={() => {
+                                      const prefill = (modifiedPrice ?? basePrice).toFixed(2).replace(".", ",");
+                                      setLocalPriceInput(prefill);
+                                      setIsEditingPrice(true);
+                                    }}
+                                  >
+                                    {modifiedPrice !== null ? "Editar precio modificado" : "Modificar precio final"}
+                                  </Button>
+                                )}
+
+                                {modifiedPrice !== null && !isEditingPrice && (isSuperAdmin || isOrgAdmin) && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="w-full text-xs text-muted-foreground"
+                                    onClick={() => setModifiedPrice(null)}
+                                  >
+                                    Usar precio calculado
+                                  </Button>
+                                )}
                               </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    )}
+                            );
+                          })()}
 
-                      </>
-                    )}
+                          {/* Text outputs - General (sin precio) */}
+                          {textOutputs.length > 0 && <div className="space-y-2 text-sm">
+                              {textOutputs.map((output, index) => <div key={index} className="flex justify-between">
+                                  <span>{output.label || output.name}</span>
+                                  <span className="font-medium">{output.value}</span>
+                                </div>)}
+                            </div>}
 
-                  </CardContent>
-                </Card>}
-            </div>
-          )}
+                          {/* Image outputs - General */}
+                          {imageOutputs.length > 0 && <div className="space-y-3 border-t pt-4">
+                              {imageOutputs.map((output, index) => <div key={`${output.value}-${index}`} className="space-y-2">
+                                  <div className="text-sm font-medium">{output.label || output.name}</div>
+                                  <img key={output.value} src={output.value} alt={output.label || output.name || `Imagen ${index + 1}`} className="w-full max-w-md rounded border" />
+                                </div>)}
+                            </div>}
+
+                          {/* Resultados del componente seleccionado */}
+                          {selectedComponent !== "general" && (
+                            <div className="border-t pt-4 mt-4 space-y-4">
+                              <h4 className="font-semibold text-sm">{dynamicComponentLabels[selectedComponent] || COMPONENT_LABELS[selectedComponent] || selectedComponent}</h4>
+
+                              {selectedTextOutputs.length === 0 && selectedImageOutputs.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">Sin resultados para este componente</p>
+                              ) : (
+                                <>
+                                  {selectedTextOutputs.length > 0 && (
+                                    <div className="space-y-2 text-sm">
+                                      {selectedTextOutputs.map((output, index) => (
+                                        <div key={`sel-${index}`} className="flex justify-between">
+                                          <span>{output.label || output.name}</span>
+                                          <span className="font-medium">{output.value}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {selectedImageOutputs.length > 0 && (
+                                    <div className="space-y-3 pt-2">
+                                      {selectedImageOutputs.map((output, index) => (
+                                        <div key={`sel-img-${output.value}-${index}`} className="space-y-2">
+                                          <div className="text-sm font-medium">{output.label || output.name}</div>
+                                          <img
+                                            key={output.value}
+                                            src={output.value}
+                                            alt={output.label || output.name || `Imagen ${index + 1}`}
+                                            className="w-full max-w-md rounded border"
+                                          />
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
+
+                </CardContent>
+              </Card>}
+          </div>
         </div>}
     </div>;
 }
