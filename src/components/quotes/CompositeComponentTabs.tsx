@@ -183,7 +183,16 @@ export default function CompositeComponentTabs({
     const connections = promptConnections.filter(
       (conn: any) => conn.target_component_id === componentId
     );
-    return new Set(connections.map((conn: any) => conn.target_prompt_name));
+    const mappedIds = new Set(connections.map((conn: any) => conn.target_prompt_name));
+    
+    console.log("[CompositeComponentTabs] getMappedPromptIds", {
+      componentId,
+      allConnections: promptConnections.length,
+      matchingConnections: connections.length,
+      mappedIds: Array.from(mappedIds),
+    });
+    
+    return mappedIds;
   };
 
   // Crear producto virtual para el componente (SOLO prompts NO mapeados - los heredados se excluyen)
@@ -193,8 +202,17 @@ export default function CompositeComponentTabs({
 
     const mappedIds = getMappedPromptIds(componentId);
     
+    console.log("[CompositeComponentTabs] createComponentProduct", {
+      componentId,
+      totalPrompts: componentData.prompts.length,
+      promptIds: componentData.prompts.map((p: any) => p.id),
+      mappedIds: Array.from(mappedIds),
+    });
+    
     // Filtrar: solo prompts NO mapeados (los mapeados vienen del padre)
     const prompts = componentData.prompts.filter((p: any) => !mappedIds.has(String(p.id)));
+    
+    console.log("[CompositeComponentTabs] filtered prompts", prompts.length);
 
     return { prompts };
   };
