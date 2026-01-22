@@ -778,6 +778,14 @@ export default function ProductManagement() {
     queryKey: ["product-prompts", selectedProduct?.id],
     queryFn: async () => {
       if (!selectedProduct?.id) return [];
+      
+      // Para productos compuestos locales, no llamar a la API de EasyQuote
+      if (selectedProduct.id.startsWith('comp_')) {
+        // Los prompts de productos compuestos se obtienen de Supabase
+        // a través de useCompositeProductConfig hook
+        return [];
+      }
+      
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
       const {
@@ -806,6 +814,14 @@ export default function ProductManagement() {
     queryKey: ["product-outputs", selectedProduct?.id],
     queryFn: async () => {
       if (!selectedProduct?.id) return [];
+      
+      // Para productos compuestos locales, no llamar a la API de EasyQuote
+      if (selectedProduct.id.startsWith('comp_')) {
+        // Los outputs de productos compuestos se obtienen de Supabase
+        // a través de useCompositeProductConfig hook
+        return [];
+      }
+      
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No token available");
       const {
