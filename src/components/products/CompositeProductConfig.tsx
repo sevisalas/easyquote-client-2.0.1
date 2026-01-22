@@ -1,22 +1,21 @@
 import { Loader2, Info } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useCompositeProductConfig, type PromptConnection } from "@/hooks/useCompositeProductConfig";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CompatibleComponentsEditor } from "./CompatibleComponentsEditor";
 import { toast } from "sonner";
+import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 
 interface CompositeProductConfigProps {
   easyquoteProductId: string;
   productName: string;
   availableProducts: { id: string; name: string }[];
-  /** Prompts del producto padre (desde el Excel) para mapear a componentes */
-  parentPrompts?: { name: string; label: string }[];
 }
 
 export function CompositeProductConfig({ 
   easyquoteProductId, 
   productName,
   availableProducts,
-  parentPrompts = [],
 }: CompositeProductConfigProps) {
   const {
     components,
@@ -35,7 +34,31 @@ export function CompositeProductConfig({
     isUpsertingConnection,
   } = useCompositeProductConfig(easyquoteProductId);
 
-  if (isLoading || !organizationId) {
+  // Cargar los prompts del producto padre desde pricing API (para obtener labels reales)
+  const { data: parentPrompts = [], isLoading: isLoadingParentPrompts } = useQuery({
+    queryKey: ["composite-parent-prompts", easyquoteProductId],
+    queryFn: async () => {
+      const token = await getEasyQuoteToken();
+      if (!token) return [];
+      const { data, error } = await invokeEasyQuoteFunction<any>("easyquote-pricing", {
+        token,
+        productId: easyquoteProductId,
+      });
+      if (error) {
+        console.error("Error fetching parent prompts:", error);
+        return [];
+      }
+      const prompts = data?.prompts || [];
+      return prompts.map((p: any) => ({
+        name: p.id, // Usamos el ID como nombre para las conexiones
+        label: p.promptText || p.promptCell || p.id,
+      }));
+    },
+    enabled: !!easyquoteProductId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  if (isLoading || isLoadingParentPrompts || !organizationId) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
