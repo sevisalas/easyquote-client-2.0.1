@@ -107,8 +107,15 @@ export default function CompositeComponentTabs({
         console.log("[CompositeComponentTabs] API inputs for component", {
           componentId: component.id,
           componentProductId: component.component_product_id,
+          connectionsFound: connections.length,
+          connectionDetails: connections.map((c: any) => ({
+            source: c.source_prompt_name,
+            target: c.target_prompt_name,
+            sourceValueExists: parentPromptValues[c.source_prompt_name] !== undefined,
+            sourceValue: parentPromptValues[c.source_prompt_name],
+          })),
           inputs: componentInputs,
-          parentPromptValues,
+          parentPromptValuesKeys: Object.keys(parentPromptValues),
         });
 
         const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
