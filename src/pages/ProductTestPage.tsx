@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +18,13 @@ import BoundProductConfigSelector, {
   getAvailableConfigs,
   getActiveComponents
 } from "@/components/quotes/BoundProductConfigSelector";
+import CompositeComponentsSelector, {
+  type ActiveComponent,
+  getInitialActiveComponents,
+  hasRequiredComponents,
+} from "@/components/quotes/CompositeComponentsSelector";
 import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
+import { useCompositeProductConfig } from "@/hooks/useCompositeProductConfig";
 import { ArrowLeft, AlertCircle, Package, Boxes } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -55,6 +61,7 @@ export default function ProductTestPage() {
   const [isDiagnosing, setIsDiagnosing] = useState(false);
   const [selectedComponent, setSelectedComponent] = useState<string>('general');
   const [boundProductConfig, setBoundProductConfig] = useState<BoundProductConfig | null>(null);
+  const [activeCompositeComponents, setActiveCompositeComponents] = useState<ActiveComponent[]>([]);
   const [modifiedPrice, setModifiedPrice] = useState<number | null>(null);
   const [isEditingPrice, setIsEditingPrice] = useState(false);
   const [localPriceInput, setLocalPriceInput] = useState("");
@@ -74,6 +81,13 @@ export default function ProductTestPage() {
   
   // Check if product is composite
   const { isComposite, enabledComponents, getPromptComponent } = useProductComponentSettings(productId || undefined);
+  
+  // Fetch composite product components configuration
+  const { 
+    components: configuredComponents = [],
+    componentsLoading: isLoadingConfiguredComponents,
+  } = useCompositeProductConfig(productId || undefined);
+  
   const queryClient = useQueryClient();
   
   const organizationId = organization?.id || membership?.organization_id;
@@ -98,13 +112,39 @@ export default function ProductTestPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Determinar si el producto necesita selector de configuración (tiene múltiples componentes)
+  // Nuevo sistema: si hay componentes configurados en composite_product_components, usar ese
+  const hasConfiguredComponents = configuredComponents.length > 0;
+  const hasRequiredComponentsConfigured = hasRequiredComponents(configuredComponents);
+  
+  // Inicializar componentes activos cuando cambia la configuración
+  const handleActiveComponentsChange = useCallback((components: ActiveComponent[]) => {
+    setActiveCompositeComponents(components);
+  }, []);
+  
+  // Efecto para inicializar componentes activos cuando se cargan los configurados
+  useEffect(() => {
+    if (hasConfiguredComponents && activeCompositeComponents.length === 0) {
+      const initial = getInitialActiveComponents(configuredComponents);
+      setActiveCompositeComponents(initial);
+    }
+  }, [hasConfiguredComponents, configuredComponents, activeCompositeComponents.length]);
+
+  // Determinar si el producto necesita selector de configuración (sistema legacy)
   const availableConfigs = useMemo(() => {
+    // Si tiene el nuevo sistema de componentes, no usar el legacy
+    if (hasConfiguredComponents) return [];
     if (!isComposite || !productId) return [];
     return getAvailableConfigs(enabledComponents);
-  }, [isComposite, enabledComponents, productId]);
+  }, [isComposite, enabledComponents, productId, hasConfiguredComponents]);
   
   const needsConfigSelector = availableConfigs.length > 0;
+  
+  // Producto compuesto está listo para mostrar datos cuando:
+  // - Tiene componentes configurados Y al menos un obligatorio (automático)
+  // - O tiene el sistema legacy Y se seleccionó una configuración
+  const isCompositeReady = hasConfiguredComponents 
+    ? (hasRequiredComponentsConfigured || activeCompositeComponents.length > 0)
+    : (!needsConfigSelector || boundProductConfig !== null);
   // Fetch saved output order from Supabase
   const { data: savedOutputOrder } = useQuery({
     queryKey: ["product-output-order", productId, organizationId],
@@ -367,6 +407,7 @@ export default function ProductTestPage() {
         setDiagnosticResult(null);
         setProductLoadError(null);
         setBoundProductConfig(null);
+        setActiveCompositeComponents([]); // Clear active components when changing product
         setProductDetail(null); // Clear previous product detail
       }
 
@@ -1140,8 +1181,20 @@ export default function ProductTestPage() {
                   </div>
                 </div>
 
-                {/* Selector de configuración - mostrar INMEDIATAMENTE cuando se selecciona producto */}
-                {productId && needsConfigSelector && (
+                {/* Nuevo sistema: Selector de componentes para productos compuestos */}
+                {productId && hasConfiguredComponents && !isLoadingConfiguredComponents && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Componentes del producto</label>
+                    <CompositeComponentsSelector
+                      configuredComponents={configuredComponents}
+                      activeComponents={activeCompositeComponents}
+                      onActiveComponentsChange={handleActiveComponentsChange}
+                    />
+                  </div>
+                )}
+
+                {/* Sistema legacy: Selector de configuración de encuadernado */}
+                {productId && needsConfigSelector && !hasConfiguredComponents && (
                   <BoundProductConfigSelector
                     enabledComponents={enabledComponents}
                     value={boundProductConfig}
@@ -1201,8 +1254,8 @@ export default function ProductTestPage() {
 
                 {productId && !isLoadingProduct && productDetail && <div className="border-t pt-4 space-y-4">
                     
-                    {/* Mostrar prompts solo si no requiere configuración O ya se seleccionó una */}
-                    {(!needsConfigSelector || boundProductConfig) ? (
+                    {/* Mostrar prompts si el producto compuesto está listo */}
+                    {isCompositeReady ? (
                       <>
                         <ComponentTabsPromptsForm 
                           product={productForPrompts ?? productDetail}
@@ -1306,15 +1359,20 @@ export default function ProductTestPage() {
                   <CardTitle>Resultados</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Si requiere configuración y no se ha seleccionado, mostrar mensaje */}
-                  {needsConfigSelector && !boundProductConfig && (
+                  {/* Si el producto compuesto no está listo, mostrar mensaje */}
+                  {!isCompositeReady && hasConfiguredComponents && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Añade al menos un componente para ver los resultados</p>
+                    </div>
+                  )}
+                  {!isCompositeReady && !hasConfiguredComponents && needsConfigSelector && (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>Selecciona el tipo de producto para ver los resultados</p>
                     </div>
                   )}
                   
-                  {/* Solo mostrar resultados si no requiere configuración O ya se seleccionó una */}
-                  {(!needsConfigSelector || boundProductConfig) && (
+                  {/* Solo mostrar resultados si el producto compuesto está listo */}
+                  {isCompositeReady && (
                     <>
                       {pricingLoading && <div className="text-center py-8 text-muted-foreground">
                           <p>Calculando resultados...</p>
