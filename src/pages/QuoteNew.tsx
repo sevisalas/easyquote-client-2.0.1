@@ -13,6 +13,7 @@ import { CalendarDays, Plus, Trash2, Save, ArrowLeft, Download } from "lucide-re
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { toast } from "@/hooks/use-toast";
 import { CustomerSelector } from "@/components/quotes/CustomerSelector";
 import QuoteItem from "@/components/quotes/QuoteItem";
@@ -20,6 +21,8 @@ import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 import { getEasyQuoteToken } from "@/lib/easyquoteApi";
 import { useNumberingFormat, generateDocumentNumber } from "@/hooks/useNumberingFormat";
+
+type QuotesInsert = Database["public"]["Tables"]["quotes"]["Insert"];
 type ItemSnapshot = {
   productId: string;
   prompts: Record<string, any>;
@@ -389,7 +392,7 @@ export default function QuoteNew() {
   };
 
   const insertQuoteWithRetry = async (
-    quoteDataBase: Record<string, any>,
+    quoteDataBase: Omit<QuotesInsert, "quote_number" | "title">,
     titleValue: string,
   ): Promise<{ quote: any; quoteNumber: string; nextSequential: number }> => {
     const MAX_ATTEMPTS = 3;
@@ -397,14 +400,14 @@ export default function QuoteNew() {
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       const { quoteNumber, nextSequential } = await generateQuoteNumber();
-      const quoteData: Record<string, any> = {
+      const quoteData: QuotesInsert = {
         ...quoteDataBase,
         quote_number: quoteNumber,
         title: titleValue || `Presupuesto ${quoteNumber}`,
       };
 
-      // Nota: casteo a any para evitar fricción con tipos generados cuando construimos el payload dinámicamente
-      const { data: quote, error } = await (supabase.from("quotes") as any)
+      const { data: quote, error } = await supabase
+        .from("quotes")
         .insert(quoteData)
         .select()
         .single();
@@ -465,7 +468,7 @@ export default function QuoteNew() {
         throw new Error("No se pudo obtener la organización");
       }
 
-      const quoteDataBase = {
+      const quoteDataBase: Omit<QuotesInsert, "quote_number" | "title"> = {
         user_id: user.id,
         customer_id: actualCustomerId,
         description: description || itemsArray[0]?.itemDescription || "",
