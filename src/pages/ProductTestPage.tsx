@@ -23,6 +23,7 @@ import CompositeComponentsSelector, {
   getInitialActiveComponents,
   hasRequiredComponents,
 } from "@/components/quotes/CompositeComponentsSelector";
+import CompositeComponentTabs from "@/components/quotes/CompositeComponentTabs";
 import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { useCompositeProductConfig } from "@/hooks/useCompositeProductConfig";
 import { ArrowLeft, AlertCircle, Package, Boxes } from "lucide-react";
@@ -1257,20 +1258,34 @@ export default function ProductTestPage() {
                     {/* Mostrar prompts si el producto compuesto está listo */}
                     {isCompositeReady ? (
                       <>
-                        <ComponentTabsPromptsForm 
-                          product={productForPrompts ?? productDetail}
-                          productId={productId} 
-                          values={promptValues} 
-                          onChange={handlePromptChange} 
-                          onCommit={handlePromptCommit}
-                          onComponentChange={setSelectedComponent}
-                          boundProductConfig={boundProductConfig}
-                          isAdmin={isSuperAdmin || isOrgAdmin}
-                          onForceResultPrompts={setForceResultPrompts}
-                        />
+                        {/* Nuevo sistema de productos compuestos con componentes configurados */}
+                        {hasConfiguredComponents ? (
+                          <CompositeComponentTabs
+                            parentProductId={productId}
+                            activeComponents={activeCompositeComponents}
+                            parentPromptValues={promptValues}
+                            onParentPromptChange={handlePromptChange}
+                            onParentPromptCommit={handlePromptCommit}
+                            parentProduct={productForPrompts ?? productDetail}
+                            isAdmin={isSuperAdmin || isOrgAdmin}
+                          />
+                        ) : (
+                          /* Sistema legacy para productos encuadernados */
+                          <ComponentTabsPromptsForm 
+                            product={productForPrompts ?? productDetail}
+                            productId={productId} 
+                            values={promptValues} 
+                            onChange={handlePromptChange} 
+                            onCommit={handlePromptCommit}
+                            onComponentChange={setSelectedComponent}
+                            boundProductConfig={boundProductConfig}
+                            isAdmin={isSuperAdmin || isOrgAdmin}
+                            onForceResultPrompts={setForceResultPrompts}
+                          />
+                        )}
 
-                        {/* Sección: Opciones restrictivas (prompts marcados como force_result) */}
-                        {forceResultPrompts.length > 0 && (
+                        {/* Sección: Opciones restrictivas (prompts marcados como force_result) - solo legacy */}
+                        {!hasConfiguredComponents && forceResultPrompts.length > 0 && (
                           <div className="border-t pt-4 mt-4">
                             <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                               Opciones restrictivas
@@ -1352,199 +1367,196 @@ export default function ProductTestPage() {
             </Card>
           </div>
 
-          {/* Results */}
-          <div>
-            {productId && <Card>
-                <CardHeader>
-                  <CardTitle>Resultados</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Si el producto compuesto no está listo, mostrar mensaje */}
-                  {!isCompositeReady && hasConfiguredComponents && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>Añade al menos un componente para ver los resultados</p>
-                    </div>
-                  )}
-                  {!isCompositeReady && !hasConfiguredComponents && needsConfigSelector && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>Selecciona el tipo de producto para ver los resultados</p>
-                    </div>
-                  )}
-                  
-                  {/* Solo mostrar resultados si el producto compuesto está listo */}
-                  {isCompositeReady && (
-                    <>
-                      {pricingLoading && <div className="text-center py-8 text-muted-foreground">
-                          <p>Calculando resultados...</p>
-                        </div>}
+          {/* Results - Solo para sistema legacy, ya que el nuevo sistema muestra resultados en CompositeComponentTabs */}
+          {!hasConfiguredComponents && (
+            <div>
+              {productId && <Card>
+                  <CardHeader>
+                    <CardTitle>Resultados</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Si el producto compuesto no está listo, mostrar mensaje */}
+                    {!isCompositeReady && needsConfigSelector && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>Selecciona el tipo de producto para ver los resultados</p>
+                      </div>
+                    )}
+                    
+                    {/* Solo mostrar resultados si el producto compuesto está listo */}
+                    {isCompositeReady && (
+                      <>
+                        {pricingLoading && <div className="text-center py-8 text-muted-foreground">
+                            <p>Calculando resultados...</p>
+                          </div>}
 
 
-                  {/* Precio (simple = API / compuesto = suma de componentes) + opción de modificar */}
-                  {(() => {
-                    const basePrice = isComposite ? calculatedTotalPrice : apiPrice;
-                    // Mostrar siempre el precio si hay outputs procesados (incluso si es 0)
-                    const hasPriceOutput = generalOutputs.some(
-                      (o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price"
-                    );
-                    if (!hasPriceOutput && basePrice === 0) return null;
+                    {/* Precio (simple = API / compuesto = suma de componentes) + opción de modificar */}
+                    {(() => {
+                      const basePrice = isComposite ? calculatedTotalPrice : apiPrice;
+                      // Mostrar siempre el precio si hay outputs procesados (incluso si es 0)
+                      const hasPriceOutput = generalOutputs.some(
+                        (o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price"
+                      );
+                      if (!hasPriceOutput && basePrice === 0) return null;
 
-                    const title = isComposite ? "Precio Total" : "Precio";
+                      const title = isComposite ? "Precio Total" : "Precio";
 
-                    return (
-                      <div className="p-3 rounded-md border bg-accent/10 mb-4 space-y-3">
-                        {/* Precio calculado */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-muted-foreground">
-                            {modifiedPrice !== null ? "Precio calculado" : title}
-                          </span>
-                          <span
-                            className={
-                              modifiedPrice !== null
-                                ? "text-sm text-muted-foreground line-through"
-                                : "text-lg font-semibold"
-                            }
-                          >
-                            {formatCurrency(basePrice)}
-                          </span>
-                        </div>
-
-                        {/* Precio modificado (si existe) */}
-                        {modifiedPrice !== null && (
+                      return (
+                        <div className="p-3 rounded-md border bg-accent/10 mb-4 space-y-3">
+                          {/* Precio calculado */}
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-muted-foreground">Precio modificado</span>
-                            <span className="text-lg font-semibold text-primary">{formatCurrency(modifiedPrice)}</span>
+                            <span className="text-sm font-medium text-muted-foreground">
+                              {modifiedPrice !== null ? "Precio calculado" : title}
+                            </span>
+                            <span
+                              className={
+                                modifiedPrice !== null
+                                  ? "text-sm text-muted-foreground line-through"
+                                  : "text-lg font-semibold"
+                              }
+                            >
+                              {formatCurrency(basePrice)}
+                            </span>
                           </div>
-                        )}
 
-                        {/* Campo de edición */}
-                        {isEditingPrice && (
-                          <div className="flex items-center gap-2 pt-2 border-t">
-                            <Input
-                              type="text"
-                              value={localPriceInput}
-                              onChange={(e) => setLocalPriceInput(e.target.value)}
-                              placeholder="Nuevo precio"
-                              className="flex-1"
-                              autoFocus
-                            />
+                          {/* Precio modificado (si existe) */}
+                          {modifiedPrice !== null && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-muted-foreground">Precio modificado</span>
+                              <span className="text-lg font-semibold text-primary">{formatCurrency(modifiedPrice)}</span>
+                            </div>
+                          )}
+
+                          {/* Campo de edición */}
+                          {isEditingPrice && (
+                            <div className="flex items-center gap-2 pt-2 border-t">
+                              <Input
+                                type="text"
+                                value={localPriceInput}
+                                onChange={(e) => setLocalPriceInput(e.target.value)}
+                                placeholder="Nuevo precio"
+                                className="flex-1"
+                                autoFocus
+                              />
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  const parsed =
+                                    parseFloat(localPriceInput.replace(/\./g, "").replace(",", ".")) || 0;
+                                  setModifiedPrice(parsed > 0 ? parsed : null);
+                                  setIsEditingPrice(false);
+                                }}
+                              >
+                                Aplicar
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setIsEditingPrice(false);
+                                  setLocalPriceInput("");
+                                }}
+                              >
+                                Cancelar
+                              </Button>
+                            </div>
+                          )}
+
+                          {/* Botón para activar edición - solo para admins */}
+                          {!isEditingPrice && (isSuperAdmin || isOrgAdmin) && (
                             <Button
                               size="sm"
+                              variant="ghost"
+                              className="w-full text-xs"
                               onClick={() => {
-                                const parsed =
-                                  parseFloat(localPriceInput.replace(/\./g, "").replace(",", ".")) || 0;
-                                setModifiedPrice(parsed > 0 ? parsed : null);
-                                setIsEditingPrice(false);
+                                const prefill = (modifiedPrice ?? basePrice).toFixed(2).replace(".", ",");
+                                setLocalPriceInput(prefill);
+                                setIsEditingPrice(true);
                               }}
                             >
-                              Aplicar
+                              {modifiedPrice !== null ? "Editar precio modificado" : "Modificar precio final"}
                             </Button>
+                          )}
+
+                          {/* Botón para quitar precio modificado - solo para admins */}
+                          {modifiedPrice !== null && !isEditingPrice && (isSuperAdmin || isOrgAdmin) && (
                             <Button
                               size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setIsEditingPrice(false);
-                                setLocalPriceInput("");
-                              }}
+                              variant="ghost"
+                              className="w-full text-xs text-muted-foreground"
+                              onClick={() => setModifiedPrice(null)}
                             >
-                              Cancelar
+                              Usar precio calculado
                             </Button>
-                          </div>
-                        )}
+                          )}
+                        </div>
+                      );
+                    })()}
 
-                        {/* Botón para activar edición - solo para admins */}
-                        {!isEditingPrice && (isSuperAdmin || isOrgAdmin) && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="w-full text-xs"
-                            onClick={() => {
-                              const prefill = (modifiedPrice ?? basePrice).toFixed(2).replace(".", ",");
-                              setLocalPriceInput(prefill);
-                              setIsEditingPrice(true);
-                            }}
-                          >
-                            {modifiedPrice !== null ? "Editar precio modificado" : "Modificar precio final"}
-                          </Button>
-                        )}
 
-                        {/* Botón para quitar precio modificado - solo para admins */}
-                        {modifiedPrice !== null && !isEditingPrice && (isSuperAdmin || isOrgAdmin) && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="w-full text-xs text-muted-foreground"
-                            onClick={() => setModifiedPrice(null)}
-                          >
-                            Usar precio calculado
-                          </Button>
+                    {/* Text outputs - General (sin precio) */}
+                    {textOutputs.length > 0 && <div className="space-y-2 text-sm">
+                        {textOutputs.map((output, index) => <div key={index} className="flex justify-between">
+                            <span>{output.label || output.name}</span>
+                            <span className="font-medium">{output.value}</span>
+                          </div>)}
+                      </div>}
+
+                    {/* Image outputs - General */}
+                    {imageOutputs.length > 0 && <div className="space-y-3 border-t pt-4">
+                        {imageOutputs.map((output, index) => <div key={`${output.value}-${index}`} className="space-y-2">
+                            <div className="text-sm font-medium">{output.label || output.name}</div>
+                            <img key={output.value} src={output.value} alt={output.label || output.name || `Imagen ${index + 1}`} className="w-full max-w-md rounded border" />
+                          </div>)}
+                      </div>}
+
+                    {/* Resultados del componente seleccionado */}
+                    {selectedComponent !== "general" && (
+                      <div className="border-t pt-4 mt-4 space-y-4">
+                        <h4 className="font-semibold text-sm">{dynamicComponentLabels[selectedComponent] || COMPONENT_LABELS[selectedComponent] || selectedComponent}</h4>
+
+                        {selectedTextOutputs.length === 0 && selectedImageOutputs.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">Sin resultados para este componente</p>
+                        ) : (
+                          <>
+                            {selectedTextOutputs.length > 0 && (
+                              <div className="space-y-2 text-sm">
+                                {selectedTextOutputs.map((output, index) => (
+                                  <div key={`sel-${index}`} className="flex justify-between">
+                                    <span>{output.label || output.name}</span>
+                                    <span className="font-medium">{output.value}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {selectedImageOutputs.length > 0 && (
+                              <div className="space-y-3 pt-2">
+                                {selectedImageOutputs.map((output, index) => (
+                                  <div key={`sel-img-${output.value}-${index}`} className="space-y-2">
+                                    <div className="text-sm font-medium">{output.label || output.name}</div>
+                                    <img
+                                      key={output.value}
+                                      src={output.value}
+                                      alt={output.label || output.name || `Imagen ${index + 1}`}
+                                      className="w-full max-w-md rounded border"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
-                    );
-                  })()}
+                    )}
 
+                      </>
+                    )}
 
-                  {/* Text outputs - General (sin precio) */}
-                  {textOutputs.length > 0 && <div className="space-y-2 text-sm">
-                      {textOutputs.map((output, index) => <div key={index} className="flex justify-between">
-                          <span>{output.label || output.name}</span>
-                          <span className="font-medium">{output.value}</span>
-                        </div>)}
-                    </div>}
-
-                  {/* Image outputs - General */}
-                  {imageOutputs.length > 0 && <div className="space-y-3 border-t pt-4">
-                      {imageOutputs.map((output, index) => <div key={`${output.value}-${index}`} className="space-y-2">
-                          <div className="text-sm font-medium">{output.label || output.name}</div>
-                          <img key={output.value} src={output.value} alt={output.label || output.name || `Imagen ${index + 1}`} className="w-full max-w-md rounded border" />
-                        </div>)}
-                    </div>}
-
-                  {/* Resultados del componente seleccionado */}
-                  {selectedComponent !== "general" && (
-                    <div className="border-t pt-4 mt-4 space-y-4">
-                      <h4 className="font-semibold text-sm">{dynamicComponentLabels[selectedComponent] || COMPONENT_LABELS[selectedComponent] || selectedComponent}</h4>
-
-                      {selectedTextOutputs.length === 0 && selectedImageOutputs.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">Sin resultados para este componente</p>
-                      ) : (
-                        <>
-                          {selectedTextOutputs.length > 0 && (
-                            <div className="space-y-2 text-sm">
-                              {selectedTextOutputs.map((output, index) => (
-                                <div key={`sel-${index}`} className="flex justify-between">
-                                  <span>{output.label || output.name}</span>
-                                  <span className="font-medium">{output.value}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {selectedImageOutputs.length > 0 && (
-                            <div className="space-y-3 pt-2">
-                              {selectedImageOutputs.map((output, index) => (
-                                <div key={`sel-img-${output.value}-${index}`} className="space-y-2">
-                                  <div className="text-sm font-medium">{output.label || output.name}</div>
-                                  <img
-                                    key={output.value}
-                                    src={output.value}
-                                    alt={output.label || output.name || `Imagen ${index + 1}`}
-                                    className="w-full max-w-md rounded border"
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                    </>
-                  )}
-
-                </CardContent>
-              </Card>}
-          </div>
+                  </CardContent>
+                </Card>}
+            </div>
+          )}
         </div>}
     </div>;
 }
