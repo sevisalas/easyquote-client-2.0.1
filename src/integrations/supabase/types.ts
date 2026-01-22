@@ -611,6 +611,30 @@ export type Database = {
           },
         ]
       }
+      document_sequences: {
+        Row: {
+          document_type: string
+          last_number: number
+          organization_id: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          document_type: string
+          last_number?: number
+          organization_id: string
+          updated_at?: string
+          year?: number
+        }
+        Update: {
+          document_type?: string
+          last_number?: number
+          organization_id?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       easyquote_credentials: {
         Row: {
           api_password_encrypted: string
@@ -2710,6 +2734,13 @@ export type Database = {
         Returns: boolean
       }
       is_superadmin: { Args: never; Returns: boolean }
+      next_document_number: {
+        Args: { p_document_type: string; p_organization_id: string }
+        Returns: {
+          document_number: string
+          sequential_number: number
+        }[]
+      }
       search_customers: {
         Args: {
           page_limit?: number
