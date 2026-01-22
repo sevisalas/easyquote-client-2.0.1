@@ -133,6 +133,25 @@ export function useCompositeProductConfig(easyquoteProductId?: string) {
     enabled: !!easyquoteProductId && !!organizationId,
   });
 
+  // Fetch all available component products (products with is_component=true)
+  const {
+    data: availableComponentProducts = [],
+    isLoading: availableComponentsLoading,
+  } = useQuery({
+    queryKey: ["available-component-products", organizationId],
+    queryFn: async () => {
+      if (!organizationId) return [];
+      const { data, error } = await supabase
+        .from("product_component_settings")
+        .select("easyquote_product_id")
+        .eq("organization_id", organizationId)
+        .eq("is_component", true);
+      if (error) throw error;
+      return (data || []).map((d) => d.easyquote_product_id);
+    },
+    enabled: !!organizationId,
+  });
+
   // Add prompt mutation
   const addPromptMutation = useMutation({
     mutationFn: async (prompt: Omit<CompositePrompt, "id" | "created_at" | "updated_at">) => {
@@ -227,17 +246,66 @@ export function useCompositeProductConfig(easyquoteProductId?: string) {
     },
   });
 
+  // Add component mutation
+  const addComponentMutation = useMutation({
+    mutationFn: async (component: Omit<CompositeComponent, "id" | "created_at" | "updated_at">) => {
+      const { data, error } = await supabase
+        .from("composite_product_components")
+        .insert(component)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["composite-components", easyquoteProductId] });
+    },
+  });
+
+  // Update component mutation
+  const updateComponentMutation = useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<CompositeComponent> & { id: string }) => {
+      const { data, error } = await supabase
+        .from("composite_product_components")
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["composite-components", easyquoteProductId] });
+    },
+  });
+
+  // Delete component mutation
+  const deleteComponentMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("composite_product_components")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["composite-components", easyquoteProductId] });
+    },
+  });
+
   return {
     // Data
     prompts,
     outputs,
     components,
+    availableComponentProducts,
     organizationId,
 
     // Loading states
     promptsLoading,
     outputsLoading,
     componentsLoading,
+    availableComponentsLoading,
     isLoading: promptsLoading || outputsLoading || componentsLoading,
 
     // Refetch
@@ -260,5 +328,13 @@ export function useCompositeProductConfig(easyquoteProductId?: string) {
     isAddingOutput: addOutputMutation.isPending,
     isUpdatingOutput: updateOutputMutation.isPending,
     isDeletingOutput: deleteOutputMutation.isPending,
+
+    // Component mutations
+    addComponent: addComponentMutation.mutateAsync,
+    updateComponent: updateComponentMutation.mutateAsync,
+    deleteComponent: deleteComponentMutation.mutateAsync,
+    isAddingComponent: addComponentMutation.isPending,
+    isUpdatingComponent: updateComponentMutation.isPending,
+    isDeletingComponent: deleteComponentMutation.isPending,
   };
 }

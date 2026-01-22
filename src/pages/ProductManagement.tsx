@@ -2784,6 +2784,7 @@ export default function ProductManagement() {
                 <CompositeProductConfig 
                   easyquoteProductId={selectedProduct.id}
                   productName={selectedProduct.productName}
+                  availableProducts={products.map(p => ({ id: p.id, name: p.productName }))}
                 />
               </TabsContent>
             </Tabs>
