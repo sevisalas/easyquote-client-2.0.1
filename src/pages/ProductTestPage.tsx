@@ -124,13 +124,29 @@ export default function ProductTestPage() {
     setActiveCompositeComponents(components);
   }, []);
   
-  // Efecto para inicializar componentes activos cuando se cargan los configurados
+  // Mantener SIEMPRE activos los componentes obligatorios.
+  // Esto evita estados inconsistentes donde existen componentes configurados,
+  // pero activeCompositeComponents se queda vacío (y se muestra “No hay componentes activos”).
   useEffect(() => {
-    if (hasConfiguredComponents && activeCompositeComponents.length === 0) {
-      const initial = getInitialActiveComponents(configuredComponents);
-      setActiveCompositeComponents(initial);
-    }
-  }, [hasConfiguredComponents, configuredComponents, activeCompositeComponents.length]);
+    if (!hasConfiguredComponents) return;
+
+    const requiredInitial = getInitialActiveComponents(configuredComponents);
+    const sortByOrder = (arr: ActiveComponent[]) =>
+      [...arr].sort((a, b) => a.display_order - b.display_order);
+
+    setActiveCompositeComponents((prev) => {
+      // Si aún no hay activos, arrancar con los obligatorios.
+      if (prev.length === 0) return sortByOrder(requiredInitial);
+
+      const prevIds = new Set(prev.map((c) => c.id));
+      const missingRequired = requiredInitial.filter((c) => !prevIds.has(c.id));
+
+      // Si no falta ninguno, no tocar el estado (evita renders innecesarios).
+      if (missingRequired.length === 0) return prev;
+
+      return sortByOrder([...prev, ...missingRequired]);
+    });
+  }, [hasConfiguredComponents, configuredComponents]);
 
   // Determinar si el producto necesita selector de configuración (sistema legacy)
   const availableConfigs = useMemo(() => {
