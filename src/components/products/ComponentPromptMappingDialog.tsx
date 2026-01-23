@@ -18,9 +18,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
-import type { CompositeComponent, PromptConnection } from "@/hooks/useCompositeProductConfig";
+import type { CompositeComponent, PromptConnection, OutputAggregation } from "@/hooks/useCompositeProductConfig";
+import { OutputAggregationSection } from "./OutputAggregationSection";
 
 interface ComponentPromptMappingDialogProps {
   open: boolean;
@@ -30,10 +32,14 @@ interface ComponentPromptMappingDialogProps {
   parentPrompts: { name: string; label: string }[];
   /** Conexiones existentes */
   connections: PromptConnection[];
+  /** Agregaciones de outputs existentes */
+  outputAggregations: OutputAggregation[];
   organizationId: string;
   compositeProductId: string;
   onSave: (connections: Omit<PromptConnection, "id" | "created_at" | "updated_at">[]) => Promise<void>;
+  onSaveAggregations: (aggregations: Omit<OutputAggregation, "id" | "created_at" | "updated_at">[]) => Promise<void>;
   isSaving?: boolean;
+  isSavingAggregations?: boolean;
 }
 
 interface ComponentPromptDef {
@@ -51,10 +57,13 @@ export function ComponentPromptMappingDialog({
   component,
   parentPrompts,
   connections,
+  outputAggregations,
   organizationId,
   compositeProductId,
   onSave,
+  onSaveAggregations,
   isSaving,
+  isSavingAggregations,
 }: ComponentPromptMappingDialogProps) {
   // Cargar los prompts del componente desde la API de pricing (que devuelve labels reales)
   const { data: componentPrompts = [], isLoading } = useQuery({
@@ -238,6 +247,23 @@ export function ComponentPromptMappingDialog({
                 })}
               </div>
             </ScrollArea>
+
+            {/* Sección de agregación de outputs */}
+            <Separator className="my-4" />
+            <div>
+              <h4 className="text-sm font-medium mb-3">Agregación de datos de salida</h4>
+              <p className="text-xs text-muted-foreground mb-3">
+                Selecciona outputs de este componente para sumarlos en el producto padre
+              </p>
+              <OutputAggregationSection
+                componentProductId={component.component_product_id}
+                organizationId={organizationId}
+                compositeProductId={compositeProductId}
+                existingAggregations={outputAggregations}
+                onSave={onSaveAggregations}
+                isSaving={isSavingAggregations}
+              />
+            </div>
           </>
         )}
 
@@ -247,7 +273,7 @@ export function ComponentPromptMappingDialog({
           </Button>
           <Button onClick={handleSave} disabled={isSaving || isLoading}>
             {isSaving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-            Guardar configuración
+            Guardar datos de entrada
           </Button>
         </DialogFooter>
       </DialogContent>

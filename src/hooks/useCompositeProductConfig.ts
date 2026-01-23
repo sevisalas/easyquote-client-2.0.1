@@ -54,6 +54,18 @@ export interface PromptConnection {
   updated_at: string;
 }
 
+export interface OutputAggregation {
+  id: string;
+  organization_id: string;
+  composite_product_id: string;
+  source_output_name: string;
+  target_output_name: string;
+  target_output_label: string;
+  aggregation_type: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export const PROMPT_TYPES = [
   { value: "text", label: "Texto" },
   { value: "number", label: "Número" },
@@ -166,6 +178,26 @@ export function useCompositeProductConfig(
         .eq("composite_product_id", easyquoteProductId);
       if (error) throw error;
       return (data || []) as PromptConnection[];
+    },
+    enabled: !!easyquoteProductId && !!organizationId,
+  });
+
+  // Fetch output aggregations for composite product
+  const {
+    data: outputAggregations = [],
+    isLoading: aggregationsLoading,
+    refetch: refetchAggregations,
+  } = useQuery({
+    queryKey: ["composite-output-aggregations", easyquoteProductId, organizationId],
+    queryFn: async () => {
+      if (!easyquoteProductId || !organizationId) return [];
+      const { data, error } = await supabase
+        .from("composite_output_aggregations")
+        .select("*")
+        .eq("organization_id", organizationId)
+        .eq("composite_product_id", easyquoteProductId);
+      if (error) throw error;
+      return (data || []) as OutputAggregation[];
     },
     enabled: !!easyquoteProductId && !!organizationId,
   });
@@ -377,12 +409,45 @@ export function useCompositeProductConfig(
     },
   });
 
+  // Upsert output aggregation mutation
+  const upsertAggregationMutation = useMutation({
+    mutationFn: async (aggregation: Omit<OutputAggregation, "id" | "created_at" | "updated_at">) => {
+      const { data, error } = await supabase
+        .from("composite_output_aggregations")
+        .upsert(aggregation, {
+          onConflict: "composite_product_id,organization_id,source_output_name",
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["composite-output-aggregations", easyquoteProductId] });
+    },
+  });
+
+  // Delete output aggregation mutation
+  const deleteAggregationMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("composite_output_aggregations")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["composite-output-aggregations", easyquoteProductId] });
+    },
+  });
+
   return {
     // Data
     prompts,
     outputs,
     components,
     promptConnections,
+    outputAggregations,
     availableComponentProducts,
     organizationId,
 
@@ -391,14 +456,16 @@ export function useCompositeProductConfig(
     outputsLoading,
     componentsLoading,
     connectionsLoading,
+    aggregationsLoading,
     availableComponentsLoading,
-    isLoading: promptsLoading || outputsLoading || componentsLoading || connectionsLoading,
+    isLoading: promptsLoading || outputsLoading || componentsLoading || connectionsLoading || aggregationsLoading,
 
     // Refetch
     refetchPrompts,
     refetchOutputs,
     refetchComponents,
     refetchConnections,
+    refetchAggregations,
 
     // Prompt mutations
     addPrompt: addPromptMutation.mutateAsync,
@@ -430,5 +497,11 @@ export function useCompositeProductConfig(
     deleteConnectionsByComponent: deleteConnectionsByComponentMutation.mutateAsync,
     isUpsertingConnection: upsertConnectionMutation.isPending,
     isDeletingConnection: deleteConnectionMutation.isPending,
+
+    // Aggregation mutations
+    upsertAggregation: upsertAggregationMutation.mutateAsync,
+    deleteAggregation: deleteAggregationMutation.mutateAsync,
+    isUpsertingAggregation: upsertAggregationMutation.isPending,
+    isDeletingAggregation: deleteAggregationMutation.isPending,
   };
 }

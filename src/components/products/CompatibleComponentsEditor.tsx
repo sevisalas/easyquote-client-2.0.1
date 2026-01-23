@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import type { CompositeComponent, PromptConnection } from "@/hooks/useCompositeProductConfig";
+import type { CompositeComponent, PromptConnection, OutputAggregation } from "@/hooks/useCompositeProductConfig";
 import { ComponentPromptMappingDialog } from "./ComponentPromptMappingDialog";
 
 interface CompatibleComponentsEditorProps {
@@ -32,14 +32,18 @@ interface CompatibleComponentsEditorProps {
   parentPrompts: { name: string; label: string }[];
   /** Conexiones de prompts existentes */
   promptConnections: PromptConnection[];
+  /** Agregaciones de outputs existentes */
+  outputAggregations: OutputAggregation[];
   onAdd: (component: Omit<CompositeComponent, "id" | "created_at" | "updated_at">) => Promise<any>;
   onUpdate: (update: Partial<CompositeComponent> & { id: string }) => Promise<any>;
   onDelete: (id: string) => Promise<void>;
   onSaveConnections: (componentProductId: string, connections: Omit<PromptConnection, "id" | "created_at" | "updated_at">[]) => Promise<void>;
+  onSaveAggregations: (aggregations: Omit<OutputAggregation, "id" | "created_at" | "updated_at">[]) => Promise<void>;
   isAdding?: boolean;
   isUpdating?: boolean;
   isDeleting?: boolean;
   isSavingConnections?: boolean;
+  isSavingAggregations?: boolean;
 }
 
 export function CompatibleComponentsEditor({
@@ -49,14 +53,17 @@ export function CompatibleComponentsEditor({
   availableProducts,
   parentPrompts,
   promptConnections,
+  outputAggregations,
   onAdd,
   onUpdate,
   onDelete,
   onSaveConnections,
+  onSaveAggregations,
   isAdding,
   isUpdating,
   isDeleting,
   isSavingConnections,
+  isSavingAggregations,
 }: CompatibleComponentsEditorProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
@@ -288,7 +295,7 @@ export function CompatibleComponentsEditor({
         </DialogContent>
       </Dialog>
 
-      {/* Diálogo de configuración de prompts del componente */}
+      {/* Diálogo de configuración de prompts y outputs del componente */}
       {configuringComponent && (
         <ComponentPromptMappingDialog
           open={!!configuringComponent}
@@ -296,12 +303,15 @@ export function CompatibleComponentsEditor({
           component={configuringComponent}
           parentPrompts={parentPrompts}
           connections={promptConnections}
+          outputAggregations={outputAggregations}
           organizationId={organizationId}
           compositeProductId={easyquoteProductId}
           onSave={async (connections) => {
             await onSaveConnections(configuringComponent.component_product_id, connections);
           }}
+          onSaveAggregations={onSaveAggregations}
           isSaving={isSavingConnections}
+          isSavingAggregations={isSavingAggregations}
         />
       )}
     </div>
