@@ -2018,17 +2018,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                     {hasConfiguredComponents ? (
                       isCompositeReady ? (
                         <>
-                          {/* Selector de componentes para añadir/quitar opcionales */}
-                          {configuredComponents.some(c => c.is_optional) && (
-                            <div className="mb-4">
-                              <CompositeComponentsSelector
-                                configuredComponents={configuredComponents}
-                                activeComponents={activeCompositeComponents}
-                                onActiveComponentsChange={setActiveCompositeComponents}
-                                compact
-                              />
-                            </div>
-                          )}
+                          {/* Selector de componentes: siempre visible para mostrar los activos */}
+                          <div className="mb-4">
+                            <label className="text-sm font-medium mb-2 block">Componentes del producto</label>
+                            <CompositeComponentsSelector
+                              configuredComponents={configuredComponents}
+                              activeComponents={activeCompositeComponents}
+                              onActiveComponentsChange={setActiveCompositeComponents}
+                              compact
+                            />
+                          </div>
                           
                           <CompositeComponentTabs
                             parentProductId={productId}
@@ -2268,19 +2267,115 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                           )}
                         </div>
 
-                        {/* Outputs del padre */}
-                        {compositeParentOutputs.length > 0 && (
-                          <div className="space-y-2">
-                            {compositeParentOutputs
-                              .filter((o: any) => o.type !== 'Price' && o.type !== 'Image')
-                              .map((o: any, idx: number) => (
-                                <div key={idx} className="flex items-center justify-between text-sm px-1">
-                                  <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
-                                  <span className="truncate ml-2">{String(o.value)}</span>
+                        {/* Datos de salida: generales del padre + tabs para componente seleccionado */}
+                        {(() => {
+                          // Outputs del padre (ancho, alto, etc.)
+                          const parentTextOutputs: { label: string; value: string }[] = [];
+                          
+                          (compositeParentOutputs || []).forEach((o: any) => {
+                            const value = String(o?.value ?? "");
+                            const type = String(o?.type || o?.outputType || "").toLowerCase();
+                            const label = o.label || o.name || "";
+                            
+                            if (type !== "price" && value.trim() && !/^https?:\/\//i.test(value)) {
+                              parentTextOutputs.push({ label, value });
+                            }
+                          });
+
+                          // Obtener outputs del componente seleccionado
+                          const selectedCompData = compositeComponentsData[activeComponent];
+                          const selectedOutputs = selectedCompData?.outputs || [];
+                          const selectedTextOutputs: { label: string; value: string }[] = [];
+                          const selectedImageOutputs: { label: string; value: string }[] = [];
+
+                          selectedOutputs.forEach((o: any) => {
+                            const value = String(o?.value ?? "");
+                            const type = String(o?.type || o?.outputType || "").toLowerCase();
+                            const label = o.label || o.name || "";
+                            
+                            if (/^https?:\/\//i.test(value)) {
+                              selectedImageOutputs.push({ label, value });
+                            } else if (type !== "price" && value.trim()) {
+                              selectedTextOutputs.push({ label, value });
+                            }
+                          });
+
+                          const hasAnyLoading = Object.values(compositeComponentsData).some((d: any) => d?.isLoading);
+                          const componentEntries = Object.entries(compositeComponentsData);
+
+                          if (hasAnyLoading) {
+                            return <p className="text-sm text-muted-foreground">Calculando datos de salida...</p>;
+                          }
+
+                          return (
+                            <>
+                              {/* Outputs generales del padre (ancho, alto, etc.) */}
+                              {parentTextOutputs.length > 0 && (
+                                <div className="space-y-2 text-sm">
+                                  {parentTextOutputs.map((output, index) => (
+                                    <div key={`parent-${index}`} className="flex justify-between px-1">
+                                      <span className="text-muted-foreground">{output.label}</span>
+                                      <span className="font-medium truncate ml-2">{output.value}</span>
+                                    </div>
+                                  ))}
                                 </div>
-                              ))}
-                          </div>
-                        )}
+                              )}
+
+                              {/* Tabs y outputs del componente seleccionado */}
+                              {componentEntries.length > 0 && (
+                                <div className="border-t pt-4 mt-4 space-y-4">
+                                  {componentEntries.length > 1 && (
+                                    <Tabs value={activeComponent} onValueChange={setActiveComponent}>
+                                      <TabsList className="w-full">
+                                        {componentEntries.map(([compId, data]) => (
+                                          <TabsTrigger key={compId} value={compId} className="flex-1">
+                                            {(data as any).alias}
+                                          </TabsTrigger>
+                                        ))}
+                                      </TabsList>
+                                    </Tabs>
+                                  )}
+                                  
+                                  {componentEntries.length === 1 && selectedCompData && (
+                                    <h4 className="font-semibold text-sm">{selectedCompData.alias}</h4>
+                                  )}
+
+                                  {selectedCompData && (
+                                    <div className="space-y-2 text-sm">
+                                      <div className="flex justify-between px-1">
+                                        <span className="text-muted-foreground">Precio</span>
+                                        <span className="font-medium">{formatEUR(selectedCompData.price ?? 0)}</span>
+                                      </div>
+                                      {selectedTextOutputs.map((output, index) => (
+                                        <div key={`sel-${index}`} className="flex justify-between px-1">
+                                          <span className="text-muted-foreground">{output.label}</span>
+                                          <span className="font-medium truncate ml-2">{output.value}</span>
+                                        </div>
+                                      ))}
+                                      {selectedImageOutputs.length > 0 && (
+                                        <div className="space-y-3 pt-2">
+                                          {selectedImageOutputs.map((output, index) => (
+                                            <div key={`sel-img-${index}`} className="space-y-2">
+                                              <div className="text-sm font-medium">{output.label}</div>
+                                              <img src={output.value} alt={output.label || `Imagen ${index + 1}`} className="w-full max-w-md rounded border" />
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                      {selectedTextOutputs.length === 0 && selectedImageOutputs.length === 0 && (
+                                        <p className="text-muted-foreground">Sin datos de salida</p>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {parentTextOutputs.length === 0 && componentEntries.length === 0 && (
+                                <p className="text-sm text-muted-foreground">Sin datos de salida adicionales</p>
+                              )}
+                            </>
+                          );
+                        })()}
                       </>
                     )}
 
