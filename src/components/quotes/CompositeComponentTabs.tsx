@@ -401,7 +401,7 @@ export default function CompositeComponentTabs({
               <h5 className="text-sm font-semibold text-muted-foreground mb-3">
                 Opciones restrictivas
               </h5>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-2">
                 {parentForceResultPrompts.map((prompt) => {
                   const effectiveValue = parentPromptValues[prompt.id];
                   const value = effectiveValue && typeof effectiveValue === 'object' && 'value' in effectiveValue 
