@@ -92,27 +92,32 @@ export function OutputAggregationSection({
       }) as ComponentOutputDef[];
   };
 
-  // Cargar las definiciones de outputs del componente (no requiere inputs, nunca falla por 500)
-  const { data: componentOutputs = [], isLoading } = useQuery({
-    queryKey: ["component-outputs-list", componentProductId],
+  // Cargar los outputs del componente desde easyquote-pricing (GET) que devuelve labels reales
+  const { data: componentOutputs = [], isLoading, isError } = useQuery({
+    queryKey: ["component-outputs-pricing", componentProductId],
     queryFn: async () => {
       const token = await getEasyQuoteToken();
       if (!token) return [];
 
-      const { data, error } = await invokeEasyQuoteFunction<any>("easyquote-outputs", {
+      // Usamos easyquote-pricing con GET que devuelve outputValues con labels reales
+      const { data, error } = await invokeEasyQuoteFunction<any>("easyquote-pricing", {
         token,
         productId: componentProductId,
+        method: "GET",
       });
 
       if (error) {
-        console.error("Error fetching component outputs list:", error);
-        return [];
+        console.error("Error fetching component outputs:", error);
+        throw new Error("No se pudieron cargar los outputs del componente");
       }
 
-      return normalizeOutputs(data);
+      // La respuesta puede tener los outputs en outputValues o outputs
+      const outputs = data?.outputValues ?? data?.outputs ?? [];
+      return normalizeOutputs(outputs);
     },
     enabled: !!componentProductId,
     staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 
   // Estado local: source_output_name -> { target_output_name, target_output_label }
@@ -185,6 +190,14 @@ export function OutputAggregationSection({
     return (
       <div className="flex items-center justify-center py-4">
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="text-sm text-destructive text-center py-4">
+        Error al cargar los outputs. Verifica que el producto esté configurado correctamente.
       </div>
     );
   }
