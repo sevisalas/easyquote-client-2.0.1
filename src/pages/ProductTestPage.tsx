@@ -125,12 +125,26 @@ export default function ProductTestPage() {
   }, []);
   
   // Efecto para inicializar componentes activos cuando se cargan los configurados
+  // Se usa un ref para trackear el último productId inicializado y evitar reinicializaciones innecesarias
+  const lastInitializedProductRef = useRef<string | null>(null);
+  
   useEffect(() => {
-    if (hasConfiguredComponents && activeCompositeComponents.length === 0) {
-      const initial = getInitialActiveComponents(configuredComponents);
-      setActiveCompositeComponents(initial);
+    // Solo inicializar si:
+    // 1. Hay componentes configurados
+    // 2. No hemos inicializado este producto todavía O los componentes activos están vacíos
+    if (hasConfiguredComponents && configuredComponents.length > 0) {
+      const shouldInitialize = 
+        lastInitializedProductRef.current !== productId || 
+        activeCompositeComponents.length === 0;
+      
+      if (shouldInitialize) {
+        console.log("[ProductTestPage] Initializing active components for product:", productId, configuredComponents);
+        const initial = getInitialActiveComponents(configuredComponents);
+        setActiveCompositeComponents(initial);
+        lastInitializedProductRef.current = productId;
+      }
     }
-  }, [hasConfiguredComponents, configuredComponents, activeCompositeComponents.length]);
+  }, [hasConfiguredComponents, configuredComponents, productId, activeCompositeComponents.length]);
 
   // Determinar si el producto necesita selector de configuración (sistema legacy)
   const availableConfigs = useMemo(() => {
