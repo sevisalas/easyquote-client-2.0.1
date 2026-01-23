@@ -1544,27 +1544,27 @@ export default function ProductTestPage() {
                             }
 
                             return (
-                              <div className="space-y-2">
+                              <>
                                 {/* Outputs generales del padre (ancho, alto, etc.) */}
                                 {parentTextOutputs.length > 0 && (
-                                  <div className="text-sm">
+                                  <div className="space-y-2 text-sm">
                                     {parentTextOutputs.map((output, index) => (
                                       <div key={`parent-${index}`} className="flex justify-between">
-                                        <span className="text-muted-foreground">{output.label}</span>
+                                        <span>{output.label}</span>
                                         <span className="font-medium">{output.value}</span>
                                       </div>
                                     ))}
                                   </div>
                                 )}
 
-                                {/* Tabs de componentes para outputs */}
+                                {/* Tabs y outputs del componente seleccionado */}
                                 {componentEntries.length > 0 && (
-                                  <div className="pt-2 border-t space-y-2">
+                                  <div className="border-t pt-4 mt-4 space-y-4">
                                     {componentEntries.length > 1 && (
                                       <Tabs value={selectedComponent} onValueChange={setSelectedComponent}>
-                                        <TabsList className="h-8">
+                                        <TabsList>
                                           {componentEntries.map(([compId, data]) => (
-                                            <TabsTrigger key={compId} value={compId} className="text-xs px-3">
+                                            <TabsTrigger key={compId} value={compId}>
                                               {(data as any).alias}
                                             </TabsTrigger>
                                           ))}
@@ -1573,27 +1573,31 @@ export default function ProductTestPage() {
                                     )}
                                     
                                     {componentEntries.length === 1 && selectedCompData && (
-                                      <h4 className="font-medium text-sm">{selectedCompData.alias}</h4>
+                                      <h4 className="font-semibold text-sm">{selectedCompData.alias}</h4>
                                     )}
 
                                     {selectedCompData && (
-                                      <div className="text-sm">
+                                      <div className="space-y-2 text-sm">
                                         <div className="flex justify-between">
-                                          <span className="text-muted-foreground">Precio</span>
+                                          <span>Precio</span>
                                           <span className="font-medium">{formatCurrency(selectedCompData.price ?? 0)}</span>
                                         </div>
                                         {selectedTextOutputs.map((output, index) => (
                                           <div key={`sel-${index}`} className="flex justify-between">
-                                            <span className="text-muted-foreground">{output.label}</span>
+                                            <span>{output.label}</span>
                                             <span className="font-medium">{output.value}</span>
                                           </div>
                                         ))}
-                                        {selectedImageOutputs.map((output, index) => (
-                                          <div key={`sel-img-${index}`} className="mt-2">
-                                            <div className="text-muted-foreground text-xs">{output.label}</div>
-                                            <img src={output.value} alt={output.label || `Imagen ${index + 1}`} className="w-full max-w-xs rounded border mt-1" />
+                                        {selectedImageOutputs.length > 0 && (
+                                          <div className="space-y-3 pt-2">
+                                            {selectedImageOutputs.map((output, index) => (
+                                              <div key={`sel-img-${index}`} className="space-y-2">
+                                                <div className="text-sm font-medium">{output.label}</div>
+                                                <img src={output.value} alt={output.label || `Imagen ${index + 1}`} className="w-full max-w-md rounded border" />
+                                              </div>
+                                            ))}
                                           </div>
-                                        ))}
+                                        )}
                                         {selectedTextOutputs.length === 0 && selectedImageOutputs.length === 0 && (
                                           <p className="text-muted-foreground">Sin datos de salida</p>
                                         )}
@@ -1605,7 +1609,7 @@ export default function ProductTestPage() {
                                 {parentTextOutputs.length === 0 && componentEntries.length === 0 && (
                                   <p className="text-sm text-muted-foreground">Sin datos de salida adicionales</p>
                                 )}
-                              </div>
+                              </>
                             );
                           })()}
                         </>
