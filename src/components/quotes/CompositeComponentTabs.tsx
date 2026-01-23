@@ -529,12 +529,18 @@ export default function CompositeComponentTabs({
     const componentData = componentsData[componentId];
     if (!componentData) return [];
 
-    // Importante: aquí NO excluimos prompts mapeados.
-    // Si un prompt force_result del componente está mapeado desde el padre, igualmente
-    // debe visualizarse en “Opciones restrictivas” (readonly) para evitar que “falte”.
+    const mappedIds = getMappedPromptIds(componentId);
+
+    // Filtrar: solo prompts force_result que:
+    // 1. NO estén mapeados (los mapeados ya se ven en el padre, ej: Tarifa/B10)
+    // 2. Si no es admin, excluir admin_only
     return componentData.prompts.filter((p: any) => {
       const id = String(p.id);
+      // Excluir mapeados (heredados del padre)
+      if (mappedIds.has(id)) return false;
+      // Solo incluir si es force_result
       if (!isComponentPromptForceResult(componentId, id)) return false;
+      // Excluir admin_only si no es admin
       if (!isAdmin && isComponentPromptAdminOnly(componentId, id)) return false;
       return true;
     });
