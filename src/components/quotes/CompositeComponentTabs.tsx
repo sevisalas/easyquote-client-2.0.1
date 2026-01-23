@@ -384,7 +384,49 @@ export default function CompositeComponentTabs({
     return mappedIds;
   };
 
-  // Crear producto virtual para el componente (SOLO prompts NO mapeados - los heredados se excluyen)
+  // Hook para obtener configuración de force_result de cada componente
+  // Usamos useQueries para obtener la configuración de todos los componentes activos
+  const componentPromptSettingsQueries = useQueries({
+    queries: activeComponents.map((component) => ({
+      queryKey: ["component-prompt-settings", component.component_product_id],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from("product_prompt_settings")
+          .select("*")
+          .eq("easyquote_product_id", component.component_product_id);
+        if (error) throw error;
+        return { componentId: component.id, productId: component.component_product_id, settings: data || [] };
+      },
+      enabled: !!component.component_product_id,
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+
+  // Mapa: componentId -> Set de prompt_names que son force_result
+  const componentForceResultMap = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const query of componentPromptSettingsQueries) {
+      if (query.data) {
+        const forceResultNames = new Set<string>();
+        for (const setting of query.data.settings as any[]) {
+          if (setting.force_result) {
+            forceResultNames.add(normalizePromptName(setting.prompt_name));
+          }
+        }
+        map.set(query.data.componentId, forceResultNames);
+      }
+    }
+    return map;
+  }, [componentPromptSettingsQueries]);
+
+  // Verificar si un prompt de un componente es force_result
+  const isComponentPromptForceResult = useCallback((componentId: string, promptName: string): boolean => {
+    const forceResultSet = componentForceResultMap.get(componentId);
+    if (!forceResultSet) return false;
+    return forceResultSet.has(normalizePromptName(promptName));
+  }, [componentForceResultMap]);
+
+  // Crear producto virtual para el componente (SOLO prompts NO mapeados y NO force_result)
   const createComponentProduct = (componentId: string) => {
     const componentData = componentsData[componentId];
     if (!componentData) return null;
@@ -398,12 +440,32 @@ export default function CompositeComponentTabs({
       mappedIds: Array.from(mappedIds),
     });
     
-    // Filtrar: solo prompts NO mapeados (los mapeados vienen del padre)
-    const prompts = componentData.prompts.filter((p: any) => !mappedIds.has(String(p.id)));
+    // Filtrar: solo prompts NO mapeados (los mapeados vienen del padre) y NO force_result
+    const prompts = componentData.prompts.filter((p: any) => {
+      if (mappedIds.has(String(p.id))) return false;
+      // Excluir force_result (se mostrarán en sección aparte)
+      const cellRef = extractCellRef(p.id) ?? normalizePromptName(p.id);
+      return !isComponentPromptForceResult(componentId, cellRef);
+    });
     
     console.log("[CompositeComponentTabs] filtered prompts", prompts.length);
 
     return { prompts };
+  };
+
+  // Obtener prompts force_result de un componente
+  const getComponentForceResultPrompts = (componentId: string): any[] => {
+    const componentData = componentsData[componentId];
+    if (!componentData) return [];
+
+    const mappedIds = getMappedPromptIds(componentId);
+    
+    // Filtrar: solo prompts NO mapeados que SÍ son force_result
+    return componentData.prompts.filter((p: any) => {
+      if (mappedIds.has(String(p.id))) return false;
+      const cellRef = extractCellRef(p.id) ?? normalizePromptName(p.id);
+      return isComponentPromptForceResult(componentId, cellRef);
+    });
   };
 
   // Obtener valores de prompts para un componente específico
@@ -550,14 +612,15 @@ export default function CompositeComponentTabs({
                 if (component.id !== activeTab) return null;
                 const componentProduct = createComponentProduct(component.id);
                 const componentValues = getComponentPromptValues(component.id);
-                const isLoading = componentsData[component.id]?.isLoading;
+                const componentForceResultPrompts = getComponentForceResultPrompts(component.id);
+                const isLoadingComponent = componentsData[component.id]?.isLoading;
 
                 return (
                   <div key={component.id}>
                     <h4 className="text-sm font-medium text-muted-foreground mb-3">
                       {getComponentLabel(component)}
                     </h4>
-                    {isLoading ? (
+                    {isLoadingComponent ? (
                       <p className="text-sm text-muted-foreground">Cargando...</p>
                     ) : componentProduct?.prompts?.length ? (
                       <PromptsForm
@@ -571,6 +634,70 @@ export default function CompositeComponentTabs({
                       <p className="text-sm text-muted-foreground">
                         Sin opciones para este componente
                       </p>
+                    )}
+                    
+                    {/* Sección: Opciones restrictivas del componente */}
+                    {componentForceResultPrompts.length > 0 && (
+                      <div className="border-t pt-4 mt-4">
+                        <h5 className="text-sm font-semibold text-muted-foreground mb-3">
+                          Opciones restrictivas
+                        </h5>
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                          {componentForceResultPrompts.map((prompt: any) => {
+                            const value = componentValues[prompt.id] ?? prompt.currentValue ?? prompt.default;
+                            
+                            // Checkbox type
+                            if (prompt.type === 'checkbox' || prompt.promptType === 'checkbox') {
+                              const isChecked = value === true || value === "true" || value === "Sí" || value === "Si" || value === 1 || value === "1";
+                              return (
+                                <div key={prompt.id} className="flex items-center gap-2 py-1">
+                                  <span className="text-sm">{prompt.promptText || prompt.label || prompt.id}</span>
+                                  <Checkbox
+                                    id={`restrictive-component-${prompt.id}`}
+                                    checked={isChecked}
+                                    disabled // Componentes son readonly
+                                  />
+                                </div>
+                              );
+                            }
+                            
+                            // Select type
+                            const options = prompt.options || prompt.values || [];
+                            if ((prompt.type === 'select' || prompt.promptType === 'select') && options.length) {
+                              return (
+                                <div key={prompt.id} className="flex items-center gap-2 py-1">
+                                  <span className="text-sm">{prompt.promptText || prompt.label || prompt.id}</span>
+                                  <Select value={String(value ?? '')} disabled>
+                                    <SelectTrigger className="h-8 w-auto min-w-[100px]">
+                                      <SelectValue placeholder="—" />
+                                    </SelectTrigger>
+                                    <SelectContent className="z-50 bg-popover">
+                                      {options.map((o: any, idx: number) => (
+                                        <SelectItem key={`${o.value ?? o}-${idx}`} value={String(o.value ?? o)}>
+                                          {o.label ?? o.value ?? o}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              );
+                            }
+                            
+                            // Number/Integer/Text type
+                            return (
+                              <div key={prompt.id} className="flex items-center gap-2 py-1">
+                                <span className="text-sm">{prompt.promptText || prompt.label || prompt.id}</span>
+                                <Input
+                                  type={prompt.type === 'number' || prompt.type === 'integer' ? 'number' : 'text'}
+                                  className="h-8 w-24"
+                                  value={value ?? ''}
+                                  disabled // Componentes son readonly
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     )}
                   </div>
                 );
