@@ -1544,14 +1544,14 @@ export default function ProductTestPage() {
                             }
 
                             return (
-                              <div className="space-y-4">
+                              <div className="space-y-2">
                                 {/* Outputs generales del padre (ancho, alto, etc.) */}
                                 {parentTextOutputs.length > 0 && (
-                                  <div className="space-y-1.5 text-sm">
+                                  <div className="text-sm">
                                     {parentTextOutputs.map((output, index) => (
-                                      <div key={`parent-${index}`} className="flex justify-between py-1 border-b border-border/50 last:border-0">
+                                      <div key={`parent-${index}`} className="flex justify-between">
                                         <span className="text-muted-foreground">{output.label}</span>
-                                        <span className="font-medium text-right max-w-[60%]">{output.value}</span>
+                                        <span className="font-medium">{output.value}</span>
                                       </div>
                                     ))}
                                   </div>
@@ -1559,13 +1559,12 @@ export default function ProductTestPage() {
 
                                 {/* Tabs de componentes para outputs */}
                                 {componentEntries.length > 0 && (
-                                  <div className="space-y-3 pt-2 border-t">
-                                    {/* Solo mostrar tabs si hay más de un componente */}
+                                  <div className="pt-2 border-t space-y-2">
                                     {componentEntries.length > 1 && (
-                                      <Tabs value={selectedComponent} onValueChange={setSelectedComponent} className="w-full">
-                                        <TabsList className="w-full justify-start">
+                                      <Tabs value={selectedComponent} onValueChange={setSelectedComponent}>
+                                        <TabsList className="h-8">
                                           {componentEntries.map(([compId, data]) => (
-                                            <TabsTrigger key={compId} value={compId}>
+                                            <TabsTrigger key={compId} value={compId} className="text-xs px-3">
                                               {(data as any).alias}
                                             </TabsTrigger>
                                           ))}
@@ -1573,42 +1572,30 @@ export default function ProductTestPage() {
                                       </Tabs>
                                     )}
                                     
-                                    {/* Título del componente si solo hay uno */}
                                     {componentEntries.length === 1 && selectedCompData && (
-                                      <h4 className="font-medium">{selectedCompData.alias}</h4>
+                                      <h4 className="font-medium text-sm">{selectedCompData.alias}</h4>
                                     )}
 
-                                    {/* Outputs del componente seleccionado */}
                                     {selectedCompData && (
-                                      <div className="space-y-3">
-                                        {/* Precio del componente */}
-                                        <div className="flex justify-between py-1 text-sm">
+                                      <div className="text-sm">
+                                        <div className="flex justify-between">
                                           <span className="text-muted-foreground">Precio</span>
                                           <span className="font-medium">{formatCurrency(selectedCompData.price ?? 0)}</span>
                                         </div>
-
-                                        {/* Outputs de texto */}
                                         {selectedTextOutputs.map((output, index) => (
-                                          <div key={`sel-${index}`} className="flex justify-between py-1 border-b border-border/50 last:border-0 text-sm">
+                                          <div key={`sel-${index}`} className="flex justify-between">
                                             <span className="text-muted-foreground">{output.label}</span>
-                                            <span className="font-medium text-right max-w-[60%]">{output.value}</span>
+                                            <span className="font-medium">{output.value}</span>
                                           </div>
                                         ))}
-
-                                        {/* Imágenes del componente */}
                                         {selectedImageOutputs.map((output, index) => (
-                                          <div key={`sel-img-${index}`} className="space-y-1">
-                                            <div className="text-sm text-muted-foreground">{output.label}</div>
-                                            <img 
-                                              src={output.value} 
-                                              alt={output.label || `Imagen ${index + 1}`} 
-                                              className="w-full max-w-md rounded border" 
-                                            />
+                                          <div key={`sel-img-${index}`} className="mt-2">
+                                            <div className="text-muted-foreground text-xs">{output.label}</div>
+                                            <img src={output.value} alt={output.label || `Imagen ${index + 1}`} className="w-full max-w-xs rounded border mt-1" />
                                           </div>
                                         ))}
-
                                         {selectedTextOutputs.length === 0 && selectedImageOutputs.length === 0 && (
-                                          <p className="text-sm text-muted-foreground">Sin datos de salida para este componente</p>
+                                          <p className="text-muted-foreground">Sin datos de salida</p>
                                         )}
                                       </div>
                                     )}
