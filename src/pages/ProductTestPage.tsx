@@ -125,6 +125,18 @@ export default function ProductTestPage() {
   const handleActiveComponentsChange = useCallback((components: ActiveComponent[]) => {
     setActiveCompositeComponents(components);
   }, []);
+
+  // Al cambiar de producto: resetear UI de compuestos ANTES de rehidratar obligatorios.
+  // Importante: esto evita que se queden componentes “fantasma” de otro producto,
+  // y también evita el caso de que se queden vacíos y parezca que “se han borrado”.
+  useEffect(() => {
+    if (!productId) return;
+    setSelectedComponent("general");
+    setActiveCompositeComponents([]);
+    setCompositeComponentsData({});
+    setCompositeTotalPrice(0);
+    setCompositeParentOutputs([]);
+  }, [productId]);
   
   // Mantener SIEMPRE activos los componentes obligatorios.
   // Esto evita estados inconsistentes donde existen componentes configurados,
@@ -428,7 +440,6 @@ export default function ProductTestPage() {
         setDiagnosticResult(null);
         setProductLoadError(null);
         setBoundProductConfig(null);
-        setActiveCompositeComponents([]); // Clear active components when changing product
         setProductDetail(null); // Clear previous product detail
       }
 
