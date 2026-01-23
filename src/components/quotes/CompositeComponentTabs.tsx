@@ -258,14 +258,34 @@ export default function CompositeComponentTabs({
   const activeComponentData = activeTab ? componentsData[activeTab] : null;
 
   return (
-    <div className="space-y-4">
-      {/* Header con título */}
-      <h3 className="font-medium">Configuración del producto</h3>
+    <div className="space-y-3">
+      {/* Header con título y tabs de componentes en la misma línea */}
+      <div className="flex items-center justify-between">
+        <h3 className="font-medium">Configuración del producto</h3>
+        {activeComponents.length > 0 && (
+          <Tabs value={activeTab} onValueChange={handleTabChange}>
+            <TabsList className="h-auto gap-1">
+              {activeComponents.map((component) => (
+                <TabsTrigger 
+                  key={component.id} 
+                  value={component.id}
+                  className="relative flex items-center gap-1.5"
+                >
+                  {getComponentLabel(component)}
+                  {componentsData[component.id]?.isLoading && (
+                    <span className="text-xs text-muted-foreground">...</span>
+                  )}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        )}
+      </div>
 
-      {/* Layout de dos columnas: Izquierda=Padre, Derecha=Componente */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+      {/* Layout de dos columnas alineadas arriba */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
         {/* COLUMNA IZQUIERDA: Prompts del producto padre (generales) */}
-        <div className="rounded-lg border border-border bg-card p-4 self-start">
+        <div className="rounded-lg border border-border bg-card p-4">
           <h4 className="text-sm font-medium text-muted-foreground mb-3">Datos generales</h4>
           {parentProduct?.prompts ? (
             <PromptsForm
@@ -282,31 +302,20 @@ export default function CompositeComponentTabs({
         </div>
 
         {/* COLUMNA DERECHA: Prompts del componente seleccionado */}
-        <div className="rounded-lg border border-border bg-card p-4 self-start">
+        <div className="rounded-lg border border-border bg-card p-4">
           {activeComponents.length > 0 ? (
-            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className="flex-wrap h-auto gap-1 mb-4">
-                {activeComponents.map((component) => (
-                  <TabsTrigger 
-                    key={component.id} 
-                    value={component.id}
-                    className="relative flex items-center gap-1.5"
-                  >
-                    {getComponentLabel(component)}
-                    {componentsData[component.id]?.isLoading && (
-                      <span className="text-xs text-muted-foreground">...</span>
-                    )}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-
+            <>
               {activeComponents.map((component) => {
+                if (component.id !== activeTab) return null;
                 const componentProduct = createComponentProduct(component.id);
                 const componentValues = getComponentPromptValues(component.id);
                 const isLoading = componentsData[component.id]?.isLoading;
 
                 return (
-                  <TabsContent key={component.id} value={component.id} className="mt-0">
+                  <div key={component.id}>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-3">
+                      {getComponentLabel(component)}
+                    </h4>
                     {isLoading ? (
                       <p className="text-sm text-muted-foreground">Cargando...</p>
                     ) : componentProduct?.prompts?.length ? (
@@ -322,10 +331,10 @@ export default function CompositeComponentTabs({
                         Sin opciones para este componente
                       </p>
                     )}
-                  </TabsContent>
+                  </div>
                 );
               })}
-            </Tabs>
+            </>
           ) : (
             <p className="text-sm text-muted-foreground">No hay componentes activos</p>
           )}
