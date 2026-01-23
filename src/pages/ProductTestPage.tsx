@@ -1502,11 +1502,27 @@ export default function ProductTestPage() {
                             )}
                           </div>
 
-                          {/* Datos de salida generales (agregados de todos los componentes) */}
+                          {/* Datos de salida generales (padre) + agregados de componentes */}
                           {(() => {
-                            // Recopilar todos los outputs de texto de todos los componentes
-                            const allTextOutputs: { componentAlias: string; label: string; value: string }[] = [];
-                            const allImageOutputs: { componentAlias: string; label: string; value: string }[] = [];
+                            // Outputs del padre (ancho, alto, etc.) - van primero como "generales"
+                            const parentTextOutputs: { label: string; value: string }[] = [];
+                            const parentImageOutputs: { label: string; value: string }[] = [];
+                            
+                            (compositeParentOutputs || []).forEach((o: any) => {
+                              const value = String(o?.value ?? "");
+                              const type = String(o?.type || o?.outputType || "").toLowerCase();
+                              const label = o.label || o.name || "";
+                              
+                              if (/^https?:\/\//i.test(value)) {
+                                parentImageOutputs.push({ label, value });
+                              } else if (type !== "price" && value.trim()) {
+                                parentTextOutputs.push({ label, value });
+                              }
+                            });
+
+                            // Outputs de los componentes
+                            const componentTextOutputs: { componentAlias: string; label: string; value: string }[] = [];
+                            const componentImageOutputs: { componentAlias: string; label: string; value: string }[] = [];
 
                             Object.entries(compositeComponentsData).forEach(([, data]) => {
                               const compData = data as any;
@@ -1517,9 +1533,9 @@ export default function ProductTestPage() {
                                 const label = o.label || o.name || "";
                                 
                                 if (/^https?:\/\//i.test(value)) {
-                                  allImageOutputs.push({ componentAlias: compData.alias, label, value });
+                                  componentImageOutputs.push({ componentAlias: compData.alias, label, value });
                                 } else if (type !== "price" && value.trim()) {
-                                  allTextOutputs.push({ componentAlias: compData.alias, label, value });
+                                  componentTextOutputs.push({ componentAlias: compData.alias, label, value });
                                 }
                               });
                             });
@@ -1532,13 +1548,28 @@ export default function ProductTestPage() {
 
                             return (
                               <div className="space-y-4">
-                                {/* Outputs de texto generales */}
-                                {allTextOutputs.length > 0 && (
+                                {/* Outputs de texto del padre (ancho, alto, etc.) */}
+                                {parentTextOutputs.length > 0 && (
                                   <div className="space-y-2">
-                                    <h4 className="text-sm font-medium text-muted-foreground">Datos de salida</h4>
+                                    <h4 className="text-sm font-medium text-muted-foreground">Datos generales</h4>
                                     <div className="space-y-1.5 text-sm">
-                                      {allTextOutputs.map((output, index) => (
-                                        <div key={index} className="flex justify-between py-1 border-b border-border/50 last:border-0">
+                                      {parentTextOutputs.map((output, index) => (
+                                        <div key={`parent-${index}`} className="flex justify-between py-1 border-b border-border/50 last:border-0">
+                                          <span className="text-muted-foreground">{output.label}</span>
+                                          <span className="font-medium text-right max-w-[60%]">{output.value}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Outputs de texto de componentes */}
+                                {componentTextOutputs.length > 0 && (
+                                  <div className="space-y-2">
+                                    <h4 className="text-sm font-medium text-muted-foreground">Datos de componentes</h4>
+                                    <div className="space-y-1.5 text-sm">
+                                      {componentTextOutputs.map((output, index) => (
+                                        <div key={`comp-${index}`} className="flex justify-between py-1 border-b border-border/50 last:border-0">
                                           <span className="text-muted-foreground">
                                             {output.label}
                                             {Object.keys(compositeComponentsData).length > 1 && (
@@ -1568,12 +1599,29 @@ export default function ProductTestPage() {
                                   </div>
                                 )}
 
-                                {/* Imágenes */}
-                                {allImageOutputs.length > 0 && (
+                                {/* Imágenes del padre */}
+                                {parentImageOutputs.length > 0 && (
                                   <div className="space-y-3 pt-2 border-t">
                                     <h4 className="text-sm font-medium text-muted-foreground">Imágenes</h4>
-                                    {allImageOutputs.map((output, index) => (
-                                      <div key={`img-${index}`} className="space-y-1">
+                                    {parentImageOutputs.map((output, index) => (
+                                      <div key={`parent-img-${index}`} className="space-y-1">
+                                        <div className="text-sm text-muted-foreground">{output.label}</div>
+                                        <img 
+                                          src={output.value} 
+                                          alt={output.label || `Imagen ${index + 1}`} 
+                                          className="w-full max-w-md rounded border" 
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Imágenes de componentes */}
+                                {componentImageOutputs.length > 0 && (
+                                  <div className="space-y-3 pt-2 border-t">
+                                    <h4 className="text-sm font-medium text-muted-foreground">Imágenes de componentes</h4>
+                                    {componentImageOutputs.map((output, index) => (
+                                      <div key={`comp-img-${index}`} className="space-y-1">
                                         <div className="text-sm text-muted-foreground">
                                           {output.label}
                                           {Object.keys(compositeComponentsData).length > 1 && (
@@ -1590,7 +1638,8 @@ export default function ProductTestPage() {
                                   </div>
                                 )}
 
-                                {allTextOutputs.length === 0 && allImageOutputs.length === 0 && (
+                                {parentTextOutputs.length === 0 && componentTextOutputs.length === 0 && 
+                                 parentImageOutputs.length === 0 && componentImageOutputs.length === 0 && (
                                   <p className="text-sm text-muted-foreground">Sin datos de salida adicionales</p>
                                 )}
                               </div>
