@@ -125,26 +125,12 @@ export default function ProductTestPage() {
   }, []);
   
   // Efecto para inicializar componentes activos cuando se cargan los configurados
-  // Se usa un ref para trackear el último productId inicializado y evitar reinicializaciones innecesarias
-  const lastInitializedProductRef = useRef<string | null>(null);
-  
   useEffect(() => {
-    // Solo inicializar si:
-    // 1. Hay componentes configurados
-    // 2. No hemos inicializado este producto todavía O los componentes activos están vacíos
-    if (hasConfiguredComponents && configuredComponents.length > 0) {
-      const shouldInitialize = 
-        lastInitializedProductRef.current !== productId || 
-        activeCompositeComponents.length === 0;
-      
-      if (shouldInitialize) {
-        console.log("[ProductTestPage] Initializing active components for product:", productId, configuredComponents);
-        const initial = getInitialActiveComponents(configuredComponents);
-        setActiveCompositeComponents(initial);
-        lastInitializedProductRef.current = productId;
-      }
+    if (hasConfiguredComponents && activeCompositeComponents.length === 0) {
+      const initial = getInitialActiveComponents(configuredComponents);
+      setActiveCompositeComponents(initial);
     }
-  }, [hasConfiguredComponents, configuredComponents, productId, activeCompositeComponents.length]);
+  }, [hasConfiguredComponents, configuredComponents, activeCompositeComponents.length]);
 
   // Determinar si el producto necesita selector de configuración (sistema legacy)
   const availableConfigs = useMemo(() => {
@@ -1177,10 +1163,10 @@ export default function ProductTestPage() {
           {/* Product Selection & Configuration */}
           <div className="lg:col-span-2">
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Selección de {viewMode === 'productos' ? 'producto' : 'componente'}</CardTitle>
+              <CardHeader>
+                <CardTitle>Selección de {viewMode === 'productos' ? 'producto' : 'componente'}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 {/* Product Selection */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">{viewMode === 'productos' ? 'Producto' : 'Componente'}</label>
@@ -1269,7 +1255,7 @@ export default function ProductTestPage() {
                     </AlertDescription>
                   </Alert>}
 
-                {productId && !isLoadingProduct && productDetail && <div className="border-t pt-3 space-y-3">
+                {productId && !isLoadingProduct && productDetail && <div className="border-t pt-4 space-y-4">
                     
                     {/* Mostrar prompts si el producto compuesto está listo */}
                     {isCompositeReady ? (
@@ -1391,10 +1377,10 @@ export default function ProductTestPage() {
           {/* Results - Panel lateral de resultados */}
           <div>
             {productId && <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Resultados</CardTitle>
+                <CardHeader>
+                  <CardTitle>Resultados</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-4">
                   {/* Si el producto compuesto no está listo, mostrar mensaje */}
                   {!isCompositeReady && needsConfigSelector && (
                     <div className="text-center py-8 text-muted-foreground">

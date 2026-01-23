@@ -258,14 +258,15 @@ export default function CompositeComponentTabs({
   const activeComponentData = activeTab ? componentsData[activeTab] : null;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Header con título */}
-      <h3 className="font-medium text-sm">Configuración del producto</h3>
+      <h3 className="font-medium">Configuración del producto</h3>
 
       {/* Layout de dos columnas: Izquierda=Padre, Derecha=Componente */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         {/* COLUMNA IZQUIERDA: Prompts del producto padre (generales) */}
-        <div className="self-start">
+        <div className="rounded-lg border border-border bg-card p-4 self-start">
+          <h4 className="text-sm font-medium text-muted-foreground mb-3">Datos generales</h4>
           {parentProduct?.prompts ? (
             <PromptsForm
               product={parentProduct}
@@ -281,15 +282,15 @@ export default function CompositeComponentTabs({
         </div>
 
         {/* COLUMNA DERECHA: Prompts del componente seleccionado */}
-        <div className="self-start">
+        <div className="rounded-lg border border-border bg-card p-4 self-start">
           {activeComponents.length > 0 ? (
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className="flex-wrap h-auto gap-1 mb-3 w-auto">
+              <TabsList className="flex-wrap h-auto gap-1 mb-4">
                 {activeComponents.map((component) => (
                   <TabsTrigger 
                     key={component.id} 
                     value={component.id}
-                    className="relative flex items-center gap-1.5 px-3 py-1.5"
+                    className="relative flex items-center gap-1.5"
                   >
                     {getComponentLabel(component)}
                     {componentsData[component.id]?.isLoading && (
