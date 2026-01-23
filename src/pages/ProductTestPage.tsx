@@ -70,6 +70,7 @@ export default function ProductTestPage() {
   const [forceResultPrompts, setForceResultPrompts] = useState<PromptDef[]>([]);
   const [compositeComponentsData, setCompositeComponentsData] = useState<ComponentsDataMap>({});
   const [compositeTotalPrice, setCompositeTotalPrice] = useState<number>(0);
+  const [compositeParentOutputs, setCompositeParentOutputs] = useState<any[]>([]);
   
   // Ref para el timeout del debounce de commit de prompts
   const commitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -958,7 +959,13 @@ export default function ProductTestPage() {
   }, [sortedOutputs, enabledComponents, getPromptComponent]);
 
   // Outputs generales (siempre visibles)
-  const generalOutputs = useMemo(() => outputsByComponent.general || [], [outputsByComponent]);
+  // Para productos compuestos con nuevo sistema, usar los outputs del padre
+  const generalOutputs = useMemo(() => {
+    if (hasConfiguredComponents && compositeParentOutputs.length > 0) {
+      return compositeParentOutputs;
+    }
+    return outputsByComponent.general || [];
+  }, [outputsByComponent, hasConfiguredComponents, compositeParentOutputs]);
 
   // Filtrar outputs de texto generales, EXCLUYENDO el price (se muestra aparte)
   const textOutputs = useMemo(() => {
@@ -1287,9 +1294,10 @@ export default function ProductTestPage() {
                             parentProduct={productForPrompts ?? productDetail}
                             isAdmin={isSuperAdmin || isOrgAdmin}
                             onComponentChange={setSelectedComponent}
-                            onComponentsDataChange={(data, total) => {
+                            onComponentsDataChange={(data, total, parentOutputs) => {
                               setCompositeComponentsData(data);
                               setCompositeTotalPrice(total);
+                              if (parentOutputs) setCompositeParentOutputs(parentOutputs);
                             }}
                           />
                         ) : (
