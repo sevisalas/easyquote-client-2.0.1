@@ -92,39 +92,24 @@ export function OutputAggregationSection({
       }) as ComponentOutputDef[];
   };
 
-  // Cargar los outputs del componente desde la API
+  // Cargar las definiciones de outputs del componente (no requiere inputs, nunca falla por 500)
   const { data: componentOutputs = [], isLoading } = useQuery({
-    queryKey: ["component-outputs-pricing", componentProductId],
+    queryKey: ["component-outputs-list", componentProductId],
     queryFn: async () => {
       const token = await getEasyQuoteToken();
       if (!token) return [];
 
-      // 1) Intentamos primero con pricing (da outputs calculados, pero puede fallar con 500 en algunos Excel)
-      const pricingRes = await invokeEasyQuoteFunction<any>("easyquote-pricing", {
-        token,
-        productId: componentProductId,
-        method: "GET",
-      });
-
-      if (!pricingRes.error) {
-        const normalized = normalizeOutputs(pricingRes.data);
-        if (normalized.length > 0) return normalized;
-      } else {
-        console.error("Error fetching component outputs (pricing):", pricingRes.error);
-      }
-
-      // 2) Fallback: listado de outputs (no depende del motor de cálculo)
-      const outputsRes = await invokeEasyQuoteFunction<any>("easyquote-outputs", {
+      const { data, error } = await invokeEasyQuoteFunction<any>("easyquote-outputs", {
         token,
         productId: componentProductId,
       });
 
-      if (outputsRes.error) {
-        console.error("Error fetching component outputs (outputs list):", outputsRes.error);
+      if (error) {
+        console.error("Error fetching component outputs list:", error);
         return [];
       }
 
-      return normalizeOutputs(outputsRes.data);
+      return normalizeOutputs(data);
     },
     enabled: !!componentProductId,
     staleTime: 5 * 60 * 1000,
