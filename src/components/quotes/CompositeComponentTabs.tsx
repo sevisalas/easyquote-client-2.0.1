@@ -384,8 +384,55 @@ export default function CompositeComponentTabs({
     return mappedIds;
   };
 
+  // Fetch definiciones de prompts de cada componente (para mapear UUID -> celda)
+  const componentPromptDefinitionsQueries = useQueries({
+    queries: activeComponents.map((component) => ({
+      queryKey: ["easyquote-prompts-definitions", component.component_product_id],
+      queryFn: async () => {
+        const token = await getEasyQuoteToken();
+        if (!token) return { componentId: component.id, productId: component.component_product_id, definitions: [] };
+        const { data, error } = await invokeEasyQuoteFunction<any[]>("easyquote-prompts", {
+          token,
+          productId: component.component_product_id,
+        });
+        if (error) {
+          console.error("[CompositeComponentTabs] Error fetching component prompt definitions", error);
+          return { componentId: component.id, productId: component.component_product_id, definitions: [] };
+        }
+        return { componentId: component.id, productId: component.component_product_id, definitions: Array.isArray(data) ? data : [] };
+      },
+      enabled: !!component.component_product_id,
+      staleTime: 30 * 60 * 1000,
+      gcTime: 60 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    })),
+  });
+
+  // Mapa: componentId -> Map<UUID, celda>
+  const componentPromptCellLookups = useMemo(() => {
+    const lookups = new Map<string, Map<string, string>>();
+    for (const query of componentPromptDefinitionsQueries) {
+      if (query.data) {
+        const map = new Map<string, string>();
+        for (const p of query.data.definitions as any[]) {
+          const rawCell = getPromptCell(p);
+          const cell = extractCellRef(rawCell) ?? normalizePromptName(rawCell);
+          if (!cell) continue;
+          const uuid = String(p?.id ?? "").trim();
+          if (uuid) {
+            map.set(uuid, cell);
+            map.set(uuid.toUpperCase(), cell);
+            map.set(uuid.toLowerCase(), cell);
+          }
+          map.set(cell, cell);
+        }
+        lookups.set(query.data.componentId, map);
+      }
+    }
+    return lookups;
+  }, [componentPromptDefinitionsQueries]);
+
   // Hook para obtener configuración de force_result de cada componente
-  // Usamos useQueries para obtener la configuración de todos los componentes activos
   const componentPromptSettingsQueries = useQueries({
     queries: activeComponents.map((component) => ({
       queryKey: ["component-prompt-settings", component.component_product_id],
@@ -402,7 +449,7 @@ export default function CompositeComponentTabs({
     })),
   });
 
-  // Mapa: componentId -> Set de prompt_names que son force_result
+  // Mapa: componentId -> Set de prompt_names (celdas) que son force_result
   const componentForceResultMap = useMemo(() => {
     const map = new Map<string, Set<string>>();
     for (const query of componentPromptSettingsQueries) {
@@ -419,12 +466,21 @@ export default function CompositeComponentTabs({
     return map;
   }, [componentPromptSettingsQueries]);
 
+  // Obtener la celda de un prompt de componente (UUID -> celda)
+  const getComponentPromptCell = useCallback((componentId: string, promptId: string): string => {
+    const lookup = componentPromptCellLookups.get(componentId);
+    if (!lookup) return extractCellRef(promptId) ?? normalizePromptName(promptId);
+    const cell = lookup.get(promptId) ?? lookup.get(promptId.toUpperCase()) ?? lookup.get(promptId.toLowerCase());
+    return cell ?? extractCellRef(promptId) ?? normalizePromptName(promptId);
+  }, [componentPromptCellLookups]);
+
   // Verificar si un prompt de un componente es force_result
-  const isComponentPromptForceResult = useCallback((componentId: string, promptName: string): boolean => {
+  const isComponentPromptForceResult = useCallback((componentId: string, promptId: string): boolean => {
     const forceResultSet = componentForceResultMap.get(componentId);
     if (!forceResultSet) return false;
-    return forceResultSet.has(normalizePromptName(promptName));
-  }, [componentForceResultMap]);
+    const cellRef = getComponentPromptCell(componentId, promptId);
+    return forceResultSet.has(normalizePromptName(cellRef));
+  }, [componentForceResultMap, getComponentPromptCell]);
 
   // Crear producto virtual para el componente (SOLO prompts NO mapeados y NO force_result)
   const createComponentProduct = (componentId: string) => {
@@ -433,22 +489,12 @@ export default function CompositeComponentTabs({
 
     const mappedIds = getMappedPromptIds(componentId);
     
-    console.log("[CompositeComponentTabs] createComponentProduct", {
-      componentId,
-      totalPrompts: componentData.prompts.length,
-      promptIds: componentData.prompts.map((p: any) => p.id),
-      mappedIds: Array.from(mappedIds),
-    });
-    
     // Filtrar: solo prompts NO mapeados (los mapeados vienen del padre) y NO force_result
     const prompts = componentData.prompts.filter((p: any) => {
       if (mappedIds.has(String(p.id))) return false;
       // Excluir force_result (se mostrarán en sección aparte)
-      const cellRef = extractCellRef(p.id) ?? normalizePromptName(p.id);
-      return !isComponentPromptForceResult(componentId, cellRef);
+      return !isComponentPromptForceResult(componentId, String(p.id));
     });
-    
-    console.log("[CompositeComponentTabs] filtered prompts", prompts.length);
 
     return { prompts };
   };
@@ -463,8 +509,7 @@ export default function CompositeComponentTabs({
     // Filtrar: solo prompts NO mapeados que SÍ son force_result
     return componentData.prompts.filter((p: any) => {
       if (mappedIds.has(String(p.id))) return false;
-      const cellRef = extractCellRef(p.id) ?? normalizePromptName(p.id);
-      return isComponentPromptForceResult(componentId, cellRef);
+      return isComponentPromptForceResult(componentId, String(p.id));
     });
   };
 
