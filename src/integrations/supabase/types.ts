@@ -245,7 +245,6 @@ export type Database = {
           created_at: string
           display_order: number
           id: string
-          is_final_calculation: boolean
           is_optional: boolean
           organization_id: string
           updated_at: string
@@ -257,7 +256,6 @@ export type Database = {
           created_at?: string
           display_order?: number
           id?: string
-          is_final_calculation?: boolean
           is_optional?: boolean
           organization_id: string
           updated_at?: string
@@ -269,7 +267,6 @@ export type Database = {
           created_at?: string
           display_order?: number
           id?: string
-          is_final_calculation?: boolean
           is_optional?: boolean
           organization_id?: string
           updated_at?: string

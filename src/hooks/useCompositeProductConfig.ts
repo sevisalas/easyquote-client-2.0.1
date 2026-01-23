@@ -38,7 +38,6 @@ export interface CompositeComponent {
   component_alias: string;
   display_order: number;
   is_optional: boolean;
-  is_final_calculation: boolean;
   created_at: string;
   updated_at: string;
 }
