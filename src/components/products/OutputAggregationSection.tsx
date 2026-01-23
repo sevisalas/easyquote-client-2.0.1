@@ -216,7 +216,7 @@ export function OutputAggregationSection({
   if (parentOutputs.length === 0) {
     return (
       <div className="text-sm text-muted-foreground text-center py-4">
-        No hay outputs disponibles en el producto padre
+        No hay outputs disponibles en el producto principal
       </div>
     );
   }
@@ -227,7 +227,7 @@ export function OutputAggregationSection({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">Mapeo de outputs (componente → padre)</p>
+        <p className="text-sm font-medium">Mapeo de outputs (componente → general)</p>
         <span className="text-xs text-muted-foreground">
           {validAggregationsCount} configurados
         </span>
@@ -253,7 +253,7 @@ export function OutputAggregationSection({
 
             {/* Selector de output del padre (destino) */}
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground">Padre (sumar a)</p>
+              <p className="text-xs text-muted-foreground">General (sumar a)</p>
               <Select
                 value={targetOutputName}
                 onValueChange={(value) => handleTargetChange(sourceOutputName, value)}
