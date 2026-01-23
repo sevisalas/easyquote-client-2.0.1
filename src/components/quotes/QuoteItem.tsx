@@ -2027,14 +2027,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                     {hasConfiguredComponents ? (
                       isCompositeReady ? (
                         <>
-                          {/* Selector de componentes: siempre visible para mostrar los activos */}
+                          {/* Selector de componentes: siempre visible para mostrar los activos y permitir añadir */}
                           <div className="mb-4">
                             <label className="text-sm font-medium mb-2 block">Componentes del producto</label>
                             <CompositeComponentsSelector
                               configuredComponents={configuredComponents}
                               activeComponents={activeCompositeComponents}
                               onActiveComponentsChange={setActiveCompositeComponents}
-                              compact
+                              productNames={new Map(configuredComponents.map(c => [c.component_product_id, c.component_alias]))}
                             />
                           </div>
                           
