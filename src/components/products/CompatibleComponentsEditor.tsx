@@ -69,6 +69,7 @@ export function CompatibleComponentsEditor({
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [alias, setAlias] = useState("");
   const [isOptional, setIsOptional] = useState(false);
+  const [isFinalCalculation, setIsFinalCalculation] = useState(false);
   const [configuringComponent, setConfiguringComponent] = useState<CompositeComponent | null>(null);
 
   // Productos disponibles que aún no están añadidos
@@ -95,12 +96,14 @@ export function CompatibleComponentsEditor({
         component_alias: alias.trim(),
         display_order: components.length,
         is_optional: isOptional,
+        is_final_calculation: isFinalCalculation,
       });
       toast.success("Componente añadido");
       setIsDialogOpen(false);
       setSelectedProductId("");
       setAlias("");
       setIsOptional(false);
+      setIsFinalCalculation(false);
     } catch (error) {
       console.error("Error adding component:", error);
       toast.error("Error al añadir componente");
@@ -121,6 +124,15 @@ export function CompatibleComponentsEditor({
   const handleToggleOptional = async (component: CompositeComponent) => {
     try {
       await onUpdate({ id: component.id, is_optional: !component.is_optional });
+    } catch (error) {
+      console.error("Error updating component:", error);
+      toast.error("Error al actualizar componente");
+    }
+  };
+
+  const handleToggleFinalCalculation = async (component: CompositeComponent) => {
+    try {
+      await onUpdate({ id: component.id, is_final_calculation: !component.is_final_calculation });
     } catch (error) {
       console.error("Error updating component:", error);
       toast.error("Error al actualizar componente");
@@ -209,6 +221,18 @@ export function CompatibleComponentsEditor({
               </Button>
 
               <div className="flex items-center gap-2">
+                <Label htmlFor={`final-${component.id}`} className="text-xs text-muted-foreground">
+                  Cálculo final
+                </Label>
+                <Switch
+                  id={`final-${component.id}`}
+                  checked={component.is_final_calculation}
+                  onCheckedChange={() => handleToggleFinalCalculation(component)}
+                  disabled={isUpdating}
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
                 <Label htmlFor={`optional-${component.id}`} className="text-xs text-muted-foreground">
                   Opcional
                 </Label>
@@ -270,6 +294,16 @@ export function CompatibleComponentsEditor({
               <p className="text-xs text-muted-foreground">
                 El alias identifica el rol de este componente en el producto compuesto
               </p>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Cálculo final</Label>
+                <p className="text-xs text-muted-foreground">
+                  Se calcula después de recibir valores agregados de otros componentes
+                </p>
+              </div>
+              <Switch checked={isFinalCalculation} onCheckedChange={setIsFinalCalculation} />
             </div>
 
             <div className="flex items-center justify-between">
