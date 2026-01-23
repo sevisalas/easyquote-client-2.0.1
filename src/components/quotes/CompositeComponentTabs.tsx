@@ -100,17 +100,36 @@ export default function CompositeComponentTabs({
     const regular: PromptDef[] = [];
     const forceResult: PromptDef[] = [];
 
+    console.log("[CompositeComponentTabs] Checking force_result prompts", {
+      allPromptsCount: allPrompts.length,
+      parentProductId,
+    });
+
     for (const prompt of allPrompts) {
       const key = extractCellRef(prompt.id) ?? extractCellRef((prompt as any).label) ?? normalizePromptName(String(prompt.id));
-      if (isPromptForceResult(key)) {
+      const isForce = isPromptForceResult(key);
+      
+      console.log("[CompositeComponentTabs] Prompt check:", {
+        promptId: prompt.id,
+        promptLabel: prompt.label,
+        normalizedKey: key,
+        isForceResult: isForce,
+      });
+      
+      if (isForce) {
         forceResult.push(prompt);
       } else {
         regular.push(prompt);
       }
     }
 
+    console.log("[CompositeComponentTabs] Force result separation:", {
+      regularCount: regular.length,
+      forceResultCount: forceResult.length,
+    });
+
     return { parentRegularPrompts: regular, parentForceResultPrompts: forceResult };
-  }, [parentProduct, isPromptForceResult]);
+  }, [parentProduct, isPromptForceResult, parentProductId]);
 
   // Producto virtual para prompts regulares del padre
   const parentRegularProduct = useMemo(() => {
