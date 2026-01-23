@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, X, Package } from "lucide-react";
@@ -19,6 +19,11 @@ export interface ActiveComponent {
   is_optional: boolean;
   /** Instancia añadida por el usuario (para múltiples del mismo tipo opcional) */
   instance_index?: number;
+}
+
+export function getActiveComponentKey(component: ActiveComponent): string {
+  const idx = component.instance_index ?? 1;
+  return `${component.id}:${idx}`;
 }
 
 interface CompositeComponentsSelectorProps {
@@ -48,6 +53,8 @@ export default function CompositeComponentsSelector({
   productNames = new Map(),
   compact = false,
 }: CompositeComponentsSelectorProps) {
+  const getInstanceIndex = (c: ActiveComponent) => c.instance_index ?? 1;
+
   // Separar componentes obligatorios y opcionales
   const { requiredComponents, optionalComponents } = useMemo(() => {
     const required = configuredComponents.filter(c => !c.is_optional);
@@ -64,64 +71,74 @@ export default function CompositeComponentsSelector({
         component_alias: c.component_alias,
         display_order: c.display_order,
         is_optional: false,
+        instance_index: 1,
       }));
       onActiveComponentsChange(initial);
     }
   }, [requiredComponents, activeComponents.length, onActiveComponentsChange]);
 
-  // Opcionales que aún no están activos
-  const availableOptionals = useMemo(() => {
-    const activeIds = new Set(activeComponents.map(a => a.id));
-    return optionalComponents.filter(c => !activeIds.has(c.id));
-  }, [optionalComponents, activeComponents]);
+  const getNextInstanceIndex = useCallback(
+    (componentConfigId: string) => {
+      const indices = activeComponents
+        .filter((a) => a.id === componentConfigId)
+        .map((a) => getInstanceIndex(a));
+      if (indices.length === 0) return 1;
+      return Math.max(...indices) + 1;
+    },
+    [activeComponents]
+  );
 
-  const handleAddOptional = (componentId: string) => {
-    const component = optionalComponents.find(c => c.id === componentId);
+  const handleAddComponentInstance = (componentConfigId: string) => {
+    const component = configuredComponents.find((c) => c.id === componentConfigId);
     if (!component) return;
+
+    const nextIndex = getNextInstanceIndex(component.id);
+    const baseLabel = productNames.get(component.component_product_id) || component.component_alias;
 
     const newActive: ActiveComponent = {
       id: component.id,
       component_product_id: component.component_product_id,
-      component_alias: component.component_alias,
+      component_alias: baseLabel,
       display_order: component.display_order,
-      is_optional: true,
+      // La primera instancia de un obligatorio es no-removible. Cualquier instancia extra es removible.
+      is_optional: component.is_optional ? true : nextIndex > 1,
+      instance_index: nextIndex,
     };
 
-    // Ordenar por display_order
-    const updated = [...activeComponents, newActive].sort(
-      (a, b) => a.display_order - b.display_order
+    const updated = [...activeComponents, newActive].sort((a, b) => {
+      if (a.display_order !== b.display_order) return a.display_order - b.display_order;
+      return getInstanceIndex(a) - getInstanceIndex(b);
+    });
+    onActiveComponentsChange(updated);
+  };
+
+  const handleRemoveInstance = (componentConfigId: string, instanceIndex: number) => {
+    const updated = activeComponents.filter(
+      (a) => !(a.id === componentConfigId && getInstanceIndex(a) === instanceIndex)
     );
     onActiveComponentsChange(updated);
   };
 
-  const handleRemoveOptional = (componentId: string) => {
-    const updated = activeComponents.filter(a => a.id !== componentId);
-    onActiveComponentsChange(updated);
-  };
+  const instanceCountById = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const c of activeComponents) {
+      map.set(c.id, (map.get(c.id) ?? 0) + 1);
+    }
+    return map;
+  }, [activeComponents]);
 
   const getComponentLabel = (component: ActiveComponent) => {
     const productName = productNames.get(component.component_product_id);
-    return productName || component.component_alias;
+    const base = productName || component.component_alias;
+    const count = instanceCountById.get(component.id) ?? 0;
+    const idx = getInstanceIndex(component);
+    // Solo mostramos sufijo si hay más de una instancia.
+    return count > 1 ? `${base} ${idx}` : base;
   };
 
   // Si no hay componentes configurados, no mostrar nada
   if (configuredComponents.length === 0) {
     return null;
-  }
-
-  // Si solo hay componentes obligatorios y ninguno opcional, mostrar lista simple
-  if (optionalComponents.length === 0) {
-    if (compact) return null;
-    return (
-      <div className="flex flex-wrap gap-2">
-        {activeComponents.map(component => (
-          <Badge key={component.id} variant="secondary" className="gap-1">
-            <Package className="h-3 w-3" />
-            {getComponentLabel(component)}
-          </Badge>
-        ))}
-      </div>
-    );
   }
 
   return (
@@ -130,7 +147,7 @@ export default function CompositeComponentsSelector({
       <div className="flex flex-wrap gap-2">
         {activeComponents.map(component => (
           <Badge
-            key={component.id}
+            key={getActiveComponentKey(component)}
             variant={component.is_optional ? "outline" : "secondary"}
             className="gap-1 pr-1"
           >
@@ -141,7 +158,7 @@ export default function CompositeComponentsSelector({
                 variant="ghost"
                 size="icon"
                 className="h-4 w-4 ml-1 hover:bg-destructive/20"
-                onClick={() => handleRemoveOptional(component.id)}
+                onClick={() => handleRemoveInstance(component.id, getInstanceIndex(component))}
               >
                 <X className="h-3 w-3" />
               </Button>
@@ -149,15 +166,15 @@ export default function CompositeComponentsSelector({
           </Badge>
         ))}
 
-        {/* Selector para añadir opcionales */}
-        {availableOptionals.length > 0 && (
-          <Select onValueChange={handleAddOptional}>
+        {/* Selector para añadir instancias (permite añadir el mismo componente varias veces) */}
+        {!compact && configuredComponents.length > 0 && (
+          <Select onValueChange={handleAddComponentInstance}>
             <SelectTrigger className="h-7 w-auto min-w-[140px] text-xs">
               <Plus className="h-3 w-3 mr-1" />
               <SelectValue placeholder="Añadir componente" />
             </SelectTrigger>
             <SelectContent className="bg-popover">
-              {availableOptionals.map(component => (
+              {configuredComponents.map((component) => (
                 <SelectItem key={component.id} value={component.id}>
                   {productNames.get(component.component_product_id) || component.component_alias}
                 </SelectItem>
@@ -198,6 +215,7 @@ export function getInitialActiveComponents(
       component_alias: c.component_alias,
       display_order: c.display_order,
       is_optional: false,
+      instance_index: 1,
     }))
     .sort((a, b) => a.display_order - b.display_order);
 }
