@@ -129,19 +129,20 @@ export default function ProductTestPage() {
   }, []);
 
   // Handlers para cambios de prompts en componentes individuales
-  const handleComponentPromptChange = useCallback((componentId: string, promptId: string, value: any) => {
+  // Ahora reciben componentKey (id:instance_index) en lugar de solo componentId
+  const handleComponentPromptChange = useCallback((componentKey: string, promptId: string, value: any) => {
     setComponentPromptValues(prev => ({
       ...prev,
-      [componentId]: {
-        ...(prev[componentId] || {}),
+      [componentKey]: {
+        ...(prev[componentKey] || {}),
         [promptId]: value,
       },
     }));
   }, []);
 
-  const handleComponentPromptCommit = useCallback((componentId: string, promptId: string, value: any) => {
+  const handleComponentPromptCommit = useCallback((componentKey: string, promptId: string, value: any) => {
     // El commit ya se hace al actualizar el estado, la query se refrescará automáticamente
-    console.log("[ProductTestPage] Component prompt committed:", { componentId, promptId, value });
+    console.log("[ProductTestPage] Component prompt committed:", { componentKey, promptId, value });
   }, []);
 
   // Al cambiar de producto: resetear UI de compuestos ANTES de rehidratar obligatorios.

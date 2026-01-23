@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ActiveComponent } from "./CompositeComponentsSelector";
+import { ActiveComponent, getActiveComponentKey } from "./CompositeComponentsSelector";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 import PromptsForm, { type PromptDef, extractPrompts } from "./PromptsForm";
@@ -282,16 +282,18 @@ export default function CompositeComponentTabs({
 
   // Usar useQueries para obtener datos de todos los componentes
   // Incluye tanto los valores heredados (conexiones) como los editados por el usuario (componentPromptValues)
+  // IMPORTANTE: Usamos getActiveComponentKey para distinguir múltiples instancias del mismo componente
   const componentQueriesResults = useQueries({
     queries: activeComponents.map((component) => {
-      // Obtener valores editados por el usuario para este componente
-      const userEditedValues = componentPromptValues[component.id] || {};
+      const componentKey = getActiveComponentKey(component);
+      // Obtener valores editados por el usuario para esta instancia específica
+      const userEditedValues = componentPromptValues[componentKey] || {};
       
       return {
         queryKey: [
           "component-pricing", 
           component.component_product_id, 
-          component.id, 
+          componentKey, // Usar key única que incluye instance_index
           JSON.stringify(parentPromptValues),
           JSON.stringify(userEditedValues), // Incluir valores editados en la key
         ],
@@ -342,9 +344,10 @@ export default function CompositeComponentTabs({
             }
           }
           
-          console.log("[CompositeComponentTabs] API inputs for component", {
-            componentId: component.id,
+          console.log("[CompositeComponentTabs] API inputs for component instance", {
+            componentKey,
             componentProductId: component.component_product_id,
+            instanceIndex: component.instance_index,
             connectionsFound: connections.length,
             userEditedValuesCount: Object.keys(userEditedValues).length,
             inputs: componentInputs,
@@ -378,20 +381,30 @@ export default function CompositeComponentTabs({
     }),
   });
 
-  // Procesar datos de componentes
+  // Procesar datos de componentes usando key única por instancia
   const componentsData = useMemo(() => {
     const data: ComponentsDataMap = {};
 
+    // Contar instancias por component.id para decidir si añadir sufijo numérico
+    const instanceCountById = new Map<string, number>();
+    for (const c of activeComponents) {
+      instanceCountById.set(c.id, (instanceCountById.get(c.id) ?? 0) + 1);
+    }
+
     activeComponents.forEach((component, index) => {
+      const componentKey = getActiveComponentKey(component);
       const query = componentQueriesResults[index];
       const pricingData = query?.data;
+      const baseName = productNames.get(component.component_product_id) || component.component_alias;
+      const count = instanceCountById.get(component.id) ?? 0;
+      const alias = count > 1 ? `${baseName} ${component.instance_index ?? 1}` : baseName;
 
-      data[component.id] = {
+      data[componentKey] = {
         prompts: pricingData?.prompts || [],
         outputs: pricingData?.outputs || [],
         price: pricingData?.price ?? 0,
         isLoading: query?.isLoading ?? false,
-        alias: productNames.get(component.component_product_id) || component.component_alias,
+        alias,
       };
     });
 
@@ -408,12 +421,12 @@ export default function CompositeComponentTabs({
     onComponentsDataChange?.(componentsData, totalPrice, parentOutputs);
   }, [componentsData, totalPrice, parentOutputs, onComponentsDataChange]);
 
-  // Auto-seleccionar el primer componente al cargar
+  // Auto-seleccionar el primer componente al cargar (usando key única)
   useEffect(() => {
     if (activeComponents.length > 0 && !activeTab) {
-      const firstComponentId = activeComponents[0].id;
-      setActiveTab(firstComponentId);
-      onComponentChange?.(firstComponentId);
+      const firstComponentKey = getActiveComponentKey(activeComponents[0]);
+      setActiveTab(firstComponentKey);
+      onComponentChange?.(firstComponentKey);
     }
   }, [activeComponents, activeTab, onComponentChange]);
 
@@ -423,28 +436,32 @@ export default function CompositeComponentTabs({
     onComponentChange?.(value);
   };
 
-  // Obtener label del componente
+  // Obtener label del componente (con sufijo numérico si hay múltiples instancias)
   const getComponentLabel = (component: ActiveComponent) => {
-    return productNames.get(component.component_product_id) || component.component_alias;
+    const componentKey = getActiveComponentKey(component);
+    return componentsData[componentKey]?.alias || productNames.get(component.component_product_id) || component.component_alias;
   };
 
-  // Obtener IDs de prompts mapeados para un componente
+  // Obtener IDs de prompts mapeados para un componente (por key de instancia)
   // NOTA: Las conexiones pueden usar target_component_id como el ID del registro O el product_id
-  const getMappedPromptIds = (componentId: string): Set<string> => {
-    // Buscar el component_product_id correspondiente a este componentId
-    const component = activeComponents.find(c => c.id === componentId);
-    const componentProductId = component?.component_product_id;
+  const getMappedPromptIds = (componentKey: string): Set<string> => {
+    // Buscar el componente activo por key (puede incluir instance_index)
+    const component = activeComponents.find(c => getActiveComponentKey(c) === componentKey);
+    if (!component) return new Set();
+    
+    const componentProductId = component.component_product_id;
     
     // Buscar conexiones por ambos: el ID del registro y el product_id
     const connections = promptConnections.filter(
       (conn: any) => 
-        conn.target_component_id === componentId || 
+        conn.target_component_id === component.id || 
         conn.target_component_id === componentProductId
     );
     const mappedIds = new Set(connections.map((conn: any) => conn.target_prompt_name));
     
     console.log("[CompositeComponentTabs] getMappedPromptIds", {
-      componentId,
+      componentKey,
+      componentId: component.id,
       componentProductId,
       allConnections: promptConnections.length,
       matchingConnections: connections.length,
@@ -481,14 +498,19 @@ export default function CompositeComponentTabs({
     })),
   });
 
-  // Mapa: componentId -> Map<UUID, celda>
+  // Mapa: componentKey -> Map<UUID, celda>
+  // NOTA: Las definiciones de prompts dependen solo del component_product_id (no de la instancia).
+  // Usamos component_product_id como key secundaria para reutilizar cache.
   const componentPromptCellLookups = useMemo(() => {
     const lookups = new Map<string, Map<string, string>>();
 
     activeComponents.forEach((component, idx) => {
+      const componentKey = getActiveComponentKey(component);
       const query = componentPromptDefinitionsQueries[idx];
       const defs = Array.isArray(query?.data) ? (query!.data as any[]) : [];
       if (!defs.length) {
+        lookups.set(componentKey, new Map());
+        // Fallback: también mapear el component.id simple para compatibilidad
         lookups.set(component.id, new Map());
         return;
       }
@@ -508,6 +530,8 @@ export default function CompositeComponentTabs({
         map.set(cell, cell);
       }
 
+      lookups.set(componentKey, map);
+      // Fallback: también mapear el component.id simple para compatibilidad
       lookups.set(component.id, map);
     });
 
@@ -515,23 +539,28 @@ export default function CompositeComponentTabs({
   }, [activeComponents, componentPromptDefinitionsQueries]);
 
   // Hook para obtener configuración de force_result de cada componente
+  // Estas settings dependen del component_product_id, así que usamos ese como queryKey.
   const componentPromptSettingsQueries = useQueries({
-    queries: activeComponents.map((component) => ({
-      queryKey: ["component-prompt-settings", component.component_product_id],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from("product_prompt_settings")
-          .select("*")
-          .eq("easyquote_product_id", component.component_product_id);
-        if (error) throw error;
-        return { componentId: component.id, productId: component.component_product_id, settings: data || [] };
-      },
-      enabled: !!component.component_product_id,
-      staleTime: 5 * 60 * 1000,
-    })),
+    queries: activeComponents.map((component) => {
+      const componentKey = getActiveComponentKey(component);
+      return {
+        queryKey: ["component-prompt-settings", component.component_product_id],
+        queryFn: async () => {
+          const { data, error } = await supabase
+            .from("product_prompt_settings")
+            .select("*")
+            .eq("easyquote_product_id", component.component_product_id);
+          if (error) throw error;
+          // Devolvemos componentKey en lugar de component.id para mapear correctamente
+          return { componentKey, componentId: component.id, productId: component.component_product_id, settings: data || [] };
+        },
+        enabled: !!component.component_product_id,
+        staleTime: 5 * 60 * 1000,
+      };
+    }),
   });
 
-  // Mapa: componentId -> Set de prompt_names (celdas) que son force_result
+  // Mapa: componentKey -> Set de prompt_names (celdas) que son force_result
   const componentForceResultMap = useMemo(() => {
     const map = new Map<string, Set<string>>();
     for (const query of componentPromptSettingsQueries) {
@@ -542,13 +571,15 @@ export default function CompositeComponentTabs({
             forceResultNames.add(normalizePromptName(setting.prompt_name));
           }
         }
+        map.set(query.data.componentKey, forceResultNames);
+        // Fallback con component.id para compatibilidad
         map.set(query.data.componentId, forceResultNames);
       }
     }
     return map;
   }, [componentPromptSettingsQueries]);
 
-  // Mapa: componentId -> Set de prompt_names (celdas) que son admin_only
+  // Mapa: componentKey -> Set de prompt_names (celdas) que son admin_only
   // (para poder ocultarlas a usuarios no-admin también en la sección de restrictivas)
   const componentAdminOnlyMap = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -560,6 +591,8 @@ export default function CompositeComponentTabs({
             adminOnlyNames.add(normalizePromptName(setting.prompt_name));
           }
         }
+        map.set(query.data.componentKey, adminOnlyNames);
+        // Fallback con component.id para compatibilidad
         map.set(query.data.componentId, adminOnlyNames);
       }
     }
@@ -567,51 +600,57 @@ export default function CompositeComponentTabs({
   }, [componentPromptSettingsQueries]);
 
   // Obtener la celda de un prompt de componente (UUID -> celda)
-  const getComponentPromptCell = useCallback((componentId: string, promptId: string): string => {
-    const lookup = componentPromptCellLookups.get(componentId);
+  // Acepta componentKey (id:instance_index) o component.id como fallback
+  const getComponentPromptCell = useCallback((componentKeyOrId: string, promptId: string): string => {
+    const lookup = componentPromptCellLookups.get(componentKeyOrId);
     if (!lookup) return extractCellRef(promptId) ?? normalizePromptName(promptId);
     const cell = lookup.get(promptId) ?? lookup.get(promptId.toUpperCase()) ?? lookup.get(promptId.toLowerCase());
     return cell ?? extractCellRef(promptId) ?? normalizePromptName(promptId);
   }, [componentPromptCellLookups]);
 
   // Verificar si un prompt de un componente es force_result
-  const isComponentPromptForceResult = useCallback((componentId: string, promptId: string): boolean => {
-    const forceResultSet = componentForceResultMap.get(componentId);
+  // Acepta componentKey (id:instance_index) o component.id como fallback
+  const isComponentPromptForceResult = useCallback((componentKeyOrId: string, promptId: string): boolean => {
+    const forceResultSet = componentForceResultMap.get(componentKeyOrId);
     if (!forceResultSet) return false;
-    const cellRef = getComponentPromptCell(componentId, promptId);
+    const cellRef = getComponentPromptCell(componentKeyOrId, promptId);
     return forceResultSet.has(normalizePromptName(cellRef));
   }, [componentForceResultMap, getComponentPromptCell]);
 
-  const isComponentPromptAdminOnly = useCallback((componentId: string, promptId: string): boolean => {
-    const adminOnlySet = componentAdminOnlyMap.get(componentId);
+  // Verificar si un prompt de un componente es admin_only
+  // Acepta componentKey (id:instance_index) o component.id como fallback
+  const isComponentPromptAdminOnly = useCallback((componentKeyOrId: string, promptId: string): boolean => {
+    const adminOnlySet = componentAdminOnlyMap.get(componentKeyOrId);
     if (!adminOnlySet) return false;
-    const cellRef = getComponentPromptCell(componentId, promptId);
+    const cellRef = getComponentPromptCell(componentKeyOrId, promptId);
     return adminOnlySet.has(normalizePromptName(cellRef));
   }, [componentAdminOnlyMap, getComponentPromptCell]);
 
   // Crear producto virtual para el componente (SOLO prompts NO mapeados y NO force_result)
-  const createComponentProduct = (componentId: string) => {
-    const componentData = componentsData[componentId];
+  // Acepta componentKey (id:instance_index)
+  const createComponentProduct = (componentKey: string) => {
+    const componentData = componentsData[componentKey];
     if (!componentData) return null;
 
-    const mappedIds = getMappedPromptIds(componentId);
+    const mappedIds = getMappedPromptIds(componentKey);
     
     // Filtrar: solo prompts NO mapeados (los mapeados vienen del padre) y NO force_result
     const prompts = componentData.prompts.filter((p: any) => {
       if (mappedIds.has(String(p.id))) return false;
       // Excluir force_result (se mostrarán en sección aparte)
-      return !isComponentPromptForceResult(componentId, String(p.id));
+      return !isComponentPromptForceResult(componentKey, String(p.id));
     });
 
     return { prompts };
   };
 
   // Obtener prompts force_result de un componente
-  const getComponentForceResultPrompts = (componentId: string): any[] => {
-    const componentData = componentsData[componentId];
+  // Acepta componentKey (id:instance_index)
+  const getComponentForceResultPrompts = (componentKey: string): any[] => {
+    const componentData = componentsData[componentKey];
     if (!componentData) return [];
 
-    const mappedIds = getMappedPromptIds(componentId);
+    const mappedIds = getMappedPromptIds(componentKey);
 
     // Filtrar: solo prompts force_result que:
     // 1. NO estén mapeados (los mapeados ya se ven en el padre, ej: Tarifa/B10)
@@ -621,18 +660,19 @@ export default function CompositeComponentTabs({
       // Excluir mapeados (heredados del padre)
       if (mappedIds.has(id)) return false;
       // Solo incluir si es force_result
-      if (!isComponentPromptForceResult(componentId, id)) return false;
+      if (!isComponentPromptForceResult(componentKey, id)) return false;
       // Excluir admin_only si no es admin
-      if (!isAdmin && isComponentPromptAdminOnly(componentId, id)) return false;
+      if (!isAdmin && isComponentPromptAdminOnly(componentKey, id)) return false;
       return true;
     });
   };
 
   // Obtener valores de prompts para un componente específico
   // Combina: valores de la API (currentValue) + valores editados por el usuario (componentPromptValues)
-  const getComponentPromptValues = (componentId: string): Record<string, any> => {
-    const componentData = componentsData[componentId];
-    if (!componentData) return componentPromptValues[componentId] || {};
+  // Acepta componentKey (id:instance_index)
+  const getComponentPromptValues = (componentKey: string): Record<string, any> => {
+    const componentData = componentsData[componentKey];
+    if (!componentData) return componentPromptValues[componentKey] || {};
 
     const values: Record<string, any> = {};
     // 1. Primero, valores de la API
@@ -640,7 +680,7 @@ export default function CompositeComponentTabs({
       values[prompt.id] = prompt.currentValue ?? prompt.default ?? "";
     }
     // 2. Luego, valores editados por el usuario (sobrescriben)
-    const userEdited = componentPromptValues[componentId] || {};
+    const userEdited = componentPromptValues[componentKey] || {};
     for (const [promptId, value] of Object.entries(userEdited)) {
       if (value !== undefined) {
         values[promptId] = value;
@@ -660,18 +700,21 @@ export default function CompositeComponentTabs({
         {activeComponents.length > 0 && (
           <Tabs value={activeTab} onValueChange={handleTabChange}>
             <TabsList className="h-auto gap-1">
-              {activeComponents.map((component) => (
-                <TabsTrigger 
-                  key={component.id} 
-                  value={component.id}
-                  className="relative flex items-center gap-1.5"
-                >
-                  {getComponentLabel(component)}
-                  {componentsData[component.id]?.isLoading && (
-                    <span className="text-xs text-muted-foreground">...</span>
-                  )}
-                </TabsTrigger>
-              ))}
+              {activeComponents.map((component) => {
+                const componentKey = getActiveComponentKey(component);
+                return (
+                  <TabsTrigger 
+                    key={componentKey} 
+                    value={componentKey}
+                    className="relative flex items-center gap-1.5"
+                  >
+                    {getComponentLabel(component)}
+                    {componentsData[componentKey]?.isLoading && (
+                      <span className="text-xs text-muted-foreground">...</span>
+                    )}
+                  </TabsTrigger>
+                );
+              })}
             </TabsList>
           </Tabs>
         )}
@@ -779,14 +822,15 @@ export default function CompositeComponentTabs({
           {activeComponents.length > 0 ? (
             <>
               {activeComponents.map((component) => {
-                if (component.id !== activeTab) return null;
-                const componentProduct = createComponentProduct(component.id);
-                const componentValues = getComponentPromptValues(component.id);
-                const componentForceResultPrompts = getComponentForceResultPrompts(component.id);
-                const isLoadingComponent = componentsData[component.id]?.isLoading;
+                const componentKey = getActiveComponentKey(component);
+                if (componentKey !== activeTab) return null;
+                const componentProduct = createComponentProduct(componentKey);
+                const componentValues = getComponentPromptValues(componentKey);
+                const componentForceResultPrompts = getComponentForceResultPrompts(componentKey);
+                const isLoadingComponent = componentsData[componentKey]?.isLoading;
 
                 return (
-                  <div key={component.id}>
+                  <div key={componentKey}>
                     <h4 className="text-sm font-medium text-muted-foreground mb-3">
                       {getComponentLabel(component)}
                     </h4>
@@ -817,11 +861,12 @@ export default function CompositeComponentTabs({
                             const value = componentValues[prompt.id] ?? prompt.currentValue ?? prompt.default;
                             
                             // Handler para cambios en campos restrictivos del componente
+                            // Usamos componentKey para identificar la instancia
                             const handleChange = (newValue: any) => {
-                              onComponentPromptChange?.(component.id, prompt.id, newValue);
+                              onComponentPromptChange?.(componentKey, prompt.id, newValue);
                             };
                             const handleCommit = (newValue: any) => {
-                              onComponentPromptCommit?.(component.id, prompt.id, newValue);
+                              onComponentPromptCommit?.(componentKey, prompt.id, newValue);
                             };
                             
                             const typeKey = getPromptTypeKey(prompt);
@@ -833,7 +878,7 @@ export default function CompositeComponentTabs({
                                 <div key={prompt.id} className="flex items-center gap-2 py-1">
                                   <span className="text-sm">{prompt.promptText || prompt.label || prompt.id}</span>
                                   <Checkbox
-                                    id={`restrictive-component-${prompt.id}`}
+                                    id={`restrictive-component-${componentKey}-${prompt.id}`}
                                     checked={isChecked}
                                     onCheckedChange={(checked) => {
                                       handleChange(checked);
