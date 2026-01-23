@@ -168,7 +168,7 @@ export default function CompositeComponentsSelector({
 
         {/* Selector para añadir instancias (permite añadir el mismo componente varias veces) */}
         {!compact && configuredComponents.length > 0 && (
-          <Select onValueChange={handleAddComponentInstance}>
+          <Select value="" onValueChange={handleAddComponentInstance}>
             <SelectTrigger className="h-7 w-auto min-w-[140px] text-xs">
               <Plus className="h-3 w-3 mr-1" />
               <SelectValue placeholder="Añadir componente" />
