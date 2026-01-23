@@ -1,18 +1,17 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Trash2, ArrowUp, Loader2 } from "lucide-react";
+import { Plus, Trash2, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 
 // Tipo local para evitar acoplar este componente a exportaciones del hook.
-// (Solo se usa para tipado de `existingAggregations` y del payload de guardado.)
 interface OutputAggregation {
   id: string;
   organization_id: string;
@@ -34,7 +33,7 @@ interface OutputAggregationSectionProps {
   isSaving?: boolean;
 }
 
-interface ComponentOutputDef {
+interface OutputDef {
   name: string;
   label: string;
   type: string;
@@ -42,7 +41,7 @@ interface ComponentOutputDef {
 
 /**
  * Sección para configurar qué outputs del componente se agregan (suman) 
- * al producto padre compuesto.
+ * a outputs del producto padre compuesto.
  */
 export function OutputAggregationSection({
   componentProductId,
@@ -52,7 +51,7 @@ export function OutputAggregationSection({
   onSave,
   isSaving,
 }: OutputAggregationSectionProps) {
-  const normalizeOutputs = (raw: any): ComponentOutputDef[] => {
+  const normalizeOutputs = (raw: any): OutputDef[] => {
     const list: any[] = Array.isArray(raw)
       ? raw
       : raw && typeof raw === "object"
@@ -73,45 +72,33 @@ export function OutputAggregationSection({
         const label = String(
           o?.label ?? o?.name ?? o?.outputText ?? o?.nameCell ?? o?.valueCell ?? o?.id ?? o?.outputId ?? ""
         ).trim();
-
-        // `name` debe ser estable: priorizamos `name`/`id` y caemos a `label` si no hay nada.
         const name = String(o?.name ?? o?.id ?? o?.outputId ?? label).trim();
         if (!name) return null;
-
-        return { name, label: label || name, type: type || "unknown" } as ComponentOutputDef;
+        return { name, label: label || name, type: type || "unknown" } as OutputDef;
       })
       .filter(Boolean)
       .filter((o: any) => {
         const type = String(o.type || "").toLowerCase();
         const name = String(o.name || "").toLowerCase();
-
+        // Excluir precio e imágenes
         const isPrice = type === "price" || name === "price" || name === "precio";
         const isImage = type === "image" || name === "image" || name === "imagen";
-
         return !isPrice && !isImage;
-      }) as ComponentOutputDef[];
+      }) as OutputDef[];
   };
 
-  // Cargar los outputs del componente desde easyquote-pricing (GET) que devuelve labels reales
-  const { data: componentOutputs = [], isLoading, isError } = useQuery({
+  // Cargar outputs del COMPONENTE
+  const { data: componentOutputs = [], isLoading: isLoadingComponent, isError: isErrorComponent } = useQuery({
     queryKey: ["component-outputs-pricing", componentProductId],
     queryFn: async () => {
       const token = await getEasyQuoteToken();
       if (!token) return [];
-
-      // Usamos easyquote-pricing con GET que devuelve outputValues con labels reales
       const { data, error } = await invokeEasyQuoteFunction<any>("easyquote-pricing", {
         token,
         productId: componentProductId,
         method: "GET",
       });
-
-      if (error) {
-        console.error("Error fetching component outputs:", error);
-        throw new Error("No se pudieron cargar los outputs del componente");
-      }
-
-      // La respuesta puede tener los outputs en outputValues o outputs
+      if (error) throw new Error("No se pudieron cargar los outputs del componente");
       const outputs = data?.outputValues ?? data?.outputs ?? [];
       return normalizeOutputs(outputs);
     },
@@ -120,30 +107,44 @@ export function OutputAggregationSection({
     retry: 1,
   });
 
-  // Estado local: source_output_name -> { target_output_name, target_output_label }
-  const [aggregations, setAggregations] = useState<
-    Record<string, { targetName: string; targetLabel: string }>
-  >({});
+  // Cargar outputs del PADRE (producto compuesto)
+  const { data: parentOutputs = [], isLoading: isLoadingParent, isError: isErrorParent } = useQuery({
+    queryKey: ["parent-outputs-pricing", compositeProductId],
+    queryFn: async () => {
+      const token = await getEasyQuoteToken();
+      if (!token) return [];
+      const { data, error } = await invokeEasyQuoteFunction<any>("easyquote-pricing", {
+        token,
+        productId: compositeProductId,
+        method: "GET",
+      });
+      if (error) throw new Error("No se pudieron cargar los outputs del padre");
+      const outputs = data?.outputValues ?? data?.outputs ?? [];
+      return normalizeOutputs(outputs);
+    },
+    enabled: !!compositeProductId,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+
+  // Estado local: source_output_name -> target_output_name (del padre)
+  const [aggregations, setAggregations] = useState<Record<string, string>>({});
 
   // Inicializar desde existentes
   useEffect(() => {
-    const initial: Record<string, { targetName: string; targetLabel: string }> = {};
+    const initial: Record<string, string> = {};
     existingAggregations.forEach((agg) => {
-      initial[agg.source_output_name] = {
-        targetName: agg.target_output_name,
-        targetLabel: agg.target_output_label,
-      };
+      initial[agg.source_output_name] = agg.target_output_name;
     });
     setAggregations(initial);
   }, [existingAggregations]);
 
-  const handleAddAggregation = (sourceOutputName: string, label: string) => {
+  const handleAddAggregation = (sourceOutputName: string) => {
+    // Por defecto, intentar mapear al output con el mismo nombre si existe
+    const matchingParent = parentOutputs.find(p => p.name === sourceOutputName);
     setAggregations((prev) => ({
       ...prev,
-      [sourceOutputName]: {
-        targetName: `total_${sourceOutputName}`,
-        targetLabel: `Total ${label}`,
-      },
+      [sourceOutputName]: matchingParent?.name || "",
     }));
   };
 
@@ -155,25 +156,24 @@ export function OutputAggregationSection({
     });
   };
 
-  const handleLabelChange = (sourceOutputName: string, newLabel: string) => {
+  const handleTargetChange = (sourceOutputName: string, targetOutputName: string) => {
     setAggregations((prev) => ({
       ...prev,
-      [sourceOutputName]: {
-        ...prev[sourceOutputName],
-        targetLabel: newLabel,
-      },
+      [sourceOutputName]: targetOutputName,
     }));
   };
 
   const handleSave = async () => {
     const toSave: Omit<OutputAggregation, "id" | "created_at" | "updated_at">[] = [];
-    for (const [sourceOutputName, config] of Object.entries(aggregations)) {
+    for (const [sourceOutputName, targetOutputName] of Object.entries(aggregations)) {
+      if (!targetOutputName) continue; // Solo guardar si hay un target seleccionado
+      const targetOutput = parentOutputs.find(p => p.name === targetOutputName);
       toSave.push({
         organization_id: organizationId,
         composite_product_id: compositeProductId,
         source_output_name: sourceOutputName,
-        target_output_name: config.targetName,
-        target_output_label: config.targetLabel,
+        target_output_name: targetOutputName,
+        target_output_label: targetOutput?.label || targetOutputName,
         aggregation_type: "sum",
       });
     }
@@ -182,9 +182,12 @@ export function OutputAggregationSection({
 
   // Outputs configurados como agregados
   const configuredOutputNames = new Set(Object.keys(aggregations));
-  const availableOutputs = componentOutputs.filter(
+  const availableComponentOutputs = componentOutputs.filter(
     (o) => !configuredOutputNames.has(o.name)
   );
+
+  const isLoading = isLoadingComponent || isLoadingParent;
+  const isError = isErrorComponent || isErrorParent;
 
   if (isLoading) {
     return (
@@ -197,7 +200,7 @@ export function OutputAggregationSection({
   if (isError) {
     return (
       <div className="text-sm text-destructive text-center py-4">
-        Error al cargar los outputs. Verifica que el producto esté configurado correctamente.
+        Error al cargar los outputs. Verifica que los productos estén configurados correctamente.
       </div>
     );
   }
@@ -210,39 +213,68 @@ export function OutputAggregationSection({
     );
   }
 
+  if (parentOutputs.length === 0) {
+    return (
+      <div className="text-sm text-muted-foreground text-center py-4">
+        No hay outputs disponibles en el producto padre
+      </div>
+    );
+  }
+
+  // Verificar si hay agregaciones válidas (con target seleccionado)
+  const validAggregationsCount = Object.values(aggregations).filter(t => t).length;
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">Outputs a agregar (sumar)</p>
+        <p className="text-sm font-medium">Mapeo de outputs (componente → padre)</p>
         <span className="text-xs text-muted-foreground">
-          {configuredOutputNames.size} configurados
+          {validAggregationsCount} configurados
         </span>
       </div>
 
       {/* Lista de agregaciones configuradas */}
-      {Object.entries(aggregations).map(([sourceOutputName, config]) => {
-        const output = componentOutputs.find((o) => o.name === sourceOutputName);
+      {Object.entries(aggregations).map(([sourceOutputName, targetOutputName]) => {
+        const sourceOutput = componentOutputs.find((o) => o.name === sourceOutputName);
         return (
           <div
             key={sourceOutputName}
             className="flex items-center gap-2 p-2 rounded-lg border bg-accent/5"
           >
-            <ArrowUp className="h-4 w-4 text-primary shrink-0" />
+            {/* Output del componente (origen) */}
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground truncate">
-                {output?.label || sourceOutputName}
+              <p className="text-xs text-muted-foreground">Componente</p>
+              <p className="text-sm font-medium truncate">
+                {sourceOutput?.label || sourceOutputName}
               </p>
-              <Input
-                value={config.targetLabel}
-                onChange={(e) => handleLabelChange(sourceOutputName, e.target.value)}
-                placeholder="Etiqueta en el padre"
-                className="h-7 text-sm mt-1"
-              />
             </div>
+
+            <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+
+            {/* Selector de output del padre (destino) */}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground">Padre (sumar a)</p>
+              <Select
+                value={targetOutputName}
+                onValueChange={(value) => handleTargetChange(sourceOutputName, value)}
+              >
+                <SelectTrigger className="h-7 text-xs">
+                  <SelectValue placeholder="Seleccionar output..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {parentOutputs.map((output) => (
+                    <SelectItem key={output.name} value={output.name}>
+                      {output.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 text-destructive hover:text-destructive"
+              className="h-7 w-7 text-destructive hover:text-destructive shrink-0"
               onClick={() => handleRemoveAggregation(sourceOutputName)}
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -252,22 +284,17 @@ export function OutputAggregationSection({
       })}
 
       {/* Selector para añadir nuevas agregaciones */}
-      {availableOutputs.length > 0 && (
+      {availableComponentOutputs.length > 0 && (
         <Select
           value=""
-          onValueChange={(name) => {
-            const output = componentOutputs.find((o) => o.name === name);
-            if (output) {
-              handleAddAggregation(name, output.label);
-            }
-          }}
+          onValueChange={(name) => handleAddAggregation(name)}
         >
           <SelectTrigger className="h-8 text-xs">
             <Plus className="h-3 w-3 mr-1" />
-            <span>Añadir output para agregar</span>
+            <span>Añadir output del componente</span>
           </SelectTrigger>
           <SelectContent>
-            {availableOutputs.map((output) => (
+            {availableComponentOutputs.map((output) => (
               <SelectItem key={output.name} value={output.name}>
                 {output.label}
               </SelectItem>
@@ -281,7 +308,7 @@ export function OutputAggregationSection({
         <Button
           size="sm"
           onClick={handleSave}
-          disabled={isSaving}
+          disabled={isSaving || validAggregationsCount === 0}
           className="w-full"
         >
           {isSaving && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
