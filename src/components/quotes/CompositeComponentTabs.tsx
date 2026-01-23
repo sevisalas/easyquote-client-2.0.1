@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ActiveComponent } from "./CompositeComponentsSelector";
 import { useQuery, useQueries } from "@tanstack/react-query";
@@ -68,6 +68,30 @@ export default function CompositeComponentTabs({
   // Hook para obtener configuración de prompts (force_result, admin_only, etc.)
   const { isPromptForceResult } = useProductPromptSettings(parentProductId);
 
+  // Necesitamos las definiciones de prompts para mapear UUID -> celda (B10, B36, etc.)
+  // y así poder aplicar correctamente force_result (se guarda en BD por celda).
+  const { data: parentPromptDefinitions = [] } = useQuery({
+    queryKey: ["easyquote-prompts-definitions", parentProductId],
+    queryFn: async () => {
+      if (!parentProductId) return [];
+      const token = await getEasyQuoteToken();
+      if (!token) return [];
+      const { data, error } = await invokeEasyQuoteFunction<any[]>("easyquote-prompts", {
+        token,
+        productId: parentProductId,
+      });
+      if (error) {
+        console.error("[CompositeComponentTabs] Error fetching parent prompt definitions", error);
+        return [];
+      }
+      return Array.isArray(data) ? data : [];
+    },
+    enabled: !!parentProductId,
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
   // Fetch prompt connections from database
   const { data: promptConnections = [] } = useQuery({
     queryKey: ["composite-prompt-connections", parentProductId],
@@ -83,16 +107,64 @@ export default function CompositeComponentTabs({
     staleTime: 5 * 60 * 1000,
   });
 
+  function getPromptCell(op: any): string | undefined {
+    return op?.promptCell ?? op?.prompt_cell ?? op?.cell ?? op?.promptcell;
+  }
+
   // Normalizar nombre de prompt para comparación
-  const normalizePromptName = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
-  
-  // Extraer celda de un id como "$B$5" -> "B5"
+  const normalizePromptName = (v: any) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+
+  // Extraer celda (B10) de un string. Ojo: evitamos matches "dentro" de UUIDs usando \b.
   const extractCellRef = (v: any): string | null => {
-    if (!v) return null;
-    const s = String(v).trim();
-    const m = s.match(/\$?([A-Za-z]+)\$?(\d+)/);
-    return m ? `${m[1].toUpperCase()}${m[2]}` : null;
+    const s = String(v ?? "").replace(/\$/g, "").toUpperCase();
+    const m = s.match(/\b[A-Z]{1,3}\d{1,4}\b/);
+    return m?.[0] ?? null;
   };
+
+  // Lookup: UUID -> celda (ej: "B10") para el producto padre.
+  const parentPromptCellLookup = useMemo(() => {
+    const map = new Map<string, string>();
+
+    for (const p of parentPromptDefinitions as any[]) {
+      const rawCell = getPromptCell(p);
+      const cell = extractCellRef(rawCell) ?? normalizePromptName(rawCell);
+      if (!cell) continue;
+
+      const uuid = String(p?.id ?? "").trim();
+      if (uuid) {
+        map.set(uuid, cell);
+        map.set(uuid.toUpperCase(), cell);
+        map.set(uuid.toLowerCase(), cell);
+      }
+
+      const keys = [p?.key, p?.code, p?.slug, p?.name, getPromptCell(p)];
+      for (const k of keys) {
+        const kn = extractCellRef(k) ?? normalizePromptName(k);
+        if (kn) map.set(kn, cell);
+      }
+
+      map.set(cell, cell);
+    }
+
+    return map;
+  }, [parentPromptDefinitions]);
+
+  const getParentPromptAdminKey = useCallback((prompt: PromptDef): string => {
+    const idStr = String(prompt.id).trim();
+
+    // 1) UUID -> celda (clave más fiable)
+    const cellFromUuid = parentPromptCellLookup.get(idStr);
+    if (cellFromUuid) return cellFromUuid;
+
+    // 2) fallback por celdas detectables
+    const idNorm = extractCellRef(idStr) ?? normalizePromptName(idStr);
+    const labelCell = extractCellRef((prompt as any)?.label);
+
+    const cellFromId = idNorm ? parentPromptCellLookup.get(idNorm) : undefined;
+    const cellFromLabel = labelCell ? (parentPromptCellLookup.get(labelCell) ?? labelCell) : undefined;
+
+    return cellFromId ?? cellFromLabel ?? extractCellRef(idStr) ?? labelCell ?? idNorm ?? idStr;
+  }, [parentPromptCellLookup]);
 
   // Separar prompts del padre en regulares y force_result
   const { parentRegularPrompts, parentForceResultPrompts } = useMemo(() => {
@@ -100,36 +172,14 @@ export default function CompositeComponentTabs({
     const regular: PromptDef[] = [];
     const forceResult: PromptDef[] = [];
 
-    console.log("[CompositeComponentTabs] Checking force_result prompts", {
-      allPromptsCount: allPrompts.length,
-      parentProductId,
-    });
-
     for (const prompt of allPrompts) {
-      const key = extractCellRef(prompt.id) ?? extractCellRef((prompt as any).label) ?? normalizePromptName(String(prompt.id));
-      const isForce = isPromptForceResult(key);
-      
-      console.log("[CompositeComponentTabs] Prompt check:", {
-        promptId: prompt.id,
-        promptLabel: prompt.label,
-        normalizedKey: key,
-        isForceResult: isForce,
-      });
-      
-      if (isForce) {
-        forceResult.push(prompt);
-      } else {
-        regular.push(prompt);
-      }
+      const key = getParentPromptAdminKey(prompt);
+      if (isPromptForceResult(key)) forceResult.push(prompt);
+      else regular.push(prompt);
     }
 
-    console.log("[CompositeComponentTabs] Force result separation:", {
-      regularCount: regular.length,
-      forceResultCount: forceResult.length,
-    });
-
     return { parentRegularPrompts: regular, parentForceResultPrompts: forceResult };
-  }, [parentProduct, isPromptForceResult, parentProductId]);
+  }, [parentProduct, isPromptForceResult, getParentPromptAdminKey]);
 
   // Producto virtual para prompts regulares del padre
   const parentRegularProduct = useMemo(() => {
