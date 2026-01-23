@@ -72,6 +72,8 @@ export default function ProductTestPage() {
   const [compositeComponentsData, setCompositeComponentsData] = useState<ComponentsDataMap>({});
   const [compositeTotalPrice, setCompositeTotalPrice] = useState<number>(0);
   const [compositeParentOutputs, setCompositeParentOutputs] = useState<any[]>([]);
+  // Estado para valores de prompts editados por el usuario en cada componente: { [componentId]: { [promptId]: value } }
+  const [componentPromptValues, setComponentPromptValues] = useState<Record<string, Record<string, any>>>({});
   
   // Ref para el timeout del debounce de commit de prompts
   const commitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -126,6 +128,22 @@ export default function ProductTestPage() {
     setActiveCompositeComponents(components);
   }, []);
 
+  // Handlers para cambios de prompts en componentes individuales
+  const handleComponentPromptChange = useCallback((componentId: string, promptId: string, value: any) => {
+    setComponentPromptValues(prev => ({
+      ...prev,
+      [componentId]: {
+        ...(prev[componentId] || {}),
+        [promptId]: value,
+      },
+    }));
+  }, []);
+
+  const handleComponentPromptCommit = useCallback((componentId: string, promptId: string, value: any) => {
+    // El commit ya se hace al actualizar el estado, la query se refrescará automáticamente
+    console.log("[ProductTestPage] Component prompt committed:", { componentId, promptId, value });
+  }, []);
+
   // Al cambiar de producto: resetear UI de compuestos ANTES de rehidratar obligatorios.
   // Importante: esto evita que se queden componentes “fantasma” de otro producto,
   // y también evita el caso de que se queden vacíos y parezca que “se han borrado”.
@@ -136,6 +154,7 @@ export default function ProductTestPage() {
     setCompositeComponentsData({});
     setCompositeTotalPrice(0);
     setCompositeParentOutputs([]);
+    setComponentPromptValues({}); // Resetear valores de prompts de componentes
   }, [productId]);
   
   // Mantener SIEMPRE activos los componentes obligatorios.
@@ -1311,6 +1330,9 @@ export default function ProductTestPage() {
                               setCompositeTotalPrice(total);
                               if (parentOutputs) setCompositeParentOutputs(parentOutputs);
                             }}
+                            componentPromptValues={componentPromptValues}
+                            onComponentPromptChange={handleComponentPromptChange}
+                            onComponentPromptCommit={handleComponentPromptCommit}
                           />
                         ) : (
                           /* Sistema legacy para productos encuadernados */
