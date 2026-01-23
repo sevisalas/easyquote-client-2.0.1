@@ -18,7 +18,14 @@ import BoundProductConfigSelector, {
   getAvailableConfigs, 
   getActiveComponents 
 } from "@/components/quotes/BoundProductConfigSelector";
+import CompositeComponentTabs, { type ComponentsDataMap } from "@/components/quotes/CompositeComponentTabs";
+import CompositeComponentsSelector, { 
+  type ActiveComponent, 
+  getInitialActiveComponents, 
+  hasRequiredComponents 
+} from "@/components/quotes/CompositeComponentsSelector";
 import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
+import { useCompositeProductConfig } from "@/hooks/useCompositeProductConfig";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -124,19 +131,91 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [forceResultPrompts, setForceResultPrompts] = useState<PromptDef[]>([]); // Prompts marcados como "Opc. restrictiva"
   const initialStateRef = useRef<string>("");
   
+  // Estados para productos compuestos con componentes configurados (nuevo sistema)
+  const [activeCompositeComponents, setActiveCompositeComponents] = useState<ActiveComponent[]>([]);
+  const [compositeComponentsData, setCompositeComponentsData] = useState<ComponentsDataMap>({});
+  const [compositeTotalPrice, setCompositeTotalPrice] = useState<number>(0);
+  const [compositeParentOutputs, setCompositeParentOutputs] = useState<any[]>([]);
+  const [componentPromptValues, setComponentPromptValues] = useState<Record<string, Record<string, any>>>({});
+  
   // Cache de opciones de prompts: se cargan una vez por producto y no se recargan en cada PATCH
   const promptOptionsCache = useRef<Record<string, any[]>>({});
   
   // Obtener configuración de componentes del producto
   const { isComposite, enabledComponents } = useProductComponentSettings(productId || undefined);
   
+  // Fetch composite product components configuration (nuevo sistema)
+  const { 
+    components: configuredComponents = [],
+    componentsLoading: isLoadingConfiguredComponents,
+  } = useCompositeProductConfig(productId || undefined, organizationId);
+  
+  // Nuevo sistema: si hay componentes configurados en composite_product_components, usar ese
+  const hasConfiguredComponents = configuredComponents.length > 0;
+  const hasRequiredComponentsConfigured = hasRequiredComponents(configuredComponents);
+  
+  // Handlers para cambios de prompts en componentes individuales
+  const handleComponentPromptChange = useCallback((componentKey: string, promptId: string, value: any) => {
+    setComponentPromptValues(prev => ({
+      ...prev,
+      [componentKey]: {
+        ...(prev[componentKey] || {}),
+        [promptId]: value,
+      },
+    }));
+  }, []);
+
+  const handleComponentPromptCommit = useCallback((componentKey: string, promptId: string, value: any) => {
+    console.log("[QuoteItem] Component prompt committed:", { componentKey, promptId, value });
+  }, []);
+  
   // Determinar si el producto necesita selector de configuración (tiene múltiples componentes)
   const availableConfigs = useMemo(() => {
+    // Si tiene el nuevo sistema de componentes, no usar el legacy
+    if (hasConfiguredComponents) return [];
     if (!isComposite || !productId || productId === CUSTOM_PRODUCT_ID) return [];
     return getAvailableConfigs(enabledComponents);
-  }, [isComposite, enabledComponents, productId]);
+  }, [isComposite, enabledComponents, productId, hasConfiguredComponents]);
   
   const needsConfigSelector = availableConfigs.length > 0;
+  
+  // Producto compuesto está listo para mostrar datos cuando:
+  // - Tiene componentes configurados Y al menos un obligatorio (automático)
+  // - O tiene el sistema legacy Y se seleccionó una configuración
+  const isCompositeReady = hasConfiguredComponents 
+    ? (hasRequiredComponentsConfigured || activeCompositeComponents.length > 0)
+    : (!needsConfigSelector || boundProductConfig !== null);
+
+  // Al cambiar de producto: resetear UI de compuestos
+  useEffect(() => {
+    if (!productId) return;
+    setActiveComponent("cubierta");
+    setActiveCompositeComponents([]);
+    setCompositeComponentsData({});
+    setCompositeTotalPrice(0);
+    setCompositeParentOutputs([]);
+    setComponentPromptValues({});
+  }, [productId]);
+  
+  // Mantener SIEMPRE activos los componentes obligatorios
+  useEffect(() => {
+    if (!hasConfiguredComponents) return;
+
+    const requiredInitial = getInitialActiveComponents(configuredComponents);
+    const sortByOrder = (arr: ActiveComponent[]) =>
+      [...arr].sort((a, b) => a.display_order - b.display_order);
+
+    setActiveCompositeComponents((prev) => {
+      if (prev.length === 0) return sortByOrder(requiredInitial);
+
+      const prevIds = new Set(prev.map((c) => c.id));
+      const missingRequired = requiredInitial.filter((c) => !prevIds.has(c.id));
+
+      if (missingRequired.length === 0) return prev;
+
+      return sortByOrder([...prev, ...missingRequired]);
+    });
+  }, [hasConfiguredComponents, configuredComponents]);
 
   // Inicialización desde datos previos (duplicar)
   const initializedRef = useRef(false);
@@ -1926,7 +2005,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   </Alert>
                 ) : (
                   <div className="space-y-4">
-                    {/* Selector de configuración - mostrar INMEDIATAMENTE sin esperar API */}
+                    {/* Selector de configuración legacy - mostrar INMEDIATAMENTE sin esperar API */}
                     {needsConfigSelector && !boundProductConfig && (
                       <BoundProductConfigSelector
                         enabledComponents={enabledComponents}
@@ -1935,101 +2014,144 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                       />
                     )}
 
-                    {/* Mostrar prompts solo si no requiere configuración O ya se seleccionó una */}
-                    {(!needsConfigSelector || boundProductConfig) ? (
-                      pricing ? (
-                        <ComponentTabsPromptsForm
-                          product={pricing}
-                          productId={productId}
-                          values={promptValues}
-                          onChange={handlePromptChange}
-                          onCommit={handlePromptCommit}
-                          showAllPrompts={!!initialData}
-                          onComponentChange={setActiveComponent}
-                          boundProductConfig={boundProductConfig}
-                          isAdmin={isSuperAdmin || isOrgAdmin}
-                          onForceResultPrompts={setForceResultPrompts}
-                        />
+                    {/* Nuevo sistema de productos compuestos con componentes configurados */}
+                    {hasConfiguredComponents ? (
+                      isCompositeReady ? (
+                        <>
+                          {/* Selector de componentes para añadir/quitar opcionales */}
+                          {configuredComponents.some(c => c.is_optional) && (
+                            <div className="mb-4">
+                              <CompositeComponentsSelector
+                                configuredComponents={configuredComponents}
+                                activeComponents={activeCompositeComponents}
+                                onActiveComponentsChange={setActiveCompositeComponents}
+                                compact
+                              />
+                            </div>
+                          )}
+                          
+                          <CompositeComponentTabs
+                            parentProductId={productId}
+                            activeComponents={activeCompositeComponents}
+                            parentPromptValues={promptValues}
+                            onParentPromptChange={handlePromptChange}
+                            onParentPromptCommit={handlePromptCommit}
+                            parentProduct={pricing}
+                            isAdmin={isSuperAdmin || isOrgAdmin}
+                            onComponentChange={setActiveComponent}
+                            onComponentsDataChange={(data, total, parentOutputs) => {
+                              setCompositeComponentsData(data);
+                              setCompositeTotalPrice(total);
+                              if (parentOutputs) setCompositeParentOutputs(parentOutputs);
+                            }}
+                            componentPromptValues={componentPromptValues}
+                            onComponentPromptChange={handleComponentPromptChange}
+                            onComponentPromptCommit={handleComponentPromptCommit}
+                          />
+                        </>
                       ) : (
-                        <p className="text-sm text-muted-foreground">Cargando opciones…</p>
+                        <p className="text-sm text-muted-foreground">Cargando configuración...</p>
                       )
-                    ) : null}
-                    
-                    {/* Sección: Opciones restrictivas (prompts marcados como force_result) */}
-                    {forceResultPrompts.length > 0 && (
-                      <div className="border-t pt-4 mt-4">
-                        <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-                          Opciones restrictivas
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2">
-                          {forceResultPrompts.map((prompt) => {
-                            const effectiveValue = promptValues[prompt.id];
-                            const value = effectiveValue && typeof effectiveValue === 'object' && 'value' in effectiveValue 
-                              ? effectiveValue.value 
-                              : effectiveValue ?? prompt.default;
-                            
-                            // Checkbox type
-                            if (prompt.type === 'checkbox') {
-                              const isChecked = value === true || value === "true" || value === "Sí" || value === "Si" || value === 1 || value === "1";
-                              return (
-                                <div key={prompt.id} className="flex items-center gap-2 py-1">
-                                  <span className="text-sm">{prompt.label}</span>
-                                  <Checkbox
-                                    id={`restrictive-${prompt.id}`}
-                                    checked={isChecked}
-                                    onCheckedChange={(checked) => {
-                                      const newValue = checked ? "Sí" : "No";
-                                      handlePromptChange(prompt.id, newValue, prompt.label);
-                                      handlePromptCommit(prompt.id, newValue, prompt.label);
-                                    }}
-                                  />
-                                </div>
-                              );
-                            }
-                            
-                            // Select type
-                            if (prompt.type === 'select' && prompt.options?.length) {
-                              return (
-                                <div key={prompt.id} className="flex items-center gap-2 py-1">
-                                  <span className="text-sm">{prompt.label}</span>
-                                  <Select 
-                                    value={String(value ?? '')} 
-                                    onValueChange={(v) => {
-                                      handlePromptChange(prompt.id, v, prompt.label);
-                                      handlePromptCommit(prompt.id, v, prompt.label);
-                                    }}
-                                  >
-                                    <SelectTrigger className="h-8 w-auto min-w-[100px]">
-                                      <SelectValue placeholder="—" />
-                                    </SelectTrigger>
-                                    <SelectContent className="z-50 bg-popover">
-                                      {prompt.options.map((o, idx) => (
-                                        <SelectItem key={`${o.value}-${idx}`} value={o.value}>
-                                          {o.label ?? o.value}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              );
-                            }
-                            
-                            // Number/Integer/Text type
-                            return (
-                              <div key={prompt.id} className="flex items-center gap-2 py-1">
-                                <span className="text-sm">{prompt.label}</span>
-                                <Input
-                                  type={prompt.type === 'number' || prompt.type === 'integer' ? 'number' : 'text'}
-                                  className="h-8 w-24"
-                                  value={value ?? ''}
-                                  onChange={(e) => handlePromptChange(prompt.id, e.target.value, prompt.label)}
-                                  onBlur={(e) => handlePromptCommit(prompt.id, e.target.value, prompt.label)}
-                                />
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
+                    ) : (
+                      /* Sistema legacy para productos encuadernados */
+                      <>
+                        {/* Mostrar prompts solo si no requiere configuración O ya se seleccionó una */}
+                        {(!needsConfigSelector || boundProductConfig) ? (
+                          pricing ? (
+                            <ComponentTabsPromptsForm
+                              product={pricing}
+                              productId={productId}
+                              values={promptValues}
+                              onChange={handlePromptChange}
+                              onCommit={handlePromptCommit}
+                              showAllPrompts={!!initialData}
+                              onComponentChange={setActiveComponent}
+                              boundProductConfig={boundProductConfig}
+                              isAdmin={isSuperAdmin || isOrgAdmin}
+                              onForceResultPrompts={setForceResultPrompts}
+                            />
+                          ) : (
+                            <p className="text-sm text-muted-foreground">Cargando opciones…</p>
+                          )
+                        ) : null}
+                        
+                        {/* Sección: Opciones restrictivas (prompts marcados como force_result) - solo legacy */}
+                        {!hasConfiguredComponents && forceResultPrompts.length > 0 && (
+                          <div className="border-t pt-4 mt-4">
+                            <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+                              Opciones restrictivas
+                            </h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2">
+                              {forceResultPrompts.map((prompt) => {
+                                const effectiveValue = promptValues[prompt.id];
+                                const value = effectiveValue && typeof effectiveValue === 'object' && 'value' in effectiveValue 
+                                  ? effectiveValue.value 
+                                  : effectiveValue ?? prompt.default;
+                                
+                                // Checkbox type
+                                if (prompt.type === 'checkbox') {
+                                  const isChecked = value === true || value === "true" || value === "Sí" || value === "Si" || value === 1 || value === "1";
+                                  return (
+                                    <div key={prompt.id} className="flex items-center gap-2 py-1">
+                                      <span className="text-sm">{prompt.label}</span>
+                                      <Checkbox
+                                        id={`restrictive-${prompt.id}`}
+                                        checked={isChecked}
+                                        onCheckedChange={(checked) => {
+                                          const newValue = checked ? "Sí" : "No";
+                                          handlePromptChange(prompt.id, newValue, prompt.label);
+                                          handlePromptCommit(prompt.id, newValue, prompt.label);
+                                        }}
+                                      />
+                                    </div>
+                                  );
+                                }
+                                
+                                // Select type
+                                if (prompt.type === 'select' && prompt.options?.length) {
+                                  return (
+                                    <div key={prompt.id} className="flex items-center gap-2 py-1">
+                                      <span className="text-sm">{prompt.label}</span>
+                                      <Select 
+                                        value={String(value ?? '')} 
+                                        onValueChange={(v) => {
+                                          handlePromptChange(prompt.id, v, prompt.label);
+                                          handlePromptCommit(prompt.id, v, prompt.label);
+                                        }}
+                                      >
+                                        <SelectTrigger className="h-8 w-auto min-w-[100px]">
+                                          <SelectValue placeholder="—" />
+                                        </SelectTrigger>
+                                        <SelectContent className="z-50 bg-popover">
+                                          {prompt.options.map((o, idx) => (
+                                            <SelectItem key={`${o.value}-${idx}`} value={o.value}>
+                                              {o.label ?? o.value}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  );
+                                }
+                                
+                                // Number/Integer/Text type
+                                return (
+                                  <div key={prompt.id} className="flex items-center gap-2 py-1">
+                                    <span className="text-sm">{prompt.label}</span>
+                                    <Input
+                                      type={prompt.type === 'number' || prompt.type === 'integer' ? 'number' : 'text'}
+                                      className="h-8 w-24"
+                                      value={value ?? ''}
+                                      onChange={(e) => handlePromptChange(prompt.id, e.target.value, prompt.label)}
+                                      onBlur={(e) => handlePromptCommit(prompt.id, e.target.value, prompt.label)}
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
@@ -2092,7 +2214,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   </div>
                 ) : (
                   <>
-                    {pricingError && (
+                    {pricingError && !hasConfiguredComponents && (
                       <Alert variant="destructive" className="mb-4">
                         <AlertTitle>Producto sin pricing</AlertTitle>
                         <AlertDescription>El producto seleccionado no existe o es incorrecto.</AlertDescription>
@@ -2100,14 +2222,70 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                     )}
 
                     {/* Si requiere configuración y no se ha seleccionado, mostrar mensaje */}
-                    {needsConfigSelector && !boundProductConfig && (
+                    {!isCompositeReady && (
                       <div className="text-center py-8 text-muted-foreground">
                         <p>Selecciona el tipo de producto para ver los resultados</p>
                       </div>
                     )}
 
-                    {/* Solo mostrar resultados si no requiere configuración O ya se seleccionó una */}
-                    {(!needsConfigSelector || boundProductConfig) && (
+                    {/* ======= Nuevo sistema de productos compuestos ======= */}
+                    {hasConfiguredComponents && isCompositeReady && (
+                      <>
+                        {/* Precio Total del producto compuesto */}
+                        <div className="p-3 rounded-md border bg-accent/10 mb-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-muted-foreground">
+                              {userEditedPrice !== null ? "Precio calculado" : "Precio Total"}
+                            </span>
+                            <span
+                              className={
+                                userEditedPrice !== null
+                                  ? "text-sm text-muted-foreground line-through"
+                                  : "text-lg font-semibold"
+                              }
+                            >
+                              {formatEUR(compositeTotalPrice)}
+                            </span>
+                          </div>
+
+                          {userEditedPrice !== null && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-muted-foreground">Precio modificado</span>
+                              <span className="text-lg font-semibold text-primary">{formatEUR(userEditedPrice)}</span>
+                            </div>
+                          )}
+
+                          {canEditPrice && (
+                            <div className="flex justify-end">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setUserEditedPrice(userEditedPrice === null ? compositeTotalPrice : null)}
+                              >
+                                {userEditedPrice !== null ? "Usar precio calculado" : "Editar precio"}
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Outputs del padre */}
+                        {compositeParentOutputs.length > 0 && (
+                          <div className="space-y-2">
+                            {compositeParentOutputs
+                              .filter((o: any) => o.type !== 'Price' && o.type !== 'Image')
+                              .map((o: any, idx: number) => (
+                                <div key={idx} className="flex items-center justify-between text-sm px-1">
+                                  <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
+                                  <span className="truncate ml-2">{String(o.value)}</span>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* ======= Sistema legacy ======= */}
+                    {!hasConfiguredComponents && isCompositeReady && (
                       <ComponentTabsOutputs
                         productId={productId}
                         outputs={sortedOutputs}
