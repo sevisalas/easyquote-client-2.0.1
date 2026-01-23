@@ -544,7 +544,8 @@ export default function CompositeComponentTabs({
     queries: activeComponents.map((component) => {
       const componentKey = getActiveComponentKey(component);
       return {
-        queryKey: ["component-prompt-settings", component.component_product_id],
+        // IMPORTANTE: incluir componentKey para que cada instancia tenga su propia entrada en el mapa
+        queryKey: ["component-prompt-settings", component.component_product_id, componentKey],
         queryFn: async () => {
           const { data, error } = await supabase
             .from("product_prompt_settings")
