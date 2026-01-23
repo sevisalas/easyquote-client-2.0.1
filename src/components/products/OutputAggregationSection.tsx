@@ -8,10 +8,22 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
-import type { OutputAggregation } from "@/hooks/useCompositeProductConfig";
+
+// Tipo local para evitar acoplar este componente a exportaciones del hook.
+// (Solo se usa para tipado de `existingAggregations` y del payload de guardado.)
+interface OutputAggregation {
+  id: string;
+  organization_id: string;
+  composite_product_id: string;
+  source_output_name: string;
+  target_output_name: string;
+  target_output_label: string;
+  aggregation_type: string;
+  created_at: string;
+  updated_at: string;
+}
 
 interface OutputAggregationSectionProps {
   componentProductId: string;
@@ -40,51 +52,79 @@ export function OutputAggregationSection({
   onSave,
   isSaving,
 }: OutputAggregationSectionProps) {
+  const normalizeOutputs = (raw: any): ComponentOutputDef[] => {
+    const list: any[] = Array.isArray(raw)
+      ? raw
+      : raw && typeof raw === "object"
+        ? Array.isArray(raw.items)
+          ? raw.items
+          : Array.isArray(raw.outputs)
+            ? raw.outputs
+            : Array.isArray(raw.outputValues)
+              ? raw.outputValues
+              : Array.isArray(raw.results)
+                ? raw.results
+                : []
+        : [];
+
+    return list
+      .map((o: any) => {
+        const type = String(o?.type ?? o?.outputType ?? "").trim();
+        const label = String(
+          o?.label ?? o?.name ?? o?.outputText ?? o?.nameCell ?? o?.valueCell ?? o?.id ?? o?.outputId ?? ""
+        ).trim();
+
+        // `name` debe ser estable: priorizamos `name`/`id` y caemos a `label` si no hay nada.
+        const name = String(o?.name ?? o?.id ?? o?.outputId ?? label).trim();
+        if (!name) return null;
+
+        return { name, label: label || name, type: type || "unknown" } as ComponentOutputDef;
+      })
+      .filter(Boolean)
+      .filter((o: any) => {
+        const type = String(o.type || "").toLowerCase();
+        const name = String(o.name || "").toLowerCase();
+
+        const isPrice = type === "price" || name === "price" || name === "precio";
+        const isImage = type === "image" || name === "image" || name === "imagen";
+
+        return !isPrice && !isImage;
+      }) as ComponentOutputDef[];
+  };
+
   // Cargar los outputs del componente desde la API
   const { data: componentOutputs = [], isLoading } = useQuery({
     queryKey: ["component-outputs-pricing", componentProductId],
     queryFn: async () => {
       const token = await getEasyQuoteToken();
       if (!token) return [];
-      const { data, error } = await invokeEasyQuoteFunction<any>("easyquote-pricing", {
+
+      // 1) Intentamos primero con pricing (da outputs calculados, pero puede fallar con 500 en algunos Excel)
+      const pricingRes = await invokeEasyQuoteFunction<any>("easyquote-pricing", {
         token,
         productId: componentProductId,
         method: "GET",
       });
-      if (error) {
-        console.error("Error fetching component outputs:", error);
+
+      if (!pricingRes.error) {
+        const normalized = normalizeOutputs(pricingRes.data);
+        if (normalized.length > 0) return normalized;
+      } else {
+        console.error("Error fetching component outputs (pricing):", pricingRes.error);
+      }
+
+      // 2) Fallback: listado de outputs (no depende del motor de cálculo)
+      const outputsRes = await invokeEasyQuoteFunction<any>("easyquote-outputs", {
+        token,
+        productId: componentProductId,
+      });
+
+      if (outputsRes.error) {
+        console.error("Error fetching component outputs (outputs list):", outputsRes.error);
         return [];
       }
-      // EasyQuote puede devolver outputs en distintas claves según el endpoint/versión.
-      // Normalizamos como en ProductTestPage.
-      const raw = (data?.outputValues ?? data?.outputs ?? data?.results ?? []) as any;
-      const outputs: any[] = Array.isArray(raw) ? raw : [];
 
-      // Excluir PRICE e imágenes (solo se incluirán si en el futuro se quiere tratarlos explícitamente)
-      return outputs
-        .map((o: any) => {
-          const type = String(o?.type ?? o?.outputType ?? "").trim();
-          const label = String(
-            o?.label ?? o?.name ?? o?.outputText ?? o?.nameCell ?? o?.valueCell ?? o?.id ?? o?.outputId ?? ""
-          ).trim();
-
-          // `name` debe ser estable: priorizamos `name`/`id` y caemos a `label` si no hay nada.
-          const name = String(o?.name ?? o?.id ?? o?.outputId ?? label).trim();
-
-          if (!name) return null;
-
-          return { name, label: label || name, type: type || "unknown" } as ComponentOutputDef;
-        })
-        .filter(Boolean)
-        .filter((o: any) => {
-          const type = String(o.type || "").toLowerCase();
-          const name = String(o.name || "").toLowerCase();
-
-          const isPrice = type === "price" || name === "price" || name === "precio";
-          const isImage = type === "image" || name === "image" || name === "imagen";
-
-          return !isPrice && !isImage;
-        }) as ComponentOutputDef[];
+      return normalizeOutputs(outputsRes.data);
     },
     enabled: !!componentProductId,
     staleTime: 5 * 60 * 1000,
