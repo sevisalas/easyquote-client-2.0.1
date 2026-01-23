@@ -1163,10 +1163,10 @@ export default function ProductTestPage() {
           {/* Product Selection & Configuration */}
           <div className="lg:col-span-2">
             <Card>
-              <CardHeader>
-                <CardTitle>Selección de {viewMode === 'productos' ? 'producto' : 'componente'}</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Selección de {viewMode === 'productos' ? 'producto' : 'componente'}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-4">
                 {/* Product Selection */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">{viewMode === 'productos' ? 'Producto' : 'Componente'}</label>
@@ -1255,7 +1255,7 @@ export default function ProductTestPage() {
                     </AlertDescription>
                   </Alert>}
 
-                {productId && !isLoadingProduct && productDetail && <div className="border-t pt-4 space-y-4">
+                {productId && !isLoadingProduct && productDetail && <div className="border-t pt-3 space-y-3">
                     
                     {/* Mostrar prompts si el producto compuesto está listo */}
                     {isCompositeReady ? (
@@ -1377,10 +1377,10 @@ export default function ProductTestPage() {
           {/* Results - Panel lateral de resultados */}
           <div>
             {productId && <Card>
-                <CardHeader>
-                  <CardTitle>Resultados</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Resultados</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3">
                   {/* Si el producto compuesto no está listo, mostrar mensaje */}
                   {!isCompositeReady && needsConfigSelector && (
                     <div className="text-center py-8 text-muted-foreground">
