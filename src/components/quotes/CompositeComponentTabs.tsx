@@ -130,6 +130,31 @@ export default function CompositeComponentTabs({
     return m?.[0] ?? null;
   };
 
+  // Normaliza el tipo de prompt (viene como promptType en EasyQuote: DropDown, Number, TextBox, Checkbox, etc.)
+  const getPromptTypeKey = (p: any) => String(p?.type ?? p?.promptType ?? "").trim().toLowerCase();
+
+  const normalizeValueOptions = (p: any) => {
+    const rawOptions =
+      p?.valueOptions ??
+      p?.value_options ??
+      p?.options ??
+      p?.values ??
+      p?.items ??
+      [];
+    const arr = Array.isArray(rawOptions) ? rawOptions : [];
+    return arr
+      .map((o: any) => {
+        if (typeof o === "string" || typeof o === "number") {
+          return { label: String(o), value: String(o) };
+        }
+        const value = o?.value ?? o?.id ?? o?.key ?? o?.name;
+        const label = o?.label ?? o?.title ?? o?.name ?? value;
+        if (value === undefined || value === null) return null;
+        return { label: String(label ?? value), value: String(value) };
+      })
+      .filter(Boolean) as Array<{ label: string; value: string }>;
+  };
+
   // Lookup: UUID -> celda (ej: "B10") para el producto padre.
   const parentPromptCellLookup = useMemo(() => {
     const map = new Map<string, string>();
@@ -782,8 +807,10 @@ export default function CompositeComponentTabs({
                               onComponentPromptCommit?.(component.id, prompt.id, newValue);
                             };
                             
-                            // Checkbox type
-                            if (prompt.type === 'checkbox' || prompt.promptType === 'checkbox') {
+                            const typeKey = getPromptTypeKey(prompt);
+
+                            // Checkbox type (por si EasyQuote lo devuelve como Checkbox/Boolean)
+                            if (typeKey.includes('check') || typeKey.includes('boolean')) {
                               const isChecked = value === true || value === "true" || value === "Sí" || value === "Si" || value === 1 || value === "1";
                               return (
                                 <div key={prompt.id} className="flex items-center gap-2 py-1">
@@ -800,18 +827,18 @@ export default function CompositeComponentTabs({
                               );
                             }
                             
-                            // Select type - usar valueOptions de la API de EasyQuote
-                            const rawOptions = prompt.valueOptions || prompt.options || prompt.values || [];
-                            const options = rawOptions.map((o: any) => 
-                              typeof o === 'string' ? { label: o, value: o } : o
-                            );
-                            
-                            if ((prompt.type === 'select' || prompt.promptType === 'List' || prompt.promptType === 'select') && options.length) {
+                            // Select type - EasyQuote usa "DropDown"; también aceptamos List/Select
+                            const options = normalizeValueOptions(prompt);
+                            const isSelectType = typeKey.includes('drop') || typeKey.includes('select') || typeKey.includes('list');
+
+                            if (isSelectType && options.length) {
+                              const valueStr = value === undefined || value === null ? "" : String(value);
+                              const isValid = valueStr === "" || options.some((o) => o.value === valueStr);
                               return (
                                 <div key={prompt.id} className="flex items-center gap-2 py-1">
                                   <span className="text-sm">{prompt.promptText || prompt.label || prompt.id}</span>
                                   <Select 
-                                    value={String(value ?? '')} 
+                                    value={isValid ? valueStr : ""}
                                     onValueChange={(val) => {
                                       handleChange(val);
                                       handleCommit(val);
@@ -821,9 +848,9 @@ export default function CompositeComponentTabs({
                                       <SelectValue placeholder="—" />
                                     </SelectTrigger>
                                     <SelectContent className="z-50 bg-popover">
-                                      {options.map((o: any, idx: number) => (
-                                        <SelectItem key={`${o.value ?? o}-${idx}`} value={String(o.value ?? o)}>
-                                          {o.label ?? o.value ?? o}
+                                      {options.map((o, idx: number) => (
+                                        <SelectItem key={`${o.value}-${idx}`} value={o.value}>
+                                          {o.label}
                                         </SelectItem>
                                       ))}
                                     </SelectContent>
@@ -837,7 +864,7 @@ export default function CompositeComponentTabs({
                               <div key={prompt.id} className="flex items-center gap-2 py-1">
                                 <span className="text-sm">{prompt.promptText || prompt.label || prompt.id}</span>
                                 <Input
-                                  type={prompt.type === 'number' || prompt.type === 'integer' || prompt.promptType === 'Number' ? 'number' : 'text'}
+                                  type={typeKey.includes('number') || typeKey.includes('decimal') || typeKey.includes('float') || typeKey.includes('int') ? 'number' : 'text'}
                                   className="h-8 w-24"
                                   value={value ?? ''}
                                   onChange={(e) => handleChange(e.target.value)}
