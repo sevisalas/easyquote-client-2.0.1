@@ -189,13 +189,22 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Al cambiar de producto: resetear UI de compuestos
   useEffect(() => {
     if (!productId) return;
-    setActiveComponent("cubierta");
+    setActiveComponent(""); // Reset - se auto-selecciona cuando llegan datos
     setActiveCompositeComponents([]);
     setCompositeComponentsData({});
     setCompositeTotalPrice(0);
     setCompositeParentOutputs([]);
     setComponentPromptValues({});
   }, [productId]);
+  
+  // Auto-seleccionar el primer componente cuando lleguen los datos
+  useEffect(() => {
+    if (!hasConfiguredComponents) return;
+    const keys = Object.keys(compositeComponentsData);
+    if (keys.length > 0 && (!activeComponent || !compositeComponentsData[activeComponent])) {
+      setActiveComponent(keys[0]);
+    }
+  }, [hasConfiguredComponents, compositeComponentsData, activeComponent]);
   
   // Mantener SIEMPRE activos los componentes obligatorios
   useEffect(() => {
