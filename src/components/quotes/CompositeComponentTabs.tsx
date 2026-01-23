@@ -304,12 +304,21 @@ export default function CompositeComponentTabs({
 
           // 1. Añadir valores heredados de conexiones
           for (const conn of connections as any[]) {
-            const sourceValue = parentPromptValues[conn.source_prompt_name];
+            let sourceValue = parentPromptValues[conn.source_prompt_name];
+            
+            // El valor puede venir como objeto {value, label} o como primitivo
             if (sourceValue !== undefined && sourceValue !== null) {
-              componentInputs.push({
-                id: conn.target_prompt_name,
-                value: sourceValue,
-              });
+              // Extraer el valor real si es un objeto
+              const actualValue = (typeof sourceValue === 'object' && sourceValue !== null && 'value' in sourceValue)
+                ? sourceValue.value
+                : sourceValue;
+              
+              if (actualValue !== undefined && actualValue !== null) {
+                componentInputs.push({
+                  id: conn.target_prompt_name,
+                  value: actualValue,
+                });
+              }
             }
           }
           
