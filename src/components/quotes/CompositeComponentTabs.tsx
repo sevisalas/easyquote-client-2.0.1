@@ -689,9 +689,6 @@ export default function CompositeComponentTabs({
     return values;
   };
 
-  // El componente activo actual
-  const activeComponentData = activeTab ? componentsData[activeTab] : null;
-
   return (
     <div className="space-y-3">
       {/* Header con título y tabs de componentes en la misma línea */}
@@ -737,6 +734,86 @@ export default function CompositeComponentTabs({
           ) : (
             <p className="text-sm text-muted-foreground">Sin prompts configurados</p>
           )}
+
+          {/* Opciones restrictivas del padre (force_result) */}
+          {parentForceResultPrompts.length > 0 && (
+            <div className="border-t pt-4 mt-4">
+              <h5 className="text-sm font-semibold text-muted-foreground mb-3">Opciones restrictivas</h5>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                {parentForceResultPrompts.map((prompt) => {
+                  const effectiveValue = parentPromptValues[prompt.id];
+                  const value =
+                    effectiveValue && typeof effectiveValue === "object" && "value" in effectiveValue
+                      ? (effectiveValue as any).value
+                      : effectiveValue ?? prompt.default;
+
+                  if (prompt.type === "checkbox") {
+                    const isChecked =
+                      value === true ||
+                      value === "true" ||
+                      value === "Sí" ||
+                      value === "Si" ||
+                      value === 1 ||
+                      value === "1";
+                    return (
+                      <div key={prompt.id} className="flex items-center gap-2 py-1">
+                        <span className="text-sm">{prompt.label}</span>
+                        <Checkbox
+                          id={`restrictive-parent-${prompt.id}`}
+                          checked={isChecked}
+                          onCheckedChange={(checked) => {
+                            const newValue = checked ? "Sí" : "No";
+                            onParentPromptChange(prompt.id, newValue);
+                            onParentPromptCommit?.(prompt.id, newValue);
+                          }}
+                        />
+                      </div>
+                    );
+                  }
+
+                  if (prompt.type === "select" && prompt.options?.length) {
+                    return (
+                      <div key={prompt.id} className="flex items-center gap-2 py-1">
+                        <span className="text-sm">{prompt.label}</span>
+                        <Select
+                          value={String(value ?? "")}
+                          onValueChange={(v) => {
+                            onParentPromptChange(prompt.id, v);
+                            onParentPromptCommit?.(prompt.id, v);
+                          }}
+                        >
+                          <SelectTrigger className="h-8 w-auto min-w-[100px]">
+                            <SelectValue placeholder="—" />
+                          </SelectTrigger>
+                          <SelectContent className="z-50 bg-popover">
+                            {prompt.options.map((o, idx) => (
+                              <SelectItem key={`${o.value}-${idx}`} value={o.value}>
+                                {o.label ?? o.value}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={prompt.id} className="flex items-center gap-2 py-1">
+                      <span className="text-sm">{prompt.label}</span>
+                      <Input
+                        type={prompt.type === "number" || prompt.type === "integer" ? "number" : "text"}
+                        className="h-8 w-24"
+                        value={value ?? ""}
+                        onChange={(e) => onParentPromptChange(prompt.id, e.target.value)}
+                        onBlur={(e) => onParentPromptCommit?.(prompt.id, e.target.value)}
+                        onKeyDown={handleEnterToBlur}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* COLUMNA DERECHA: Prompts del componente seleccionado */}
@@ -776,6 +853,96 @@ export default function CompositeComponentTabs({
                         Sin opciones para este componente
                       </p>
                     )}
+
+                    {/* Opciones restrictivas del componente (force_result) */}
+                    {componentForceResultPrompts.length > 0 && (
+                      <div className="border-t pt-4 mt-4">
+                        <h5 className="text-sm font-semibold text-muted-foreground mb-3">Opciones restrictivas</h5>
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                          {componentForceResultPrompts.map((prompt: any) => {
+                            const value = componentValues[prompt.id] ?? prompt.currentValue ?? prompt.default;
+                            const typeKey = getPromptTypeKey(prompt);
+
+                            if (typeKey.includes("check") || typeKey.includes("boolean")) {
+                              const isChecked =
+                                value === true ||
+                                value === "true" ||
+                                value === "Sí" ||
+                                value === "Si" ||
+                                value === 1 ||
+                                value === "1";
+                              return (
+                                <div key={prompt.id} className="flex items-center gap-2 py-1">
+                                  <span className="text-sm">{prompt.promptText || prompt.label || prompt.id}</span>
+                                  <Checkbox
+                                    id={`restrictive-component-${componentKey}-${prompt.id}`}
+                                    checked={isChecked}
+                                    onCheckedChange={(checked) => {
+                                      const newValue = checked ? "Sí" : "No";
+                                      onComponentPromptChange?.(componentKey, prompt.id, newValue);
+                                      onComponentPromptCommit?.(componentKey, prompt.id, newValue);
+                                    }}
+                                  />
+                                </div>
+                              );
+                            }
+
+                            const options = normalizeValueOptions(prompt);
+                            const isSelectType =
+                              typeKey.includes("drop") || typeKey.includes("select") || typeKey.includes("list");
+
+                            if (isSelectType && options.length) {
+                              const valueStr = value === undefined || value === null ? "" : String(value);
+                              const isValid = valueStr === "" || options.some((o) => o.value === valueStr);
+                              return (
+                                <div key={prompt.id} className="flex items-center gap-2 py-1">
+                                  <span className="text-sm">{prompt.promptText || prompt.label || prompt.id}</span>
+                                  <Select
+                                    value={isValid ? valueStr : ""}
+                                    onValueChange={(val) => {
+                                      onComponentPromptChange?.(componentKey, prompt.id, val);
+                                      onComponentPromptCommit?.(componentKey, prompt.id, val);
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-8 w-auto min-w-[100px]">
+                                      <SelectValue placeholder="—" />
+                                    </SelectTrigger>
+                                    <SelectContent className="z-50 bg-popover">
+                                      {options.map((o, idx: number) => (
+                                        <SelectItem key={`${o.value}-${idx}`} value={o.value}>
+                                          {o.label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div key={prompt.id} className="flex items-center gap-2 py-1">
+                                <span className="text-sm">{prompt.promptText || prompt.label || prompt.id}</span>
+                                <Input
+                                  type={
+                                    typeKey.includes("number") ||
+                                    typeKey.includes("decimal") ||
+                                    typeKey.includes("float") ||
+                                    typeKey.includes("int")
+                                      ? "number"
+                                      : "text"
+                                  }
+                                  className="h-8 w-24"
+                                  value={value ?? ""}
+                                  onChange={(e) => onComponentPromptChange?.(componentKey, prompt.id, e.target.value)}
+                                  onBlur={(e) => onComponentPromptCommit?.(componentKey, prompt.id, e.target.value)}
+                                  onKeyDown={handleEnterToBlur}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -785,143 +952,6 @@ export default function CompositeComponentTabs({
           )}
         </div>
       </div>
-
-      {/* SECCIÓN SEPARADA: Opciones restrictivas (force_result) de padre y componentes */}
-      {(() => {
-        // Recopilar todas las opciones restrictivas: del padre + de todos los componentes
-        const allRestrictivePrompts: Array<{
-          source: 'parent' | 'component';
-          componentKey?: string;
-          componentLabel?: string;
-          prompt: any;
-          value: any;
-          handleChange: (v: any) => void;
-          handleCommit: (v: any) => void;
-        }> = [];
-
-        // Añadir prompts restrictivos del padre
-        for (const prompt of parentForceResultPrompts) {
-          const effectiveValue = parentPromptValues[prompt.id];
-          const value = effectiveValue && typeof effectiveValue === 'object' && 'value' in effectiveValue 
-            ? effectiveValue.value 
-            : effectiveValue ?? prompt.default;
-          allRestrictivePrompts.push({
-            source: 'parent',
-            prompt,
-            value,
-            handleChange: (v) => onParentPromptChange(prompt.id, v),
-            handleCommit: (v) => onParentPromptCommit?.(prompt.id, v),
-          });
-        }
-
-        // Añadir prompts restrictivos de cada componente activo
-        for (const component of activeComponents) {
-          const componentKey = getActiveComponentKey(component);
-          const componentForceResultPrompts = getComponentForceResultPrompts(componentKey);
-          const componentValues = getComponentPromptValues(componentKey);
-          
-          for (const prompt of componentForceResultPrompts) {
-            const value = componentValues[prompt.id] ?? prompt.currentValue ?? prompt.default;
-            allRestrictivePrompts.push({
-              source: 'component',
-              componentKey,
-              componentLabel: getComponentLabel(component),
-              prompt,
-              value,
-              handleChange: (v) => onComponentPromptChange?.(componentKey, prompt.id, v),
-              handleCommit: (v) => onComponentPromptCommit?.(componentKey, prompt.id, v),
-            });
-          }
-        }
-
-        if (allRestrictivePrompts.length === 0) return null;
-
-        return (
-          <div className="rounded-lg border border-border bg-card p-4">
-            <h4 className="text-sm font-semibold text-muted-foreground mb-3">
-              Opciones restrictivas
-            </h4>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-2">
-              {allRestrictivePrompts.map(({ source, componentKey, componentLabel, prompt, value, handleChange, handleCommit }, idx) => {
-                const typeKey = getPromptTypeKey(prompt);
-                const label = prompt.promptText || prompt.label || (prompt as any).id;
-                const prefixLabel = source === 'component' && componentLabel ? `${componentLabel}: ` : '';
-                const uniqueKey = source === 'parent' ? `parent-${prompt.id}` : `${componentKey}-${prompt.id}`;
-
-                // Checkbox type
-                if (typeKey.includes('check') || typeKey.includes('boolean') || prompt.type === 'checkbox') {
-                  const isChecked = value === true || value === "true" || value === "Sí" || value === "Si" || value === 1 || value === "1";
-                  return (
-                    <div key={uniqueKey} className="flex items-center gap-2 py-1">
-                      <span className="text-sm">{prefixLabel}{label}</span>
-                      <Checkbox
-                        id={`restrictive-${uniqueKey}`}
-                        checked={isChecked}
-                        onCheckedChange={(checked) => {
-                          const newValue = checked ? "Sí" : "No";
-                          handleChange(newValue);
-                          handleCommit(newValue);
-                        }}
-                      />
-                    </div>
-                  );
-                }
-
-                // Select type
-                const options = prompt.options?.length ? prompt.options : normalizeValueOptions(prompt);
-                const isSelectType = typeKey.includes('drop') || typeKey.includes('select') || typeKey.includes('list') || prompt.type === 'select';
-
-                if (isSelectType && options.length) {
-                  const valueStr = value === undefined || value === null ? "" : String(value);
-                  const isValid = valueStr === "" || options.some((o: any) => (o.value ?? o) === valueStr);
-                  return (
-                    <div key={uniqueKey} className="flex items-center gap-2 py-1">
-                      <span className="text-sm">{prefixLabel}{label}</span>
-                      <Select 
-                        value={isValid ? valueStr : ""}
-                        onValueChange={(val) => {
-                          handleChange(val);
-                          handleCommit(val);
-                        }}
-                      >
-                        <SelectTrigger className="h-8 w-auto min-w-[100px]">
-                          <SelectValue placeholder="—" />
-                        </SelectTrigger>
-                        <SelectContent className="z-50 bg-popover">
-                          {options.map((o: any, optIdx: number) => {
-                            const optValue = o.value ?? o;
-                            const optLabel = o.label ?? o.value ?? o;
-                            return (
-                              <SelectItem key={`${optValue}-${optIdx}`} value={String(optValue)}>
-                                {optLabel}
-                              </SelectItem>
-                            );
-                          })}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  );
-                }
-
-                // Number/Integer/Text type
-                return (
-                  <div key={uniqueKey} className="flex items-center gap-2 py-1">
-                    <span className="text-sm">{prefixLabel}{label}</span>
-                    <Input
-                      type={typeKey.includes('number') || typeKey.includes('decimal') || typeKey.includes('float') || typeKey.includes('int') || prompt.type === 'number' || prompt.type === 'integer' ? 'number' : 'text'}
-                      className="h-8 w-24"
-                      value={value ?? ''}
-                      onChange={(e) => handleChange(e.target.value)}
-                      onBlur={(e) => handleCommit(e.target.value)}
-                      onKeyDown={handleEnterToBlur}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 }
