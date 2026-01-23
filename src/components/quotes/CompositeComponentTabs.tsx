@@ -3,8 +3,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ActiveComponent } from "./CompositeComponentsSelector";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
-import PromptsForm from "./PromptsForm";
+import PromptsForm, { type PromptDef, extractPrompts } from "./PromptsForm";
 import { supabase } from "@/integrations/supabase/client";
+import { useProductPromptSettings } from "@/hooks/useProductPromptSettings";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 interface CompositeComponentTabsProps {
   /** Producto padre compuesto */
@@ -61,6 +65,9 @@ export default function CompositeComponentTabs({
 }: CompositeComponentTabsProps) {
   const [activeTab, setActiveTab] = useState<string>("");
 
+  // Hook para obtener configuración de prompts (force_result, admin_only, etc.)
+  const { isPromptForceResult } = useProductPromptSettings(parentProductId);
+
   // Fetch prompt connections from database
   const { data: promptConnections = [] } = useQuery({
     queryKey: ["composite-prompt-connections", parentProductId],
@@ -75,6 +82,40 @@ export default function CompositeComponentTabs({
     enabled: !!parentProductId,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Normalizar nombre de prompt para comparación
+  const normalizePromptName = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+  
+  // Extraer celda de un id como "$B$5" -> "B5"
+  const extractCellRef = (v: any): string | null => {
+    if (!v) return null;
+    const s = String(v).trim();
+    const m = s.match(/\$?([A-Za-z]+)\$?(\d+)/);
+    return m ? `${m[1].toUpperCase()}${m[2]}` : null;
+  };
+
+  // Separar prompts del padre en regulares y force_result
+  const { parentRegularPrompts, parentForceResultPrompts } = useMemo(() => {
+    const allPrompts = extractPrompts(parentProduct);
+    const regular: PromptDef[] = [];
+    const forceResult: PromptDef[] = [];
+
+    for (const prompt of allPrompts) {
+      const key = extractCellRef(prompt.id) ?? extractCellRef((prompt as any).label) ?? normalizePromptName(String(prompt.id));
+      if (isPromptForceResult(key)) {
+        forceResult.push(prompt);
+      } else {
+        regular.push(prompt);
+      }
+    }
+
+    return { parentRegularPrompts: regular, parentForceResultPrompts: forceResult };
+  }, [parentProduct, isPromptForceResult]);
+
+  // Producto virtual para prompts regulares del padre
+  const parentRegularProduct = useMemo(() => {
+    return { prompts: parentRegularPrompts };
+  }, [parentRegularPrompts]);
 
   // Verificar si hay valores de prompts padre disponibles
   // Esto evita llamar a la API de componentes antes de tener los valores del padre
@@ -341,9 +382,9 @@ export default function CompositeComponentTabs({
         {/* COLUMNA IZQUIERDA: Prompts del producto padre (generales) */}
         <div className="rounded-lg border border-border bg-card p-4">
           <h4 className="text-sm font-medium text-muted-foreground mb-3">Datos generales</h4>
-          {parentProduct?.prompts ? (
+          {parentRegularPrompts.length > 0 ? (
             <PromptsForm
-              product={parentProduct}
+              product={parentRegularProduct}
               values={parentPromptValues}
               onChange={onParentPromptChange}
               onCommit={onParentPromptCommit}
@@ -352,6 +393,83 @@ export default function CompositeComponentTabs({
             />
           ) : (
             <p className="text-sm text-muted-foreground">Sin prompts configurados</p>
+          )}
+          
+          {/* Sección: Opciones restrictivas (prompts force_result del padre) */}
+          {parentForceResultPrompts.length > 0 && (
+            <div className="border-t pt-4 mt-4">
+              <h5 className="text-sm font-semibold text-muted-foreground mb-3">
+                Opciones restrictivas
+              </h5>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+                {parentForceResultPrompts.map((prompt) => {
+                  const effectiveValue = parentPromptValues[prompt.id];
+                  const value = effectiveValue && typeof effectiveValue === 'object' && 'value' in effectiveValue 
+                    ? effectiveValue.value 
+                    : effectiveValue ?? prompt.default;
+                  
+                  // Checkbox type
+                  if (prompt.type === 'checkbox') {
+                    const isChecked = value === true || value === "true" || value === "Sí" || value === "Si" || value === 1 || value === "1";
+                    return (
+                      <div key={prompt.id} className="flex items-center gap-2 py-1">
+                        <span className="text-sm">{prompt.label}</span>
+                        <Checkbox
+                          id={`restrictive-parent-${prompt.id}`}
+                          checked={isChecked}
+                          onCheckedChange={(checked) => {
+                            const newValue = checked ? "Sí" : "No";
+                            onParentPromptChange(prompt.id, newValue);
+                            onParentPromptCommit?.(prompt.id, newValue);
+                          }}
+                        />
+                      </div>
+                    );
+                  }
+                  
+                  // Select type
+                  if (prompt.type === 'select' && prompt.options?.length) {
+                    return (
+                      <div key={prompt.id} className="flex items-center gap-2 py-1">
+                        <span className="text-sm">{prompt.label}</span>
+                        <Select 
+                          value={String(value ?? '')} 
+                          onValueChange={(v) => {
+                            onParentPromptChange(prompt.id, v);
+                            onParentPromptCommit?.(prompt.id, v);
+                          }}
+                        >
+                          <SelectTrigger className="h-8 w-auto min-w-[100px]">
+                            <SelectValue placeholder="—" />
+                          </SelectTrigger>
+                          <SelectContent className="z-50 bg-popover">
+                            {prompt.options.map((o, idx) => (
+                              <SelectItem key={`${o.value}-${idx}`} value={o.value}>
+                                {o.label ?? o.value}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    );
+                  }
+                  
+                  // Number/Integer/Text type
+                  return (
+                    <div key={prompt.id} className="flex items-center gap-2 py-1">
+                      <span className="text-sm">{prompt.label}</span>
+                      <Input
+                        type={prompt.type === 'number' || prompt.type === 'integer' ? 'number' : 'text'}
+                        className="h-8 w-24"
+                        value={value ?? ''}
+                        onChange={(e) => onParentPromptChange(prompt.id, e.target.value)}
+                        onBlur={(e) => onParentPromptCommit?.(prompt.id, e.target.value)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </div>
 
