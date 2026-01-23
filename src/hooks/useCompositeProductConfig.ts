@@ -66,10 +66,14 @@ export const OUTPUT_TYPES = [
   { value: "number", label: "Número" },
 ] as const;
 
-export function useCompositeProductConfig(easyquoteProductId?: string) {
+export function useCompositeProductConfig(
+  easyquoteProductId?: string,
+  organizationIdOverride?: string
+) {
   const queryClient = useQueryClient();
 
   // Get organization ID
+  const shouldFetchUserRole = !organizationIdOverride;
   const { data: userRole } = useQuery({
     queryKey: ["current-user-role"],
     queryFn: async () => {
@@ -78,9 +82,10 @@ export function useCompositeProductConfig(easyquoteProductId?: string) {
       return data?.[0] || null;
     },
     staleTime: 5 * 60 * 1000,
+    enabled: shouldFetchUserRole,
   });
 
-  const organizationId = userRole?.organization_id;
+  const organizationId = organizationIdOverride ?? userRole?.organization_id;
 
   // Fetch prompts (inputs) for composite product
   const {
