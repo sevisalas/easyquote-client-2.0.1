@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import PromptsForm, { type PromptDef } from "@/components/quotes/PromptsForm";
 import ComponentTabsPromptsForm, { COMPONENT_LABELS } from "@/components/quotes/ComponentTabsPromptsForm";
@@ -1502,45 +1503,41 @@ export default function ProductTestPage() {
                             )}
                           </div>
 
-                          {/* Datos de salida generales (padre) + agregados de componentes */}
+                          {/* Datos de salida: generales del padre + tabs para componente seleccionado */}
                           {(() => {
-                            // Outputs del padre (ancho, alto, etc.) - van primero como "generales"
+                            // Outputs del padre (ancho, alto, etc.)
                             const parentTextOutputs: { label: string; value: string }[] = [];
-                            const parentImageOutputs: { label: string; value: string }[] = [];
                             
                             (compositeParentOutputs || []).forEach((o: any) => {
                               const value = String(o?.value ?? "");
                               const type = String(o?.type || o?.outputType || "").toLowerCase();
                               const label = o.label || o.name || "";
                               
-                              if (/^https?:\/\//i.test(value)) {
-                                parentImageOutputs.push({ label, value });
-                              } else if (type !== "price" && value.trim()) {
+                              if (type !== "price" && value.trim() && !/^https?:\/\//i.test(value)) {
                                 parentTextOutputs.push({ label, value });
                               }
                             });
 
-                            // Outputs de los componentes
-                            const componentTextOutputs: { componentAlias: string; label: string; value: string }[] = [];
-                            const componentImageOutputs: { componentAlias: string; label: string; value: string }[] = [];
+                            // Obtener outputs del componente seleccionado
+                            const selectedCompData = compositeComponentsData[selectedComponent];
+                            const selectedOutputs = selectedCompData?.outputs || [];
+                            const selectedTextOutputs: { label: string; value: string }[] = [];
+                            const selectedImageOutputs: { label: string; value: string }[] = [];
 
-                            Object.entries(compositeComponentsData).forEach(([, data]) => {
-                              const compData = data as any;
-                              const outputs = compData?.outputs || [];
-                              outputs.forEach((o: any) => {
-                                const value = String(o?.value ?? "");
-                                const type = String(o?.type || o?.outputType || "").toLowerCase();
-                                const label = o.label || o.name || "";
-                                
-                                if (/^https?:\/\//i.test(value)) {
-                                  componentImageOutputs.push({ componentAlias: compData.alias, label, value });
-                                } else if (type !== "price" && value.trim()) {
-                                  componentTextOutputs.push({ componentAlias: compData.alias, label, value });
-                                }
-                              });
+                            selectedOutputs.forEach((o: any) => {
+                              const value = String(o?.value ?? "");
+                              const type = String(o?.type || o?.outputType || "").toLowerCase();
+                              const label = o.label || o.name || "";
+                              
+                              if (/^https?:\/\//i.test(value)) {
+                                selectedImageOutputs.push({ label, value });
+                              } else if (type !== "price" && value.trim()) {
+                                selectedTextOutputs.push({ label, value });
+                              }
                             });
 
                             const hasAnyLoading = Object.values(compositeComponentsData).some((d: any) => d?.isLoading);
+                            const componentEntries = Object.entries(compositeComponentsData);
 
                             if (hasAnyLoading) {
                               return <p className="text-sm text-muted-foreground">Calculando datos de salida...</p>;
@@ -1548,98 +1545,77 @@ export default function ProductTestPage() {
 
                             return (
                               <div className="space-y-4">
-                                {/* Outputs de texto del padre (ancho, alto, etc.) */}
+                                {/* Outputs generales del padre (ancho, alto, etc.) */}
                                 {parentTextOutputs.length > 0 && (
-                                  <div className="space-y-2">
-                                    <h4 className="text-sm font-medium text-muted-foreground">Datos generales</h4>
-                                    <div className="space-y-1.5 text-sm">
-                                      {parentTextOutputs.map((output, index) => (
-                                        <div key={`parent-${index}`} className="flex justify-between py-1 border-b border-border/50 last:border-0">
-                                          <span className="text-muted-foreground">{output.label}</span>
-                                          <span className="font-medium text-right max-w-[60%]">{output.value}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Outputs de texto de componentes */}
-                                {componentTextOutputs.length > 0 && (
-                                  <div className="space-y-2">
-                                    <h4 className="text-sm font-medium text-muted-foreground">Datos de componentes</h4>
-                                    <div className="space-y-1.5 text-sm">
-                                      {componentTextOutputs.map((output, index) => (
-                                        <div key={`comp-${index}`} className="flex justify-between py-1 border-b border-border/50 last:border-0">
-                                          <span className="text-muted-foreground">
-                                            {output.label}
-                                            {Object.keys(compositeComponentsData).length > 1 && (
-                                              <span className="text-xs ml-1">({output.componentAlias})</span>
-                                            )}
-                                          </span>
-                                          <span className="font-medium text-right max-w-[60%]">{output.value}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Detalle por componente con precios */}
-                                {Object.keys(compositeComponentsData).length > 0 && (
-                                  <div className="space-y-2 pt-2 border-t">
-                                    <h4 className="text-sm font-medium text-muted-foreground">Detalle por componente</h4>
-                                    {Object.entries(compositeComponentsData).map(([compId, data]) => {
-                                      const compData = data as any;
-                                      return (
-                                        <div key={compId} className="flex justify-between text-sm py-1">
-                                          <span>{compData.alias}</span>
-                                          <span className="font-medium">{formatCurrency(compData.price ?? 0)}</span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-
-                                {/* Imágenes del padre */}
-                                {parentImageOutputs.length > 0 && (
-                                  <div className="space-y-3 pt-2 border-t">
-                                    <h4 className="text-sm font-medium text-muted-foreground">Imágenes</h4>
-                                    {parentImageOutputs.map((output, index) => (
-                                      <div key={`parent-img-${index}`} className="space-y-1">
-                                        <div className="text-sm text-muted-foreground">{output.label}</div>
-                                        <img 
-                                          src={output.value} 
-                                          alt={output.label || `Imagen ${index + 1}`} 
-                                          className="w-full max-w-md rounded border" 
-                                        />
+                                  <div className="space-y-1.5 text-sm">
+                                    {parentTextOutputs.map((output, index) => (
+                                      <div key={`parent-${index}`} className="flex justify-between py-1 border-b border-border/50 last:border-0">
+                                        <span className="text-muted-foreground">{output.label}</span>
+                                        <span className="font-medium text-right max-w-[60%]">{output.value}</span>
                                       </div>
                                     ))}
                                   </div>
                                 )}
 
-                                {/* Imágenes de componentes */}
-                                {componentImageOutputs.length > 0 && (
+                                {/* Tabs de componentes para outputs */}
+                                {componentEntries.length > 0 && (
                                   <div className="space-y-3 pt-2 border-t">
-                                    <h4 className="text-sm font-medium text-muted-foreground">Imágenes de componentes</h4>
-                                    {componentImageOutputs.map((output, index) => (
-                                      <div key={`comp-img-${index}`} className="space-y-1">
-                                        <div className="text-sm text-muted-foreground">
-                                          {output.label}
-                                          {Object.keys(compositeComponentsData).length > 1 && (
-                                            <span className="text-xs ml-1">({output.componentAlias})</span>
-                                          )}
+                                    {/* Solo mostrar tabs si hay más de un componente */}
+                                    {componentEntries.length > 1 && (
+                                      <Tabs value={selectedComponent} onValueChange={setSelectedComponent} className="w-full">
+                                        <TabsList className="w-full justify-start">
+                                          {componentEntries.map(([compId, data]) => (
+                                            <TabsTrigger key={compId} value={compId}>
+                                              {(data as any).alias}
+                                            </TabsTrigger>
+                                          ))}
+                                        </TabsList>
+                                      </Tabs>
+                                    )}
+                                    
+                                    {/* Título del componente si solo hay uno */}
+                                    {componentEntries.length === 1 && selectedCompData && (
+                                      <h4 className="font-medium">{selectedCompData.alias}</h4>
+                                    )}
+
+                                    {/* Outputs del componente seleccionado */}
+                                    {selectedCompData && (
+                                      <div className="space-y-3">
+                                        {/* Precio del componente */}
+                                        <div className="flex justify-between py-1 text-sm">
+                                          <span className="text-muted-foreground">Precio</span>
+                                          <span className="font-medium">{formatCurrency(selectedCompData.price ?? 0)}</span>
                                         </div>
-                                        <img 
-                                          src={output.value} 
-                                          alt={output.label || `Imagen ${index + 1}`} 
-                                          className="w-full max-w-md rounded border" 
-                                        />
+
+                                        {/* Outputs de texto */}
+                                        {selectedTextOutputs.map((output, index) => (
+                                          <div key={`sel-${index}`} className="flex justify-between py-1 border-b border-border/50 last:border-0 text-sm">
+                                            <span className="text-muted-foreground">{output.label}</span>
+                                            <span className="font-medium text-right max-w-[60%]">{output.value}</span>
+                                          </div>
+                                        ))}
+
+                                        {/* Imágenes del componente */}
+                                        {selectedImageOutputs.map((output, index) => (
+                                          <div key={`sel-img-${index}`} className="space-y-1">
+                                            <div className="text-sm text-muted-foreground">{output.label}</div>
+                                            <img 
+                                              src={output.value} 
+                                              alt={output.label || `Imagen ${index + 1}`} 
+                                              className="w-full max-w-md rounded border" 
+                                            />
+                                          </div>
+                                        ))}
+
+                                        {selectedTextOutputs.length === 0 && selectedImageOutputs.length === 0 && (
+                                          <p className="text-sm text-muted-foreground">Sin datos de salida para este componente</p>
+                                        )}
                                       </div>
-                                    ))}
+                                    )}
                                   </div>
                                 )}
 
-                                {parentTextOutputs.length === 0 && componentTextOutputs.length === 0 && 
-                                 parentImageOutputs.length === 0 && componentImageOutputs.length === 0 && (
+                                {parentTextOutputs.length === 0 && componentEntries.length === 0 && (
                                   <p className="text-sm text-muted-foreground">Sin datos de salida adicionales</p>
                                 )}
                               </div>
