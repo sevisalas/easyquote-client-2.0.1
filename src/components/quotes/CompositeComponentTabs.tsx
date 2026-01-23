@@ -26,7 +26,7 @@ interface CompositeComponentTabsProps {
   /** Callback para cambio de componente seleccionado */
   onComponentChange?: (componentId: string) => void;
   /** Callback para exponer los datos calculados de componentes (para el panel de resultados) */
-  onComponentsDataChange?: (data: ComponentsDataMap, totalPrice: number) => void;
+  onComponentsDataChange?: (data: ComponentsDataMap, totalPrice: number, parentOutputs?: any[]) => void;
 }
 
 export interface ComponentPricingData {
@@ -79,6 +79,55 @@ export default function CompositeComponentTabs({
   // Verificar si hay valores de prompts padre disponibles
   // Esto evita llamar a la API de componentes antes de tener los valores del padre
   const hasParentValues = Object.keys(parentPromptValues).length > 0;
+
+  // Query para obtener outputs del producto PADRE (ancho, alto, etc.)
+  const { data: parentPricingData } = useQuery({
+    queryKey: ["parent-pricing-outputs", parentProductId, JSON.stringify(parentPromptValues)],
+    queryFn: async () => {
+      const token = await getEasyQuoteToken();
+      if (!token) throw new Error("No hay token");
+
+      // Preparar inputs del padre
+      const parentInputs: { id: string; value: any }[] = [];
+      
+      // Obtener valores actuales de prompts del padre
+      const parentPrompts = parentProduct?.prompts || [];
+      for (const p of parentPrompts) {
+        const id = String(p?.id ?? "");
+        if (!id) continue;
+        
+        // Usar valor del estado si existe, si no usar currentValue del producto
+        const value = parentPromptValues[id] ?? p?.currentValue;
+        if (value !== undefined && value !== null) {
+          parentInputs.push({ id, value });
+        }
+      }
+
+      console.log("[CompositeComponentTabs] Fetching parent outputs", {
+        parentProductId,
+        inputsCount: parentInputs.length,
+      });
+
+      const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
+        token,
+        productId: parentProductId,
+        inputs: parentInputs,
+      });
+
+      if (error) throw error;
+      
+      return {
+        outputs: data?.outputValues || data?.outputs || [],
+        prompts: data?.prompts || [],
+      };
+    },
+    enabled: !!parentProductId && hasParentValues,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  // Outputs del padre (generales)
+  const parentOutputs = useMemo(() => parentPricingData?.outputs || [], [parentPricingData]);
 
   // Usar useQueries para obtener datos de todos los componentes
   const componentQueriesResults = useQueries({
@@ -174,10 +223,10 @@ export default function CompositeComponentTabs({
     return Object.values(componentsData).reduce((sum, data) => sum + data.price, 0);
   }, [componentsData]);
 
-  // Notificar cambios en los datos de componentes al padre
+  // Notificar cambios en los datos de componentes al padre (incluye outputs del padre)
   useEffect(() => {
-    onComponentsDataChange?.(componentsData, totalPrice);
-  }, [componentsData, totalPrice, onComponentsDataChange]);
+    onComponentsDataChange?.(componentsData, totalPrice, parentOutputs);
+  }, [componentsData, totalPrice, parentOutputs, onComponentsDataChange]);
 
   // Auto-seleccionar el primer componente al cargar
   useEffect(() => {
