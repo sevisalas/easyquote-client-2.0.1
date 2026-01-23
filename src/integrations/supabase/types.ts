@@ -201,6 +201,42 @@ export type Database = {
           },
         ]
       }
+      composite_output_aggregations: {
+        Row: {
+          aggregation_type: string
+          composite_product_id: string
+          created_at: string
+          id: string
+          organization_id: string
+          source_output_name: string
+          target_output_label: string
+          target_output_name: string
+          updated_at: string
+        }
+        Insert: {
+          aggregation_type?: string
+          composite_product_id: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          source_output_name: string
+          target_output_label: string
+          target_output_name: string
+          updated_at?: string
+        }
+        Update: {
+          aggregation_type?: string
+          composite_product_id?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          source_output_name?: string
+          target_output_label?: string
+          target_output_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       composite_product_components: {
         Row: {
           component_alias: string

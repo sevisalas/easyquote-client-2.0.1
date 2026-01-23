@@ -1,6 +1,6 @@
 import { Loader2, Info } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useCompositeProductConfig, type PromptConnection } from "@/hooks/useCompositeProductConfig";
+import { useCompositeProductConfig, type PromptConnection, type OutputAggregation } from "@/hooks/useCompositeProductConfig";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CompatibleComponentsEditor } from "./CompatibleComponentsEditor";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ export function CompositeProductConfig({
   const {
     components,
     promptConnections,
+    outputAggregations,
     availableComponentProducts,
     organizationId,
     isLoading,
@@ -28,10 +29,13 @@ export function CompositeProductConfig({
     deleteComponent,
     upsertConnection,
     deleteConnectionsByComponent,
+    upsertAggregation,
+    deleteAggregation,
     isAddingComponent,
     isUpdatingComponent,
     isDeletingComponent,
     isUpsertingConnection,
+    isUpsertingAggregation,
   } = useCompositeProductConfig(easyquoteProductId);
 
   // Cargar los prompts del producto padre desde pricing API (para obtener labels reales)
@@ -90,6 +94,31 @@ export function CompositeProductConfig({
     }
   };
 
+  // Guardar agregaciones de outputs
+  const handleSaveAggregations = async (
+    aggregations: Omit<OutputAggregation, "id" | "created_at" | "updated_at">[]
+  ) => {
+    try {
+      // Obtener las agregaciones actuales para este producto
+      const currentSourceNames = new Set(aggregations.map(a => a.source_output_name));
+      
+      // Eliminar las que ya no están en la nueva lista
+      for (const existing of outputAggregations) {
+        if (!currentSourceNames.has(existing.source_output_name)) {
+          await deleteAggregation(existing.id);
+        }
+      }
+      
+      // Upsert las nuevas
+      for (const agg of aggregations) {
+        await upsertAggregation(agg);
+      }
+    } catch (error) {
+      console.error("Error saving aggregations:", error);
+      throw error;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -115,14 +144,17 @@ export function CompositeProductConfig({
         availableProducts={componentProducts}
         parentPrompts={parentPrompts}
         promptConnections={promptConnections}
+        outputAggregations={outputAggregations}
         onAdd={addComponent}
         onUpdate={updateComponent}
         onDelete={deleteComponent}
         onSaveConnections={handleSaveConnections}
+        onSaveAggregations={handleSaveAggregations}
         isAdding={isAddingComponent}
         isUpdating={isUpdatingComponent}
         isDeleting={isDeletingComponent}
         isSavingConnections={isUpsertingConnection}
+        isSavingAggregations={isUpsertingAggregation}
       />
     </div>
   );
