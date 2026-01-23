@@ -57,11 +57,11 @@ export function OutputAggregationSection({
       }
       // Los outputs vienen en data.outputs
       const outputs = data?.outputs || [];
-      // Filtrar solo outputs numéricos (no precio, no imagen)
+      // Mostrar todos los outputs (solo excluir precio e imagen)
       return outputs
         .filter((o: any) => {
-          const type = (o.type || "").toLowerCase();
-          return type !== "price" && type !== "image";
+          const name = (o.name || "").toLowerCase();
+          return name !== "price" && name !== "imagen";
         })
         .map((o: any) => ({
           name: o.name,
