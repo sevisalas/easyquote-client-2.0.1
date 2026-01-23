@@ -76,6 +76,10 @@ export default function CompositeComponentTabs({
     staleTime: 5 * 60 * 1000,
   });
 
+  // Verificar si hay valores de prompts padre disponibles
+  // Esto evita llamar a la API de componentes antes de tener los valores del padre
+  const hasParentValues = Object.keys(parentPromptValues).length > 0;
+
   // Usar useQueries para obtener datos de todos los componentes
   const componentQueriesResults = useQueries({
     queries: activeComponents.map((component) => ({
@@ -138,7 +142,8 @@ export default function CompositeComponentTabs({
           
         return { prompts, outputs, price };
       },
-      enabled: !!component.component_product_id && promptConnections !== undefined,
+      // Solo ejecutar cuando tenemos valores del padre Y las conexiones están cargadas
+      enabled: !!component.component_product_id && promptConnections !== undefined && hasParentValues,
       staleTime: 30 * 1000,
       refetchOnWindowFocus: false,
     })),
