@@ -31,6 +31,12 @@ interface CompositeComponentTabsProps {
   onComponentChange?: (componentId: string) => void;
   /** Callback para exponer los datos calculados de componentes (para el panel de resultados) */
   onComponentsDataChange?: (data: ComponentsDataMap, totalPrice: number, parentOutputs?: any[]) => void;
+  /** Valores de prompts editados por el usuario para cada componente: { [componentId]: { [promptId]: value } } */
+  componentPromptValues?: Record<string, Record<string, any>>;
+  /** Callback cuando cambian los prompts de un componente */
+  onComponentPromptChange?: (componentId: string, promptId: string, value: any) => void;
+  /** Callback cuando se confirma un prompt de componente */
+  onComponentPromptCommit?: (componentId: string, promptId: string, value: any) => void;
 }
 
 export interface ComponentPricingData {
@@ -62,6 +68,9 @@ export default function CompositeComponentTabs({
   isAdmin = false,
   onComponentChange,
   onComponentsDataChange,
+  componentPromptValues = {},
+  onComponentPromptChange,
+  onComponentPromptCommit,
 }: CompositeComponentTabsProps) {
   const [activeTab, setActiveTab] = useState<string>("");
 
@@ -240,72 +249,92 @@ export default function CompositeComponentTabs({
   const parentOutputs = useMemo(() => parentPricingData?.outputs || [], [parentPricingData]);
 
   // Usar useQueries para obtener datos de todos los componentes
+  // Incluye tanto los valores heredados (conexiones) como los editados por el usuario (componentPromptValues)
   const componentQueriesResults = useQueries({
-    queries: activeComponents.map((component) => ({
-      queryKey: ["component-pricing", component.component_product_id, component.id, JSON.stringify(parentPromptValues)],
-      queryFn: async (): Promise<{ prompts: any[]; outputs: any[]; price: number }> => {
-        const token = await getEasyQuoteToken();
-        if (!token) throw new Error("No hay token");
+    queries: activeComponents.map((component) => {
+      // Obtener valores editados por el usuario para este componente
+      const userEditedValues = componentPromptValues[component.id] || {};
+      
+      return {
+        queryKey: [
+          "component-pricing", 
+          component.component_product_id, 
+          component.id, 
+          JSON.stringify(parentPromptValues),
+          JSON.stringify(userEditedValues), // Incluir valores editados en la key
+        ],
+        queryFn: async (): Promise<{ prompts: any[]; outputs: any[]; price: number }> => {
+          const token = await getEasyQuoteToken();
+          if (!token) throw new Error("No hay token");
 
-        // Calcular valores de prompts para este componente basado en las conexiones
-        const componentInputs: { id: string; value: any }[] = [];
-        
-        // Filtrar conexiones para ESTE componente (por id O por component_product_id)
-        const connections = promptConnections.filter(
-          (conn: any) => 
-            conn.target_component_id === component.id || 
-            conn.target_component_id === component.component_product_id
-        );
-
-        for (const conn of connections as any[]) {
-          const sourceValue = parentPromptValues[conn.source_prompt_name];
-          if (sourceValue !== undefined && sourceValue !== null) {
-            componentInputs.push({
-              id: conn.target_prompt_name,
-              value: sourceValue,
-            });
-          }
-        }
-        
-        console.log("[CompositeComponentTabs] API inputs for component", {
-          componentId: component.id,
-          componentProductId: component.component_product_id,
-          connectionsFound: connections.length,
-          connectionDetails: connections.map((c: any) => ({
-            source: c.source_prompt_name,
-            target: c.target_prompt_name,
-            sourceValueExists: parentPromptValues[c.source_prompt_name] !== undefined,
-            sourceValue: parentPromptValues[c.source_prompt_name],
-          })),
-          inputs: componentInputs,
-          parentPromptValuesKeys: Object.keys(parentPromptValues),
-        });
-
-        const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
-          token,
-          productId: component.component_product_id,
-          inputs: componentInputs,
-        });
-
-        if (error) throw error;
-        
-        const prompts = data?.prompts || [];
-        const outputs = data?.outputValues || data?.outputs || [];
-        
-        const priceOutput = outputs.find(
-          (o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price"
-        );
-        const price = priceOutput
-          ? parseFloat(String(priceOutput.value ?? "0").replace(/\./g, "").replace(",", ".")) || 0
-          : 0;
+          // Calcular valores de prompts para este componente basado en las conexiones
+          const componentInputs: { id: string; value: any }[] = [];
           
-        return { prompts, outputs, price };
-      },
-      // Solo ejecutar cuando tenemos valores del padre Y las conexiones están cargadas
-      enabled: !!component.component_product_id && promptConnections !== undefined && hasParentValues,
-      staleTime: 30 * 1000,
-      refetchOnWindowFocus: false,
-    })),
+          // Filtrar conexiones para ESTE componente (por id O por component_product_id)
+          const connections = promptConnections.filter(
+            (conn: any) => 
+              conn.target_component_id === component.id || 
+              conn.target_component_id === component.component_product_id
+          );
+
+          // 1. Añadir valores heredados de conexiones
+          for (const conn of connections as any[]) {
+            const sourceValue = parentPromptValues[conn.source_prompt_name];
+            if (sourceValue !== undefined && sourceValue !== null) {
+              componentInputs.push({
+                id: conn.target_prompt_name,
+                value: sourceValue,
+              });
+            }
+          }
+          
+          // 2. Añadir valores editados por el usuario (sobrescriben si hay conflicto)
+          for (const [promptId, value] of Object.entries(userEditedValues)) {
+            if (value !== undefined && value !== null) {
+              // Buscar si ya existe en componentInputs y sobrescribir
+              const existingIdx = componentInputs.findIndex(i => i.id === promptId);
+              if (existingIdx >= 0) {
+                componentInputs[existingIdx].value = value;
+              } else {
+                componentInputs.push({ id: promptId, value });
+              }
+            }
+          }
+          
+          console.log("[CompositeComponentTabs] API inputs for component", {
+            componentId: component.id,
+            componentProductId: component.component_product_id,
+            connectionsFound: connections.length,
+            userEditedValuesCount: Object.keys(userEditedValues).length,
+            inputs: componentInputs,
+          });
+
+          const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
+            token,
+            productId: component.component_product_id,
+            inputs: componentInputs,
+          });
+
+          if (error) throw error;
+          
+          const prompts = data?.prompts || [];
+          const outputs = data?.outputValues || data?.outputs || [];
+          
+          const priceOutput = outputs.find(
+            (o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price"
+          );
+          const price = priceOutput
+            ? parseFloat(String(priceOutput.value ?? "0").replace(/\./g, "").replace(",", ".")) || 0
+            : 0;
+            
+          return { prompts, outputs, price };
+        },
+        // Solo ejecutar cuando tenemos valores del padre Y las conexiones están cargadas
+        enabled: !!component.component_product_id && promptConnections !== undefined && hasParentValues,
+        staleTime: 30 * 1000,
+        refetchOnWindowFocus: false,
+      };
+    }),
   });
 
   // Procesar datos de componentes
@@ -559,13 +588,22 @@ export default function CompositeComponentTabs({
   };
 
   // Obtener valores de prompts para un componente específico
+  // Combina: valores de la API (currentValue) + valores editados por el usuario (componentPromptValues)
   const getComponentPromptValues = (componentId: string): Record<string, any> => {
     const componentData = componentsData[componentId];
-    if (!componentData) return {};
+    if (!componentData) return componentPromptValues[componentId] || {};
 
     const values: Record<string, any> = {};
+    // 1. Primero, valores de la API
     for (const prompt of componentData.prompts) {
       values[prompt.id] = prompt.currentValue ?? prompt.default ?? "";
+    }
+    // 2. Luego, valores editados por el usuario (sobrescriben)
+    const userEdited = componentPromptValues[componentId] || {};
+    for (const [promptId, value] of Object.entries(userEdited)) {
+      if (value !== undefined) {
+        values[promptId] = value;
+      }
     }
     return values;
   };
@@ -736,6 +774,14 @@ export default function CompositeComponentTabs({
                           {componentForceResultPrompts.map((prompt: any) => {
                             const value = componentValues[prompt.id] ?? prompt.currentValue ?? prompt.default;
                             
+                            // Handler para cambios en campos restrictivos del componente
+                            const handleChange = (newValue: any) => {
+                              onComponentPromptChange?.(component.id, prompt.id, newValue);
+                            };
+                            const handleCommit = (newValue: any) => {
+                              onComponentPromptCommit?.(component.id, prompt.id, newValue);
+                            };
+                            
                             // Checkbox type
                             if (prompt.type === 'checkbox' || prompt.promptType === 'checkbox') {
                               const isChecked = value === true || value === "true" || value === "Sí" || value === "Si" || value === 1 || value === "1";
@@ -745,19 +791,32 @@ export default function CompositeComponentTabs({
                                   <Checkbox
                                     id={`restrictive-component-${prompt.id}`}
                                     checked={isChecked}
-                                    disabled // Componentes son readonly
+                                    onCheckedChange={(checked) => {
+                                      handleChange(checked);
+                                      handleCommit(checked);
+                                    }}
                                   />
                                 </div>
                               );
                             }
                             
-                            // Select type
-                            const options = prompt.options || prompt.values || [];
-                            if ((prompt.type === 'select' || prompt.promptType === 'select') && options.length) {
+                            // Select type - usar valueOptions de la API de EasyQuote
+                            const rawOptions = prompt.valueOptions || prompt.options || prompt.values || [];
+                            const options = rawOptions.map((o: any) => 
+                              typeof o === 'string' ? { label: o, value: o } : o
+                            );
+                            
+                            if ((prompt.type === 'select' || prompt.promptType === 'List' || prompt.promptType === 'select') && options.length) {
                               return (
                                 <div key={prompt.id} className="flex items-center gap-2 py-1">
                                   <span className="text-sm">{prompt.promptText || prompt.label || prompt.id}</span>
-                                  <Select value={String(value ?? '')} disabled>
+                                  <Select 
+                                    value={String(value ?? '')} 
+                                    onValueChange={(val) => {
+                                      handleChange(val);
+                                      handleCommit(val);
+                                    }}
+                                  >
                                     <SelectTrigger className="h-8 w-auto min-w-[100px]">
                                       <SelectValue placeholder="—" />
                                     </SelectTrigger>
@@ -778,10 +837,11 @@ export default function CompositeComponentTabs({
                               <div key={prompt.id} className="flex items-center gap-2 py-1">
                                 <span className="text-sm">{prompt.promptText || prompt.label || prompt.id}</span>
                                 <Input
-                                  type={prompt.type === 'number' || prompt.type === 'integer' ? 'number' : 'text'}
+                                  type={prompt.type === 'number' || prompt.type === 'integer' || prompt.promptType === 'Number' ? 'number' : 'text'}
                                   className="h-8 w-24"
                                   value={value ?? ''}
-                                  disabled // Componentes son readonly
+                                  onChange={(e) => handleChange(e.target.value)}
+                                  onBlur={(e) => handleCommit(e.target.value)}
                                 />
                               </div>
                             );
