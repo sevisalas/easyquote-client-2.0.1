@@ -466,6 +466,24 @@ export default function CompositeComponentTabs({
     return map;
   }, [componentPromptSettingsQueries]);
 
+  // Mapa: componentId -> Set de prompt_names (celdas) que son admin_only
+  // (para poder ocultarlas a usuarios no-admin también en la sección de restrictivas)
+  const componentAdminOnlyMap = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const query of componentPromptSettingsQueries) {
+      if (query.data) {
+        const adminOnlyNames = new Set<string>();
+        for (const setting of query.data.settings as any[]) {
+          if (setting.admin_only) {
+            adminOnlyNames.add(normalizePromptName(setting.prompt_name));
+          }
+        }
+        map.set(query.data.componentId, adminOnlyNames);
+      }
+    }
+    return map;
+  }, [componentPromptSettingsQueries]);
+
   // Obtener la celda de un prompt de componente (UUID -> celda)
   const getComponentPromptCell = useCallback((componentId: string, promptId: string): string => {
     const lookup = componentPromptCellLookups.get(componentId);
@@ -481,6 +499,13 @@ export default function CompositeComponentTabs({
     const cellRef = getComponentPromptCell(componentId, promptId);
     return forceResultSet.has(normalizePromptName(cellRef));
   }, [componentForceResultMap, getComponentPromptCell]);
+
+  const isComponentPromptAdminOnly = useCallback((componentId: string, promptId: string): boolean => {
+    const adminOnlySet = componentAdminOnlyMap.get(componentId);
+    if (!adminOnlySet) return false;
+    const cellRef = getComponentPromptCell(componentId, promptId);
+    return adminOnlySet.has(normalizePromptName(cellRef));
+  }, [componentAdminOnlyMap, getComponentPromptCell]);
 
   // Crear producto virtual para el componente (SOLO prompts NO mapeados y NO force_result)
   const createComponentProduct = (componentId: string) => {
@@ -504,12 +529,14 @@ export default function CompositeComponentTabs({
     const componentData = componentsData[componentId];
     if (!componentData) return [];
 
-    const mappedIds = getMappedPromptIds(componentId);
-    
-    // Filtrar: solo prompts NO mapeados que SÍ son force_result
+    // Importante: aquí NO excluimos prompts mapeados.
+    // Si un prompt force_result del componente está mapeado desde el padre, igualmente
+    // debe visualizarse en “Opciones restrictivas” (readonly) para evitar que “falte”.
     return componentData.prompts.filter((p: any) => {
-      if (mappedIds.has(String(p.id))) return false;
-      return isComponentPromptForceResult(componentId, String(p.id));
+      const id = String(p.id);
+      if (!isComponentPromptForceResult(componentId, id)) return false;
+      if (!isAdmin && isComponentPromptAdminOnly(componentId, id)) return false;
+      return true;
     });
   };
 
