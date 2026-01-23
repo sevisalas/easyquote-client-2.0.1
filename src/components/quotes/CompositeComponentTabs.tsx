@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ActiveComponent } from "./CompositeComponentsSelector";
 import { useQuery, useQueries } from "@tanstack/react-query";
@@ -73,6 +73,28 @@ export default function CompositeComponentTabs({
   onComponentPromptCommit,
 }: CompositeComponentTabsProps) {
   const [activeTab, setActiveTab] = useState<string>("");
+
+  // Debounce para commits (evita requerir Enter/blur y reduce llamadas mientras se escribe)
+  const commitDebounceRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const scheduleCommit = useCallback((key: string, fn: () => void, delayMs = 250) => {
+    const prev = commitDebounceRef.current.get(key);
+    if (prev) clearTimeout(prev);
+    const t = setTimeout(() => {
+      commitDebounceRef.current.delete(key);
+      fn();
+    }, delayMs);
+    commitDebounceRef.current.set(key, t);
+  }, []);
+
+  const flushCommit = useCallback((key: string, fn: () => void) => {
+    const prev = commitDebounceRef.current.get(key);
+    if (prev) {
+      clearTimeout(prev);
+      commitDebounceRef.current.delete(key);
+    }
+    fn();
+  }, []);
 
   // Hook para obtener configuración de prompts (force_result, admin_only, etc.)
   const { isPromptForceResult } = useProductPromptSettings(parentProductId);
@@ -755,8 +777,19 @@ export default function CompositeComponentTabs({
                         type={prompt.type === 'number' || prompt.type === 'integer' ? 'number' : 'text'}
                         className="h-8 w-24"
                         value={value ?? ''}
-                        onChange={(e) => onParentPromptChange(prompt.id, e.target.value)}
-                        onBlur={(e) => onParentPromptCommit?.(prompt.id, e.target.value)}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          onParentPromptChange(prompt.id, v);
+                          if (onParentPromptCommit) {
+                            scheduleCommit(`parent:${prompt.id}`, () => onParentPromptCommit(prompt.id, v));
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const v = e.target.value;
+                          if (onParentPromptCommit) {
+                            flushCommit(`parent:${prompt.id}`, () => onParentPromptCommit(prompt.id, v));
+                          }
+                        }}
                       />
                     </div>
                   );
@@ -876,8 +909,20 @@ export default function CompositeComponentTabs({
                                   type={typeKey.includes('number') || typeKey.includes('decimal') || typeKey.includes('float') || typeKey.includes('int') ? 'number' : 'text'}
                                   className="h-8 w-24"
                                   value={value ?? ''}
-                                  onChange={(e) => handleChange(e.target.value)}
-                                  onBlur={(e) => handleCommit(e.target.value)}
+                                  onChange={(e) => {
+                                    const v = e.target.value;
+                                    handleChange(v);
+                                    if (onComponentPromptCommit) {
+                                      scheduleCommit(
+                                        `component:${component.id}:${prompt.id}`,
+                                        () => handleCommit(v)
+                                      );
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    const v = e.target.value;
+                                    flushCommit(`component:${component.id}:${prompt.id}`, () => handleCommit(v));
+                                  }}
                                 />
                               </div>
                             );
