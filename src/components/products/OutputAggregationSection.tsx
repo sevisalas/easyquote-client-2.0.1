@@ -57,11 +57,16 @@ export function OutputAggregationSection({
       }
       // Los outputs vienen en data.outputs
       const outputs = data?.outputs || [];
-      // Mostrar todos los outputs (solo excluir precio e imagen)
+      // Excluir PRICE e imágenes (solo se incluirán si en el futuro se quiere tratarlos explícitamente)
       return outputs
         .filter((o: any) => {
-          const name = (o.name || "").toLowerCase();
-          return name !== "price" && name !== "imagen";
+          const type = String(o.type || "").toLowerCase();
+          const name = String(o.name || "").toLowerCase();
+
+          const isPrice = type === "price" || name === "price";
+          const isImage = type === "image" || name === "image" || name === "imagen";
+
+          return !isPrice && !isImage;
         })
         .map((o: any) => ({
           name: o.name,
@@ -150,7 +155,7 @@ export function OutputAggregationSection({
   if (componentOutputs.length === 0) {
     return (
       <div className="text-sm text-muted-foreground text-center py-4">
-        No hay outputs numéricos disponibles en este componente
+        No hay outputs disponibles en este componente
       </div>
     );
   }
