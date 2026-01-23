@@ -55,24 +55,36 @@ export function OutputAggregationSection({
         console.error("Error fetching component outputs:", error);
         return [];
       }
-      // Los outputs vienen en data.outputs
-      const outputs = data?.outputs || [];
+      // EasyQuote puede devolver outputs en distintas claves según el endpoint/versión.
+      // Normalizamos como en ProductTestPage.
+      const raw = (data?.outputValues ?? data?.outputs ?? data?.results ?? []) as any;
+      const outputs: any[] = Array.isArray(raw) ? raw : [];
+
       // Excluir PRICE e imágenes (solo se incluirán si en el futuro se quiere tratarlos explícitamente)
       return outputs
+        .map((o: any) => {
+          const type = String(o?.type ?? o?.outputType ?? "").trim();
+          const label = String(
+            o?.label ?? o?.name ?? o?.outputText ?? o?.nameCell ?? o?.valueCell ?? o?.id ?? o?.outputId ?? ""
+          ).trim();
+
+          // `name` debe ser estable: priorizamos `name`/`id` y caemos a `label` si no hay nada.
+          const name = String(o?.name ?? o?.id ?? o?.outputId ?? label).trim();
+
+          if (!name) return null;
+
+          return { name, label: label || name, type: type || "unknown" } as ComponentOutputDef;
+        })
+        .filter(Boolean)
         .filter((o: any) => {
           const type = String(o.type || "").toLowerCase();
           const name = String(o.name || "").toLowerCase();
 
-          const isPrice = type === "price" || name === "price";
+          const isPrice = type === "price" || name === "price" || name === "precio";
           const isImage = type === "image" || name === "image" || name === "imagen";
 
           return !isPrice && !isImage;
-        })
-        .map((o: any) => ({
-          name: o.name,
-          label: o.label || o.name,
-          type: o.type,
-        })) as ComponentOutputDef[];
+        }) as ComponentOutputDef[];
     },
     enabled: !!componentProductId,
     staleTime: 5 * 60 * 1000,
