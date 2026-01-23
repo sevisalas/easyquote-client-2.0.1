@@ -81,6 +81,8 @@ export default function ProductTestPage() {
     organization,
     membership
   } = useSubscription();
+
+  const organizationId = organization?.id || membership?.organization_id;
   
   // Check if product is composite
   const { isComposite, enabledComponents, getPromptComponent } = useProductComponentSettings(productId || undefined);
@@ -89,11 +91,9 @@ export default function ProductTestPage() {
   const { 
     components: configuredComponents = [],
     componentsLoading: isLoadingConfiguredComponents,
-  } = useCompositeProductConfig(productId || undefined);
+  } = useCompositeProductConfig(productId || undefined, organizationId);
   
   const queryClient = useQueryClient();
-  
-  const organizationId = organization?.id || membership?.organization_id;
 
   // Fetch component product IDs
   const { data: componentProductIds = new Set<string>() } = useQuery({
