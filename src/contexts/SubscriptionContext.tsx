@@ -150,25 +150,30 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         if (savedOrgId) {
           selectedOrg = allOrgs.find(org => org.id === savedOrgId) || null;
           
-          // If saved org not found in user's orgs, clear it
+          // If saved org not found in user's orgs, DO NOT clear it or auto-select another
+          // The user explicitly chose this org - keep it until they manually switch
+          // This prevents unwanted org switches due to timing issues or stale data
           if (!selectedOrg && savedOrgId) {
-            sessionStorage.removeItem('selected_organization_id');
+            console.warn('[SubscriptionContext] Saved org not found in allOrgs, keeping savedOrgId:', savedOrgId);
+            // Do NOT remove or auto-select - wait for user to manually switch if needed
           }
         }
 
-        // If no saved selection and NOT pending user selection, use the first organization
-        if (!selectedOrg && allOrgs.length > 0) {
+        // ONLY auto-select if there was NO previous selection at all
+        // This prevents overwriting user's explicit choice
+        if (!selectedOrg && !savedOrgId && allOrgs.length > 0) {
           const isOnAuthPage = window.location.pathname === '/auth';
           
           if (pendingSelection && !isOnAuthPage) {
             sessionStorage.removeItem('pending_org_selection');
           }
           
-          const shouldAutoSelect = !savedOrgId && (!pendingSelection || !isOnAuthPage);
+          const shouldAutoSelect = !pendingSelection || !isOnAuthPage;
           
           if (shouldAutoSelect) {
             selectedOrg = allOrgs[0];
             sessionStorage.setItem('selected_organization_id', selectedOrg.id);
+            console.log('[SubscriptionContext] Auto-selected first org:', selectedOrg.name);
           }
         }
 
