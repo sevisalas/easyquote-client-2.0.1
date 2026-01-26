@@ -5,6 +5,13 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.4] - 2026-01-26
+
+### Añadido
+- **Agregación de outputs en productos compuestos**: Los valores numéricos de outputs específicos (ej: "Lomo") de los componentes ahora se suman automáticamente en el output correspondiente del producto padre, según la configuración definida en `composite_output_aggregations`
+
+---
+
 ## [2.5.3] - 2026-01-26
 
 ### Corregido
