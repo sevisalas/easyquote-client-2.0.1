@@ -5,6 +5,14 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.3] - 2026-01-26
+
+### Corregido
+- **Numeración de presupuestos en borradores**: Corregida condición de carrera en la función `next_document_number` que causaba números duplicados al guardar borradores concurrentemente
+- **Sincronización de secuencias**: La función ahora bloquea la fila con `FOR UPDATE` y recalcula el siguiente número usando `GREATEST` entre la secuencia almacenada y el máximo existente en documentos
+
+---
+
 ## [2.5.2] - 2026-01-21
 
 ### Corregido
