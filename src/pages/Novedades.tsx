@@ -26,6 +26,16 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.5.5",
+    date: "2026-01-26",
+    isDevelopment: true,
+    changes: {
+      added: [],
+      changed: [],
+      fixed: [],
+    },
+  },
+  {
     version: "2.5.4",
     date: "2026-01-26",
     changes: {
