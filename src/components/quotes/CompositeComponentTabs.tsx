@@ -150,6 +150,21 @@ export default function CompositeComponentTabs({
     staleTime: 5 * 60 * 1000,
   });
 
+  // Fetch output aggregation config from database
+  const { data: outputAggregations = [] } = useQuery({
+    queryKey: ["composite-output-aggregations", parentProductId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("composite_output_aggregations")
+        .select("*")
+        .eq("composite_product_id", parentProductId);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!parentProductId,
+    staleTime: 5 * 60 * 1000,
+  });
+
   function getPromptCell(op: any): string | undefined {
     return op?.promptCell ?? op?.prompt_cell ?? op?.cell ?? op?.promptcell;
   }
@@ -449,10 +464,100 @@ export default function CompositeComponentTabs({
     return Object.values(componentsData).reduce((sum, data) => sum + data.price, 0);
   }, [componentsData]);
 
-  // Notificar cambios en los datos de componentes al padre (incluye outputs del padre)
+  // Calcular outputs agregados según configuración de composite_output_aggregations
+  const aggregatedOutputs = useMemo(() => {
+    if (!outputAggregations.length || !Object.keys(componentsData).length) return [];
+
+    // Agrupar outputs por source_output_name y sumar valores
+    const aggregationMap = new Map<string, { sum: number; label: string; targetName: string }>();
+
+    for (const agg of outputAggregations as any[]) {
+      const sourceOutputName = String(agg.source_output_name || "").trim();
+      const targetOutputName = String(agg.target_output_name || "").trim();
+      const targetOutputLabel = String(agg.target_output_label || targetOutputName).trim();
+      
+      if (!sourceOutputName || !targetOutputName) continue;
+
+      // Sumar este output de todos los componentes
+      for (const [componentKey, compData] of Object.entries(componentsData)) {
+        const outputs = compData.outputs || [];
+        // Buscar el output que coincida con source_output_name
+        for (const out of outputs as any[]) {
+          const outName = String(out?.name || out?.id || "").trim();
+          const outLabel = String(out?.label || "").trim();
+          
+          // Comparar por name o label (normalizando)
+          const matchesName = outName.toLowerCase() === sourceOutputName.toLowerCase();
+          const matchesLabel = outLabel.toLowerCase() === sourceOutputName.toLowerCase();
+          
+          if (matchesName || matchesLabel) {
+            // Parsear valor numérico
+            const rawValue = String(out?.value ?? "0");
+            const numericValue = parseFloat(rawValue.replace(/\./g, "").replace(",", ".")) || 0;
+            
+            const current = aggregationMap.get(targetOutputName);
+            if (current) {
+              current.sum += numericValue;
+            } else {
+              aggregationMap.set(targetOutputName, {
+                sum: numericValue,
+                label: targetOutputLabel,
+                targetName: targetOutputName,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Convertir a array de outputs
+    const result: any[] = [];
+    for (const [targetName, data] of aggregationMap) {
+      result.push({
+        name: targetName,
+        label: data.label,
+        value: data.sum.toFixed(2).replace(".", ","), // Formato español
+        type: "number",
+        isAggregated: true, // Flag para identificar que es un valor agregado
+      });
+    }
+
+    console.log("[CompositeComponentTabs] Aggregated outputs calculated:", result);
+    return result;
+  }, [outputAggregations, componentsData]);
+
+  // Combinar outputs del padre con outputs agregados de componentes
+  const combinedParentOutputs = useMemo(() => {
+    if (!aggregatedOutputs.length) return parentOutputs;
+
+    // Crear un mapa de outputs del padre por nombre para actualizar/añadir
+    const outputsMap = new Map<string, any>();
+    for (const out of parentOutputs as any[]) {
+      const name = String(out?.name || out?.id || "").trim().toLowerCase();
+      if (name) outputsMap.set(name, { ...out });
+    }
+
+    // Añadir o actualizar con valores agregados
+    for (const aggOut of aggregatedOutputs) {
+      const targetName = String(aggOut.name || "").trim().toLowerCase();
+      if (outputsMap.has(targetName)) {
+        // Actualizar el valor existente
+        const existing = outputsMap.get(targetName)!;
+        existing.value = aggOut.value;
+        existing.isAggregated = true;
+      } else {
+        // Añadir nuevo output
+        outputsMap.set(targetName, aggOut);
+      }
+    }
+
+    return Array.from(outputsMap.values());
+  }, [parentOutputs, aggregatedOutputs]);
+
+  // Notificar cambios en los datos de componentes al padre (incluye outputs del padre + agregados)
   useEffect(() => {
-    onComponentsDataChange?.(componentsData, totalPrice, parentOutputs);
-  }, [componentsData, totalPrice, parentOutputs, onComponentsDataChange]);
+    onComponentsDataChange?.(componentsData, totalPrice, combinedParentOutputs);
+  }, [componentsData, totalPrice, combinedParentOutputs, onComponentsDataChange]);
 
   // Auto-seleccionar el primer componente al cargar (usando key única)
   useEffect(() => {
