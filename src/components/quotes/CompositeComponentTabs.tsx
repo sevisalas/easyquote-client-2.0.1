@@ -74,6 +74,33 @@ export default function CompositeComponentTabs({
 }: CompositeComponentTabsProps) {
   const [activeTab, setActiveTab] = useState<string>("");
 
+  // Prompts del padre normalizados (para lookup de valores actuales aunque parentPromptValues esté vacío)
+  const parentPromptsForLookup = useMemo(() => extractPrompts(parentProduct), [parentProduct]);
+
+  // Mapa: parentPromptId -> valor actual (currentValue/default)
+  const parentPromptValueById = useMemo(() => {
+    const map = new Map<string, any>();
+    for (const p of parentPromptsForLookup) {
+      const id = String((p as any)?.id ?? "").trim();
+      if (!id) continue;
+      const v = (p as any)?.currentValue ?? (p as any)?.default ?? (p as any)?.default_value;
+      if (v !== undefined) map.set(id, v);
+    }
+    return map;
+  }, [parentPromptsForLookup]);
+
+  const getEffectiveParentPromptValue = useCallback(
+    (sourcePromptName: string) => {
+      const key = String(sourcePromptName ?? "").trim();
+      const fromState = parentPromptValues[key];
+      if (fromState !== undefined && fromState !== null) return fromState;
+      const fromProduct = parentPromptValueById.get(key);
+      if (fromProduct !== undefined && fromProduct !== null) return fromProduct;
+      return undefined;
+    },
+    [parentPromptValues, parentPromptValueById]
+  );
+
   // Igual que en PromptsForm: no “commit” mientras se escribe; Enter hace blur y el blur comitea.
   const handleEnterToBlur = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -227,9 +254,31 @@ export default function CompositeComponentTabs({
     return { prompts: parentRegularPrompts };
   }, [parentRegularPrompts]);
 
+  // Inputs efectivos del padre (estado + currentValue). Esto evita depender de que el estado
+  // esté “poblado” para poder calcular componentes en la página de test.
+  const parentInputs = useMemo(() => {
+    const inputs: { id: string; value: any }[] = [];
+    for (const p of parentPromptsForLookup) {
+      const id = String((p as any)?.id ?? "").trim();
+      if (!id) continue;
+
+      const value = parentPromptValues[id] ?? (p as any)?.currentValue;
+      if (value === undefined || value === null) continue;
+
+      const actualValue =
+        typeof value === "object" && value !== null && "value" in (value as any)
+          ? (value as any).value
+          : value;
+
+      if (actualValue !== undefined && actualValue !== null) {
+        inputs.push({ id, value: actualValue });
+      }
+    }
+    return inputs;
+  }, [parentPromptsForLookup, parentPromptValues]);
+
   // Verificar si hay valores de prompts padre disponibles
-  // Esto evita llamar a la API de componentes antes de tener los valores del padre
-  const hasParentValues = Object.keys(parentPromptValues).length > 0;
+  const hasParentValues = parentInputs.length > 0;
 
   // Query para obtener outputs del producto PADRE (ancho, alto, etc.)
   const { data: parentPricingData } = useQuery({
@@ -237,22 +286,6 @@ export default function CompositeComponentTabs({
     queryFn: async () => {
       const token = await getEasyQuoteToken();
       if (!token) throw new Error("No hay token");
-
-      // Preparar inputs del padre
-      const parentInputs: { id: string; value: any }[] = [];
-      
-      // Obtener valores actuales de prompts del padre
-      const parentPrompts = parentProduct?.prompts || [];
-      for (const p of parentPrompts) {
-        const id = String(p?.id ?? "");
-        if (!id) continue;
-        
-        // Usar valor del estado si existe, si no usar currentValue del producto
-        const value = parentPromptValues[id] ?? p?.currentValue;
-        if (value !== undefined && value !== null) {
-          parentInputs.push({ id, value });
-        }
-      }
 
       console.log("[CompositeComponentTabs] Fetching parent outputs", {
         parentProductId,
@@ -313,7 +346,7 @@ export default function CompositeComponentTabs({
 
           // 1. Añadir valores heredados de conexiones
           for (const conn of connections as any[]) {
-            let sourceValue = parentPromptValues[conn.source_prompt_name];
+            let sourceValue = getEffectiveParentPromptValue(conn.source_prompt_name);
             
             // El valor puede venir como objeto {value, label} o como primitivo
             if (sourceValue !== undefined && sourceValue !== null) {
