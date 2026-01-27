@@ -2130,6 +2130,7 @@ export default function ProductManagement() {
               compositeProductIds={compositeProductIds}
               onToggleComponent={(productId, isComponent) => toggleComponentMutation.mutate({ productId, isComponent })}
               isTogglingComponent={toggleComponentMutation.isPending}
+              viewMode={viewMode}
             />}
         </CardContent>
       </Card>
