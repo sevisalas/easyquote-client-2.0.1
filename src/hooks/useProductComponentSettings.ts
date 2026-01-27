@@ -9,6 +9,7 @@ export interface ProductComponentSettings {
   is_composite: boolean;
   is_component: boolean;
   enabled_components: string[];
+  product_type: 'sencillo' | 'encuadernado' | 'compuesto';
   created_at: string;
   updated_at: string;
 }
@@ -106,6 +107,7 @@ export function useProductComponentSettings(easyquoteProductId?: string) {
       is_composite?: boolean;
       is_component?: boolean;
       enabled_components?: string[];
+      product_type?: 'sencillo' | 'encuadernado' | 'compuesto';
     }) => {
       if (!organizationId) throw new Error('No organization found');
 
@@ -118,6 +120,7 @@ export function useProductComponentSettings(easyquoteProductId?: string) {
       if (settings.is_composite !== undefined) payload.is_composite = settings.is_composite;
       if (settings.is_component !== undefined) payload.is_component = settings.is_component;
       if (settings.enabled_components !== undefined) payload.enabled_components = settings.enabled_components;
+      if (settings.product_type !== undefined) payload.product_type = settings.product_type;
 
       const { data, error } = await supabase
         .from('product_component_settings')
@@ -206,6 +209,9 @@ export function useProductComponentSettings(easyquoteProductId?: string) {
   // Helper: obtener componentes habilitados
   const enabledComponents = componentSettings?.enabled_components ?? [];
 
+  // Helper: obtener tipo de producto
+  const productType = componentSettings?.product_type ?? 'sencillo';
+
   const normalizePromptName = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
 
   const componentByPromptName = useMemo(() => {
@@ -228,6 +234,7 @@ export function useProductComponentSettings(easyquoteProductId?: string) {
     isComposite,
     isComponent,
     enabledComponents,
+    productType,
     organizationId,
     
     // Loading states
