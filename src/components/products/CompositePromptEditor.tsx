@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Save, Loader2, GripVertical } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Plus, Trash2, Save, Loader2, GripVertical, EyeOff } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { CompositePrompt, PROMPT_TYPES } from "@/hooks/useCompositeProductConfig";
 
@@ -29,6 +30,7 @@ interface EditingPrompt {
   type: string;
   default_value: string;
   is_required: boolean;
+  is_hidden: boolean;
   options: { label: string; value: string }[];
 }
 
@@ -38,6 +40,7 @@ const DEFAULT_PROMPT: EditingPrompt = {
   type: "text",
   default_value: "",
   is_required: false,
+  is_hidden: false,
   options: [],
 };
 
@@ -68,6 +71,7 @@ export function CompositePromptEditor({
       type: prompt.type,
       default_value: prompt.default_value || "",
       is_required: prompt.is_required,
+      is_hidden: prompt.is_hidden ?? false,
       options: (prompt.options as { label: string; value: string }[]) || [],
     });
     setIsCreating(false);
@@ -100,6 +104,7 @@ export function CompositePromptEditor({
           type: editingPrompt.type,
           default_value: editingPrompt.default_value || null,
           is_required: editingPrompt.is_required,
+          is_hidden: editingPrompt.is_hidden,
           options: editingPrompt.type === "select" ? editingPrompt.options : null,
           display_order: prompts.length,
         });
@@ -112,6 +117,7 @@ export function CompositePromptEditor({
           type: editingPrompt.type,
           default_value: editingPrompt.default_value || null,
           is_required: editingPrompt.is_required,
+          is_hidden: editingPrompt.is_hidden,
           options: editingPrompt.type === "select" ? editingPrompt.options : null,
         });
         toast({ title: "Campo actualizado", description: "El campo se ha actualizado" });
@@ -211,7 +217,17 @@ export function CompositePromptEditor({
                   <div className="flex items-center gap-3">
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <div className="font-medium">{prompt.label}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{prompt.label}</span>
+                        {prompt.is_hidden && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>Oculto para el usuario</TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
                       <div className="text-xs text-muted-foreground">
                         {prompt.name} • {PROMPT_TYPES.find((t) => t.value === prompt.type)?.label}
                         {prompt.is_required && " • Obligatorio"}
@@ -336,13 +352,23 @@ function PromptForm({
             placeholder="500"
           />
         </div>
-        <div className="flex items-end pb-2">
+        <div className="flex items-end pb-2 gap-4">
           <div className="flex items-center space-x-2">
             <Switch
               checked={prompt.is_required}
               onCheckedChange={(checked) => onChange({ ...prompt, is_required: checked })}
             />
             <Label>Obligatorio</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={prompt.is_hidden}
+              onCheckedChange={(checked) => onChange({ ...prompt, is_hidden: checked })}
+            />
+            <Label className="flex items-center gap-1">
+              <EyeOff className="h-3.5 w-3.5" />
+              Oculto
+            </Label>
           </div>
         </div>
       </div>
