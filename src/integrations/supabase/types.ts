@@ -1666,6 +1666,7 @@ export type Database = {
           is_component: boolean
           is_composite: boolean
           organization_id: string
+          product_type: string | null
           updated_at: string
         }
         Insert: {
@@ -1676,6 +1677,7 @@ export type Database = {
           is_component?: boolean
           is_composite?: boolean
           organization_id: string
+          product_type?: string | null
           updated_at?: string
         }
         Update: {
@@ -1686,6 +1688,7 @@ export type Database = {
           is_component?: boolean
           is_composite?: boolean
           organization_id?: string
+          product_type?: string | null
           updated_at?: string
         }
         Relationships: [

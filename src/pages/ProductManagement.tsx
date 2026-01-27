@@ -400,6 +400,7 @@ export default function ProductManagement() {
     promptComponents,
     isComposite,
     enabledComponents,
+    productType: savedProductType,
     upsertSettings: upsertComponentSettings,
     assignPromptToComponent,
     getPromptComponent,
@@ -407,17 +408,12 @@ export default function ProductManagement() {
     isAssigning: isAssigningComponent
   } = useProductComponentSettings(selectedProduct?.id);
 
-  // Sincronizar productType con isComposite cuando cambia
+  // Sincronizar productType con el valor guardado en BD
   useEffect(() => {
-    if (isComposite) {
-      // Los productos compuestos tienen is_composite: true en product_component_settings
-      // La diferencia entre 'encuadernado' y 'compuesto' la determinamos por enabledComponents
-      const hasPresetComponents = enabledComponents.includes('cubierta') || enabledComponents.includes('interior_1');
-      setProductType(hasPresetComponents ? 'encuadernado' : 'compuesto');
-    } else {
-      setProductType('sencillo');
+    if (savedProductType) {
+      setProductType(savedProductType);
     }
-  }, [isComposite, enabledComponents]);
+  }, [savedProductType]);
 
   // Query para obtener IDs de productos que son componentes
   const { data: componentProductIds = new Set<string>(), refetch: refetchComponentIds } = useQuery({
@@ -2255,11 +2251,20 @@ export default function ProductManagement() {
                     setProductType(value);
                     if (selectedProduct) {
                       const newIsComposite = value !== 'sencillo';
+                      // Determinar componentes según el tipo
+                      let newEnabledComponents: string[] = [];
+                      if (value === 'encuadernado') {
+                        newEnabledComponents = ['cubierta', 'interior_1'];
+                      } else if (value === 'compuesto') {
+                        // Compuesto empieza vacío o mantiene los existentes
+                        newEnabledComponents = enabledComponents.length > 0 ? enabledComponents : [];
+                      }
                       try {
                         await upsertComponentSettings({
                           easyquote_product_id: selectedProduct.id,
                           is_composite: newIsComposite,
-                          enabled_components: newIsComposite ? ['interior_1'] : []
+                          enabled_components: newEnabledComponents,
+                          product_type: value
                         });
                       } catch (error) {
                         console.error("Error updating product type:", error);
