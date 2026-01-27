@@ -68,7 +68,7 @@ export function CompatibleComponentsEditor({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [alias, setAlias] = useState("");
-  const [isOptional, setIsOptional] = useState(false);
+  const [isRequired, setIsRequired] = useState(true);
   const [configuringComponent, setConfiguringComponent] = useState<CompositeComponent | null>(null);
 
   // Productos disponibles que aún no están añadidos
@@ -94,13 +94,13 @@ export function CompatibleComponentsEditor({
         component_product_id: selectedProductId,
         component_alias: alias.trim(),
         display_order: components.length,
-        is_optional: isOptional,
+        is_optional: !isRequired,
       });
       toast.success("Componente añadido");
       setIsDialogOpen(false);
       setSelectedProductId("");
       setAlias("");
-      setIsOptional(false);
+      setIsRequired(true);
     } catch (error) {
       console.error("Error adding component:", error);
       toast.error("Error al añadir componente");
@@ -277,12 +277,12 @@ export function CompatibleComponentsEditor({
 
             <div className="flex items-center justify-between">
               <div>
-                <Label>Opcional</Label>
+                <Label>Obligatorio</Label>
                 <p className="text-xs text-muted-foreground">
-                  Si es opcional, puede omitirse al presupuestar
+                  Si es obligatorio, siempre se incluirá al presupuestar
                 </p>
               </div>
-              <Switch checked={isOptional} onCheckedChange={setIsOptional} />
+              <Switch checked={isRequired} onCheckedChange={setIsRequired} />
             </div>
           </div>
 
