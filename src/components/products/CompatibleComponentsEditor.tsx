@@ -211,12 +211,12 @@ export function CompatibleComponentsEditor({
 
 
               <div className="flex items-center gap-2">
-                <Label htmlFor={`optional-${component.id}`} className="text-xs text-muted-foreground">
-                  Opcional
+                <Label htmlFor={`required-${component.id}`} className="text-xs text-muted-foreground">
+                  Obligatorio
                 </Label>
                 <Switch
-                  id={`optional-${component.id}`}
-                  checked={component.is_optional}
+                  id={`required-${component.id}`}
+                  checked={!component.is_optional}
                   onCheckedChange={() => handleToggleOptional(component)}
                   disabled={isUpdating}
                 />
