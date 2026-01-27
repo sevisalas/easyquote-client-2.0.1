@@ -108,8 +108,8 @@ export default function CompositeComponentTabs({
     }
   }, []);
 
-  // Hook para obtener configuración de prompts (force_result, admin_only, etc.)
-  const { isPromptForceResult } = useProductPromptSettings(parentProductId);
+  // Hook para obtener configuración de prompts (force_result, admin_only, is_hidden, etc.)
+  const { isPromptForceResult, isPromptHidden } = useProductPromptSettings(parentProductId);
 
   // Necesitamos las definiciones de prompts para mapear UUID -> celda (B10, B36, etc.)
   // y así poder aplicar correctamente force_result (se guarda en BD por celda).
@@ -249,7 +249,7 @@ export default function CompositeComponentTabs({
     return cellFromId ?? cellFromLabel ?? extractCellRef(idStr) ?? labelCell ?? idNorm ?? idStr;
   }, [parentPromptCellLookup]);
 
-  // Separar prompts del padre en regulares y force_result
+  // Separar prompts del padre en regulares y force_result (filtrando ocultos)
   const { parentRegularPrompts, parentForceResultPrompts } = useMemo(() => {
     const allPrompts = extractPrompts(parentProduct);
     const regular: PromptDef[] = [];
@@ -257,12 +257,15 @@ export default function CompositeComponentTabs({
 
     for (const prompt of allPrompts) {
       const key = getParentPromptAdminKey(prompt);
+      // Filtrar prompts ocultos (is_hidden)
+      if (isPromptHidden(key)) continue;
+      
       if (isPromptForceResult(key)) forceResult.push(prompt);
       else regular.push(prompt);
     }
 
     return { parentRegularPrompts: regular, parentForceResultPrompts: forceResult };
-  }, [parentProduct, isPromptForceResult, getParentPromptAdminKey]);
+  }, [parentProduct, isPromptForceResult, isPromptHidden, getParentPromptAdminKey]);
 
   // Producto virtual para prompts regulares del padre
   const parentRegularProduct = useMemo(() => {
