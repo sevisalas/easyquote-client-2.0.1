@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useProductPromptSettings } from "@/hooks/useProductPromptSettings";
 
 export type PromptOption = {
   value: string;
@@ -225,6 +226,10 @@ export default function PromptsForm({
   showAllPrompts?: boolean;
   singleColumn?: boolean; // Force single column layout (for composite products in tabs)
 }) {
+  // Get product ID to filter hidden prompts
+  const productId = product?.productId ?? product?.id ?? product?.product_id;
+  const { isPromptHidden } = useProductPromptSettings(productId);
+
   const prompts = useMemo(() => extractPrompts(product), [product]);
   const defaultsMap = useMemo(() => Object.fromEntries(prompts.map((p) => [p.id, p.default])), [prompts]);
   const effectiveValues = useMemo(() => {
@@ -243,10 +248,10 @@ export default function PromptsForm({
     return { ...defaultsMap, ...extractedValues };
   }, [defaultsMap, values]);
 
-  // Mostrar TODOS los prompts sin ningún filtro
+  // Filtrar prompts ocultos (is_hidden) pero mantener todos visibles para cálculos
   const visiblePrompts = useMemo(() => {
-    return prompts;
-  }, [prompts]);
+    return prompts.filter(p => !isPromptHidden(p.id));
+  }, [prompts, isPromptHidden]);
 
   // Clamp numeric value to min/max range
   const clampValue = (value: any, min?: number, max?: number): any => {
