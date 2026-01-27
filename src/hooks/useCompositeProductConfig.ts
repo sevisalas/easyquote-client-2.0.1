@@ -12,6 +12,7 @@ export interface CompositePrompt {
   default_value: string | null;
   options: { label: string; value: string }[] | null;
   is_required: boolean;
+  is_hidden: boolean;
   display_order: number;
   created_at: string;
   updated_at: string;

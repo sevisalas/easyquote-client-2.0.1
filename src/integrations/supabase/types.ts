@@ -319,6 +319,7 @@ export type Database = {
           display_order: number
           easyquote_product_id: string
           id: string
+          is_hidden: boolean
           is_required: boolean
           label: string
           name: string
@@ -333,6 +334,7 @@ export type Database = {
           display_order?: number
           easyquote_product_id: string
           id?: string
+          is_hidden?: boolean
           is_required?: boolean
           label: string
           name: string
@@ -347,6 +349,7 @@ export type Database = {
           display_order?: number
           easyquote_product_id?: string
           id?: string
+          is_hidden?: boolean
           is_required?: boolean
           label?: string
           name?: string
