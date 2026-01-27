@@ -184,18 +184,6 @@ export default function CompositeComponentsSelector({
         )}
       </div>
 
-      {/* Info de componentes obligatorios vs opcionales */}
-      {!compact && (
-        <p className="text-xs text-muted-foreground">
-          {requiredComponents.length > 0 && (
-            <span>{requiredComponents.length} obligatorio{requiredComponents.length > 1 ? 's' : ''}</span>
-          )}
-          {requiredComponents.length > 0 && optionalComponents.length > 0 && ' · '}
-          {optionalComponents.length > 0 && (
-            <span>{optionalComponents.length} opcional{optionalComponents.length > 1 ? 'es' : ''}</span>
-          )}
-        </p>
-      )}
     </div>
   );
 }
