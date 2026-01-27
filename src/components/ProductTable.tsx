@@ -43,9 +43,11 @@ interface ProductTableProps {
   compositeProductIds?: Set<string>;
   onToggleComponent?: (productId: string, isComponent: boolean) => void;
   isTogglingComponent?: boolean;
+  /** Vista actual: 'productos' o 'componentes' */
+  viewMode?: 'productos' | 'componentes';
 }
 
-export function ProductTable({ products, getProductMapping, onEditProduct, onDuplicateProduct, componentProductIds, compositeProductIds, onToggleComponent, isTogglingComponent }: ProductTableProps) {
+export function ProductTable({ products, getProductMapping, onEditProduct, onDuplicateProduct, componentProductIds, compositeProductIds, onToggleComponent, isTogglingComponent, viewMode = 'productos' }: ProductTableProps) {
   const navigate = useNavigate();
   const { isWooCommerceActive, loading: wooIntegrationLoading } = useWooCommerceIntegration();
   const productIds = products.map((p) => p.id);
@@ -238,7 +240,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/admin/productos/test?productId=${product.id}`)}
+                        onClick={() => navigate(`/admin/productos/test?productId=${product.id}&view=${viewMode}`)}
                         title="Test"
                         className="h-7 w-7 p-0"
                       >
@@ -427,7 +429,7 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate(`/admin/productos/test?productId=${product.id}`)}
+                  onClick={() => navigate(`/admin/productos/test?productId=${product.id}&view=${viewMode}`)}
                   className="flex-1 text-xs"
                 >
                   <TestTube className="h-3 w-3 mr-2" />
