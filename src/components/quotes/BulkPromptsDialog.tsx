@@ -26,6 +26,8 @@ interface BulkPromptData {
   promptSeq: number;
   component?: string;
   hideInDocuments?: boolean;
+  forceResult?: boolean;
+  adminOnly?: boolean;
 }
 
 interface BulkPromptsDialogProps {
@@ -78,8 +80,8 @@ export function BulkPromptsDialog({
     return maxRow + 1;
   };
 
-  const createInitialPrompt = (seq: number, row: number) => ({
-    sheet: "",
+  const createInitialPrompt = (seq: number, row: number, inheritSheet?: string, inheritComponent?: string) => ({
+    sheet: inheritSheet || "",
     promptCell: "",
     valueCell: "",
     promptType: promptTypes[0]?.id || 0,
@@ -89,18 +91,28 @@ export function BulkPromptsDialog({
     valueQuantityMin: 0,
     valueQuantityMax: 9999,
     promptSeq: seq,
-    component: "general",
-    hideInDocuments: false
+    component: inheritComponent || "general",
+    hideInDocuments: false,
+    forceResult: false,
+    adminOnly: false
   });
 
   const [prompts, setPrompts] = useState<BulkPromptData[]>([]);
 
   const addPrompt = () => {
-    const baseSeq = getNextSeq();
-    const baseRow = getNextRow();
-    const nextSeq = baseSeq + prompts.length;
-    const nextRow = baseRow + prompts.length;
-    setPrompts([...prompts, createInitialPrompt(nextSeq, nextRow)]);
+    setPrompts((prev) => {
+      const baseSeq = getNextSeq();
+      const baseRow = getNextRow();
+      const nextSeq = baseSeq + prev.length;
+      const nextRow = baseRow + prev.length;
+
+      // Heredar hoja y componente del último prompt (igual que en outputs)
+      const lastPrompt = prev[prev.length - 1];
+      const inheritSheet = lastPrompt?.sheet || availableSheets[0] || "";
+      const inheritComponent = lastPrompt?.component || "general";
+
+      return [...prev, createInitialPrompt(nextSeq, nextRow, inheritSheet, inheritComponent)];
+    });
   };
 
   const removePrompt = (index: number) => {
@@ -301,7 +313,7 @@ export function BulkPromptsDialog({
                         )}
                       </div>
 
-                      {/* Segunda fila: Ocultar en docs y Componente */}
+                      {/* Segunda fila: Opciones adicionales */}
                       <div className="grid grid-cols-12 gap-2 items-end">
                         <div className="col-span-2">
                           <Label className="text-xs">Ocultar en docs</Label>
@@ -309,6 +321,26 @@ export function BulkPromptsDialog({
                             <Switch
                               checked={prompt.hideInDocuments}
                               onCheckedChange={(checked) => updatePrompt(index, 'hideInDocuments', checked)}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="col-span-2">
+                          <Label className="text-xs">Op. restrictiva</Label>
+                          <div className="flex items-center h-8">
+                            <Switch
+                              checked={prompt.forceResult}
+                              onCheckedChange={(checked) => updatePrompt(index, 'forceResult', checked)}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="col-span-2">
+                          <Label className="text-xs">Solo admin</Label>
+                          <div className="flex items-center h-8">
+                            <Switch
+                              checked={prompt.adminOnly}
+                              onCheckedChange={(checked) => updatePrompt(index, 'adminOnly', checked)}
                             />
                           </div>
                         </div>
