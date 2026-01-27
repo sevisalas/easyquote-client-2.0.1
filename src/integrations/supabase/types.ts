@@ -1806,6 +1806,7 @@ export type Database = {
           force_result: boolean
           hide_in_documents: boolean
           id: string
+          is_hidden: boolean
           organization_id: string
           prompt_name: string
           updated_at: string
@@ -1817,6 +1818,7 @@ export type Database = {
           force_result?: boolean
           hide_in_documents?: boolean
           id?: string
+          is_hidden?: boolean
           organization_id: string
           prompt_name: string
           updated_at?: string
@@ -1828,6 +1830,7 @@ export type Database = {
           force_result?: boolean
           hide_in_documents?: boolean
           id?: string
+          is_hidden?: boolean
           organization_id?: string
           prompt_name?: string
           updated_at?: string

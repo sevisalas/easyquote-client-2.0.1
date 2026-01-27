@@ -552,13 +552,15 @@ export default function ProductManagement() {
       promptName,
       hideInDocuments,
       adminOnly,
-      forceResult
+      forceResult,
+      isHidden
     }: {
       productId: string;
       promptName: string;
       hideInDocuments?: boolean;
       adminOnly?: boolean;
       forceResult?: boolean;
+      isHidden?: boolean;
     }) => {
       const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
       const promptKey = normalizePromptKey(promptName);
@@ -579,12 +581,13 @@ export default function ProductManagement() {
       } = await supabase.from("product_prompt_settings").select("id, hide_in_documents, admin_only, force_result").eq("organization_id", orgId).eq("easyquote_product_id", productId).eq("prompt_name", promptKey).maybeSingle();
       
       // Build update object with only provided fields
-      const updateData: { hide_in_documents?: boolean; admin_only?: boolean; force_result?: boolean; updated_at: string } = {
+      const updateData: { hide_in_documents?: boolean; admin_only?: boolean; force_result?: boolean; is_hidden?: boolean; updated_at: string } = {
         updated_at: new Date().toISOString()
       };
       if (hideInDocuments !== undefined) updateData.hide_in_documents = hideInDocuments;
       if (adminOnly !== undefined) updateData.admin_only = adminOnly;
       if (forceResult !== undefined) updateData.force_result = forceResult;
+      if (isHidden !== undefined) updateData.is_hidden = isHidden;
 
       if (existing) {
         // Update existing record
@@ -602,7 +605,8 @@ export default function ProductManagement() {
           prompt_name: promptKey,
           hide_in_documents: hideInDocuments ?? false,
           admin_only: adminOnly ?? false,
-          force_result: forceResult ?? false
+          force_result: forceResult ?? false,
+          is_hidden: isHidden ?? false
         });
         if (error) throw error;
       }
@@ -646,6 +650,14 @@ export default function ProductManagement() {
     const key = normalizePromptKey(promptName);
     const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
     return setting?.force_result || false;
+  };
+
+  // Helper to check if prompt is hidden from users
+  const isPromptHidden = (promptName: string): boolean => {
+    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+    const key = normalizePromptKey(promptName);
+    const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
+    return setting?.is_hidden || false;
   };
 
   // ALL HOOKS MUST BE DECLARED BEFORE ANY CONDITIONAL LOGIC
@@ -2580,6 +2592,18 @@ export default function ProductManagement() {
                                     productId: selectedProduct.id,
                                     promptName: prompt.promptCell,
                                     forceResult: checked
+                                  });
+                                }
+                              }} />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Label className="text-sm font-medium whitespace-nowrap">Oculto</Label>
+                                <Switch checked={isPromptHidden(prompt.promptCell)} onCheckedChange={checked => {
+                                if (selectedProduct) {
+                                  upsertPromptSettingMutation.mutate({
+                                    productId: selectedProduct.id,
+                                    promptName: prompt.promptCell,
+                                    isHidden: checked
                                   });
                                 }
                               }} />
