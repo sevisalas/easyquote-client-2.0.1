@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 interface CompositeComponentTabsProps {
   /** Producto padre compuesto */
   parentProductId: string;
+  /** organization_id (recomendado para RLS multi-tenant) */
+  organizationId?: string;
   /** Componentes activos seleccionados por el usuario */
   activeComponents: ActiveComponent[];
   /** Valores de prompts del producto padre */
@@ -59,6 +61,7 @@ export type ComponentsDataMap = Record<string, ComponentPricingData>;
  */
 export default function CompositeComponentTabs({
   parentProductId,
+  organizationId: organizationIdProp,
   activeComponents,
   parentPromptValues,
   onParentPromptChange,
@@ -109,7 +112,10 @@ export default function CompositeComponentTabs({
   }, []);
 
   // Hook para obtener configuración de prompts (force_result, admin_only, is_hidden, etc.)
-  const { isPromptForceResult, isPromptHidden } = useProductPromptSettings(parentProductId);
+  const { isPromptForceResult, isPromptHidden, organizationId: settingsOrganizationId } = useProductPromptSettings(parentProductId);
+
+  // organization_id efectivo (necesario para RLS en tablas multi-tenant)
+  const organizationId = organizationIdProp ?? settingsOrganizationId;
 
   // Necesitamos las definiciones de prompts para mapear UUID -> celda (B10, B36, etc.)
   // y así poder aplicar correctamente force_result (se guarda en BD por celda).
@@ -136,32 +142,37 @@ export default function CompositeComponentTabs({
   });
 
   // Fetch prompt connections from database
-  const { data: promptConnections = [] } = useQuery({
-    queryKey: ["composite-prompt-connections", parentProductId],
+  const {
+    data: promptConnections = [],
+    isSuccess: promptConnectionsReady,
+  } = useQuery({
+    queryKey: ["composite-prompt-connections", parentProductId, organizationId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("composite_prompt_connections")
         .select("*")
+        .eq("organization_id", organizationId)
         .eq("composite_product_id", parentProductId);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!parentProductId,
+    enabled: !!parentProductId && !!organizationId,
     staleTime: 5 * 60 * 1000,
   });
 
   // Fetch output aggregation config from database
   const { data: outputAggregations = [] } = useQuery({
-    queryKey: ["composite-output-aggregations", parentProductId],
+    queryKey: ["composite-output-aggregations", parentProductId, organizationId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("composite_output_aggregations")
         .select("*")
+        .eq("organization_id", organizationId)
         .eq("composite_product_id", parentProductId);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!parentProductId,
+    enabled: !!parentProductId && !!organizationId,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -425,7 +436,7 @@ export default function CompositeComponentTabs({
           return { prompts, outputs, price };
         },
         // Solo ejecutar cuando tenemos valores del padre Y las conexiones están cargadas
-        enabled: !!component.component_product_id && promptConnections !== undefined && hasParentValues,
+        enabled: !!component.component_product_id && hasParentValues && promptConnectionsReady,
         staleTime: 30 * 1000,
         refetchOnWindowFocus: false,
       };
@@ -469,7 +480,60 @@ export default function CompositeComponentTabs({
 
   // Calcular outputs agregados según configuración de composite_output_aggregations
   const aggregatedOutputs = useMemo(() => {
-    if (!outputAggregations.length || !Object.keys(componentsData).length) return [];
+    if (!Object.keys(componentsData).length) return [];
+
+    // Normalizador simple para identificar "lomo" aunque haya sufijos ("Lomo mm", etc.)
+    const normalizeLoose = (v: any) =>
+      String(v ?? "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+
+    const isLomoLike = (v: any) => normalizeLoose(v).includes("lomo");
+
+    // Fallback: si NO hay configuración, intentar agregar automáticamente SOLO "Lomo".
+    // Esto cubre el caso típico de encuadernados (lomo de interiores -> lomo general).
+    if (!outputAggregations.length) {
+      const parentLomo = (parentOutputs as any[]).find(
+        (o: any) => isLomoLike(o?.label) || isLomoLike(o?.name) || isLomoLike(o?.id)
+      );
+
+      if (!parentLomo) return [];
+
+      let sum = 0;
+      let found = false;
+
+      for (const compData of Object.values(componentsData)) {
+        const outputs = compData.outputs || [];
+        for (const out of outputs as any[]) {
+          const outName = out?.name ?? out?.id;
+          const outLabel = out?.label;
+          if (!isLomoLike(outLabel) && !isLomoLike(outName)) continue;
+
+          const raw = String(out?.value ?? "");
+          const num = parseFloat(raw.replace(/\./g, "").replace(",", "."));
+          if (Number.isFinite(num)) {
+            sum += num;
+            found = true;
+          }
+        }
+      }
+
+      if (!found) return [];
+
+      const targetName = String(parentLomo?.name ?? parentLomo?.id ?? "LOMO");
+      const targetLabel = String(parentLomo?.label ?? "Lomo");
+
+      return [
+        {
+          name: targetName,
+          label: targetLabel,
+          value: sum.toFixed(2).replace(".", ","),
+          type: "number",
+          isAggregated: true,
+        },
+      ];
+    }
 
     // Agrupar outputs por source_output_name y sumar valores
     const aggregationMap = new Map<string, { sum: number; label: string; targetName: string }>();
@@ -527,7 +591,7 @@ export default function CompositeComponentTabs({
 
     console.log("[CompositeComponentTabs] Aggregated outputs calculated:", result);
     return result;
-  }, [outputAggregations, componentsData]);
+  }, [outputAggregations, componentsData, parentOutputs]);
 
   // Combinar outputs del padre con outputs agregados de componentes
   const combinedParentOutputs = useMemo(() => {
