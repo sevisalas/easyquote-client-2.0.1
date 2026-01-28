@@ -622,9 +622,17 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       // Helper para detectar si un ID es un GUID válido
       const isValidGuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
       
+      // Determinar el tipo de producto para métricas
+      const productTypeForMetrics = hasConfiguredComponents 
+        ? "composite" 
+        : isComposite 
+          ? "bound" 
+          : "simple";
+      
       const requestBody: any = {
         token,
-        productId
+        productId,
+        productType: productTypeForMetrics,
       };
 
       // Si NO es producto nuevo Y tenemos valores de prompts, SIEMPRE enviar PATCH (nunca GET para artículos guardados)
