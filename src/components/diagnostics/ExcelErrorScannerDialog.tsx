@@ -27,7 +27,7 @@ const EXTERNAL_REF_RE = /\[([^\]]+)\]/g;
 // ============================================================
 const SYNCFUSION_UNSUPPORTED_FUNCTIONS = [
   // Dynamic array functions (Excel 365/2021) - NEVER supported
-  "XLOOKUP", "BUSCARX",
+  // NOTE: XLOOKUP/BUSCARX IS supported by Syncfusion (see DEVELOPER_NOTES.md)
   "XMATCH", "COINCIDIRX",
   "FILTER", "FILTRAR",
   "SORT", "ORDENAR",  
