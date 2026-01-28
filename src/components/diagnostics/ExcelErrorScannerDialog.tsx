@@ -79,6 +79,19 @@ const SYNCFUSION_RISKY_FUNCTIONS = [
   "ISFORMULA",                    // May not work correctly
 ];
 
+// Functions that work but need special attention for correct behavior
+const SYNCFUSION_WARNING_FUNCTIONS: Array<{
+  names: string[];
+  warning: string;
+  suggestion: string;
+}> = [
+  {
+    names: ["XLOOKUP", "BUSCARX"],
+    warning: "XLOOKUP con match_mode -1 requiere rango descendente",
+    suggestion: "Si usas rangos ascendentes con match_mode -1, considera usar INDICE+COINCIDIR en su lugar: =INDICE(rango_resultado;COINCIDIR(valor;rango_busqueda;1))"
+  }
+];
+
 // Runtime error patterns removed - too many false positives on working files
 
 // Data flow patterns removed - too many false positives on working files
@@ -92,7 +105,8 @@ type IssueType =
   | "external_ref" 
   | "circular_suspect" 
   | "syncfusion_unsupported"
-  | "syncfusion_risky";
+  | "syncfusion_risky"
+  | "syncfusion_warning";
 
 type IssueSeverity = "error" | "warning" | "info";
 
@@ -202,6 +216,30 @@ function extractSyncfusionRiskyFunctions(formula: string): string[] {
   return funcs;
 }
 
+// Extract warning functions (supported but need attention)
+function extractSyncfusionWarningFunctions(formula: string): Array<{ func: string; warning: string; suggestion: string }> {
+  const results: Array<{ func: string; warning: string; suggestion: string }> = [];
+  const seen = new Set<string>();
+  let match;
+  const regex = new RegExp(FUNCTION_RE.source, "gi");
+  while ((match = regex.exec(formula)) !== null) {
+    const funcName = match[1].toUpperCase();
+    if (seen.has(funcName)) continue;
+    
+    for (const warnDef of SYNCFUSION_WARNING_FUNCTIONS) {
+      if (warnDef.names.map(n => n.toUpperCase()).includes(funcName)) {
+        seen.add(funcName);
+        results.push({
+          func: funcName,
+          warning: warnDef.warning,
+          suggestion: warnDef.suggestion
+        });
+        break;
+      }
+    }
+  }
+  return results;
+}
 
 // Build a reference graph and detect potential circular references
 function buildRefGraph(wb: XLSX.WorkBook): Map<string, { formula: string; refs: string[] }> {
@@ -289,6 +327,7 @@ const TYPE_LABELS: Record<IssueType, { label: string; variant: "destructive" | "
   error: { label: "Error", variant: "destructive" },
   syncfusion_unsupported: { label: "No soportada", variant: "destructive" },
   syncfusion_risky: { label: "Riesgo", variant: "secondary" },
+  syncfusion_warning: { label: "Aviso", variant: "outline" },
   missing_sheet: { label: "Hoja falta", variant: "secondary" },
   external_ref: { label: "Ref externa", variant: "outline" },
   circular_suspect: { label: "Circular?", variant: "default" },
@@ -467,6 +506,20 @@ export function ExcelErrorScannerDialog() {
             });
           }
           
+          // 6. Check for warning functions (supported but need attention)
+          const warningFuncs = extractSyncfusionWarningFunctions(formula);
+          for (const wf of warningFuncs) {
+            found.push({
+              sheet: sheetName,
+              cell: addr,
+              error: `${wf.func}: ${wf.warning}`,
+              formula,
+              type: "syncfusion_warning",
+              severity: "warning",
+              suggestion: wf.suggestion
+            });
+          }
+          
           // Runtime and data flow checks removed - too many false positives
         }
         
@@ -503,7 +556,8 @@ export function ExcelErrorScannerDialog() {
           missing_sheet: 2,
           external_ref: 3,
           syncfusion_risky: 4,
-          circular_suspect: 5
+          syncfusion_warning: 5,
+          circular_suspect: 6
         };
         if (a.type !== b.type) return typePriority[a.type] - typePriority[b.type];
         if (a.sheet !== b.sheet) return a.sheet.localeCompare(b.sheet);
