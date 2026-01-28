@@ -181,7 +181,7 @@ export function ComponentPromptMappingDialog({
               </span>
             </div>
 
-            <ScrollArea className="max-h-[400px] pr-4">
+            <ScrollArea className="max-h-[60vh] pr-4">
               <div className="space-y-3">
                 {componentPrompts.map((cp) => {
                   const currentMapping = mappings[cp.name] || USER_EDITABLE;
@@ -246,24 +246,24 @@ export function ComponentPromptMappingDialog({
                   );
                 })}
               </div>
-            </ScrollArea>
 
-            {/* Sección de agregación de outputs */}
-            <Separator className="my-4" />
-            <div>
-              <h4 className="text-sm font-medium mb-3">Agregación de datos de salida</h4>
-              <p className="text-xs text-muted-foreground mb-3">
-                Selecciona outputs de este componente para sumarlos en el producto padre
-              </p>
-              <OutputAggregationSection
-                componentProductId={component.component_product_id}
-                organizationId={organizationId}
-                compositeProductId={compositeProductId}
-                existingAggregations={outputAggregations}
-                onSave={onSaveAggregations}
-                isSaving={isSavingAggregations}
-              />
-            </div>
+              {/* Sección de agregación de outputs - dentro del scroll */}
+              <Separator className="my-4" />
+              <div className="pb-2">
+                <h4 className="text-sm font-medium mb-3">Agregación de datos de salida</h4>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Selecciona outputs de este componente para sumarlos en el producto padre
+                </p>
+                <OutputAggregationSection
+                  componentProductId={component.component_product_id}
+                  organizationId={organizationId}
+                  compositeProductId={compositeProductId}
+                  existingAggregations={outputAggregations}
+                  onSave={onSaveAggregations}
+                  isSaving={isSavingAggregations}
+                />
+              </div>
+            </ScrollArea>
           </>
         )}
 
