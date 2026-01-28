@@ -443,6 +443,60 @@ export default function CompositeComponentTabs({
     }),
   });
 
+  // Query para obtener el orden de outputs guardado para CADA componente
+  const componentOutputOrderQueries = useQueries({
+    queries: activeComponents.map((component) => ({
+      queryKey: ["component-output-order", component.component_product_id, organizationId],
+      queryFn: async () => {
+        if (!organizationId) return { productId: component.component_product_id, order: null };
+        const { data, error } = await supabase
+          .from("product_output_order")
+          .select("output_order")
+          .eq("easyquote_product_id", component.component_product_id)
+          .eq("organization_id", organizationId)
+          .maybeSingle();
+        if (error) throw error;
+        return { productId: component.component_product_id, order: data?.output_order || null };
+      },
+      enabled: !!component.component_product_id && !!organizationId,
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+
+  // Mapa de productId -> orden de outputs guardado
+  const componentOutputOrderMap = useMemo(() => {
+    const map = new Map<string, string[] | null>();
+    for (const query of componentOutputOrderQueries) {
+      if (query.data) {
+        map.set(query.data.productId, query.data.order);
+      }
+    }
+    return map;
+  }, [componentOutputOrderQueries]);
+
+  // Función para ordenar outputs según el orden guardado
+  const sortOutputsByOrder = useCallback((outputs: any[], savedOrder: string[] | null): any[] => {
+    if (!savedOrder || savedOrder.length === 0) return outputs;
+
+    const normalizeKey = (s: string) =>
+      String(s ?? "")
+        .replace(/\$/g, "")
+        .trim()
+        .toUpperCase();
+
+    const orderMap = new Map(savedOrder.map((cell, idx) => [normalizeKey(cell), idx]));
+
+    return [...outputs].sort((a, b) => {
+      const keyA = normalizeKey(a?.nameCell || a?.name_cell || a?.name || a?.id || "");
+      const keyB = normalizeKey(b?.nameCell || b?.name_cell || b?.name || b?.id || "");
+
+      const orderA = orderMap.get(keyA) ?? 9999;
+      const orderB = orderMap.get(keyB) ?? 9999;
+
+      return orderA - orderB;
+    });
+  }, []);
+
   // Procesar datos de componentes usando key única por instancia
   const componentsData = useMemo(() => {
     const data: ComponentsDataMap = {};
@@ -461,9 +515,14 @@ export default function CompositeComponentTabs({
       const count = instanceCountById.get(component.id) ?? 0;
       const alias = count > 1 ? `${baseName} ${component.instance_index ?? 1}` : baseName;
 
+      // Obtener orden guardado para este componente
+      const savedOrder = componentOutputOrderMap.get(component.component_product_id);
+      const rawOutputs = pricingData?.outputs || [];
+      const sortedOutputs = sortOutputsByOrder(rawOutputs, savedOrder);
+
       data[componentKey] = {
         prompts: pricingData?.prompts || [],
-        outputs: pricingData?.outputs || [],
+        outputs: sortedOutputs,
         price: pricingData?.price ?? 0,
         isLoading: query?.isLoading ?? false,
         alias,
@@ -471,7 +530,7 @@ export default function CompositeComponentTabs({
     });
 
     return data;
-  }, [activeComponents, componentQueriesResults, productNames]);
+  }, [activeComponents, componentQueriesResults, productNames, componentOutputOrderMap, sortOutputsByOrder]);
 
   // Calcular precio total
   const totalPrice = useMemo(() => {
