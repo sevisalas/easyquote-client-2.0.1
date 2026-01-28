@@ -325,6 +325,7 @@ export default function CompositeComponentTabs({
         token,
         productId: parentProductId,
         inputs: parentInputs,
+        productType: "composite",
       });
 
       if (error) throw error;
@@ -419,6 +420,8 @@ export default function CompositeComponentTabs({
             token,
             productId: component.component_product_id,
             inputs: componentInputs,
+            productType: "composite",
+            componentId: componentKey,
           });
 
           if (error) throw error;

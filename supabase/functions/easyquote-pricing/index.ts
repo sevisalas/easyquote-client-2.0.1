@@ -21,8 +21,8 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const startTime = Date.now();
-    const { token, productId, inputs } = await req.json();
-    console.log("easyquote-pricing: Request received", { productId, inputsCount: Array.isArray(inputs) ? inputs.length : (inputs ? Object.keys(inputs).length : 0) });
+    const { token, productId, inputs, productType, componentId } = await req.json();
+    console.log("easyquote-pricing: Request received", { productId, productType, componentId, inputsCount: Array.isArray(inputs) ? inputs.length : (inputs ? Object.keys(inputs).length : 0) });
     if (!token || !productId) {
       return new Response(JSON.stringify({ error: "Missing token or productId" }), {
         status: 400,
@@ -403,7 +403,13 @@ serve(async (req: Request): Promise<Response> => {
       endpoint: `pricing/${productId}`,
       responseTimeMs: totalTime,
       statusCode: 200,
-      metadata: { productId, inputsCount: formattedInputsList.length }
+      metadata: { 
+        productId, 
+        inputsCount: formattedInputsList.length,
+        productType: productType || 'unknown',
+        componentId: componentId || null,
+        isComponent: !!componentId
+      }
     }).catch(() => {});
     
     return new Response(JSON.stringify(data), {
