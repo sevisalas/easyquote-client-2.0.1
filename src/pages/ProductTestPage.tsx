@@ -1319,6 +1319,7 @@ export default function ProductTestPage() {
                         {hasConfiguredComponents ? (
                           <CompositeComponentTabs
                             parentProductId={productId}
+                            organizationId={organizationId}
                             activeComponents={activeCompositeComponents}
                             parentPromptValues={promptValues}
                             onParentPromptChange={handlePromptChange}
