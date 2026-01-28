@@ -87,8 +87,8 @@ const SYNCFUSION_WARNING_FUNCTIONS: Array<{
 }> = [
   {
     names: ["XLOOKUP", "BUSCARX"],
-    warning: "XLOOKUP con match_mode -1 requiere rango descendente",
-    suggestion: "Si usas rangos ascendentes con match_mode -1, considera usar INDICE+COINCIDIR en su lugar: =INDICE(rango_resultado;COINCIDIR(valor;rango_busqueda;1))"
+    warning: "⚠️ Puede fallar con rangos ascendentes y match_mode -1",
+    suggestion: "RECOMENDADO: Cambiar a INDICE+COINCIDIR para rangos ascendentes → =SI.ERROR(INDICE(rango_resultado;COINCIDIR(valor;rango_busqueda;1));valor_defecto)"
   }
 ];
 
