@@ -29,9 +29,9 @@ export default function ProductForm() {
   const [useNewFile, setUseNewFile] = useState(true);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   
-  // Estado para tipo de producto: simple, encuadernado o compuesto
+  // Estado para tipo de producto: simple o compuesto
   // Todos usan Excel - la diferencia es la configuración posterior
-  type ProductType = 'simple' | 'encuadernado' | 'compuesto';
+  type ProductType = 'simple' | 'compuesto';
   const [productType, setProductType] = useState<ProductType>('simple');
 
   // Obtener organization_id del usuario actual
@@ -54,7 +54,7 @@ export default function ProductForm() {
   const saveProductTypeSettings = async (productId: string) => {
     if (productType === 'simple' || !userRole?.organization_id) return;
 
-    // Para encuadernado o compuesto
+    // Para compuesto
     const { error } = await supabase
       .from('product_component_settings')
       .upsert({
@@ -62,8 +62,7 @@ export default function ProductForm() {
         easyquote_product_id: productId,
         is_composite: true,
         is_component: false,
-        // Encuadernado tiene preset, compuesto empieza vacío
-        enabled_components: productType === 'encuadernado' ? ['cubierta', 'interior_1'] : [],
+        enabled_components: [],
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'organization_id,easyquote_product_id',
@@ -156,7 +155,7 @@ export default function ProductForm() {
     onSuccess: async (data) => {
       await saveProductTypeSettings(data);
       
-      const typeLabel = productType === 'compuesto' ? ' (compuesto)' : productType === 'encuadernado' ? ' (encuadernado)' : '';
+      const typeLabel = productType === 'compuesto' ? ' (compuesto)' : '';
       
       toast({
         title: "Producto creado",
@@ -212,7 +211,7 @@ export default function ProductForm() {
     onSuccess: async (data) => {
       await saveProductTypeSettings(data);
       
-      const typeLabel = productType === 'compuesto' ? ' (compuesto)' : productType === 'encuadernado' ? ' (encuadernado)' : '';
+      const typeLabel = productType === 'compuesto' ? ' (compuesto)' : '';
       
       toast({
         title: "Producto creado",
@@ -387,7 +386,7 @@ export default function ProductForm() {
                 Tipo de producto
               </Label>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Simple */}
                 <div 
                   className={`p-4 border rounded-lg cursor-pointer transition-all ${
@@ -403,22 +402,7 @@ export default function ProductForm() {
                   </p>
                 </div>
 
-                {/* Encuadernado (preset predefinido) */}
-                <div 
-                  className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                    productType === 'encuadernado' 
-                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
-                      : 'hover:border-muted-foreground/50'
-                  }`}
-                  onClick={() => setProductType('encuadernado')}
-                >
-                  <div className="font-medium">Encuadernado</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Preset con Cubierta + Interiores predefinidos
-                  </p>
-                </div>
-
-                {/* Compuesto (arquitectura flexible) */}
+                {/* Compuesto */}
                 <div 
                   className={`p-4 border rounded-lg cursor-pointer transition-all ${
                     productType === 'compuesto' 
@@ -433,23 +417,6 @@ export default function ProductForm() {
                   </p>
                 </div>
               </div>
-
-              {/* Info para producto encuadernado */}
-              {productType === 'encuadernado' && (
-                <div className="p-4 border rounded-lg bg-muted/50 space-y-2">
-                  <p className="text-sm text-foreground">
-                    <strong>Encuadernado:</strong> Producto con componentes predefinidos:
-                  </p>
-                  <ul className="text-xs text-muted-foreground list-disc list-inside space-y-1">
-                    <li><strong>Cubierta:</strong> papel o acabado distinto al interior</li>
-                    <li><strong>Interior 1:</strong> páginas interiores principales</li>
-                    <li><strong>Interior 2:</strong> segundas páginas interiores (opcional)</li>
-                  </ul>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Podrás asignar prompts y outputs a cada componente después de crear el producto.
-                  </p>
-                </div>
-              )}
 
               {/* Info para producto compuesto */}
               {productType === 'compuesto' && (
