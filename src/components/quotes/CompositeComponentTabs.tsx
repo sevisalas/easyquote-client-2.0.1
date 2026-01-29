@@ -10,6 +10,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 
+// Debug: evitar spam en consola
+const __loggedOutputOrderingByProduct = new Set<string>();
+
 interface CompositeComponentTabsProps {
   /** Producto padre compuesto */
   parentProductId: string;
@@ -577,6 +580,39 @@ export default function CompositeComponentTabs({
 
       // Obtener el mapa label -> cell para este producto
       const labelToCell = componentOutputLabelToCellMap.get(productId);
+
+      // Diagnóstico: si el usuario reporta orden incorrecto, queremos saber si
+      // las celdas se están resolviendo. Lo logueamos solo 1 vez por productId.
+      if (labelToCell && !__loggedOutputOrderingByProduct.has(productId)) {
+        __loggedOutputOrderingByProduct.add(productId);
+        try {
+          const samples = outputs
+            .map((o: any) => {
+              const rawLabel = o?.label ?? o?.outputText ?? o?.name;
+              const norm = normalizeLabel(rawLabel);
+              return {
+                label: String(rawLabel ?? ""),
+                normalized: norm,
+                cell: labelToCell.get(norm) ?? null,
+              };
+            })
+            .filter((x: any) => x.label);
+
+          const interesting = samples.filter((x: any) => {
+            const n = String(x.normalized);
+            return n.includes("mejor") || n.includes("coste papel") || n.includes("papel");
+          });
+
+          console.log("[CompositeComponentTabs] Output ordering debug", {
+            productId,
+            hasSavedOrder: !!(savedOrder && savedOrder.length > 0),
+            labelToCellSize: labelToCell.size,
+            interesting,
+          });
+        } catch {
+          // no-op
+        }
+      }
 
       const getCellKeyFromOutput = (o: any): string | null => {
         let key = o?.nameCell || o?.outputNameCell || o?.name_cell;
