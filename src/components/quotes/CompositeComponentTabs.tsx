@@ -536,6 +536,11 @@ export default function CompositeComponentTabs({
     (outputs: any[], savedOrder: string[] | null, productId: string): any[] => {
       if (!Array.isArray(outputs) || outputs.length === 0) return outputs;
 
+      // Si NO hay orden guardado, mantener el orden original de la API (orden del Excel)
+      if (!savedOrder || savedOrder.length === 0) {
+        return outputs;
+      }
+
       const normalizeKey = (s: any) =>
         String(s ?? "")
           .replace(/\$/g, "")
@@ -543,19 +548,6 @@ export default function CompositeComponentTabs({
           .toUpperCase();
 
       const normalizeLabel = (v: any) => String(v ?? "").trim().toLowerCase();
-
-      const parseCell = (cellRaw: any): { col: number; row: number } | null => {
-        const cell = normalizeKey(cellRaw);
-        const m = cell.match(/^([A-Z]{1,3})(\d{1,4})$/);
-        if (!m) return null;
-        const [, letters, rowStr] = m;
-        const row = Number(rowStr);
-        const col = letters
-          .split("")
-          .reduce((acc, ch) => acc * 26 + (ch.charCodeAt(0) - 64), 0);
-        if (!Number.isFinite(row) || !Number.isFinite(col)) return null;
-        return { col, row };
-      };
 
       // Obtener el mapa label -> cell para este producto
       const labelToCell = componentOutputLabelToCellMap.get(productId);
@@ -570,37 +562,18 @@ export default function CompositeComponentTabs({
         return normalized ? normalized : null;
       };
 
-      const orderMap =
-        savedOrder && savedOrder.length > 0
-          ? new Map(savedOrder.map((cell, idx) => [normalizeKey(cell), idx]))
-          : null;
-
+      const orderMap = new Map(savedOrder.map((cell, idx) => [normalizeKey(cell), idx]));
       const originalIndex = new Map<any, number>(outputs.map((o, idx) => [o, idx]));
 
       return [...outputs].sort((a, b) => {
         const cellA = getCellKeyFromOutput(a);
         const cellB = getCellKeyFromOutput(b);
 
-        // 1) Si hay orden guardado, priorizarlo
-        if (orderMap) {
-          const orderA = cellA && orderMap.has(cellA) ? orderMap.get(cellA)! : 9999;
-          const orderB = cellB && orderMap.has(cellB) ? orderMap.get(cellB)! : 9999;
-          if (orderA !== orderB) return orderA - orderB;
-        }
+        const orderA = cellA && orderMap.has(cellA) ? orderMap.get(cellA)! : 9999;
+        const orderB = cellB && orderMap.has(cellB) ? orderMap.get(cellB)! : 9999;
+        if (orderA !== orderB) return orderA - orderB;
 
-        // 2) Orden universal: por celda (columna, luego fila)
-        const parsedA = cellA ? parseCell(cellA) : null;
-        const parsedB = cellB ? parseCell(cellB) : null;
-        if (parsedA && parsedB) {
-          if (parsedA.col !== parsedB.col) return parsedA.col - parsedB.col;
-          if (parsedA.row !== parsedB.row) return parsedA.row - parsedB.row;
-        } else if (parsedA && !parsedB) {
-          return -1;
-        } else if (!parsedA && parsedB) {
-          return 1;
-        }
-
-        // 3) Estable: mantener el orden original si no podemos decidir
+        // Estable: mantener el orden original si no podemos decidir
         return (originalIndex.get(a) ?? 0) - (originalIndex.get(b) ?? 0);
       });
     },
