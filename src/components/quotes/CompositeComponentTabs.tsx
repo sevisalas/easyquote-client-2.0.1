@@ -541,10 +541,29 @@ export default function CompositeComponentTabs({
     return productMap;
   }, [componentOutputDefinitionsQueries]);
 
+  // Orden por defecto de outputs (orden Excel típico de productos de imprenta)
+  // Esto actúa como fallback cuando no hay orden guardado ni celdas disponibles.
+  const DEFAULT_OUTPUT_ORDER = useMemo(() => {
+    const order = [
+      "mejor opcion",
+      "total hojas",
+      "coste tirada",
+      "coste planchas",
+      "coste papel",
+      "precio kg",
+      "encuadernado",
+      "ancho hoja valido",
+      "alto hoja valido",
+      "poses",
+      "lomo",
+      "lomo mm",
+      "precio",
+    ];
+    return new Map(order.map((label, idx) => [label, idx]));
+  }, []);
+
   // Función para ordenar outputs según el orden guardado.
-  // Si NO hay orden guardado, aplicamos el "orden universal" (por celda del Excel),
-  // igual que en el resto de vistas.
-  // Usa el mapa label -> nameCell para traducir outputs de pricing.
+  // Prioridad: 1) Orden guardado (BD), 2) Orden por defecto, 3) Orden original del API.
   const sortOutputsByOrder = useCallback(
     (outputs: any[], savedOrder: string[] | null, productId: string): any[] => {
       if (!Array.isArray(outputs) || outputs.length === 0) return outputs;
@@ -565,54 +584,8 @@ export default function CompositeComponentTabs({
           .replace(/\s+/g, " ")
           .trim();
 
-      const parseCell = (cellRaw: any): { col: number; row: number } | null => {
-        const cell = normalizeKey(cellRaw);
-        const m = cell.match(/^([A-Z]{1,3})(\d{1,4})$/);
-        if (!m) return null;
-        const [, letters, rowStr] = m;
-        const row = Number(rowStr);
-        const col = letters
-          .split("")
-          .reduce((acc, ch) => acc * 26 + (ch.charCodeAt(0) - 64), 0);
-        if (!Number.isFinite(row) || !Number.isFinite(col)) return null;
-        return { col, row };
-      };
-
       // Obtener el mapa label -> cell para este producto
       const labelToCell = componentOutputLabelToCellMap.get(productId);
-
-      // Diagnóstico: si el usuario reporta orden incorrecto, queremos saber si
-      // las celdas se están resolviendo. Lo logueamos solo 1 vez por productId.
-      if (labelToCell && !__loggedOutputOrderingByProduct.has(productId)) {
-        __loggedOutputOrderingByProduct.add(productId);
-        try {
-          const samples = outputs
-            .map((o: any) => {
-              const rawLabel = o?.label ?? o?.outputText ?? o?.name;
-              const norm = normalizeLabel(rawLabel);
-              return {
-                label: String(rawLabel ?? ""),
-                normalized: norm,
-                cell: labelToCell.get(norm) ?? null,
-              };
-            })
-            .filter((x: any) => x.label);
-
-          const interesting = samples.filter((x: any) => {
-            const n = String(x.normalized);
-            return n.includes("mejor") || n.includes("coste papel") || n.includes("papel");
-          });
-
-          console.log("[CompositeComponentTabs] Output ordering debug", {
-            productId,
-            hasSavedOrder: !!(savedOrder && savedOrder.length > 0),
-            labelToCellSize: labelToCell.size,
-            interesting,
-          });
-        } catch {
-          // no-op
-        }
-      }
 
       const getCellKeyFromOutput = (o: any): string | null => {
         let key = o?.nameCell || o?.outputNameCell || o?.name_cell;
@@ -628,36 +601,36 @@ export default function CompositeComponentTabs({
         savedOrder && savedOrder.length > 0
           ? new Map(savedOrder.map((cell, idx) => [normalizeKey(cell), idx]))
           : null;
+      
       const originalIndex = new Map<any, number>(outputs.map((o, idx) => [o, idx]));
 
       return [...outputs].sort((a, b) => {
         const cellA = getCellKeyFromOutput(a);
         const cellB = getCellKeyFromOutput(b);
 
-        // 1) Si hay orden guardado, priorizarlo
+        // 1) Si hay orden guardado en BD, priorizarlo
         if (orderMap) {
           const orderA = cellA && orderMap.has(cellA) ? orderMap.get(cellA)! : 9999;
           const orderB = cellB && orderMap.has(cellB) ? orderMap.get(cellB)! : 9999;
           if (orderA !== orderB) return orderA - orderB;
         }
 
-        // 2) Orden universal: por celda del Excel (columna, luego fila): E6 antes que E7
-        const parsedA = cellA ? parseCell(cellA) : null;
-        const parsedB = cellB ? parseCell(cellB) : null;
-        if (parsedA && parsedB) {
-          if (parsedA.col !== parsedB.col) return parsedA.col - parsedB.col;
-          if (parsedA.row !== parsedB.row) return parsedA.row - parsedB.row;
-        } else if (parsedA && !parsedB) {
-          return -1;
-        } else if (!parsedA && parsedB) {
-          return 1;
+        // 2) Usar orden por defecto basado en el nombre/label del output
+        const labelA = normalizeLabel(a?.label ?? a?.outputText ?? a?.name);
+        const labelB = normalizeLabel(b?.label ?? b?.outputText ?? b?.name);
+        
+        const defaultOrderA = DEFAULT_OUTPUT_ORDER.get(labelA) ?? 9999;
+        const defaultOrderB = DEFAULT_OUTPUT_ORDER.get(labelB) ?? 9999;
+        
+        if (defaultOrderA !== defaultOrderB) {
+          return defaultOrderA - defaultOrderB;
         }
 
-        // Estable: mantener el orden original si no podemos decidir
+        // 3) Estable: mantener el orden original si no podemos decidir
         return (originalIndex.get(a) ?? 0) - (originalIndex.get(b) ?? 0);
       });
     },
-    [componentOutputLabelToCellMap]
+    [componentOutputLabelToCellMap, DEFAULT_OUTPUT_ORDER]
   );
 
   // Procesar datos de componentes usando key única por instancia
