@@ -31,7 +31,7 @@ export default function ProductForm() {
   
   // Estado para tipo de producto: simple o compuesto
   // Todos usan Excel - la diferencia es la configuración posterior
-  type ProductType = 'simple' | 'compuesto';
+  type ProductType = 'simple' | 'compuesto' | 'kit';
   const [productType, setProductType] = useState<ProductType>('simple');
 
   // Obtener organization_id del usuario actual
@@ -384,7 +384,7 @@ export default function ProductForm() {
                 Tipo de producto
               </Label>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* Simple */}
                 <div 
                   className={`p-4 border rounded-lg cursor-pointer transition-all ${
@@ -412,6 +412,16 @@ export default function ProductForm() {
                   <div className="font-medium">Compuesto</div>
                   <p className="text-xs text-muted-foreground mt-1">
                     Contenedor flexible con componentes personalizados
+                  </p>
+                </div>
+
+                {/* Kit - Próximamente */}
+                <div 
+                  className="p-4 border rounded-lg cursor-not-allowed opacity-50 bg-muted/30"
+                >
+                  <div className="font-medium text-muted-foreground">Kit (próximamente)</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Agrupación de productos independientes
                   </p>
                 </div>
               </div>
