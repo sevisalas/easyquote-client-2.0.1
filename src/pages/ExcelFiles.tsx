@@ -528,15 +528,19 @@ export default function ExcelFiles() {
         reader.onerror = reject;
       });
 
-      // Payload structure matches original code: { fileName, file }
+      // Payload structure for EasyQuote API - uses PascalCase
+      // FileName: nombre del archivo
+      // File: contenido en base64
       const payload = {
-        fileName: file.name,
-        file: base64,
+        FileName: file.name,
+        File: base64,
         isPlanCompliant: true
       };
-      console.log('📤 Actualizando archivo:', {
+      console.log('📤 Actualizando archivo con PUT:', {
+        url: `https://api.easyquote.cloud/api/v1/excelfiles/${fileId}`,
         fileId,
         fileName: file.name,
+        payloadKeys: Object.keys(payload),
         base64Length: base64.length
       });
       const response = await fetch(`https://api.easyquote.cloud/api/v1/excelfiles/${fileId}`, {
