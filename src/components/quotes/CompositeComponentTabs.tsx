@@ -545,6 +545,7 @@ export default function CompositeComponentTabs({
   // Esto actúa como fallback cuando no hay orden guardado ni celdas disponibles.
   const DEFAULT_OUTPUT_ORDER = useMemo(() => {
     const order = [
+      "precio",
       "mejor opcion",
       "total hojas",
       "coste tirada",
@@ -557,7 +558,6 @@ export default function CompositeComponentTabs({
       "poses",
       "lomo",
       "lomo mm",
-      "precio",
     ];
     return new Map(order.map((label, idx) => [label, idx]));
   }, []);
