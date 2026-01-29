@@ -156,7 +156,7 @@ function SortableOutputItem({
   // Obtener componente asignado para este output
   const outputName = output.nameCell || output.id;
   const assignedComponent = getPromptComponent(outputName);
-  const componentLabel = assignedComponent === 'general' ? 'General' : COMPONENT_PRESETS.encuadernado.components.find(c => c.value === assignedComponent)?.label || assignedComponent;
+  const componentLabel = assignedComponent === 'general' ? 'General' : COMPONENT_PRESETS.compuesto.components.find(c => c.value === assignedComponent)?.label || assignedComponent;
   return <div ref={setNodeRef} style={style} className={`p-4 border rounded-lg bg-background ${isDragging ? "ring-2 ring-primary" : ""}`}>
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -251,7 +251,7 @@ function SortableOutputItem({
               <SelectContent className="bg-background border shadow-lg z-50">
                 <SelectItem value="general">General</SelectItem>
                 {enabledComponents.map(comp => {
-              const preset = COMPONENT_PRESETS.encuadernado.components.find(c => c.value === comp);
+              const preset = COMPONENT_PRESETS.compuesto.components.find(c => c.value === comp);
               return <SelectItem key={comp} value={comp}>
                       {preset?.label || comp}
                     </SelectItem>;
@@ -336,7 +336,7 @@ export default function ProductManagement() {
   const [isDeleteProductDialogOpen, setIsDeleteProductDialogOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>("");
-  const [productType, setProductType] = useState<'sencillo' | 'encuadernado' | 'compuesto'>('sencillo');
+  const [productType, setProductType] = useState<'sencillo' | 'compuesto' | 'kit'>('sencillo');
   const [selectedInputComponent, setSelectedInputComponent] = useState<string>('general');
   const [newPromptData, setNewPromptData] = useState({
     promptSheet: "",
@@ -394,7 +394,7 @@ export default function ProductManagement() {
     getMappedNames
   } = useProductVariableMappings(selectedProduct?.id);
 
-  // Hooks for product component settings (encuadernado)
+  // Hooks for product component settings (composite)
   const {
     componentSettings,
     promptComponents,
@@ -2156,12 +2156,11 @@ export default function ProductManagement() {
           {selectedProduct && <div>
             <Tabs defaultValue="general" className="w-full">
               {/* Todos los tipos de producto muestran General + Datos de entrada + Datos de salida */}
-              {/* Productos compuestos y encuadernados añaden pestaña de Componentes */}
               <TabsList className={`grid w-full ${productType === 'sencillo' ? 'grid-cols-3' : 'grid-cols-4'}`}>
                 <TabsTrigger value="general">General</TabsTrigger>
                 <TabsTrigger value="prompts">Datos de entrada ({productPrompts.length})</TabsTrigger>
                 <TabsTrigger value="outputs">Datos de salida ({productOutputs.length})</TabsTrigger>
-                {(productType === 'encuadernado' || productType === 'compuesto') && (
+                {productType === 'compuesto' && (
                   <TabsTrigger value="composite-config">Componentes</TabsTrigger>
                 )}
               </TabsList>
@@ -2259,15 +2258,14 @@ export default function ProductManagement() {
                   
                   <div>
                     <Label htmlFor="product-type">Tipo de producto</Label>
-                    <Select value={productType} onValueChange={async (value: 'sencillo' | 'encuadernado' | 'compuesto') => {
+                    <Select value={productType} onValueChange={async (value: 'sencillo' | 'compuesto' | 'kit') => {
+                    if (value === 'kit') return; // Kit está deshabilitado
                     setProductType(value);
                     if (selectedProduct) {
-                      const newIsComposite = value !== 'sencillo';
+                      const newIsComposite = value === 'compuesto';
                       // Determinar componentes según el tipo
                       let newEnabledComponents: string[] = [];
-                      if (value === 'encuadernado') {
-                        newEnabledComponents = ['cubierta', 'interior_1'];
-                      } else if (value === 'compuesto') {
+                      if (value === 'compuesto') {
                         // Compuesto empieza vacío o mantiene los existentes
                         newEnabledComponents = enabledComponents.length > 0 ? enabledComponents : [];
                       }
@@ -2288,9 +2286,9 @@ export default function ProductManagement() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="sencillo">Sencillo</SelectItem>
-                        <SelectItem value="encuadernado">Encuadernado</SelectItem>
-                        <SelectItem value="compuesto">
-                          Compuesto
+                        <SelectItem value="compuesto">Compuesto</SelectItem>
+                        <SelectItem value="kit" disabled className="text-muted-foreground">
+                          Kit <span className="ml-2 text-xs">(próximamente)</span>
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -2353,7 +2351,7 @@ export default function ProductManagement() {
                       {productPrompts.map((prompt, index) => {
                     const promptName = prompt.promptCell || prompt.id;
                     const assignedComponent = getPromptComponent(promptName);
-                    const componentLabel = assignedComponent === 'general' ? 'General' : COMPONENT_PRESETS.encuadernado.components.find(c => c.value === assignedComponent)?.label || assignedComponent;
+                    const componentLabel = assignedComponent === 'general' ? 'General' : COMPONENT_PRESETS.compuesto.components.find(c => c.value === assignedComponent)?.label || assignedComponent;
                     return <div key={prompt.id} className="p-4 border rounded-lg">
                         <div className="mb-4 flex items-center justify-between">
                           <h4 className="font-medium">Campo nº {index + 1}</h4>
@@ -2625,7 +2623,7 @@ export default function ProductManagement() {
                                     <SelectContent className="bg-background border shadow-lg z-50">
                                       <SelectItem value="general">General</SelectItem>
                                       {enabledComponents.map(comp => {
-                                    const preset = COMPONENT_PRESETS.encuadernado.components.find(c => c.value === comp);
+                                    const preset = COMPONENT_PRESETS.compuesto.components.find(c => c.value === comp);
                                     return <SelectItem key={comp} value={comp}>
                                             {preset?.label || comp}
                                           </SelectItem>;
@@ -2750,10 +2748,10 @@ export default function ProductManagement() {
                   </ScrollArea>}
               </TabsContent>
 
-              {/* Pestaña para Encuadernado (preset predefinido) */}
+              {/* Pestaña para productos compuestos */}
               <TabsContent value="components" className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-medium">Configuración de Componentes (Encuadernado)</h3>
+                  <h3 className="text-lg font-medium">Configuración de componentes</h3>
                   <p className="text-sm text-muted-foreground">
                     Configura las partes del producto (cubierta, interior, etc.) y asigna cada dato de entrada a su componente.
                   </p>
@@ -2767,7 +2765,7 @@ export default function ProductManagement() {
                       Selecciona qué partes tiene este producto
                     </p>
                     <div className="space-y-2">
-                      {COMPONENT_PRESETS.encuadernado.components.map(comp => {
+                      {COMPONENT_PRESETS.compuesto.components.map(comp => {
                       const isEnabled = enabledComponents.includes(comp.value);
                       const isRequired = comp.value === 'interior_1';
                       const hints: Record<string, string> = {

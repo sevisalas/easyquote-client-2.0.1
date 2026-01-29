@@ -9,7 +9,7 @@ export interface ProductComponentSettings {
   is_composite: boolean;
   is_component: boolean;
   enabled_components: string[];
-  product_type: 'sencillo' | 'encuadernado' | 'compuesto';
+  product_type: 'sencillo' | 'compuesto' | 'kit';
   created_at: string;
   updated_at: string;
 }
@@ -26,18 +26,20 @@ export interface ProductPromptComponent {
 
 // Presets de componentes para diferentes tipos de productos
 export const COMPONENT_PRESETS = {
-  encuadernado: {
-    label: 'Encuadernado',
+  compuesto: {
+    label: 'Compuesto',
     components: [
       { value: 'cubierta', label: 'Cubierta' },
       { value: 'interior_1', label: 'Interior 1' },
       { value: 'interior_2', label: 'Interior 2' },
     ],
-    defaultEnabled: ['cubierta', 'interior_1'], // Interior 1 siempre, cubierta por defecto
+    defaultEnabled: [],
   },
-  // Futuros presets se pueden añadir aquí:
-  // diptico: { label: 'Díptico', components: [...], defaultEnabled: [...] },
-  // triptico: { label: 'Tríptico', components: [...], defaultEnabled: [...] },
+  kit: {
+    label: 'Kit',
+    components: [],
+    defaultEnabled: [],
+  },
 } as const;
 
 // Componente especial "general" que siempre existe
@@ -107,7 +109,7 @@ export function useProductComponentSettings(easyquoteProductId?: string) {
       is_composite?: boolean;
       is_component?: boolean;
       enabled_components?: string[];
-      product_type?: 'sencillo' | 'encuadernado' | 'compuesto';
+      product_type?: 'sencillo' | 'compuesto' | 'kit';
     }) => {
       if (!organizationId) throw new Error('No organization found');
 
