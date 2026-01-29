@@ -528,49 +528,84 @@ export default function CompositeComponentTabs({
     return productMap;
   }, [componentOutputDefinitionsQueries]);
 
-  // Función para ordenar outputs según el orden guardado
-  // Ahora usa el mapa de label -> nameCell para traducir outputs de pricing
-  const sortOutputsByOrder = useCallback((outputs: any[], savedOrder: string[] | null, productId: string): any[] => {
-    if (!savedOrder || savedOrder.length === 0) return outputs;
+  // Función para ordenar outputs según el orden guardado.
+  // Si NO hay orden guardado, aplicamos el "orden universal" (por celda del Excel),
+  // igual que en el resto de vistas.
+  // Usa el mapa label -> nameCell para traducir outputs de pricing.
+  const sortOutputsByOrder = useCallback(
+    (outputs: any[], savedOrder: string[] | null, productId: string): any[] => {
+      if (!Array.isArray(outputs) || outputs.length === 0) return outputs;
 
-    const normalizeKey = (s: string) =>
-      String(s ?? "")
-        .replace(/\$/g, "")
-        .trim()
-        .toUpperCase();
-    
-    const normalizeLabel = (v: any) => String(v ?? "").trim().toLowerCase();
+      const normalizeKey = (s: any) =>
+        String(s ?? "")
+          .replace(/\$/g, "")
+          .trim()
+          .toUpperCase();
 
-    const orderMap = new Map(savedOrder.map((cell, idx) => [normalizeKey(cell), idx]));
-    
-    // Obtener el mapa label -> cell para este producto
-    const labelToCell = componentOutputLabelToCellMap.get(productId);
+      const normalizeLabel = (v: any) => String(v ?? "").trim().toLowerCase();
 
-    return [...outputs].sort((a, b) => {
-      // Primero intentar obtener nameCell directo (si la API lo devuelve)
-      let keyA = a?.nameCell || a?.name_cell;
-      let keyB = b?.nameCell || b?.name_cell;
-      
-      // Si no hay nameCell, traducir desde label usando las definiciones
-      if (!keyA && labelToCell) {
-        const labelA = normalizeLabel(a?.label ?? a?.outputText ?? a?.name);
-        keyA = labelToCell.get(labelA);
-      }
-      if (!keyB && labelToCell) {
-        const labelB = normalizeLabel(b?.label ?? b?.outputText ?? b?.name);
-        keyB = labelToCell.get(labelB);
-      }
-      
-      // Fallback a name/id si todavía no hay key
-      keyA = normalizeKey(keyA || a?.name || a?.id || "");
-      keyB = normalizeKey(keyB || b?.name || b?.id || "");
+      const parseCell = (cellRaw: any): { col: number; row: number } | null => {
+        const cell = normalizeKey(cellRaw);
+        const m = cell.match(/^([A-Z]{1,3})(\d{1,4})$/);
+        if (!m) return null;
+        const [, letters, rowStr] = m;
+        const row = Number(rowStr);
+        const col = letters
+          .split("")
+          .reduce((acc, ch) => acc * 26 + (ch.charCodeAt(0) - 64), 0);
+        if (!Number.isFinite(row) || !Number.isFinite(col)) return null;
+        return { col, row };
+      };
 
-      const orderA = orderMap.get(keyA) ?? 9999;
-      const orderB = orderMap.get(keyB) ?? 9999;
+      // Obtener el mapa label -> cell para este producto
+      const labelToCell = componentOutputLabelToCellMap.get(productId);
 
-      return orderA - orderB;
-    });
-  }, [componentOutputLabelToCellMap]);
+      const getCellKeyFromOutput = (o: any): string | null => {
+        let key = o?.nameCell || o?.outputNameCell || o?.name_cell;
+        if (!key && labelToCell) {
+          const label = normalizeLabel(o?.label ?? o?.outputText ?? o?.name);
+          key = labelToCell.get(label);
+        }
+        const normalized = normalizeKey(key);
+        return normalized ? normalized : null;
+      };
+
+      const orderMap =
+        savedOrder && savedOrder.length > 0
+          ? new Map(savedOrder.map((cell, idx) => [normalizeKey(cell), idx]))
+          : null;
+
+      const originalIndex = new Map<any, number>(outputs.map((o, idx) => [o, idx]));
+
+      return [...outputs].sort((a, b) => {
+        const cellA = getCellKeyFromOutput(a);
+        const cellB = getCellKeyFromOutput(b);
+
+        // 1) Si hay orden guardado, priorizarlo
+        if (orderMap) {
+          const orderA = cellA && orderMap.has(cellA) ? orderMap.get(cellA)! : 9999;
+          const orderB = cellB && orderMap.has(cellB) ? orderMap.get(cellB)! : 9999;
+          if (orderA !== orderB) return orderA - orderB;
+        }
+
+        // 2) Orden universal: por celda (columna, luego fila)
+        const parsedA = cellA ? parseCell(cellA) : null;
+        const parsedB = cellB ? parseCell(cellB) : null;
+        if (parsedA && parsedB) {
+          if (parsedA.col !== parsedB.col) return parsedA.col - parsedB.col;
+          if (parsedA.row !== parsedB.row) return parsedA.row - parsedB.row;
+        } else if (parsedA && !parsedB) {
+          return -1;
+        } else if (!parsedA && parsedB) {
+          return 1;
+        }
+
+        // 3) Estable: mantener el orden original si no podemos decidir
+        return (originalIndex.get(a) ?? 0) - (originalIndex.get(b) ?? 0);
+      });
+    },
+    [componentOutputLabelToCellMap]
+  );
 
   // Procesar datos de componentes usando key única por instancia
   const componentsData = useMemo(() => {
