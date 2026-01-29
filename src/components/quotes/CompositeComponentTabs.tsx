@@ -1052,6 +1052,20 @@ export default function CompositeComponentTabs({
     if (!componentData) return [];
 
     const mappedIds = getMappedPromptIds(componentKey);
+    const forceResultSet = componentForceResultMap.get(componentKey);
+    
+    // Debug log
+    console.log("[CompositeComponentTabs] getComponentForceResultPrompts", {
+      componentKey,
+      totalPrompts: componentData.prompts.length,
+      mappedIds: Array.from(mappedIds),
+      forceResultSet: forceResultSet ? Array.from(forceResultSet) : null,
+      promptIds: componentData.prompts.map((p: any) => ({
+        id: p.id,
+        label: p.promptText || p.label,
+        cellResolved: getComponentPromptCell(componentKey, String(p.id)),
+      })),
+    });
 
     // Filtrar: solo prompts force_result que:
     // 1. NO estén mapeados (los mapeados ya se ven en el padre, ej: Tarifa/B10)
@@ -1061,7 +1075,8 @@ export default function CompositeComponentTabs({
       // Excluir mapeados (heredados del padre)
       if (mappedIds.has(id)) return false;
       // Solo incluir si es force_result
-      if (!isComponentPromptForceResult(componentKey, id)) return false;
+      const isForceResult = isComponentPromptForceResult(componentKey, id);
+      if (!isForceResult) return false;
       // Excluir admin_only si no es admin
       if (!isAdmin && isComponentPromptAdminOnly(componentKey, id)) return false;
       return true;
