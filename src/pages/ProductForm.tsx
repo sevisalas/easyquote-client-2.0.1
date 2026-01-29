@@ -244,9 +244,7 @@ export default function ProductForm() {
       return;
     }
 
-    // Todos los tipos de producto (simple, encuadernado, compuesto) requieren Excel
-
-    // Para productos simple/encuadernado: requieren Excel y EasyQuote API
+    // Todos los tipos de producto requieren Excel
     if (useNewFile) {
       if (!uploadedFile) {
         toast({
