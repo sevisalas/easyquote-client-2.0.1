@@ -477,8 +477,60 @@ export default function CompositeComponentTabs({
     return map;
   }, [componentOutputOrderQueries]);
 
+  // Query para obtener las DEFINICIONES de outputs de cada componente (contienen nameCell)
+  // La API de pricing no devuelve nameCell, pero las definiciones sí
+  const componentOutputDefinitionsQueries = useQueries({
+    queries: activeComponents.map((component) => ({
+      queryKey: ["component-output-definitions", component.component_product_id],
+      queryFn: async () => {
+        const token = await getEasyQuoteToken();
+        if (!token) return { productId: component.component_product_id, definitions: [] };
+        const { data, error } = await invokeEasyQuoteFunction("easyquote-outputs", {
+          token,
+          productId: component.component_product_id,
+        });
+        if (error) {
+          console.error("[CompositeComponentTabs] Error fetching component output definitions", error);
+          return { productId: component.component_product_id, definitions: [] };
+        }
+        const list = Array.isArray(data) ? data : data?.items || data?.data || [];
+        return { productId: component.component_product_id, definitions: Array.isArray(list) ? list : [] };
+      },
+      enabled: !!component.component_product_id,
+      staleTime: 30 * 60 * 1000, // 30 minutos - las definiciones casi nunca cambian
+      gcTime: 60 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    })),
+  });
+
+  // Mapa: productId -> Map<normalizedLabel, nameCell>
+  // Permite traducir el label del output de pricing a la celda de la definición
+  const componentOutputLabelToCellMap = useMemo(() => {
+    const productMap = new Map<string, Map<string, string>>();
+    const normalizeLabel = (v: any) => String(v ?? "").trim().toLowerCase();
+    
+    for (const query of componentOutputDefinitionsQueries) {
+      if (query.data?.definitions) {
+        const labelMap = new Map<string, string>();
+        for (const def of query.data.definitions as any[]) {
+          const nameCell = String(def?.nameCell ?? def?.name_cell ?? "").replace(/\$/g, "").trim().toUpperCase();
+          if (!nameCell) continue;
+          
+          // Usar outputText como label de referencia (es lo que devuelve pricing como "label")
+          const outputText = def?.outputText ?? def?.output_text ?? def?.label ?? def?.name ?? "";
+          if (outputText) {
+            labelMap.set(normalizeLabel(outputText), nameCell);
+          }
+        }
+        productMap.set(query.data.productId, labelMap);
+      }
+    }
+    return productMap;
+  }, [componentOutputDefinitionsQueries]);
+
   // Función para ordenar outputs según el orden guardado
-  const sortOutputsByOrder = useCallback((outputs: any[], savedOrder: string[] | null): any[] => {
+  // Ahora usa el mapa de label -> nameCell para traducir outputs de pricing
+  const sortOutputsByOrder = useCallback((outputs: any[], savedOrder: string[] | null, productId: string): any[] => {
     if (!savedOrder || savedOrder.length === 0) return outputs;
 
     const normalizeKey = (s: string) =>
@@ -486,19 +538,39 @@ export default function CompositeComponentTabs({
         .replace(/\$/g, "")
         .trim()
         .toUpperCase();
+    
+    const normalizeLabel = (v: any) => String(v ?? "").trim().toLowerCase();
 
     const orderMap = new Map(savedOrder.map((cell, idx) => [normalizeKey(cell), idx]));
+    
+    // Obtener el mapa label -> cell para este producto
+    const labelToCell = componentOutputLabelToCellMap.get(productId);
 
     return [...outputs].sort((a, b) => {
-      const keyA = normalizeKey(a?.nameCell || a?.name_cell || a?.name || a?.id || "");
-      const keyB = normalizeKey(b?.nameCell || b?.name_cell || b?.name || b?.id || "");
+      // Primero intentar obtener nameCell directo (si la API lo devuelve)
+      let keyA = a?.nameCell || a?.name_cell;
+      let keyB = b?.nameCell || b?.name_cell;
+      
+      // Si no hay nameCell, traducir desde label usando las definiciones
+      if (!keyA && labelToCell) {
+        const labelA = normalizeLabel(a?.label ?? a?.outputText ?? a?.name);
+        keyA = labelToCell.get(labelA);
+      }
+      if (!keyB && labelToCell) {
+        const labelB = normalizeLabel(b?.label ?? b?.outputText ?? b?.name);
+        keyB = labelToCell.get(labelB);
+      }
+      
+      // Fallback a name/id si todavía no hay key
+      keyA = normalizeKey(keyA || a?.name || a?.id || "");
+      keyB = normalizeKey(keyB || b?.name || b?.id || "");
 
       const orderA = orderMap.get(keyA) ?? 9999;
       const orderB = orderMap.get(keyB) ?? 9999;
 
       return orderA - orderB;
     });
-  }, []);
+  }, [componentOutputLabelToCellMap]);
 
   // Procesar datos de componentes usando key única por instancia
   const componentsData = useMemo(() => {
@@ -521,7 +593,7 @@ export default function CompositeComponentTabs({
       // Obtener orden guardado para este componente
       const savedOrder = componentOutputOrderMap.get(component.component_product_id);
       const rawOutputs = pricingData?.outputs || [];
-      const sortedOutputs = sortOutputsByOrder(rawOutputs, savedOrder);
+      const sortedOutputs = sortOutputsByOrder(rawOutputs, savedOrder, component.component_product_id);
 
       data[componentKey] = {
         prompts: pricingData?.prompts || [],
