@@ -234,7 +234,7 @@ export function useCompositeProductConfig(
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["composite-prompts", easyquoteProductId] });
+      queryClient.invalidateQueries({ queryKey: ["composite-prompts", easyquoteProductId, organizationId] });
     },
   });
 
@@ -251,7 +251,7 @@ export function useCompositeProductConfig(
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["composite-prompts", easyquoteProductId] });
+      queryClient.invalidateQueries({ queryKey: ["composite-prompts", easyquoteProductId, organizationId] });
     },
   });
 
@@ -265,7 +265,7 @@ export function useCompositeProductConfig(
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["composite-prompts", easyquoteProductId] });
+      queryClient.invalidateQueries({ queryKey: ["composite-prompts", easyquoteProductId, organizationId] });
     },
   });
 
@@ -281,7 +281,7 @@ export function useCompositeProductConfig(
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["composite-outputs", easyquoteProductId] });
+      queryClient.invalidateQueries({ queryKey: ["composite-outputs", easyquoteProductId, organizationId] });
     },
   });
 
@@ -298,7 +298,7 @@ export function useCompositeProductConfig(
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["composite-outputs", easyquoteProductId] });
+      queryClient.invalidateQueries({ queryKey: ["composite-outputs", easyquoteProductId, organizationId] });
     },
   });
 
@@ -312,7 +312,7 @@ export function useCompositeProductConfig(
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["composite-outputs", easyquoteProductId] });
+      queryClient.invalidateQueries({ queryKey: ["composite-outputs", easyquoteProductId, organizationId] });
     },
   });
 
@@ -328,7 +328,7 @@ export function useCompositeProductConfig(
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["composite-components", easyquoteProductId] });
+      queryClient.invalidateQueries({ queryKey: ["composite-components", easyquoteProductId, organizationId] });
     },
   });
 
@@ -345,7 +345,7 @@ export function useCompositeProductConfig(
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["composite-components", easyquoteProductId] });
+      queryClient.invalidateQueries({ queryKey: ["composite-components", easyquoteProductId, organizationId] });
     },
   });
 
@@ -359,7 +359,7 @@ export function useCompositeProductConfig(
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["composite-components", easyquoteProductId] });
+      queryClient.invalidateQueries({ queryKey: ["composite-components", easyquoteProductId, organizationId] });
     },
   });
 
@@ -377,7 +377,7 @@ export function useCompositeProductConfig(
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["composite-prompt-connections", easyquoteProductId] });
+      queryClient.invalidateQueries({ queryKey: ["composite-prompt-connections", easyquoteProductId, organizationId] });
     },
   });
 
@@ -391,7 +391,7 @@ export function useCompositeProductConfig(
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["composite-prompt-connections", easyquoteProductId] });
+      queryClient.invalidateQueries({ queryKey: ["composite-prompt-connections", easyquoteProductId, organizationId] });
     },
   });
 
@@ -406,7 +406,7 @@ export function useCompositeProductConfig(
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["composite-prompt-connections", easyquoteProductId] });
+      queryClient.invalidateQueries({ queryKey: ["composite-prompt-connections", easyquoteProductId, organizationId] });
     },
   });
 
@@ -424,7 +424,7 @@ export function useCompositeProductConfig(
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["composite-output-aggregations", easyquoteProductId] });
+      queryClient.invalidateQueries({ queryKey: ["composite-output-aggregations", easyquoteProductId, organizationId] });
     },
   });
 
@@ -438,7 +438,7 @@ export function useCompositeProductConfig(
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["composite-output-aggregations", easyquoteProductId] });
+      queryClient.invalidateQueries({ queryKey: ["composite-output-aggregations", easyquoteProductId, organizationId] });
     },
   });
 
