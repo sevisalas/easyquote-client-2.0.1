@@ -47,6 +47,7 @@ interface ComponentPromptDef {
   name: string;
   label: string;
   promptCell?: string;
+  sequence?: number;
 }
 
 const USER_EDITABLE = "__user_editable__";
@@ -68,39 +69,88 @@ export function ComponentPromptMappingDialog({
   const queryClient = useQueryClient();
 
   // Cargar los prompts del componente desde la API de pricing (que devuelve labels reales)
-  const { data: componentPrompts = [], isLoading, isFetching, refetch } = useQuery({
+  const { data: componentPrompts = [], isLoading, isFetching } = useQuery({
     queryKey: ["component-prompts-pricing", component.component_product_id],
     queryFn: async () => {
       const token = await getEasyQuoteToken();
       if (!token) return [];
-      // Usamos easyquote-pricing GET para obtener los prompts con labels reales
-      const { data, error } = await invokeEasyQuoteFunction<any>("easyquote-pricing", {
-        token,
-        productId: component.component_product_id,
-        method: "GET",
-      });
-      if (error) {
-        console.error("Error fetching component prompts:", error);
-        return [];
+
+      // OJO: `easyquote-pricing` puede ir cacheado internamente en EasyQuote.
+      // Para que los prompts nuevos del Excel aparezcan igualmente, completamos con `easyquote-prompts`.
+      const [pricingRes, defsRes] = await Promise.all([
+        invokeEasyQuoteFunction<any>("easyquote-pricing", {
+          token,
+          productId: component.component_product_id,
+          method: "GET",
+        }),
+        invokeEasyQuoteFunction<any>("easyquote-prompts", {
+          token,
+          productId: component.component_product_id,
+        }),
+      ]);
+
+      if (pricingRes.error) {
+        console.warn("[ComponentPromptMappingDialog] pricing cacheado o error:", pricingRes.error);
       }
-      // Los prompts vienen en data.prompts con su label/texto real
-      const prompts = data?.prompts || [];
-      return prompts.map((p: any) => ({
-        id: p.id,
-        name: p.id, // Usamos el ID para las conexiones (consistente con el padre)
-        label: p.promptText || p.promptCell || p.id,
-        promptCell: p.promptCell,
-      })) as ComponentPromptDef[];
+      if (defsRes.error) {
+        console.warn("[ComponentPromptMappingDialog] error leyendo prompts definiciones:", defsRes.error);
+      }
+
+      const pricingPrompts = Array.isArray(pricingRes.data?.prompts) ? pricingRes.data.prompts : [];
+      const promptDefs = Array.isArray(defsRes.data) ? defsRes.data : [];
+
+      const merged = new Map<string, ComponentPromptDef>();
+
+      // 1) Preferimos `pricing` porque trae promptText (label real)
+      for (const p of pricingPrompts) {
+        merged.set(String(p.id), {
+          id: String(p.id),
+          name: String(p.id),
+          label: p.promptText || p.promptCell || String(p.id),
+          promptCell: p.promptCell,
+          sequence: typeof p.promptSequence === "number" ? p.promptSequence : undefined,
+        });
+      }
+
+      // 2) Completamos con `prompts` (definición Excel) para incluir campos nuevos
+      for (const d of promptDefs) {
+        const id = String(d.id);
+        const existing = merged.get(id);
+        if (!existing) {
+          merged.set(id, {
+            id,
+            name: id,
+            // Aquí normalmente solo tendremos la celda (p.ej. B10). Mejor que nada si `pricing` no está actualizado.
+            label: d.promptCell || id,
+            promptCell: d.promptCell,
+            sequence: typeof d.promptSeq === "number" ? d.promptSeq : undefined,
+          });
+        } else if (!existing.promptCell && d.promptCell) {
+          merged.set(id, { ...existing, promptCell: d.promptCell });
+        }
+      }
+
+      const result = Array.from(merged.values());
+      result.sort((a, b) => {
+        const sa = a.sequence ?? Number.POSITIVE_INFINITY;
+        const sb = b.sequence ?? Number.POSITIVE_INFINITY;
+        if (sa !== sb) return sa - sb;
+        return a.label.localeCompare(b.label);
+      });
+
+      return result;
     },
     enabled: open && !!component.component_product_id,
     staleTime: 30 * 1000, // 30 segundos - más corto para reflejar cambios de Excel
   });
 
   const handleRefreshPrompts = async () => {
-    await queryClient.invalidateQueries({ 
-      queryKey: ["component-prompts-pricing", component.component_product_id] 
+    // Fuerza refetch, pero si EasyQuote aún no ha invalidado su caché interna,
+    // puede tardar en reflejar el Excel en `pricing`.
+    await queryClient.invalidateQueries({
+      queryKey: ["component-prompts-pricing", component.component_product_id],
     });
-    toast.success("Datos actualizados desde la API");
+    toast.success("Recarga solicitada (si EasyQuote ya procesó el Excel, verás los campos nuevos)");
   };
 
   // Estado local para los mapeos: targetPromptName -> sourcePromptName (o USER_EDITABLE)
