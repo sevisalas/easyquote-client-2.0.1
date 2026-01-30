@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Loader2, Link, Link2Off, ArrowRight } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Link, Link2Off, ArrowRight, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -65,8 +65,10 @@ export function ComponentPromptMappingDialog({
   isSaving,
   isSavingAggregations,
 }: ComponentPromptMappingDialogProps) {
+  const queryClient = useQueryClient();
+
   // Cargar los prompts del componente desde la API de pricing (que devuelve labels reales)
-  const { data: componentPrompts = [], isLoading } = useQuery({
+  const { data: componentPrompts = [], isLoading, isFetching, refetch } = useQuery({
     queryKey: ["component-prompts-pricing", component.component_product_id],
     queryFn: async () => {
       const token = await getEasyQuoteToken();
@@ -91,8 +93,15 @@ export function ComponentPromptMappingDialog({
       })) as ComponentPromptDef[];
     },
     enabled: open && !!component.component_product_id,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000, // 30 segundos - más corto para reflejar cambios de Excel
   });
+
+  const handleRefreshPrompts = async () => {
+    await queryClient.invalidateQueries({ 
+      queryKey: ["component-prompts-pricing", component.component_product_id] 
+    });
+    toast.success("Datos actualizados desde la API");
+  };
 
   // Estado local para los mapeos: targetPromptName -> sourcePromptName (o USER_EDITABLE)
   const [mappings, setMappings] = useState<Record<string, string>>({});
@@ -166,19 +175,40 @@ export function ComponentPromptMappingDialog({
           </div>
         ) : componentPrompts.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            No se encontraron datos de entrada para este componente
+            <p>No se encontraron datos de entrada para este componente</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-3"
+              onClick={handleRefreshPrompts}
+              disabled={isFetching}
+            >
+              <RefreshCw className={`h-4 w-4 mr-1 ${isFetching ? 'animate-spin' : ''}`} />
+              Recargar desde API
+            </Button>
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
-              <span className="flex items-center gap-1">
-                <Link className="h-3.5 w-3.5 text-primary" />
-                {stats.mapped} heredados del padre
-              </span>
-              <span className="flex items-center gap-1">
-                <Link2Off className="h-3.5 w-3.5" />
-                {stats.editable} editables por usuario
-              </span>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Link className="h-3.5 w-3.5 text-primary" />
+                  {stats.mapped} heredados del padre
+                </span>
+                <span className="flex items-center gap-1">
+                  <Link2Off className="h-3.5 w-3.5" />
+                  {stats.editable} editables por usuario
+                </span>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={handleRefreshPrompts}
+                disabled={isFetching}
+                title="Recargar datos de entrada desde la API (útil si actualizaste el Excel)"
+              >
+                <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+              </Button>
             </div>
 
             <ScrollArea className="max-h-[60vh] pr-4">
