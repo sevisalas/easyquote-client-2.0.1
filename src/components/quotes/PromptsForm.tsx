@@ -2,8 +2,10 @@ import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useProductPromptSettings } from "@/hooks/useProductPromptSettings";
+import { isCheckedValue, detectCheckboxFormat, toOriginalFormat, type CheckboxFormat } from "@/utils/checkboxValues";
 
 export type PromptOption = {
   value: string;
@@ -153,10 +155,9 @@ function extractPrompts(product: any): PromptDef[] {
     let type: PromptDef["type"] = "text";
     if (rawType.includes("image")) type = "image";
     else if (rawType.includes("color")) type = "color";
-    // We don't render checkboxes in the UI (they caused confusion/"NoNo" issues).
-    // Treat boolean/checkbox prompts as selects when options exist.
+    // Checkbox/Boolean types - render as actual checkbox
     else if (rawType.includes("checkbox") || rawType.includes("boolean") || rawType.includes("check")) {
-      type = (options?.length ?? 0) > 0 ? "select" : "text";
+      type = "checkbox";
     }
     else if (rawType.includes("quantity") || rawType.includes("cantidad")) type = "quantity";
     else if (rawType.includes("drop") || rawType.includes("select")) type = "select";
@@ -360,8 +361,36 @@ export default function PromptsForm({
         />
       )}
 
+      {/* Checkbox - commits immediately */}
+      {p.type === "checkbox" && (() => {
+        const currentValue = effectiveValues[p.id];
+        const isChecked = isCheckedValue(currentValue);
+        const originalFormat = detectCheckboxFormat(currentValue);
+        
+        return (
+          <div className="flex items-center space-x-2 pt-1">
+            <Checkbox
+              id={p.id}
+              checked={isChecked}
+              onCheckedChange={(checked) => {
+                // Convert back to original format when sending
+                const newValue = toOriginalFormat(!!checked, originalFormat, currentValue);
+                onChange(p.id, newValue, p.label);
+                handleCommit(p.id, newValue, p.label);
+              }}
+            />
+            <label
+              htmlFor={p.id}
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+            >
+              {isChecked ? "Activado" : "Desactivado"}
+            </label>
+          </div>
+        );
+      })()}
+
       {/* Select (dropdown) - commits immediately */}
-      {(p.type === "select" || p.type === "checkbox") && (() => {
+      {p.type === "select" && (() => {
         // Filter out empty/invalid options first
         const filteredOptions = p.options?.filter((o) =>
           o.value !== '' && o.value !== undefined && o.value !== null
