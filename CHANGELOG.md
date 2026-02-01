@@ -5,6 +5,15 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.6] - 2026-02-01
+
+### Añadido
+- **Sistema de solicitudes de soporte**: Nueva funcionalidad para que los usuarios envíen solicitudes de funcionalidades, reportes de errores y dudas desde el Centro de ayuda
+- **Panel de gestión de solicitudes (Superadmin)**: Vista dedicada para gestionar todas las solicitudes con filtros por estado, estadísticas y sistema de respuesta
+- **Tour guiado mejorado**: Corregidos los selectores del tour para que funcione correctamente con los menús colapsables del sidebar
+
+---
+
 ## [2.5.5] - 2026-01-29
 
 ### Cambiado
