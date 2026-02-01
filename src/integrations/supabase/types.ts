@@ -2588,6 +2588,63 @@ export type Database = {
           },
         ]
       }
+      support_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          description: string
+          id: string
+          organization_id: string | null
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["support_request_status"]
+          title: string
+          type: Database["public"]["Enums"]["support_request_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          organization_id?: string | null
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["support_request_status"]
+          title: string
+          type: Database["public"]["Enums"]["support_request_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          organization_id?: string | null
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["support_request_status"]
+          title?: string
+          type?: Database["public"]["Enums"]["support_request_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "support_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2823,6 +2880,12 @@ export type Database = {
     }
     Enums: {
       app_role: "superadmin" | "admin" | "comercial" | "operador" | "gestor"
+      support_request_status:
+        | "pending"
+        | "in_progress"
+        | "resolved"
+        | "rejected"
+      support_request_type: "feature" | "bug" | "question"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2951,6 +3014,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["superadmin", "admin", "comercial", "operador", "gestor"],
+      support_request_status: [
+        "pending",
+        "in_progress",
+        "resolved",
+        "rejected",
+      ],
+      support_request_type: ["feature", "bug", "question"],
     },
   },
 } as const
