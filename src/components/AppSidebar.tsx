@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles, Monitor, ListChecks, TrendingUp, Building2, Kanban, Check } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles, Monitor, ListChecks, TrendingUp, Building2, Kanban, Check, HelpCircle } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, SidebarRail, useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -487,6 +487,14 @@ export function AppSidebar() {
                 </NavLink>
               </SidebarMenuButton>
             </SidebarMenuItem>}
+          {!isSuperAdmin && <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={currentPath === "/ayuda"} tooltip="Ayuda" className="h-7 px-2">
+              <NavLink to="/ayuda" className={getNavCls}>
+                <HelpCircle className="mr-2 h-4 w-4" />
+                {!isCollapsed && <span>Ayuda</span>}
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>}
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip={isCollapsed ? "Expandir menú" : "Contraer menú"} className="h-7 px-2">
               <button onClick={toggleSidebar} className="w-full flex items-center justify-start">

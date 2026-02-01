@@ -55,6 +55,7 @@ import ProductionBoardCompact from "./pages/ProductionBoardCompact";
 import ProductionBoardRedirect from "./pages/ProductionBoardRedirect";
 import Novedades from "./pages/Novedades";
 import ApiHome from "./pages/ApiHome";
+import HelpPage from "./pages/HelpPage";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { useSessionMonitor } from "./hooks/useSessionMonitor";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -513,6 +514,16 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <SuperAdminRoadmap />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+        />
+      <Route
+        path="/ayuda"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <HelpPage />
             </AppLayout>
           </ProtectedRoute>
         }
