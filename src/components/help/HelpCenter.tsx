@@ -4,10 +4,12 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useHelpAccess } from '@/hooks/useHelpAccess';
 import { HelpArticle, HelpCategory } from '@/data/helpArticles';
 import { GuidedTour } from './GuidedTour';
+import { SupportRequestForm } from './SupportRequestForm';
+import { UserRequestsList } from './UserRequestsList';
 
 const iconMap: Record<string, React.ElementType> = {
   Rocket,
@@ -147,111 +149,125 @@ export function HelpCenter() {
         </p>
       </div>
 
-      {/* Buscador */}
-      <div className="relative mb-8">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar en la ayuda..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+      <Tabs defaultValue="help" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="help">Documentación</TabsTrigger>
+          <TabsTrigger value="support">Soporte</TabsTrigger>
+        </TabsList>
 
-      {/* Resultados de búsqueda */}
-      {searchQuery && (
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-4">
-            Resultados para "{searchQuery}" ({searchResults.length})
-          </h2>
-          <div className="grid gap-3">
-            {searchResults.map((article) => (
-              <Card 
-                key={article.id}
-                className="cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => {
-                  setSelectedCategory(article.category);
-                  setSelectedArticle(article.id);
-                  setSearchQuery('');
-                }}
-              >
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">{article.title}</h3>
-                    <p className="text-sm text-muted-foreground">{article.summary}</p>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                </CardContent>
-              </Card>
-            ))}
-            {searchResults.length === 0 && (
-              <p className="text-center text-muted-foreground py-4">
-                No se encontraron resultados
-              </p>
-            )}
+        <TabsContent value="help" className="space-y-6">
+          {/* Buscador */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar en la ayuda..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
           </div>
-        </div>
-      )}
 
-      {/* Tour guiado */}
-      {!searchQuery && (
-        <Card className="mb-8 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
-          <CardContent className="p-6 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-full bg-primary/20">
-                <PlayCircle className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Tour guiado</h3>
-                <p className="text-sm text-muted-foreground">
-                  Aprende los conceptos básicos con un recorrido interactivo
-                </p>
+          {/* Resultados de búsqueda */}
+          {searchQuery && (
+            <div>
+              <h2 className="text-lg font-semibold mb-4">
+                Resultados para "{searchQuery}" ({searchResults.length})
+              </h2>
+              <div className="grid gap-3">
+                {searchResults.map((article) => (
+                  <Card 
+                    key={article.id}
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => {
+                      setSelectedCategory(article.category);
+                      setSelectedArticle(article.id);
+                      setSearchQuery('');
+                    }}
+                  >
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium">{article.title}</h3>
+                        <p className="text-sm text-muted-foreground">{article.summary}</p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    </CardContent>
+                  </Card>
+                ))}
+                {searchResults.length === 0 && (
+                  <p className="text-center text-muted-foreground py-4">
+                    No se encontraron resultados
+                  </p>
+                )}
               </div>
             </div>
-            <Button onClick={handleStartTour}>
-              Iniciar tour
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+          )}
 
-      {/* Categorías */}
-      {!searchQuery && (
-        <div>
-          <h2 className="text-lg font-semibold mb-4">Categorías</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {categories.map((category) => {
-              const Icon = iconMap[category.icon] || BookOpen;
-              const articleCount = getArticlesByCategory(category.id).length;
-              
-              return (
-                <Card 
-                  key={category.id}
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => setSelectedCategory(category.id)}
-                >
-                  <CardContent className="p-4 flex items-start gap-4">
-                    <div className="p-2 rounded-lg bg-primary/10 shrink-0">
-                      <Icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-medium">{category.name}</h3>
-                        <Badge variant="secondary" className="shrink-0">
-                          {articleCount}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {category.description}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      )}
+          {/* Tour guiado */}
+          {!searchQuery && (
+            <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-full bg-primary/20">
+                    <PlayCircle className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Tour guiado</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Aprende los conceptos básicos con un recorrido interactivo
+                    </p>
+                  </div>
+                </div>
+                <Button onClick={handleStartTour}>
+                  Iniciar tour
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Categorías */}
+          {!searchQuery && (
+            <div>
+              <h2 className="text-lg font-semibold mb-4">Categorías</h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {categories.map((category) => {
+                  const Icon = iconMap[category.icon] || BookOpen;
+                  const articleCount = getArticlesByCategory(category.id).length;
+                  
+                  return (
+                    <Card 
+                      key={category.id}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => setSelectedCategory(category.id)}
+                    >
+                      <CardContent className="p-4 flex items-start gap-4">
+                        <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                          <Icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-medium">{category.name}</h3>
+                            <Badge variant="secondary" className="shrink-0">
+                              {articleCount}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {category.description}
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="support" className="space-y-6">
+          <SupportRequestForm />
+          <UserRequestsList />
+        </TabsContent>
+      </Tabs>
 
       {/* Info del rol */}
       <div className="mt-8 text-center">

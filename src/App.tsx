@@ -26,6 +26,7 @@ import GestionPlanes from "./pages/PlansManagement";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SuperAdminUsers from "./pages/SuperAdminUsers";
 import SuperAdminRoadmap from "./pages/SuperAdminRoadmap";
+import SuperAdminSupportRequests from "./pages/SuperAdminSupportRequests";
 import SettingsRenumberDocuments from "./pages/SettingsRenumberDocuments";
 import Integrations from "./pages/Integrations";
 import IntegrationAccess from "./pages/IntegrationAccess";
@@ -518,6 +519,16 @@ const AppContent = () => {
           </ProtectedRoute>
         }
         />
+      <Route
+        path="/superadmin/solicitudes"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SuperAdminSupportRequests />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/ayuda"
         element={

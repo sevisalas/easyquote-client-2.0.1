@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles, Monitor, ListChecks, TrendingUp, Building2, Kanban, Check, HelpCircle } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles, Monitor, ListChecks, TrendingUp, Building2, Kanban, Check, HelpCircle, MessageSquare } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, SidebarRail, useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -175,6 +175,15 @@ export function AppSidebar() {
                        <NavLink to="/superadmin/roadmap" end className={getNavCls}>
                          <Kanban className="mr-2 h-4 w-4" />
                          {!isCollapsed && <span>Roadmap</span>}
+                       </NavLink>
+                     </SidebarMenuButton>
+                  </SidebarMenuItem>
+
+                  <SidebarMenuItem>
+                     <SidebarMenuButton asChild isActive={currentPath === "/superadmin/solicitudes"} className="h-7 px-2">
+                       <NavLink to="/superadmin/solicitudes" end className={getNavCls}>
+                         <MessageSquare className="mr-2 h-4 w-4" />
+                         {!isCollapsed && <span>Solicitudes</span>}
                        </NavLink>
                      </SidebarMenuButton>
                   </SidebarMenuItem>
