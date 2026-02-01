@@ -43,11 +43,12 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
   ];
 
   // Pasos condicionales según permisos
+  // Nota: Usamos selectores basados en el texto del botón porque los menús son Collapsible, no NavLink directos
   const conditionalSteps: Step[] = [];
 
   if (canAccessPresupuestos && canAccessPresupuestos()) {
     conditionalSteps.push({
-      target: '[href="/presupuestos"]',
+      target: '[data-tour="presupuestos"]',
       content: (
         <div>
           <h3 className="font-semibold mb-2">Presupuestos</h3>
@@ -61,7 +62,7 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
 
   if (canAccessProduccion && canAccessProduccion()) {
     conditionalSteps.push({
-      target: '[href="/pedidos"]',
+      target: '[data-tour="pedidos"]',
       content: (
         <div>
           <h3 className="font-semibold mb-2">Pedidos</h3>
@@ -76,7 +77,7 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
   // Pasos finales
   const finalSteps: Step[] = [
     {
-      target: '[href="/ayuda"]',
+      target: '[data-tour="ayuda"]',
       content: (
         <div>
           <h3 className="font-semibold mb-2">Centro de ayuda</h3>

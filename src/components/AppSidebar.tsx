@@ -237,7 +237,7 @@ export function AppSidebar() {
                   {canAccessPresupuestos() && <Collapsible asChild defaultOpen={false}>
                       <SidebarMenuItem>
                         <CollapsibleTrigger asChild>
-                          <SidebarMenuButton isActive={currentPath.startsWith("/presupuestos")} className="h-7 px-2">
+                          <SidebarMenuButton data-tour="presupuestos" isActive={currentPath.startsWith("/presupuestos")} className="h-7 px-2">
                             <FileText className="mr-2 h-4 w-4" />
                             {!isCollapsed && <span>Presupuestos</span>}
                             {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />}
@@ -270,7 +270,7 @@ export function AppSidebar() {
                    {canAccessProduccion() && <Collapsible asChild defaultOpen={false}>
                        <SidebarMenuItem>
                          <CollapsibleTrigger asChild>
-                           <SidebarMenuButton isActive={currentPath.startsWith("/pedidos")} className="h-7 px-2">
+                           <SidebarMenuButton data-tour="pedidos" isActive={currentPath.startsWith("/pedidos")} className="h-7 px-2">
                              <Package className="mr-2 h-4 w-4" />
                              {!isCollapsed && <span>Pedidos</span>}
                              {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />}
@@ -497,7 +497,7 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>}
           {!isSuperAdmin && <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={currentPath === "/ayuda"} tooltip="Ayuda" className="h-7 px-2">
+            <SidebarMenuButton asChild isActive={currentPath === "/ayuda"} tooltip="Ayuda" className="h-7 px-2" data-tour="ayuda">
               <NavLink to="/ayuda" className={getNavCls}>
                 <HelpCircle className="mr-2 h-4 w-4" />
                 {!isCollapsed && <span>Ayuda</span>}
