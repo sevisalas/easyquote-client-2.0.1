@@ -1602,11 +1602,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     // Si multi-cantidades está activo, usar el precio de Q1 como referencia para el total
     if (multiEnabled && multiRows.length > 0) {
       const q1Price = multiRows[0]?.totalStr ?? multiRows[0]?.price ?? 0;
-      basePrice = parseFloat(String(q1Price).replace(/\./g, "").replace(",", ".")) || 0;
+      // IMPORTANT: q1Price puede ser number (ya con punto decimal) o string (formato ES con coma).
+      // Si lo tratamos siempre como string y quitamos '.', podemos convertir 14.99 -> 1499.
+      basePrice = parseEsNumber(q1Price) || 0;
     } else if (outputPrice !== undefined && outputPrice !== null) {
-      basePrice = parseFloat(String(outputPrice).replace(/\./g, "").replace(",", ".")) || 0;
+      basePrice = parseEsNumber(outputPrice) || 0;
     } else {
-      basePrice = parseFloat(String(pricingPrice ?? 0).replace(/\./g, "").replace(",", ".")) || 0;
+      basePrice = parseEsNumber(pricingPrice ?? 0) || 0;
     }
     let additionalsTotal = 0;
     
@@ -1620,7 +1622,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       const rawQty = (qtyValue && typeof qtyValue === 'object' && 'value' in qtyValue) 
         ? qtyValue.value 
         : qtyValue;
-      const parsedQty = parseFloat(String(rawQty).replace(/\./g, "").replace(",", "."));
+      const parsedQty = parseEsNumber(rawQty);
       if (!isNaN(parsedQty) && parsedQty > 0) {
         quantity = parsedQty;
       }
