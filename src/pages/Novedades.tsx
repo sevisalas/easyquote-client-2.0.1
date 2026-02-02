@@ -26,13 +26,19 @@ interface Version {
 
 const versions: Version[] = [
   {
-    version: "2.5.5",
-    date: "2026-01-26",
-    isDevelopment: true,
+    version: "2.5.6",
+    date: "2026-02-02",
     changes: {
-      added: [],
-      changed: [],
-      fixed: [],
+      added: [
+        "Sistema de solicitudes de soporte: envío de funcionalidades, errores y dudas desde el Centro de ayuda",
+        "Panel de gestión de solicitudes (Superadmin): vista con filtros, estadísticas y sistema de respuesta",
+        "Tour guiado mejorado con selectores corregidos para menús colapsables",
+      ],
+      fixed: [
+        "Exportación multi-cantidades a Holded: cada cantidad se exporta como artículo separado con su precio real",
+        "Filtro de prompts ocultos en Holded: ahora se filtra correctamente usando el ID interno del prompt",
+        "Total en presupuestos con multi-cantidades: muestra el precio de Q1 como referencia",
+      ],
     },
   },
   {
