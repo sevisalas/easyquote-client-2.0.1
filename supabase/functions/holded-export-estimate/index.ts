@@ -791,6 +791,56 @@ Deno.serve(async (req) => {
 
     const holdedData = JSON.parse(holdedResponseText);
 
+    // Some Holded UI settings (like hiding totals) are controlled by undocumented fields.
+    // We already send shipping:'hidden' on create when there are multi-quantities, but Holded
+    // may ignore it on creation. To make it reliable, we re-apply it immediately via update.
+    if (hasMultiQuantities && holdedData?.id) {
+      try {
+        const updateUrl = `https://api.holded.com/api/invoicing/v1/documents/estimate/${holdedData.id}`;
+
+        // Keep update payload minimal to avoid unintended overwrites.
+        // Note: Update endpoint is documented as PUT, but it behaves like a partial update for some fields.
+        const updatePayload: Record<string, unknown> = {
+          shipping: 'hidden',
+          date: estimatePayload.date,
+          desc: estimatePayload.desc,
+          notes: estimatePayload.notes,
+          items: estimatePayload.items,
+          paymentMethodId: estimatePayload.paymentMethodId,
+        };
+
+        if (estimatePayload.salesChannelId) {
+          updatePayload.salesChannelId = estimatePayload.salesChannelId;
+        }
+        if (estimatePayload.discount) {
+          updatePayload.discount = estimatePayload.discount;
+        }
+
+        console.log('Re-applying shipping:hidden via Holded update:', updateUrl);
+        console.log('Holded update payload:', JSON.stringify(updatePayload, null, 2));
+
+        const holdedUpdateResponse = await fetch(updateUrl, {
+          method: 'PUT',
+          headers: {
+            'accept': 'application/json',
+            'content-type': 'application/json',
+            'key': apiKey,
+          },
+          body: JSON.stringify(updatePayload),
+        });
+
+        const holdedUpdateText = await holdedUpdateResponse.text();
+        console.log('Holded update status:', holdedUpdateResponse.status);
+        console.log('Holded update response:', holdedUpdateText);
+
+        if (!holdedUpdateResponse.ok) {
+          console.warn(`Holded update (shipping:hidden) failed: ${holdedUpdateResponse.status} - ${holdedUpdateText}`);
+        }
+      } catch (e) {
+        console.warn('Holded update (shipping:hidden) threw error:', e);
+      }
+    }
+
     // Update quote with Holded estimate ID
     if (holdedData.id) {
       await supabase
