@@ -796,6 +796,11 @@ Deno.serve(async (req) => {
       await supabase
         .from('quotes')
         .update({
+          // Backwards-compatible fields used by the UI + PDF download
+          holded_estimate_id: holdedData.id,
+          holded_estimate_number: holdedData.invoiceNum ?? null,
+
+          // New canonical field
           holded_id: holdedData.id,
           status: 'sent'
         })

@@ -36,6 +36,10 @@ export function QuoteCard({
 }: QuoteCardProps) {
   const navigate = useNavigate();
 
+  // Backwards/forwards compatible: older code used holded_estimate_*; newer export stores holded_id.
+  const holdedNumber = quote?.holded_estimate_number || quote?.holded_id;
+  const holdedPdfId = quote?.holded_estimate_id || quote?.holded_id;
+
   const handleDelete = async () => {
     if (confirm('¿Estás seguro de que quieres eliminar este presupuesto?')) {
       try {
@@ -100,18 +104,18 @@ export function QuoteCard({
         </div>
 
         {/* Holded Info */}
-        {hasHoldedAccess && quote.holded_estimate_number && (
+        {hasHoldedAccess && holdedNumber && (
           <div className="mb-3 pb-2 border-b">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">Nº Holded</p>
-                <p className="text-xs font-mono">{quote.holded_estimate_number}</p>
+                <p className="text-xs font-mono">{holdedNumber}</p>
               </div>
-              {quote.holded_estimate_id && isHoldedActive && (
+              {holdedPdfId && isHoldedActive && (
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => handleDownloadHoldedPdf(quote.holded_estimate_id, quote.holded_estimate_number || quote.quote_number, quote.customer_id)}
+                  onClick={() => handleDownloadHoldedPdf(holdedPdfId, holdedNumber || quote.quote_number, quote.customer_id)}
                   className="h-9 w-9 p-0 touch-manipulation"
                 >
                   <Download className="h-4 w-4" />

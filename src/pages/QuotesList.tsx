@@ -41,7 +41,7 @@ const fetchQuotes = async () => {
   
   let query = supabase
     .from("quotes")
-    .select("id, created_at, quote_number, customer_id, product_name, final_price, status, selections, description, holded_estimate_number, holded_estimate_id, user_id, organization_id")
+    .select("id, created_at, quote_number, customer_id, product_name, final_price, status, selections, description, holded_estimate_number, holded_estimate_id, holded_id, user_id, organization_id")
     .order("created_at", { ascending: false });
   
   if (organizationId) {
@@ -408,18 +408,18 @@ const QuotesList = () => {
                     {hasHoldedAccess && (
                       <>
                         <TableCell className="py-1.5 px-3">
-                          {q.holded_estimate_number ? (
-                            <span className="text-xs font-mono text-muted-foreground">{q.holded_estimate_number}</span>
+                          {q.holded_estimate_number || q.holded_id ? (
+                            <span className="text-xs font-mono text-muted-foreground">{q.holded_estimate_number || q.holded_id}</span>
                           ) : (
                             <span className="text-xs text-muted-foreground">—</span>
                           )}
                         </TableCell>
                         <TableCell className="py-1.5 px-3">
-                          {q.holded_estimate_id && isHoldedActive && (
+                          {(q.holded_estimate_id || q.holded_id) && isHoldedActive && (
                             <span title="Descargar PDF de Holded">
                               <Download 
                                 className="h-3.5 w-3.5 cursor-pointer text-muted-foreground hover:text-foreground transition-colors" 
-                                onClick={() => handleDownloadHoldedPdf(q.holded_estimate_id, q.holded_estimate_number || q.quote_number, q.customer_id)}
+                                onClick={() => handleDownloadHoldedPdf(q.holded_estimate_id || q.holded_id, q.holded_estimate_number || q.quote_number, q.customer_id)}
                               />
                             </span>
                           )}
