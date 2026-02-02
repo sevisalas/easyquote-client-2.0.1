@@ -1598,7 +1598,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     const pricingPrice = (pricing as any)?.price;
 
     let basePrice: number;
-    if (outputPrice !== undefined && outputPrice !== null) {
+    
+    // Si multi-cantidades está activo, usar el precio de Q1 como referencia para el total
+    if (multiEnabled && multiRows.length > 0) {
+      const q1Price = multiRows[0]?.totalStr ?? multiRows[0]?.price ?? 0;
+      basePrice = parseFloat(String(q1Price).replace(/\./g, "").replace(",", ".")) || 0;
+    } else if (outputPrice !== undefined && outputPrice !== null) {
       basePrice = parseFloat(String(outputPrice).replace(/\./g, "").replace(",", ".")) || 0;
     } else {
       basePrice = parseFloat(String(pricingPrice ?? 0).replace(/\./g, "").replace(",", ".")) || 0;
