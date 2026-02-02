@@ -263,10 +263,19 @@ Deno.serve(async (req) => {
       .select('easyquote_product_id, prompt_name')
       .eq('organization_id', organizationId)
       .eq('hide_in_documents', true);
+
+    // IMPORTANT: in product_prompt_settings we store prompt_name (prompt id/name), not the human label.
+    // Match using normalized keys to avoid issues with $, casing, spaces, etc.
+    const normalizePromptKey = (v: unknown) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+    const makeHiddenKey = (productId: unknown, promptKey: unknown) => `${String(productId ?? '')}:${normalizePromptKey(promptKey)}`;
+    const isHiddenInDocuments = (productId: unknown, prompt: any): boolean => {
+      const candidates = [prompt?.name, prompt?.id, prompt?.label].filter(Boolean);
+      return candidates.some((c) => hiddenPromptsSet.has(makeHiddenKey(productId, c)));
+    };
     
-    // Create a set of hidden prompts for quick lookup: "productId:promptLabel"
+    // Create a set of hidden prompts for quick lookup: "productId:PROMPT_KEY"
     const hiddenPromptsSet = new Set(
-      (hiddenPromptSettings || []).map(s => `${s.easyquote_product_id}:${s.prompt_name}`)
+      (hiddenPromptSettings || []).map((s: any) => makeHiddenKey(s.easyquote_product_id, s.prompt_name))
     );
     console.log('🙈 Hidden prompts set:', Array.from(hiddenPromptsSet));
 
@@ -321,13 +330,12 @@ Deno.serve(async (req) => {
                 // Skip the quantity prompt - we'll show it separately
                 if (prompt.id === item.multi.qtyPrompt) return false;
                 if (!isPromptVisible(prompt.id, promptsObj, item.product_id || '')) return false;
-                // Check if this prompt is hidden in documents
-                const productId = item.product_id || '';
-                const promptLabel = prompt.label;
-                if (hiddenPromptsSet.has(`${productId}:${promptLabel}`)) {
-                  console.log(`🙈 Hiding prompt "${promptLabel}" for product ${productId}`);
-                  return false;
-                }
+                 // Check if this prompt is hidden in documents
+                 const productId = item.product_id || '';
+                 if (isHiddenInDocuments(productId, prompt)) {
+                   console.log(`🙈 Hiding prompt "${prompt.label}" (id=${prompt.id ?? 'n/a'}) for product ${productId}`);
+                   return false;
+                 }
                 return true;
               })
               .sort((a, b) => (a.order || 999) - (b.order || 999))
@@ -471,13 +479,12 @@ Deno.serve(async (req) => {
                 .filter(prompt => {
                   if (!prompt || !prompt.label) return false;
                   if (!isPromptVisible(prompt.id, promptsObj, item.product_id || '')) return false;
-                  // Check if this prompt is hidden in documents
-                  const productId = item.product_id || '';
-                  const promptLabel = prompt.label;
-                  if (hiddenPromptsSet.has(`${productId}:${promptLabel}`)) {
-                    console.log(`🙈 Hiding prompt "${promptLabel}" for product ${productId}`);
-                    return false;
-                  }
+                   // Check if this prompt is hidden in documents
+                   const productId = item.product_id || '';
+                   if (isHiddenInDocuments(productId, prompt)) {
+                     console.log(`🙈 Hiding prompt "${prompt.label}" (id=${prompt.id ?? 'n/a'}) for product ${productId}`);
+                     return false;
+                   }
                   return true;
                 })
                 .sort((a, b) => (a.order || 999) - (b.order || 999))
