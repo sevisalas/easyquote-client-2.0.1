@@ -356,9 +356,17 @@ Deno.serve(async (req) => {
         item.multi.rows.forEach((row: any, index: number) => {
           globalQtyCounter++;
           const qtyValue = row.qty || 0;
-          let rowPrice = typeof row.price === "number" 
-            ? row.price 
-            : parseFloat(String(row.price || 0).replace(/\./g, "").replace(",", ".")) || 0;
+
+          // IMPORTANT: multi rows often store the calculated price inside row.outs (type=Price)
+          // and may NOT have row.price populated.
+          const outs = (row?.outs ?? row?.outputs ?? []) as any[];
+          const priceFromOuts = Array.isArray(outs)
+            ? outs.find((o: any) => String(o?.type || '').toLowerCase() === 'price')?.value
+            : undefined;
+          const rawRowPrice = priceFromOuts ?? row?.price ?? 0;
+          let rowPrice = typeof rawRowPrice === "number"
+            ? rawRowPrice
+            : parseFloat(String(rawRowPrice || 0).replace(/\./g, "").replace(",", ".")) || 0;
           
           // Apply item additionals to the price
           if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
