@@ -2285,6 +2285,7 @@ export type Database = {
           hide_holded_totals: boolean
           holded_estimate_id: string | null
           holded_estimate_number: string | null
+          holded_id: string | null
           id: string
           notes: string | null
           organization_id: string | null
@@ -2310,6 +2311,7 @@ export type Database = {
           hide_holded_totals?: boolean
           holded_estimate_id?: string | null
           holded_estimate_number?: string | null
+          holded_id?: string | null
           id?: string
           notes?: string | null
           organization_id?: string | null
@@ -2335,6 +2337,7 @@ export type Database = {
           hide_holded_totals?: boolean
           holded_estimate_id?: string | null
           holded_estimate_number?: string | null
+          holded_id?: string | null
           id?: string
           notes?: string | null
           organization_id?: string | null
