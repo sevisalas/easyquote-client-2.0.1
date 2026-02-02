@@ -3,25 +3,6 @@ import { corsHeaders } from '../_shared/cors.ts';
 
 const HOLDED_API_URL = 'https://api.holded.com/api/invoicing/v1/documents/estimate';
 
-type HoldedIntegrationConfig = {
-  /** Holded design/template id to apply to estimates (used to control PDF layout, including totals visibility) */
-  estimate_design_id?: string;
-};
-
-const parseEsNumber = (v: unknown): number => {
-  if (typeof v === 'number') return v;
-  const s = String(v ?? '').trim();
-  if (!s) return 0;
-  // If string uses ES format (comma decimals), remove thousand separators and convert comma to dot.
-  if (s.includes(',')) {
-    const n = parseFloat(s.replace(/\./g, '').replace(',', '.'));
-    return Number.isFinite(n) ? n : 0;
-  }
-  // Otherwise, trust JS parsing (dot decimals) and avoid stripping '.' (would break 14.99 -> 1499).
-  const n = parseFloat(s);
-  return Number.isFinite(n) ? n : 0;
-};
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -63,24 +44,6 @@ Deno.serve(async (req) => {
     if (quoteError || !quote) {
       console.error('Quote not found:', quoteError);
       throw new Error('Quote not found');
-    }
-
-    // Idempotency: if already exported, return stored info and do not create duplicates
-    const existingHoldedId = (quote as any).holded_estimate_id || (quote as any).holded_id;
-    const existingHoldedNumber = (quote as any).holded_estimate_number;
-    if (existingHoldedId) {
-      return new Response(
-        JSON.stringify({
-          success: true,
-          estimateId: existingHoldedId,
-          estimateNumber: existingHoldedNumber ?? null,
-          message: 'Estimate already exported to Holded'
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200
-        }
-      );
     }
 
     // Verify user has access to this quote (either owns it or is in the same organization)
@@ -201,7 +164,7 @@ Deno.serve(async (req) => {
     // Get organization's Holded API key
     const { data: integrationAccess } = await supabase
       .from('organization_integration_access')
-      .select('access_token_encrypted, configuration')
+      .select('access_token_encrypted')
       .eq('organization_id', organizationId)
       .eq('integration_id', holdedIntegration.id)
       .eq('is_active', true)
@@ -222,8 +185,6 @@ Deno.serve(async (req) => {
     
     const apiKey = decryptedKey;
     console.log('Using Holded API key for organization:', organizationId);
-
-    const holdedConfig = (integrationAccess?.configuration ?? null) as HoldedIntegrationConfig | null;
 
     // Get EasyQuote credentials to fetch product definitions
     const { data: easyquoteCredsData } = await supabase
@@ -411,7 +372,9 @@ Deno.serve(async (req) => {
             ? outs.find((o: any) => String(o?.type || '').toLowerCase() === 'price')?.value
             : undefined;
           const rawRowPrice = priceFromOuts ?? row?.price ?? 0;
-          let rowPrice = parseEsNumber(rawRowPrice);
+          let rowPrice = typeof rawRowPrice === "number"
+            ? rawRowPrice
+            : parseFloat(String(rawRowPrice || 0).replace(/\./g, "").replace(",", ".")) || 0;
           
           // Apply item additionals to the price
           if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
@@ -783,10 +746,6 @@ Deno.serve(async (req) => {
       paymentMethodId: '5ad06f6a2e1d93408570743e'
     };
 
-    // Apply Holded design/template if configured (this is the reliable way to hide totals, etc.)
-    if (holdedConfig?.estimate_design_id) {
-      estimatePayload.designId = holdedConfig.estimate_design_id;
-    }
     
     // Add sales channel ID if available
     if (salesChannelId) {
@@ -888,12 +847,8 @@ Deno.serve(async (req) => {
       await supabase
         .from('quotes')
         .update({
-          // Keep legacy field for backwards compatibility
           holded_id: holdedData.id,
-          // Fields used by UI (QuoteCard) + PDF download
-          holded_estimate_id: holdedData.id,
-          holded_estimate_number: holdedData.invoiceNum ?? holdedData.docNumber ?? null,
-          status: 'sent',
+          status: 'sent'
         })
         .eq('id', quoteId);
 
