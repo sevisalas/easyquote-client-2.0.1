@@ -5,12 +5,17 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
-## [2.5.6] - 2026-02-01
+## [2.5.6] - 2026-02-02
 
 ### Añadido
 - **Sistema de solicitudes de soporte**: Nueva funcionalidad para que los usuarios envíen solicitudes de funcionalidades, reportes de errores y dudas desde el Centro de ayuda
 - **Panel de gestión de solicitudes (Superadmin)**: Vista dedicada para gestionar todas las solicitudes con filtros por estado, estadísticas y sistema de respuesta
 - **Tour guiado mejorado**: Corregidos los selectores del tour para que funcione correctamente con los menús colapsables del sidebar
+
+### Corregido
+- **Exportación multi-cantidades a Holded**: Cada cantidad ahora se exporta como artículo separado con su precio real (Q1, Q2, etc.)
+- **Filtro de prompts ocultos en Holded**: Los campos marcados como "Ocultar en documentos" ahora se filtran correctamente usando el ID interno del prompt
+- **Total en presupuestos con multi-cantidades**: El resumen ahora muestra el precio de Q1 como referencia en lugar de 0
 
 ---
 
