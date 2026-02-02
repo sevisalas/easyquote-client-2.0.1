@@ -2455,7 +2455,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               </CardContent>
             </Card>
 
-            {!hideMultiQuantities && !isCustomProduct && !isComposite && (
+            {!hideMultiQuantities && !isCustomProduct && (
               <Card className="border-accent/50 bg-muted/30">
                 <CardHeader className="py-2 px-3">
                   <CardTitle className="text-base">Múltiples cantidades</CardTitle>
