@@ -1168,6 +1168,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // - No espera a que termine el pricing principal (para que Q2..Qn puedan empezar en paralelo)
   // (allQtysComplete se calcula más arriba para poder controlar también la query principal)
 
+  // Multi-quantity query for SIMPLE products (no components)
   const { data: multiResults, isFetching: multiLoading } = useQuery({
     queryKey: [
       "easyquote-multi",
@@ -1179,7 +1180,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       allQtysComplete,
     ],
     // No esperar a isPricingLoading - Q2/Q3 se lanzan en paralelo con Q1
-    enabled: !!hasToken && !!productId && multiEnabled && !!qtyPrompt && allQtysComplete,
+    // Solo ejecutar para productos simples (sin componentes configurados)
+    enabled: !!hasToken && !!productId && multiEnabled && !!qtyPrompt && allQtysComplete && !hasConfiguredComponents,
     refetchOnWindowFocus: false,
     retry: 1,
     staleTime: 30000,
@@ -1221,7 +1223,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       // Así evitamos el patrón "primero cantidad principal y luego Q1/Q2/Q3".
       const qtysToFetch = qtys;
 
-      console.log("🔢 Multi-cantidad: lanzando", qtysToFetch.length, "llamadas en paralelo", {
+      console.log("🔢 Multi-cantidad (simple): lanzando", qtysToFetch.length, "llamadas en paralelo", {
         qtysToFetch,
       });
 
@@ -1253,6 +1255,146 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         qty,
         data: fetchedByQty.get(qty),
       }));
+
+      return results;
+    },
+  });
+
+  // Multi-quantity query for COMPOSITE products (with configured components)
+  // For each quantity, we calculate all components and sum their prices
+  const { data: compositeMultiResults, isFetching: compositeMultiLoading } = useQuery({
+    queryKey: [
+      "composite-multi",
+      productId,
+      debouncedPromptValues,
+      qtyPrompt,
+      qtyInputs,
+      multiEnabled,
+      allQtysComplete,
+      activeCompositeComponents.map(c => `${c.id}:${c.instance_index}`).join(","),
+      JSON.stringify(componentPromptValues),
+      organizationId,
+    ],
+    enabled: !!hasToken && !!productId && multiEnabled && !!qtyPrompt && allQtysComplete && hasConfiguredComponents && activeCompositeComponents.length > 0,
+    refetchOnWindowFocus: false,
+    retry: 1,
+    staleTime: 30000,
+    queryFn: async () => {
+      const token = sessionStorage.getItem("easyquote_token");
+      if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
+
+      const qtys = qtyInputs
+        .map((q) => Number(String(q).replace(/\./g, "").replace(",", ".")))
+        .filter((n) => !Number.isNaN(n) && n > 0);
+      if (qtys.length === 0) return [] as any[];
+
+      console.log("🔢 Multi-cantidad (compuesto): lanzando cálculos para", qtys.length, "cantidades con", activeCompositeComponents.length, "componentes");
+
+      // Fetch prompt connections for this composite product
+      const { data: promptConnections } = await supabase
+        .from("composite_prompt_connections")
+        .select("*")
+        .eq("organization_id", organizationId)
+        .eq("composite_product_id", productId);
+
+      // For each quantity, calculate all components in parallel
+      const results = await Promise.all(
+        qtys.map(async (qty) => {
+          // Calculate price for each component with this quantity
+          const componentPrices = await Promise.all(
+            activeCompositeComponents.map(async (component) => {
+              // Build inputs for this component
+              const componentInputs: { id: string; value: any }[] = [];
+              
+              // Get connections for this component
+              const connections = (promptConnections || []).filter(
+                (conn: any) => 
+                  conn.target_component_id === component.id || 
+                  conn.target_component_id === component.component_product_id
+              );
+
+              // Add inherited values from parent prompts (with quantity replaced)
+              for (const conn of connections as any[]) {
+                let sourceValue: any;
+                
+                // If this is the quantity prompt connection, use the current qty
+                if (conn.source_prompt_name === qtyPrompt) {
+                  sourceValue = qty;
+                } else {
+                  // Get value from parent prompt values
+                  sourceValue = debouncedPromptValues[conn.source_prompt_name];
+                  if (sourceValue && typeof sourceValue === 'object' && 'value' in sourceValue) {
+                    sourceValue = sourceValue.value;
+                  }
+                }
+                
+                if (sourceValue !== undefined && sourceValue !== null) {
+                  componentInputs.push({
+                    id: conn.target_prompt_name,
+                    value: sourceValue,
+                  });
+                }
+              }
+              
+              // Add user-edited component values (if any)
+              const componentKey = `${component.id}:${component.instance_index || 1}`;
+              const userEditedValues = componentPromptValues[componentKey] || {};
+              for (const [promptId, value] of Object.entries(userEditedValues)) {
+                if (value !== undefined && value !== null) {
+                  const existingIdx = componentInputs.findIndex(i => i.id === promptId);
+                  if (existingIdx >= 0) {
+                    componentInputs[existingIdx].value = value;
+                  } else {
+                    componentInputs.push({ id: promptId, value });
+                  }
+                }
+              }
+
+              try {
+                const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
+                  token,
+                  productId: component.component_product_id,
+                  inputs: componentInputs,
+                });
+                
+                if (error) {
+                  console.error(`Error calculating component ${component.component_alias}:`, error);
+                  return 0;
+                }
+                
+                // Extract price from outputs
+                const outputs = data?.outputValues || data?.outputs || [];
+                const priceOutput = outputs.find(
+                  (o: any) => String(o?.type || "").toLowerCase() === "price"
+                );
+                const price = priceOutput
+                  ? parseFloat(String(priceOutput.value ?? "0").replace(/\./g, "").replace(",", ".")) || 0
+                  : 0;
+                  
+                return price;
+              } catch (err) {
+                console.error(`Error calculating component ${component.component_alias}:`, err);
+                return 0;
+              }
+            })
+          );
+
+          // Sum all component prices for this quantity
+          const totalPrice = componentPrices.reduce((sum, price) => sum + price, 0);
+          
+          return {
+            qty,
+            data: {
+              outputValues: [
+                { type: "Price", name: "Precio", value: totalPrice.toFixed(2).replace(".", ",") }
+              ]
+            },
+            totalPrice,
+          };
+        })
+      );
+
+      console.log("🔢 Multi-cantidad (compuesto) resultados:", results.map(r => ({ qty: r.qty, price: r.totalPrice })));
 
       return results;
     },
@@ -1387,7 +1529,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   const multiRows = useMemo(() => {
     // First, check if we have saved multi data from initialData
-    if (initialData?.multi?.rows && Array.isArray(initialData.multi.rows) && !multiResults) {
+    const hasNewMultiResults = hasConfiguredComponents ? compositeMultiResults : multiResults;
+    if (initialData?.multi?.rows && Array.isArray(initialData.multi.rows) && !hasNewMultiResults) {
       // Use saved data
       return initialData.multi.rows.map((r: any) => {
         const outs: any[] = Array.isArray(r?.outs) ? r.outs : [];
@@ -1400,7 +1543,17 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       });
     }
     
-    // Otherwise use fresh query results
+    // For composite products, use compositeMultiResults
+    if (hasConfiguredComponents && compositeMultiResults) {
+      return (compositeMultiResults as any[]).map((r: any) => {
+        const outs: any[] = Array.isArray(r?.data?.outputValues) ? r.data.outputValues : [];
+        const totalNum = r.totalPrice ?? getCalculatedPriceFromOutputs(outs);
+        const unit = r.qty > 0 && Number.isFinite(totalNum) ? totalNum / r.qty : NaN;
+        return { qty: r.qty, outs, totalStr: totalNum, unit };
+      });
+    }
+    
+    // For simple products, use multiResults
     const rows = (multiResults as any[] | undefined) || [];
     return rows.map((r: any) => {
       const outs: any[] = Array.isArray(r?.data?.outputValues) ? r.data.outputValues : [];
@@ -1412,7 +1565,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       const unit = r.qty > 0 && Number.isFinite(totalNum) ? totalNum / r.qty : NaN;
       return { qty: r.qty, outs, totalStr: totalNum, unit };
     });
-  }, [multiResults, initialData?.multi?.rows]);
+  }, [multiResults, compositeMultiResults, hasConfiguredComponents, initialData?.multi?.rows]);
 
   // Calculate final price with additionals
   const finalPrice = useMemo(() => {
@@ -1749,7 +1902,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, displayName, itemDescription, itemAdditionals, products, initialData?.isFinalized, isInitializing, isCustomProduct, customPrice, customQuantity, pricing, isPricingLoading, userEditedPrice, boundProductConfig]);
 
   // Verificar que el artículo está completo Y no se está recalculando el precio
-  const isCalculating = isPricingLoading || multiLoading;
+  const isCalculating = isPricingLoading || multiLoading || compositeMultiLoading;
   const isComplete = productId && !isCalculating && ((isCustomProduct && customPrice > 0 && itemDescription) || (priceOutput && finalPrice > 0));
 
   // Sincronizar automáticamente cuando cambien los prompts/cálculo (excepto durante inicialización o cálculo)
@@ -2548,7 +2701,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                         ))}
                       </div>
 
-                       {multiLoading ? (
+                       {(multiLoading || compositeMultiLoading) ? (
                         <p className="text-sm text-muted-foreground">Calculando...</p>
                       ) : (Array.isArray(multiRows) && multiRows.length > 0 ? (
                         <>
