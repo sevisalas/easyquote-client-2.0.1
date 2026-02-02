@@ -796,14 +796,12 @@ Deno.serve(async (req) => {
       await supabase
         .from('quotes')
         .update({
-          holded_estimate_id: holdedData.id,
-          holded_estimate_number: holdedData.invoiceNum || null,
+          holded_id: holdedData.id,
           status: 'sent'
         })
         .eq('id', quoteId);
 
-      console.log('Quote updated with Holded estimate ID:', holdedData.id);
-      console.log('Quote updated with Holded estimate number:', holdedData.invoiceNum);
+      console.log('Quote updated with Holded ID:', holdedData.id);
     }
 
     return new Response(
