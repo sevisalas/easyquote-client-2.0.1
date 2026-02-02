@@ -284,139 +284,138 @@ Deno.serve(async (req) => {
       
       if (itemHasMultiQuantities) {
         hasMultiQuantities = true;
-        // Create one item per quantity row
-        item.multi.rows.forEach((row: any, index: number) => {
-          globalQtyCounter++; // Increment global counter
-          const qtyLabel = `Q${globalQtyCounter}`; // Use global counter instead of local index
-          let description = '';
+        
+        // Build base description from prompts (excluding quantity prompt)
+        let baseDescription = '';
+        let qtyPromptLabel = 'Cantidad';
+        
+        if (item.prompts) {
+          let promptsArray: any[] = [];
           
-            // Build description from prompts (filter using visibility rules)
-          if (item.prompts) {
-            let promptsArray: any[] = [];
-            
-            // Handle both array and object formats
-            if (Array.isArray(item.prompts)) {
-              promptsArray = item.prompts;
-            } else if (typeof item.prompts === 'object') {
-              promptsArray = Object.entries(item.prompts).map(([key, value]) => ({
-                id: key,
-                ...(typeof value === 'object' ? value : { value })
-              }));
-            }
-            
-            // Convert to object for visibility checking
-            const promptsObj = promptsArray.reduce((acc: any, p: any) => {
-              acc[p.id] = p;
-              return acc;
-            }, {});
-            
-            if (promptsArray.length > 0) {
-              description = promptsArray
-                .filter(prompt => {
-                  if (!prompt || !prompt.label) return false;
-                  if (!isPromptVisible(prompt.id, promptsObj, item.product_id || '')) return false;
-                  // Check if this prompt is hidden in documents
-                  const productId = item.product_id || '';
-                  const promptLabel = prompt.label;
-                  if (hiddenPromptsSet.has(`${productId}:${promptLabel}`)) {
-                    console.log(`🙈 Hiding prompt "${promptLabel}" for product ${productId}`);
-                    return false;
-                  }
-                  return true;
-                })
-                .sort((a, b) => (a.order || 999) - (b.order || 999))
-                .map((prompt) => {
-                  // For the quantity prompt, use the value from this specific row
-                  if (prompt.id === item.multi.qtyPrompt && row.qty) {
-                    return `${prompt.label}: ${row.qty}`;
-                  }
-                  return `${prompt.label}: ${prompt.value}`;
-                })
-                .filter(Boolean)
-                .join('\n');
-            }
+          // Handle both array and object formats
+          if (Array.isArray(item.prompts)) {
+            promptsArray = item.prompts;
+          } else if (typeof item.prompts === 'object') {
+            promptsArray = Object.entries(item.prompts).map(([key, value]) => ({
+              id: key,
+              ...(typeof value === 'object' ? value : { value })
+            }));
           }
           
-          // OUTPUTS SON DATOS INTERNOS - NO SE ENVÍAN A HOLDED
+          // Convert to object for visibility checking
+          const promptsObj = promptsArray.reduce((acc: any, p: any) => {
+            acc[p.id] = p;
+            return acc;
+          }, {});
           
-          // Add item additionals (ajustes sobre el artículo) at the end
-          if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
-            const additionalsText = item.item_additionals
-              .map((additional: any) => {
-                const value = additional.value || 0;
-                const formattedValue = typeof value === 'number' ? value.toFixed(2) : value;
-                return `${additional.name}: ${formattedValue}€`;
+          // Find the quantity prompt label
+          const qtyPromptData = promptsArray.find(p => p.id === item.multi.qtyPrompt);
+          if (qtyPromptData?.label) {
+            qtyPromptLabel = qtyPromptData.label;
+          }
+          
+          if (promptsArray.length > 0) {
+            baseDescription = promptsArray
+              .filter(prompt => {
+                if (!prompt || !prompt.label) return false;
+                // Skip the quantity prompt - we'll show it in the pricing table
+                if (prompt.id === item.multi.qtyPrompt) return false;
+                if (!isPromptVisible(prompt.id, promptsObj, item.product_id || '')) return false;
+                // Check if this prompt is hidden in documents
+                const productId = item.product_id || '';
+                const promptLabel = prompt.label;
+                if (hiddenPromptsSet.has(`${productId}:${promptLabel}`)) {
+                  console.log(`🙈 Hiding prompt "${promptLabel}" for product ${productId}`);
+                  return false;
+                }
+                return true;
               })
+              .sort((a, b) => (a.order || 999) - (b.order || 999))
+              .map((prompt) => `${prompt.label}: ${prompt.value}`)
+              .filter(Boolean)
               .join('\n');
-            
-            if (additionalsText) {
-              description += (description ? '\n' : '') + additionalsText;
-            }
           }
+        }
+        
+        // Add item additionals to description
+        if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
+          const additionalsText = item.item_additionals
+            .map((additional: any) => {
+              const value = additional.value || 0;
+              const formattedValue = typeof value === 'number' ? value.toFixed(2) : value;
+              return `${additional.name}: ${formattedValue}€`;
+            })
+            .join('\n');
           
-          // Get price directly from row.price (comes from pricing.price - base without VAT)
-          let price = typeof row.price === "number" 
+          if (additionalsText) {
+            baseDescription += (baseDescription ? '\n' : '') + additionalsText;
+          }
+        }
+        
+        // Build pricing table for multiple quantities
+        let pricingTable = '\n\n--- Precios por cantidad ---';
+        
+        item.multi.rows.forEach((row: any, index: number) => {
+          const qtyValue = row.qty || 0;
+          let rowPrice = typeof row.price === "number" 
             ? row.price 
             : parseFloat(String(row.price || 0).replace(/\./g, "").replace(",", ".")) || 0;
           
-          // Apply item additionals to the price and calculate discounts
-          let discountAmount = 0;
+          // Apply item additionals to the price
           if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
             item.item_additionals.forEach((additional: any) => {
               const value = additional.value || 0;
-              // Detect discount: either explicitly marked or has negative value
               const isDiscount = additional.is_discount === true || value < 0;
               
-              if (isDiscount) {
-                // Add to applied discounts list
-                if (additional.name && !appliedDiscounts.includes(additional.name)) {
-                  appliedDiscounts.push(additional.name);
-                }
-                // Calculate discount amount
+              if (!isDiscount) {
                 switch (additional.type) {
                   case 'net_amount':
-                    discountAmount += Math.abs(value);
+                    rowPrice += value;
                     break;
                   case 'percentage':
-                    discountAmount += Math.abs((price * value) / 100);
+                    rowPrice += (rowPrice * value) / 100;
+                    break;
+                  case 'quantity_multiplier':
+                    rowPrice *= value;
                     break;
                 }
               } else {
-                // Apply non-discount adjustments to price
+                // Apply discounts
                 switch (additional.type) {
                   case 'net_amount':
-                    price += value;
+                    rowPrice -= Math.abs(value);
                     break;
                   case 'percentage':
-                    price += (price * value) / 100;
-                    break;
-                  case 'quantity_multiplier':
-                    price *= value;
+                    rowPrice -= Math.abs((rowPrice * value) / 100);
                     break;
                 }
               }
             });
           }
           
-          // Round to 6 decimals for Holded compatibility (supports up to 6)
-          price = Math.round(price * 1000000) / 1000000;
-          discountAmount = Math.round(discountAmount * 1000000) / 1000000;
-          
-          const itemData: any = {
-            name: `${item.product_name || 'Producto'} (${qtyLabel})`,
-            desc: description,
-            units: 1,
-            subtotal: price,
-            taxes: ["s_iva_21"]
-          };
-          
-          // Add discount field if there's a discount
-          if (discountAmount > 0) {
-            itemData.discount = discountAmount;
-          }
-          
-          items.push(itemData);
+          // Format: "Q1: 100.000 uds → 1.735,50€"
+          const formattedQty = typeof qtyValue === 'number' 
+            ? qtyValue.toLocaleString('es-ES') 
+            : qtyValue;
+          const formattedPrice = rowPrice.toLocaleString('es-ES', { 
+            minimumFractionDigits: 2, 
+            maximumFractionDigits: 2 
+          });
+          pricingTable += `\nQ${index + 1}: ${formattedQty} uds → ${formattedPrice}€`;
         });
+        
+        const fullDescription = baseDescription + pricingTable;
+        
+        // Create a single item with units=1 and no price (informational only)
+        const itemData: any = {
+          name: item.product_name || 'Producto',
+          desc: fullDescription,
+          units: 1,
+          subtotal: 0, // No price - this is informational
+          taxes: ["s_iva_21"]
+        };
+        
+        items.push(itemData);
       } else {
         // Single item without multi quantities
         let description = '';
