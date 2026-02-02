@@ -18,20 +18,18 @@ export interface SupportRequest {
   resolved_at: string | null;
   created_at: string;
   updated_at: string;
+  user_email?: string; // Joined from auth.users
 }
 
 export function useSupportRequests() {
   const { isSuperAdmin, organization } = useSubscription();
   const queryClient = useQueryClient();
 
-  // Fetch requests (user sees their own, superadmin sees all)
+  // Fetch requests using edge function (includes user email for superadmins)
   const { data: requests, isLoading } = useQuery({
     queryKey: ['support-requests', isSuperAdmin],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('support_requests')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.functions.invoke('get-support-requests');
 
       if (error) throw error;
       return data as SupportRequest[];
@@ -61,6 +59,18 @@ export function useSupportRequests() {
         .single();
 
       if (error) throw error;
+
+      // Send email notification to superadmin (fire and forget)
+      supabase.functions.invoke('send-support-notification', {
+        body: {
+          type: 'new_request',
+          requestType: request.type,
+          title: request.title,
+          description: request.description,
+          userEmail: user.email
+        }
+      }).catch(err => console.error('Error sending notification:', err));
+
       return data;
     },
     onSuccess: () => {
@@ -78,6 +88,8 @@ export function useSupportRequests() {
       id: string;
       status: SupportRequestStatus;
       admin_notes?: string;
+      userEmail?: string;
+      title?: string;
     }) => {
       const updateData: Record<string, unknown> = {
         status: update.status,
@@ -96,6 +108,21 @@ export function useSupportRequests() {
         .single();
 
       if (error) throw error;
+
+      // Send email notification to user (fire and forget)
+      if (update.userEmail) {
+        supabase.functions.invoke('send-support-notification', {
+          body: {
+            type: 'status_update',
+            requestType: 'question',
+            title: update.title || 'Tu solicitud',
+            status: update.status,
+            adminNotes: update.admin_notes,
+            userEmail: update.userEmail
+          }
+        }).catch(err => console.error('Error sending notification:', err));
+      }
+
       return data;
     },
     onSuccess: () => {
