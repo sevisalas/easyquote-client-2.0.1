@@ -94,7 +94,9 @@ export default function SuperAdminSupportRequests() {
     await updateRequest.mutateAsync({
       id: selectedRequest.id,
       status: newStatus,
-      admin_notes: adminNotes
+      admin_notes: adminNotes,
+      userEmail: selectedRequest.user_email,
+      title: selectedRequest.title
     });
     
     setSelectedRequest(null);
@@ -211,6 +213,7 @@ export default function SuperAdminSupportRequests() {
                   <TableRow>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Título</TableHead>
+                    <TableHead>Usuario</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead>Fecha</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
@@ -235,6 +238,11 @@ export default function SuperAdminSupportRequests() {
                           <div className="max-w-xs truncate font-medium">
                             {request.title}
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-muted-foreground">
+                            {request.user_email || '-'}
+                          </span>
                         </TableCell>
                         <TableCell>
                           <Badge variant={status.variant} className="flex items-center gap-1 w-fit">
