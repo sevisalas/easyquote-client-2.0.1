@@ -318,7 +318,7 @@ Deno.serve(async (req) => {
             baseDescription = promptsArray
               .filter(prompt => {
                 if (!prompt || !prompt.label) return false;
-                // Skip the quantity prompt - we'll show it in the pricing table
+                // Skip the quantity prompt - we'll show it separately
                 if (prompt.id === item.multi.qtyPrompt) return false;
                 if (!isPromptVisible(prompt.id, promptsObj, item.product_id || '')) return false;
                 // Check if this prompt is hidden in documents
@@ -352,10 +352,9 @@ Deno.serve(async (req) => {
           }
         }
         
-        // Build pricing table for multiple quantities
-        let pricingTable = '\n\n--- Precios por cantidad ---';
-        
+        // Create one item per quantity row (each with its own price)
         item.multi.rows.forEach((row: any, index: number) => {
+          globalQtyCounter++;
           const qtyValue = row.qty || 0;
           let rowPrice = typeof row.price === "number" 
             ? row.price 
@@ -393,29 +392,25 @@ Deno.serve(async (req) => {
             });
           }
           
-          // Format: "Q1: 100.000 uds → 1.735,50€"
+          // Format quantity for display
           const formattedQty = typeof qtyValue === 'number' 
             ? qtyValue.toLocaleString('es-ES') 
             : qtyValue;
-          const formattedPrice = rowPrice.toLocaleString('es-ES', { 
-            minimumFractionDigits: 2, 
-            maximumFractionDigits: 2 
-          });
-          pricingTable += `\nQ${index + 1}: ${formattedQty} uds → ${formattedPrice}€`;
+          
+          // Add quantity info to description
+          const fullDescription = `${qtyPromptLabel}: ${formattedQty}\n${baseDescription}`.trim();
+          
+          // Create item with quantity label in name and real price
+          const itemData: any = {
+            name: `${item.product_name || 'Producto'} (Q${globalQtyCounter})`,
+            desc: fullDescription,
+            units: 1,
+            subtotal: rowPrice, // Real price for this quantity
+            taxes: ["s_iva_21"]
+          };
+          
+          items.push(itemData);
         });
-        
-        const fullDescription = baseDescription + pricingTable;
-        
-        // Create a single item with units=1 and no price (informational only)
-        const itemData: any = {
-          name: item.product_name || 'Producto',
-          desc: fullDescription,
-          units: 1,
-          subtotal: 0, // No price - this is informational
-          taxes: ["s_iva_21"]
-        };
-        
-        items.push(itemData);
       } else {
         // Single item without multi quantities
         let description = '';
