@@ -222,11 +222,12 @@ export default function QuoteNew() {
   const totals = useMemo(() => {
     let subtotal = 0;
 
-    // Sum items prices
+    // Sum items prices - ensure valid numeric values only
     Object.values(items).forEach(item => {
-      if (typeof item.price === 'number') {
-        subtotal += item.price;
-      }
+      const price = typeof item.price === 'number' && isFinite(item.price) && item.price >= 0 
+        ? item.price 
+        : 0;
+      subtotal += price;
     });
 
     // Add quote-level additionals
@@ -246,11 +247,14 @@ export default function QuoteNew() {
     const taxAmount = 0; // TODO: Implement tax calculation
     const discountAmount = 0; // TODO: Implement discount
     const finalPrice = finalSubtotal + taxAmount - discountAmount;
+    
+    // Final safety check - cap at reasonable maximum (1 billion)
+    const MAX_PRICE = 1_000_000_000;
     return {
-      subtotal: finalSubtotal,
+      subtotal: Math.min(finalSubtotal, MAX_PRICE),
       taxAmount,
       discountAmount,
-      finalPrice
+      finalPrice: Math.min(finalPrice, MAX_PRICE)
     };
   }, [items, quoteAdditionals]);
   const formatEUR = (amount: number) => {
