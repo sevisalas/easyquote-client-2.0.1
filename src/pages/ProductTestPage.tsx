@@ -47,7 +47,16 @@ const fetchProducts = async () => {
   return list.filter((product: any) => product.isActive === true);
 };
 const getProductLabel = (p: any) => p?.name ?? p?.title ?? p?.displayName ?? p?.productName ?? p?.product_name ?? p?.nombre ?? p?.Nombre ?? p?.description ?? "Producto sin nombre";
-export default function ProductTestPage() {
+
+interface ProductTestPageProps {
+  overrideOrganizationId?: string;
+  showDebugTools?: boolean;
+}
+
+export default function ProductTestPage({ 
+  overrideOrganizationId,
+  showDebugTools = false,
+}: ProductTestPageProps = {}) {
   const [searchParams] = useSearchParams();
   const [productId, setProductId] = useState<string>("");
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
@@ -87,7 +96,8 @@ export default function ProductTestPage() {
     membership
   } = useSubscription();
 
-  const organizationId = organization?.id || membership?.organization_id;
+  // Use override if provided (for superadmin impersonation), otherwise use subscription context
+  const organizationId = overrideOrganizationId || organization?.id || membership?.organization_id;
   
   // Check if product is composite
   const { isComposite, enabledComponents, getPromptComponent } = useProductComponentSettings(productId || undefined);

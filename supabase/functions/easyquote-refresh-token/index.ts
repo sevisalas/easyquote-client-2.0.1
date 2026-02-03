@@ -52,11 +52,50 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     console.log('easyquote-refresh-token: Authenticated user:', user.id)
 
-    // Get organization credentials using service role (bypasses RLS)
-    // This uses the get_organization_easyquote_credentials RPC with service role
-    const { data: credentials, error: credError } = await supabaseAdmin.rpc('get_organization_easyquote_credentials', {
-      p_user_id: user.id
-    })
+    // Parse request body for optional organization_id (superadmin impersonation)
+    let organizationId: string | null = null
+    try {
+      const body = await req.json()
+      organizationId = body?.organization_id || null
+    } catch {
+      // Empty body is fine
+    }
+
+    let credentials: any = null
+    let credError: any = null
+
+    // If superadmin passes organization_id, use the impersonation RPC
+    if (organizationId) {
+      console.log('easyquote-refresh-token: SuperAdmin impersonation requested for org:', organizationId)
+      
+      // Check if user is superadmin first
+      const { data: roles } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'superadmin')
+      
+      if (!roles || roles.length === 0) {
+        return new Response(
+          JSON.stringify({ error: 'Acceso denegado: solo superadmins pueden impersonar organizaciones' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Use the superadmin-specific RPC
+      const result = await supabaseAdmin.rpc('get_organization_easyquote_credentials_for_superadmin', {
+        p_organization_id: organizationId
+      })
+      credentials = result.data
+      credError = result.error
+    } else {
+      // Normal flow: get credentials for the authenticated user's organization
+      const result = await supabaseAdmin.rpc('get_organization_easyquote_credentials', {
+        p_user_id: user.id
+      })
+      credentials = result.data
+      credError = result.error
+    }
 
     if (credError) {
       console.error('easyquote-refresh-token: Error fetching credentials:', credError)
