@@ -1439,15 +1439,18 @@ export default function ProductTestPage({
                           </div>
                         )}
 
-                        <ProductPromptsDebugPanel
-                          prompts={
-                            Array.isArray(pricing?.prompts)
-                              ? pricing?.prompts
-                              : Array.isArray(productDetail?.prompts)
-                                ? productDetail?.prompts
-                                : []
-                          }
-                        />
+                        {/* Panel de debug solo para SuperAdmin */}
+                        {(showDebugTools || isSuperAdmin) && (
+                          <ProductPromptsDebugPanel
+                            prompts={
+                              Array.isArray(pricing?.prompts)
+                                ? pricing?.prompts
+                                : Array.isArray(productDetail?.prompts)
+                                  ? productDetail?.prompts
+                                  : []
+                            }
+                          />
+                        )}
                       </>
                     ) : null}
                   </div>}
