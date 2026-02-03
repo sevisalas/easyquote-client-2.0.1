@@ -453,13 +453,32 @@ export default function QuoteNew() {
 
       // Create quote_items records with prompts and outputs
       const quoteItemsData = itemsArray.map((item, index) => {
-        // Convert prompts object to sorted array and keep order field
-        const promptsArray = Object.entries(item.prompts || {}).map(([id, promptData]: [string, any]) => ({
-          id,
-          label: promptData.label,
-          value: promptData.value,
-          order: promptData.order ?? 999
-        })).sort((a, b) => a.order - b.order);
+        // Normalizar prompts a array [{id,label,value,order}] para persistencia.
+        // En runtime, QuoteItem debería entregar prompts como objeto {id:{label,value,order}},
+        // pero soportamos array por compatibilidad para evitar guardar índices "0","1"...
+        const promptsArray = (() => {
+          const raw = (item as any).prompts;
+          if (Array.isArray(raw)) {
+            return raw
+              .filter((p: any) => p && p.id)
+              .map((p: any) => ({
+                id: String(p.id),
+                label: p.label ?? String(p.id),
+                value: p.value,
+                order: p.order ?? 999,
+              }));
+          }
+          if (raw && typeof raw === "object") {
+            return Object.entries(raw).map(([pid, promptData]: [string, any]) => ({
+              id: pid,
+              label: (promptData && typeof promptData === "object" ? promptData.label : undefined) ?? pid,
+              value: (promptData && typeof promptData === "object" && "value" in promptData) ? promptData.value : promptData,
+              order: (promptData && typeof promptData === "object" ? (promptData.order ?? 999) : 999),
+            }));
+          }
+          return [] as any[];
+        })().sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+
         return {
           quote_id: quote.id,
           product_id: item.productId,
