@@ -27,6 +27,7 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SuperAdminUsers from "./pages/SuperAdminUsers";
 import SuperAdminRoadmap from "./pages/SuperAdminRoadmap";
 import SuperAdminSupportRequests from "./pages/SuperAdminSupportRequests";
+import SuperAdminTools from "./pages/SuperAdminTools";
 import SettingsRenumberDocuments from "./pages/SettingsRenumberDocuments";
 import Integrations from "./pages/Integrations";
 import IntegrationAccess from "./pages/IntegrationAccess";
@@ -525,6 +526,16 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <SuperAdminSupportRequests />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/superadmin/herramientas"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SuperAdminTools />
             </AppLayout>
           </ProtectedRoute>
         }
