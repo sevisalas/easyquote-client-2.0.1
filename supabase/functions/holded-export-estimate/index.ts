@@ -214,13 +214,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    const normalizePromptKey = (v: unknown) => String(v ?? '').replace(/\$/g, '').trim();
+    const stripDiacritics = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const normalizePromptKey = (v: unknown) =>
+      stripDiacritics(String(v ?? '')).replace(/\$/g, '').replace(/\s+/g, ' ').trim();
     const keyVariants = (v: unknown): string[] => {
-      const raw = String(v ?? '').trim();
+      const raw = String(v ?? '').replace(/\s+/g, ' ').trim();
       const rawNoDollar = raw.replace(/\$/g, '').trim();
       const base = normalizePromptKey(v);
       const variants = new Set<string>();
-      for (const s of [raw, rawNoDollar, base]) {
+      for (const s of [raw, rawNoDollar, base, stripDiacritics(raw), stripDiacritics(rawNoDollar)]) {
         if (!s) continue;
         variants.add(s);
         variants.add(s.toUpperCase());
@@ -292,6 +294,40 @@ Deno.serve(async (req) => {
         }
       }
       return null;
+    };
+
+    // Some EasyQuote visibility rules reference prompt IDs/cells (e.g., "$A$", "A", etc.)
+    // while our saved quote prompts are keyed by human labels and numeric ids.
+    // To correctly evaluate visibility, we map EasyQuote def.id -> the corresponding saved prompt value
+    // by matching on (normalized) label.
+    const enrichValuesMapWithDefs = (
+      defsMap: Record<string, PromptDef> | null | undefined,
+      promptsArray: any[],
+      valuesMap: Record<string, unknown>,
+    ): Record<string, unknown> => {
+      if (!defsMap || !Array.isArray(promptsArray) || promptsArray.length === 0) return valuesMap;
+
+      // defsMap stores the same def under many keys; de-duplicate by reference
+      const uniqueDefs = Array.from(new Set(Object.values(defsMap)));
+      for (const def of uniqueDefs) {
+        if (!def?.id) continue;
+        const defLabel = def.label ?? def.id;
+        const matchedPrompt = promptsArray.find((p: any) =>
+          normalizePromptKey(p?.label) === normalizePromptKey(defLabel),
+        );
+        if (!matchedPrompt) continue;
+
+        const raw = unwrapPromptValue(matchedPrompt?.value);
+        for (const kk of keyVariants(def.id)) {
+          if (!(kk in valuesMap)) valuesMap[kk] = raw;
+        }
+        if (def.label) {
+          for (const kk of keyVariants(def.label)) {
+            if (!(kk in valuesMap)) valuesMap[kk] = raw;
+          }
+        }
+      }
+      return valuesMap;
     };
 
     const formatPromptValue = (v: any): string => {
@@ -417,7 +453,7 @@ Deno.serve(async (req) => {
              return acc;
            }, {});
 
-           const valuesMap = buildValuesMap(promptsObj);
+           const valuesMap = enrichValuesMapWithDefs(defsMap, promptsArray, buildValuesMap(promptsObj));
           
           // Find the quantity prompt label
           const qtyPromptData = promptsArray.find(p => p.id === item.multi.qtyPrompt);
@@ -584,7 +620,7 @@ Deno.serve(async (req) => {
              return acc;
            }, {});
 
-             const valuesMap = buildValuesMap(promptsObj);
+              const valuesMap = enrichValuesMapWithDefs(defsMap, promptsArray, buildValuesMap(promptsObj));
             
             if (promptsArray.length > 0) {
               description = promptsArray
