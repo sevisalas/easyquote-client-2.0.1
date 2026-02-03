@@ -99,6 +99,11 @@ Misma estructura que quote_items, solo cambia `quote_id` por `sales_order_id`
 - Generación de PDFs
 - Webhooks para actualizaciones
 
+##### Checklist obligatorio (productos con campos condicionales)
+- Al exportar a Holded, **NO** se deben incluir prompts que el usuario ya no ve porque se ocultaron por una selección (visibilidad dinámica).
+- Verificación manual rápida (Reprotel): **Acreditaciones completo** → cambia selecciones que oculten/enseñen campos → exporta a Holded → revisa que en el concepto/descripcion no aparecen los campos ocultos.
+- Si se toca cualquier lógica de prompts/visibilidad/exportación, repetir esta comprobación antes de darlo por cerrado.
+
 #### WooCommerce
 - Sincronización de productos
 - Mapeo de productos EasyQuote a WooCommerce
