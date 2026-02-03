@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import PromptsForm, { type PromptDef } from "@/components/quotes/PromptsForm";
 import ComponentTabsPromptsForm, { COMPONENT_LABELS } from "@/components/quotes/ComponentTabsPromptsForm";
+import ProductPromptsDebugPanel from "@/components/diagnostics/ProductPromptsDebugPanel";
 import BoundProductConfigSelector, { 
   type BoundProductConfig, 
   getAvailableConfigs,
@@ -1427,6 +1428,16 @@ export default function ProductTestPage() {
                             </div>
                           </div>
                         )}
+
+                        <ProductPromptsDebugPanel
+                          prompts={
+                            Array.isArray(pricing?.prompts)
+                              ? pricing?.prompts
+                              : Array.isArray(productDetail?.prompts)
+                                ? productDetail?.prompts
+                                : []
+                          }
+                        />
                       </>
                     ) : null}
                   </div>}
