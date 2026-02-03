@@ -835,17 +835,17 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       // 1) Evitar acumulación de prompts que ya no existen tras un PATCH (dependencias/condicionales)
       // 2) Evitar guardar solo el último prompt cambiado: siempre mantener el conjunto completo actual
       // 3) Mantener valores del usuario cuando siguen siendo válidos
-      if (!isNewProduct && data?.prompts && !isCustomProduct) {
+       if (!isNewProduct && data?.prompts && !isCustomProduct) {
         const apiPrompts: any[] = Array.isArray(data.prompts) ? data.prompts : [];
 
         console.log("🔄 Reconciliando prompts con API (sin acumular):", {
           productId,
           apiPromptsCount: apiPrompts.length,
           currentPromptsCount: Object.keys(promptValues).length,
-          mode: initialData ? "preserve_saved_extras" : "api_is_source_of_truth",
+           mode: "api_is_source_of_truth",
         });
 
-        setPromptValues((prev) => {
+         setPromptValues((prev) => {
           const norm = (v: any) => String(v ?? "").trim().toLowerCase();
           const next: Record<string, any> = {};
 
@@ -875,9 +875,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             };
           }
 
-          // REGLA: si es un ítem guardado (initialData), NO borramos prompts históricos.
-          // Para ítems nuevos, el API es la fuente de verdad y NO acumulamos.
-          return initialData ? { ...prev, ...next } : next;
+           // REGLA: el último resultado del pricing (GET/PATCH) es la fuente de verdad.
+           // Si un prompt deja de venir en la respuesta, se elimina del estado y NO se
+           // vuelve a enviar en el siguiente PATCH (evita acumulación).
+           setDebouncedPromptValues(next);
+           return next;
         });
 
         setIsInitializing(false);
