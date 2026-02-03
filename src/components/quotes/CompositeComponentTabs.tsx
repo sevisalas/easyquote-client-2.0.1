@@ -80,6 +80,10 @@ export default function CompositeComponentTabs({
 }: CompositeComponentTabsProps) {
   const [activeTab, setActiveTab] = useState<string>("");
 
+  // Valores en edición (draft) por componente. Importante: estos valores NO deben disparar
+  // el recálculo del precio hasta que el usuario confirme (blur/Enter).
+  const [componentDraftValues, setComponentDraftValues] = useState<Record<string, Record<string, any>>>({});
+
   // Prompts del padre normalizados (para lookup de valores actuales aunque parentPromptValues esté vacío)
   const parentPromptsForLookup = useMemo(() => extractPrompts(parentProduct), [parentProduct]);
 
@@ -1241,6 +1245,8 @@ export default function CompositeComponentTabs({
                 if (componentKey !== activeTab) return null;
                 const componentProduct = createComponentProduct(componentKey);
                 const componentValues = getComponentPromptValues(componentKey);
+                const draftValues = componentDraftValues[componentKey];
+                const effectiveComponentValues = draftValues ? { ...componentValues, ...draftValues } : componentValues;
                 const componentForceResultPrompts = getComponentForceResultPrompts(componentKey);
                 const isLoadingComponent = componentsData[componentKey]?.isLoading;
 
@@ -1254,11 +1260,27 @@ export default function CompositeComponentTabs({
                     ) : componentProduct?.prompts?.length ? (
                       <PromptsForm
                         product={componentProduct}
-                        values={componentValues}
+                        values={effectiveComponentValues}
                         onChange={(promptId, value) => {
-                          onComponentPromptChange?.(componentKey, promptId, value);
+                          // Guardar localmente mientras se escribe (sin disparar pricing)
+                          setComponentDraftValues((prev) => ({
+                            ...prev,
+                            [componentKey]: {
+                              ...(prev[componentKey] || {}),
+                              [promptId]: value,
+                            },
+                          }));
                         }}
                         onCommit={(promptId, value) => {
+                          // Al confirmar, propagamos al estado externo (esto SÍ dispara recálculo)
+                          setComponentDraftValues((prev) => ({
+                            ...prev,
+                            [componentKey]: {
+                              ...(prev[componentKey] || {}),
+                              [promptId]: value,
+                            },
+                          }));
+                          onComponentPromptChange?.(componentKey, promptId, value);
                           onComponentPromptCommit?.(componentKey, promptId, value);
                         }}
                         showAllPrompts={isAdmin}
@@ -1276,7 +1298,7 @@ export default function CompositeComponentTabs({
                         <h5 className="text-sm font-semibold text-muted-foreground mb-3">Opciones restrictivas</h5>
                         <div className="grid grid-cols-2 gap-x-6 gap-y-2">
                           {componentForceResultPrompts.map((prompt: any) => {
-                            const value = componentValues[prompt.id] ?? prompt.currentValue ?? prompt.default;
+                            const value = effectiveComponentValues[prompt.id] ?? prompt.currentValue ?? prompt.default;
                             const typeKey = getPromptTypeKey(prompt);
 
                             if (typeKey.includes("check") || typeKey.includes("boolean")) {
