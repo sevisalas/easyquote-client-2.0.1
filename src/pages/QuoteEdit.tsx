@@ -382,7 +382,7 @@ export default function QuoteEdit() {
 
       // Insert all current items
       if (items.length > 0) {
-        const itemsToInsert = items.map((item, index) => {
+          const itemsToInsert = items.map((item, index) => {
           console.log(`📦 Preparando item ${index} para guardar:`, {
             id: item.id,
             productId: item.productId,
@@ -392,29 +392,43 @@ export default function QuoteEdit() {
             promptsCount: item.prompts ? Object.keys(item.prompts).length : 0
           });
           
-          // Convert prompts object to sorted array and keep order field
-          // El formato recibido debe ser {promptId: {label, value, order}} o {promptId: valor}
-          const promptsArray = Object.entries(item.prompts || {})
-            .map(([id, promptData]: [string, any]) => {
-              // Si promptData es un objeto con label/value, usarlo; si no, crear estructura
-              if (typeof promptData === 'object' && promptData !== null && 'value' in promptData) {
-                return {
-                  id,
-                  label: promptData.label || id,
-                  value: promptData.value,
-                  order: promptData.order ?? 999,
-                };
-              } else {
-                // promptData es el valor directo
-                return {
-                  id,
-                  label: id,
-                  value: promptData,
-                  order: 999,
-                };
+            // Normalizar prompts a array [{id,label,value,order}] para persistencia.
+            // Runtime debe ser objeto {id:{label,value,order}}, pero soportamos array por compatibilidad.
+            const promptsArray = (() => {
+              const raw: any = (item as any).prompts;
+              if (Array.isArray(raw)) {
+                return raw
+                  .filter((p: any) => p && p.id)
+                  .map((p: any) => ({
+                    id: String(p.id),
+                    label: p.label ?? String(p.id),
+                    value: p.value,
+                    order: p.order ?? 999,
+                  }));
               }
-            })
-            .sort((a, b) => a.order - b.order);
+
+              if (raw && typeof raw === "object") {
+                return Object.entries(raw)
+                  .map(([pid, promptData]: [string, any]) => {
+                    if (typeof promptData === "object" && promptData !== null && "value" in promptData) {
+                      return {
+                        id: pid,
+                        label: promptData.label || pid,
+                        value: promptData.value,
+                        order: promptData.order ?? 999,
+                      };
+                    }
+                    return {
+                      id: pid,
+                      label: pid,
+                      value: promptData,
+                      order: 999,
+                    };
+                  });
+              }
+
+              return [] as any[];
+            })().sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
 
           console.log(`✅ Item ${index} - Prompts array generado:`, {
             count: promptsArray.length,

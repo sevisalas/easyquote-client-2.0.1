@@ -1830,45 +1830,53 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       hasOutputs: outputs && outputs.length > 0,
     });
 
-    let promptsArray: any[] = [];
+    // IMPORTANTE: En el estado de la app, `prompts` debe ser SIEMPRE un objeto
+    // { [promptId]: { label, value, order } }.
+    // El formato array [{id,label,value,order}] se usa SOLO al persistir en DB.
+    // Si aquí enviamos un array, las pantallas de guardado (QuoteNew/QuoteEdit)
+    // pueden terminar guardando índices "0", "1"... como IDs, mezclando prompts.
+    let promptsObj: Record<string, { label: string; value: any; order: number }> = {};
 
     // For custom products, create synthetic prompts for quantity and price
     if (isCustomProduct) {
-      promptsArray = [
-        { id: 'custom_quantity', label: 'Cantidad', value: customQuantity, order: 1 },
-        { id: 'custom_unit_price', label: 'Precio unitario', value: customPrice, order: 2 },
-      ];
+      promptsObj = {
+        custom_quantity: { label: "Cantidad", value: customQuantity, order: 1 },
+        custom_unit_price: { label: "Precio unitario", value: customPrice, order: 2 },
+      };
     } else if (hasPromptValues) {
       // Guardar TODOS los prompts basándonos en promptValues (fuente de verdad)
-      Object.entries(promptValues).forEach(([id, promptData]) => {
-        if (typeof promptData === 'object' && promptData !== null && 'value' in promptData) {
-          promptsArray.push({
-            id,
-            label: (promptData as any).label || id,
+      const next: typeof promptsObj = {};
+      Object.entries(promptValues).forEach(([promptId, promptData]) => {
+        if (typeof promptData === "object" && promptData !== null && "value" in promptData) {
+          next[promptId] = {
+            label: (promptData as any).label || promptId,
             value: (promptData as any).value,
             order: (promptData as any).order ?? 999,
-          });
+          };
         } else {
-          promptsArray.push({
-            id,
-            label: id,
+          next[promptId] = {
+            label: promptId,
             value: promptData,
             order: 999,
-          });
+          };
         }
       });
+      promptsObj = next;
     } else if (pricingPrompts.length > 0) {
       // Fallback: aún no se han inicializado promptValues pero sí tenemos
       // definiciones/valores desde EasyQuote (GET inicial). Los usamos para
       // sincronizar y actualizar el subtotal.
-      promptsArray = pricingPrompts
+      const next: typeof promptsObj = {};
+      pricingPrompts
         .filter((p: any) => !!p?.id)
-        .map((p: any) => ({
-          id: p.id,
-          label: p.promptText || p.label || p.id,
-          value: p.currentValue,
-          order: p.promptSequence ?? p.order ?? 999,
-        }));
+        .forEach((p: any) => {
+          next[p.id] = {
+            label: p.promptText || p.label || p.id,
+            value: p.currentValue,
+            order: p.promptSequence ?? p.order ?? 999,
+          };
+        });
+      promptsObj = next;
     }
 
     // Si seguimos sin prompts, no bloqueamos: permitimos sincronizar outputs/precio.
@@ -1880,7 +1888,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     
     const snapshot = {
       productId,
-      prompts: promptsArray,
+      prompts: promptsObj,
       outputs: isCustomProduct ? [] : outputs,
       price: userEditedPrice !== null ? userEditedPrice : finalPrice, // Usar precio modificado si existe
       modifiedPrice: userEditedPrice, // Guardar precio modificado por separado
@@ -1897,8 +1905,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     if (snapshotString !== lastSyncedSnapshot.current) {
       lastSyncedSnapshot.current = snapshotString;
       console.log('✅ Sincronizando snapshot al padre:', {
-        promptsCount: promptsArray.length,
-        snapshotPreview: { ...snapshot, prompts: promptsArray.slice(0, 3) }
+        promptsCount: Object.keys(promptsObj).length,
+        snapshotPreview: {
+          ...snapshot,
+          prompts: Object.entries(promptsObj)
+            .slice(0, 3)
+            .map(([pid, p]) => ({ id: pid, ...p })),
+        },
       });
       onChange(id, snapshot);
     } else {
