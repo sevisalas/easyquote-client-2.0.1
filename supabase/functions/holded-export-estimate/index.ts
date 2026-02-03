@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { corsHeaders } from '../_shared/cors.ts';
+import { isVisiblePromptDef, unwrapPromptValue } from '../_shared/prompt_visibility.ts';
 
 const HOLDED_API_URL = 'https://api.holded.com/api/invoicing/v1/documents/estimate';
 
@@ -213,49 +214,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Helper function to check if prompt is visible based on conditions
-    const isPromptVisible = (promptId: string, allPrompts: Record<string, any>, productId: string): boolean => {
-      const prompt = allPrompts[promptId];
-      
-      // If no prompt data or no label, not visible
-      if (!prompt || !prompt.label) return false;
-      
-      // If prompt value is null, it's likely hidden
-      if (prompt.value === null || prompt.value === undefined) return false;
-      
-      // If no visibility conditions, it's visible
-      if (!prompt.hiddenWhen && !prompt.visibility) return true;
-      
-      // Check hiddenWhen condition
-      if (prompt.hiddenWhen) {
-        if (typeof prompt.hiddenWhen === 'object') {
-          const field = prompt.hiddenWhen.field || prompt.hiddenWhen.id;
-          const expectedValue = prompt.hiddenWhen.equals || prompt.hiddenWhen.value;
-          if (field && allPrompts[field]) {
-            const currentValue = allPrompts[field].value;
-            if (String(currentValue) === String(expectedValue)) {
-              return false; // Hidden when condition is met
-            }
-          }
-        }
-      }
-      
-      // Check visibility condition
-      if (prompt.visibility) {
-        if (typeof prompt.visibility === 'object') {
-          const field = prompt.visibility.field || prompt.visibility.id;
-          const expectedValue = prompt.visibility.equals || prompt.visibility.value;
-          if (field && allPrompts[field]) {
-            const currentValue = allPrompts[field].value;
-            if (String(currentValue) !== String(expectedValue)) {
-              return false; // Not visible because condition not met
-            }
-          }
-        }
-      }
-      
-      return true;
-    };
+    const normalizePromptKey = (v: unknown) => String(v ?? "").replace(/\$/g, "").trim();
 
     // Get hidden prompt settings for the organization
     const { data: hiddenPromptSettings } = await supabase
@@ -266,8 +225,8 @@ Deno.serve(async (req) => {
 
     // IMPORTANT: in product_prompt_settings we store prompt_name (prompt id/name), not the human label.
     // Match using normalized keys to avoid issues with $, casing, spaces, etc.
-    const normalizePromptKey = (v: unknown) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
-    const makeHiddenKey = (productId: unknown, promptKey: unknown) => `${String(productId ?? '')}:${normalizePromptKey(promptKey)}`;
+    const normalizeHiddenKey = (v: unknown) => normalizePromptKey(v).toUpperCase();
+    const makeHiddenKey = (productId: unknown, promptKey: unknown) => `${String(productId ?? '')}:${normalizeHiddenKey(promptKey)}`;
     const isHiddenInDocuments = (productId: unknown, prompt: any): boolean => {
       const candidates = [prompt?.name, prompt?.id, prompt?.label].filter(Boolean);
       return candidates.some((c) => hiddenPromptsSet.has(makeHiddenKey(productId, c)));
@@ -279,6 +238,102 @@ Deno.serve(async (req) => {
     );
     console.log('🙈 Hidden prompts set:', Array.from(hiddenPromptsSet));
 
+    // --- Dynamic prompt visibility (EasyQuote) ---
+    type PromptDef = {
+      id: string;
+      label?: string;
+      visibility?: unknown;
+      hiddenWhen?: unknown;
+    };
+
+    const buildValuesMap = (promptsObj: Record<string, any>): Record<string, unknown> => {
+      const values: Record<string, unknown> = {};
+      for (const [k, p] of Object.entries(promptsObj || {})) {
+        const raw = unwrapPromptValue(p?.value);
+        values[k] = raw;
+        const nk = normalizePromptKey(k);
+        if (nk && !(nk in values)) values[nk] = raw;
+      }
+      return values;
+    };
+
+    const formatPromptValue = (v: any): string => {
+      if (v === null || v === undefined) return '';
+      if (typeof v === 'object') {
+        if (typeof v.label === 'string' && v.label.trim()) return v.label;
+        if (v.value !== undefined && v.value !== null) return String(v.value);
+      }
+      return String(v);
+    };
+
+    const normalizeEasyQuotePromptDef = (f: any): PromptDef | null => {
+      const id = String(f?.id ?? f?.key ?? f?.name ?? f?.promptCell ?? '').trim();
+      if (!id) return null;
+      const label = f?.promptText ?? f?.label ?? f?.title ?? f?.name ?? f?.promptCell ?? id;
+      const visibility = f?.visibleWhen ?? f?.showIf ?? f?.when ?? f?.condition ?? f?.conditions ?? f?.visibility;
+      const hiddenWhen = f?.hiddenWhen ?? f?.hideIf;
+      return { id, label, visibility, hiddenWhen };
+    };
+
+    const fetchPromptDefsMap = async (productId: string): Promise<Record<string, PromptDef> | null> => {
+      if (!easyquoteToken || !productId) return null;
+
+      try {
+        const cacheBuster = `_t=${Date.now()}`;
+        const res = await fetch(
+          `https://api.easyquote.cloud/api/v1/products/prompts/list/${productId}?${cacheBuster}`,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${easyquoteToken}`,
+              'Accept': 'application/json',
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+            },
+          },
+        );
+
+        if (!res.ok) {
+          const text = await res.text();
+          console.warn('[Holded export] No se pudieron cargar prompts de EasyQuote', { productId, status: res.status, textPreview: text.slice(0, 200) });
+          return null;
+        }
+
+        const data = await res.json();
+        if (!Array.isArray(data)) return null;
+
+        const map: Record<string, PromptDef> = {};
+        for (const raw of data) {
+          const def = normalizeEasyQuotePromptDef(raw);
+          if (!def) continue;
+          map[def.id] = def;
+          const nk = normalizePromptKey(def.id);
+          if (nk && nk !== def.id) map[nk] = def;
+        }
+        return map;
+      } catch (e) {
+        console.warn('[Holded export] Error cargando definiciones de prompts', { productId, error: String((e as any)?.message ?? e) });
+        return null;
+      }
+    };
+
+    // Prefetch prompt definitions for all products present in the quote (to evaluate dynamic visibility)
+    const productIdsForVisibility = Array.from(
+      new Set(
+        (quoteItems || [])
+          .map((i: any) => i?.product_id)
+          .filter((id: any) => typeof id === 'string' && id && id !== '__CUSTOM_PRODUCT__'),
+      ),
+    );
+
+    const promptDefsByProductId = new Map<string, Record<string, PromptDef> | null>();
+    await Promise.all(
+      productIdsForVisibility.map(async (pid: string) => {
+        const defs = await fetchPromptDefsMap(pid);
+        promptDefsByProductId.set(pid, defs);
+      }),
+    );
+
     // Build complete payload with all quote data
     const items: any[] = [];
     const appliedDiscounts: string[] = [];
@@ -287,6 +342,9 @@ Deno.serve(async (req) => {
     
     quoteItems.forEach((item: any) => {
       console.log('🔍 Processing item - ALL FIELDS:', JSON.stringify(item, null, 2));
+
+      const itemProductId = String(item.product_id || '');
+      const defsMap = itemProductId ? (promptDefsByProductId.get(itemProductId) ?? null) : null;
       
       // Check if item has multiple quantities
       const itemHasMultiQuantities = item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1;
@@ -312,10 +370,12 @@ Deno.serve(async (req) => {
           }
           
           // Convert to object for visibility checking
-          const promptsObj = promptsArray.reduce((acc: any, p: any) => {
+           const promptsObj = promptsArray.reduce((acc: any, p: any) => {
             acc[p.id] = p;
             return acc;
           }, {});
+
+           const valuesMap = buildValuesMap(promptsObj);
           
           // Find the quantity prompt label
           const qtyPromptData = promptsArray.find(p => p.id === item.multi.qtyPrompt);
@@ -325,11 +385,15 @@ Deno.serve(async (req) => {
           
           if (promptsArray.length > 0) {
             baseDescription = promptsArray
-              .filter(prompt => {
+               .filter(prompt => {
                 if (!prompt || !prompt.label) return false;
                 // Skip the quantity prompt - we'll show it separately
                 if (prompt.id === item.multi.qtyPrompt) return false;
-                if (!isPromptVisible(prompt.id, promptsObj, item.product_id || '')) return false;
+
+                 // Dynamic visibility (based on EasyQuote prompt definitions)
+                 const def = defsMap?.[prompt.id] ?? defsMap?.[normalizePromptKey(prompt.id)];
+                 if (def && !isVisiblePromptDef(def, valuesMap)) return false;
+
                  // Check if this prompt is hidden in documents
                  const productId = item.product_id || '';
                  if (isHiddenInDocuments(productId, prompt)) {
@@ -339,7 +403,7 @@ Deno.serve(async (req) => {
                 return true;
               })
               .sort((a, b) => (a.order || 999) - (b.order || 999))
-              .map((prompt) => `${prompt.label}: ${prompt.value}`)
+               .map((prompt) => `${prompt.label}: ${formatPromptValue(prompt.value)}`)
               .filter(Boolean)
               .join('\n');
           }
@@ -469,16 +533,22 @@ Deno.serve(async (req) => {
             }
             
             // Convert to object for visibility checking
-            const promptsObj = promptsArray.reduce((acc: any, p: any) => {
+             const promptsObj = promptsArray.reduce((acc: any, p: any) => {
               acc[p.id] = p;
               return acc;
             }, {});
+
+             const valuesMap = buildValuesMap(promptsObj);
             
             if (promptsArray.length > 0) {
               description = promptsArray
-                .filter(prompt => {
+                 .filter(prompt => {
                   if (!prompt || !prompt.label) return false;
-                  if (!isPromptVisible(prompt.id, promptsObj, item.product_id || '')) return false;
+
+                   // Dynamic visibility (based on EasyQuote prompt definitions)
+                   const def = defsMap?.[prompt.id] ?? defsMap?.[normalizePromptKey(prompt.id)];
+                   if (def && !isVisiblePromptDef(def, valuesMap)) return false;
+
                    // Check if this prompt is hidden in documents
                    const productId = item.product_id || '';
                    if (isHiddenInDocuments(productId, prompt)) {
@@ -488,9 +558,7 @@ Deno.serve(async (req) => {
                   return true;
                 })
                 .sort((a, b) => (a.order || 999) - (b.order || 999))
-                .map((prompt) => {
-                  return `${prompt.label}: ${prompt.value}`;
-                })
+                 .map((prompt) => `${prompt.label}: ${formatPromptValue(prompt.value)}`)
                 .filter(Boolean)
                 .join('\n');
             }
