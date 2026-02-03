@@ -90,13 +90,16 @@ const getHiddenPromptSettings = async (): Promise<Map<string, Set<string>>> => {
     
   if (error || !settings) return new Map();
   
-  // Map: productId -> Set of hidden prompt names
+  // Map: productId -> Set of hidden prompt names (normalized for comparison)
+  // We store the NORMALIZED prompt_name so we can match by id, name, or label.
+  const normalize = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
+  
   const hiddenMap = new Map<string, Set<string>>();
   settings.forEach(s => {
     if (!hiddenMap.has(s.easyquote_product_id)) {
       hiddenMap.set(s.easyquote_product_id, new Set());
     }
-    hiddenMap.get(s.easyquote_product_id)!.add(s.prompt_name);
+    hiddenMap.get(s.easyquote_product_id)!.add(normalize(s.prompt_name));
   });
   
   return hiddenMap;
@@ -150,8 +153,16 @@ export const generateQuotePDF = async (
       const images: string[] = [];
       const promptsFormatted: Array<{label: string, value: string}> = [];
       
-      // Get hidden prompts for this product
+      // Get hidden prompts for this product (normalized keys)
       const hiddenPrompts = item.product_id ? hiddenPromptSettings.get(item.product_id) : null;
+      const normalize = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
+      
+      // Helper: check if prompt should be hidden (by id OR label)
+      const isHidden = (prompt: any): boolean => {
+        if (!hiddenPrompts) return false;
+        const candidates = [prompt?.id, prompt?.name, prompt?.label].filter(Boolean).map(normalize);
+        return candidates.some(c => hiddenPrompts.has(c));
+      };
       
       // Extraer imágenes y prompts EN ORDEN
       if (item.prompts && Array.isArray(item.prompts)) {
@@ -165,8 +176,8 @@ export const generateQuotePDF = async (
             return; // No incluir URLs en la descripción
           }
           
-          // Skip hidden prompts (for quotes only)
-          if (hiddenPrompts && hiddenPrompts.has(label)) {
+          // Skip hidden prompts (by id or label)
+          if (isHidden(prompt)) {
             return;
           }
           
