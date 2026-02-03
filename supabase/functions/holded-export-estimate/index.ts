@@ -214,7 +214,20 @@ Deno.serve(async (req) => {
       }
     }
 
-    const normalizePromptKey = (v: unknown) => String(v ?? "").replace(/\$/g, "").trim();
+    const normalizePromptKey = (v: unknown) => String(v ?? '').replace(/\$/g, '').trim();
+    const keyVariants = (v: unknown): string[] => {
+      const raw = String(v ?? '').trim();
+      const rawNoDollar = raw.replace(/\$/g, '').trim();
+      const base = normalizePromptKey(v);
+      const variants = new Set<string>();
+      for (const s of [raw, rawNoDollar, base]) {
+        if (!s) continue;
+        variants.add(s);
+        variants.add(s.toUpperCase());
+        variants.add(s.toLowerCase());
+      }
+      return Array.from(variants);
+    };
 
     // Get hidden prompt settings for the organization
     const { data: hiddenPromptSettings } = await supabase
@@ -248,13 +261,37 @@ Deno.serve(async (req) => {
 
     const buildValuesMap = (promptsObj: Record<string, any>): Record<string, unknown> => {
       const values: Record<string, unknown> = {};
+      const setIfMissing = (k: unknown, raw: unknown) => {
+        for (const kk of keyVariants(k)) {
+          if (!kk) continue;
+          if (!(kk in values)) values[kk] = raw;
+        }
+      };
+
       for (const [k, p] of Object.entries(promptsObj || {})) {
         const raw = unwrapPromptValue(p?.value);
-        values[k] = raw;
-        const nk = normalizePromptKey(k);
-        if (nk && !(nk in values)) values[nk] = raw;
+        setIfMissing(k, raw);
+        if (p?.id) setIfMissing(p.id, raw);
+        if (p?.name) setIfMissing(p.name, raw);
+        if (p?.key) setIfMissing(p.key, raw);
+        if (p?.label) setIfMissing(p.label, raw);
       }
       return values;
+    };
+
+    const getPromptDef = (
+      defsMap: Record<string, PromptDef> | null | undefined,
+      prompt: any,
+    ): PromptDef | null => {
+      if (!defsMap || !prompt) return null;
+      const candidates = [prompt?.id, prompt?.name, prompt?.key, prompt?.label].filter(Boolean);
+      for (const c of candidates) {
+        for (const kk of keyVariants(c)) {
+          const def = (defsMap as any)[kk];
+          if (def) return def as PromptDef;
+        }
+      }
+      return null;
     };
 
     const formatPromptValue = (v: any): string => {
@@ -306,9 +343,10 @@ Deno.serve(async (req) => {
         for (const raw of data) {
           const def = normalizeEasyQuotePromptDef(raw);
           if (!def) continue;
-          map[def.id] = def;
-          const nk = normalizePromptKey(def.id);
-          if (nk && nk !== def.id) map[nk] = def;
+          for (const kk of keyVariants(def.id)) map[kk] = def;
+          if (def.label) {
+            for (const kk of keyVariants(def.label)) map[kk] = def;
+          }
         }
         return map;
       } catch (e) {
@@ -369,11 +407,15 @@ Deno.serve(async (req) => {
             }));
           }
           
-          // Convert to object for visibility checking
+           // Convert to object for visibility checking (add id + label keys for robust matching)
            const promptsObj = promptsArray.reduce((acc: any, p: any) => {
-            acc[p.id] = p;
-            return acc;
-          }, {});
+             const keys = [p?.id, p?.name, p?.key, p?.label].filter(Boolean);
+             for (const k of keys) {
+               const sk = String(k);
+               if (!(sk in acc)) acc[sk] = p;
+             }
+             return acc;
+           }, {});
 
            const valuesMap = buildValuesMap(promptsObj);
           
@@ -391,7 +433,7 @@ Deno.serve(async (req) => {
                 if (prompt.id === item.multi.qtyPrompt) return false;
 
                  // Dynamic visibility (based on EasyQuote prompt definitions)
-                 const def = defsMap?.[prompt.id] ?? defsMap?.[normalizePromptKey(prompt.id)];
+                 const def = getPromptDef(defsMap, prompt);
                  if (def && !isVisiblePromptDef(def, valuesMap)) return false;
 
                  // Check if this prompt is hidden in documents
@@ -532,11 +574,15 @@ Deno.serve(async (req) => {
               }));
             }
             
-            // Convert to object for visibility checking
-             const promptsObj = promptsArray.reduce((acc: any, p: any) => {
-              acc[p.id] = p;
-              return acc;
-            }, {});
+           // Convert to object for visibility checking (add id + label keys for robust matching)
+           const promptsObj = promptsArray.reduce((acc: any, p: any) => {
+             const keys = [p?.id, p?.name, p?.key, p?.label].filter(Boolean);
+             for (const k of keys) {
+               const sk = String(k);
+               if (!(sk in acc)) acc[sk] = p;
+             }
+             return acc;
+           }, {});
 
              const valuesMap = buildValuesMap(promptsObj);
             
@@ -545,9 +591,9 @@ Deno.serve(async (req) => {
                  .filter(prompt => {
                   if (!prompt || !prompt.label) return false;
 
-                   // Dynamic visibility (based on EasyQuote prompt definitions)
-                   const def = defsMap?.[prompt.id] ?? defsMap?.[normalizePromptKey(prompt.id)];
-                   if (def && !isVisiblePromptDef(def, valuesMap)) return false;
+                    // Dynamic visibility (based on EasyQuote prompt definitions)
+                    const def = getPromptDef(defsMap, prompt);
+                    if (def && !isVisiblePromptDef(def, valuesMap)) return false;
 
                    // Check if this prompt is hidden in documents
                    const productId = item.product_id || '';
