@@ -830,84 +830,59 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         setIsInitializing(false);
       }
       
-      // Para productos de API: fusionar TODOS los prompts del API con los valores actuales del usuario
-      // Los prompts del usuario tienen prioridad (sus valores se mantienen), pero añadimos cualquier prompt
-      // nuevo que venga del API para tener el snapshot completo
+      // Para productos de API: reconciliar prompts con la respuesta actual del API.
+      // Objetivos:
+      // 1) Evitar acumulación de prompts que ya no existen tras un PATCH (dependencias/condicionales)
+      // 2) Evitar guardar solo el último prompt cambiado: siempre mantener el conjunto completo actual
+      // 3) Mantener valores del usuario cuando siguen siendo válidos
       if (!isNewProduct && data?.prompts && !isCustomProduct) {
-        console.log("🔄 Fusionando TODOS los prompts del API con valores del usuario:", {
+        const apiPrompts: any[] = Array.isArray(data.prompts) ? data.prompts : [];
+
+        console.log("🔄 Reconciliando prompts con API (sin acumular):", {
           productId,
-          apiPromptsCount: data.prompts.length,
-          currentPromptsCount: Object.keys(promptValues).length
+          apiPromptsCount: apiPrompts.length,
+          currentPromptsCount: Object.keys(promptValues).length,
+          mode: initialData ? "preserve_saved_extras" : "api_is_source_of_truth",
         });
-        
-        setPromptValues(prev => {
-          const merged: Record<string, any> = { ...prev };
-          
-          // Crear un mapa de labels existentes para evitar duplicados
-          const existingLabels = new Set<string>();
-          Object.values(prev).forEach((p: any) => {
-            if (typeof p === 'object' && p?.label) {
-              existingLabels.add(p.label.toLowerCase().trim());
-            }
-          });
-          
-          data.prompts.forEach((prompt: any) => {
-            if (prompt.id) {
-              const promptLabel = (prompt.promptText || prompt.label || prompt.id).toLowerCase().trim();
-              
-              // Si ya existe en los valores del usuario por ID, mantener su valor pero actualizar label/order.
-              // PERO: si el API ha forzado un currentValue distinto (dependencias entre campos), debemos sincronizar
-              // para evitar selects en blanco y/o enviar valores inválidos en el siguiente PATCH.
-              if (merged[prompt.id]) {
-                const norm = (v: any) => String(v ?? "").trim().toLowerCase();
-                const userValue = (typeof merged[prompt.id] === "object" && merged[prompt.id] !== null && "value" in merged[prompt.id])
-                  ? merged[prompt.id].value
-                  : merged[prompt.id];
 
-                const apiValue = prompt.currentValue;
-                const options = Array.isArray(prompt.valueOptions) ? prompt.valueOptions : [];
+        setPromptValues((prev) => {
+          const norm = (v: any) => String(v ?? "").trim().toLowerCase();
+          const next: Record<string, any> = {};
 
-                const hasUserValue = userValue !== undefined && userValue !== null && String(userValue).trim() !== "";
-                const userInOptions = options.length === 0
-                  ? true
-                  : (!hasUserValue || options.some((o: any) => norm(o) === norm(userValue)));
+          for (const p of apiPrompts) {
+            if (!p?.id) continue;
+            const pid = String(p.id);
 
-                // Si ya no está en options, o el API cambió explícitamente el currentValue, corregimos.
-                const apiChangedExplicitly = apiValue !== undefined && apiValue !== null && norm(apiValue) !== norm(userValue);
-                const shouldUseApiValue = (!userInOptions && apiValue !== undefined && apiValue !== null) || apiChangedExplicitly;
+            const prevEntry = (prev as any)[pid];
+            const prevValue =
+              prevEntry && typeof prevEntry === "object" && prevEntry !== null && "value" in prevEntry
+                ? prevEntry.value
+                : prevEntry;
 
-                merged[prompt.id] = {
-                  ...merged[prompt.id],
-                  label: prompt.promptText || prompt.label || merged[prompt.id].label || prompt.id,
-                  order: prompt.promptSequence ?? prompt.order ?? merged[prompt.id].order ?? 999,
-                  ...(shouldUseApiValue ? { value: apiValue } : {}),
-                };
-              }
-              // Solo añadir si NO existe ya un prompt con el mismo label
-              else if (!existingLabels.has(promptLabel)) {
-                merged[prompt.id] = {
-                  label: prompt.promptText || prompt.label || prompt.id,
-                  value: prompt.currentValue,
-                  order: prompt.promptSequence ?? prompt.order ?? 999
-                };
-                existingLabels.add(promptLabel);
-              }
-              // Si ya existe con el mismo label pero diferente ID, ignorar (no duplicar)
-            }
-          });
-          
-          console.log("✅ Prompts fusionados:", {
-            antes: Object.keys(prev).length,
-            despues: Object.keys(merged).length,
-            nuevos: Object.keys(merged).length - Object.keys(prev).length
-          });
-          
-          return merged;
+            const apiValue = p.currentValue;
+            const options = Array.isArray(p.valueOptions) ? p.valueOptions : [];
+
+            const hasPrevValue = prevValue !== undefined && prevValue !== null && String(prevValue).trim() !== "";
+            const prevValueIsValid = options.length === 0 ? true : options.some((o: any) => norm(o) === norm(prevValue));
+
+            // Mantener el valor previo si existe y sigue siendo válido; si no, usar el currentValue del API.
+            const value = hasPrevValue && prevValueIsValid ? prevValue : apiValue;
+
+            next[pid] = {
+              label: p.promptText || p.label || prevEntry?.label || pid,
+              value,
+              order: p.promptSequence ?? p.order ?? prevEntry?.order ?? 999,
+            };
+          }
+
+          // REGLA: si es un ítem guardado (initialData), NO borramos prompts históricos.
+          // Para ítems nuevos, el API es la fuente de verdad y NO acumulamos.
+          return initialData ? { ...prev, ...next } : next;
         });
-        
+
         setIsInitializing(false);
       } else if (!isNewProduct && data?.prompts) {
-        // Para productos custom, no fusionar
+        // Para productos custom, no tocar prompts
         setIsInitializing(false);
       }
       
