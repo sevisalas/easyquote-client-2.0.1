@@ -26,6 +26,18 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.5.7",
+    date: "2026-02-03",
+    changes: {
+      fixed: [
+        "Inputs numéricos en productos compuestos: el recálculo ahora espera a Enter o pérdida de foco",
+      ],
+      security: [
+        "Autorización reforzada en eliminación de pedidos: verificación de permisos antes de ejecutar",
+      ],
+    },
+  },
+  {
     version: "2.5.6",
     date: "2026-02-02",
     changes: {
