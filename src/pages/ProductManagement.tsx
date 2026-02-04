@@ -369,6 +369,7 @@ export default function ProductManagement() {
     membership
   } = useSubscription();
   const organizationId = organization?.id || membership?.organization_id;
+  const apiUserId = organization?.api_user_id || (membership?.organization as any)?.api_user_id;
   const queryClient = useQueryClient();
 
   // Hooks for categories
@@ -406,7 +407,7 @@ export default function ProductManagement() {
     getPromptComponent,
     isUpserting: isUpsertingComponents,
     isAssigning: isAssigningComponent
-  } = useProductComponentSettings(selectedProduct?.id, organizationId);
+  } = useProductComponentSettings(selectedProduct?.id, apiUserId);
 
   // Sincronizar productType con el valor guardado en BD
   useEffect(() => {
@@ -415,15 +416,15 @@ export default function ProductManagement() {
     }
   }, [savedProductType]);
 
-  // Query para obtener IDs de productos que son componentes
+  // Query para obtener IDs de productos que son componentes (por api_user_id)
   const { data: componentProductIds = new Set<string>(), refetch: refetchComponentIds } = useQuery({
-    queryKey: ['component-product-ids', organizationId],
+    queryKey: ['component-product-ids', apiUserId],
     queryFn: async () => {
-      if (!organizationId) return new Set<string>();
+      if (!apiUserId) return new Set<string>();
       const { data, error } = await supabase
         .from('product_component_settings')
         .select('easyquote_product_id')
-        .eq('organization_id', organizationId)
+        .eq('api_user_id', apiUserId)
         .eq('is_component', true);
       if (error) {
         console.error("Error fetching component IDs:", error);
@@ -431,19 +432,19 @@ export default function ProductManagement() {
       }
       return new Set((data || []).map(d => d.easyquote_product_id));
     },
-    enabled: !!organizationId,
+    enabled: !!apiUserId,
     select: (data) => data instanceof Set ? data : new Set<string>()
   });
 
-  // Query para obtener IDs de productos compuestos
+  // Query para obtener IDs de productos compuestos (por api_user_id)
   const { data: compositeProductIds = new Set<string>() } = useQuery({
-    queryKey: ['composite-product-ids', organizationId],
+    queryKey: ['composite-product-ids', apiUserId],
     queryFn: async () => {
-      if (!organizationId) return new Set<string>();
+      if (!apiUserId) return new Set<string>();
       const { data, error } = await supabase
         .from('product_component_settings')
         .select('easyquote_product_id')
-        .eq('organization_id', organizationId)
+        .eq('api_user_id', apiUserId)
         .eq('is_composite', true);
       if (error) {
         console.error("Error fetching composite IDs:", error);
@@ -451,26 +452,27 @@ export default function ProductManagement() {
       }
       return new Set((data || []).map(d => d.easyquote_product_id));
     },
-    enabled: !!organizationId,
+    enabled: !!apiUserId,
     select: (data) => data instanceof Set ? data : new Set<string>()
   });
 
   // Ya no necesitamos query para productos compuestos locales (comp_*)
   // Todos los productos compuestos ahora vienen de EasyQuote con Excel
 
-  // Mutación para cambiar si un producto es componente
+  // Mutación para cambiar si un producto es componente (por api_user_id)
   const toggleComponentMutation = useMutation({
     mutationFn: async ({ productId, isComponent }: { productId: string; isComponent: boolean }) => {
-      if (!organizationId) throw new Error('No organization');
+      if (!apiUserId || !organizationId) throw new Error('No organization');
       const { error } = await supabase
         .from('product_component_settings')
         .upsert({
           organization_id: organizationId,
+          api_user_id: apiUserId,
           easyquote_product_id: productId,
           is_component: isComponent,
           updated_at: new Date().toISOString(),
         }, {
-          onConflict: 'organization_id,easyquote_product_id',
+          onConflict: 'api_user_id,easyquote_product_id',
         });
       if (error) throw error;
     },
@@ -1459,15 +1461,15 @@ export default function ProductManagement() {
         }
       });
 
-      // 3. Obtener configuración de componentes del producto original (Supabase)
+      // 3. Obtener configuración de componentes del producto original (Supabase) - por api_user_id
       const {
         data: sourceComponentSettings
-      } = await supabase.from('product_component_settings').select('*').eq('organization_id', orgId).eq('easyquote_product_id', sourceProduct.id).maybeSingle();
+      } = await supabase.from('product_component_settings').select('*').eq('api_user_id', apiUserId).eq('easyquote_product_id', sourceProduct.id).maybeSingle();
 
-      // 4. Obtener asignaciones de prompts a componentes del producto original (Supabase)
+      // 4. Obtener asignaciones de prompts a componentes del producto original (Supabase) - por api_user_id
       const {
         data: sourcePromptComponents
-      } = await supabase.from('product_prompt_components').select('*').eq('organization_id', orgId).eq('easyquote_product_id', sourceProduct.id);
+      } = await supabase.from('product_prompt_components').select('*').eq('api_user_id', apiUserId).eq('easyquote_product_id', sourceProduct.id);
 
       // 5. Obtener orden de outputs del producto original (Supabase)
       const {
@@ -1553,29 +1555,53 @@ export default function ProductManagement() {
 
       // 9. Copiar configuración de componentes (is_composite, enabled_components) a Supabase
       if (sourceComponentSettings) {
-        await supabase.from('product_component_settings').upsert({
-          organization_id: orgId,
-          easyquote_product_id: newProductId,
-          is_composite: sourceComponentSettings.is_composite,
-          enabled_components: sourceComponentSettings.enabled_components,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'organization_id,easyquote_product_id'
-        });
+        // Get api_user_id for the organization
+        const { data: orgData } = await supabase
+          .from('organizations')
+          .select('api_user_id')
+          .eq('id', orgId)
+          .single();
+        
+        const targetApiUserId = orgData?.api_user_id;
+        
+        if (targetApiUserId) {
+          await supabase.from('product_component_settings').upsert({
+            organization_id: orgId,
+            api_user_id: targetApiUserId,
+            easyquote_product_id: newProductId,
+            is_composite: sourceComponentSettings.is_composite,
+            enabled_components: sourceComponentSettings.enabled_components,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'api_user_id,easyquote_product_id'
+          });
+        }
       }
 
       // 10. Copiar asignaciones de prompts a componentes a Supabase
       if (sourcePromptComponents && sourcePromptComponents.length > 0) {
-        const newPromptComponents = sourcePromptComponents.map((pc: any) => ({
-          organization_id: orgId,
-          easyquote_product_id: newProductId,
-          prompt_name: pc.prompt_name,
-          component: pc.component,
-          updated_at: new Date().toISOString()
-        }));
-        await supabase.from('product_prompt_components').upsert(newPromptComponents, {
-          onConflict: 'organization_id,easyquote_product_id,prompt_name'
-        });
+        // Get api_user_id for the organization (reuse if already fetched)
+        const { data: orgData } = await supabase
+          .from('organizations')
+          .select('api_user_id')
+          .eq('id', orgId)
+          .single();
+        
+        const targetApiUserId = orgData?.api_user_id;
+        
+        if (targetApiUserId) {
+          const newPromptComponents = sourcePromptComponents.map((pc: any) => ({
+            organization_id: orgId,
+            api_user_id: targetApiUserId,
+            easyquote_product_id: newProductId,
+            prompt_name: pc.prompt_name,
+            component: pc.component,
+            updated_at: new Date().toISOString()
+          }));
+          await supabase.from('product_prompt_components').upsert(newPromptComponents, {
+            onConflict: 'api_user_id,easyquote_product_id,prompt_name'
+          });
+        }
       }
 
       // 11. Copiar orden de outputs a Supabase

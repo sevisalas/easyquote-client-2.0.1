@@ -98,9 +98,10 @@ export default function ProductTestPage({
 
   // Use override if provided (for superadmin impersonation), otherwise use subscription context
   const organizationId = overrideOrganizationId || organization?.id || membership?.organization_id;
+  const apiUserId = organization?.api_user_id || (membership?.organization as any)?.api_user_id;
   
   // Check if product is composite
-  const { isComposite, enabledComponents, getPromptComponent } = useProductComponentSettings(productId || undefined, organizationId);
+  const { isComposite, enabledComponents, getPromptComponent } = useProductComponentSettings(productId || undefined, apiUserId);
   
   // Fetch composite product components configuration
   const { 
@@ -110,15 +111,15 @@ export default function ProductTestPage({
   
   const queryClient = useQueryClient();
 
-  // Fetch component product IDs
+  // Fetch component product IDs (por api_user_id)
   const { data: componentProductIds = new Set<string>() } = useQuery({
-    queryKey: ["component-product-ids", organizationId],
+    queryKey: ["component-product-ids", apiUserId],
     queryFn: async () => {
-      if (!organizationId) return new Set<string>();
+      if (!apiUserId) return new Set<string>();
       const { data, error } = await supabase
         .from("product_component_settings")
         .select("easyquote_product_id")
-        .eq("organization_id", organizationId)
+        .eq("api_user_id", apiUserId)
         .eq("is_component", true);
       if (error) {
         console.error("Error fetching component products:", error);
@@ -126,7 +127,7 @@ export default function ProductTestPage({
       }
       return new Set((data || []).map((d) => d.easyquote_product_id));
     },
-    enabled: !!organizationId,
+    enabled: !!apiUserId,
     staleTime: 5 * 60 * 1000,
   });
 

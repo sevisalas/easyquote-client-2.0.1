@@ -1662,6 +1662,7 @@ export type Database = {
       }
       product_component_settings: {
         Row: {
+          api_user_id: string
           created_at: string
           easyquote_product_id: string
           enabled_components: string[]
@@ -1673,6 +1674,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          api_user_id: string
           created_at?: string
           easyquote_product_id: string
           enabled_components?: string[]
@@ -1684,6 +1686,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          api_user_id?: string
           created_at?: string
           easyquote_product_id?: string
           enabled_components?: string[]
@@ -1755,6 +1758,7 @@ export type Database = {
       }
       product_prompt_components: {
         Row: {
+          api_user_id: string
           component: string
           created_at: string
           easyquote_product_id: string
@@ -1764,6 +1768,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          api_user_id: string
           component: string
           created_at?: string
           easyquote_product_id: string
@@ -1773,6 +1778,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          api_user_id?: string
           component?: string
           created_at?: string
           easyquote_product_id?: string
