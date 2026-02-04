@@ -100,7 +100,7 @@ export default function ProductTestPage({
   const organizationId = overrideOrganizationId || organization?.id || membership?.organization_id;
   
   // Check if product is composite
-  const { isComposite, enabledComponents, getPromptComponent } = useProductComponentSettings(productId || undefined);
+  const { isComposite, enabledComponents, getPromptComponent } = useProductComponentSettings(productId || undefined, organizationId);
   
   // Fetch composite product components configuration
   const { 
