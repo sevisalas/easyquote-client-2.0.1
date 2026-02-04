@@ -26,6 +26,15 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.5.8",
+    date: "2026-02-04",
+    changes: {
+      fixed: [
+        "Productos compuestos compartidos: la configuración de componentes ahora se comparte correctamente entre organizaciones del mismo grupo API",
+      ],
+    },
+  },
+  {
     version: "2.5.7",
     date: "2026-02-03",
     changes: {
