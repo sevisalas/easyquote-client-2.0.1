@@ -204,6 +204,7 @@ export type Database = {
       composite_output_aggregations: {
         Row: {
           aggregation_type: string
+          api_user_id: string
           composite_product_id: string
           created_at: string
           id: string
@@ -215,6 +216,7 @@ export type Database = {
         }
         Insert: {
           aggregation_type?: string
+          api_user_id: string
           composite_product_id: string
           created_at?: string
           id?: string
@@ -226,6 +228,7 @@ export type Database = {
         }
         Update: {
           aggregation_type?: string
+          api_user_id?: string
           composite_product_id?: string
           created_at?: string
           id?: string
@@ -239,6 +242,7 @@ export type Database = {
       }
       composite_product_components: {
         Row: {
+          api_user_id: string
           component_alias: string
           component_product_id: string
           composite_product_id: string
@@ -250,6 +254,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          api_user_id: string
           component_alias: string
           component_product_id: string
           composite_product_id: string
@@ -261,6 +266,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          api_user_id?: string
           component_alias?: string
           component_product_id?: string
           composite_product_id?: string
@@ -275,6 +281,7 @@ export type Database = {
       }
       composite_product_outputs: {
         Row: {
+          api_user_id: string
           created_at: string
           display_order: number
           easyquote_product_id: string
@@ -287,6 +294,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          api_user_id: string
           created_at?: string
           display_order?: number
           easyquote_product_id: string
@@ -299,6 +307,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          api_user_id?: string
           created_at?: string
           display_order?: number
           easyquote_product_id?: string
@@ -314,6 +323,7 @@ export type Database = {
       }
       composite_product_prompts: {
         Row: {
+          api_user_id: string
           created_at: string
           default_value: string | null
           display_order: number
@@ -329,6 +339,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          api_user_id: string
           created_at?: string
           default_value?: string | null
           display_order?: number
@@ -344,6 +355,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          api_user_id?: string
           created_at?: string
           default_value?: string | null
           display_order?: number
@@ -362,6 +374,7 @@ export type Database = {
       }
       composite_prompt_connections: {
         Row: {
+          api_user_id: string
           composite_product_id: string
           created_at: string
           id: string
@@ -373,6 +386,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          api_user_id: string
           composite_product_id: string
           created_at?: string
           id?: string
@@ -384,6 +398,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          api_user_id?: string
           composite_product_id?: string
           created_at?: string
           id?: string
