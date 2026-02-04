@@ -5,6 +5,13 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.8] - 2026-02-04
+
+### Corregido
+- **Productos compuestos compartidos**: La configuración de componentes ahora se comparte correctamente entre organizaciones del mismo grupo API (api_user_id)
+
+---
+
 ## [2.5.6] - 2026-02-02
 
 ### Añadido
