@@ -77,6 +77,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Get organization context for output ordering
   const { organization, membership, isSuperAdmin, isOrgAdmin } = useSubscription();
   const organizationId = organization?.id || membership?.organization_id;
+  const apiUserId = organization?.api_user_id || (membership?.organization as any)?.api_user_id;
   const canEditPrice = isSuperAdmin || isOrgAdmin;
   const queryClient = useQueryClient();
 
@@ -142,7 +143,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const promptOptionsCache = useRef<Record<string, any[]>>({});
   
   // Obtener configuración de componentes del producto
-  const { isComposite, enabledComponents } = useProductComponentSettings(productId || undefined, organizationId);
+  const { isComposite, enabledComponents } = useProductComponentSettings(productId || undefined, apiUserId);
   
   // Fetch composite product components configuration (nuevo sistema)
   const { 

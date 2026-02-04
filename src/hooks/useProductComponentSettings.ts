@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 export interface ProductComponentSettings {
   id: string;
   organization_id: string;
+  api_user_id: string;
   easyquote_product_id: string;
   is_composite: boolean;
   is_component: boolean;
@@ -17,9 +18,10 @@ export interface ProductComponentSettings {
 export interface ProductPromptComponent {
   id: string;
   organization_id: string;
+  api_user_id: string;
   easyquote_product_id: string;
   prompt_name: string;
-  component: string; // Ahora acepta cualquier componente, no solo los hardcodeados
+  component: string;
   created_at: string;
   updated_at: string;
 }
@@ -45,69 +47,102 @@ export const COMPONENT_PRESETS = {
 // Componente especial "general" que siempre existe
 export const GENERAL_COMPONENT = { value: 'general', label: 'General' };
 
+/**
+ * Hook para gestionar la configuración de componentes de productos.
+ * IMPORTANTE: La configuración se comparte entre organizaciones que tienen el mismo api_user_id.
+ * Esto permite que empresas como Campillo/Anebri/Formación compartan la configuración de productos.
+ */
 export function useProductComponentSettings(
   easyquoteProductId?: string,
-  organizationIdOverride?: string
+  apiUserIdOverride?: string
 ) {
   const queryClient = useQueryClient();
 
-  // Obtener organization_id del usuario actual (fallback si no hay override)
-  const { data: userRole } = useQuery({
-    queryKey: ['current-user-role'],
+  // Obtener api_user_id de la organización del usuario actual
+  const { data: orgData } = useQuery({
+    queryKey: ['current-user-api-user-id'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_current_user_role');
-      if (error) throw error;
-      return data?.[0] || null;
+      // Primero intentar obtener de la organización donde el usuario es dueño
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      // Check if user is an org owner
+      const { data: ownedOrg } = await supabase
+        .from('organizations')
+        .select('id, api_user_id')
+        .eq('api_user_id', user.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (ownedOrg) {
+        return { organizationId: ownedOrg.id, apiUserId: ownedOrg.api_user_id };
+      }
+
+      // Otherwise get from membership
+      const { data: membership } = await supabase
+        .from('organization_members')
+        .select('organization_id, organization:organizations(id, api_user_id)')
+        .eq('user_id', user.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (membership?.organization) {
+        const org = membership.organization as { id: string; api_user_id: string };
+        return { organizationId: org.id, apiUserId: org.api_user_id };
+      }
+
+      return null;
     },
     staleTime: 5 * 60 * 1000,
-    enabled: !organizationIdOverride, // Solo ejecutar si no hay override
+    enabled: !apiUserIdOverride,
   });
 
   // Usar el override si está disponible, sino usar el del usuario
-  const organizationId = organizationIdOverride || userRole?.organization_id;
+  const apiUserId = apiUserIdOverride || orgData?.apiUserId;
+  const organizationId = orgData?.organizationId;
 
-  // Obtener configuración de componentes para un producto específico
+  // Obtener configuración de componentes para un producto específico (por api_user_id)
   const { data: componentSettings, isLoading, error } = useQuery({
-    queryKey: ['product-component-settings', easyquoteProductId, organizationId],
+    queryKey: ['product-component-settings', easyquoteProductId, apiUserId],
     queryFn: async () => {
-      if (!easyquoteProductId || !organizationId) return null;
+      if (!easyquoteProductId || !apiUserId) return null;
       
       const { data, error } = await supabase
         .from('product_component_settings')
         .select('*')
-        .eq('organization_id', organizationId)
+        .eq('api_user_id', apiUserId)
         .eq('easyquote_product_id', easyquoteProductId)
         .maybeSingle();
       
       if (error) throw error;
       return data as ProductComponentSettings | null;
     },
-    enabled: !!easyquoteProductId && !!organizationId,
-    staleTime: 5 * 60 * 1000, // 5 minutos - la configuración de componentes cambia raramente
+    enabled: !!easyquoteProductId && !!apiUserId,
+    staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
-  // Obtener asignaciones de prompts a componentes
+  // Obtener asignaciones de prompts a componentes (por api_user_id)
   const { data: promptComponents } = useQuery({
-    queryKey: ['product-prompt-components', easyquoteProductId, organizationId],
+    queryKey: ['product-prompt-components', easyquoteProductId, apiUserId],
     queryFn: async () => {
-      if (!easyquoteProductId || !organizationId) return [];
+      if (!easyquoteProductId || !apiUserId) return [];
       
       const { data, error } = await supabase
         .from('product_prompt_components')
         .select('*')
-        .eq('organization_id', organizationId)
+        .eq('api_user_id', apiUserId)
         .eq('easyquote_product_id', easyquoteProductId);
       
       if (error) throw error;
       return data as ProductPromptComponent[];
     },
-    enabled: !!easyquoteProductId && !!organizationId,
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    enabled: !!easyquoteProductId && !!apiUserId,
+    staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
-  // Crear o actualizar configuración de componentes
+  // Crear o actualizar configuración de componentes (por api_user_id)
   const upsertSettingsMutation = useMutation({
     mutationFn: async (settings: {
       easyquote_product_id: string;
@@ -116,23 +151,22 @@ export function useProductComponentSettings(
       enabled_components?: string[];
       product_type?: 'sencillo' | 'compuesto' | 'kit';
     }) => {
+      if (!apiUserId) throw new Error('No api_user_id found');
       if (!organizationId) throw new Error('No organization found');
-
-      const payload: any = {
-        organization_id: organizationId,
-        easyquote_product_id: settings.easyquote_product_id,
-        updated_at: new Date().toISOString(),
-      };
-      
-      if (settings.is_composite !== undefined) payload.is_composite = settings.is_composite;
-      if (settings.is_component !== undefined) payload.is_component = settings.is_component;
-      if (settings.enabled_components !== undefined) payload.enabled_components = settings.enabled_components;
-      if (settings.product_type !== undefined) payload.product_type = settings.product_type;
 
       const { data, error } = await supabase
         .from('product_component_settings')
-        .upsert(payload, {
-          onConflict: 'organization_id,easyquote_product_id',
+        .upsert({
+          organization_id: organizationId,
+          api_user_id: apiUserId,
+          easyquote_product_id: settings.easyquote_product_id,
+          is_composite: settings.is_composite,
+          is_component: settings.is_component,
+          enabled_components: settings.enabled_components,
+          product_type: settings.product_type,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'api_user_id,easyquote_product_id',
         })
         .select()
         .single();
@@ -150,25 +184,27 @@ export function useProductComponentSettings(
     },
   });
 
-  // Asignar prompt a componente
+  // Asignar prompt a componente (por api_user_id)
   const assignPromptToComponentMutation = useMutation({
     mutationFn: async (assignment: {
       easyquote_product_id: string;
       prompt_name: string;
-      component: string; // Acepta cualquier nombre de componente
+      component: string;
     }) => {
+      if (!apiUserId) throw new Error('No api_user_id found');
       if (!organizationId) throw new Error('No organization found');
 
       const { data, error } = await supabase
         .from('product_prompt_components')
         .upsert({
           organization_id: organizationId,
+          api_user_id: apiUserId,
           easyquote_product_id: assignment.easyquote_product_id,
           prompt_name: assignment.prompt_name,
           component: assignment.component,
           updated_at: new Date().toISOString(),
         }, {
-          onConflict: 'organization_id,easyquote_product_id,prompt_name',
+          onConflict: 'api_user_id,easyquote_product_id,prompt_name',
         })
         .select()
         .single();
@@ -183,18 +219,18 @@ export function useProductComponentSettings(
     },
   });
 
-  // Eliminar asignación de prompt
+  // Eliminar asignación de prompt (por api_user_id)
   const removePromptComponentMutation = useMutation({
     mutationFn: async (params: {
       easyquote_product_id: string;
       prompt_name: string;
     }) => {
-      if (!organizationId) throw new Error('No organization found');
+      if (!apiUserId) throw new Error('No api_user_id found');
 
       const { error } = await supabase
         .from('product_prompt_components')
         .delete()
-        .eq('organization_id', organizationId)
+        .eq('api_user_id', apiUserId)
         .eq('easyquote_product_id', params.easyquote_product_id)
         .eq('prompt_name', params.prompt_name);
 
@@ -242,6 +278,7 @@ export function useProductComponentSettings(
     isComponent,
     enabledComponents,
     productType,
+    apiUserId,
     organizationId,
     
     // Loading states

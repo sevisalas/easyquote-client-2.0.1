@@ -34,13 +34,39 @@ export default function ProductForm() {
   type ProductType = 'simple' | 'compuesto' | 'kit';
   const [productType, setProductType] = useState<ProductType>('simple');
 
-  // Obtener organization_id del usuario actual
-  const { data: userRole } = useQuery({
-    queryKey: ['current-user-role'],
+  // Obtener organization_id y api_user_id del usuario actual
+  const { data: userOrgData } = useQuery({
+    queryKey: ['current-user-org-data'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_current_user_role');
-      if (error) throw error;
-      return data?.[0] || null;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      // Check if user is an org owner
+      const { data: ownedOrg } = await supabase
+        .from('organizations')
+        .select('id, api_user_id')
+        .eq('api_user_id', user.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (ownedOrg) {
+        return { organizationId: ownedOrg.id, apiUserId: ownedOrg.api_user_id };
+      }
+
+      // Otherwise get from membership
+      const { data: membership } = await supabase
+        .from('organization_members')
+        .select('organization_id, organization:organizations(id, api_user_id)')
+        .eq('user_id', user.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (membership?.organization) {
+        const org = membership.organization as { id: string; api_user_id: string };
+        return { organizationId: org.id, apiUserId: org.api_user_id };
+      }
+
+      return null;
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -52,20 +78,21 @@ export default function ProductForm() {
 
   // Función para guardar configuración de producto según su tipo
   const saveProductTypeSettings = async (productId: string) => {
-    if (productType === 'simple' || !userRole?.organization_id) return;
+    if (productType === 'simple' || !userOrgData) return;
 
     // Para compuesto
     const { error } = await supabase
       .from('product_component_settings')
       .upsert({
-        organization_id: userRole.organization_id,
+        organization_id: userOrgData.organizationId,
+        api_user_id: userOrgData.apiUserId,
         easyquote_product_id: productId,
         is_composite: true,
         is_component: false,
         enabled_components: [],
         updated_at: new Date().toISOString(),
       }, {
-        onConflict: 'organization_id,easyquote_product_id',
+        onConflict: 'api_user_id,easyquote_product_id',
       });
 
     if (error) {
