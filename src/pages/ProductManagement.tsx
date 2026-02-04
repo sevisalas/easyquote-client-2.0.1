@@ -406,7 +406,7 @@ export default function ProductManagement() {
     getPromptComponent,
     isUpserting: isUpsertingComponents,
     isAssigning: isAssigningComponent
-  } = useProductComponentSettings(selectedProduct?.id);
+  } = useProductComponentSettings(selectedProduct?.id, organizationId);
 
   // Sincronizar productType con el valor guardado en BD
   useEffect(() => {

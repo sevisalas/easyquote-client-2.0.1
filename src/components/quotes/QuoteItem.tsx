@@ -142,7 +142,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const promptOptionsCache = useRef<Record<string, any[]>>({});
   
   // Obtener configuración de componentes del producto
-  const { isComposite, enabledComponents } = useProductComponentSettings(productId || undefined);
+  const { isComposite, enabledComponents } = useProductComponentSettings(productId || undefined, organizationId);
   
   // Fetch composite product components configuration (nuevo sistema)
   const { 

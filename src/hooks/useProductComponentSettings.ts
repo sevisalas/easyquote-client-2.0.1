@@ -45,10 +45,13 @@ export const COMPONENT_PRESETS = {
 // Componente especial "general" que siempre existe
 export const GENERAL_COMPONENT = { value: 'general', label: 'General' };
 
-export function useProductComponentSettings(easyquoteProductId?: string) {
+export function useProductComponentSettings(
+  easyquoteProductId?: string,
+  organizationIdOverride?: string
+) {
   const queryClient = useQueryClient();
 
-  // Obtener organization_id del usuario actual
+  // Obtener organization_id del usuario actual (fallback si no hay override)
   const { data: userRole } = useQuery({
     queryKey: ['current-user-role'],
     queryFn: async () => {
@@ -57,9 +60,11 @@ export function useProductComponentSettings(easyquoteProductId?: string) {
       return data?.[0] || null;
     },
     staleTime: 5 * 60 * 1000,
+    enabled: !organizationIdOverride, // Solo ejecutar si no hay override
   });
 
-  const organizationId = userRole?.organization_id;
+  // Usar el override si está disponible, sino usar el del usuario
+  const organizationId = organizationIdOverride || userRole?.organization_id;
 
   // Obtener configuración de componentes para un producto específico
   const { data: componentSettings, isLoading, error } = useQuery({
