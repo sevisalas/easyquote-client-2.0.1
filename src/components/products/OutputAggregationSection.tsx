@@ -60,29 +60,58 @@ export function OutputAggregationSection({
   onSave,
   isSaving,
 }: OutputAggregationSectionProps) {
+  /**
+   * Extrae lista de outputs de la respuesta de EasyQuote (múltiples formatos posibles).
+   */
+  const extractOutputList = (raw: any): any[] => {
+    if (!raw || typeof raw !== "object") return [];
+    
+    // Caso 1: raw ya es un array
+    if (Array.isArray(raw)) return raw;
+    
+    // Caso 2: la respuesta es un objeto con campos conocidos
+    // EasyQuote pricing devuelve { prompts: [...], outputValues: [...], price: ... }
+    if (Array.isArray(raw.outputValues)) return raw.outputValues;
+    if (Array.isArray(raw.outputs)) return raw.outputs;
+    if (Array.isArray(raw.items)) return raw.items;
+    if (Array.isArray(raw.results)) return raw.results;
+    
+    // Caso 3: raw.data contiene los campos
+    if (raw.data && typeof raw.data === "object") {
+      if (Array.isArray(raw.data.outputValues)) return raw.data.outputValues;
+      if (Array.isArray(raw.data.outputs)) return raw.data.outputs;
+      if (Array.isArray(raw.data)) return raw.data;
+    }
+    
+    console.warn("[OutputAggregationSection] Unknown response structure:", Object.keys(raw));
+    return [];
+  };
+
   const normalizeOutputs = (raw: any): OutputDef[] => {
-    const list: any[] = Array.isArray(raw)
-      ? raw
-      : raw && typeof raw === "object"
-        ? Array.isArray(raw.items)
-          ? raw.items
-          : Array.isArray(raw.outputs)
-            ? raw.outputs
-            : Array.isArray(raw.outputValues)
-              ? raw.outputValues
-              : Array.isArray(raw.results)
-                ? raw.results
-                : []
-        : [];
+    const list = extractOutputList(raw);
+    
+    console.log("[OutputAggregationSection] normalizeOutputs: extracted list count =", list.length);
+    if (list.length > 0) {
+      console.log("[OutputAggregationSection] sample output keys:", Object.keys(list[0]));
+    }
 
     return list
       .map((o: any) => {
+        // Tipo: puede venir como type, outputType
         const type = String(o?.type ?? o?.outputType ?? "").trim();
+        
+        // Label: intentar múltiples campos posibles
+        // nameCell suele contener la celda donde está la etiqueta (ej: "E5")
+        // outputText suele contener el texto real de la etiqueta
         const label = String(
-          o?.label ?? o?.name ?? o?.outputText ?? o?.nameCell ?? o?.valueCell ?? o?.id ?? o?.outputId ?? ""
+          o?.outputText ?? o?.label ?? o?.name ?? o?.nameCell ?? o?.id ?? o?.outputId ?? ""
         ).trim();
-        const name = String(o?.name ?? o?.id ?? o?.outputId ?? label).trim();
+        
+        // Name/ID: identificador único (puede ser UUID o nombre)
+        const name = String(o?.id ?? o?.outputId ?? o?.name ?? label).trim();
+        
         if (!name) return null;
+        
         return { name, label: label || name, type: type || "unknown" } as OutputDef;
       })
       .filter(Boolean)
