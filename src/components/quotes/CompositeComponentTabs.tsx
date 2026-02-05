@@ -531,46 +531,68 @@ export default function CompositeComponentTabs({
           }
 
           // ============================================================
-          // INYECTAR EL LOMO AGREGADO DE LOS INTERIORES
+          // INYECTAR EL LOMO AGREGADO DEL GENERAL A CUBIERTA
+          // Flujo: Interiores → General (suma) → Cubierta
           // ============================================================
           if (aggregatedLomoValue !== null) {
-            // Buscar el prompt de lomo en este componente para inyectar el valor
-            // El prompt de lomo puede llamarse "Lomo mm", "Lomo", etc.
-            // Lo añadimos/sobrescribimos en los inputs
-            const lomoPromptPatterns = ["lomo mm", "lomo"];
+            const lomoPatterns = ["lomo mm", "lomo"];
+            const isLomoPrompt = (text: string) => {
+              const normalized = String(text ?? "").toLowerCase().trim();
+              return lomoPatterns.some(p => normalized.includes(p));
+            };
             
-            // Primero intentamos encontrar el ID del prompt de lomo basándonos en 
-            // las conexiones existentes o los prompts conocidos
+            // 1. Buscar en outputAggregations si hay una configuración que mapee lomo
+            //    del General a este componente (Cubierta)
             let lomoPromptId: string | null = null;
             
-            // Buscar en las conexiones si hay alguna que mapee al lomo
+            // 2. Buscar en las conexiones de prompts existentes
             for (const conn of promptConnections as any[]) {
               if (conn.target_component_id === component.id || 
                   conn.target_component_id === component.component_product_id) {
-                const targetName = String(conn.target_prompt_name || "").toLowerCase();
-                if (lomoPromptPatterns.some(p => targetName.includes(p))) {
+                // Si la conexión mapea un prompt "lomo" del padre al componente
+                const sourceName = String(conn.source_prompt_name || "").toLowerCase();
+                const targetName = String(conn.target_prompt_name || "");
+                if (isLomoPrompt(sourceName) || isLomoPrompt(targetName)) {
                   lomoPromptId = conn.target_prompt_name;
+                  console.log("[CompositeComponentTabs] Found Lomo connection:", { sourceName, targetName });
                   break;
                 }
               }
             }
 
-            // Si no encontramos conexión, usar un ID genérico basado en patrones comunes
+            // 3. Si no hay conexión, hacer GET inicial para encontrar el prompt de lomo
+            //    en los prompts del componente receptor
             if (!lomoPromptId) {
-              // Intentar buscar en los prompts existentes del componente
-              // Por ahora usamos un ID común que EasyQuote suele usar para Lomo
-              lomoPromptId = "18573499-e156-4e95-985e-88e5e4820cdc"; // UUID común para Lomo mm
+              // Hacer una llamada GET para obtener los prompts de este componente
+              const { data: componentData } = await invokeEasyQuoteFunction("easyquote-pricing", {
+                token,
+                productId: component.component_product_id,
+                method: "GET",
+              });
+              
+              const componentPrompts = componentData?.prompts || [];
+              for (const p of componentPrompts as any[]) {
+                const promptText = String(p?.promptText ?? p?.label ?? p?.name ?? "");
+                if (isLomoPrompt(promptText)) {
+                  lomoPromptId = String(p?.id ?? "");
+                  console.log("[CompositeComponentTabs] Found Lomo prompt in component:", { 
+                    promptText, 
+                    id: lomoPromptId 
+                  });
+                  break;
+                }
+              }
             }
 
-            // Solo inyectar si el usuario no ha editado manualmente el lomo
+            // 4. Solo inyectar si el usuario no ha editado manualmente el lomo
             const userEditedLomo = Object.entries(userEditedValues).find(([key, _]) => 
-              key.toLowerCase().includes("lomo") || key === lomoPromptId
+              isLomoPrompt(key) || key === lomoPromptId
             );
             
             if (!userEditedLomo && lomoPromptId) {
+              // Buscar y actualizar o añadir el input de lomo
               const existingIdx = componentInputs.findIndex(i => 
-                i.id === lomoPromptId || 
-                String(i.id).toLowerCase().includes("lomo")
+                i.id === lomoPromptId || isLomoPrompt(String(i.id))
               );
               
               if (existingIdx >= 0) {
@@ -579,10 +601,10 @@ export default function CompositeComponentTabs({
                 componentInputs.push({ id: lomoPromptId, value: aggregatedLomoValue });
               }
               
-              console.log("[CompositeComponentTabs] Injected aggregated Lomo to receiver:", {
+              console.log("[CompositeComponentTabs] Injecting aggregated Lomo from General to Cubierta:", {
                 componentKey,
                 lomoPromptId,
-                value: aggregatedLomoValue,
+                aggregatedValue: aggregatedLomoValue,
               });
             }
           }
