@@ -49,6 +49,7 @@ export interface ComponentPricingData {
   outputs: any[];
   price: number;
   isLoading: boolean;
+  isFetching: boolean;
   alias: string;
 }
 
@@ -602,7 +603,7 @@ export default function CompositeComponentTabs({
   // COMBINAR RESULTADOS DE AMBAS FASES
   // =====================================================================
   const componentQueriesResults = useMemo(() => {
-    const results: Array<{ data?: { prompts: any[]; outputs: any[]; price: number }; isLoading: boolean }> = [];
+    const results: Array<{ data?: { prompts: any[]; outputs: any[]; price: number }; isLoading: boolean; isFetching: boolean }> = [];
     
     for (const component of activeComponents) {
       const isReceiver = aggregationReceiverComponents.some(r => r.id === component.id);
@@ -613,6 +614,7 @@ export default function CompositeComponentTabs({
         results.push({
           data: query?.data ? { prompts: query.data.prompts, outputs: query.data.outputs, price: query.data.price } : undefined,
           isLoading: query?.isLoading ?? true,
+          isFetching: query?.isFetching ?? false,
         });
       } else {
         const idx = sourceComponents.findIndex(s => s.id === component.id);
@@ -620,6 +622,7 @@ export default function CompositeComponentTabs({
         results.push({
           data: query?.data ? { prompts: query.data.prompts, outputs: query.data.outputs, price: query.data.price } : undefined,
           isLoading: query?.isLoading ?? true,
+          isFetching: query?.isFetching ?? false,
         });
       }
     }
@@ -839,6 +842,7 @@ export default function CompositeComponentTabs({
         outputs: sortedOutputs,
         price: pricingData?.price ?? 0,
         isLoading: query?.isLoading ?? false,
+        isFetching: query?.isFetching ?? false,
         alias,
       };
     });
@@ -1409,13 +1413,14 @@ export default function CompositeComponentTabs({
                 const effectiveComponentValues = draftValues ? { ...componentValues, ...draftValues } : componentValues;
                 const componentForceResultPrompts = getComponentForceResultPrompts(componentKey);
                 const isLoadingComponent = componentsData[componentKey]?.isLoading;
+                const isFetchingComponent = componentsData[componentKey]?.isFetching;
 
                 return (
                   <div key={componentKey}>
                     <h4 className="text-sm font-medium text-muted-foreground mb-3">
                       {getComponentLabel(component)}
                     </h4>
-                    {isLoadingComponent ? (
+                    {isLoadingComponent || isFetchingComponent ? (
                       <p className="text-sm text-muted-foreground">Cargando...</p>
                     ) : componentProduct?.prompts?.length ? (
                       <PromptsForm
