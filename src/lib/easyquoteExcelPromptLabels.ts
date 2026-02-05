@@ -10,6 +10,16 @@ type EasyQuoteExcelFile = {
   products?: any[];
 };
 
+type EasyQuoteProduct = {
+  id?: string;
+  productId?: string;
+  excelFileId?: string;
+  excelfileId?: string;
+  excel_file_id?: string;
+  excelFile?: { id?: string };
+  [k: string]: unknown;
+};
+
 function isA1CellRef(value: string): boolean {
   return /^[A-Z]+\d+$/i.test(value.trim());
 }
@@ -114,6 +124,62 @@ function productInFile(file: EasyQuoteExcelFile, productId: string): boolean {
   });
 }
 
+function pickFirstString(...values: unknown[]): string | undefined {
+  for (const v of values) {
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return undefined;
+}
+
+function extractExcelFileIdFromProduct(product: EasyQuoteProduct | null | undefined): string | null {
+  if (!product) return null;
+
+  const direct = pickFirstString(
+    (product as any).excelFileId,
+    (product as any).excelfileId,
+    (product as any).excel_file_id,
+    (product as any).ExcelFileId,
+    (product as any).ExcelFileID,
+  );
+  if (direct) return direct;
+
+  const nested = pickFirstString((product as any)?.excelFile?.id, (product as any)?.ExcelFile?.id);
+  return nested ?? null;
+}
+
+async function getExcelFileDetailsForProduct(params: {
+  token: string;
+  productId: string;
+}): Promise<{ fileId: string; fileName?: string; subscriberId?: string; dateModified?: string } | null> {
+  const { token, productId } = params;
+
+  // 1) Encontrar el Excel asociado al producto (fuente: products)
+  const productsRes = await invokeEasyQuoteFunction<EasyQuoteProduct[]>("easyquote-products", {
+    token,
+    includeInactive: true,
+  });
+  if (productsRes.error) return null;
+
+  const products = Array.isArray(productsRes.data) ? productsRes.data : [];
+  const product = products.find((p) => String(p?.id ?? p?.productId) === String(productId));
+  const fileId = extractExcelFileIdFromProduct(product);
+  if (!fileId) return null;
+
+  // 2) Pedir detalle del excel (suele traer fileName/subscriberId/dateModified)
+  const fileRes = await invokeEasyQuoteFunction<any>("easyquote-excel-files", {
+    token,
+    fileId,
+  });
+  if (fileRes.error) return null;
+
+  const file = fileRes.data ?? {};
+  const fileName = pickFirstString(file.fileName, file.FileName, file.filename, file.name);
+  const subscriberId = pickFirstString(file.subscriberId, file.subscriberID, file.subscriber_id, file.SubscriberId);
+  const dateModified = pickFirstString(file.dateModified, file.DateModified, file.modifiedAt, file.updatedAt);
+
+  return { fileId, fileName, subscriberId, dateModified };
+}
+
 async function downloadExcelAsArrayBuffer(params: {
   token: string;
   subscriberId: string;
@@ -162,21 +228,41 @@ export async function resolveLivePromptCellLabels(params: {
   const uniqueCells = Array.from(new Set(promptCells.filter(Boolean)));
   if (!token || !productId || uniqueCells.length === 0) return {};
 
-  const excelFilesRes = await invokeEasyQuoteFunction<EasyQuoteExcelFile[]>("easyquote-excel-files", {
-    token,
-  });
-  if (excelFilesRes.error) return {};
-  const files = Array.isArray(excelFilesRes.data) ? excelFilesRes.data : [];
+  // Estrategia principal: producto -> excelFileId -> excel file detail
+  let excelDetails = await getExcelFileDetailsForProduct({ token, productId });
 
-  const file = files.find((f) => productInFile(f, productId));
-  if (!file?.id) return {};
+  // Fallback legacy: intentar inferir relación producto→excel mediante "products" dentro del listado de excel files
+  if (!excelDetails) {
+    const excelFilesRes = await invokeEasyQuoteFunction<EasyQuoteExcelFile[]>("easyquote-excel-files", {
+      token,
+    });
+    if (!excelFilesRes.error) {
+      const files = Array.isArray(excelFilesRes.data) ? excelFilesRes.data : [];
+      const file = files.find((f) => productInFile(f, productId));
+      if (file?.id) {
+        // Intentar enriquecer con el detalle del archivo (para obtener subscriberId/fileName/dateModified)
+        const detailRes = await invokeEasyQuoteFunction<any>("easyquote-excel-files", {
+          token,
+          fileId: file.id,
+        });
+        const detail = !detailRes.error ? (detailRes.data ?? {}) : {};
 
-  // Necesarios para descargar
-  const subscriberId = file.subscriberId;
-  const fileName = file.fileName;
+        excelDetails = {
+          fileId: file.id,
+          fileName: pickFirstString(file.fileName, detail.fileName, detail.FileName, detail.filename, detail.name),
+          subscriberId: pickFirstString(file.subscriberId, detail.subscriberId, detail.subscriberID, detail.subscriber_id),
+          dateModified: pickFirstString(file.dateModified, detail.dateModified, detail.DateModified, detail.modifiedAt, detail.updatedAt),
+        };
+      }
+    }
+  }
+
+  if (!excelDetails?.fileId) return {};
+  const subscriberId = excelDetails.subscriberId;
+  const fileName = excelDetails.fileName;
   if (!subscriberId || !fileName) return {};
 
-  const cacheKey = `easyquote:excel-prompt-labels:${file.id}:${file.dateModified ?? "0"}`;
+  const cacheKey = `easyquote:excel-prompt-labels:${excelDetails.fileId}:${excelDetails.dateModified ?? "0"}`;
   try {
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
@@ -192,7 +278,7 @@ export async function resolveLivePromptCellLabels(params: {
   const arrayBuffer = await downloadExcelAsArrayBuffer({
     token,
     subscriberId,
-    fileId: file.id,
+    fileId: excelDetails.fileId,
     fileName,
   });
 
