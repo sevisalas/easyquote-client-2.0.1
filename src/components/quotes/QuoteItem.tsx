@@ -74,35 +74,70 @@ interface Additional {
 }
 
 export default function QuoteItem({ hasToken, id, initialData, onChange, onRemove, onFinishEdit, shouldExpand, hideMultiQuantities = false }: QuoteItemProps) {
-  // Get organization context for output ordering
+  // Contexto de organización: SIEMPRE usar la organización seleccionada en sessionStorage
+  // (es la fuente de verdad en multi-tenant / cambio de organización).
   const { organization, membership, isSuperAdmin, isOrgAdmin } = useSubscription();
-  const organizationId = organization?.id || membership?.organization_id;
-  const apiUserId = organization?.api_user_id || (membership?.organization as any)?.api_user_id;
+
+  const subscriptionOrganizationId = organization?.id || membership?.organization_id || null;
+  const selectedOrganizationId = sessionStorage.getItem("selected_organization_id") || subscriptionOrganizationId;
+
+  // Para cualquier query por organization_id (orden de outputs, etc.)
+  const organizationId = selectedOrganizationId || undefined;
+
+  // api_user_id puede no estar aún en el contexto (o puede pertenecer a otra org si el contexto va tarde)
+  const apiUserIdFromContext =
+    organization?.api_user_id || (membership?.organization as any)?.api_user_id;
+
   const canEditPrice = isSuperAdmin || isOrgAdmin;
   const queryClient = useQueryClient();
 
-  // Si el contexto aún no trae api_user_id (casos multi-org / impersonación), resolverlo por organizationId
-  const { data: resolvedApiUserId, isLoading: isLoadingResolvedApiUserId } = useQuery({
-    queryKey: ["organization-api-user-id", organizationId],
+  const isOrgMismatch =
+    !!selectedOrganizationId &&
+    !!subscriptionOrganizationId &&
+    selectedOrganizationId !== subscriptionOrganizationId;
+
+  // Resolver SIEMPRE el api_user_id desde la organización seleccionada
+  const {
+    data: resolvedApiUserId,
+    isLoading: isLoadingResolvedApiUserId,
+    isError: isResolvedApiUserIdError,
+  } = useQuery({
+    queryKey: ["organization-api-user-id", selectedOrganizationId],
     queryFn: async () => {
-      if (!organizationId) return null;
+      if (!selectedOrganizationId) return null;
       const { data, error } = await supabase
         .from("organizations")
         .select("api_user_id")
-        .eq("id", organizationId)
+        .eq("id", selectedOrganizationId)
         .single();
       if (error) throw error;
       return data?.api_user_id ?? null;
     },
-    enabled: !!organizationId && !apiUserId,
+    enabled: !!selectedOrganizationId,
     staleTime: 5 * 60 * 1000,
   });
 
-  const effectiveApiUserId = apiUserId ?? resolvedApiUserId ?? null;
-  const isApiUserIdPending = !!organizationId && !effectiveApiUserId && isLoadingResolvedApiUserId;
+  // Si hay mismatch, NO confiar en el contexto hasta resolver desde BD
+  const effectiveApiUserId =
+    resolvedApiUserId ??
+    (!isOrgMismatch || isResolvedApiUserIdError ? apiUserIdFromContext : null) ??
+    null;
 
-  // Debug: log apiUserId para verificar filtrado de componentes
-  console.log('🔍 QuoteItem context:', { organizationId, apiUserId, resolvedApiUserId, effectiveApiUserId, orgName: organization?.name });
+  // Si no podemos resolver api_user_id todavía, NO mostramos lista sin filtrar
+  const isApiUserIdPending = !!selectedOrganizationId && !effectiveApiUserId;
+
+  if (import.meta.env.DEV) {
+    console.log("[QuoteItem] Org context:", {
+      selectedOrganizationId,
+      subscriptionOrganizationId,
+      isOrgMismatch,
+      apiUserIdFromContext,
+      resolvedApiUserId,
+      effectiveApiUserId,
+      isApiUserIdPending,
+      isLoadingResolvedApiUserId,
+    });
+  }
 
   // Local state per item
   const [productId, setProductId] = useState<string>("");
@@ -166,8 +201,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const promptOptionsCache = useRef<Record<string, any[]>>({});
   
   // Obtener configuración de componentes del producto
-  const { isComposite, enabledComponents } = useProductComponentSettings(productId || undefined, apiUserId);
-  
+  const { isComposite, enabledComponents } = useProductComponentSettings(
+    productId || undefined,
+    effectiveApiUserId || undefined,
+  );
+
   // Fetch composite product components configuration (nuevo sistema)
   const { 
     components: configuredComponents = [],
