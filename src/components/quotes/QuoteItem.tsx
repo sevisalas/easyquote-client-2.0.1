@@ -80,9 +80,29 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const apiUserId = organization?.api_user_id || (membership?.organization as any)?.api_user_id;
   const canEditPrice = isSuperAdmin || isOrgAdmin;
   const queryClient = useQueryClient();
-  
+
+  // Si el contexto aún no trae api_user_id (casos multi-org / impersonación), resolverlo por organizationId
+  const { data: resolvedApiUserId, isLoading: isLoadingResolvedApiUserId } = useQuery({
+    queryKey: ["organization-api-user-id", organizationId],
+    queryFn: async () => {
+      if (!organizationId) return null;
+      const { data, error } = await supabase
+        .from("organizations")
+        .select("api_user_id")
+        .eq("id", organizationId)
+        .single();
+      if (error) throw error;
+      return data?.api_user_id ?? null;
+    },
+    enabled: !!organizationId && !apiUserId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const effectiveApiUserId = apiUserId ?? resolvedApiUserId ?? null;
+  const isApiUserIdPending = !!organizationId && !effectiveApiUserId && isLoadingResolvedApiUserId;
+
   // Debug: log apiUserId para verificar filtrado de componentes
-  console.log('🔍 QuoteItem context:', { organizationId, apiUserId, orgName: organization?.name });
+  console.log('🔍 QuoteItem context:', { organizationId, apiUserId, resolvedApiUserId, effectiveApiUserId, orgName: organization?.name });
 
   // Local state per item
   const [productId, setProductId] = useState<string>("");
@@ -439,20 +459,23 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const getProductLabel = (p: any) =>
     p?.name ?? p?.title ?? p?.displayName ?? p?.productName ?? p?.product_name ?? p?.nombre ?? p?.Nombre ?? p?.description ?? "Producto sin nombre";
 
+  const getProductId = (p: any) =>
+    String(p?.id ?? p?.productId ?? p?.product_id ?? p?.easyquote_product_id ?? "");
+
   // Obtener productos que son componentes (para excluirlos de la selección)
   // IMPORTANTE: esto debe filtrarse por api_user_id (config compartida entre organizaciones del mismo grupo)
   const { data: componentProductIds, isLoading: isLoadingComponents } = useQuery({
-    queryKey: ["component-product-ids", apiUserId],
+    queryKey: ["component-product-ids", effectiveApiUserId],
     queryFn: async () => {
-      if (!apiUserId) {
-        console.log('⚠️ No apiUserId, cannot filter components');
+      if (!effectiveApiUserId) {
+        console.log("⚠️ No effectiveApiUserId, cannot filter components");
         return [];
       }
-      console.log('🔍 Fetching component IDs for apiUserId:', apiUserId);
+      console.log("🔍 Fetching component IDs for apiUserId:", effectiveApiUserId);
       const { data, error } = await supabase
         .from("product_component_settings")
         .select("easyquote_product_id")
-        .eq("api_user_id", apiUserId)
+        .eq("api_user_id", effectiveApiUserId)
         .eq("is_component", true);
 
       if (error) {
@@ -461,10 +484,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       }
 
       const ids = (data || []).map((d) => d.easyquote_product_id);
-      console.log('✅ Component IDs to exclude:', ids);
+      console.log("✅ Component IDs to exclude:", ids);
       return ids;
     },
-    enabled: !!apiUserId,
+    enabled: !!effectiveApiUserId,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -476,15 +499,15 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   });
 
   // Filtrar componentes de la lista de productos para selección
-  // Esperamos a que componentProductIds esté cargado para aplicar el filtro correctamente
+  // Si aún no tenemos api_user_id resuelto, NO mostrar la lista sin filtrar (evita mezclar componentes)
   const products = useMemo(() => {
     if (!allProducts) return [];
-    // Si aún no tenemos apiUserId o está cargando componentes, esperamos
-    if (apiUserId && isLoadingComponents) return [];
+    if (isApiUserIdPending) return [];
+    if (effectiveApiUserId && isLoadingComponents) return [];
+
     const componentIds = Array.isArray(componentProductIds) ? componentProductIds : [];
-    // Filtrar componentes de la lista
-    return allProducts.filter((p: any) => !componentIds.includes(p.id));
-  }, [allProducts, componentProductIds, apiUserId, isLoadingComponents]);
+    return allProducts.filter((p: any) => !componentIds.includes(getProductId(p)));
+  }, [allProducts, componentProductIds, effectiveApiUserId, isLoadingComponents, isApiUserIdPending]);
 
   // Auto-fill product description cuando se selecciona un producto se maneja en el useEffect principal (líneas 712-722)
 
@@ -2061,7 +2084,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   setCustomQuantity(1);
                 } else {
                   // Producto de la API: usar el nombre del producto como displayName
-                  const selectedProduct = products?.find((p: any) => String(p.id) === String(value));
+                  const selectedProduct = products?.find((p: any) => String(getProductId(p)) === String(value));
                   console.log("🔍 Producto encontrado:", selectedProduct);
                   if (selectedProduct) {
                     const productName = getProductLabel(selectedProduct);
@@ -2083,9 +2106,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                     </div>
                   </SelectItem>
                   {/* EasyQuote products */}
-                  {hasToken && products?.map((p: any) => (
-                    <SelectItem key={p.id} value={p.id}>{getProductLabel(p)}</SelectItem>
-                  ))}
+                  {hasToken && products?.map((p: any) => {
+                    const pid = getProductId(p);
+                    return (
+                      <SelectItem key={pid} value={pid}>{getProductLabel(p)}</SelectItem>
+                    );
+                  })}
                   {!hasToken && (
                     <SelectItem value="" disabled>Conecta EasyQuote para más productos</SelectItem>
                   )}
