@@ -2,8 +2,39 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+function pickFirstString(...values: unknown[]): string | undefined {
+  for (const v of values) {
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return undefined;
+}
+
+function findUrlInObject(obj: unknown): string | undefined {
+  if (!obj || typeof obj !== "object") return undefined;
+  const stack: unknown[] = [obj];
+  const seen = new Set<unknown>();
+
+  while (stack.length) {
+    const cur = stack.pop();
+    if (!cur || typeof cur !== "object" || seen.has(cur)) continue;
+    seen.add(cur);
+
+    for (const v of Object.values(cur as Record<string, unknown>)) {
+      if (typeof v === "string") {
+        const s = v.trim();
+        if (/^https?:\/\//i.test(s)) return s;
+      } else if (v && typeof v === "object") {
+        stack.push(v);
+      }
+    }
+  }
+
+  return undefined;
+}
 
 serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -19,19 +50,91 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const { token, subscriberId, fileId, fileName } = await req.json();
+    const { token, subscriberId, fileId, fileName, downloadUrl } = await req.json();
     
-    if (!token || !subscriberId || !fileId || !fileName) {
-      return new Response(JSON.stringify({ error: "Missing required parameters" }), {
+    if (!token || !fileId) {
+      return new Response(JSON.stringify({ error: "Missing required parameters", details: "token + fileId son obligatorios" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const downloadUrl = `https://sheets.easyquote.cloud/${subscriberId}/${fileId}/${fileName}`;
-    console.log("easyquote-download-file: Downloading from:", downloadUrl);
+    let finalDownloadUrl = pickFirstString(downloadUrl);
+    let finalSubscriberId = pickFirstString(subscriberId);
+    let finalFileName = pickFirstString(fileName);
 
-    const response = await fetch(downloadUrl, {
+    // Si faltan parámetros, intentar resolverlos desde el detalle del excel
+    if (!finalDownloadUrl && (!finalSubscriberId || !finalFileName)) {
+      const metaUrl = `https://api.easyquote.cloud/api/v1/excelfiles/${fileId}`;
+      console.log("easyquote-download-file: Resolving excel metadata", { metaUrl, fileId });
+
+      const metaRes = await fetch(metaUrl, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      console.log("easyquote-download-file: Metadata response status:", metaRes.status);
+      if (metaRes.ok) {
+        const meta = await metaRes.json();
+        // Intentar extraer campos típicos
+        finalFileName ||= pickFirstString(
+          (meta as any)?.fileName,
+          (meta as any)?.FileName,
+          (meta as any)?.filename,
+          (meta as any)?.name,
+          (meta as any)?.originalFileName,
+        );
+        finalSubscriberId ||= pickFirstString(
+          (meta as any)?.subscriberId,
+          (meta as any)?.subscriberID,
+          (meta as any)?.subscriber_id,
+          (meta as any)?.SubscriberId,
+        );
+
+        // Algunas APIs devuelven un enlace directo
+        finalDownloadUrl ||= pickFirstString(
+          (meta as any)?.downloadUrl,
+          (meta as any)?.DownloadUrl,
+          (meta as any)?.fileUrl,
+          (meta as any)?.FileUrl,
+          (meta as any)?.url,
+          (meta as any)?.Url,
+        );
+
+        // Último recurso: buscar cualquier URL dentro del objeto
+        finalDownloadUrl ||= findUrlInObject(meta);
+      } else {
+        const metaText = await metaRes.text();
+        console.error("easyquote-download-file: Metadata error:", metaText);
+      }
+    }
+
+    if (!finalDownloadUrl) {
+      if (finalSubscriberId && finalFileName) {
+        finalDownloadUrl = `https://sheets.easyquote.cloud/${finalSubscriberId}/${fileId}/${finalFileName}`;
+      }
+    }
+
+    if (!finalDownloadUrl) {
+      return new Response(
+        JSON.stringify({
+          error: "Missing download info",
+          details:
+            "No se pudo construir el enlace de descarga del Excel (faltan subscriberId/fileName y no se encontró URL en el metadata).",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    console.log("easyquote-download-file: Downloading from:", finalDownloadUrl);
+
+    const response = await fetch(finalDownloadUrl, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -86,7 +189,7 @@ serve(async (req: Request): Promise<Response> => {
       headers: {
         ...corsHeaders,
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Content-Disposition": `attachment; filename="${fileName}"`,
+        "Content-Disposition": `attachment; filename="${finalFileName ?? `excel-${fileId}.xlsx`}"`,
       },
     });
 
