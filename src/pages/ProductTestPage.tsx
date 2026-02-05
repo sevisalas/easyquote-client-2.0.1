@@ -97,7 +97,7 @@ export default function ProductTestPage({
   } = useSubscription();
 
   // Fetch api_user_id for the overridden organization (SuperAdmin impersonation)
-  const { data: overrideOrgData } = useQuery({
+  const { data: overrideOrgData, isLoading: isLoadingOverrideOrg } = useQuery({
     queryKey: ["organization-api-user-id", overrideOrganizationId],
     queryFn: async () => {
       if (!overrideOrganizationId) return null;
@@ -122,6 +122,11 @@ export default function ProductTestPage({
   const apiUserId = overrideOrganizationId 
     ? overrideOrgData?.api_user_id 
     : (organization?.api_user_id || (membership?.organization as any)?.api_user_id);
+
+  // When impersonating, wait for org data to load before querying component settings
+  const isApiUserIdReady = overrideOrganizationId 
+    ? !isLoadingOverrideOrg && !!overrideOrgData?.api_user_id
+    : !!apiUserId;
   
   // Check if product is composite
   const { isComposite, enabledComponents, getPromptComponent } = useProductComponentSettings(productId || undefined, apiUserId);
@@ -150,7 +155,7 @@ export default function ProductTestPage({
       }
       return new Set((data || []).map((d) => d.easyquote_product_id));
     },
-    enabled: !!apiUserId,
+    enabled: isApiUserIdReady,
     staleTime: 5 * 60 * 1000,
   });
 
