@@ -68,6 +68,9 @@ export function ComponentPromptMappingDialog({
 }: ComponentPromptMappingDialogProps) {
   const queryClient = useQueryClient();
 
+  // Estado para indicar si hubo error de pricing
+  const [pricingFailed, setPricingFailed] = useState(false);
+
   // Cargar los prompts del componente desde la API de pricing (que devuelve labels reales)
   const { data: componentPrompts = [], isLoading, isFetching } = useQuery({
     queryKey: ["component-prompts-pricing", component.component_product_id],
@@ -75,8 +78,9 @@ export function ComponentPromptMappingDialog({
       const token = await getEasyQuoteToken();
       if (!token) return [];
 
-      // OJO: `easyquote-pricing` puede ir cacheado internamente en EasyQuote.
-      // Para que los prompts nuevos del Excel aparezcan igualmente, completamos con `easyquote-prompts`.
+      setPricingFailed(false);
+
+      // Intentamos obtener datos de ambas fuentes
       const [pricingRes, defsRes] = await Promise.all([
         invokeEasyQuoteFunction<any>("easyquote-pricing", {
           token,
@@ -89,8 +93,10 @@ export function ComponentPromptMappingDialog({
         }),
       ]);
 
-      if (pricingRes.error) {
-        console.warn("[ComponentPromptMappingDialog] pricing cacheado o error:", pricingRes.error);
+      const hasPricingError = !!pricingRes.error;
+      if (hasPricingError) {
+        console.warn("[ComponentPromptMappingDialog] pricing error:", pricingRes.error);
+        setPricingFailed(true);
       }
       if (defsRes.error) {
         console.warn("[ComponentPromptMappingDialog] error leyendo prompts definiciones:", defsRes.error);
@@ -99,18 +105,17 @@ export function ComponentPromptMappingDialog({
       const pricingPrompts = Array.isArray(pricingRes.data?.prompts) ? pricingRes.data.prompts : [];
       const promptDefs = Array.isArray(defsRes.data) ? defsRes.data : [];
 
-      // Debug: log raw data to understand what's available
-      console.log("[ComponentPromptMappingDialog] Raw pricing prompts:", pricingPrompts.map((p: any) => ({
-        id: p.id,
-        promptText: p.promptText,
-        promptCell: p.promptCell,
-        promptSequence: p.promptSequence,
-      })));
-      console.log("[ComponentPromptMappingDialog] Raw prompt defs:", promptDefs.map((d: any) => ({
-        id: d.id,
-        promptCell: d.promptCell,
-        promptSeq: d.promptSeq,
-      })));
+      console.log("[ComponentPromptMappingDialog] Data loaded:", {
+        pricingPromptsCount: pricingPrompts.length,
+        promptDefsCount: promptDefs.length,
+        hasPricingError,
+      });
+
+      // Si no hay datos de ninguna fuente, retornar vacío
+      if (pricingPrompts.length === 0 && promptDefs.length === 0) {
+        console.warn("[ComponentPromptMappingDialog] No data from either source");
+        return [];
+      }
 
       // Función helper para extraer el mejor label disponible
       const extractLabel = (p: any): string => {
@@ -131,13 +136,14 @@ export function ComponentPromptMappingDialog({
         });
       }
 
-      // 2) Completamos/mejoramos con `prompts` (definición Excel)
+      // 2) Completamos con `prompts` (definición Excel) - siempre añadimos los que faltan
       for (const d of promptDefs) {
         const id = String(d.id);
         const existing = merged.get(id);
         const defLabel = extractLabel(d);
         
         if (!existing) {
+          // No existe en pricing, añadimos desde defs
           merged.set(id, {
             id,
             name: id,
@@ -146,7 +152,7 @@ export function ComponentPromptMappingDialog({
             sequence: typeof d.promptSeq === "number" ? d.promptSeq : undefined,
           });
         } else {
-          // Si el label existente es solo la celda (B10, C5, etc.) y tenemos un label mejor, actualizamos
+          // Ya existe, pero mejoramos el label si el existente es solo una celda
           const isCellOnlyLabel = /^[A-Z]+\d+$/i.test(existing.label);
           if (isCellOnlyLabel && defLabel && !/^[A-Z]+\d+$/i.test(defLabel)) {
             merged.set(id, { ...existing, label: defLabel });
@@ -166,10 +172,17 @@ export function ComponentPromptMappingDialog({
         return a.label.localeCompare(b.label);
       });
 
+      console.log("[ComponentPromptMappingDialog] Final prompts:", result.map(r => ({
+        id: r.id.slice(0, 8),
+        label: r.label,
+        cell: r.promptCell,
+      })));
+
       return result;
     },
     enabled: open && !!component.component_product_id,
-    staleTime: 30 * 1000, // 30 segundos - más corto para reflejar cambios de Excel
+    staleTime: 30 * 1000,
+    retry: 2, // Reintentar 2 veces si falla
   });
 
   const handleRefreshPrompts = async () => {
@@ -267,6 +280,12 @@ export function ComponentPromptMappingDialog({
           </div>
         ) : (
           <>
+            {pricingFailed && (
+              <div className="mb-3 p-2 bg-warning/10 border border-warning/30 rounded-md text-xs text-warning-foreground">
+                ⚠️ No se pudieron cargar los nombres descriptivos. Se muestran referencias de celda como alternativa.
+              </div>
+            )}
+
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
