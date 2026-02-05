@@ -180,17 +180,24 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   
   // Handlers para cambios de prompts en componentes individuales
   const handleComponentPromptChange = useCallback((componentKey: string, promptId: string, value: any) => {
-    setComponentPromptValues(prev => ({
-      ...prev,
-      [componentKey]: {
-        ...(prev[componentKey] || {}),
-        [promptId]: value,
-      },
-    }));
+    console.log("[QuoteItem] Component prompt CHANGE:", { componentKey, promptId, value });
+    setComponentPromptValues(prev => {
+      const next = {
+        ...prev,
+        [componentKey]: {
+          ...(prev[componentKey] || {}),
+          [promptId]: value,
+        },
+      };
+      console.log("[QuoteItem] componentPromptValues updated:", next);
+      return next;
+    });
   }, []);
 
   const handleComponentPromptCommit = useCallback((componentKey: string, promptId: string, value: any) => {
-    console.log("[QuoteItem] Component prompt committed:", { componentKey, promptId, value });
+    console.log("[QuoteItem] Component prompt COMMIT:", { componentKey, promptId, value });
+    // Force re-render by updating the timestamp - this ensures queries see the new state
+    setComponentPromptValues(prev => ({ ...prev }));
   }, []);
   
   // Determinar si el producto necesita selector de configuración (tiene múltiples componentes)

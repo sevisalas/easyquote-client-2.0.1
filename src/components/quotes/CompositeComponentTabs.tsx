@@ -444,7 +444,7 @@ export default function CompositeComponentTabs({
           return { prompts, outputs, price, componentKey };
         },
         enabled: !!component.component_product_id && hasParentValues && promptConnectionsReady,
-        staleTime: 30 * 1000,
+        staleTime: 5 * 1000, // Reducido para responder más rápido a cambios
         refetchOnWindowFocus: false,
       };
     }),
@@ -600,7 +600,7 @@ export default function CompositeComponentTabs({
         },
         // IMPORTANTE: Solo ejecutar cuando los interiores ya calcularon
         enabled: !!component.component_product_id && hasParentValues && promptConnectionsReady && sourcesReady,
-        staleTime: 30 * 1000,
+        staleTime: 5 * 1000, // Reducido para responder más rápido a cambios
         refetchOnWindowFocus: false,
       };
     }),
