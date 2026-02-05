@@ -481,6 +481,18 @@ export default function CompositeComponentTabs({
   // ¿Los interiores ya terminaron de cargar?
   const sourcesReady = sourceComponentQueriesResults.every(q => !q.isLoading && !q.isFetching);
 
+  // Debug: receiver queries status
+  if (import.meta.env.DEV) {
+    console.log("[CompositeComponentTabs] Receiver queries status:", {
+      receiverCount: aggregationReceiverComponents.length,
+      sourcesReady,
+      hasParentValues,
+      promptConnectionsReady,
+      sourceComponentsCount: sourceComponents.length,
+      sourceQueriesLoading: sourceComponentQueriesResults.map(q => q.isLoading),
+    });
+  }
+
   // =====================================================================
   // FASE 2: Queries para componentes receptores (Cubierta)
   // Reciben el lomo agregado de los interiores
@@ -618,6 +630,19 @@ export default function CompositeComponentTabs({
       if (isReceiver) {
         const idx = aggregationReceiverComponents.findIndex(r => r.id === component.id);
         const query = receiverComponentQueriesResults[idx];
+        
+        if (import.meta.env.DEV) {
+          console.log("[CompositeComponentTabs] Combining receiver result:", {
+            componentId: component.id,
+            componentAlias: component.component_alias,
+            idx,
+            hasQuery: !!query,
+            hasData: !!query?.data,
+            promptsCount: query?.data?.prompts?.length ?? 0,
+            isLoading: query?.isLoading,
+          });
+        }
+        
         results.push({
           data: query?.data ? { prompts: query.data.prompts, outputs: query.data.outputs, price: query.data.price } : undefined,
           isLoading: query?.isLoading ?? true,
