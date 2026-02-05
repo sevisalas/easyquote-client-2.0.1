@@ -99,6 +99,19 @@ export function ComponentPromptMappingDialog({
       const pricingPrompts = Array.isArray(pricingRes.data?.prompts) ? pricingRes.data.prompts : [];
       const promptDefs = Array.isArray(defsRes.data) ? defsRes.data : [];
 
+      // Debug: log raw data to understand what's available
+      console.log("[ComponentPromptMappingDialog] Raw pricing prompts:", pricingPrompts.map((p: any) => ({
+        id: p.id,
+        promptText: p.promptText,
+        promptCell: p.promptCell,
+        promptSequence: p.promptSequence,
+      })));
+      console.log("[ComponentPromptMappingDialog] Raw prompt defs:", promptDefs.map((d: any) => ({
+        id: d.id,
+        promptCell: d.promptCell,
+        promptSeq: d.promptSeq,
+      })));
+
       // Función helper para extraer el mejor label disponible
       const extractLabel = (p: any): string => {
         // Orden de prioridad: promptText > label > name > description > promptCell > id
