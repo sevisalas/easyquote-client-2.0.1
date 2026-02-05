@@ -2834,13 +2834,21 @@ export type Database = {
           updated_at: string
         }[]
       }
-      get_organization_easyquote_credentials_for_superadmin: {
-        Args: { p_organization_id: string }
-        Returns: {
-          api_password: string
-          api_username: string
-        }[]
-      }
+      get_organization_easyquote_credentials_for_superadmin:
+        | {
+            Args: { p_organization_id: string }
+            Returns: {
+              api_password: string
+              api_username: string
+            }[]
+          }
+        | {
+            Args: { p_calling_user_id?: string; p_organization_id: string }
+            Returns: {
+              api_password: string
+              api_username: string
+            }[]
+          }
       get_user_credentials: {
         Args: { p_user_id: string }
         Returns: {
