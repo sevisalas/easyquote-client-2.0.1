@@ -35,6 +35,11 @@ import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
 import { ChevronDown, ChevronUp, Pencil, Trash2, Package } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+
+// Debug flag: set to false to disable all console logs in this file
+const DEBUG_QUOTE_ITEM = false;
+const debugLog = (...args: any[]) => { if (DEBUG_QUOTE_ITEM) console.log(...args); };
+
 // Special product ID for custom/manual items
 const CUSTOM_PRODUCT_ID = "__CUSTOM_PRODUCT__";
 
@@ -126,18 +131,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Si no podemos resolver api_user_id todavía, NO mostramos lista sin filtrar
   const isApiUserIdPending = !!selectedOrganizationId && !effectiveApiUserId;
 
-  if (import.meta.env.DEV) {
-    console.log("[QuoteItem] Org context:", {
-      selectedOrganizationId,
-      subscriptionOrganizationId,
-      isOrgMismatch,
-      apiUserIdFromContext,
-      resolvedApiUserId,
-      effectiveApiUserId,
-      isApiUserIdPending,
-      isLoadingResolvedApiUserId,
-    });
-  }
+  // Debug desactivado para evitar spam - descomentar solo si es necesario
+  // if (import.meta.env.DEV) {
+  //   console.log("[QuoteItem] Org context:", { selectedOrganizationId, effectiveApiUserId });
+  // }
 
   // Local state per item
   const [productId, setProductId] = useState<string>("");
@@ -218,23 +215,17 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   
   // Handlers para cambios de prompts en componentes individuales
   const handleComponentPromptChange = useCallback((componentKey: string, promptId: string, value: any) => {
-    console.log("[QuoteItem] Component prompt CHANGE:", { componentKey, promptId, value });
-    setComponentPromptValues(prev => {
-      const next = {
-        ...prev,
-        [componentKey]: {
-          ...(prev[componentKey] || {}),
-          [promptId]: value,
-        },
-      };
-      console.log("[QuoteItem] componentPromptValues updated:", next);
-      return next;
-    });
+    setComponentPromptValues(prev => ({
+      ...prev,
+      [componentKey]: {
+        ...(prev[componentKey] || {}),
+        [promptId]: value,
+      },
+    }));
   }, []);
 
   const handleComponentPromptCommit = useCallback((componentKey: string, promptId: string, value: any) => {
-    console.log("[QuoteItem] Component prompt COMMIT:", { componentKey, promptId, value });
-    // Force re-render by updating the timestamp - this ensures queries see the new state
+    // Force re-render by updating the timestamp
     setComponentPromptValues(prev => ({ ...prev }));
   }, []);
   
@@ -304,65 +295,50 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     initializedRef.current = false;
   }, [id, initialData?.productId]);
   
-  // Log para debug - ver si initialData llega
-  console.log('🔍 QuoteItem rendered with initialData:', initialData);
+  // Debug desactivado para evitar spam
   
   useEffect(() => {
-    console.log('🔍 useEffect executed - initializedRef:', initializedRef.current, 'initialData:', initialData);
-    if (initializedRef.current) {
-      console.log('⚠️ useEffect cancelled - already initialized');
-      return;
-    }
+    if (initializedRef.current) return;
     if (!initialData) {
-      console.log('⚠️ No initialData - producto nuevo');
       initializedRef.current = true;
       return;
     }
     initializedRef.current = true;
     try {
-      console.log('✅ Starting initialization with initialData:', initialData);
       setProductId(initialData.productId || "");
       
       // Preservar TODOS los datos de los prompts guardados (label, value, order)
       const promptValuesOnly: Record<string, any> = {};
       if (initialData.prompts) {
-        console.log('🔍 Raw prompts from DB:', initialData.prompts);
-        
         // Handle array format [{id, label, order, value}]
         if (Array.isArray(initialData.prompts)) {
           initialData.prompts.forEach((prompt: any) => {
             if (prompt.id) {
-              // Preservar el objeto completo con label, value y order
               promptValuesOnly[prompt.id] = {
                 label: prompt.label || prompt.id,
                 value: prompt.value,
                 order: prompt.order ?? 999
               };
-              console.log(`  📌 Loaded prompt ${prompt.id}:`, promptValuesOnly[prompt.id]);
             }
           });
         } else {
           // Handle object format {promptId: {label, value, order}} or {promptId: value}
           Object.entries(initialData.prompts).forEach(([promptId, promptData]: [string, any]) => {
             if (typeof promptData === 'object' && promptData !== null && 'value' in promptData) {
-              // Ya está en formato completo, preservarlo
               promptValuesOnly[promptId] = {
                 label: promptData.label || promptId,
                 value: promptData.value,
                 order: promptData.order ?? 999
               };
             } else {
-              // Valor simple, crear objeto completo
               promptValuesOnly[promptId] = {
                 label: promptId,
                 value: promptData,
                 order: 999
               };
             }
-            console.log(`  📌 Loaded prompt ${promptId}:`, promptValuesOnly[promptId]);
           });
         }
-        console.log('✅ Prompts guardados preservados con labels:', promptValuesOnly);
       }
       
       setPromptValues(promptValuesOnly);
@@ -372,34 +348,21 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       
       // Handle custom product initialization
       if (initialData.productId === CUSTOM_PRODUCT_ID) {
-        console.log('✅ Inicializando producto personalizado');
-        // Extract custom fields from synthetic prompts
         const qtyPrompt = promptValuesOnly['custom_quantity'];
         const pricePrompt = promptValuesOnly['custom_unit_price'];
         if (qtyPrompt) setCustomQuantity(Number(qtyPrompt.value) || 1);
         if (pricePrompt) setCustomPrice(Number(pricePrompt.value) || 0);
         setIsNewProduct(false);
       } else {
-        // Marcar como NO nuevo si tiene prompts guardados
         const hasPromptsData = Object.keys(promptValuesOnly).length > 0;
         if (hasPromptsData) {
-          console.log('✅ Artículo guardado detectado con', Object.keys(promptValuesOnly).length, 'prompts');
-          console.log('🎯 Se hará PATCH con estos valores guardados para recalcular outputs y precio');
           setIsNewProduct(false);
-          // NO marcar userHasChangedCurrentProduct aquí, eso se hará después del PATCH inicial
         }
       }
       
       // Solo marcar hasInitialOutputs si hay outputs guardados
       const hasOutputsData = initialData.outputs && Array.isArray(initialData.outputs) && initialData.outputs.length > 0;
-      
-      if (hasOutputsData) {
-        console.log('✅ Initial outputs found, will use saved outputs but refresh pricing');
-        setHasInitialOutputs(true);
-      } else {
-        console.log('⚠️ Missing outputs, will fetch everything from API');
-        setHasInitialOutputs(false);
-      }
+      setHasInitialOutputs(!!hasOutputsData);
       
       // Convertir formato antiguo a nuevo si es necesario
       const additionals = initialData.itemAdditionals;
@@ -432,12 +395,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       }
       // Restaurar precio modificado si existe
       if (initialData.modifiedPrice !== null && initialData.modifiedPrice !== undefined) {
-        console.log('💰 Restaurando precio modificado:', initialData.modifiedPrice);
         setUserEditedPrice(initialData.modifiedPrice);
       }
       // Restaurar configuración de producto encuadernado si existe
       if (initialData.boundProductConfig) {
-        console.log('📦 Restaurando boundProductConfig:', initialData.boundProductConfig);
         setBoundProductConfig(initialData.boundProductConfig);
       }
     } catch {}
@@ -493,11 +454,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     
     const list = Array.isArray(data) ? data : (data?.items || data?.data || []);
     // Filtrar solo productos activos (backup en frontend)
-    const activeProducts = list.filter((product: any) => {
-      console.log(`Product ${product.productName}: isActive=${product.isActive}`);
-      return product.isActive === true;
-    });
-    console.log(`QuoteItem fetchProducts: Filtered ${activeProducts.length} active products from ${list.length} total`);
+    const activeProducts = list.filter((product: any) => product.isActive === true);
     return activeProducts as any[];
   };
 
@@ -512,11 +469,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const { data: componentProductIds, isLoading: isLoadingComponents } = useQuery({
     queryKey: ["component-product-ids", effectiveApiUserId],
     queryFn: async () => {
-      if (!effectiveApiUserId) {
-        console.log("⚠️ No effectiveApiUserId, cannot filter components");
-        return [];
-      }
-      console.log("🔍 Fetching component IDs for apiUserId:", effectiveApiUserId);
+      if (!effectiveApiUserId) return [];
       const { data, error } = await supabase
         .from("product_component_settings")
         .select("easyquote_product_id")
@@ -528,9 +481,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         return [];
       }
 
-      const ids = (data || []).map((d) => d.easyquote_product_id);
-      console.log("✅ Component IDs to exclude:", ids);
-      return ids;
+      return (data || []).map((d) => d.easyquote_product_id);
     },
     enabled: !!effectiveApiUserId,
     staleTime: 5 * 60 * 1000,
@@ -629,61 +580,30 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     queryKey: pricingQueryKey,
     enabled: (() => {
       // Verificar condiciones básicas
-      if (!hasToken || !productId) {
-        console.log("❌ Query disabled: missing token or productId");
-        return false;
-      }
+      if (!hasToken || !productId) return false;
       
       // Productos personalizados no usan la API de EasyQuote
-      if (productId === "__CUSTOM_PRODUCT__") {
-        console.log("❌ Query disabled: producto personalizado");
-        return false;
-      }
+      if (productId === "__CUSTOM_PRODUCT__") return false;
       
       // IMPORTANTE: Para productos NUEVOS, SIEMPRE permitir la query inicial (GET sin inputs)
-      if (isNewProduct) {
-        console.log("✅ Query enabled: producto nuevo, obteniendo prompts iniciales");
-        return true;
-      }
+      if (isNewProduct) return true;
       
       // Para productos NO nuevos, requerir prompts
-      if (!debouncedPromptValues || Object.keys(debouncedPromptValues).length === 0) {
-        console.log("❌ Query disabled: no prompts para producto cargado");
-        return false;
-      }
+      if (!debouncedPromptValues || Object.keys(debouncedPromptValues).length === 0) return false;
 
       // Si multi-cantidades está activo y completo, el pricing principal viene de easyquote-multi (Q1)
-      // para evitar llamadas duplicadas.
-      if (multiEnabled && qtyPrompt && allQtysComplete) {
-        console.log("⏸️ Query disabled: multi-cantidades activo (pricing viene de Q1)");
-        return false;
-      }
+      if (multiEnabled && qtyPrompt && allQtysComplete) return false;
 
       // Si hay initialData (artículo guardado), hacer query inicial para obtener prompts
       if (initialData) {
-        // Permitir la primera carga para obtener las definiciones de los prompts
-        if (!hasPerformedInitialLoad) {
-          console.log("✅ Query enabled: primera carga de artículo guardado para obtener definiciones de prompts");
-          return true;
-        }
-        // Después de la primera carga, solo hacer query si el usuario ha hecho cambios
-        if (!userHasChangedCurrentProduct) {
-          console.log("ℹ️ Query disabled: usando datos guardados, sin cambios del usuario");
-          return false;
-        }
-        console.log("✅ Query enabled: usuario ha modificado el producto guardado");
+        if (!hasPerformedInitialLoad) return true;
+        if (!userHasChangedCurrentProduct) return false;
         return true;
       }
       
-      // Para productos NO guardados, evitamos un PATCH automático tras el GET inicial.
-      // Solo recalculamos cuando el usuario confirma algún cambio (onBlur/Enter).
-      if (!initialData && !userHasChangedCurrentProduct) {
-        console.log("ℹ️ Query disabled: producto sin cambios del usuario");
-        return false;
-      }
+      // Para productos NO guardados, evitamos un PATCH automático tras el GET inicial
+      if (!initialData && !userHasChangedCurrentProduct) return false;
 
-      // Query normal para productos con prompts
-      console.log("✅ Query enabled: producto con prompts");
       return true;
     })(),
     retry: 2, // Reintentar 2 veces en errores transitorios
@@ -695,10 +615,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("Falta token de EasyQuote. Inicia sesión de nuevo.");
       
-      console.log("🔥 Fetching pricing for product:", productId);
-      console.log("  - isNewProduct:", isNewProduct);
-      console.log("  - userHasChangedCurrentProduct:", userHasChangedCurrentProduct);
-      console.log("  - debouncedPromptValues:", debouncedPromptValues);
+      // Debug desactivado para evitar spam en consola
 
       // Helper para detectar si un ID es un GUID válido
       const isValidGuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
@@ -716,18 +633,15 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         productType: productTypeForMetrics,
       };
 
-      // Si NO es producto nuevo Y tenemos valores de prompts, SIEMPRE enviar PATCH (nunca GET para artículos guardados)
+      // Si NO es producto nuevo Y tenemos valores de prompts, SIEMPRE enviar PATCH
       const hasPromptValues = debouncedPromptValues && Object.keys(debouncedPromptValues).length > 0;
-      console.log("  - hasPromptValues:", hasPromptValues);
       
       // Detectar si los IDs guardados son numéricos (corruptos) en lugar de GUIDs
       const promptIds = Object.keys(debouncedPromptValues || {});
       const hasInvalidIds = promptIds.length > 0 && promptIds.some(id => !isValidGuid(id));
       
       if (hasInvalidIds && hasPromptValues) {
-        console.log("⚠️ Detectados IDs de prompts inválidos (numéricos), necesita remapeo por label");
-        
-        // Hacer GET primero para obtener las definiciones con GUIDs correctos
+        // IDs corruptos: remapear por label
         const { data: definitions, error: defError } = await invokeEasyQuoteFunction("easyquote-pricing", {
           token,
           productId
@@ -736,9 +650,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         if (defError) throw defError;
         
         if (definitions?.prompts && Array.isArray(definitions.prompts)) {
-          console.log("📦 Definiciones de prompts obtenidas del GET:", definitions.prompts.length);
-          
-          // Crear mapa de label -> GUID
           const labelToGuid: Record<string, string> = {};
           definitions.prompts.forEach((p: any) => {
             const label = p.promptText || p.label || "";
@@ -747,9 +658,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             }
           });
           
-          console.log("🗺️ Mapa label->GUID:", labelToGuid);
-          
-          // Remapear los valores guardados usando labels
           const remappedPrompts: Record<string, any> = {};
           Object.entries(debouncedPromptValues).forEach(([oldId, promptData]) => {
             const label = (promptData && typeof promptData === 'object' && promptData.label) 
@@ -759,19 +667,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             
             if (correctGuid) {
               remappedPrompts[correctGuid] = promptData;
-              console.log(`  ✅ Remapeado "${label}": ${oldId} -> ${correctGuid}`);
-            } else {
-              console.log(`  ⚠️ No se encontró GUID para label "${label}" (id original: ${oldId})`);
             }
           });
           
-          // Actualizar promptValues con los IDs correctos
           if (Object.keys(remappedPrompts).length > 0) {
-            console.log("✅ Actualizando promptValues con GUIDs correctos");
             setPromptValues(remappedPrompts);
             setDebouncedPromptValues(remappedPrompts);
             
-            // Construir inputs con los GUIDs correctos
             const norm: Record<string, any> = {};
             Object.entries(remappedPrompts).forEach(([k, v]) => {
               const actualValue = (v && typeof v === 'object' && 'value' in v) ? v.value : v;
@@ -798,7 +700,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             if (inputsArray.length > 0) {
               requestBody.inputs = inputsArray;
             }
-            console.log("  📤 Enviando PATCH con inputs remapeados:", inputsArray);
           }
         }
         
@@ -806,8 +707,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           setUserHasChangedCurrentProduct(true);
         }
       } else if (!isNewProduct && hasPromptValues) {
-        // SIEMPRE PATCH para artículos guardados, tanto en primera carga como en cambios
-        console.log("💾 Artículo guardado - enviando PATCH con valores guardados");
+        // SIEMPRE PATCH para artículos guardados
         const norm: Record<string, any> = {};
         Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
           const actualValue = (v && typeof v === 'object' && 'value' in v) ? v.value : v;
@@ -833,20 +733,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         if (inputsArray.length > 0) {
           requestBody.inputs = inputsArray;
         }
-        console.log("  📤 Enviando PATCH con inputs:", inputsArray);
         
-        // Marcar que se hizo la primera carga si no estaba marcado
         if (!userHasChangedCurrentProduct) {
-          console.log("✅ Primera carga completa, próximos cambios serán por usuario");
           setUserHasChangedCurrentProduct(true);
         }
-      } else if (isNewProduct) {
-        console.log("✨ Producto nuevo, haciendo GET para obtener configuración inicial");
-      } else {
-        console.log("⚠️ Artículo guardado pero sin prompts aún - esperando inicialización");
       }
-
-      console.log("📤 Request body:", requestBody);
 
       // Usar solo la edge function para evitar errores con IDs incorrectos
       const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", requestBody);
@@ -862,19 +753,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       // Inicializar promptValues con los datos del API SOLO si es un producto nuevo Y NO hay initialData
       // CRÍTICO: Si hay initialData, los prompts guardados son DEFINITIVOS y NO deben sobrescribirse
       if (isNewProduct && data?.prompts && !initialData) {
-        console.log("✅ GET exitoso con prompts, marcando producto como cargado");
-        console.log("📦 Prompts recibidos del API (GET inicial):", {
-          productId,
-          promptsCount: data.prompts.length,
-          prompts: data.prompts.map((p: any) => ({
-            id: p.id,
-            label: p.promptText || p.label,
-            type: p.promptType,
-            currentValue: p.currentValue,
-            order: p.promptSequence
-          }))
-        });
-        
         // Bloquear sincronización durante inicialización
         setIsInitializing(true);
         
@@ -887,44 +765,28 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               value: prompt.currentValue,
               order: prompt.promptSequence ?? prompt.order ?? 999
             };
-            console.log(`  📌 Inicializando ${prompt.id} = ${prompt.currentValue}`);
           }
         });
         
         if (Object.keys(defaultValues).length > 0) {
-          console.log("✅ Estableciendo valores iniciales en promptValues:", defaultValues);
           setPromptValues(defaultValues);
           setDebouncedPromptValues(defaultValues);
           
-          // Desbloquear sincronización después de un tick para asegurar que React actualizó el estado
           setTimeout(() => {
-            console.log("✅ Desbloqueando sincronización después de inicialización");
             setIsInitializing(false);
           }, 0);
         }
         
         setIsNewProduct(false);
       } else if (isNewProduct && initialData) {
-        // Si hay initialData pero isNewProduct es true, corregir el flag sin sobrescribir prompts
-        console.log("⚠️ Artículo guardado detectado con isNewProduct=true, corrigiendo sin sobrescribir prompts");
         setIsNewProduct(false);
         setIsInitializing(false);
       }
       
-      // Para productos de API: reconciliar prompts con la respuesta actual del API.
-      // Objetivos:
-      // 1) Evitar acumulación de prompts que ya no existen tras un PATCH (dependencias/condicionales)
-      // 2) Evitar guardar solo el último prompt cambiado: siempre mantener el conjunto completo actual
-      // 3) Mantener valores del usuario cuando siguen siendo válidos
-       if (!isNewProduct && data?.prompts && !isCustomProduct) {
+      // Para productos de API: reconciliar prompts con la respuesta actual del API
+      if (!isNewProduct && data?.prompts && !isCustomProduct) {
         const apiPrompts: any[] = Array.isArray(data.prompts) ? data.prompts : [];
 
-        console.log("🔄 Reconciliando prompts con API (sin acumular):", {
-          productId,
-          apiPromptsCount: apiPrompts.length,
-          currentPromptsCount: Object.keys(promptValues).length,
-           mode: "api_is_source_of_truth",
-        });
 
          setPromptValues((prev) => {
           const norm = (v: any) => String(v ?? "").trim().toLowerCase();
@@ -971,13 +833,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       
       // Si obtuvimos nuevos outputs, desactivar hasInitialOutputs para que se usen los nuevos
       if (data?.outputValues && hasInitialOutputs) {
-        console.log("✅ Nuevos outputs recibidos, desactivando hasInitialOutputs para usar datos actualizados");
+        debugLog("✅ Nuevos outputs recibidos, desactivando hasInitialOutputs para usar datos actualizados");
         setHasInitialOutputs(false);
       }
       
       // Marcar que ya se realizó la carga inicial si había initialData
       if (initialData && !hasPerformedInitialLoad) {
-        console.log("✅ Primera carga completada para artículo guardado");
+        debugLog("✅ Primera carga completada para artículo guardado");
         setHasPerformedInitialLoad(true);
       }
       
@@ -988,7 +850,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         
         if (isFirstLoad) {
           // Primera carga: guardar todas las opciones en cache
-          console.log("📦 Cacheando opciones de prompts para producto:", productId);
+          debugLog("📦 Cacheando opciones de prompts para producto:", productId);
           promptOptionsCache.current[cacheKey] = data.prompts.map((p: any) => ({
             id: p.id,
             valueOptions: p.valueOptions || []
@@ -1045,7 +907,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     // Si NO hay initialData, inicializar con valores por defecto (producto nuevo)
     // Usar ref para evitar dependencia directa de promptValues
     if (!initialData && isNewProduct && promptValuesLengthRef.current === 0) {
-      console.log("🎨 Producto NUEVO - Inicializando promptValues con valores por defecto de pricing");
+      debugLog("🎨 Producto NUEVO - Inicializando promptValues con valores por defecto de pricing");
       const defaultValues: Record<string, any> = {};
       pricing.prompts.forEach((prompt: any) => {
         if (prompt.id && prompt.currentValue !== undefined && prompt.currentValue !== null) {
@@ -1058,7 +920,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       });
       
       if (Object.keys(defaultValues).length > 0) {
-        console.log("✅ Estableciendo valores iniciales:", defaultValues);
+        debugLog("✅ Estableciendo valores iniciales:", defaultValues);
         setPromptValues(defaultValues);
         setDebouncedPromptValues(defaultValues);
       }
@@ -1075,7 +937,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   useEffect(() => {
     // Only reset if product actually changed (not initial load)
     if (previousProductIdRef.current && previousProductIdRef.current !== productId) {
-      console.log("🔄 Producto cambió - RESET COMPLETO de todos los estados", { from: previousProductIdRef.current, to: productId });
+      debugLog("🔄 Producto cambió - RESET COMPLETO de todos los estados", { from: previousProductIdRef.current, to: productId });
       
       // Cancelar cualquier debounce pendiente
       if (debounceTimerRef.current) {
@@ -1102,7 +964,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setUserEditedPrice(null); // Reset precio editado por usuario
       hasMarkedAsLoadedRef.current = false;
       
-      console.log("✅ Estados reseteados completamente, listo para cargar nuevo producto");
+      debugLog("✅ Estados reseteados completamente, listo para cargar nuevo producto");
     }
     previousProductIdRef.current = productId;
     
@@ -1281,9 +1143,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       // Así evitamos el patrón "primero cantidad principal y luego Q1/Q2/Q3".
       const qtysToFetch = qtys;
 
-      console.log("🔢 Multi-cantidad (simple): lanzando", qtysToFetch.length, "llamadas en paralelo", {
-        qtysToFetch,
-      });
+      debugLog("🔢 Multi-cantidad (simple): lanzando", qtysToFetch.length, "llamadas en paralelo");
 
       const q1Qty = qtysToFetch[0];
 
@@ -1346,7 +1206,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         .filter((n) => !Number.isNaN(n) && n > 0);
       if (qtys.length === 0) return [] as any[];
 
-      console.log("🔢 Multi-cantidad (compuesto): lanzando cálculos para", qtys.length, "cantidades con", activeCompositeComponents.length, "componentes");
+      debugLog("🔢 Multi-cantidad (compuesto): lanzando cálculos para", qtys.length, "cantidades con", activeCompositeComponents.length, "componentes");
 
       // Fetch prompt connections for this composite product
       const { data: promptConnections } = await supabase
@@ -1452,7 +1312,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         })
       );
 
-      console.log("🔢 Multi-cantidad (compuesto) resultados:", results.map(r => ({ qty: r.qty, price: r.totalPrice })));
+      debugLog("🔢 Multi-cantidad (compuesto) resultados:", results.map(r => ({ qty: r.qty, price: r.totalPrice })));
 
       return results;
     },
@@ -1854,7 +1714,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Handler para commit (onBlur o Enter) - dispara el recálculo de precios
   const handlePromptCommit = useCallback((id: string, value: any, label: string) => {
-    console.log("✅ Prompt committed (blur/enter):", { id, value, label });
+    debugLog("✅ Prompt committed (blur/enter):", { id, value, label });
     
     // Marcar que el usuario ha cambiado valores (solo en commit, no en cada keystroke)
     setUserHasChangedCurrentProduct(true);
@@ -1895,13 +1755,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     
     // NO sincronizar durante la inicialización
     if (isInitializing) {
-      console.log('⏸️ syncToParent bloqueado durante inicialización');
+      debugLog('⏸️ syncToParent bloqueado durante inicialización');
       return;
     }
     
     // NO sincronizar si se está calculando el precio (evita guardar datos incompletos)
     if (isPricingLoading) {
-      console.log('⏸️ syncToParent bloqueado: precio recalculándose');
+      debugLog('⏸️ syncToParent bloqueado: precio recalculándose');
       return;
     }
     
@@ -1911,16 +1771,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     const hasPromptValues = Object.keys(promptValues).length > 0;
     const pricingPrompts = Array.isArray((pricing as any)?.prompts) ? ((pricing as any).prompts as any[]) : [];
 
-    console.log('🔄 syncToParent ejecutándose:', {
-      productId,
-      isCustomProduct,
-      hasPromptValues,
-      pricingPromptsCount: pricingPrompts.length,
-      promptValuesKeys: Object.keys(promptValues),
-      promptValuesCount: Object.keys(promptValues).length,
-      promptValues,
-      hasOutputs: outputs && outputs.length > 0,
-    });
+    debugLog('🔄 syncToParent ejecutándose:', { productId, promptValuesCount: Object.keys(promptValues).length });
 
     // IMPORTANTE: En el estado de la app, `prompts` debe ser SIEMPRE un objeto
     // { [promptId]: { label, value, order } }.
@@ -1996,18 +1847,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     const snapshotString = JSON.stringify(snapshot);
     if (snapshotString !== lastSyncedSnapshot.current) {
       lastSyncedSnapshot.current = snapshotString;
-      console.log('✅ Sincronizando snapshot al padre:', {
-        promptsCount: Object.keys(promptsObj).length,
-        snapshotPreview: {
-          ...snapshot,
-          prompts: Object.entries(promptsObj)
-            .slice(0, 3)
-            .map(([pid, p]) => ({ id: pid, ...p })),
-        },
-      });
+      debugLog('✅ Sincronizando snapshot al padre');
       onChange(id, snapshot);
-    } else {
-      console.log('⏭️ Snapshot sin cambios, no sincronizando');
     }
   }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, displayName, itemDescription, itemAdditionals, products, initialData?.isFinalized, isInitializing, isCustomProduct, customPrice, customQuantity, pricing, isPricingLoading, userEditedPrice, boundProductConfig]);
 
@@ -2018,14 +1859,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Sincronizar automáticamente cuando cambien los prompts/cálculo (excepto durante inicialización o cálculo)
   useEffect(() => {
     if (!isInitializing && !isPricingLoading && productId) {
-      // Para productos personalizados, sincronizar cuando cambien los campos
       if (isCustomProduct && itemDescription) {
-        console.log('🔄 Auto-sincronizando cambios de producto personalizado');
         syncToParent();
-      }
-      // Para productos de API, sincronizar también en la carga inicial (aunque promptValues esté vacío)
-      else if (!isCustomProduct) {
-        console.log('🔄 Auto-sincronizando producto de API (prompts/pricing)');
+      } else if (!isCustomProduct) {
         syncToParent();
       }
     }
@@ -2044,16 +1880,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     syncToParent,
   ]);
 
-  // Debug logging para el botón Finalizar
-  useEffect(() => {
-    console.log("🔍 Estado de finalización:", {
-      productId: !!productId,
-      priceOutput: !!priceOutput,
-      finalPrice,
-      isComplete,
-      outputsLength: outputs.length
-    });
-  }, [productId, priceOutput, finalPrice, isComplete, outputs]);
+  // Debug desactivado para evitar spam
 
   return (
     <>
@@ -2153,8 +1980,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             <div className="space-y-2">
               <Label>Selecciona producto</Label>
               <Select onValueChange={(value) => {
-                console.log("🔄 Usuario cambió de producto:", value);
-                console.log("🔍 Products disponibles:", products);
                 setProductId(value);
                 if (value === CUSTOM_PRODUCT_ID) {
                   setItemDescription("Artículo personalizado");
@@ -2164,10 +1989,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 } else {
                   // Producto de la API: usar el nombre del producto como displayName
                   const selectedProduct = products?.find((p: any) => String(getProductId(p)) === String(value));
-                  console.log("🔍 Producto encontrado:", selectedProduct);
                   if (selectedProduct) {
                     const productName = getProductLabel(selectedProduct);
-                    console.log("✅ Seteando displayName a:", productName);
                     setDisplayName(productName);
                   }
                 }
