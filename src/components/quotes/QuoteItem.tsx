@@ -80,6 +80,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const apiUserId = organization?.api_user_id || (membership?.organization as any)?.api_user_id;
   const canEditPrice = isSuperAdmin || isOrgAdmin;
   const queryClient = useQueryClient();
+  
+  // Debug: log apiUserId para verificar filtrado de componentes
+  console.log('🔍 QuoteItem context:', { organizationId, apiUserId, orgName: organization?.name });
 
   // Local state per item
   const [productId, setProductId] = useState<string>("");
@@ -441,7 +444,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const { data: componentProductIds, isLoading: isLoadingComponents } = useQuery({
     queryKey: ["component-product-ids", apiUserId],
     queryFn: async () => {
-      if (!apiUserId) return [];
+      if (!apiUserId) {
+        console.log('⚠️ No apiUserId, cannot filter components');
+        return [];
+      }
+      console.log('🔍 Fetching component IDs for apiUserId:', apiUserId);
       const { data, error } = await supabase
         .from("product_component_settings")
         .select("easyquote_product_id")
@@ -453,7 +460,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         return [];
       }
 
-      return (data || []).map((d) => d.easyquote_product_id);
+      const ids = (data || []).map((d) => d.easyquote_product_id);
+      console.log('✅ Component IDs to exclude:', ids);
+      return ids;
     },
     enabled: !!apiUserId,
     staleTime: 5 * 60 * 1000,
