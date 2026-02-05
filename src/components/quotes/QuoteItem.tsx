@@ -466,10 +466,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Obtener productos que son componentes (para excluirlos de la selección)
   // IMPORTANTE: esto debe filtrarse por api_user_id (config compartida entre organizaciones del mismo grupo)
-  const { data: componentProductIds, isLoading: isLoadingComponents } = useQuery({
+  // NOTA: este queryKey se comparte con ProductManagement/ProductTestPage, así que el tipo DEBE ser consistente.
+  const { data: componentProductIds = new Set<string>(), isLoading: isLoadingComponents } = useQuery({
     queryKey: ["component-product-ids", effectiveApiUserId],
     queryFn: async () => {
-      if (!effectiveApiUserId) return [];
+      if (!effectiveApiUserId) return new Set<string>();
       const { data, error } = await supabase
         .from("product_component_settings")
         .select("easyquote_product_id")
@@ -478,13 +479,19 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
       if (error) {
         console.error("Error fetching component products:", error);
-        return [];
+        return new Set<string>();
       }
 
-      return (data || []).map((d) => d.easyquote_product_id);
+      return new Set((data || []).map((d) => d.easyquote_product_id));
     },
     enabled: !!effectiveApiUserId,
     staleTime: 5 * 60 * 1000,
+    // Si por cualquier motivo el caché contiene un array (versión antigua), lo normalizamos a Set.
+    select: (data) => {
+      if (data instanceof Set) return data;
+      if (Array.isArray(data)) return new Set<string>(data);
+      return new Set<string>();
+    },
   });
 
   const { data: allProducts } = useQuery({
@@ -501,8 +508,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     if (isApiUserIdPending) return [];
     if (effectiveApiUserId && isLoadingComponents) return [];
 
-    const componentIds = Array.isArray(componentProductIds) ? componentProductIds : [];
-    return allProducts.filter((p: any) => !componentIds.includes(getProductId(p)));
+    const componentSet = componentProductIds instanceof Set ? componentProductIds : new Set<string>();
+    return allProducts.filter((p: any) => !componentSet.has(getProductId(p)));
   }, [allProducts, componentProductIds, effectiveApiUserId, isLoadingComponents, isApiUserIdPending]);
 
   // Auto-fill product description cuando se selecciona un producto se maneja en el useEffect principal (líneas 712-722)
