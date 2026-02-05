@@ -21,7 +21,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
-import { resolveLivePromptCellLabels } from "@/lib/easyquoteExcelPromptLabels";
 import type { CompositeComponent, PromptConnection, OutputAggregation } from "@/hooks/useCompositeProductConfig";
 import { OutputAggregationSection } from "./OutputAggregationSection";
 
@@ -102,7 +101,7 @@ export function ComponentPromptMappingDialog({
   // Aviso cuando no podemos resolver nombres desde el Excel (o falta asociación producto→excel)
   const [labelResolutionWarning, setLabelResolutionWarning] = useState<string | null>(null);
 
-  // Cargar los prompts del componente desde la definición (prompts/list) + resolución desde el Excel vivo
+  // Cargar los prompts del componente desde easyquote-pricing (fuente de verdad con promptText correcto)
   const { data: componentPrompts = [], isLoading, isFetching } = useQuery({
     queryKey: ["component-prompts", component.component_product_id],
     queryFn: async () => {
@@ -116,94 +115,69 @@ export function ComponentPromptMappingDialog({
           : [];
       }
 
-      // Fuente base: prompts/list (definición)
-      const defsRes = await invokeEasyQuoteFunction<any>("easyquote-prompts", {
+      // Usar easyquote-pricing GET que devuelve los prompts REALES con promptText correcto
+      const pricingRes = await invokeEasyQuoteFunction<any>("easyquote-pricing", {
         token,
         productId: component.component_product_id,
       });
 
-      if (defsRes.error) {
-        console.warn("[ComponentPromptMappingDialog] error leyendo prompts definiciones:", defsRes.error);
-        setLabelResolutionWarning("No se pudo leer la definición de prompts desde EasyQuote. Se muestran los últimos datos disponibles.");
+      if (pricingRes.error) {
+        console.warn("[ComponentPromptMappingDialog] error leyendo pricing:", pricingRes.error);
+        setLabelResolutionWarning("No se pudo leer los datos de entrada desde EasyQuote. Se muestran los últimos datos disponibles.");
         return component.component_product_id
           ? loadLocalCachedPrompts(component.component_product_id)
           : [];
       }
 
-      const promptDefs = Array.isArray(defsRes.data) ? defsRes.data : [];
-      if (promptDefs.length === 0) {
+      // easyquote-pricing devuelve { prompts: [...], outputValues: [...], ... }
+      const promptsFromPricing = Array.isArray(pricingRes.data?.prompts) ? pricingRes.data.prompts : [];
+      
+      if (promptsFromPricing.length === 0) {
+        // Fallback: intentar con easyquote-prompts si pricing no devuelve prompts
+        const defsRes = await invokeEasyQuoteFunction<any>("easyquote-prompts", {
+          token,
+          productId: component.component_product_id,
+        });
+        
+        if (!defsRes.error && Array.isArray(defsRes.data) && defsRes.data.length > 0) {
+          const fallbackResult = defsRes.data.map((d: any) => ({
+            id: String(d.id),
+            name: String(d.id),
+            label: d.promptText || d.label || d.name || d.promptCell || String(d.id),
+            promptCell: d.promptCell ? String(d.promptCell) : undefined,
+            sequence: typeof d.promptSequence === "number" ? d.promptSequence : undefined,
+          }));
+          
+          fallbackResult.sort((a: ComponentPromptDef, b: ComponentPromptDef) => {
+            const sa = a.sequence ?? Number.POSITIVE_INFINITY;
+            const sb = b.sequence ?? Number.POSITIVE_INFINITY;
+            return sa !== sb ? sa - sb : a.label.localeCompare(b.label);
+          });
+          
+          if (component.component_product_id) {
+            saveLocalCachedPrompts(component.component_product_id, fallbackResult);
+          }
+          return fallbackResult;
+        }
+        
         return [];
       }
 
-      // Función helper para extraer el mejor label disponible
-      const extractLabel = (p: any): string => {
-        // Algunos entornos devuelven promptText; otros solo promptCell.
-        return p.promptText || p.label || p.name || p.description || p.promptCell || String(p.id);
-      };
+      // Convertir prompts de pricing al formato esperado
+      const result: ComponentPromptDef[] = promptsFromPricing.map((p: any) => ({
+        id: String(p.id),
+        name: String(p.id),
+        label: p.promptText || p.label || p.name || String(p.id),
+        promptCell: undefined, // pricing no devuelve promptCell, pero no lo necesitamos
+        sequence: typeof p.promptSequence === "number" ? p.promptSequence : undefined,
+      }));
 
-      const merged = new Map<string, ComponentPromptDef>();
-
-      // Base: `prompts` (definición Excel) - siempre añadimos los que faltan
-      for (const d of promptDefs) {
-        const id = String(d.id);
-        const defLabel = extractLabel(d);
-
-        merged.set(id, {
-          id,
-          name: id,
-          label: defLabel,
-          promptCell: d.promptCell ? String(d.promptCell) : undefined,
-          sequence:
-            typeof d.promptSeq === "number"
-              ? d.promptSeq
-              : typeof d.promptSequence === "number"
-                ? d.promptSequence
-                : undefined,
-        });
-      }
-
-      let result = Array.from(merged.values());
       result.sort((a, b) => {
         const sa = a.sequence ?? Number.POSITIVE_INFINITY;
         const sb = b.sequence ?? Number.POSITIVE_INFINITY;
         if (sa !== sb) return sa - sb;
         return a.label.localeCompare(b.label);
       });
-
-      // 2ª capa (clave): resolver labels desde el Excel REAL (vivo)
-      // Esto hace que los nombres sigan al Excel incluso si EasyQuote aún no “etiqueta” los prompts.
-      try {
-        const cells = result.map((p) => p.promptCell).filter(Boolean) as string[];
-        const labelMap = await resolveLivePromptCellLabels({
-          token,
-          productId: component.component_product_id,
-          promptCells: cells,
-        });
-
-        if (labelMap && Object.keys(labelMap).length > 0) {
-          result = result.map((p) => {
-            const excelLabel = p.promptCell ? labelMap[p.promptCell] : undefined;
-            if (!excelLabel) return p;
-            // Solo sustituimos si el label del excel parece “humano”
-            if (/^[A-Z]+\d+$/i.test(excelLabel)) return p;
-            if (String(excelLabel).trim().length < 2) return p;
-            return { ...p, label: String(excelLabel).trim() };
-          });
-        } else {
-          // No error: simplemente no pudimos encontrar el Excel / relación producto→excel.
-          const stillCellOnly = result.some((p) => p.label && /^[A-Z]+\d+$/i.test(p.label));
-          if (stillCellOnly) {
-            setLabelResolutionWarning(
-               "Este componente sigue mostrando celdas (B10, B11…). Se pudo descargar el Excel, pero no se encontraron etiquetas cerca de esas celdas (normalmente están a la izquierda o encima). Revisa el Excel y su estructura.",
-            );
-          }
-        }
-      } catch (e) {
-        console.warn("[ComponentPromptMappingDialog] Excel label resolution failed", e);
-        setLabelResolutionWarning(
-          "No se pudieron resolver los nombres desde el Excel. Se muestran los nombres devueltos por la API (pueden ser celdas).",
-        );
-      }
 
       // Guardar cache local (para offline / errores puntuales)
       if (component.component_product_id) {
@@ -214,7 +188,7 @@ export function ComponentPromptMappingDialog({
     },
     enabled: open && !!component.component_product_id,
     staleTime: 30 * 1000,
-    retry: 2, // Reintentar 2 veces si falla
+    retry: 2,
   });
 
   const handleRefreshPrompts = async () => {
