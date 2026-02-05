@@ -351,40 +351,34 @@ export default function CompositeComponentTabs({
   const parentOutputs = useMemo(() => parentPricingData?.outputs || [], [parentPricingData]);
 
   // =====================================================================
-  // SISTEMA DE DOS FASES PARA AGREGACIÓN DE OUTPUTS
-  // =====================================================================
-  // Fase 1: Calcular componentes que NO reciben agregaciones (ej: interiores)
-  // Fase 2: Calcular componentes que SÍ reciben agregaciones (ej: cubierta recibe lomo)
-  //
-  // Esto permite que Cubierta reciba el lomo sumado de todos los interiores
+  // SISTEMA DE DOS FASES PARA AGREGACIÓN DE LOMO
+  // Fase 1: Calcular interiores (fuentes) y sumar su lomo
+  // Fase 2: Calcular cubierta (receptores) con lomo inyectado del General
   // =====================================================================
 
   // Normalizar para detectar "lomo" en cualquier variante
-  const isLomoLikeOutput = useCallback((v: any) => {
+  const isLomoLikeField = useCallback((v: any) => {
     return String(v ?? "").trim().toLowerCase().includes("lomo");
   }, []);
 
-  // Determinar qué componentes son receptores de agregaciones (reciben lomo de otros)
-  // Un componente es receptor si tiene un prompt llamado "lomo" o similar que debe recibir
-  // el valor agregado de los outputs de otros componentes
+  // Determinar qué componentes reciben el lomo (Cubierta, Tapa, etc.)
+  const receiverPatterns = ["cubierta", "tapa", "cover", "portada"];
+  
   const aggregationReceiverComponents = useMemo(() => {
-    // Componentes que típicamente reciben el lomo: Cubierta, Tapa, Cover
-    const receiverPatterns = ["cubierta", "tapa", "cover", "portada"];
-    
     return activeComponents.filter((c) => {
       const alias = String(c.component_alias || "").toLowerCase();
       return receiverPatterns.some((p) => alias.includes(p));
     });
   }, [activeComponents]);
 
-  // Componentes que NO son receptores (interiores, etc.) - se calculan primero
+  // Componentes fuente (interiores) - se calculan primero
   const sourceComponents = useMemo(() => {
     const receiverIds = new Set(aggregationReceiverComponents.map(c => c.id));
     return activeComponents.filter(c => !receiverIds.has(c.id));
   }, [activeComponents, aggregationReceiverComponents]);
 
   // =====================================================================
-  // FASE 1: Queries para componentes fuente (interiores, etc.)
+  // FASE 1: Queries para componentes fuente (interiores)
   // =====================================================================
   const sourceComponentQueriesResults = useQueries({
     queries: sourceComponents.map((component) => {
@@ -456,8 +450,11 @@ export default function CompositeComponentTabs({
     }),
   });
 
-  // Calcular el lomo agregado de los componentes fuente (interiores)
-  const aggregatedLomoValue = useMemo(() => {
+  // =====================================================================
+  // CALCULAR EL LOMO AGREGADO DE LOS INTERIORES
+  // Este valor se inyectará a Cubierta en la Fase 2
+  // =====================================================================
+  const aggregatedLomoFromSources = useMemo(() => {
     let sum = 0;
     let found = false;
 
@@ -466,7 +463,7 @@ export default function CompositeComponentTabs({
       for (const out of query.data.outputs as any[]) {
         const outName = out?.name ?? out?.id;
         const outLabel = out?.label;
-        if (!isLomoLikeOutput(outLabel) && !isLomoLikeOutput(outName)) continue;
+        if (!isLomoLikeField(outLabel) && !isLomoLikeField(outName)) continue;
 
         const raw = String(out?.value ?? "");
         const num = parseFloat(raw.replace(/\./g, "").replace(",", "."));
@@ -477,13 +474,16 @@ export default function CompositeComponentTabs({
       }
     }
 
-    console.log("[CompositeComponentTabs] Aggregated Lomo from sources:", { sum, found });
+    console.log("[CompositeComponentTabs] Aggregated Lomo from sources (Interiores):", { sum, found });
     return found ? sum : null;
-  }, [sourceComponentQueriesResults, isLomoLikeOutput]);
+  }, [sourceComponentQueriesResults, isLomoLikeField]);
+
+  // ¿Los interiores ya terminaron de cargar?
+  const sourcesReady = sourceComponentQueriesResults.every(q => !q.isLoading && !q.isFetching);
 
   // =====================================================================
-  // FASE 2: Queries para componentes receptores (cubierta) 
-  // Reciben el lomo agregado como input
+  // FASE 2: Queries para componentes receptores (Cubierta)
+  // Reciben el lomo agregado de los interiores
   // =====================================================================
   const receiverComponentQueriesResults = useQueries({
     queries: aggregationReceiverComponents.map((component) => {
@@ -497,7 +497,7 @@ export default function CompositeComponentTabs({
           componentKey,
           JSON.stringify(parentPromptValues),
           JSON.stringify(userEditedValues),
-          aggregatedLomoValue, // Re-calcular cuando cambie el lomo agregado
+          aggregatedLomoFromSources, // Re-calcular cuando cambie el lomo
         ],
         queryFn: async (): Promise<{ prompts: any[]; outputs: any[]; price: number; componentKey: string }> => {
           const token = await getEasyQuoteToken();
@@ -531,81 +531,51 @@ export default function CompositeComponentTabs({
           }
 
           // ============================================================
-          // INYECTAR EL LOMO AGREGADO DEL GENERAL A CUBIERTA
-          // Flujo: Interiores → General (suma) → Cubierta
+          // INYECTAR EL LOMO AGREGADO DE INTERIORES A CUBIERTA
           // ============================================================
-          if (aggregatedLomoValue !== null) {
-            const lomoPatterns = ["lomo mm", "lomo"];
-            const isLomoPrompt = (text: string) => {
-              const normalized = String(text ?? "").toLowerCase().trim();
-              return lomoPatterns.some(p => normalized.includes(p));
-            };
+          if (aggregatedLomoFromSources !== null) {
+            // Hacer GET para encontrar el prompt de lomo en este componente
+            const { data: componentInitData } = await invokeEasyQuoteFunction("easyquote-pricing", {
+              token,
+              productId: component.component_product_id,
+              method: "GET",
+            });
             
-            // 1. Buscar en outputAggregations si hay una configuración que mapee lomo
-            //    del General a este componente (Cubierta)
+            const componentPrompts = componentInitData?.prompts || [];
             let lomoPromptId: string | null = null;
             
-            // 2. Buscar en las conexiones de prompts existentes
-            for (const conn of promptConnections as any[]) {
-              if (conn.target_component_id === component.id || 
-                  conn.target_component_id === component.component_product_id) {
-                // Si la conexión mapea un prompt "lomo" del padre al componente
-                const sourceName = String(conn.source_prompt_name || "").toLowerCase();
-                const targetName = String(conn.target_prompt_name || "");
-                if (isLomoPrompt(sourceName) || isLomoPrompt(targetName)) {
-                  lomoPromptId = conn.target_prompt_name;
-                  console.log("[CompositeComponentTabs] Found Lomo connection:", { sourceName, targetName });
-                  break;
-                }
+            for (const p of componentPrompts as any[]) {
+              const promptText = String(p?.promptText ?? p?.label ?? p?.name ?? "").toLowerCase();
+              const promptId = String(p?.id ?? "");
+              if (promptText.includes("lomo")) {
+                lomoPromptId = promptId;
+                console.log("[CompositeComponentTabs] Found Lomo prompt in Cubierta:", { promptText, id: lomoPromptId });
+                break;
               }
             }
 
-            // 3. Si no hay conexión, hacer GET inicial para encontrar el prompt de lomo
-            //    en los prompts del componente receptor
-            if (!lomoPromptId) {
-              // Hacer una llamada GET para obtener los prompts de este componente
-              const { data: componentData } = await invokeEasyQuoteFunction("easyquote-pricing", {
-                token,
-                productId: component.component_product_id,
-                method: "GET",
-              });
-              
-              const componentPrompts = componentData?.prompts || [];
-              for (const p of componentPrompts as any[]) {
-                const promptText = String(p?.promptText ?? p?.label ?? p?.name ?? "");
-                if (isLomoPrompt(promptText)) {
-                  lomoPromptId = String(p?.id ?? "");
-                  console.log("[CompositeComponentTabs] Found Lomo prompt in component:", { 
-                    promptText, 
-                    id: lomoPromptId 
-                  });
-                  break;
-                }
-              }
-            }
-
-            // 4. Solo inyectar si el usuario no ha editado manualmente el lomo
-            const userEditedLomo = Object.entries(userEditedValues).find(([key, _]) => 
-              isLomoPrompt(key) || key === lomoPromptId
-            );
-            
-            if (!userEditedLomo && lomoPromptId) {
-              // Buscar y actualizar o añadir el input de lomo
-              const existingIdx = componentInputs.findIndex(i => 
-                i.id === lomoPromptId || isLomoPrompt(String(i.id))
+            if (lomoPromptId) {
+              // Solo inyectar si el usuario no ha editado manualmente el lomo
+              const userEditedLomo = Object.entries(userEditedValues).some(([key, _]) => 
+                isLomoLikeField(key) || key === lomoPromptId
               );
               
-              if (existingIdx >= 0) {
-                componentInputs[existingIdx].value = aggregatedLomoValue;
-              } else {
-                componentInputs.push({ id: lomoPromptId, value: aggregatedLomoValue });
+              if (!userEditedLomo) {
+                const existingIdx = componentInputs.findIndex(i => i.id === lomoPromptId);
+                if (existingIdx >= 0) {
+                  componentInputs[existingIdx].value = aggregatedLomoFromSources;
+                } else {
+                  componentInputs.push({ id: lomoPromptId, value: aggregatedLomoFromSources });
+                }
+                
+                console.log("[CompositeComponentTabs] Injecting Lomo from Interiores to Cubierta:", {
+                  componentKey,
+                  lomoPromptId,
+                  value: aggregatedLomoFromSources,
+                });
               }
-              
-              console.log("[CompositeComponentTabs] Injecting aggregated Lomo from General to Cubierta:", {
-                componentKey,
-                lomoPromptId,
-                aggregatedValue: aggregatedLomoValue,
-              });
+            } else {
+              console.warn("[CompositeComponentTabs] No lomo prompt found in Cubierta:", componentKey);
             }
           }
 
@@ -628,25 +598,24 @@ export default function CompositeComponentTabs({
             
           return { prompts, outputs, price, componentKey };
         },
-        // Solo ejecutar cuando los componentes fuente ya calcularon (tenemos el lomo)
-        enabled: !!component.component_product_id && hasParentValues && promptConnectionsReady && 
-                 sourceComponentQueriesResults.every(q => !q.isLoading),
+        // IMPORTANTE: Solo ejecutar cuando los interiores ya calcularon
+        enabled: !!component.component_product_id && hasParentValues && promptConnectionsReady && sourcesReady,
         staleTime: 30 * 1000,
         refetchOnWindowFocus: false,
       };
     }),
   });
 
-  // Combinar resultados de ambas fases en el orden original de activeComponents
+  // =====================================================================
+  // COMBINAR RESULTADOS DE AMBAS FASES
+  // =====================================================================
   const componentQueriesResults = useMemo(() => {
     const results: Array<{ data?: { prompts: any[]; outputs: any[]; price: number }; isLoading: boolean }> = [];
     
     for (const component of activeComponents) {
-      const componentKey = getActiveComponentKey(component);
       const isReceiver = aggregationReceiverComponents.some(r => r.id === component.id);
       
       if (isReceiver) {
-        // Buscar en los resultados de receptores
         const idx = aggregationReceiverComponents.findIndex(r => r.id === component.id);
         const query = receiverComponentQueriesResults[idx];
         results.push({
@@ -654,7 +623,6 @@ export default function CompositeComponentTabs({
           isLoading: query?.isLoading ?? true,
         });
       } else {
-        // Buscar en los resultados de fuentes
         const idx = sourceComponents.findIndex(s => s.id === component.id);
         const query = sourceComponentQueriesResults[idx];
         results.push({
