@@ -1605,7 +1605,41 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       return basePrice + additionalsTotal;
     }
     
-    // Para productos API: el precio que queremos mostrar/guardar es el output con type=Price.
+    // Para productos COMPUESTOS: usar compositeTotalPrice (suma de componentes)
+    if (hasConfiguredComponents && compositeTotalPrice > 0) {
+      let additionalsTotal = 0;
+      let quantity = 1;
+      
+      // Obtener cantidad del prompt
+      if (qtyPrompt && promptValues[qtyPrompt]) {
+        const qtyValue = promptValues[qtyPrompt];
+        const rawQty = (qtyValue && typeof qtyValue === 'object' && 'value' in qtyValue) 
+          ? qtyValue.value 
+          : qtyValue;
+        const parsedQty = parseFloat(String(rawQty).replace(/\./g, "").replace(",", "."));
+        if (!isNaN(parsedQty) && parsedQty > 0) {
+          quantity = parsedQty;
+        }
+      }
+      
+      if (Array.isArray(itemAdditionals)) {
+        itemAdditionals.forEach((additional) => {
+          if (additional.type === 'net_amount') {
+            additionalsTotal += additional.value;
+          } else if (additional.type === 'quantity_multiplier') {
+            additionalsTotal += additional.value * quantity;
+          } else if (additional.type === 'capacity_divider') {
+            const capacity = additional.capacity_value || 1;
+            const unitsNeeded = Math.ceil(quantity / capacity);
+            additionalsTotal += additional.value * unitsNeeded;
+          }
+        });
+      }
+      
+      return compositeTotalPrice + additionalsTotal;
+    }
+    
+    // Para productos API simples: el precio que queremos mostrar/guardar es el output con type=Price.
     // pricing.price a veces viene con IVA, así que solo lo usamos como fallback.
     const outputPrice = (priceOutput as any)?.value;
     const pricingPrice = (pricing as any)?.price;
@@ -1655,7 +1689,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     }
     
     return basePrice + additionalsTotal;
-  }, [priceOutput, itemAdditionals, multiEnabled, multiRows, isCustomProduct, customPrice, customQuantity, qtyPrompt, promptValues]);
+  }, [priceOutput, itemAdditionals, multiEnabled, multiRows, isCustomProduct, customPrice, customQuantity, qtyPrompt, promptValues, hasConfiguredComponents, compositeTotalPrice, pricing]);
 
   // Calculate additionals breakdown for a specific quantity
   const calculateAdditionalsForQty = useMemo(() => {
