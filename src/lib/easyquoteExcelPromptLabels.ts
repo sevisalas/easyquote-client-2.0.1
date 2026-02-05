@@ -71,6 +71,13 @@ function getCandidateLabelFromSheet(sheet: XLSX.WorkSheet, row: number, col: num
     return stringifyCell(cell?.w ?? cell?.v ?? "");
   };
 
+  // Caso especial EasyQuote: promptCell en columna B (índice 1) contiene la etiqueta directamente
+  // EasyQuote usa B como celda de etiqueta, no como input
+  if (col === 1) {
+    const selfValue = at(row, col);
+    if (looksLikeUsefulLabel(selfValue)) return selfValue;
+  }
+
   // Heurística típica: etiqueta a la izquierda del input
   for (let dx = 1; dx <= 3; dx++) {
     const v = at(row, col - dx);
