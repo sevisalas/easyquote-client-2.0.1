@@ -36,6 +36,31 @@ function findUrlInObject(obj: unknown): string | undefined {
   return undefined;
 }
 
+function base64UrlDecode(input: string): string {
+  // base64url -> base64
+  const b64 = input.replace(/-/g, "+").replace(/_/g, "/");
+  const pad = b64.length % 4 === 0 ? "" : "=".repeat(4 - (b64.length % 4));
+  const bytes = Uint8Array.from(atob(b64 + pad), (c) => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function tryExtractSubscriberIdFromEasyQuoteJwt(token: string): string | undefined {
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return undefined;
+    const payloadJson = base64UrlDecode(parts[1]);
+    const payload = JSON.parse(payloadJson) as Record<string, unknown>;
+    return pickFirstString(
+      payload?.SubscriberID,
+      payload?.SubscriberId,
+      payload?.subscriberId,
+      payload?.subscriberID,
+    );
+  } catch {
+    return undefined;
+  }
+}
+
 serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -62,6 +87,11 @@ serve(async (req: Request): Promise<Response> => {
     let finalDownloadUrl = pickFirstString(downloadUrl);
     let finalSubscriberId = pickFirstString(subscriberId);
     let finalFileName = pickFirstString(fileName);
+
+    // Si no llega subscriberId, intentarlo desde el JWT de EasyQuote (claim SubscriberID)
+    if (!finalSubscriberId) {
+      finalSubscriberId = tryExtractSubscriberIdFromEasyQuoteJwt(token);
+    }
 
     // Si faltan parámetros, intentar resolverlos desde el detalle del excel
     if (!finalDownloadUrl && (!finalSubscriberId || !finalFileName)) {
