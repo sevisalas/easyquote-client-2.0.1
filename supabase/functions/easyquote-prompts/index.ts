@@ -70,6 +70,22 @@ serve(async (req: Request): Promise<Response> => {
 
     const data = await response.json();
     console.log("easyquote-prompts: Prompts received:", data?.length || 0);
+    
+    // Log detailed structure of first few prompts to understand available fields
+    if (Array.isArray(data) && data.length > 0) {
+      console.log("easyquote-prompts: Sample prompt structure:", JSON.stringify(data.slice(0, 3).map((p: any) => ({
+        id: p.id,
+        promptCell: p.promptCell,
+        promptText: p.promptText,
+        promptSeq: p.promptSeq,
+        promptSequence: p.promptSequence,
+        promptType: p.promptType,
+        label: p.label,
+        name: p.name,
+        description: p.description,
+        keys: Object.keys(p)
+      }))));
+    }
 
     return new Response(JSON.stringify(data), {
       status: 200,

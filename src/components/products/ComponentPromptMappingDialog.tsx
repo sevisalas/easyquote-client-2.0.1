@@ -99,34 +99,49 @@ export function ComponentPromptMappingDialog({
       const pricingPrompts = Array.isArray(pricingRes.data?.prompts) ? pricingRes.data.prompts : [];
       const promptDefs = Array.isArray(defsRes.data) ? defsRes.data : [];
 
+      // Función helper para extraer el mejor label disponible
+      const extractLabel = (p: any): string => {
+        // Orden de prioridad: promptText > label > name > description > promptCell > id
+        return p.promptText || p.label || p.name || p.description || p.promptCell || String(p.id);
+      };
+
       const merged = new Map<string, ComponentPromptDef>();
 
-      // 1) Preferimos `pricing` porque trae promptText (label real)
+      // 1) Preferimos `pricing` porque suele traer promptText (label real)
       for (const p of pricingPrompts) {
         merged.set(String(p.id), {
           id: String(p.id),
           name: String(p.id),
-          label: p.promptText || p.promptCell || String(p.id),
+          label: extractLabel(p),
           promptCell: p.promptCell,
           sequence: typeof p.promptSequence === "number" ? p.promptSequence : undefined,
         });
       }
 
-      // 2) Completamos con `prompts` (definición Excel) para incluir campos nuevos
+      // 2) Completamos/mejoramos con `prompts` (definición Excel)
       for (const d of promptDefs) {
         const id = String(d.id);
         const existing = merged.get(id);
+        const defLabel = extractLabel(d);
+        
         if (!existing) {
           merged.set(id, {
             id,
             name: id,
-            // Aquí normalmente solo tendremos la celda (p.ej. B10). Mejor que nada si `pricing` no está actualizado.
-            label: d.promptCell || id,
+            label: defLabel,
             promptCell: d.promptCell,
             sequence: typeof d.promptSeq === "number" ? d.promptSeq : undefined,
           });
-        } else if (!existing.promptCell && d.promptCell) {
-          merged.set(id, { ...existing, promptCell: d.promptCell });
+        } else {
+          // Si el label existente es solo la celda (B10, C5, etc.) y tenemos un label mejor, actualizamos
+          const isCellOnlyLabel = /^[A-Z]+\d+$/i.test(existing.label);
+          if (isCellOnlyLabel && defLabel && !/^[A-Z]+\d+$/i.test(defLabel)) {
+            merged.set(id, { ...existing, label: defLabel });
+          }
+          // También completar promptCell si falta
+          if (!existing.promptCell && d.promptCell) {
+            merged.set(id, { ...merged.get(id)!, promptCell: d.promptCell });
+          }
         }
       }
 
