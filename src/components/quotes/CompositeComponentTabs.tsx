@@ -350,78 +350,85 @@ export default function CompositeComponentTabs({
   // Outputs del padre (generales)
   const parentOutputs = useMemo(() => parentPricingData?.outputs || [], [parentPricingData]);
 
-  // Usar useQueries para obtener datos de todos los componentes
-  // Incluye tanto los valores heredados (conexiones) como los editados por el usuario (componentPromptValues)
-  // IMPORTANTE: Usamos getActiveComponentKey para distinguir múltiples instancias del mismo componente
-  const componentQueriesResults = useQueries({
-    queries: activeComponents.map((component) => {
+  // =====================================================================
+  // SISTEMA DE DOS FASES PARA AGREGACIÓN DE OUTPUTS
+  // =====================================================================
+  // Fase 1: Calcular componentes que NO reciben agregaciones (ej: interiores)
+  // Fase 2: Calcular componentes que SÍ reciben agregaciones (ej: cubierta recibe lomo)
+  //
+  // Esto permite que Cubierta reciba el lomo sumado de todos los interiores
+  // =====================================================================
+
+  // Normalizar para detectar "lomo" en cualquier variante
+  const isLomoLikeOutput = useCallback((v: any) => {
+    return String(v ?? "").trim().toLowerCase().includes("lomo");
+  }, []);
+
+  // Determinar qué componentes son receptores de agregaciones (reciben lomo de otros)
+  // Un componente es receptor si tiene un prompt llamado "lomo" o similar que debe recibir
+  // el valor agregado de los outputs de otros componentes
+  const aggregationReceiverComponents = useMemo(() => {
+    // Componentes que típicamente reciben el lomo: Cubierta, Tapa, Cover
+    const receiverPatterns = ["cubierta", "tapa", "cover", "portada"];
+    
+    return activeComponents.filter((c) => {
+      const alias = String(c.component_alias || "").toLowerCase();
+      return receiverPatterns.some((p) => alias.includes(p));
+    });
+  }, [activeComponents]);
+
+  // Componentes que NO son receptores (interiores, etc.) - se calculan primero
+  const sourceComponents = useMemo(() => {
+    const receiverIds = new Set(aggregationReceiverComponents.map(c => c.id));
+    return activeComponents.filter(c => !receiverIds.has(c.id));
+  }, [activeComponents, aggregationReceiverComponents]);
+
+  // =====================================================================
+  // FASE 1: Queries para componentes fuente (interiores, etc.)
+  // =====================================================================
+  const sourceComponentQueriesResults = useQueries({
+    queries: sourceComponents.map((component) => {
       const componentKey = getActiveComponentKey(component);
-      // Obtener valores editados por el usuario para esta instancia específica
       const userEditedValues = componentPromptValues[componentKey] || {};
       
       return {
         queryKey: [
-          "component-pricing", 
+          "component-pricing-source", 
           component.component_product_id, 
-          componentKey, // Usar key única que incluye instance_index
+          componentKey,
           JSON.stringify(parentPromptValues),
-          JSON.stringify(userEditedValues), // Incluir valores editados en la key
+          JSON.stringify(userEditedValues),
         ],
-        queryFn: async (): Promise<{ prompts: any[]; outputs: any[]; price: number }> => {
+        queryFn: async (): Promise<{ prompts: any[]; outputs: any[]; price: number; componentKey: string }> => {
           const token = await getEasyQuoteToken();
           if (!token) throw new Error("No hay token");
 
-          // Calcular valores de prompts para este componente basado en las conexiones
           const componentInputs: { id: string; value: any }[] = [];
           
-          // Filtrar conexiones para ESTE componente (por id O por component_product_id)
           const connections = promptConnections.filter(
             (conn: any) => 
               conn.target_component_id === component.id || 
               conn.target_component_id === component.component_product_id
           );
 
-          // 1. Añadir valores heredados de conexiones
           for (const conn of connections as any[]) {
             let sourceValue = getEffectiveParentPromptValue(conn.source_prompt_name);
-            
-            // El valor puede venir como objeto {value, label} o como primitivo
             if (sourceValue !== undefined && sourceValue !== null) {
-              // Extraer el valor real si es un objeto
               const actualValue = (typeof sourceValue === 'object' && sourceValue !== null && 'value' in sourceValue)
-                ? sourceValue.value
-                : sourceValue;
-              
+                ? sourceValue.value : sourceValue;
               if (actualValue !== undefined && actualValue !== null) {
-                componentInputs.push({
-                  id: conn.target_prompt_name,
-                  value: actualValue,
-                });
+                componentInputs.push({ id: conn.target_prompt_name, value: actualValue });
               }
             }
           }
           
-          // 2. Añadir valores editados por el usuario (sobrescriben si hay conflicto)
           for (const [promptId, value] of Object.entries(userEditedValues)) {
             if (value !== undefined && value !== null) {
-              // Buscar si ya existe en componentInputs y sobrescribir
               const existingIdx = componentInputs.findIndex(i => i.id === promptId);
-              if (existingIdx >= 0) {
-                componentInputs[existingIdx].value = value;
-              } else {
-                componentInputs.push({ id: promptId, value });
-              }
+              if (existingIdx >= 0) componentInputs[existingIdx].value = value;
+              else componentInputs.push({ id: promptId, value });
             }
           }
-          
-          console.log("[CompositeComponentTabs] API inputs for component instance", {
-            componentKey,
-            componentProductId: component.component_product_id,
-            instanceIndex: component.instance_index,
-            connectionsFound: connections.length,
-            userEditedValuesCount: Object.keys(userEditedValues).length,
-            inputs: componentInputs,
-          });
 
           const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
             token,
@@ -435,23 +442,208 @@ export default function CompositeComponentTabs({
           
           const prompts = data?.prompts || [];
           const outputs = data?.outputValues || data?.outputs || [];
-          
-          const priceOutput = outputs.find(
-            (o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price"
-          );
+          const priceOutput = outputs.find((o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price");
           const price = priceOutput
             ? parseFloat(String(priceOutput.value ?? "0").replace(/\./g, "").replace(",", ".")) || 0
             : 0;
             
-          return { prompts, outputs, price };
+          return { prompts, outputs, price, componentKey };
         },
-        // Solo ejecutar cuando tenemos valores del padre Y las conexiones están cargadas
         enabled: !!component.component_product_id && hasParentValues && promptConnectionsReady,
         staleTime: 30 * 1000,
         refetchOnWindowFocus: false,
       };
     }),
   });
+
+  // Calcular el lomo agregado de los componentes fuente (interiores)
+  const aggregatedLomoValue = useMemo(() => {
+    let sum = 0;
+    let found = false;
+
+    for (const query of sourceComponentQueriesResults) {
+      if (!query.data?.outputs) continue;
+      for (const out of query.data.outputs as any[]) {
+        const outName = out?.name ?? out?.id;
+        const outLabel = out?.label;
+        if (!isLomoLikeOutput(outLabel) && !isLomoLikeOutput(outName)) continue;
+
+        const raw = String(out?.value ?? "");
+        const num = parseFloat(raw.replace(/\./g, "").replace(",", "."));
+        if (Number.isFinite(num)) {
+          sum += num;
+          found = true;
+        }
+      }
+    }
+
+    console.log("[CompositeComponentTabs] Aggregated Lomo from sources:", { sum, found });
+    return found ? sum : null;
+  }, [sourceComponentQueriesResults, isLomoLikeOutput]);
+
+  // =====================================================================
+  // FASE 2: Queries para componentes receptores (cubierta) 
+  // Reciben el lomo agregado como input
+  // =====================================================================
+  const receiverComponentQueriesResults = useQueries({
+    queries: aggregationReceiverComponents.map((component) => {
+      const componentKey = getActiveComponentKey(component);
+      const userEditedValues = componentPromptValues[componentKey] || {};
+      
+      return {
+        queryKey: [
+          "component-pricing-receiver", 
+          component.component_product_id, 
+          componentKey,
+          JSON.stringify(parentPromptValues),
+          JSON.stringify(userEditedValues),
+          aggregatedLomoValue, // Re-calcular cuando cambie el lomo agregado
+        ],
+        queryFn: async (): Promise<{ prompts: any[]; outputs: any[]; price: number; componentKey: string }> => {
+          const token = await getEasyQuoteToken();
+          if (!token) throw new Error("No hay token");
+
+          const componentInputs: { id: string; value: any }[] = [];
+          
+          const connections = promptConnections.filter(
+            (conn: any) => 
+              conn.target_component_id === component.id || 
+              conn.target_component_id === component.component_product_id
+          );
+
+          for (const conn of connections as any[]) {
+            let sourceValue = getEffectiveParentPromptValue(conn.source_prompt_name);
+            if (sourceValue !== undefined && sourceValue !== null) {
+              const actualValue = (typeof sourceValue === 'object' && sourceValue !== null && 'value' in sourceValue)
+                ? sourceValue.value : sourceValue;
+              if (actualValue !== undefined && actualValue !== null) {
+                componentInputs.push({ id: conn.target_prompt_name, value: actualValue });
+              }
+            }
+          }
+          
+          for (const [promptId, value] of Object.entries(userEditedValues)) {
+            if (value !== undefined && value !== null) {
+              const existingIdx = componentInputs.findIndex(i => i.id === promptId);
+              if (existingIdx >= 0) componentInputs[existingIdx].value = value;
+              else componentInputs.push({ id: promptId, value });
+            }
+          }
+
+          // ============================================================
+          // INYECTAR EL LOMO AGREGADO DE LOS INTERIORES
+          // ============================================================
+          if (aggregatedLomoValue !== null) {
+            // Buscar el prompt de lomo en este componente para inyectar el valor
+            // El prompt de lomo puede llamarse "Lomo mm", "Lomo", etc.
+            // Lo añadimos/sobrescribimos en los inputs
+            const lomoPromptPatterns = ["lomo mm", "lomo"];
+            
+            // Primero intentamos encontrar el ID del prompt de lomo basándonos en 
+            // las conexiones existentes o los prompts conocidos
+            let lomoPromptId: string | null = null;
+            
+            // Buscar en las conexiones si hay alguna que mapee al lomo
+            for (const conn of promptConnections as any[]) {
+              if (conn.target_component_id === component.id || 
+                  conn.target_component_id === component.component_product_id) {
+                const targetName = String(conn.target_prompt_name || "").toLowerCase();
+                if (lomoPromptPatterns.some(p => targetName.includes(p))) {
+                  lomoPromptId = conn.target_prompt_name;
+                  break;
+                }
+              }
+            }
+
+            // Si no encontramos conexión, usar un ID genérico basado en patrones comunes
+            if (!lomoPromptId) {
+              // Intentar buscar en los prompts existentes del componente
+              // Por ahora usamos un ID común que EasyQuote suele usar para Lomo
+              lomoPromptId = "18573499-e156-4e95-985e-88e5e4820cdc"; // UUID común para Lomo mm
+            }
+
+            // Solo inyectar si el usuario no ha editado manualmente el lomo
+            const userEditedLomo = Object.entries(userEditedValues).find(([key, _]) => 
+              key.toLowerCase().includes("lomo") || key === lomoPromptId
+            );
+            
+            if (!userEditedLomo && lomoPromptId) {
+              const existingIdx = componentInputs.findIndex(i => 
+                i.id === lomoPromptId || 
+                String(i.id).toLowerCase().includes("lomo")
+              );
+              
+              if (existingIdx >= 0) {
+                componentInputs[existingIdx].value = aggregatedLomoValue;
+              } else {
+                componentInputs.push({ id: lomoPromptId, value: aggregatedLomoValue });
+              }
+              
+              console.log("[CompositeComponentTabs] Injected aggregated Lomo to receiver:", {
+                componentKey,
+                lomoPromptId,
+                value: aggregatedLomoValue,
+              });
+            }
+          }
+
+          const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
+            token,
+            productId: component.component_product_id,
+            inputs: componentInputs,
+            productType: "composite",
+            componentId: componentKey,
+          });
+
+          if (error) throw error;
+          
+          const prompts = data?.prompts || [];
+          const outputs = data?.outputValues || data?.outputs || [];
+          const priceOutput = outputs.find((o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price");
+          const price = priceOutput
+            ? parseFloat(String(priceOutput.value ?? "0").replace(/\./g, "").replace(",", ".")) || 0
+            : 0;
+            
+          return { prompts, outputs, price, componentKey };
+        },
+        // Solo ejecutar cuando los componentes fuente ya calcularon (tenemos el lomo)
+        enabled: !!component.component_product_id && hasParentValues && promptConnectionsReady && 
+                 sourceComponentQueriesResults.every(q => !q.isLoading),
+        staleTime: 30 * 1000,
+        refetchOnWindowFocus: false,
+      };
+    }),
+  });
+
+  // Combinar resultados de ambas fases en el orden original de activeComponents
+  const componentQueriesResults = useMemo(() => {
+    const results: Array<{ data?: { prompts: any[]; outputs: any[]; price: number }; isLoading: boolean }> = [];
+    
+    for (const component of activeComponents) {
+      const componentKey = getActiveComponentKey(component);
+      const isReceiver = aggregationReceiverComponents.some(r => r.id === component.id);
+      
+      if (isReceiver) {
+        // Buscar en los resultados de receptores
+        const idx = aggregationReceiverComponents.findIndex(r => r.id === component.id);
+        const query = receiverComponentQueriesResults[idx];
+        results.push({
+          data: query?.data ? { prompts: query.data.prompts, outputs: query.data.outputs, price: query.data.price } : undefined,
+          isLoading: query?.isLoading ?? true,
+        });
+      } else {
+        // Buscar en los resultados de fuentes
+        const idx = sourceComponents.findIndex(s => s.id === component.id);
+        const query = sourceComponentQueriesResults[idx];
+        results.push({
+          data: query?.data ? { prompts: query.data.prompts, outputs: query.data.outputs, price: query.data.price } : undefined,
+          isLoading: query?.isLoading ?? true,
+        });
+      }
+    }
+    
+    return results;
+  }, [activeComponents, aggregationReceiverComponents, sourceComponents, sourceComponentQueriesResults, receiverComponentQueriesResults]);
 
   // Query para obtener el orden de outputs guardado para CADA componente
   const componentOutputOrderQueries = useQueries({
