@@ -82,9 +82,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
         )
       }
 
-      // Use the superadmin-specific RPC
+      // Use the superadmin-specific RPC, passing user.id for verification since service role doesn't have auth.uid()
       const result = await supabaseAdmin.rpc('get_organization_easyquote_credentials_for_superadmin', {
-        p_organization_id: organizationId
+        p_organization_id: organizationId,
+        p_calling_user_id: user.id
       })
       credentials = result.data
       credError = result.error
