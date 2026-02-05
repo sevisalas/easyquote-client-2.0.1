@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
+import { supabase } from "@/integrations/supabase/client";
 
 // Tipo local para evitar acoplar este componente a exportaciones del hook.
 interface OutputAggregation {
@@ -37,6 +38,14 @@ interface OutputDef {
   name: string;
   label: string;
   type: string;
+}
+
+function filterOutPriceAndImages(o: OutputDef): boolean {
+  const type = String(o.type || "").toLowerCase();
+  const name = String(o.name || "").toLowerCase();
+  const isPrice = type === "price" || name === "price" || name === "precio";
+  const isImage = type === "image" || name === "image" || name === "imagen";
+  return !isPrice && !isImage;
 }
 
 /**
@@ -77,14 +86,7 @@ export function OutputAggregationSection({
         return { name, label: label || name, type: type || "unknown" } as OutputDef;
       })
       .filter(Boolean)
-      .filter((o: any) => {
-        const type = String(o.type || "").toLowerCase();
-        const name = String(o.name || "").toLowerCase();
-        // Excluir precio e imágenes
-        const isPrice = type === "price" || name === "price" || name === "precio";
-        const isImage = type === "image" || name === "image" || name === "imagen";
-        return !isPrice && !isImage;
-      }) as OutputDef[];
+      .filter(filterOutPriceAndImages) as OutputDef[];
   };
 
   // Cargar outputs del COMPONENTE
@@ -99,8 +101,7 @@ export function OutputAggregationSection({
         method: "GET",
       });
       if (error) throw new Error("No se pudieron cargar los outputs del componente");
-      const outputs = data?.outputValues ?? data?.outputs ?? [];
-      return normalizeOutputs(outputs);
+      return normalizeOutputs(data);
     },
     enabled: !!componentProductId,
     staleTime: 5 * 60 * 1000,
@@ -109,8 +110,42 @@ export function OutputAggregationSection({
 
   // Cargar outputs del PADRE (producto compuesto)
   const { data: parentOutputs = [], isLoading: isLoadingParent, isError: isErrorParent } = useQuery({
-    queryKey: ["parent-outputs-pricing", compositeProductId],
+    queryKey: ["parent-outputs", compositeProductId, organizationId],
     queryFn: async () => {
+      // 1) Preferimos los outputs “generales” configurados en BD (pestaña Datos de salida).
+      //    Esto evita depender de que EasyQuote devuelva outputs en el pricing del padre.
+      try {
+        if (organizationId && compositeProductId) {
+          const { data: org, error: orgError } = await supabase
+            .from("organizations")
+            .select("api_user_id")
+            .eq("id", organizationId)
+            .single();
+
+          if (!orgError && org?.api_user_id) {
+            const { data: dbOutputs, error: dbError } = await supabase
+              .from("composite_product_outputs")
+              .select("name,label,type")
+              .eq("api_user_id", org.api_user_id)
+              .eq("easyquote_product_id", compositeProductId)
+              .order("display_order", { ascending: true });
+
+            if (!dbError && Array.isArray(dbOutputs) && dbOutputs.length > 0) {
+              return dbOutputs
+                .map((o) => ({
+                  name: String(o.name),
+                  label: String(o.label ?? o.name),
+                  type: String(o.type ?? "unknown"),
+                }))
+                .filter(filterOutPriceAndImages);
+            }
+          }
+        }
+      } catch {
+        // Si falla BD, hacemos fallback a EasyQuote.
+      }
+
+      // 2) Fallback: EasyQuote pricing (por si no hay outputs en BD todavía)
       const token = await getEasyQuoteToken();
       if (!token) return [];
       const { data, error } = await invokeEasyQuoteFunction<any>("easyquote-pricing", {
@@ -118,9 +153,8 @@ export function OutputAggregationSection({
         productId: compositeProductId,
         method: "GET",
       });
-      if (error) throw new Error("No se pudieron cargar los outputs del padre");
-      const outputs = data?.outputValues ?? data?.outputs ?? [];
-      return normalizeOutputs(outputs);
+      if (error) throw new Error("No se pudieron cargar los outputs del producto principal");
+      return normalizeOutputs(data);
     },
     enabled: !!compositeProductId,
     staleTime: 5 * 60 * 1000,
@@ -216,7 +250,7 @@ export function OutputAggregationSection({
   if (parentOutputs.length === 0) {
     return (
       <div className="text-sm text-muted-foreground text-center py-4">
-        No hay outputs disponibles en el producto principal
+        No hay outputs generales disponibles para mapear. Define primero los “Datos de salida” del producto compuesto.
       </div>
     );
   }
