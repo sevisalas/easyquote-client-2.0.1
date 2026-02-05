@@ -1360,6 +1360,7 @@ export default function ProductTestPage({
                           <CompositeComponentTabs
                             parentProductId={productId}
                             organizationId={organizationId}
+                            apiUserId={apiUserId}
                             activeComponents={activeCompositeComponents}
                             parentPromptValues={promptValues}
                             onParentPromptChange={handlePromptChange}

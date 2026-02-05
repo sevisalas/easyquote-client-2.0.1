@@ -2145,6 +2145,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                           <CompositeComponentTabs
                             parentProductId={productId}
                             organizationId={organizationId}
+                            apiUserId={effectiveApiUserId || undefined}
                             activeComponents={activeCompositeComponents}
                             parentPromptValues={promptValues}
                             onParentPromptChange={handlePromptChange}

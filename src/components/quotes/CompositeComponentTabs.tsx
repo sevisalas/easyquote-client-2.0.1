@@ -18,6 +18,8 @@ interface CompositeComponentTabsProps {
   parentProductId: string;
   /** organization_id (recomendado para RLS multi-tenant) */
   organizationId?: string;
+  /** api_user_id para configuraciones compartidas entre organizaciones del mismo grupo */
+  apiUserId?: string;
   /** Componentes activos seleccionados por el usuario */
   activeComponents: ActiveComponent[];
   /** Valores de prompts del producto padre */
@@ -66,6 +68,7 @@ export type ComponentsDataMap = Record<string, ComponentPricingData>;
 export default function CompositeComponentTabs({
   parentProductId,
   organizationId: organizationIdProp,
+  apiUserId: apiUserIdProp,
   activeComponents,
   parentPromptValues,
   onParentPromptChange,
@@ -124,6 +127,47 @@ export default function CompositeComponentTabs({
 
   // organization_id efectivo (necesario para RLS en tablas multi-tenant)
   const organizationId = organizationIdProp ?? settingsOrganizationId;
+  
+  // Query para obtener api_user_id (para configuraciones compartidas entre organizaciones del mismo grupo)
+  const { data: orgApiUserData } = useQuery({
+    queryKey: ['current-org-api-user-id'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      // Primero intentar como owner de una organización
+      const { data: ownedOrg } = await supabase
+        .from('organizations')
+        .select('id, api_user_id')
+        .eq('api_user_id', user.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (ownedOrg) {
+        return { organizationId: ownedOrg.id, apiUserId: ownedOrg.api_user_id };
+      }
+
+      // Sino, buscar como miembro
+      const { data: membership } = await supabase
+        .from('organization_members')
+        .select('organization_id, organization:organizations(id, api_user_id)')
+        .eq('user_id', user.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (membership?.organization) {
+        const org = membership.organization as { id: string; api_user_id: string };
+        return { organizationId: org.id, apiUserId: org.api_user_id };
+      }
+
+      return null;
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: !apiUserIdProp,
+  });
+  
+  // api_user_id efectivo
+  const apiUserId = apiUserIdProp ?? orgApiUserData?.apiUserId;
 
   // Necesitamos las definiciones de prompts para mapear UUID -> celda (B10, B36, etc.)
   // y así poder aplicar correctamente force_result (se guarda en BD por celda).
@@ -150,37 +194,39 @@ export default function CompositeComponentTabs({
   });
 
   // Fetch prompt connections from database
+  // NOTE: Use api_user_id for shared product configurations across organizations
   const {
     data: promptConnections = [],
     isSuccess: promptConnectionsReady,
   } = useQuery({
-    queryKey: ["composite-prompt-connections", parentProductId, organizationId],
+    queryKey: ["composite-prompt-connections", parentProductId, apiUserId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("composite_prompt_connections")
         .select("*")
-        .eq("organization_id", organizationId)
+        .eq("api_user_id", apiUserId)
         .eq("composite_product_id", parentProductId);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!parentProductId && !!organizationId,
+    enabled: !!parentProductId && !!apiUserId,
     staleTime: 5 * 60 * 1000,
   });
 
   // Fetch output aggregation config from database
+  // NOTE: Use api_user_id for shared product configurations
   const { data: outputAggregations = [] } = useQuery({
-    queryKey: ["composite-output-aggregations", parentProductId, organizationId],
+    queryKey: ["composite-output-aggregations", parentProductId, apiUserId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("composite_output_aggregations")
         .select("*")
-        .eq("organization_id", organizationId)
+        .eq("api_user_id", apiUserId)
         .eq("composite_product_id", parentProductId);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!parentProductId && !!organizationId,
+    enabled: !!parentProductId && !!apiUserId,
     staleTime: 5 * 60 * 1000,
   });
 
