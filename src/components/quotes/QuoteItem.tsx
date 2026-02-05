@@ -437,22 +437,25 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     p?.name ?? p?.title ?? p?.displayName ?? p?.productName ?? p?.product_name ?? p?.nombre ?? p?.Nombre ?? p?.description ?? "Producto sin nombre";
 
   // Obtener productos que son componentes (para excluirlos de la selección)
+  // IMPORTANTE: esto debe filtrarse por api_user_id (config compartida entre organizaciones del mismo grupo)
   const { data: componentProductIds, isLoading: isLoadingComponents } = useQuery({
-    queryKey: ["component-product-ids", organizationId],
+    queryKey: ["component-product-ids", apiUserId],
     queryFn: async () => {
-      if (!organizationId) return [];
+      if (!apiUserId) return [];
       const { data, error } = await supabase
         .from("product_component_settings")
         .select("easyquote_product_id")
-        .eq("organization_id", organizationId)
+        .eq("api_user_id", apiUserId)
         .eq("is_component", true);
+
       if (error) {
         console.error("Error fetching component products:", error);
         return [];
       }
-      return data.map(d => d.easyquote_product_id);
+
+      return (data || []).map((d) => d.easyquote_product_id);
     },
-    enabled: !!organizationId,
+    enabled: !!apiUserId,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -467,12 +470,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Esperamos a que componentProductIds esté cargado para aplicar el filtro correctamente
   const products = useMemo(() => {
     if (!allProducts) return [];
-    // Si aún no tenemos organizationId o está cargando componentes, esperamos
-    if (organizationId && isLoadingComponents) return [];
+    // Si aún no tenemos apiUserId o está cargando componentes, esperamos
+    if (apiUserId && isLoadingComponents) return [];
     const componentIds = Array.isArray(componentProductIds) ? componentProductIds : [];
     // Filtrar componentes de la lista
     return allProducts.filter((p: any) => !componentIds.includes(p.id));
-  }, [allProducts, componentProductIds, organizationId, isLoadingComponents]);
+  }, [allProducts, componentProductIds, apiUserId, isLoadingComponents]);
 
   // Auto-fill product description cuando se selecciona un producto se maneja en el useEffect principal (líneas 712-722)
 
