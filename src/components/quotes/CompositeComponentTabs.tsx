@@ -323,10 +323,6 @@ export default function CompositeComponentTabs({
       const token = await getEasyQuoteToken();
       if (!token) throw new Error("No hay token");
 
-      console.log("[CompositeComponentTabs] Fetching parent outputs", {
-        parentProductId,
-        inputsCount: parentInputs.length,
-      });
 
       const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
         token,
@@ -474,24 +470,16 @@ export default function CompositeComponentTabs({
       }
     }
 
-    console.log("[CompositeComponentTabs] Aggregated Lomo from sources (Interiores):", { sum, found });
+    // Debug desactivado: evitar spam en consola
     return found ? sum : null;
   }, [sourceComponentQueriesResults, isLomoLikeField]);
 
   // ¿Los interiores ya terminaron de cargar?
   const sourcesReady = sourceComponentQueriesResults.every(q => !q.isLoading && !q.isFetching);
 
-  // Debug: receiver queries status
-  if (import.meta.env.DEV) {
-    console.log("[CompositeComponentTabs] Receiver queries status:", {
-      receiverCount: aggregationReceiverComponents.length,
-      sourcesReady,
-      hasParentValues,
-      promptConnectionsReady,
-      sourceComponentsCount: sourceComponents.length,
-      sourceQueriesLoading: sourceComponentQueriesResults.map(q => q.isLoading),
-    });
-  }
+
+  // Debug desactivado: evitar spam en consola
+
 
   // =====================================================================
   // FASE 2: Queries para componentes receptores (Cubierta)
@@ -561,7 +549,6 @@ export default function CompositeComponentTabs({
               const promptId = String(p?.id ?? "");
               if (promptText.includes("lomo")) {
                 lomoPromptId = promptId;
-                console.log("[CompositeComponentTabs] Found Lomo prompt in Cubierta:", { promptText, id: lomoPromptId });
                 break;
               }
             }
@@ -580,14 +567,7 @@ export default function CompositeComponentTabs({
                   componentInputs.push({ id: lomoPromptId, value: aggregatedLomoFromSources });
                 }
                 
-                console.log("[CompositeComponentTabs] Injecting Lomo from Interiores to Cubierta:", {
-                  componentKey,
-                  lomoPromptId,
-                  value: aggregatedLomoFromSources,
-                });
               }
-            } else {
-              console.warn("[CompositeComponentTabs] No lomo prompt found in Cubierta:", componentKey);
             }
           }
 
@@ -630,19 +610,6 @@ export default function CompositeComponentTabs({
       if (isReceiver) {
         const idx = aggregationReceiverComponents.findIndex(r => r.id === component.id);
         const query = receiverComponentQueriesResults[idx];
-        
-        if (import.meta.env.DEV) {
-          console.log("[CompositeComponentTabs] Combining receiver result:", {
-            componentId: component.id,
-            componentAlias: component.component_alias,
-            idx,
-            hasQuery: !!query,
-            hasData: !!query?.data,
-            promptsCount: query?.data?.prompts?.length ?? 0,
-            isLoading: query?.isLoading,
-          });
-        }
-        
         results.push({
           data: query?.data ? { prompts: query.data.prompts, outputs: query.data.outputs, price: query.data.price } : undefined,
           isLoading: query?.isLoading ?? true,
@@ -995,7 +962,7 @@ export default function CompositeComponentTabs({
       });
     }
 
-    console.log("[CompositeComponentTabs] Aggregated outputs calculated:", result);
+    // Debug desactivado: evitar spam en consola
     return result;
   }, [outputAggregations, componentsData, parentOutputs]);
 
@@ -1070,14 +1037,9 @@ export default function CompositeComponentTabs({
     );
     const mappedIds = new Set(connections.map((conn: any) => conn.target_prompt_name));
     
-    console.log("[CompositeComponentTabs] getMappedPromptIds", {
-      componentKey,
-      componentId: component.id,
-      componentProductId,
-      allConnections: promptConnections.length,
-      matchingConnections: connections.length,
-      mappedIds: Array.from(mappedIds),
-    });
+
+    // Debug desactivado: evitar spam en consola
+
     
     return mappedIds;
   };
@@ -1265,18 +1227,9 @@ export default function CompositeComponentTabs({
     const mappedIds = getMappedPromptIds(componentKey);
     const forceResultSet = componentForceResultMap.get(componentKey);
     
-    // Debug log
-    console.log("[CompositeComponentTabs] getComponentForceResultPrompts", {
-      componentKey,
-      totalPrompts: componentData.prompts.length,
-      mappedIds: Array.from(mappedIds),
-      forceResultSet: forceResultSet ? Array.from(forceResultSet) : null,
-      promptIds: componentData.prompts.map((p: any) => ({
-        id: p.id,
-        label: p.promptText || p.label,
-        cellResolved: getComponentPromptCell(componentKey, String(p.id)),
-      })),
-    });
+
+    // Debug desactivado: evitar spam en consola
+
 
     // Filtrar: solo prompts force_result que:
     // 1. NO estén mapeados (los mapeados ya se ven en el padre, ej: Tarifa/B10)
