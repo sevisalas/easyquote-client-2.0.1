@@ -1,43 +1,33 @@
-import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 
 export const usePdfAccess = () => {
-  const [hasPdfAccess, setHasPdfAccess] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const { organization, membership, isSuperAdmin } = useSubscription();
+  const orgId = organization?.id || membership?.organization_id;
 
-  useEffect(() => {
-    checkPdfAccess();
-  }, [organization, membership, isSuperAdmin]);
+  // Solo los propietarios de organizaciones y admins tienen acceso a plantillas PDF
+  const isOrgOwner = organization !== null;
+  const isOrgAdmin = membership?.role === 'admin';
+  const hasRole = isSuperAdmin || isOrgOwner || isOrgAdmin;
 
-  const checkPdfAccess = async () => {
-    try {
+  const { data: hasPdfAccess = false, isLoading: loading } = useQuery({
+    queryKey: ['pdf-access', orgId, isSuperAdmin],
+    queryFn: async () => {
       // Superadmins always have access
       if (isSuperAdmin) {
-        setHasPdfAccess(true);
-        setLoading(false);
-        return;
+        return true;
       }
 
-      // Solo los propietarios de organizaciones y admins tienen acceso a plantillas PDF
       // Los usuarios normales (organization_members sin rol admin) NO tienen acceso
-      const isOrgOwner = organization !== null;
-      const isOrgAdmin = membership?.role === 'admin';
-      
-      if (!isOrgOwner && !isOrgAdmin) {
-        setHasPdfAccess(false);
-        setLoading(false);
-        return;
+      if (!hasRole) {
+        return false;
       }
 
-      // Get the current user's organization ID
-      const orgId = organization?.id || membership?.organization_id;
-      
       if (!orgId) {
-        setHasPdfAccess(false);
-        setLoading(false);
-        return;
+        return false;
       }
 
       // Check if the organization has an active integration
@@ -51,25 +41,29 @@ export const usePdfAccess = () => {
 
       if (error) {
         console.error('Error checking PDF access:', error);
-        setHasPdfAccess(false); // Default to false on errors for security
-      } else if (!data) {
-        // If no integration exists, allow PDF access for admins by default
-        setHasPdfAccess(true);
-      } else {
-        // If integration exists and is active, check generate_pdfs flag
-        setHasPdfAccess(data?.generate_pdfs === true);
+        return false; // Default to false on errors for security
       }
-    } catch (error) {
-      console.error('Error in checkPdfAccess:', error);
-      setHasPdfAccess(false); // Default to false on errors for security
-    } finally {
-      setLoading(false);
-    }
-  };
+      
+      if (!data) {
+        // If no integration exists, allow PDF access for admins by default
+        return true;
+      }
+      
+      // If integration exists and is active, check generate_pdfs flag
+      return data?.generate_pdfs === true;
+    },
+    enabled: hasRole && !!orgId,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: false,
+  });
+
+  const refreshPdfAccess = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['pdf-access', orgId, isSuperAdmin] });
+  }, [queryClient, orgId, isSuperAdmin]);
 
   return {
     hasPdfAccess,
     loading,
-    refreshPdfAccess: checkPdfAccess
+    refreshPdfAccess
   };
 };

@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 
@@ -22,80 +23,74 @@ export interface OrganizationTheme {
 }
 
 export const useTheme = () => {
+  const queryClient = useQueryClient();
   const { organization, membership } = useSubscription();
-  const [organizationTheme, setOrganizationTheme] = useState<OrganizationTheme | null>(null);
-  const [loading, setLoading] = useState(true);
+  const orgId = organization?.id || membership?.organization_id;
 
-  useEffect(() => {
-    loadTheme();
-  }, [organization, membership]);
+  const { data: organizationTheme, isLoading: loading } = useQuery({
+    queryKey: ['organization-theme', orgId],
+    queryFn: async () => {
+      if (!orgId) return null;
 
-  useEffect(() => {
-    applyTheme();
-  }, [organizationTheme]);
-
-  const loadTheme = async () => {
-    try {
-      const orgId = organization?.id || membership?.organization_id;
-      if (!orgId) {
-        setLoading(false);
-        return;
-      }
-
-      // Load organization theme
-      const { data: themeData } = await supabase
+      const { data: themeData, error } = await supabase
         .from('organization_themes')
         .select('*')
         .eq('organization_id', orgId)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
-      if (themeData) {
-        setOrganizationTheme(themeData);
+      if (error) {
+        console.error('Error loading theme:', error);
+        return null;
       }
-    } catch (error) {
-      console.error('Error loading theme:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const applyTheme = () => {
+      return themeData as OrganizationTheme | null;
+    },
+    enabled: !!orgId,
+    staleTime: 10 * 60 * 1000, // 10 minutos - temas cambian muy raramente
+    refetchOnWindowFocus: false,
+  });
+
+  // Aplicar tema cuando cambie
+  useEffect(() => {
+    applyTheme(organizationTheme);
+  }, [organizationTheme]);
+
+  const applyTheme = useCallback((theme: OrganizationTheme | null | undefined) => {
     const root = document.documentElement;
 
-    // Apply organization theme colors if available
-    if (organizationTheme) {
+    if (theme) {
       // Primary
-      root.style.setProperty('--primary', organizationTheme.primary_color);
-      if (organizationTheme.primary_foreground) {
-        root.style.setProperty('--primary-foreground', organizationTheme.primary_foreground);
+      root.style.setProperty('--primary', theme.primary_color);
+      if (theme.primary_foreground) {
+        root.style.setProperty('--primary-foreground', theme.primary_foreground);
       }
       
       // Secondary
-      root.style.setProperty('--secondary', organizationTheme.secondary_color);
-      if (organizationTheme.secondary_foreground) {
-        root.style.setProperty('--secondary-foreground', organizationTheme.secondary_foreground);
+      root.style.setProperty('--secondary', theme.secondary_color);
+      if (theme.secondary_foreground) {
+        root.style.setProperty('--secondary-foreground', theme.secondary_foreground);
       }
       
       // Accent
-      root.style.setProperty('--accent', organizationTheme.accent_color);
-      if (organizationTheme.accent_foreground) {
-        root.style.setProperty('--accent-foreground', organizationTheme.accent_foreground);
+      root.style.setProperty('--accent', theme.accent_color);
+      if (theme.accent_foreground) {
+        root.style.setProperty('--accent-foreground', theme.accent_foreground);
       }
       
       // Muted
-      if (organizationTheme.muted_color) {
-        root.style.setProperty('--muted', organizationTheme.muted_color);
+      if (theme.muted_color) {
+        root.style.setProperty('--muted', theme.muted_color);
       }
-      if (organizationTheme.muted_foreground) {
-        root.style.setProperty('--muted-foreground', organizationTheme.muted_foreground);
+      if (theme.muted_foreground) {
+        root.style.setProperty('--muted-foreground', theme.muted_foreground);
       }
       
       // Sidebar - siempre establecer valores con defaults para evitar texto invisible
-      const sidebarBg = organizationTheme.sidebar_background || '0 0% 98%';
-      const sidebarFg = organizationTheme.sidebar_foreground || '240 5% 26%';
-      const sidebarAccent = organizationTheme.sidebar_accent || '240 5% 96%';
-      const sidebarAccentFg = organizationTheme.sidebar_accent_foreground || '240 6% 10%';
+      const sidebarBg = theme.sidebar_background || '0 0% 98%';
+      const sidebarFg = theme.sidebar_foreground || '240 5% 26%';
+      const sidebarAccent = theme.sidebar_accent || '240 5% 96%';
+      const sidebarAccentFg = theme.sidebar_accent_foreground || '240 6% 10%';
       
       root.style.setProperty('--sidebar-background', sidebarBg);
       root.style.setProperty('--sidebar-foreground', sidebarFg);
@@ -116,12 +111,13 @@ export const useTheme = () => {
       root.style.removeProperty('--sidebar-accent');
       root.style.removeProperty('--sidebar-accent-foreground');
     }
-  };
+  }, []);
 
   const updateOrganizationTheme = async (theme: Partial<OrganizationTheme>) => {
+    if (!orgId) throw new Error('No organization found');
+
     try {
-      const orgId = organization?.id || membership?.organization_id;
-      if (!orgId) throw new Error('No organization found');
+      let result: OrganizationTheme;
 
       if (organizationTheme) {
         // Update existing theme
@@ -133,7 +129,7 @@ export const useTheme = () => {
           .single();
 
         if (error) throw error;
-        setOrganizationTheme(data);
+        result = data;
       } else {
         // Create new theme
         const { data, error } = await supabase
@@ -146,8 +142,12 @@ export const useTheme = () => {
           .single();
 
         if (error) throw error;
-        setOrganizationTheme(data);
+        result = data;
       }
+
+      // Invalidar cache para refrescar
+      queryClient.invalidateQueries({ queryKey: ['organization-theme', orgId] });
+      return result;
     } catch (error) {
       console.error('Error updating organization theme:', error);
       throw error;
@@ -163,33 +163,26 @@ export const useTheme = () => {
         .delete()
         .eq('id', organizationTheme.id);
 
-      setOrganizationTheme(null);
+      // Invalidar cache
+      queryClient.invalidateQueries({ queryKey: ['organization-theme', orgId] });
       
       // Reset CSS variables to default
-      const root = document.documentElement;
-      root.style.removeProperty('--primary');
-      root.style.removeProperty('--primary-foreground');
-      root.style.removeProperty('--secondary');
-      root.style.removeProperty('--secondary-foreground');
-      root.style.removeProperty('--accent');
-      root.style.removeProperty('--accent-foreground');
-      root.style.removeProperty('--muted');
-      root.style.removeProperty('--muted-foreground');
-      root.style.removeProperty('--sidebar-background');
-      root.style.removeProperty('--sidebar-foreground');
-      root.style.removeProperty('--sidebar-accent');
-      root.style.removeProperty('--sidebar-accent-foreground');
+      applyTheme(null);
     } catch (error) {
       console.error('Error resetting theme:', error);
       throw error;
     }
   };
 
+  const reloadTheme = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['organization-theme', orgId] });
+  }, [queryClient, orgId]);
+
   return {
-    organizationTheme,
+    organizationTheme: organizationTheme ?? null,
     loading,
     updateOrganizationTheme,
     resetToOriginalTheme,
-    reloadTheme: loadTheme
+    reloadTheme
   };
 };
