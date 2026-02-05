@@ -21,6 +21,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
+import { resolveLivePromptCellLabels } from "@/lib/easyquoteExcelPromptLabels";
 import type { CompositeComponent, PromptConnection, OutputAggregation } from "@/hooks/useCompositeProductConfig";
 import { OutputAggregationSection } from "./OutputAggregationSection";
 
@@ -98,125 +99,70 @@ export function ComponentPromptMappingDialog({
     }
   };
 
-  // Estado para indicar si hubo error de pricing
-  const [pricingFailed, setPricingFailed] = useState(false);
+  // Aviso cuando no podemos resolver nombres desde el Excel (o falta asociación producto→excel)
+  const [labelResolutionWarning, setLabelResolutionWarning] = useState<string | null>(null);
 
-  // Cargar los prompts del componente desde la API de pricing (que devuelve labels reales)
+  // Cargar los prompts del componente desde la definición (prompts/list) + resolución desde el Excel vivo
   const { data: componentPrompts = [], isLoading, isFetching } = useQuery({
-    queryKey: ["component-prompts-pricing", component.component_product_id],
+    queryKey: ["component-prompts", component.component_product_id],
     queryFn: async () => {
       const token = await getEasyQuoteToken();
-      if (!token) return [];
+      setLabelResolutionWarning(null);
 
-      setPricingFailed(false);
-
-      // Intentamos obtener datos de ambas fuentes
-      const [pricingRes, defsRes] = await Promise.all([
-        invokeEasyQuoteFunction<any>("easyquote-pricing", {
-          token,
-          productId: component.component_product_id,
-          method: "GET",
-        }),
-        invokeEasyQuoteFunction<any>("easyquote-prompts", {
-          token,
-          productId: component.component_product_id,
-        }),
-      ]);
-
-      const hasPricingError = !!pricingRes.error;
-      if (hasPricingError) {
-        console.warn("[ComponentPromptMappingDialog] pricing error:", pricingRes.error);
-        setPricingFailed(true);
-      }
-      if (defsRes.error) {
-        console.warn("[ComponentPromptMappingDialog] error leyendo prompts definiciones:", defsRes.error);
+      // Si no hay token, al menos mostramos lo último cacheado localmente.
+      if (!token) {
+        return component.component_product_id
+          ? loadLocalCachedPrompts(component.component_product_id)
+          : [];
       }
 
-      const pricingPrompts = Array.isArray(pricingRes.data?.prompts) ? pricingRes.data.prompts : [];
-      const promptDefs = Array.isArray(defsRes.data) ? defsRes.data : [];
-
-      console.log("[ComponentPromptMappingDialog] Data loaded:", {
-        pricingPromptsCount: pricingPrompts.length,
-        promptDefsCount: promptDefs.length,
-        hasPricingError,
+      // Fuente base: prompts/list (definición)
+      const defsRes = await invokeEasyQuoteFunction<any>("easyquote-prompts", {
+        token,
+        productId: component.component_product_id,
       });
 
-      // Si no hay datos de ninguna fuente, retornar vacío
-      if (pricingPrompts.length === 0 && promptDefs.length === 0) {
-        console.warn("[ComponentPromptMappingDialog] No data from either source");
+      if (defsRes.error) {
+        console.warn("[ComponentPromptMappingDialog] error leyendo prompts definiciones:", defsRes.error);
+        setLabelResolutionWarning("No se pudo leer la definición de prompts desde EasyQuote. Se muestran los últimos datos disponibles.");
+        return component.component_product_id
+          ? loadLocalCachedPrompts(component.component_product_id)
+          : [];
+      }
+
+      const promptDefs = Array.isArray(defsRes.data) ? defsRes.data : [];
+      if (promptDefs.length === 0) {
         return [];
       }
 
       // Función helper para extraer el mejor label disponible
       const extractLabel = (p: any): string => {
-        // `easyquote-prompts` NO devuelve promptText, así que aquí solo hay celdas.
-        // `easyquote-pricing` sí suele devolver promptText.
+        // Algunos entornos devuelven promptText; otros solo promptCell.
         return p.promptText || p.label || p.name || p.description || p.promptCell || String(p.id);
       };
 
       const merged = new Map<string, ComponentPromptDef>();
 
-      // Si pricing falla, NO queremos machacar labels buenos previos.
-      // Recuperamos lo último conocido del caché de React Query o localStorage.
-      if (hasPricingError) {
-        const queryKey = ["component-prompts-pricing", component.component_product_id] as const;
-        const previous = (queryClient.getQueryData(queryKey) as ComponentPromptDef[] | undefined) ?? [];
-        const localCached = component.component_product_id
-          ? loadLocalCachedPrompts(component.component_product_id)
-          : [];
-        const base = previous.length > 0 ? previous : localCached;
+      // Base: `prompts` (definición Excel) - siempre añadimos los que faltan
+      for (const d of promptDefs) {
+        const id = String(d.id);
+        const defLabel = extractLabel(d);
 
-        for (const p of base) {
-          merged.set(String(p.id), {
-            id: String(p.id),
-            name: String(p.name ?? p.id),
-            label: String(p.label),
-            promptCell: p.promptCell,
-            sequence: p.sequence,
-          });
-        }
-      }
-
-      // 1) Preferimos `pricing` porque suele traer promptText (label real)
-      for (const p of pricingPrompts) {
-        merged.set(String(p.id), {
-          id: String(p.id),
-          name: String(p.id),
-          label: extractLabel(p),
-          promptCell: p.promptCell,
-          sequence: typeof p.promptSequence === "number" ? p.promptSequence : undefined,
+        merged.set(id, {
+          id,
+          name: id,
+          label: defLabel,
+          promptCell: d.promptCell ? String(d.promptCell) : undefined,
+          sequence:
+            typeof d.promptSeq === "number"
+              ? d.promptSeq
+              : typeof d.promptSequence === "number"
+                ? d.promptSequence
+                : undefined,
         });
       }
 
-      // 2) Completamos con `prompts` (definición Excel) - siempre añadimos los que faltan
-      for (const d of promptDefs) {
-        const id = String(d.id);
-        const existing = merged.get(id);
-        const defLabel = extractLabel(d);
-        
-        if (!existing) {
-          // No existe en pricing, añadimos desde defs
-          merged.set(id, {
-            id,
-            name: id,
-            label: defLabel,
-            promptCell: d.promptCell,
-            sequence: typeof d.promptSeq === "number" ? d.promptSeq : undefined,
-          });
-        } else {
-          // Ya existe, pero mejoramos el label si el existente es solo una celda
-          const isCellOnlyLabel = /^[A-Z]+\d+$/i.test(existing.label);
-          if (isCellOnlyLabel && defLabel && !/^[A-Z]+\d+$/i.test(defLabel)) {
-            merged.set(id, { ...existing, label: defLabel });
-          }
-          // También completar promptCell si falta
-          if (!existing.promptCell && d.promptCell) {
-            merged.set(id, { ...merged.get(id)!, promptCell: d.promptCell });
-          }
-        }
-      }
-
-      const result = Array.from(merged.values());
+      let result = Array.from(merged.values());
       result.sort((a, b) => {
         const sa = a.sequence ?? Number.POSITIVE_INFINITY;
         const sb = b.sequence ?? Number.POSITIVE_INFINITY;
@@ -224,14 +170,43 @@ export function ComponentPromptMappingDialog({
         return a.label.localeCompare(b.label);
       });
 
-      console.log("[ComponentPromptMappingDialog] Final prompts:", result.map(r => ({
-        id: r.id.slice(0, 8),
-        label: r.label,
-        cell: r.promptCell,
-      })));
+      // 2ª capa (clave): resolver labels desde el Excel REAL (vivo)
+      // Esto hace que los nombres sigan al Excel incluso si EasyQuote aún no “etiqueta” los prompts.
+      try {
+        const cells = result.map((p) => p.promptCell).filter(Boolean) as string[];
+        const labelMap = await resolveLivePromptCellLabels({
+          token,
+          productId: component.component_product_id,
+          promptCells: cells,
+        });
 
-      // Guardar cache local SOLO si tenemos nombres descriptivos (pricing OK)
-      if (!hasPricingError && pricingPrompts.length > 0 && component.component_product_id) {
+        if (labelMap && Object.keys(labelMap).length > 0) {
+          result = result.map((p) => {
+            const excelLabel = p.promptCell ? labelMap[p.promptCell] : undefined;
+            if (!excelLabel) return p;
+            // Solo sustituimos si el label del excel parece “humano”
+            if (/^[A-Z]+\d+$/i.test(excelLabel)) return p;
+            if (String(excelLabel).trim().length < 2) return p;
+            return { ...p, label: String(excelLabel).trim() };
+          });
+        } else {
+          // No error: simplemente no pudimos encontrar el Excel / relación producto→excel.
+          const stillCellOnly = result.some((p) => p.label && /^[A-Z]+\d+$/i.test(p.label));
+          if (stillCellOnly) {
+            setLabelResolutionWarning(
+              "Este componente sigue mostrando celdas (B10, B11…). No se encontró el Excel asociado al producto o no se pudo leer su contenido.",
+            );
+          }
+        }
+      } catch (e) {
+        console.warn("[ComponentPromptMappingDialog] Excel label resolution failed", e);
+        setLabelResolutionWarning(
+          "No se pudieron resolver los nombres desde el Excel. Se muestran los nombres devueltos por la API (pueden ser celdas).",
+        );
+      }
+
+      // Guardar cache local (para offline / errores puntuales)
+      if (component.component_product_id) {
         saveLocalCachedPrompts(component.component_product_id, result);
       }
 
@@ -243,12 +218,10 @@ export function ComponentPromptMappingDialog({
   });
 
   const handleRefreshPrompts = async () => {
-    // Fuerza refetch, pero si EasyQuote aún no ha invalidado su caché interna,
-    // puede tardar en reflejar el Excel en `pricing`.
     await queryClient.invalidateQueries({
-      queryKey: ["component-prompts-pricing", component.component_product_id],
+      queryKey: ["component-prompts", component.component_product_id],
     });
-    toast.success("Recarga solicitada (si EasyQuote ya procesó el Excel, verás los campos nuevos)");
+    toast.success("Recarga solicitada");
   };
 
   // Estado local para los mapeos: targetPromptName -> sourcePromptName (o USER_EDITABLE)
@@ -337,9 +310,9 @@ export function ComponentPromptMappingDialog({
           </div>
         ) : (
           <>
-            {pricingFailed && (
+            {labelResolutionWarning && (
               <div className="mb-3 p-2 bg-warning/10 border border-warning/30 rounded-md text-xs text-warning-foreground">
-                ⚠️ EasyQuote no pudo calcular el producto (500). Se muestran los últimos nombres disponibles; si faltan campos nuevos, aparecerán como “Bxx”.
+                ⚠️ {labelResolutionWarning}
               </div>
             )}
 
