@@ -62,8 +62,14 @@ function looksLikeUsefulLabel(label: string): boolean {
   return v.length >= 2;
 }
 
-function getCandidateLabel(rows: any[][], row: number, col: number): string | null {
-  const at = (r: number, c: number) => stringifyCell(rows?.[r]?.[c]);
+function getCandidateLabelFromSheet(sheet: XLSX.WorkSheet, row: number, col: number): string | null {
+  const at = (r: number, c: number) => {
+    if (r < 0 || c < 0) return "";
+    const addr = XLSX.utils.encode_cell({ r, c });
+    const cell = (sheet as any)?.[addr];
+    // `w` es el valor formateado; `v` el valor crudo
+    return stringifyCell(cell?.w ?? cell?.v ?? "");
+  };
 
   // Heurística típica: etiqueta a la izquierda del input
   for (let dx = 1; dx <= 3; dx++) {
@@ -91,13 +97,6 @@ function tryResolveFromWorkbook(workbook: XLSX.WorkBook, promptCells: string[]):
     const sheet = workbook.Sheets[sheetName];
     if (!sheet) continue;
 
-    // Matriz 2D para acceso rápido por fila/columna
-    const rows = XLSX.utils.sheet_to_json(sheet, {
-      header: 1,
-      blankrows: false,
-      defval: "",
-    }) as any[][];
-
     for (const cell of Array.from(wanted)) {
       const pos = parseA1(cell);
       if (!pos) {
@@ -105,7 +104,10 @@ function tryResolveFromWorkbook(workbook: XLSX.WorkBook, promptCells: string[]):
         continue;
       }
       const { rowIndex, colIndex } = pos;
-      const candidate = getCandidateLabel(rows, rowIndex, colIndex);
+      // IMPORTANTE:
+      // No podemos usar sheet_to_json + índices porque el recorte por !ref y los blank rows
+      // desplazan los índices y rompen la correspondencia A1.
+      const candidate = getCandidateLabelFromSheet(sheet, rowIndex, colIndex);
       if (candidate) {
         out[cell] = candidate;
         wanted.delete(cell);

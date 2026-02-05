@@ -194,7 +194,7 @@ export function ComponentPromptMappingDialog({
           const stillCellOnly = result.some((p) => p.label && /^[A-Z]+\d+$/i.test(p.label));
           if (stillCellOnly) {
             setLabelResolutionWarning(
-               "Este componente sigue mostrando celdas (B10, B11…). No se pudo localizar/descargar el Excel asociado a este producto en EasyQuote (revisa que el producto tenga Excel asignado y que la sesión de EasyQuote sea válida).",
+               "Este componente sigue mostrando celdas (B10, B11…). Se pudo descargar el Excel, pero no se encontraron etiquetas cerca de esas celdas (normalmente están a la izquierda o encima). Revisa el Excel y su estructura.",
             );
           }
         }
