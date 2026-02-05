@@ -68,6 +68,36 @@ export function ComponentPromptMappingDialog({
 }: ComponentPromptMappingDialogProps) {
   const queryClient = useQueryClient();
 
+  const getLocalCacheKey = (productId: string) => `easyquote:component-prompts:${productId}`;
+
+  const loadLocalCachedPrompts = (productId: string): ComponentPromptDef[] => {
+    try {
+      const raw = localStorage.getItem(getLocalCacheKey(productId));
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter((p) => p && typeof p === "object" && typeof p.id === "string" && typeof p.label === "string")
+        .map((p) => ({
+          id: String(p.id),
+          name: String(p.name ?? p.id),
+          label: String(p.label),
+          promptCell: p.promptCell ? String(p.promptCell) : undefined,
+          sequence: typeof p.sequence === "number" ? p.sequence : undefined,
+        }));
+    } catch {
+      return [];
+    }
+  };
+
+  const saveLocalCachedPrompts = (productId: string, prompts: ComponentPromptDef[]) => {
+    try {
+      localStorage.setItem(getLocalCacheKey(productId), JSON.stringify(prompts));
+    } catch {
+      // ignore storage failures (private mode, quota, etc.)
+    }
+  };
+
   // Estado para indicar si hubo error de pricing
   const [pricingFailed, setPricingFailed] = useState(false);
 
@@ -119,11 +149,33 @@ export function ComponentPromptMappingDialog({
 
       // Función helper para extraer el mejor label disponible
       const extractLabel = (p: any): string => {
-        // Orden de prioridad: promptText > label > name > description > promptCell > id
+        // `easyquote-prompts` NO devuelve promptText, así que aquí solo hay celdas.
+        // `easyquote-pricing` sí suele devolver promptText.
         return p.promptText || p.label || p.name || p.description || p.promptCell || String(p.id);
       };
 
       const merged = new Map<string, ComponentPromptDef>();
+
+      // Si pricing falla, NO queremos machacar labels buenos previos.
+      // Recuperamos lo último conocido del caché de React Query o localStorage.
+      if (hasPricingError) {
+        const queryKey = ["component-prompts-pricing", component.component_product_id] as const;
+        const previous = (queryClient.getQueryData(queryKey) as ComponentPromptDef[] | undefined) ?? [];
+        const localCached = component.component_product_id
+          ? loadLocalCachedPrompts(component.component_product_id)
+          : [];
+        const base = previous.length > 0 ? previous : localCached;
+
+        for (const p of base) {
+          merged.set(String(p.id), {
+            id: String(p.id),
+            name: String(p.name ?? p.id),
+            label: String(p.label),
+            promptCell: p.promptCell,
+            sequence: p.sequence,
+          });
+        }
+      }
 
       // 1) Preferimos `pricing` porque suele traer promptText (label real)
       for (const p of pricingPrompts) {
@@ -177,6 +229,11 @@ export function ComponentPromptMappingDialog({
         label: r.label,
         cell: r.promptCell,
       })));
+
+      // Guardar cache local SOLO si tenemos nombres descriptivos (pricing OK)
+      if (!hasPricingError && pricingPrompts.length > 0 && component.component_product_id) {
+        saveLocalCachedPrompts(component.component_product_id, result);
+      }
 
       return result;
     },
@@ -282,7 +339,7 @@ export function ComponentPromptMappingDialog({
           <>
             {pricingFailed && (
               <div className="mb-3 p-2 bg-warning/10 border border-warning/30 rounded-md text-xs text-warning-foreground">
-                ⚠️ No se pudieron cargar los nombres descriptivos. Se muestran referencias de celda como alternativa.
+                ⚠️ EasyQuote no pudo calcular el producto (500). Se muestran los últimos nombres disponibles; si faltan campos nuevos, aparecerán como “Bxx”.
               </div>
             )}
 
