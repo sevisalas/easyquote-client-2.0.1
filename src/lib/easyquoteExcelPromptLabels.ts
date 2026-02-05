@@ -182,9 +182,9 @@ async function getExcelFileDetailsForProduct(params: {
 
 async function downloadExcelAsArrayBuffer(params: {
   token: string;
-  subscriberId: string;
   fileId: string;
-  fileName: string;
+  subscriberId?: string;
+  fileName?: string;
 }): Promise<ArrayBuffer> {
   const { data } = await supabase.auth.getSession();
   const accessToken = data.session?.access_token;
@@ -200,8 +200,8 @@ async function downloadExcelAsArrayBuffer(params: {
     },
     body: JSON.stringify({
       token: params.token,
-      subscriberId: params.subscriberId,
       fileId: params.fileId,
+      subscriberId: params.subscriberId,
       fileName: params.fileName,
     }),
   });
@@ -260,35 +260,46 @@ export async function resolveLivePromptCellLabels(params: {
   if (!excelDetails?.fileId) return {};
   const subscriberId = excelDetails.subscriberId;
   const fileName = excelDetails.fileName;
-  if (!subscriberId || !fileName) return {};
+  // Ojo: algunos entornos no devuelven subscriberId/fileName en listados; la edge function puede resolverlo por fileId.
 
-  const cacheKey = `easyquote:excel-prompt-labels:${excelDetails.fileId}:${excelDetails.dateModified ?? "0"}`;
-  try {
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      if (parsed && typeof parsed === "object") {
-        return parsed as Record<string, string>;
+  const cacheKey = excelDetails.dateModified
+    ? `easyquote:excel-prompt-labels:${excelDetails.fileId}:${excelDetails.dateModified}`
+    : null;
+  if (cacheKey) {
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && typeof parsed === "object") {
+          const obj = parsed as Record<string, string>;
+          // Importante: NO aceptar cachés vacías (pueden venir de intentos fallidos y bloquean futuras resoluciones)
+          if (Object.keys(obj).length > 0) return obj;
+        }
       }
+    } catch {
+      // ignore
     }
-  } catch {
-    // ignore
   }
 
   const arrayBuffer = await downloadExcelAsArrayBuffer({
     token,
-    subscriberId,
     fileId: excelDetails.fileId,
+    subscriberId,
     fileName,
   });
 
   const workbook = XLSX.read(arrayBuffer, { type: "array" });
   const labelMap = tryResolveFromWorkbook(workbook, uniqueCells);
 
-  try {
-    localStorage.setItem(cacheKey, JSON.stringify(labelMap));
-  } catch {
-    // ignore
+  if (cacheKey) {
+    try {
+      // No cachear mapas vacíos (evita que un fallo temporal congele el resultado)
+      if (labelMap && Object.keys(labelMap).length > 0) {
+        localStorage.setItem(cacheKey, JSON.stringify(labelMap));
+      }
+    } catch {
+      // ignore
+    }
   }
 
   return labelMap;
