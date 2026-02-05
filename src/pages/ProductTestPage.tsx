@@ -96,9 +96,32 @@ export default function ProductTestPage({
     membership
   } = useSubscription();
 
+  // Fetch api_user_id for the overridden organization (SuperAdmin impersonation)
+  const { data: overrideOrgData } = useQuery({
+    queryKey: ["organization-api-user-id", overrideOrganizationId],
+    queryFn: async () => {
+      if (!overrideOrganizationId) return null;
+      const { data, error } = await supabase
+        .from("organizations")
+        .select("id, api_user_id")
+        .eq("id", overrideOrganizationId)
+        .maybeSingle();
+      if (error) {
+        console.error("Error fetching override org:", error);
+        return null;
+      }
+      return data;
+    },
+    enabled: !!overrideOrganizationId,
+    staleTime: 10 * 60 * 1000,
+  });
+
   // Use override if provided (for superadmin impersonation), otherwise use subscription context
   const organizationId = overrideOrganizationId || organization?.id || membership?.organization_id;
-  const apiUserId = organization?.api_user_id || (membership?.organization as any)?.api_user_id;
+  // IMPORTANT: When impersonating, use the impersonated org's api_user_id, not the superadmin's
+  const apiUserId = overrideOrganizationId 
+    ? overrideOrgData?.api_user_id 
+    : (organization?.api_user_id || (membership?.organization as any)?.api_user_id);
   
   // Check if product is composite
   const { isComposite, enabledComponents, getPromptComponent } = useProductComponentSettings(productId || undefined, apiUserId);
