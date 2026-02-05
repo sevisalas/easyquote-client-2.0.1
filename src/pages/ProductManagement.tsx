@@ -420,7 +420,11 @@ export default function ProductManagement() {
   const { data: componentProductIds = new Set<string>(), refetch: refetchComponentIds } = useQuery({
     queryKey: ['component-product-ids', apiUserId],
     queryFn: async () => {
-      if (!apiUserId) return new Set<string>();
+      console.log("[ProductManagement] Fetching component IDs for apiUserId:", apiUserId);
+      if (!apiUserId) {
+        console.log("[ProductManagement] No apiUserId, returning empty Set");
+        return new Set<string>();
+      }
       const { data, error } = await supabase
         .from('product_component_settings')
         .select('easyquote_product_id')
@@ -430,10 +434,11 @@ export default function ProductManagement() {
         console.error("Error fetching component IDs:", error);
         return new Set<string>();
       }
-      return new Set((data || []).map(d => d.easyquote_product_id));
+      const ids = new Set((data || []).map(d => d.easyquote_product_id));
+      console.log("[ProductManagement] Component IDs found:", ids.size, [...ids]);
+      return ids;
     },
     enabled: !!apiUserId,
-    select: (data) => data instanceof Set ? data : new Set<string>()
   });
 
   // Query para obtener IDs de productos compuestos (por api_user_id)
