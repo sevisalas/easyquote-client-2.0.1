@@ -2386,9 +2386,6 @@ export default function ProductManagement() {
                     return <div key={prompt.id} className="p-4 border rounded-lg">
                         <div className="mb-4 flex items-center justify-between">
                           <h4 className="font-medium">Campo nº {index + 1}</h4>
-                          {isComposite && <Badge variant={assignedComponent === 'general' ? 'secondary' : 'default'} className="text-xs">
-                              {componentLabel}
-                            </Badge>}
                         </div>
                         
                         {(() => {
@@ -2637,31 +2634,12 @@ export default function ProductManagement() {
                                 }
                               }} />
                               </div>
-                              {isComposite && <div className="flex items-center gap-2 flex-1">
-                                  <Label className="text-sm font-medium whitespace-nowrap">Componente</Label>
-                                  <Select value={assignedComponent} onValueChange={value => {
-                                if (selectedProduct) {
-                                  assignPromptToComponent({
-                                    easyquote_product_id: selectedProduct.id,
-                                    prompt_name: promptName,
-                                    component: value
-                                  });
-                                }
-                              }}>
-                                    <SelectTrigger className="flex-1">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-background border shadow-lg z-50">
-                                      <SelectItem value="general">General</SelectItem>
-                                      {enabledComponents.map(comp => {
-                                    const preset = COMPONENT_PRESETS.compuesto.components.find(c => c.value === comp);
-                                    return <SelectItem key={comp} value={comp}>
-                                            {preset?.label || comp}
-                                          </SelectItem>;
-                                  })}
-                                    </SelectContent>
-                                  </Select>
-                                </div>}
+                              {/* Etiqueta fija "General" en lugar de selector de componente */}
+                              <div className="flex items-center gap-2 flex-1">
+                                <Badge variant="secondary" className="text-xs">
+                                  General
+                                </Badge>
+                              </div>
                               <div className="flex items-center gap-2 ml-auto">
                                 <Label className="text-sm font-medium whitespace-nowrap">Variable de prod.</Label>
                                 <Select value={getMappedVariableId(prompt.promptCell) || "none"} onValueChange={value => {
