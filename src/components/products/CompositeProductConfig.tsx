@@ -48,8 +48,10 @@ export function CompositeProductConfig({
     queryFn: async () => {
       const out: { name: string; label: string }[] = [];
 
-      // Variable para guardar las etiquetas personalizadas de product_prompt_settings
-      let customLabelsByPromptName = new Map<string, string>();
+      const normalizeKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+
+      // Etiquetas personalizadas guardadas en BD (key = prompt_name, que en ProductManagement se guarda como celda, ej. "B5")
+      const customLabelsByPromptKey = new Map<string, string | null>();
 
       // 0) Campos generales del producto compuesto (registrados en BD)
       try {
@@ -78,6 +80,7 @@ export function CompositeProductConfig({
           }
 
           // Cargar etiquetas personalizadas de product_prompt_settings
+          // NOTA: prompt_name se guarda normalizado (sin $) y normalmente corresponde a la celda (ej. "B5").
           const { data: promptSettings, error: settingsError } = await supabase
             .from("product_prompt_settings")
             .select("prompt_name,label")
@@ -86,11 +89,11 @@ export function CompositeProductConfig({
 
           if (!settingsError && Array.isArray(promptSettings)) {
             for (const s of promptSettings) {
-              const promptName = String(s.prompt_name ?? "").trim().toUpperCase();
-              const label = String(s.label ?? "").trim();
-              if (promptName && label) {
-                customLabelsByPromptName.set(promptName, label);
-              }
+              const key = normalizeKey(String((s as any)?.prompt_name ?? ""));
+              if (!key) continue;
+              // label puede ser null (sin etiqueta) o string (incluyendo string vacío si el usuario la borró)
+              const raw = (s as any)?.label;
+              customLabelsByPromptKey.set(key, raw === null || raw === undefined ? null : String(raw));
             }
           }
         }
@@ -169,35 +172,33 @@ export function CompositeProductConfig({
       // primero BD (para que siempre exista aunque no esté en EasyQuote)
       for (const p of out) merged.set(p.name, p);
 
-      for (const p of defById.values()) {
-        const id = p.id;
-        const normalizedId = id.replace(/\$/g, "").trim().toUpperCase();
-        
-        // PRIORIDAD: 1) Etiqueta personalizada de product_prompt_settings
-        const customLabel = customLabelsByPromptName.get(normalizedId);
-        
-        const pricingLabel = pricingLabelById.get(id);
-        const excelLabel = p.promptCell ? excelLabelByCell[p.promptCell] : undefined;
-        const rawLabel = p.rawLabel;
+       for (const p of defById.values()) {
+         const id = p.id;
 
-        // Si hay etiqueta personalizada, usarla directamente
-        let labelCandidate: string;
-        if (customLabel) {
-          labelCandidate = customLabel;
-        } else {
-          labelCandidate =
-            (pricingLabel && !isUuidLike(pricingLabel) ? pricingLabel : undefined) ??
-            (excelLabel && !isCellLike(excelLabel) ? excelLabel : undefined) ??
-            (rawLabel && !isUuidLike(rawLabel) ? rawLabel : undefined) ??
-            p.promptCell ??
-            id;
-        }
+         const pricingLabel = pricingLabelById.get(id);
+         const excelLabel = p.promptCell ? excelLabelByCell[p.promptCell] : undefined;
+         const rawLabel = p.rawLabel;
 
-        merged.set(id, {
-          name: id,
-          label: String(labelCandidate).trim() || id,
-        });
-      }
+         // PRIORIDAD: 1) Etiqueta personalizada de product_prompt_settings (por celda/prompt_name)
+         const customLabelRaw = p.promptCell
+           ? customLabelsByPromptKey.get(normalizeKey(p.promptCell))
+           : undefined;
+         const customLabel = typeof customLabelRaw === "string" ? customLabelRaw.trim() : undefined;
+
+         // Si la etiqueta está vacía, NO la usamos y caemos a la celda
+         const labelCandidate =
+           (customLabel ? customLabel : undefined) ??
+           (pricingLabel && !isUuidLike(pricingLabel) ? pricingLabel : undefined) ??
+           (excelLabel && !isCellLike(excelLabel) ? excelLabel : undefined) ??
+           (rawLabel && !isUuidLike(rawLabel) ? rawLabel : undefined) ??
+           p.promptCell ??
+           id;
+
+         merged.set(id, {
+           name: id,
+           label: String(labelCandidate).trim() || id,
+         });
+       }
 
       return Array.from(merged.values()).sort((a, b) => a.label.localeCompare(b.label));
     },

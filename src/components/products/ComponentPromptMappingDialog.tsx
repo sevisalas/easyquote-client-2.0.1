@@ -458,7 +458,7 @@ export function ComponentPromptMappingDialog({
                               ) : (
                                 <span className="flex items-center gap-2">
                                   <Link className="h-3.5 w-3.5 text-primary" />
-                                  {parentPrompts.find(pp => pp.name === currentMapping)?.label || currentMapping}
+                                  {(parentPrompts.find((pp) => pp.name === currentMapping)?.label || "").trim() || currentMapping}
                                 </span>
                               )}
                             </SelectValue>
@@ -470,14 +470,17 @@ export function ComponentPromptMappingDialog({
                                 Editable por usuario
                               </span>
                             </SelectItem>
-                            {parentPrompts.map((pp) => (
-                              <SelectItem key={pp.name} value={pp.name}>
-                                <span className="flex items-center gap-2">
-                                  <Link className="h-3.5 w-3.5 text-primary" />
-                                  {pp.label}
-                                </span>
-                              </SelectItem>
-                            ))}
+                            {parentPrompts.map((pp) => {
+                              const display = (pp.label || "").trim() || pp.name;
+                              return (
+                                <SelectItem key={pp.name} value={pp.name}>
+                                  <span className="flex items-center gap-2">
+                                    <Link className="h-3.5 w-3.5 text-primary" />
+                                    {display}
+                                  </span>
+                                </SelectItem>
+                              );
+                            })}
                           </SelectContent>
                         </Select>
                       </div>
