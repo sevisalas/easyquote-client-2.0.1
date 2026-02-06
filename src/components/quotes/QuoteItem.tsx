@@ -1414,10 +1414,24 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
   };
 
+  // CONSTANTE DE SEGURIDAD: PostgreSQL numeric(15,2) soporta hasta ~10^13.
+  // Usamos 1 billón como límite seguro para evitar "numeric field overflow".
+  const MAX_VALID_PRICE = 1_000_000_000; // 1 billón (mil millones)
+  
   const parseEsNumber = (val: any): number => {
     if (typeof val === "number") return val;
     const n = parseFloat(String(val ?? "").replace(/\./g, "").replace(",", "."));
     return Number.isFinite(n) ? n : NaN;
+  };
+  
+  // Valida y limita un precio a un rango seguro
+  const safePrice = (price: number): number => {
+    if (!Number.isFinite(price) || price < 0) return 0;
+    if (price > MAX_VALID_PRICE) {
+      console.warn(`⚠️ Precio excesivo detectado (${price}), limitando a ${MAX_VALID_PRICE}`);
+      return MAX_VALID_PRICE;
+    }
+    return price;
   };
 
   const isPriceOutput = (o: any) => {
@@ -1442,14 +1456,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     if (prices.length === 0) return NaN;
 
     const totalLike = prices.find((o: any) => /total/i.test(String(o?.name ?? "")));
-    if (totalLike) return parseEsNumber(totalLike.value);
+    if (totalLike) return safePrice(parseEsNumber(totalLike.value));
 
     const nums = prices
       .map((o: any) => parseEsNumber(o?.value))
-      .filter((n: number) => Number.isFinite(n));
+      .filter((n: number) => Number.isFinite(n) && n >= 0 && n <= MAX_VALID_PRICE);
 
     if (nums.length === 0) return NaN;
-    return Math.max(...nums);
+    return safePrice(Math.max(...nums));
   };
 
   const multiRows = useMemo(() => {
@@ -1496,7 +1510,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const finalPrice = useMemo(() => {
     // For custom products, use customPrice * customQuantity
     if (isCustomProduct) {
-      let basePrice = customPrice * customQuantity;
+      let basePrice = safePrice(customPrice * customQuantity);
       let additionalsTotal = 0;
       
       if (Array.isArray(itemAdditionals)) {
@@ -1514,7 +1528,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         });
       }
       
-      return basePrice + additionalsTotal;
+      return safePrice(basePrice + additionalsTotal);
     }
     
     // Para productos COMPUESTOS: usar compositeTotalPrice (suma de componentes)
@@ -1548,7 +1562,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         });
       }
       
-      return compositeTotalPrice + additionalsTotal;
+      return safePrice(compositeTotalPrice + additionalsTotal);
     }
     
     // Para productos API simples: el precio que queremos mostrar/guardar es el output con type=Price.
@@ -1561,11 +1575,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     // Si multi-cantidades está activo, usar el precio de Q1 como referencia para el total
     if (multiEnabled && multiRows.length > 0) {
       const q1Price = multiRows[0]?.totalStr ?? multiRows[0]?.price ?? 0;
-      basePrice = parseFloat(String(q1Price).replace(/\./g, "").replace(",", ".")) || 0;
+      basePrice = safePrice(parseFloat(String(q1Price).replace(/\./g, "").replace(",", ".")) || 0);
     } else if (outputPrice !== undefined && outputPrice !== null) {
-      basePrice = parseFloat(String(outputPrice).replace(/\./g, "").replace(",", ".")) || 0;
+      basePrice = safePrice(parseFloat(String(outputPrice).replace(/\./g, "").replace(",", ".")) || 0);
     } else {
-      basePrice = parseFloat(String(pricingPrice ?? 0).replace(/\./g, "").replace(",", ".")) || 0;
+      basePrice = safePrice(parseFloat(String(pricingPrice ?? 0).replace(/\./g, "").replace(",", ".")) || 0);
     }
     let additionalsTotal = 0;
     
@@ -1600,7 +1614,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       });
     }
     
-    return basePrice + additionalsTotal;
+    // Aplicar límite de seguridad al precio final
+    return safePrice(basePrice + additionalsTotal);
   }, [priceOutput, itemAdditionals, multiEnabled, multiRows, isCustomProduct, customPrice, customQuantity, qtyPrompt, promptValues, hasConfiguredComponents, compositeTotalPrice, pricing]);
 
   // Calculate additionals breakdown for a specific quantity
