@@ -37,6 +37,7 @@ interface ComponentPromptMappingDialogProps {
   /** Agregaciones de outputs existentes */
   outputAggregations: OutputAggregation[];
   organizationId: string;
+  apiUserId: string;
   compositeProductId: string;
   onSave: (connections: Omit<PromptConnection, "id" | "created_at" | "updated_at">[]) => Promise<void>;
   onSaveAggregations: (aggregations: Omit<OutputAggregation, "id" | "created_at" | "updated_at">[]) => Promise<void>;
@@ -90,6 +91,7 @@ export function ComponentPromptMappingDialog({
   connections,
   outputAggregations,
   organizationId,
+  apiUserId,
   compositeProductId,
   onSave,
   onSaveAggregations,
@@ -138,43 +140,16 @@ export function ComponentPromptMappingDialog({
   const [labelResolutionWarning, setLabelResolutionWarning] = useState<string | null>(null);
 
   // Cargar etiquetas personalizadas desde product_prompt_settings
-  // IMPORTANTE: buscar en TODAS las organizaciones del mismo api_user_id (configuración compartida)
+  // IMPORTANTE: Ahora usamos api_user_id directamente (configuración compartida por grupo)
   const { data: dbCustomLabels = {} } = useQuery({
-    queryKey: ["component-db-labels", component.component_product_id, organizationId],
+    queryKey: ["component-db-labels", component.component_product_id, apiUserId],
     queryFn: async () => {
-      if (!organizationId || !component.component_product_id) return {};
+      if (!apiUserId || !component.component_product_id) return {};
       
-      // Primero obtener el api_user_id de la organización actual
-      const { data: orgData, error: orgError } = await supabase
-        .from("organizations")
-        .select("api_user_id")
-        .eq("id", organizationId)
-        .single();
-      
-      if (orgError || !orgData?.api_user_id) {
-        console.warn("[ComponentPromptMappingDialog] Error getting api_user_id:", orgError);
-        return {};
-      }
-      
-      // Obtener todas las organizaciones del mismo grupo (api_user_id)
-      const { data: siblingOrgs, error: siblingsError } = await supabase
-        .from("organizations")
-        .select("id")
-        .eq("api_user_id", orgData.api_user_id);
-      
-      if (siblingsError) {
-        console.warn("[ComponentPromptMappingDialog] Error getting sibling orgs:", siblingsError);
-        return {};
-      }
-      
-      const orgIds = (siblingOrgs || []).map(o => o.id);
-      if (orgIds.length === 0) orgIds.push(organizationId);
-      
-      // Buscar etiquetas en TODAS las organizaciones del grupo
       const { data, error } = await supabase
         .from("product_prompt_settings")
         .select("prompt_name, label")
-        .in("organization_id", orgIds)
+        .eq("api_user_id", apiUserId)
         .eq("easyquote_product_id", component.component_product_id);
       
       if (error) {
@@ -185,15 +160,13 @@ export function ComponentPromptMappingDialog({
       const labelMap: Record<string, string> = {};
       for (const row of data || []) {
         if (row.label) {
-          // Normalizar la clave (sin $, mayúsculas)
           const key = String(row.prompt_name ?? "").replace(/\$/g, "").trim().toUpperCase();
-          // Solo guardar si no existe ya (priorizar el primero encontrado)
-          if (key && !labelMap[key]) labelMap[key] = row.label;
+          if (key) labelMap[key] = row.label;
         }
       }
       return labelMap;
     },
-    enabled: open && !!component.component_product_id && !!organizationId,
+    enabled: open && !!component.component_product_id && !!apiUserId,
     staleTime: 60 * 1000,
   });
 

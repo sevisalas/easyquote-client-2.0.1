@@ -1822,6 +1822,7 @@ export type Database = {
       product_prompt_settings: {
         Row: {
           admin_only: boolean
+          api_user_id: string
           created_at: string
           easyquote_product_id: string
           force_result: boolean
@@ -1835,6 +1836,7 @@ export type Database = {
         }
         Insert: {
           admin_only?: boolean
+          api_user_id: string
           created_at?: string
           easyquote_product_id: string
           force_result?: boolean
@@ -1848,6 +1850,7 @@ export type Database = {
         }
         Update: {
           admin_only?: boolean
+          api_user_id?: string
           created_at?: string
           easyquote_product_id?: string
           force_result?: boolean

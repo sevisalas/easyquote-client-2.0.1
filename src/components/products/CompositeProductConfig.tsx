@@ -25,6 +25,7 @@ export function CompositeProductConfig({
     outputAggregations,
     availableComponentProducts,
     organizationId,
+    apiUserId,
     isLoading,
     addComponent,
     updateComponent,
@@ -287,6 +288,7 @@ export function CompositeProductConfig({
       <CompatibleComponentsEditor
         easyquoteProductId={easyquoteProductId}
         organizationId={organizationId}
+        apiUserId={apiUserId || ""}
         components={components}
         availableProducts={componentProducts}
         parentPrompts={parentPrompts}
