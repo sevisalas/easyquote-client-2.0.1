@@ -1583,7 +1583,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         // Fallback solo si no es número: parsear como string español
         basePrice = safePrice(parseEsNumber(q1Price ?? 0));
       }
-      console.log('[QuoteItem] Multi Q1 price:', { q1Price, basePrice, multiRows: multiRows.map(r => ({ qty: r.qty, totalStr: r.totalStr })) });
     } else if (outputPrice !== undefined && outputPrice !== null) {
       basePrice = safePrice(parseEsNumber(outputPrice));
     } else {

@@ -493,7 +493,21 @@ export default function QuoteEdit() {
   });
 
   const calculateSubtotal = () => {
-    return items.reduce((sum, item) => sum + (item.price || 0), 0);
+    const MAX_PRICE = 1_000_000_000;
+    const safePrice = (val: unknown): number => {
+      const n = typeof val === "number" ? val : Number(val);
+      if (!Number.isFinite(n) || n < 0) return 0;
+      return n > MAX_PRICE ? MAX_PRICE : n;
+    };
+
+    return items.reduce((sum, item) => {
+      const q1 = (item as any)?.multi?.rows?.[0]?.totalStr;
+      const candidate = (typeof q1 === "number" && Number.isFinite(q1) && q1 >= 0)
+        ? q1
+        : (item as any)?.price;
+
+      return sum + safePrice(candidate);
+    }, 0);
   };
 
   const calculateTotal = () => {

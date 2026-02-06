@@ -220,19 +220,29 @@ export default function QuoteNew() {
 
   // Calculate totals
   const totals = useMemo(() => {
+    const MAX_PRICE = 1_000_000_000;
+    const safePrice = (val: unknown): number => {
+      const n = typeof val === "number" ? val : Number(val);
+      if (!Number.isFinite(n) || n < 0) return 0;
+      return n > MAX_PRICE ? MAX_PRICE : n;
+    };
+
     let subtotal = 0;
 
-    // Sum items prices - ensure valid numeric values only
-    Object.values(items).forEach(item => {
-      const price = typeof item.price === 'number' && isFinite(item.price) && item.price >= 0 
-        ? item.price 
-        : 0;
-      subtotal += price;
+    // Sum items prices.
+    // If item has multi quantities, subtotal MUST use Q1 as reference.
+    Object.values(items).forEach((item) => {
+      const q1 = item?.multi?.rows?.[0]?.totalStr;
+      const candidate = (typeof q1 === "number" && Number.isFinite(q1) && q1 >= 0)
+        ? q1
+        : item.price;
+
+      subtotal += safePrice(candidate);
     });
 
     // Add quote-level additionals
     let additionalsTotal = 0;
-    quoteAdditionals.forEach(additional => {
+    quoteAdditionals.forEach((additional) => {
       if (additional.type === 'net_amount') {
         additionalsTotal += additional.value;
       } else if (additional.type === 'quantity_multiplier') {
@@ -243,18 +253,17 @@ export default function QuoteNew() {
         additionalsTotal += subtotal * additional.value / 100;
       }
     });
-    const finalSubtotal = subtotal + additionalsTotal;
+
+    const finalSubtotal = safePrice(subtotal + additionalsTotal);
     const taxAmount = 0; // TODO: Implement tax calculation
     const discountAmount = 0; // TODO: Implement discount
-    const finalPrice = finalSubtotal + taxAmount - discountAmount;
-    
-    // Final safety check - cap at reasonable maximum (1 billion)
-    const MAX_PRICE = 1_000_000_000;
+    const finalPrice = safePrice(finalSubtotal + taxAmount - discountAmount);
+
     return {
-      subtotal: Math.min(finalSubtotal, MAX_PRICE),
+      subtotal: finalSubtotal,
       taxAmount,
       discountAmount,
-      finalPrice: Math.min(finalPrice, MAX_PRICE)
+      finalPrice,
     };
   }, [items, quoteAdditionals]);
   const formatEUR = (amount: number) => {
