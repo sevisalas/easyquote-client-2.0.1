@@ -244,11 +244,20 @@ Deno.serve(async (req) => {
       console.warn('No EasyQuote credentials found, dynamic prompt visibility will be skipped');
     }
 
-    // Hide-in-documents prompt settings
+    // Get api_user_id for the organization (to get shared prompt settings)
+    const { data: orgData } = await supabase
+      .from('organizations')
+      .select('api_user_id')
+      .eq('id', organizationId)
+      .single();
+    
+    const apiUserId = orgData?.api_user_id;
+    
+    // Hide-in-documents prompt settings (using api_user_id for shared config)
     const { data: hiddenPromptSettings } = await supabase
       .from('product_prompt_settings')
       .select('easyquote_product_id, prompt_name')
-      .eq('organization_id', organizationId)
+      .eq('api_user_id', apiUserId)
       .eq('hide_in_documents', true);
 
     const normalizeHiddenKey = (v: unknown) => normalizePromptKey(v).toUpperCase();

@@ -1167,18 +1167,20 @@ export default function CompositeComponentTabs({
     queries: activeComponents.map((component) => {
       const componentKey = getActiveComponentKey(component);
       return {
-        // IMPORTANTE: incluir componentKey para que cada instancia tenga su propia entrada en el mapa
-        queryKey: ["component-prompt-settings", component.component_product_id, componentKey],
+        // IMPORTANTE: incluir componentKey y apiUserId para que cada instancia tenga su propia entrada
+        queryKey: ["component-prompt-settings", component.component_product_id, componentKey, apiUserId],
         queryFn: async () => {
+          if (!apiUserId) return { componentKey, componentId: component.id, productId: component.component_product_id, settings: [] };
           const { data, error } = await supabase
             .from("product_prompt_settings")
             .select("*")
+            .eq("api_user_id", apiUserId)
             .eq("easyquote_product_id", component.component_product_id);
           if (error) throw error;
           // Devolvemos componentKey en lugar de component.id para mapear correctamente
           return { componentKey, componentId: component.id, productId: component.component_product_id, settings: data || [] };
         },
-        enabled: !!component.component_product_id,
+        enabled: !!component.component_product_id && !!apiUserId,
         staleTime: 5 * 60 * 1000,
       };
     }),

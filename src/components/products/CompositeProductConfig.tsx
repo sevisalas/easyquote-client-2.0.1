@@ -81,11 +81,11 @@ export function CompositeProductConfig({
           }
 
           // Cargar etiquetas personalizadas de product_prompt_settings
-          // NOTA: prompt_name se guarda normalizado (sin $) y normalmente corresponde a la celda (ej. "B5").
+          // IMPORTANTE: Usar api_user_id para obtener configuración compartida del grupo
           const { data: promptSettings, error: settingsError } = await supabase
             .from("product_prompt_settings")
             .select("prompt_name,label")
-            .eq("organization_id", organizationId)
+            .eq("api_user_id", org.api_user_id)
             .eq("easyquote_product_id", easyquoteProductId);
 
           if (!settingsError && Array.isArray(promptSettings)) {
