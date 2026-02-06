@@ -1574,12 +1574,20 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     
     // Si multi-cantidades está activo, usar el precio de Q1 como referencia para el total
     if (multiEnabled && multiRows.length > 0) {
-      const q1Price = multiRows[0]?.totalStr ?? multiRows[0]?.price ?? 0;
-      basePrice = safePrice(parseFloat(String(q1Price).replace(/\./g, "").replace(",", ".")) || 0);
+      // multiRows[0].totalStr ya es un número calculado por getCalculatedPriceFromOutputs
+      // NO hacer parsing adicional que pueda corromper el valor
+      const q1Price = multiRows[0]?.totalStr;
+      if (typeof q1Price === 'number' && Number.isFinite(q1Price)) {
+        basePrice = safePrice(q1Price);
+      } else {
+        // Fallback solo si no es número: parsear como string español
+        basePrice = safePrice(parseEsNumber(q1Price ?? 0));
+      }
+      console.log('[QuoteItem] Multi Q1 price:', { q1Price, basePrice, multiRows: multiRows.map(r => ({ qty: r.qty, totalStr: r.totalStr })) });
     } else if (outputPrice !== undefined && outputPrice !== null) {
-      basePrice = safePrice(parseFloat(String(outputPrice).replace(/\./g, "").replace(",", ".")) || 0);
+      basePrice = safePrice(parseEsNumber(outputPrice));
     } else {
-      basePrice = safePrice(parseFloat(String(pricingPrice ?? 0).replace(/\./g, "").replace(",", ".")) || 0);
+      basePrice = safePrice(parseEsNumber(pricingPrice ?? 0));
     }
     let additionalsTotal = 0;
     
