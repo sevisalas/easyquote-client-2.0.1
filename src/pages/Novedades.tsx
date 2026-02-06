@@ -26,6 +26,16 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.5.9",
+    date: "2026-02-06",
+    changes: {
+      fixed: [
+        "Validación de precio máximo para evitar errores de desbordamiento numérico en base de datos",
+        "Etiquetas descriptivas en productos compuestos: ahora se muestran correctamente en el diálogo de asociación",
+      ],
+    },
+  },
+  {
     version: "2.5.8",
     date: "2026-02-04",
     changes: {
