@@ -82,12 +82,21 @@ const getHiddenPromptSettings = async (): Promise<Map<string, Set<string>>> => {
   
   if (!orgId) return new Map();
   
+  // Obtener api_user_id de la organización para buscar configuración compartida
+  const { data: orgInfo } = await supabase
+    .from('organizations')
+    .select('api_user_id')
+    .eq('id', orgId)
+    .single();
+  
+  if (!orgInfo?.api_user_id) return new Map();
+  
   const { data: settings, error } = await supabase
     .from('product_prompt_settings')
     .select('easyquote_product_id, prompt_name')
-    .eq('organization_id', orgId)
+    .eq('api_user_id', orgInfo.api_user_id)
     .eq('hide_in_documents', true);
-    
+
   if (error || !settings) return new Map();
   
   // Map: productId -> Set of hidden prompt names (normalized for comparison)
