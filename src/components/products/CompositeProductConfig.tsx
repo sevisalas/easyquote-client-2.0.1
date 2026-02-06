@@ -48,6 +48,9 @@ export function CompositeProductConfig({
     queryFn: async () => {
       const out: { name: string; label: string }[] = [];
 
+      // Variable para guardar las etiquetas personalizadas de product_prompt_settings
+      let customLabelsByPromptName = new Map<string, string>();
+
       // 0) Campos generales del producto compuesto (registrados en BD)
       try {
         if (organizationId && easyquoteProductId) {
@@ -70,6 +73,23 @@ export function CompositeProductConfig({
                 const name = String(p.name ?? "").trim();
                 if (!name) continue;
                 out.push({ name, label: String(p.label ?? p.name) });
+              }
+            }
+          }
+
+          // Cargar etiquetas personalizadas de product_prompt_settings
+          const { data: promptSettings, error: settingsError } = await supabase
+            .from("product_prompt_settings")
+            .select("prompt_name,label")
+            .eq("organization_id", organizationId)
+            .eq("easyquote_product_id", easyquoteProductId);
+
+          if (!settingsError && Array.isArray(promptSettings)) {
+            for (const s of promptSettings) {
+              const promptName = String(s.prompt_name ?? "").trim().toUpperCase();
+              const label = String(s.label ?? "").trim();
+              if (promptName && label) {
+                customLabelsByPromptName.set(promptName, label);
               }
             }
           }
@@ -151,16 +171,27 @@ export function CompositeProductConfig({
 
       for (const p of defById.values()) {
         const id = p.id;
+        const normalizedId = id.replace(/\$/g, "").trim().toUpperCase();
+        
+        // PRIORIDAD: 1) Etiqueta personalizada de product_prompt_settings
+        const customLabel = customLabelsByPromptName.get(normalizedId);
+        
         const pricingLabel = pricingLabelById.get(id);
         const excelLabel = p.promptCell ? excelLabelByCell[p.promptCell] : undefined;
         const rawLabel = p.rawLabel;
 
-        const labelCandidate =
-          (pricingLabel && !isUuidLike(pricingLabel) ? pricingLabel : undefined) ??
-          (excelLabel && !isCellLike(excelLabel) ? excelLabel : undefined) ??
-          (rawLabel && !isUuidLike(rawLabel) ? rawLabel : undefined) ??
-          p.promptCell ??
-          id;
+        // Si hay etiqueta personalizada, usarla directamente
+        let labelCandidate: string;
+        if (customLabel) {
+          labelCandidate = customLabel;
+        } else {
+          labelCandidate =
+            (pricingLabel && !isUuidLike(pricingLabel) ? pricingLabel : undefined) ??
+            (excelLabel && !isCellLike(excelLabel) ? excelLabel : undefined) ??
+            (rawLabel && !isUuidLike(rawLabel) ? rawLabel : undefined) ??
+            p.promptCell ??
+            id;
+        }
 
         merged.set(id, {
           name: id,
