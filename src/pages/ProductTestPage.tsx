@@ -1378,7 +1378,7 @@ export default function ProductTestPage({
                             onComponentPromptCommit={handleComponentPromptCommit}
                           />
                         ) : (
-                          /* Sistema legacy para productos encuadernados */
+                          /* Sistema legacy para productos encuadernados O productos simples/componentes */
                           <ComponentTabsPromptsForm 
                             product={productForPrompts ?? productDetail}
                             productId={productId} 
@@ -1392,7 +1392,8 @@ export default function ProductTestPage({
                           />
                         )}
 
-                        {/* Sección: Opciones restrictivas (prompts marcados como force_result) - solo legacy */}
+                        {/* Sección: Opciones restrictivas (prompts marcados como force_result) */}
+                        {/* Se muestra para: productos legacy, productos simples y componentes (cuando no usan CompositeComponentTabs) */}
                         {!hasConfiguredComponents && forceResultPrompts.length > 0 && (
                           <div className="border-t pt-4 mt-4">
                             <h3 className="text-sm font-semibold text-muted-foreground mb-3">
