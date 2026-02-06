@@ -2634,48 +2634,52 @@ export default function ProductManagement() {
                                 }
                               }} />
                               </div>
-                              {/* Campo editable de etiqueta - en la misma línea */}
-                              <div className="flex items-center gap-2 flex-1">
-                                <Label className="text-sm font-medium whitespace-nowrap">Etiqueta</Label>
-                                <Input 
-                                  className="flex-1 h-8"
-                                  placeholder="Nombre descriptivo"
-                                  defaultValue={prompt.promptText || ""}
-                                  onBlur={e => {
-                                    const updatedPrompt = {
-                                      ...prompt,
-                                      promptText: e.target.value
-                                    };
-                                    updatePromptMutation.mutate(updatedPrompt);
-                                  }}
-                                />
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Label className="text-sm font-medium whitespace-nowrap">Variable de prod.</Label>
-                                <Select value={getMappedVariableId(prompt.promptCell) || "none"} onValueChange={value => {
-                                if (selectedProduct) {
-                                  upsertVariableMapping({
-                                    easyquoteProductId: selectedProduct.id,
-                                    productName: selectedProduct.productName,
-                                    promptOrOutputName: prompt.promptCell,
-                                    variableId: value === "none" ? null : value
-                                  });
-                                }
-                              }}>
-                                  <SelectTrigger className="w-40">
-                                    <SelectValue placeholder="Sin variable" />
-                                  </SelectTrigger>
-                                  <SelectContent className="bg-background border shadow-lg z-50">
-                                    <SelectItem value="none">Sin variable asignada</SelectItem>
-                                    {productionVariables.filter(v => {
-                                    const mappedNames = getMappedNames();
-                                    const currentMapping = getMappedVariableId(prompt.promptCell);
-                                    return !mappedNames.includes(prompt.promptCell) || currentMapping && v.id === currentMapping;
-                                  }).map(variable => <SelectItem key={variable.id} value={variable.id}>
+                              {/* Etiqueta y Variable de prod. en la misma línea */}
+                              <div className="flex items-center gap-4 flex-1">
+                                <div className="flex items-center gap-2 flex-1">
+                                  <Label className="text-sm font-medium whitespace-nowrap">Etiqueta</Label>
+                                  <Input 
+                                    className="flex-1 h-8"
+                                    placeholder="Nombre descriptivo"
+                                    defaultValue={prompt.promptText || ""}
+                                    onBlur={e => {
+                                      const updatedPrompt = {
+                                        ...prompt,
+                                        promptText: e.target.value
+                                      };
+                                      updatePromptMutation.mutate(updatedPrompt);
+                                    }}
+                                  />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Label className="text-sm font-medium whitespace-nowrap">Variable de prod.</Label>
+                                  <Select value={getMappedVariableId(prompt.promptCell) || "none"} onValueChange={value => {
+                                    if (selectedProduct) {
+                                      upsertVariableMapping({
+                                        easyquoteProductId: selectedProduct.id,
+                                        productName: selectedProduct.productName,
+                                        promptOrOutputName: prompt.promptCell,
+                                        variableId: value === "none" ? null : value
+                                      });
+                                    }
+                                  }}>
+                                    <SelectTrigger className="w-40">
+                                      <SelectValue placeholder="Sin variable" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-background border shadow-lg z-50">
+                                      <SelectItem value="none">Sin variable asignada</SelectItem>
+                                      {productionVariables.filter(v => {
+                                        const mappedNames = getMappedNames();
+                                        const currentMapping = getMappedVariableId(prompt.promptCell);
+                                        return !mappedNames.includes(prompt.promptCell) || currentMapping && v.id === currentMapping;
+                                      }).map(variable => (
+                                        <SelectItem key={variable.id} value={variable.id}>
                                           {variable.name}
-                                        </SelectItem>)}
-                                  </SelectContent>
-                                </Select>
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
                               </div>
                             </div>
                             </>;
