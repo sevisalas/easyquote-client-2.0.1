@@ -2634,11 +2634,21 @@ export default function ProductManagement() {
                                 }
                               }} />
                               </div>
-                              {/* Etiqueta fija "General" en lugar de selector de componente */}
+                              {/* Campo para etiqueta/nombre del campo */}
                               <div className="flex items-center gap-2 flex-1">
-                                <Badge variant="secondary" className="text-xs">
-                                  General
-                                </Badge>
+                                <Label className="text-sm font-medium whitespace-nowrap">Etiqueta</Label>
+                                <Input 
+                                  className="flex-1 h-8"
+                                  placeholder="Nombre descriptivo del campo"
+                                  defaultValue={prompt.promptText || ""}
+                                  onBlur={e => {
+                                    const updatedPrompt = {
+                                      ...prompt,
+                                      promptText: e.target.value
+                                    };
+                                    updatePromptMutation.mutate(updatedPrompt);
+                                  }}
+                                />
                               </div>
                               <div className="flex items-center gap-2 ml-auto">
                                 <Label className="text-sm font-medium whitespace-nowrap">Variable de prod.</Label>
