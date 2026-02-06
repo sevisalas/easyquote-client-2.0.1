@@ -167,7 +167,17 @@ export default function ComponentTabsPromptsForm({
       }
 
       // También indexar por otras claves para compatibilidad
-      const keys = [p?.key, p?.code, p?.slug, p?.name, getPromptCell(p)];
+      const keys = [
+        p?.key,
+        p?.code,
+        p?.slug,
+        p?.name,
+        // Muy importante: en algunos productos el ID de definición no coincide con el UUID del pricing,
+        // pero el texto (promptText) sí, así que lo usamos como clave adicional.
+        (p as any)?.promptText,
+        (p as any)?.prompt_text,
+        getPromptCell(p)
+      ];
       for (const k of keys) {
         const kn = extractCellRef(k) ?? normalizePromptName(k);
         if (kn) map.set(kn, cell);
@@ -196,6 +206,20 @@ export default function ComponentTabsPromptsForm({
     const cellFromUuidUpper = promptCellLookup.get(idStr.toUpperCase());
     if (cellFromUuidLower) return cellFromUuidLower;
     if (cellFromUuidUpper) return cellFromUuidUpper;
+
+    // Fallback adicional: en algunos productos el pricing trae UUIDs que no están en las definiciones,
+    // pero el label (promptText) sí coincide. Intentar mapear por texto descriptivo.
+    const labelText = String((prompt as any)?.label ?? "").trim();
+    const labelTextNorm = labelText ? normalizePromptName(labelText) : "";
+    const isUuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(labelText);
+    const isCellLike = /^[A-Z]{1,3}\d{1,4}$/.test(labelTextNorm);
+    if (labelTextNorm && !isUuidLike && !isCellLike) {
+      const cellFromLabelText = promptCellLookup.get(labelTextNorm);
+      if (cellFromLabelText) {
+        debugLog("[ComponentTabs] getPromptAdminKey found by label text:", { id: idStr, labelText, cell: cellFromLabelText });
+        return cellFromLabelText;
+      }
+    }
 
     // Fallback: intentar extraer celda del id o label
     const idNorm = extractCellRef(idStr) ?? normalizePromptName(idStr);
