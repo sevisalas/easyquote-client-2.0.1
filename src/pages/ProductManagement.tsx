@@ -560,7 +560,8 @@ export default function ProductManagement() {
       hideInDocuments,
       adminOnly,
       forceResult,
-      isHidden
+      isHidden,
+      label
     }: {
       productId: string;
       promptName: string;
@@ -568,6 +569,7 @@ export default function ProductManagement() {
       adminOnly?: boolean;
       forceResult?: boolean;
       isHidden?: boolean;
+      label?: string;
     }) => {
       const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
       const promptKey = normalizePromptKey(promptName);
@@ -578,23 +580,25 @@ export default function ProductManagement() {
         promptName: promptKey,
         hideInDocuments,
         adminOnly,
-        forceResult
+        forceResult,
+        label
       });
       if (!orgId) throw new Error("No organization selected");
 
       // First try to find existing record
       const {
         data: existing
-      } = await supabase.from("product_prompt_settings").select("id, hide_in_documents, admin_only, force_result").eq("organization_id", orgId).eq("easyquote_product_id", productId).eq("prompt_name", promptKey).maybeSingle();
+      } = await supabase.from("product_prompt_settings").select("id, hide_in_documents, admin_only, force_result, label").eq("organization_id", orgId).eq("easyquote_product_id", productId).eq("prompt_name", promptKey).maybeSingle();
       
       // Build update object with only provided fields
-      const updateData: { hide_in_documents?: boolean; admin_only?: boolean; force_result?: boolean; is_hidden?: boolean; updated_at: string } = {
+      const updateData: { hide_in_documents?: boolean; admin_only?: boolean; force_result?: boolean; is_hidden?: boolean; label?: string; updated_at: string } = {
         updated_at: new Date().toISOString()
       };
       if (hideInDocuments !== undefined) updateData.hide_in_documents = hideInDocuments;
       if (adminOnly !== undefined) updateData.admin_only = adminOnly;
       if (forceResult !== undefined) updateData.force_result = forceResult;
       if (isHidden !== undefined) updateData.is_hidden = isHidden;
+      if (label !== undefined) updateData.label = label;
 
       if (existing) {
         // Update existing record
@@ -613,7 +617,8 @@ export default function ProductManagement() {
           hide_in_documents: hideInDocuments ?? false,
           admin_only: adminOnly ?? false,
           force_result: forceResult ?? false,
-          is_hidden: isHidden ?? false
+          is_hidden: isHidden ?? false,
+          label: label ?? null
         });
         if (error) throw error;
       }
@@ -665,6 +670,14 @@ export default function ProductManagement() {
     const key = normalizePromptKey(promptName);
     const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
     return setting?.is_hidden || false;
+  };
+
+  // Helper to get saved label for a prompt
+  const getPromptLabel = (promptName: string): string | undefined => {
+    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+    const key = normalizePromptKey(promptName);
+    const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
+    return setting?.label ?? undefined;
   };
 
   // ALL HOOKS MUST BE DECLARED BEFORE ANY CONDITIONAL LOGIC
@@ -2641,13 +2654,15 @@ export default function ProductManagement() {
                                   <Input 
                                     className="flex-1 h-8"
                                     placeholder="Nombre descriptivo"
-                                    defaultValue={prompt.promptText || ""}
+                                    defaultValue={getPromptLabel(prompt.promptCell) || prompt.promptText || ""}
                                     onBlur={e => {
-                                      const updatedPrompt = {
-                                        ...prompt,
-                                        promptText: e.target.value
-                                      };
-                                      updatePromptMutation.mutate(updatedPrompt);
+                                      if (selectedProduct) {
+                                        upsertPromptSettingMutation.mutate({
+                                          productId: selectedProduct.id,
+                                          promptName: prompt.promptCell,
+                                          label: e.target.value
+                                        });
+                                      }
                                     }}
                                   />
                                 </div>
