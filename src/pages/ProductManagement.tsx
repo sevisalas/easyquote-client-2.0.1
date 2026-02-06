@@ -338,6 +338,8 @@ export default function ProductManagement() {
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>("");
   const [productType, setProductType] = useState<'sencillo' | 'compuesto' | 'kit'>('sencillo');
   const [selectedInputComponent, setSelectedInputComponent] = useState<string>('general');
+  // Estado para labels de prompts (se guardan al hacer clic en "Guardar cambios")
+  const [promptLabelDrafts, setPromptLabelDrafts] = useState<Record<string, string>>({});
   const [newPromptData, setNewPromptData] = useState({
     promptSheet: "",
     promptCell: "",
@@ -1405,6 +1407,7 @@ export default function ProductManagement() {
       if (closeDialog) {
         setIsEditDialogOpen(false);
         setSelectedProduct(null);
+        setPromptLabelDrafts({});
       }
     },
     onError: (error: Error) => {
@@ -1415,7 +1418,7 @@ export default function ProductManagement() {
       });
     }
   });
-  const handleSaveProduct = () => {
+  const handleSaveProduct = async () => {
     if (selectedProduct) {
       // Todos los productos se actualizan en EasyQuote (ya no hay productos locales comp_*)
       const action = selectedProduct.isActive ? 'update' : 'delete';
@@ -1433,6 +1436,20 @@ export default function ProductManagement() {
           category_id: selectedCategoryId || undefined,
           subcategory_id: selectedSubcategoryId || undefined
         });
+      }
+
+      // Guardar todos los labels de prompts pendientes
+      const labelsToSave = Object.entries(promptLabelDrafts);
+      if (labelsToSave.length > 0) {
+        for (const [promptName, label] of labelsToSave) {
+          await upsertPromptSettingMutation.mutateAsync({
+            productId: selectedProduct.id,
+            promptName,
+            label
+          });
+        }
+        // Limpiar drafts después de guardar
+        setPromptLabelDrafts({});
       }
     }
   };
@@ -2654,15 +2671,12 @@ export default function ProductManagement() {
                                   <Input 
                                     className="flex-1 h-8"
                                     placeholder="Nombre descriptivo"
-                                    defaultValue={getPromptLabel(prompt.promptCell) || prompt.promptText || ""}
-                                    onBlur={e => {
-                                      if (selectedProduct) {
-                                        upsertPromptSettingMutation.mutate({
-                                          productId: selectedProduct.id,
-                                          promptName: prompt.promptCell,
-                                          label: e.target.value
-                                        });
-                                      }
+                                    value={promptLabelDrafts[prompt.promptCell] ?? getPromptLabel(prompt.promptCell) ?? prompt.promptText ?? ""}
+                                    onChange={e => {
+                                      setPromptLabelDrafts(prev => ({
+                                        ...prev,
+                                        [prompt.promptCell]: e.target.value
+                                      }));
                                     }}
                                   />
                                 </div>
@@ -2858,7 +2872,10 @@ export default function ProductManagement() {
                 Eliminar producto
               </Button>
               <div className="flex space-x-2">
-                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                <Button variant="outline" onClick={() => {
+                  setIsEditDialogOpen(false);
+                  setPromptLabelDrafts({});
+                }}>
                   Cancelar
                 </Button>
                 <Button onClick={handleSaveProduct} disabled={updateProductMutation.isPending}>
