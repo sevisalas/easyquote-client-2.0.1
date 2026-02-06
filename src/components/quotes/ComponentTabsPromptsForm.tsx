@@ -7,6 +7,11 @@ import { useProductPromptSettings } from "@/hooks/useProductPromptSettings";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 import { type BoundProductConfig, getActiveComponents } from "./BoundProductConfigSelector";
 
+const DEBUG_COMPONENT_TABS = false;
+const debugLog = (...args: any[]) => {
+  if (DEBUG_COMPONENT_TABS) console.log(...args);
+};
+
 interface ComponentTabsPromptsFormProps {
   product: any;
   productId: string;
@@ -136,20 +141,20 @@ export default function ComponentTabsPromptsForm({
   const promptCellLookup = useMemo(() => {
     const map = new Map<string, string>();
 
-    console.log("[ComponentTabs] Building promptCellLookup from", promptDefinitions?.length, "definitions");
+    debugLog("[ComponentTabs] Building promptCellLookup from", promptDefinitions?.length, "definitions");
 
     for (const p of promptDefinitions as any[]) {
       const rawCell = getPromptCell(p);
       const cell = extractCellRef(rawCell) ?? normalizePromptName(rawCell);
-      
-      console.log("[ComponentTabs] Prompt def:", { 
-        id: p?.id, 
-        rawCell, 
-        cell, 
+
+      debugLog("[ComponentTabs] Prompt def:", {
+        id: p?.id,
+        rawCell,
+        cell,
         name: p?.name,
-        promptText: p?.promptText 
+        promptText: p?.promptText,
       });
-      
+
       if (!cell) continue;
 
       // Indexar por UUID (la clave principal que viene del pricing)
@@ -171,20 +176,20 @@ export default function ComponentTabsPromptsForm({
       map.set(cell, cell);
     }
 
-    console.log("[ComponentTabs] promptCellLookup size:", map.size);
+    debugLog("[ComponentTabs] promptCellLookup size:", map.size);
     return map;
   }, [promptDefinitions]);
 
   const getPromptAdminKey = (prompt: PromptDef): string => {
     const idStr = String(prompt.id).trim();
-    
+
     // Primero intentar buscar por UUID directamente (la clave más confiable)
     const cellFromUuid = promptCellLookup.get(idStr);
     if (cellFromUuid) {
-      console.log("[ComponentTabs] getPromptAdminKey found by UUID:", { id: idStr, cell: cellFromUuid });
+      debugLog("[ComponentTabs] getPromptAdminKey found by UUID:", { id: idStr, cell: cellFromUuid });
       return cellFromUuid;
     }
-    
+
     // Fallback: intentar extraer celda del id o label
     const idNorm = extractCellRef(idStr) ?? normalizePromptName(idStr);
     const labelCell = extractCellRef((prompt as any)?.label);
@@ -193,8 +198,8 @@ export default function ComponentTabsPromptsForm({
     const cellFromLabel = labelCell ? (promptCellLookup.get(labelCell) ?? labelCell) : undefined;
 
     const result = cellFromId ?? cellFromLabel ?? extractCellRef(idStr) ?? labelCell ?? idNorm ?? idStr;
-    console.log("[ComponentTabs] getPromptAdminKey fallback:", { id: idStr, result, idNorm, labelCell });
-    
+    debugLog("[ComponentTabs] getPromptAdminKey fallback:", { id: idStr, result, idNorm, labelCell });
+
     // Importante: NO usar el texto del label (p.ej. "Tarifa"); solo referencias de celda/ids.
     return result;
   };
