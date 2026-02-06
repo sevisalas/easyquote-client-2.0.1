@@ -170,7 +170,15 @@ export function ComponentPromptMappingDialog({
     staleTime: 60 * 1000,
   });
 
-  // Cargar los prompts del componente desde easyquote-pricing (fuente de verdad con promptText correcto)
+  // Regex para detectar referencias de celda Excel (ej: "$B$10", "B10", "$B10$")
+  const isCellReference = (str: string): boolean => {
+    if (!str) return false;
+    const cleaned = str.replace(/\$/g, "").trim();
+    // Patrón: letra(s) + número(s), ej: B10, AA5, C123
+    return /^[A-Z]{1,3}\d+$/i.test(cleaned);
+  };
+
+  // Cargar los prompts del componente desde easyquote-prompts (definiciones completas, incluyendo campos condicionales)
   const { data: componentPrompts = [], isLoading, isFetching } = useQuery({
     queryKey: ["component-prompts", component.component_product_id, dbCustomLabels],
     queryFn: async () => {
@@ -184,7 +192,7 @@ export function ComponentPromptMappingDialog({
           : [];
       }
 
-      // Primero obtener las definiciones con promptCell para poder hacer match con BD
+      // Obtener TODAS las definiciones de prompts (incluyendo campos condicionales como Ancho/Alto)
       const defsRes = await invokeEasyQuoteFunction<any>("easyquote-prompts", {
         token,
         productId: component.component_product_id,
@@ -192,80 +200,62 @@ export function ComponentPromptMappingDialog({
       
       const defs = Array.isArray(defsRes.data) ? defsRes.data : [];
       
-      // Crear mapa de id -> promptCell para enriquecer con etiquetas de BD
-      const promptCellById = new Map<string, string>();
-      for (const d of defs) {
-        const id = String(d.id);
-        if (d.promptCell) {
-          promptCellById.set(id, String(d.promptCell).replace(/\$/g, "").trim().toUpperCase());
-        }
+      if (defs.length === 0) {
+        setLabelResolutionWarning("No se encontraron campos de entrada en la definición del producto.");
+        return loadLocalCachedPrompts(component.component_product_id);
       }
 
-      // Usar easyquote-pricing GET que devuelve los prompts REALES con promptText correcto
+      // También obtener pricing para enriquecer con promptText actualizado
       const pricingRes = await invokeEasyQuoteFunction<any>("easyquote-pricing", {
         token,
         productId: component.component_product_id,
       });
-
-      if (pricingRes.error) {
-        console.warn("[ComponentPromptMappingDialog] error leyendo pricing:", pricingRes.error);
-        setLabelResolutionWarning("No se pudo leer los datos de entrada desde EasyQuote. Se muestran los últimos datos disponibles.");
-        return component.component_product_id
-          ? loadLocalCachedPrompts(component.component_product_id)
-          : [];
-      }
-
-      // easyquote-pricing devuelve { prompts: [...], outputValues: [...], ... }
+      
       const promptsFromPricing = Array.isArray(pricingRes.data?.prompts) ? pricingRes.data.prompts : [];
       
-      if (promptsFromPricing.length === 0 && defs.length > 0) {
-        // Fallback: usar las definiciones si pricing no devuelve prompts
-        const fallbackResult = defs.map((d: any) => {
-          const id = String(d.id);
-          const promptCell = d.promptCell ? String(d.promptCell).replace(/\$/g, "").trim().toUpperCase() : undefined;
-          // Prioridad: etiqueta de BD > promptText del API > celda
-          const dbLabel = promptCell ? dbCustomLabels[promptCell] : undefined;
-          
-          return {
-            id,
-            name: id,
-            label: dbLabel || d.promptText || d.label || d.name || d.promptCell || id,
-            customLabel: dbLabel || undefined,
-            promptCell: d.promptCell ? String(d.promptCell) : undefined,
-            sequence: typeof d.promptSequence === "number" ? d.promptSequence : undefined,
-          };
-        });
-        
-        fallbackResult.sort((a: ComponentPromptDef, b: ComponentPromptDef) => {
-          const sa = a.sequence ?? Number.POSITIVE_INFINITY;
-          const sb = b.sequence ?? Number.POSITIVE_INFINITY;
-          return sa !== sb ? sa - sb : a.label.localeCompare(b.label);
-        });
-        
-        if (component.component_product_id) {
-          saveLocalCachedPrompts(component.component_product_id, fallbackResult);
+      // Crear mapa de id -> promptText del pricing (más descriptivo)
+      const pricingLabels = new Map<string, string>();
+      for (const p of promptsFromPricing) {
+        if (p.id && p.promptText) {
+          pricingLabels.set(String(p.id), String(p.promptText));
         }
-        return fallbackResult;
       }
 
       // Cargar labels personalizados de localStorage (fallback)
       const localCustomLabels = loadCustomLabels();
 
-      // Convertir prompts de pricing al formato esperado
-      const result: ComponentPromptDef[] = promptsFromPricing.map((p: any) => {
-        const id = String(p.id);
-        const promptCell = promptCellById.get(id);
-        // Prioridad: etiqueta de BD (por celda) > localStorage > promptText del API
+      // Usar las definiciones completas para incluir TODOS los campos
+      const result: ComponentPromptDef[] = defs.map((d: any) => {
+        const id = String(d.id);
+        const promptCell = d.promptCell ? String(d.promptCell).replace(/\$/g, "").trim().toUpperCase() : undefined;
+        
+        // Prioridad de etiquetas:
+        // 1. Etiqueta personalizada en BD (por celda)
+        // 2. Etiqueta personalizada en localStorage
+        // 3. promptText del pricing API (más descriptivo)
+        // 4. promptText de la definición
+        // 5. ID del prompt (último recurso)
         const dbLabel = promptCell ? dbCustomLabels[promptCell] : undefined;
         const localLabel = localCustomLabels[id];
+        const pricingLabel = pricingLabels.get(id);
+        const defLabel = d.promptText || d.label || d.name;
         
+        // Elegir la mejor etiqueta disponible, evitando referencias de celda
+        let label = dbLabel || localLabel || pricingLabel || defLabel || id;
+        
+        // Si la etiqueta parece ser una referencia de celda, usar el ID
+        if (isCellReference(label)) {
+          label = id;
+        }
+
         return {
           id,
           name: id,
-          label: dbLabel || localLabel || p.promptText || p.label || p.name || id,
+          label,
           customLabel: dbLabel || localLabel || undefined,
-          promptCell: promptCell ? `$${promptCell}$` : undefined,
-          sequence: typeof p.promptSequence === "number" ? p.promptSequence : undefined,
+          // Solo guardar promptCell si existe y es diferente a la etiqueta mostrada
+          promptCell: d.promptCell ? String(d.promptCell) : undefined,
+          sequence: typeof d.promptSequence === "number" ? d.promptSequence : undefined,
         };
       });
 
@@ -489,9 +479,10 @@ export function ComponentPromptMappingDialog({
                             Original: {cp.label}
                           </p>
                         )}
-                        {cp.promptCell && cp.promptCell !== cp.label && !isEditing && (
+                        {/* Solo mostrar celda si es descriptiva y diferente del label */}
+                        {cp.promptCell && !isCellReference(cp.promptCell) && cp.promptCell !== cp.label && !isEditing && (
                           <p className="text-xs text-muted-foreground truncate">
-                            Celda: {cp.promptCell}
+                            Ref: {cp.promptCell}
                           </p>
                         )}
                       </div>
