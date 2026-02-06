@@ -178,6 +178,17 @@ export function ComponentPromptMappingDialog({
     return /^[A-Z]{1,3}\d+$/i.test(cleaned);
   };
 
+  // Regex para detectar UUIDs (ej: "b5102bdf-e008-491c-b74b-5ac3a6a7e5a3")
+  const isUUID = (str: string): boolean => {
+    if (!str) return false;
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str.trim());
+  };
+
+  // Verificar si una etiqueta es técnica (no descriptiva para el usuario)
+  const isTechnicalLabel = (str: string): boolean => {
+    return isCellReference(str) || isUUID(str);
+  };
+
   // Cargar los prompts del componente desde easyquote-prompts (definiciones completas, incluyendo campos condicionales)
   const { data: componentPrompts = [], isLoading, isFetching } = useQuery({
     queryKey: ["component-prompts", component.component_product_id, dbCustomLabels],
@@ -234,18 +245,22 @@ export function ComponentPromptMappingDialog({
         // 2. Etiqueta personalizada en localStorage
         // 3. promptText del pricing API (más descriptivo)
         // 4. promptText de la definición
-        // 5. ID del prompt (último recurso)
+        // 5. Nombre del campo si es descriptivo
+        // 6. Fallback genérico
         const dbLabel = promptCell ? dbCustomLabels[promptCell] : undefined;
         const localLabel = localCustomLabels[id];
         const pricingLabel = pricingLabels.get(id);
         const defLabel = d.promptText || d.label || d.name;
         
-        // Elegir la mejor etiqueta disponible, evitando referencias de celda
-        let label = dbLabel || localLabel || pricingLabel || defLabel || id;
+        // Recopilar todas las opciones de etiqueta en orden de prioridad
+        const labelCandidates = [dbLabel, localLabel, pricingLabel, defLabel, id].filter(Boolean);
         
-        // Si la etiqueta parece ser una referencia de celda, usar el ID
-        if (isCellReference(label)) {
-          label = id;
+        // Elegir la primera etiqueta que NO sea técnica (UUID, celda, etc.)
+        let label = labelCandidates.find(l => !isTechnicalLabel(l as string)) as string;
+        
+        // Si todas las opciones son técnicas, mostrar un fallback descriptivo
+        if (!label) {
+          label = `Campo ${promptCell || id.slice(0, 8)}...`;
         }
 
         return {
