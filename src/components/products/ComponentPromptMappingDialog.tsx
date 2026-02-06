@@ -137,16 +137,44 @@ export function ComponentPromptMappingDialog({
   // Aviso cuando no podemos resolver nombres desde el Excel (o falta asociación producto→excel)
   const [labelResolutionWarning, setLabelResolutionWarning] = useState<string | null>(null);
 
-  // Cargar etiquetas personalizadas desde product_prompt_settings (fuente de verdad persistente)
+  // Cargar etiquetas personalizadas desde product_prompt_settings
+  // IMPORTANTE: buscar en TODAS las organizaciones del mismo api_user_id (configuración compartida)
   const { data: dbCustomLabels = {} } = useQuery({
     queryKey: ["component-db-labels", component.component_product_id, organizationId],
     queryFn: async () => {
       if (!organizationId || !component.component_product_id) return {};
       
+      // Primero obtener el api_user_id de la organización actual
+      const { data: orgData, error: orgError } = await supabase
+        .from("organizations")
+        .select("api_user_id")
+        .eq("id", organizationId)
+        .single();
+      
+      if (orgError || !orgData?.api_user_id) {
+        console.warn("[ComponentPromptMappingDialog] Error getting api_user_id:", orgError);
+        return {};
+      }
+      
+      // Obtener todas las organizaciones del mismo grupo (api_user_id)
+      const { data: siblingOrgs, error: siblingsError } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("api_user_id", orgData.api_user_id);
+      
+      if (siblingsError) {
+        console.warn("[ComponentPromptMappingDialog] Error getting sibling orgs:", siblingsError);
+        return {};
+      }
+      
+      const orgIds = (siblingOrgs || []).map(o => o.id);
+      if (orgIds.length === 0) orgIds.push(organizationId);
+      
+      // Buscar etiquetas en TODAS las organizaciones del grupo
       const { data, error } = await supabase
         .from("product_prompt_settings")
         .select("prompt_name, label")
-        .eq("organization_id", organizationId)
+        .in("organization_id", orgIds)
         .eq("easyquote_product_id", component.component_product_id);
       
       if (error) {
@@ -159,7 +187,8 @@ export function ComponentPromptMappingDialog({
         if (row.label) {
           // Normalizar la clave (sin $, mayúsculas)
           const key = String(row.prompt_name ?? "").replace(/\$/g, "").trim().toUpperCase();
-          if (key) labelMap[key] = row.label;
+          // Solo guardar si no existe ya (priorizar el primero encontrado)
+          if (key && !labelMap[key]) labelMap[key] = row.label;
         }
       }
       return labelMap;
