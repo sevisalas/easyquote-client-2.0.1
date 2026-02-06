@@ -115,7 +115,9 @@ function SortableOutputItem({
   isComposite,
   getPromptComponent,
   enabledComponents,
-  assignPromptToComponent
+  assignPromptToComponent,
+  labelValue,
+  onLabelChange
 }: {
   output: ProductOutput;
   index: number;
@@ -136,6 +138,8 @@ function SortableOutputItem({
     prompt_name: string;
     component: string;
   }) => void;
+  labelValue: string;
+  onLabelChange: (value: string) => void;
 }) {
   const {
     attributes,
@@ -157,13 +161,15 @@ function SortableOutputItem({
   const outputName = output.nameCell || output.id;
   const assignedComponent = getPromptComponent(outputName);
   const componentLabel = assignedComponent === 'general' ? 'General' : COMPONENT_PRESETS.compuesto.components.find(c => c.value === assignedComponent)?.label || assignedComponent;
+  const displayLabel = labelValue || output.nameCell || `Campo nº ${index + 1}`;
   return <div ref={setNodeRef} style={style} className={`p-4 border rounded-lg bg-background ${isDragging ? "ring-2 ring-primary" : ""}`}>
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded" type="button">
             <GripVertical className="h-4 w-4 text-muted-foreground" />
           </button>
-          <h4 className="font-medium">Campo nº {index + 1}</h4>
+          <h4 className="font-medium">{displayLabel}</h4>
+          {labelValue && <span className="text-xs text-muted-foreground">({output.nameCell})</span>}
         </div>
         {isComposite && <Badge variant={assignedComponent === 'general' ? 'secondary' : 'default'} className="text-xs">
             {componentLabel}
@@ -196,6 +202,14 @@ function SortableOutputItem({
         })} />
         </div>
         <div className="col-span-2">
+          <Label>Etiqueta</Label>
+          <Input 
+            value={labelValue}
+            placeholder="Nombre descriptivo"
+            onChange={e => onLabelChange(e.target.value)}
+          />
+        </div>
+        <div className="col-span-2">
           <Label>Valor por defecto</Label>
           <Input defaultValue={output.valueCell || ""} placeholder="ej: B25" onBlur={e => onUpdate({
           ...output,
@@ -218,8 +232,7 @@ function SortableOutputItem({
             </SelectContent>
           </Select>
         </div>
-        <div className="col-span-3"></div>
-        <div className="col-span-1">
+        <div className="col-span-2">
           <Label>Acción</Label>
           <div className="flex gap-1">
             <Button variant="ghost" size="sm" onClick={() => onUpdate(output)}>
@@ -338,8 +351,9 @@ export default function ProductManagement() {
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>("");
   const [productType, setProductType] = useState<'sencillo' | 'compuesto' | 'kit'>('sencillo');
   const [selectedInputComponent, setSelectedInputComponent] = useState<string>('general');
-  // Estado para labels de prompts (se guardan al hacer clic en "Guardar cambios")
+  // Estado para labels de prompts y outputs (se guardan al hacer clic en "Guardar cambios")
   const [promptLabelDrafts, setPromptLabelDrafts] = useState<Record<string, string>>({});
+  const [outputLabelDrafts, setOutputLabelDrafts] = useState<Record<string, string>>({});
   const [newPromptData, setNewPromptData] = useState({
     promptSheet: "",
     promptCell: "",
@@ -1408,6 +1422,7 @@ export default function ProductManagement() {
         setIsEditDialogOpen(false);
         setSelectedProduct(null);
         setPromptLabelDrafts({});
+        setOutputLabelDrafts({});
       }
     },
     onError: (error: Error) => {
@@ -1448,8 +1463,20 @@ export default function ProductManagement() {
             label
           });
         }
-        // Limpiar drafts después de guardar
         setPromptLabelDrafts({});
+      }
+
+      // Guardar todos los labels de outputs pendientes
+      const outputLabelsToSave = Object.entries(outputLabelDrafts);
+      if (outputLabelsToSave.length > 0) {
+        for (const [outputName, label] of outputLabelsToSave) {
+          await upsertPromptSettingMutation.mutateAsync({
+            productId: selectedProduct.id,
+            promptName: outputName,
+            label
+          });
+        }
+        setOutputLabelDrafts({});
       }
     }
   };
@@ -2787,7 +2814,7 @@ export default function ProductManagement() {
                         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                           <SortableContext items={orderedProductOutputs.map(o => o.id)} strategy={verticalListSortingStrategy}>
                             <div className="space-y-3">
-                              {orderedProductOutputs.map((output, index) => <SortableOutputItem key={output.id} output={output} index={index} excelSheets={excelSheets} outputTypes={outputTypes} onUpdate={updatedOutput => updateOutputMutation.mutate(updatedOutput)} onDelete={deleteOutput} getMappedVariableId={getMappedVariableId} getMappedNames={getMappedNames} upsertVariableMapping={upsertVariableMapping} productionVariables={productionVariables} selectedProduct={selectedProduct} isComposite={isComposite} getPromptComponent={getPromptComponent} enabledComponents={enabledComponents} assignPromptToComponent={assignPromptToComponent} />)}
+                              {orderedProductOutputs.map((output, index) => <SortableOutputItem key={output.id} output={output} index={index} excelSheets={excelSheets} outputTypes={outputTypes} onUpdate={updatedOutput => updateOutputMutation.mutate(updatedOutput)} onDelete={deleteOutput} getMappedVariableId={getMappedVariableId} getMappedNames={getMappedNames} upsertVariableMapping={upsertVariableMapping} productionVariables={productionVariables} selectedProduct={selectedProduct} isComposite={isComposite} getPromptComponent={getPromptComponent} enabledComponents={enabledComponents} assignPromptToComponent={assignPromptToComponent} labelValue={outputLabelDrafts[output.nameCell] ?? getPromptLabel(output.nameCell) ?? ""} onLabelChange={(value) => setOutputLabelDrafts(prev => ({ ...prev, [output.nameCell]: value }))} />)}
                               {orderedProductOutputs.length === 0 && <div className="text-center py-4">
                                   <Package className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
                                   <p className="text-sm text-muted-foreground">No hay campos de salida</p>
@@ -2875,6 +2902,7 @@ export default function ProductManagement() {
                 <Button variant="outline" onClick={() => {
                   setIsEditDialogOpen(false);
                   setPromptLabelDrafts({});
+                  setOutputLabelDrafts({});
                 }}>
                   Cancelar
                 </Button>
