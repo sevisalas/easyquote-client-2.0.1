@@ -31,7 +31,7 @@ import { BulkOutputsDialog } from "@/components/quotes/BulkOutputsDialog";
 import { useSearchParams } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ExcelErrorScannerDialog } from "@/components/diagnostics/ExcelErrorScannerDialog";
-import { useProductComponentSettings, COMPONENT_PRESETS, GENERAL_COMPONENT } from "@/hooks/useProductComponentSettings";
+import { useProductComponentSettings, COMPONENT_PRESETS } from "@/hooks/useProductComponentSettings";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CompositeProductConfig } from "@/components/products/CompositeProductConfig";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
@@ -112,12 +112,8 @@ function SortableOutputItem({
   upsertVariableMapping,
   productionVariables,
   selectedProduct,
-  isComposite,
-  getPromptComponent,
-  enabledComponents,
-  assignPromptToComponent,
   labelValue,
-  onLabelChange
+  onLabelChange,
 }: {
   output: ProductOutput;
   index: number;
@@ -130,108 +126,127 @@ function SortableOutputItem({
   upsertVariableMapping: (data: any) => void;
   productionVariables: any[];
   selectedProduct: EasyQuoteProduct | null;
-  isComposite: boolean;
-  getPromptComponent: (name: string) => string;
-  enabledComponents: string[];
-  assignPromptToComponent: (data: {
-    easyquote_product_id: string;
-    prompt_name: string;
-    component: string;
-  }) => void;
   labelValue: string;
   onLabelChange: (value: string) => void;
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({
-    id: output.id
-  });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({
+      id: output.id,
+    });
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1
+    opacity: isDragging ? 0.5 : 1,
   };
 
-  // Obtener componente asignado para este output
-  const outputName = output.nameCell || output.id;
-  const assignedComponent = getPromptComponent(outputName);
-  const componentLabel = assignedComponent === 'general' ? 'General' : COMPONENT_PRESETS.compuesto.components.find(c => c.value === assignedComponent)?.label || assignedComponent;
   const displayLabel = labelValue || output.nameCell || `Campo nº ${index + 1}`;
-  return <div ref={setNodeRef} style={style} className={`p-4 border rounded-lg bg-background ${isDragging ? "ring-2 ring-primary" : ""}`}>
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`p-4 border rounded-lg bg-background ${
+        isDragging ? "ring-2 ring-primary" : ""
+      }`}
+    >
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded" type="button">
+          <button
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+            type="button"
+          >
             <GripVertical className="h-4 w-4 text-muted-foreground" />
           </button>
           <h4 className="font-medium">{displayLabel}</h4>
-          {labelValue && <span className="text-xs text-muted-foreground">({output.nameCell})</span>}
+          {labelValue && (
+            <span className="text-xs text-muted-foreground">({output.nameCell})</span>
+          )}
         </div>
-        {isComposite && <Badge variant={assignedComponent === 'general' ? 'secondary' : 'default'} className="text-xs">
-            {componentLabel}
-          </Badge>}
       </div>
 
       <div className="grid grid-cols-12 gap-2 items-end">
         <div className="col-span-2">
           <Label>Hoja</Label>
-          <Select value={output.sheet || ""} onValueChange={value => onUpdate({
-          ...output,
-          sheet: value
-        })}>
+          <Select
+            value={output.sheet || ""}
+            onValueChange={(value) =>
+              onUpdate({
+                ...output,
+                sheet: value,
+              })
+            }
+          >
             <SelectTrigger>
               <SelectValue placeholder={output.sheet || "Seleccionar hoja"} />
             </SelectTrigger>
             <SelectContent className="bg-background border shadow-lg z-50">
-              {output.sheet && !excelSheets.includes(output.sheet) && <SelectItem value={output.sheet}>{output.sheet}</SelectItem>}
-              {excelSheets.map(sheet => <SelectItem key={sheet} value={sheet}>
+              {output.sheet && !excelSheets.includes(output.sheet) && (
+                <SelectItem value={output.sheet}>{output.sheet}</SelectItem>
+              )}
+              {excelSheets.map((sheet) => (
+                <SelectItem key={sheet} value={sheet}>
                   {sheet}
-                </SelectItem>)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
-        <div className="col-span-2">
+
+        <div className="col-span-3">
           <Label>Rótulo</Label>
-          <Input defaultValue={output.nameCell || ""} placeholder="ej: A25" onBlur={e => onUpdate({
-          ...output,
-          nameCell: e.target.value
-        })} />
-        </div>
-        <div className="col-span-2">
-          <Label>Etiqueta</Label>
-          <Input 
-            value={labelValue}
-            placeholder="Nombre descriptivo"
-            onChange={e => onLabelChange(e.target.value)}
+          <Input
+            defaultValue={output.nameCell || ""}
+            placeholder="ej: A25"
+            onBlur={(e) =>
+              onUpdate({
+                ...output,
+                nameCell: e.target.value,
+              })
+            }
           />
         </div>
-        <div className="col-span-2">
+
+        <div className="col-span-3">
           <Label>Valor por defecto</Label>
-          <Input defaultValue={output.valueCell || ""} placeholder="ej: B25" onBlur={e => onUpdate({
-          ...output,
-          valueCell: e.target.value
-        })} />
+          <Input
+            defaultValue={output.valueCell || ""}
+            placeholder="ej: B25"
+            onBlur={(e) =>
+              onUpdate({
+                ...output,
+                valueCell: e.target.value,
+              })
+            }
+          />
         </div>
+
         <div className="col-span-2">
           <Label>Tipo</Label>
-          <Select value={output.outputTypeId?.toString() || ""} onValueChange={value => onUpdate({
-          ...output,
-          outputTypeId: parseInt(value)
-        })}>
+          <Select
+            value={output.outputTypeId?.toString() || ""}
+            onValueChange={(value) =>
+              onUpdate({
+                ...output,
+                outputTypeId: parseInt(value),
+              })
+            }
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-background border shadow-lg z-50">
-              {outputTypes.map(type => <SelectItem key={type.id} value={type.id?.toString() || "0"}>
+              {outputTypes.map((type) => (
+                <SelectItem key={type.id} value={type.id?.toString() || "0"}>
                   {type.outputType}
-                </SelectItem>)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
+
         <div className="col-span-2">
           <Label>Acción</Label>
           <div className="flex gap-1">
@@ -245,63 +260,62 @@ function SortableOutputItem({
         </div>
       </div>
 
-      {/* Componente + Variable de producción - Línea separada */}
+      {/* Etiqueta + Variable de prod. en la misma línea (sin "General") */}
       <div className="flex items-center gap-4 mt-4 pt-4 border-t flex-wrap">
-        {isComposite && <div className="flex items-center gap-2 flex-1">
-            <Label className="text-sm font-medium whitespace-nowrap">Componente</Label>
-            <Select value={assignedComponent} onValueChange={value => {
-          if (selectedProduct) {
-            assignPromptToComponent({
-              easyquote_product_id: selectedProduct.id,
-              prompt_name: outputName,
-              component: value
-            });
-          }
-        }}>
-              <SelectTrigger className="flex-1">
-                <SelectValue />
+        <div className="flex items-center gap-4 flex-1">
+          <div className="flex items-center gap-2 flex-1">
+            <Label className="text-sm font-medium whitespace-nowrap">Etiqueta</Label>
+            <Input
+              className="flex-1 h-8"
+              value={labelValue}
+              placeholder="Nombre descriptivo"
+              onChange={(e) => onLabelChange(e.target.value)}
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label className="text-sm font-medium whitespace-nowrap">Variable de prod.</Label>
+            <Select
+              value={getMappedVariableId(output.nameCell) || "none"}
+              onValueChange={(value) => {
+                if (selectedProduct) {
+                  upsertVariableMapping({
+                    easyquoteProductId: selectedProduct.id,
+                    productName: selectedProduct.productName,
+                    promptOrOutputName: output.nameCell,
+                    variableId: value === "none" ? null : value,
+                  });
+                }
+              }}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Sin variable" />
               </SelectTrigger>
               <SelectContent className="bg-background border shadow-lg z-50">
-                <SelectItem value="general">General</SelectItem>
-                {enabledComponents.map(comp => {
-              const preset = COMPONENT_PRESETS.compuesto.components.find(c => c.value === comp);
-              return <SelectItem key={comp} value={comp}>
-                      {preset?.label || comp}
-                    </SelectItem>;
-            })}
+                <SelectItem value="none">Sin variable asignada</SelectItem>
+                {productionVariables
+                  .filter((v) => {
+                    const mappedNames = getMappedNames();
+                    const currentMapping = getMappedVariableId(output.nameCell);
+                    return (
+                      !mappedNames.includes(output.nameCell) ||
+                      (currentMapping && v.id === currentMapping)
+                    );
+                  })
+                  .map((variable) => (
+                    <SelectItem key={variable.id} value={variable.id}>
+                      {variable.name}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
-          </div>}
-        <div className="flex items-center gap-2 flex-1">
-          <Label className="text-sm font-medium whitespace-nowrap">Variable de producción</Label>
-          <Select value={getMappedVariableId(output.nameCell) || "none"} onValueChange={value => {
-          if (selectedProduct) {
-            upsertVariableMapping({
-              easyquoteProductId: selectedProduct.id,
-              productName: selectedProduct.productName,
-              promptOrOutputName: output.nameCell,
-              variableId: value === "none" ? null : value
-            });
-          }
-        }}>
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Sin variable" />
-            </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50">
-              <SelectItem value="none">Sin variable asignada</SelectItem>
-              {productionVariables.filter(v => {
-              const mappedNames = getMappedNames();
-              const currentMapping = getMappedVariableId(output.nameCell);
-              return !mappedNames.includes(output.nameCell) || currentMapping && v.id === currentMapping;
-            }).map(variable => <SelectItem key={variable.id} value={variable.id}>
-                    {variable.name}
-                  </SelectItem>)}
-            </SelectContent>
-          </Select>
+          </div>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 }
+
 export default function ProductManagement() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -2814,7 +2828,29 @@ export default function ProductManagement() {
                         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                           <SortableContext items={orderedProductOutputs.map(o => o.id)} strategy={verticalListSortingStrategy}>
                             <div className="space-y-3">
-                              {orderedProductOutputs.map((output, index) => <SortableOutputItem key={output.id} output={output} index={index} excelSheets={excelSheets} outputTypes={outputTypes} onUpdate={updatedOutput => updateOutputMutation.mutate(updatedOutput)} onDelete={deleteOutput} getMappedVariableId={getMappedVariableId} getMappedNames={getMappedNames} upsertVariableMapping={upsertVariableMapping} productionVariables={productionVariables} selectedProduct={selectedProduct} isComposite={isComposite} getPromptComponent={getPromptComponent} enabledComponents={enabledComponents} assignPromptToComponent={assignPromptToComponent} labelValue={outputLabelDrafts[output.nameCell] ?? getPromptLabel(output.nameCell) ?? ""} onLabelChange={(value) => setOutputLabelDrafts(prev => ({ ...prev, [output.nameCell]: value }))} />)}
+                              {orderedProductOutputs.map((output, index) => (
+                                <SortableOutputItem
+                                  key={output.id}
+                                  output={output}
+                                  index={index}
+                                  excelSheets={excelSheets}
+                                  outputTypes={outputTypes}
+                                  onUpdate={(updatedOutput) => updateOutputMutation.mutate(updatedOutput)}
+                                  onDelete={deleteOutput}
+                                  getMappedVariableId={getMappedVariableId}
+                                  getMappedNames={getMappedNames}
+                                  upsertVariableMapping={upsertVariableMapping}
+                                  productionVariables={productionVariables}
+                                  selectedProduct={selectedProduct}
+                                  labelValue={outputLabelDrafts[output.nameCell] ?? getPromptLabel(output.nameCell) ?? ""}
+                                  onLabelChange={(value) =>
+                                    setOutputLabelDrafts((prev) => ({
+                                      ...prev,
+                                      [output.nameCell]: value,
+                                    }))
+                                  }
+                                />
+                              ))}
                               {orderedProductOutputs.length === 0 && <div className="text-center py-4">
                                   <Package className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
                                   <p className="text-sm text-muted-foreground">No hay campos de salida</p>
@@ -3000,24 +3036,6 @@ export default function ProductManagement() {
                 valueOptionRange: e.target.value
               })} placeholder="ej: $E$2:$E$3" />
               </div>
-              {/* Selector de componente - solo si el producto es compuesto */}
-              {isComposite && <div className="col-span-12">
-                  <Label htmlFor="component">Componente</Label>
-                  <Select value={newPromptData.component} onValueChange={value => setNewPromptData({
-                ...newPromptData,
-                component: value
-              })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar componente" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border shadow-lg z-50">
-                      <SelectItem value="general">General</SelectItem>
-                      <SelectItem value="cubierta">Cubierta</SelectItem>
-                      {enabledComponents.includes('interior_1') && <SelectItem value="interior_1">Interior 1</SelectItem>}
-                      {enabledComponents.includes('interior_2') && <SelectItem value="interior_2">Interior 2</SelectItem>}
-                    </SelectContent>
-                  </Select>
-                </div>}
             </div>
             {/* Campos numéricos - solo si el tipo es Number (0) */}
             {newPromptData.promptType === 0 && <div className="grid grid-cols-3 gap-4">
@@ -3124,24 +3142,6 @@ export default function ProductManagement() {
                   </SelectContent>
                 </Select>
               </div>
-              {/* Selector de componente - solo si el producto es compuesto */}
-              {isComposite && <div>
-                  <Label htmlFor="outputComponent">Componente</Label>
-                  <Select value={newOutputData.component} onValueChange={value => setNewOutputData(prev => ({
-                ...prev,
-                component: value
-              }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar componente" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border shadow-lg z-50">
-                      <SelectItem value="general">General</SelectItem>
-                      <SelectItem value="cubierta">Cubierta</SelectItem>
-                      {enabledComponents.includes('interior_1') && <SelectItem value="interior_1">Interior 1</SelectItem>}
-                      {enabledComponents.includes('interior_2') && <SelectItem value="interior_2">Interior 2</SelectItem>}
-                    </SelectContent>
-                  </Select>
-                </div>}
             </div>
           </div>
           <div className="flex justify-end space-x-2">
