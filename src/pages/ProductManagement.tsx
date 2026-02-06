@@ -725,11 +725,7 @@ export default function ProductManagement() {
 
       // Then refetch to ensure we have the canonical DB state (ids, etc.)
       await refetchPromptSettings();
-
-      toast({
-        title: "Configuración guardada",
-        description: "La configuración del prompt se ha actualizado",
-      });
+      // NOTE: Toast suppressed here — a single consolidated toast is shown in handleSaveProduct
     },
     onError: (error) => {
       console.error("Error saving prompt setting:", error);
@@ -1552,7 +1548,16 @@ export default function ProductManagement() {
     }
     if (outputLabelsToSave.length > 0) setOutputLabelDrafts({});
 
-    // 3) Finalmente actualizar el producto en EasyQuote
+    // 3) Mostrar toast consolidado si hubo etiquetas guardadas
+    const totalLabelsSaved = labelsToSave.length + outputLabelsToSave.length;
+    if (totalLabelsSaved > 0) {
+      toast({
+        title: "Etiquetas guardadas",
+        description: `Se han guardado ${totalLabelsSaved} etiqueta${totalLabelsSaved !== 1 ? 's' : ''} correctamente.`,
+      });
+    }
+
+    // 4) Finalmente actualizar el producto en EasyQuote
     const action = selectedProduct.isActive ? "update" : "delete";
     updateProductMutation.mutate({
       product: selectedProduct,
