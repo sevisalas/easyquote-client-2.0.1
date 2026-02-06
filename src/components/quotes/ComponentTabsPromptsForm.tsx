@@ -95,7 +95,7 @@ export default function ComponentTabsPromptsForm({
   } = useProductComponentSettings(productId);
 
   // Obtener configuración de prompts (admin_only, hide_in_documents, force_result)
-  const { isPromptAdminOnly, isPromptForceResult } = useProductPromptSettings(productId);
+  const { isPromptAdminOnly, isPromptForceResult, isLoading: isPromptSettingsLoading, promptSettings } = useProductPromptSettings(productId);
 
   // Obtener componentes activos según la configuración de producto encuadernado
   const activeComponents = useMemo(() => {
@@ -107,7 +107,8 @@ export default function ComponentTabsPromptsForm({
   }, [boundProductConfig, enabledComponents]);
 
   const {
-    data: promptDefinitions = []
+    data: promptDefinitions = [],
+    isLoading: isPromptDefinitionsLoading,
   } = useQuery({
     queryKey: ["easyquote-prompts-definitions", productId],
     queryFn: async () => {
@@ -190,6 +191,12 @@ export default function ComponentTabsPromptsForm({
       return cellFromUuid;
     }
 
+    // Buscar también por UUID en mayúsculas/minúsculas
+    const cellFromUuidLower = promptCellLookup.get(idStr.toLowerCase());
+    const cellFromUuidUpper = promptCellLookup.get(idStr.toUpperCase());
+    if (cellFromUuidLower) return cellFromUuidLower;
+    if (cellFromUuidUpper) return cellFromUuidUpper;
+
     // Fallback: intentar extraer celda del id o label
     const idNorm = extractCellRef(idStr) ?? normalizePromptName(idStr);
     const labelCell = extractCellRef((prompt as any)?.label);
@@ -205,6 +212,7 @@ export default function ComponentTabsPromptsForm({
   };
 
   // Separar prompts: regulares vs force_result
+  // IMPORTANTE: Depende de promptSettings y promptDefinitions para recalcularse cuando se carguen
   const { prompts, forceResultPrompts } = useMemo(() => {
     const allPrompts = extractPrompts(product);
 
@@ -212,6 +220,12 @@ export default function ComponentTabsPromptsForm({
     const accessiblePrompts = isAdmin 
       ? allPrompts 
       : allPrompts.filter((prompt) => !isPromptAdminOnly(getPromptAdminKey(prompt)));
+
+    // Si los settings o definiciones están cargando, no separar force_result todavía
+    // (se recalculará cuando los datos cambien)
+    if (isPromptSettingsLoading || isPromptDefinitionsLoading) {
+      return { prompts: accessiblePrompts, forceResultPrompts: [] };
+    }
 
     // Separar prompts normales de force_result
     const regular: PromptDef[] = [];
@@ -227,7 +241,7 @@ export default function ComponentTabsPromptsForm({
     }
 
     return { prompts: regular, forceResultPrompts: forceResult };
-  }, [product, isAdmin, isPromptAdminOnly, isPromptForceResult, promptCellLookup]);
+  }, [product, isAdmin, isPromptAdminOnly, isPromptForceResult, promptCellLookup, promptSettings, isPromptSettingsLoading, isPromptDefinitionsLoading]);
 
   // Notificar los prompts force_result al componente padre
   useEffect(() => {
