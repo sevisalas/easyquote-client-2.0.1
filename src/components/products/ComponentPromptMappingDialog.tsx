@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Link, Link2Off, ArrowRight, RefreshCw } from "lucide-react";
+import { Loader2, Link, Link2Off, ArrowRight, RefreshCw, Pencil, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -46,11 +47,39 @@ interface ComponentPromptDef {
   id: string;
   name: string;
   label: string;
+  customLabel?: string; // Label personalizado por el usuario
   promptCell?: string;
   sequence?: number;
 }
 
 const USER_EDITABLE = "__user_editable__";
+
+// Hook para gestionar labels personalizados por producto
+const useCustomLabels = (productId: string) => {
+  const getStorageKey = () => `easyquote:custom-labels:${productId}`;
+  
+  const loadCustomLabels = (): Record<string, string> => {
+    try {
+      const raw = localStorage.getItem(getStorageKey());
+      if (!raw) return {};
+      return JSON.parse(raw);
+    } catch {
+      return {};
+    }
+  };
+  
+  const saveCustomLabel = (promptId: string, label: string) => {
+    try {
+      const existing = loadCustomLabels();
+      existing[promptId] = label;
+      localStorage.setItem(getStorageKey(), JSON.stringify(existing));
+    } catch {
+      // ignore storage failures
+    }
+  };
+  
+  return { loadCustomLabels, saveCustomLabel };
+};
 
 export function ComponentPromptMappingDialog({
   open,
@@ -67,6 +96,11 @@ export function ComponentPromptMappingDialog({
   isSavingAggregations,
 }: ComponentPromptMappingDialogProps) {
   const queryClient = useQueryClient();
+  const { loadCustomLabels, saveCustomLabel } = useCustomLabels(component.component_product_id);
+  
+  // Estado para edición de labels
+  const [editingLabelId, setEditingLabelId] = useState<string | null>(null);
+  const [editingLabelValue, setEditingLabelValue] = useState("");
 
   const getLocalCacheKey = (productId: string) => `easyquote:component-prompts:${productId}`;
 
@@ -82,6 +116,7 @@ export function ComponentPromptMappingDialog({
           id: String(p.id),
           name: String(p.name ?? p.id),
           label: String(p.label),
+          customLabel: p.customLabel ? String(p.customLabel) : undefined,
           promptCell: p.promptCell ? String(p.promptCell) : undefined,
           sequence: typeof p.sequence === "number" ? p.sequence : undefined,
         }));
@@ -163,14 +198,21 @@ export function ComponentPromptMappingDialog({
         return [];
       }
 
+      // Cargar labels personalizados
+      const customLabels = loadCustomLabels();
+
       // Convertir prompts de pricing al formato esperado
-      const result: ComponentPromptDef[] = promptsFromPricing.map((p: any) => ({
-        id: String(p.id),
-        name: String(p.id),
-        label: p.promptText || p.label || p.name || String(p.id),
-        promptCell: undefined, // pricing no devuelve promptCell, pero no lo necesitamos
-        sequence: typeof p.promptSequence === "number" ? p.promptSequence : undefined,
-      }));
+      const result: ComponentPromptDef[] = promptsFromPricing.map((p: any) => {
+        const id = String(p.id);
+        return {
+          id,
+          name: id,
+          label: p.promptText || p.label || p.name || id,
+          customLabel: customLabels[id] || undefined,
+          promptCell: undefined, // pricing no devuelve promptCell, pero no lo necesitamos
+          sequence: typeof p.promptSequence === "number" ? p.promptSequence : undefined,
+        };
+      });
 
       result.sort((a, b) => {
         const sa = a.sequence ?? Number.POSITIVE_INFINITY;
@@ -317,6 +359,9 @@ export function ComponentPromptMappingDialog({
                 {componentPrompts.map((cp) => {
                   const currentMapping = mappings[cp.name] || USER_EDITABLE;
                   const isMapped = currentMapping !== USER_EDITABLE;
+                  const displayLabel = cp.customLabel || cp.label;
+                  const isEditing = editingLabelId === cp.id;
+                  
                   return (
                     <div
                       key={cp.name}
@@ -325,8 +370,71 @@ export function ComponentPromptMappingDialog({
                       }`}
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{cp.label}</p>
-                        {cp.promptCell && cp.promptCell !== cp.label && (
+                        {isEditing ? (
+                          <div className="flex items-center gap-1">
+                            <Input
+                              value={editingLabelValue}
+                              onChange={(e) => setEditingLabelValue(e.target.value)}
+                              className="h-7 text-sm"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  saveCustomLabel(cp.id, editingLabelValue);
+                                  queryClient.invalidateQueries({
+                                    queryKey: ["component-prompts", component.component_product_id],
+                                  });
+                                  setEditingLabelId(null);
+                                } else if (e.key === "Escape") {
+                                  setEditingLabelId(null);
+                                }
+                              }}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => {
+                                saveCustomLabel(cp.id, editingLabelValue);
+                                queryClient.invalidateQueries({
+                                  queryKey: ["component-prompts", component.component_product_id],
+                                });
+                                setEditingLabelId(null);
+                              }}
+                            >
+                              <Check className="h-3.5 w-3.5 text-primary" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => setEditingLabelId(null)}
+                            >
+                              <X className="h-3.5 w-3.5 text-muted-foreground" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 group">
+                            <p className="font-medium text-sm truncate">{displayLabel}</p>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => {
+                                setEditingLabelId(cp.id);
+                                setEditingLabelValue(displayLabel);
+                              }}
+                              title="Editar nombre del campo"
+                            >
+                              <Pencil className="h-3 w-3 text-muted-foreground" />
+                            </Button>
+                          </div>
+                        )}
+                        {cp.customLabel && !isEditing && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            Original: {cp.label}
+                          </p>
+                        )}
+                        {cp.promptCell && cp.promptCell !== cp.label && !isEditing && (
                           <p className="text-xs text-muted-foreground truncate">
                             Celda: {cp.promptCell}
                           </p>
