@@ -559,27 +559,29 @@ export default function ProductManagement() {
     return null;
   };
 
-  // Query for prompt settings (hide in documents)
+  // Query for prompt settings (hide in documents / labels)
   const {
     data: promptSettings = [],
-    refetch: refetchPromptSettings
+    refetch: refetchPromptSettings,
   } = useQuery({
-    queryKey: ["product-prompt-settings", selectedProduct?.id],
+    queryKey: ["product-prompt-settings", selectedProduct?.id, organizationId],
     queryFn: async () => {
-      if (!selectedProduct?.id) return [];
-      const orgId = await getCurrentOrganizationIdAsync();
-      if (!orgId) return [];
-      const {
-        data,
-        error
-      } = await supabase.from('product_prompt_settings').select('*').eq('organization_id', orgId).eq('easyquote_product_id', selectedProduct.id);
+      if (!selectedProduct?.id || !organizationId) return [];
+
+      const { data, error } = await supabase
+        .from("product_prompt_settings")
+        .select("*")
+        .eq("organization_id", organizationId)
+        .eq("easyquote_product_id", selectedProduct.id);
+
       if (error) {
         console.error("Error fetching prompt settings:", error);
         return [];
       }
+
       return data || [];
     },
-    enabled: !!selectedProduct?.id
+    enabled: !!selectedProduct?.id && !!organizationId,
   });
 
   // Mutation for prompt settings
@@ -591,7 +593,7 @@ export default function ProductManagement() {
       adminOnly,
       forceResult,
       isHidden,
-      label
+      label,
     }: {
       productId: string;
       promptName: string;
@@ -601,9 +603,14 @@ export default function ProductManagement() {
       isHidden?: boolean;
       label?: string;
     }) => {
-      const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+      const normalizePromptKey = (v: string) =>
+        String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
       const promptKey = normalizePromptKey(promptName);
-      const orgId = await getCurrentOrganizationIdAsync();
+
+      // IMPORTANT: always use the same org source as the query to avoid mismatches.
+      if (!organizationId) throw new Error("No organization selected");
+      const orgId = organizationId;
+
       console.log("Saving prompt setting:", {
         orgId,
         productId,
@@ -611,36 +618,44 @@ export default function ProductManagement() {
         hideInDocuments,
         adminOnly,
         forceResult,
-        label
+        label,
       });
-      if (!orgId) throw new Error("No organization selected");
 
       // First try to find existing record
-      const {
-        data: existing
-      } = await supabase.from("product_prompt_settings").select("id, hide_in_documents, admin_only, force_result, label").eq("organization_id", orgId).eq("easyquote_product_id", productId).eq("prompt_name", promptKey).maybeSingle();
-      
+      const { data: existing } = await supabase
+        .from("product_prompt_settings")
+        .select("id")
+        .eq("organization_id", orgId)
+        .eq("easyquote_product_id", productId)
+        .eq("prompt_name", promptKey)
+        .maybeSingle();
+
       // Build update object with only provided fields
-      const updateData: { hide_in_documents?: boolean; admin_only?: boolean; force_result?: boolean; is_hidden?: boolean; label?: string; updated_at: string } = {
-        updated_at: new Date().toISOString()
+      const updateData: {
+        hide_in_documents?: boolean;
+        admin_only?: boolean;
+        force_result?: boolean;
+        is_hidden?: boolean;
+        label?: string;
+        updated_at: string;
+      } = {
+        updated_at: new Date().toISOString(),
       };
+
       if (hideInDocuments !== undefined) updateData.hide_in_documents = hideInDocuments;
       if (adminOnly !== undefined) updateData.admin_only = adminOnly;
       if (forceResult !== undefined) updateData.force_result = forceResult;
       if (isHidden !== undefined) updateData.is_hidden = isHidden;
       if (label !== undefined) updateData.label = label;
 
-      if (existing) {
-        // Update existing record
-        const {
-          error
-        } = await supabase.from("product_prompt_settings").update(updateData).eq("id", existing.id);
+      if (existing?.id) {
+        const { error } = await supabase
+          .from("product_prompt_settings")
+          .update(updateData)
+          .eq("id", existing.id);
         if (error) throw error;
       } else {
-        // Insert new record
-        const {
-          error
-        } = await supabase.from("product_prompt_settings").insert({
+        const { error } = await supabase.from("product_prompt_settings").insert({
           organization_id: orgId,
           easyquote_product_id: productId,
           prompt_name: promptKey,
@@ -648,26 +663,82 @@ export default function ProductManagement() {
           admin_only: adminOnly ?? false,
           force_result: forceResult ?? false,
           is_hidden: isHidden ?? false,
-          label: label ?? null
+          label: label ?? null,
         });
         if (error) throw error;
       }
+
+      return {
+        orgId,
+        productId,
+        promptKey,
+        patch: {
+          hide_in_documents: hideInDocuments,
+          admin_only: adminOnly,
+          force_result: forceResult,
+          is_hidden: isHidden,
+          label,
+        },
+      };
     },
-    onSuccess: () => {
-      refetchPromptSettings();
+    onSuccess: async (result, variables) => {
+      // Update cache immediately (avoids waiting for any delayed refetch pipeline)
+      queryClient.setQueryData(
+        ["product-prompt-settings", variables.productId, result.orgId],
+        (old: any[] | undefined) => {
+          const existing = Array.isArray(old) ? old : [];
+          const idx = existing.findIndex(
+            (s) =>
+              String(s?.prompt_name ?? "").replace(/\$/g, "").trim().toUpperCase() ===
+              result.promptKey
+          );
+
+          const nextItem = {
+            ...(idx >= 0 ? existing[idx] : {}),
+            organization_id: result.orgId,
+            easyquote_product_id: variables.productId,
+            prompt_name: result.promptKey,
+            ...(result.patch.hide_in_documents !== undefined
+              ? { hide_in_documents: result.patch.hide_in_documents }
+              : {}),
+            ...(result.patch.admin_only !== undefined
+              ? { admin_only: result.patch.admin_only }
+              : {}),
+            ...(result.patch.force_result !== undefined
+              ? { force_result: result.patch.force_result }
+              : {}),
+            ...(result.patch.is_hidden !== undefined
+              ? { is_hidden: result.patch.is_hidden }
+              : {}),
+            ...(result.patch.label !== undefined ? { label: result.patch.label } : {}),
+            updated_at: new Date().toISOString(),
+          };
+
+          if (idx >= 0) {
+            const copy = [...existing];
+            copy[idx] = nextItem;
+            return copy;
+          }
+          return [...existing, nextItem];
+        }
+      );
+
+      // Then refetch to ensure we have the canonical DB state (ids, etc.)
+      await refetchPromptSettings();
+
       toast({
         title: "Configuración guardada",
-        description: "La configuración del prompt se ha actualizado"
+        description: "La configuración del prompt se ha actualizado",
       });
     },
-    onError: error => {
+    onError: (error) => {
       console.error("Error saving prompt setting:", error);
       toast({
         title: "Error",
         description: "No se pudo guardar la configuración",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Helper to check if prompt is hidden in documents
@@ -1448,51 +1519,45 @@ export default function ProductManagement() {
     }
   });
   const handleSaveProduct = async () => {
-    if (selectedProduct) {
-      // Todos los productos se actualizan en EasyQuote (ya no hay productos locales comp_*)
-      const action = selectedProduct.isActive ? 'update' : 'delete';
+    if (!selectedProduct) return;
 
-      updateProductMutation.mutate({
-        product: selectedProduct,
-        action
+    // 1) Guardar categoría en Supabase (no bloqueante)
+    if (selectedCategoryId || selectedSubcategoryId) {
+      upsertCategoryMapping.mutate({
+        easyquote_product_id: selectedProduct.id,
+        product_name: selectedProduct.productName,
+        category_id: selectedCategoryId || undefined,
+        subcategory_id: selectedSubcategoryId || undefined,
       });
-
-      // Actualizar categoría en Supabase
-      if (selectedCategoryId || selectedSubcategoryId) {
-        upsertCategoryMapping.mutate({
-          easyquote_product_id: selectedProduct.id,
-          product_name: selectedProduct.productName,
-          category_id: selectedCategoryId || undefined,
-          subcategory_id: selectedSubcategoryId || undefined
-        });
-      }
-
-      // Guardar todos los labels de prompts pendientes
-      const labelsToSave = Object.entries(promptLabelDrafts);
-      if (labelsToSave.length > 0) {
-        for (const [promptName, label] of labelsToSave) {
-          await upsertPromptSettingMutation.mutateAsync({
-            productId: selectedProduct.id,
-            promptName,
-            label
-          });
-        }
-        setPromptLabelDrafts({});
-      }
-
-      // Guardar todos los labels de outputs pendientes
-      const outputLabelsToSave = Object.entries(outputLabelDrafts);
-      if (outputLabelsToSave.length > 0) {
-        for (const [outputName, label] of outputLabelsToSave) {
-          await upsertPromptSettingMutation.mutateAsync({
-            productId: selectedProduct.id,
-            promptName: outputName,
-            label
-          });
-        }
-        setOutputLabelDrafts({});
-      }
     }
+
+    // 2) Guardar labels pendientes ANTES de cerrar el diálogo (evita estados inconsistentes)
+    const labelsToSave = Object.entries(promptLabelDrafts);
+    for (const [promptName, label] of labelsToSave) {
+      await upsertPromptSettingMutation.mutateAsync({
+        productId: selectedProduct.id,
+        promptName,
+        label,
+      });
+    }
+    if (labelsToSave.length > 0) setPromptLabelDrafts({});
+
+    const outputLabelsToSave = Object.entries(outputLabelDrafts);
+    for (const [outputName, label] of outputLabelsToSave) {
+      await upsertPromptSettingMutation.mutateAsync({
+        productId: selectedProduct.id,
+        promptName: outputName,
+        label,
+      });
+    }
+    if (outputLabelsToSave.length > 0) setOutputLabelDrafts({});
+
+    // 3) Finalmente actualizar el producto en EasyQuote
+    const action = selectedProduct.isActive ? "update" : "delete";
+    updateProductMutation.mutate({
+      product: selectedProduct,
+      action,
+    });
   };
   const handleDeleteProduct = () => {
     if (selectedProduct) {
