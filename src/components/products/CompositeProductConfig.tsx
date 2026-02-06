@@ -130,7 +130,9 @@ export function CompositeProductConfig({
           for (const p of pricingPrompts) {
             const id = String(p?.id ?? "").trim();
             if (!id) continue;
-            const lbl = String(p?.promptText ?? p?.promptCell ?? "").trim();
+            // Priorizar promptText (etiqueta real); promptCell es solo referencia de celda
+            // No usar promptCell como etiqueta ya que contiene referencias como "$B$10"
+            const lbl = String(p?.promptText ?? p?.label ?? p?.name ?? "").trim();
             if (lbl) pricingLabelById.set(id, lbl);
           }
         }
@@ -165,7 +167,8 @@ export function CompositeProductConfig({
         // ignore
       }
 
-      const isCellLike = (v: string) => /^[A-Z]+\d+$/i.test(v);
+      // Detecta referencias de celda como "B10", "$B$10", "B$10", "$B10"
+      const isCellLike = (v: string) => /^\$?[A-Z]+\$?\d+$/i.test(v.replace(/\$/g, ""));
       const isUuidLike = (v: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 
       const merged = new Map<string, { name: string; label: string }>();
