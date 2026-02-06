@@ -22,6 +22,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
+import { supabase } from "@/integrations/supabase/client";
 import type { CompositeComponent, PromptConnection, OutputAggregation } from "@/hooks/useCompositeProductConfig";
 import { OutputAggregationSection } from "./OutputAggregationSection";
 
@@ -136,9 +137,40 @@ export function ComponentPromptMappingDialog({
   // Aviso cuando no podemos resolver nombres desde el Excel (o falta asociación producto→excel)
   const [labelResolutionWarning, setLabelResolutionWarning] = useState<string | null>(null);
 
+  // Cargar etiquetas personalizadas desde product_prompt_settings (fuente de verdad persistente)
+  const { data: dbCustomLabels = {} } = useQuery({
+    queryKey: ["component-db-labels", component.component_product_id, organizationId],
+    queryFn: async () => {
+      if (!organizationId || !component.component_product_id) return {};
+      
+      const { data, error } = await supabase
+        .from("product_prompt_settings")
+        .select("prompt_name, label")
+        .eq("organization_id", organizationId)
+        .eq("easyquote_product_id", component.component_product_id);
+      
+      if (error) {
+        console.warn("[ComponentPromptMappingDialog] Error loading DB labels:", error);
+        return {};
+      }
+      
+      const labelMap: Record<string, string> = {};
+      for (const row of data || []) {
+        if (row.label) {
+          // Normalizar la clave (sin $, mayúsculas)
+          const key = String(row.prompt_name ?? "").replace(/\$/g, "").trim().toUpperCase();
+          if (key) labelMap[key] = row.label;
+        }
+      }
+      return labelMap;
+    },
+    enabled: open && !!component.component_product_id && !!organizationId,
+    staleTime: 60 * 1000,
+  });
+
   // Cargar los prompts del componente desde easyquote-pricing (fuente de verdad con promptText correcto)
   const { data: componentPrompts = [], isLoading, isFetching } = useQuery({
-    queryKey: ["component-prompts", component.component_product_id],
+    queryKey: ["component-prompts", component.component_product_id, dbCustomLabels],
     queryFn: async () => {
       const token = await getEasyQuoteToken();
       setLabelResolutionWarning(null);
@@ -148,6 +180,23 @@ export function ComponentPromptMappingDialog({
         return component.component_product_id
           ? loadLocalCachedPrompts(component.component_product_id)
           : [];
+      }
+
+      // Primero obtener las definiciones con promptCell para poder hacer match con BD
+      const defsRes = await invokeEasyQuoteFunction<any>("easyquote-prompts", {
+        token,
+        productId: component.component_product_id,
+      });
+      
+      const defs = Array.isArray(defsRes.data) ? defsRes.data : [];
+      
+      // Crear mapa de id -> promptCell para enriquecer con etiquetas de BD
+      const promptCellById = new Map<string, string>();
+      for (const d of defs) {
+        const id = String(d.id);
+        if (d.promptCell) {
+          promptCellById.set(id, String(d.promptCell).replace(/\$/g, "").trim().toUpperCase());
+        }
       }
 
       // Usar easyquote-pricing GET que devuelve los prompts REALES con promptText correcto
@@ -167,49 +216,53 @@ export function ComponentPromptMappingDialog({
       // easyquote-pricing devuelve { prompts: [...], outputValues: [...], ... }
       const promptsFromPricing = Array.isArray(pricingRes.data?.prompts) ? pricingRes.data.prompts : [];
       
-      if (promptsFromPricing.length === 0) {
-        // Fallback: intentar con easyquote-prompts si pricing no devuelve prompts
-        const defsRes = await invokeEasyQuoteFunction<any>("easyquote-prompts", {
-          token,
-          productId: component.component_product_id,
-        });
-        
-        if (!defsRes.error && Array.isArray(defsRes.data) && defsRes.data.length > 0) {
-          const fallbackResult = defsRes.data.map((d: any) => ({
-            id: String(d.id),
-            name: String(d.id),
-            label: d.promptText || d.label || d.name || d.promptCell || String(d.id),
+      if (promptsFromPricing.length === 0 && defs.length > 0) {
+        // Fallback: usar las definiciones si pricing no devuelve prompts
+        const fallbackResult = defs.map((d: any) => {
+          const id = String(d.id);
+          const promptCell = d.promptCell ? String(d.promptCell).replace(/\$/g, "").trim().toUpperCase() : undefined;
+          // Prioridad: etiqueta de BD > promptText del API > celda
+          const dbLabel = promptCell ? dbCustomLabels[promptCell] : undefined;
+          
+          return {
+            id,
+            name: id,
+            label: dbLabel || d.promptText || d.label || d.name || d.promptCell || id,
+            customLabel: dbLabel || undefined,
             promptCell: d.promptCell ? String(d.promptCell) : undefined,
             sequence: typeof d.promptSequence === "number" ? d.promptSequence : undefined,
-          }));
-          
-          fallbackResult.sort((a: ComponentPromptDef, b: ComponentPromptDef) => {
-            const sa = a.sequence ?? Number.POSITIVE_INFINITY;
-            const sb = b.sequence ?? Number.POSITIVE_INFINITY;
-            return sa !== sb ? sa - sb : a.label.localeCompare(b.label);
-          });
-          
-          if (component.component_product_id) {
-            saveLocalCachedPrompts(component.component_product_id, fallbackResult);
-          }
-          return fallbackResult;
-        }
+          };
+        });
         
-        return [];
+        fallbackResult.sort((a: ComponentPromptDef, b: ComponentPromptDef) => {
+          const sa = a.sequence ?? Number.POSITIVE_INFINITY;
+          const sb = b.sequence ?? Number.POSITIVE_INFINITY;
+          return sa !== sb ? sa - sb : a.label.localeCompare(b.label);
+        });
+        
+        if (component.component_product_id) {
+          saveLocalCachedPrompts(component.component_product_id, fallbackResult);
+        }
+        return fallbackResult;
       }
 
-      // Cargar labels personalizados
-      const customLabels = loadCustomLabels();
+      // Cargar labels personalizados de localStorage (fallback)
+      const localCustomLabels = loadCustomLabels();
 
       // Convertir prompts de pricing al formato esperado
       const result: ComponentPromptDef[] = promptsFromPricing.map((p: any) => {
         const id = String(p.id);
+        const promptCell = promptCellById.get(id);
+        // Prioridad: etiqueta de BD (por celda) > localStorage > promptText del API
+        const dbLabel = promptCell ? dbCustomLabels[promptCell] : undefined;
+        const localLabel = localCustomLabels[id];
+        
         return {
           id,
           name: id,
-          label: p.promptText || p.label || p.name || id,
-          customLabel: customLabels[id] || undefined,
-          promptCell: undefined, // pricing no devuelve promptCell, pero no lo necesitamos
+          label: dbLabel || localLabel || p.promptText || p.label || p.name || id,
+          customLabel: dbLabel || localLabel || undefined,
+          promptCell: promptCell ? `$${promptCell}$` : undefined,
           sequence: typeof p.promptSequence === "number" ? p.promptSequence : undefined,
         };
       });
