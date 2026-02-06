@@ -26,6 +26,7 @@ import { ComponentPromptMappingDialog } from "./ComponentPromptMappingDialog";
 interface CompatibleComponentsEditorProps {
   easyquoteProductId: string;
   organizationId: string;
+  apiUserId: string;
   components: CompositeComponent[];
   availableProducts: { id: string; name: string }[];
   /** Prompts generales del producto padre para mapear */
@@ -49,6 +50,7 @@ interface CompatibleComponentsEditorProps {
 export function CompatibleComponentsEditor({
   easyquoteProductId,
   organizationId,
+  apiUserId,
   components,
   availableProducts,
   parentPrompts,
@@ -308,6 +310,7 @@ export function CompatibleComponentsEditor({
           connections={promptConnections}
           outputAggregations={outputAggregations}
           organizationId={organizationId}
+          apiUserId={apiUserId}
           compositeProductId={easyquoteProductId}
           onSave={async (connections) => {
             await onSaveConnections(configuringComponent.component_product_id, connections);

@@ -560,18 +560,19 @@ export default function ProductManagement() {
   };
 
   // Query for prompt settings (hide in documents / labels)
+  // IMPORTANTE: Usar api_user_id para compartir configuración entre organizaciones del mismo grupo
   const {
     data: promptSettings = [],
     refetch: refetchPromptSettings,
   } = useQuery({
-    queryKey: ["product-prompt-settings", selectedProduct?.id, organizationId],
+    queryKey: ["product-prompt-settings", selectedProduct?.id, apiUserId],
     queryFn: async () => {
-      if (!selectedProduct?.id || !organizationId) return [];
+      if (!selectedProduct?.id || !apiUserId) return [];
 
       const { data, error } = await supabase
         .from("product_prompt_settings")
         .select("*")
-        .eq("organization_id", organizationId)
+        .eq("api_user_id", apiUserId)
         .eq("easyquote_product_id", selectedProduct.id);
 
       if (error) {
@@ -581,7 +582,7 @@ export default function ProductManagement() {
 
       return data || [];
     },
-    enabled: !!selectedProduct?.id && !!organizationId,
+    enabled: !!selectedProduct?.id && !!apiUserId,
   });
 
   // Mutation for prompt settings
@@ -607,12 +608,11 @@ export default function ProductManagement() {
         String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
       const promptKey = normalizePromptKey(promptName);
 
-      // IMPORTANT: always use the same org source as the query to avoid mismatches.
-      if (!organizationId) throw new Error("No organization selected");
-      const orgId = organizationId;
+      // IMPORTANT: Usar api_user_id para compartir configuración entre organizaciones del mismo grupo
+      if (!apiUserId) throw new Error("No api_user_id available");
 
       console.log("Saving prompt setting:", {
-        orgId,
+        apiUserId,
         productId,
         promptName: promptKey,
         hideInDocuments,
@@ -621,11 +621,11 @@ export default function ProductManagement() {
         label,
       });
 
-      // First try to find existing record
+      // First try to find existing record by api_user_id
       const { data: existing } = await supabase
         .from("product_prompt_settings")
         .select("id")
-        .eq("organization_id", orgId)
+        .eq("api_user_id", apiUserId)
         .eq("easyquote_product_id", productId)
         .eq("prompt_name", promptKey)
         .maybeSingle();
@@ -656,7 +656,8 @@ export default function ProductManagement() {
         if (error) throw error;
       } else {
         const { error } = await supabase.from("product_prompt_settings").insert({
-          organization_id: orgId,
+          api_user_id: apiUserId,
+          organization_id: organizationId!, // Keep for backwards compat
           easyquote_product_id: productId,
           prompt_name: promptKey,
           hide_in_documents: hideInDocuments ?? false,
@@ -669,7 +670,7 @@ export default function ProductManagement() {
       }
 
       return {
-        orgId,
+        apiUserId,
         productId,
         promptKey,
         patch: {
@@ -684,7 +685,7 @@ export default function ProductManagement() {
     onSuccess: async (result, variables) => {
       // Update cache immediately (avoids waiting for any delayed refetch pipeline)
       queryClient.setQueryData(
-        ["product-prompt-settings", variables.productId, result.orgId],
+        ["product-prompt-settings", variables.productId, result.apiUserId],
         (old: any[] | undefined) => {
           const existing = Array.isArray(old) ? old : [];
           const idx = existing.findIndex(
@@ -695,7 +696,7 @@ export default function ProductManagement() {
 
           const nextItem = {
             ...(idx >= 0 ? existing[idx] : {}),
-            organization_id: result.orgId,
+            api_user_id: result.apiUserId,
             easyquote_product_id: variables.productId,
             prompt_name: result.promptKey,
             ...(result.patch.hide_in_documents !== undefined
@@ -1988,15 +1989,16 @@ export default function ProductManagement() {
           });
         }
 
-        // Guardar configuración de ocultar en documentos
-        if (promptData.hideInDocuments && createdPromptKey) {
+        // Guardar configuración de ocultar en documentos (usando api_user_id)
+        if (promptData.hideInDocuments && createdPromptKey && apiUserId) {
           await supabase.from("product_prompt_settings").upsert({
+            api_user_id: apiUserId,
+            organization_id: organizationId,
             easyquote_product_id: selectedProduct.id,
             prompt_name: createdPromptKey,
             hide_in_documents: true,
-            organization_id: organizationId
           }, {
-            onConflict: "easyquote_product_id,prompt_name,organization_id"
+            onConflict: "api_user_id,easyquote_product_id,prompt_name"
           });
         }
       }
