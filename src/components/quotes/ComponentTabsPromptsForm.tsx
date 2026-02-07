@@ -191,6 +191,20 @@ export default function ComponentTabsPromptsForm({
     return map;
   }, [promptDefinitions]);
 
+  // Fallback extra: si falla el mapeo por definiciones, usar las etiquetas personalizadas
+  // guardadas en Supabase (product_prompt_settings.label -> product_prompt_settings.prompt_name).
+  // Esto permite detectar force_result aunque EasyQuote cambie UUIDs o falten promptCells en pricing.
+  const promptNameByCustomLabel = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const s of (promptSettings ?? []) as any[]) {
+      const lbl = String(s?.label ?? "").trim();
+      const promptName = String(s?.prompt_name ?? "").trim();
+      if (!lbl || !promptName) continue;
+      map.set(normalizePromptName(lbl), promptName);
+    }
+    return map;
+  }, [promptSettings]);
+
   const getPromptAdminKey = (prompt: PromptDef): string => {
     const idStr = String(prompt.id).trim();
 
@@ -207,9 +221,24 @@ export default function ComponentTabsPromptsForm({
     if (cellFromUuidLower) return cellFromUuidLower;
     if (cellFromUuidUpper) return cellFromUuidUpper;
 
+    // Fallback: intentar mapear por etiqueta custom (Supabase) -> prompt_name (celda)
+    // (Ej: "Forzar máquina" -> "B22")
+    const labelText = String((prompt as any)?.label ?? "").trim();
+    const cleanedLabelText = labelText.replace(/^campo\s+/i, "").trim();
+    const labelFromSettings = cleanedLabelText
+      ? promptNameByCustomLabel.get(normalizePromptName(cleanedLabelText))
+      : undefined;
+    if (labelFromSettings) {
+      debugLog("[ComponentTabs] getPromptAdminKey found by custom label setting:", {
+        id: idStr,
+        labelText,
+        promptName: labelFromSettings,
+      });
+      return labelFromSettings;
+    }
+
     // Fallback adicional: en algunos productos el pricing trae UUIDs que no están en las definiciones,
     // pero el label (promptText) sí coincide. Intentar mapear por texto descriptivo.
-    const labelText = String((prompt as any)?.label ?? "").trim();
     const labelTextNorm = labelText ? normalizePromptName(labelText) : "";
     const isUuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(labelText);
     const isCellLike = /^[A-Z]{1,3}\d{1,4}$/.test(labelTextNorm);
