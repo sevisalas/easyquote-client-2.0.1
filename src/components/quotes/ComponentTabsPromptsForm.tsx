@@ -283,18 +283,63 @@ export default function ComponentTabsPromptsForm({
     // Separar prompts normales de force_result
     const regular: PromptDef[] = [];
     const forceResult: PromptDef[] = [];
+    const forceResultCellsSeen = new Set<string>();
 
     for (const prompt of accessiblePrompts) {
       const key = getPromptAdminKey(prompt);
       if (isPromptForceResult(key)) {
         forceResult.push(prompt);
+        forceResultCellsSeen.add(key);
       } else {
         regular.push(prompt);
       }
     }
 
+    // IMPORTANTE: Añadir prompts force_result de las DEFINICIONES que NO estén en el pricing.
+    // Esto soluciona el problema de prompts como "Tira y retira" que tienen visibilidad condicional
+    // y el API no los devuelve si están ocultos, pero aún así deben aparecer como opción restrictiva.
+    for (const setting of (promptSettings ?? []) as any[]) {
+      if (!setting?.force_result) continue;
+      const cellKey = normalizePromptName(setting.prompt_name);
+      // Solo añadir si no lo vimos ya desde el pricing
+      if (forceResultCellsSeen.has(cellKey)) continue;
+      // Verificar admin_only
+      if (!isAdmin && setting.admin_only) continue;
+
+      // Buscar la definición completa en promptDefinitions para obtener metadata (tipo, opciones, etc.)
+      const def = (promptDefinitions as any[]).find((d: any) => {
+        const defCell = extractCellRef(getPromptCell(d)) ?? normalizePromptName(getPromptCell(d));
+        return defCell === cellKey;
+      });
+
+      if (!def) continue; // Sin definición no podemos renderizar el prompt
+
+      // Construir un PromptDef mínimo desde la definición
+      const rawType = String(def?.promptType ?? def?.type ?? "text").toLowerCase();
+      let type: PromptDef["type"] = "text";
+      if (rawType.includes("checkbox") || rawType.includes("boolean")) type = "checkbox";
+      else if (rawType.includes("drop") || rawType.includes("select")) type = "select";
+      else if (rawType.includes("number") || rawType.includes("int")) type = "number";
+
+      const options = (def?.valueOptions ?? def?.options ?? []).map((o: any) => {
+        if (typeof o === "string") return { value: o, label: o };
+        return { value: String(o?.value ?? o), label: String(o?.label ?? o?.value ?? o) };
+      });
+
+      const promptDef: PromptDef = {
+        id: def?.id ?? cellKey,
+        label: setting.label ?? def?.promptText ?? def?.name ?? cellKey,
+        type,
+        options: options.length > 0 ? options : undefined,
+        default: def?.currentValue ?? def?.default ?? def?.defaultValue,
+      };
+
+      forceResult.push(promptDef);
+      forceResultCellsSeen.add(cellKey);
+    }
+
     return { prompts: regular, forceResultPrompts: forceResult };
-  }, [product, isAdmin, isPromptAdminOnly, isPromptForceResult, promptCellLookup, promptSettings, isPromptSettingsLoading, isPromptDefinitionsLoading]);
+  }, [product, isAdmin, isPromptAdminOnly, isPromptForceResult, promptCellLookup, promptSettings, isPromptSettingsLoading, isPromptDefinitionsLoading, promptDefinitions]);
 
   // Notificar los prompts force_result al componente padre
   useEffect(() => {
