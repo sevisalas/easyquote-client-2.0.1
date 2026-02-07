@@ -78,7 +78,6 @@ export default function ProductTestPage({
   const [isEditingPrice, setIsEditingPrice] = useState(false);
   const [localPriceInput, setLocalPriceInput] = useState("");
   const [tokenReady, setTokenReady] = useState(!!sessionStorage.getItem("easyquote_token"));
-  const [forceResultPrompts, setForceResultPrompts] = useState<PromptDef[]>([]);
   const [compositeComponentsData, setCompositeComponentsData] = useState<ComponentsDataMap>({});
   const [compositeTotalPrice, setCompositeTotalPrice] = useState<number>(0);
   const [compositeParentOutputs, setCompositeParentOutputs] = useState<any[]>([]);
@@ -484,7 +483,6 @@ export default function ProductTestPage({
         }
         setPromptValues({});
         setDebouncedPromptValues({});
-        setForceResultPrompts([]); // Clear force result prompts from previous product
       }
 
       console.log(
@@ -1388,87 +1386,10 @@ export default function ProductTestPage({
                             onComponentChange={setSelectedComponent}
                             boundProductConfig={boundProductConfig}
                             isAdmin={isSuperAdmin || isOrgAdmin}
-                            onForceResultPrompts={setForceResultPrompts}
+                            renderForceResultSection
                           />
                         )}
 
-                        {/* Sección: Opciones restrictivas (prompts marcados como force_result) */}
-                        {/* Se muestra para: productos legacy, productos simples y componentes (cuando no usan CompositeComponentTabs) */}
-                        {!hasConfiguredComponents && forceResultPrompts.length > 0 && (
-                          <div className="border-t pt-4 mt-4">
-                            <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-                              Opciones restrictivas
-                            </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2">
-                              {forceResultPrompts.map((prompt) => {
-                                const effectiveValue = promptValues[prompt.id];
-                                const value = effectiveValue && typeof effectiveValue === 'object' && 'value' in effectiveValue 
-                                  ? effectiveValue.value 
-                                  : effectiveValue ?? prompt.default;
-                                
-                                // Checkbox type
-                                if (prompt.type === 'checkbox') {
-                                  const isChecked = value === true || value === "true" || value === "Sí" || value === "Si" || value === 1 || value === "1";
-                                  return (
-                                    <div key={prompt.id} className="flex items-center gap-2 py-1">
-                                      <span className="text-sm">{prompt.label}</span>
-                                      <Checkbox
-                                        id={`restrictive-${prompt.id}`}
-                                        checked={isChecked}
-                                        onCheckedChange={(checked) => {
-                                          const newValue = checked ? "Sí" : "No";
-                                          handlePromptChange(prompt.id, newValue);
-                                          handlePromptCommit(prompt.id, newValue);
-                                        }}
-                                      />
-                                    </div>
-                                  );
-                                }
-                                
-                                // Select type
-                                if (prompt.type === 'select' && prompt.options?.length) {
-                                  return (
-                                    <div key={prompt.id} className="flex items-center gap-2 py-1">
-                                      <span className="text-sm">{prompt.label}</span>
-                                      <Select 
-                                        value={String(value ?? '')} 
-                                        onValueChange={(v) => {
-                                          handlePromptChange(prompt.id, v);
-                                          handlePromptCommit(prompt.id, v);
-                                        }}
-                                      >
-                                        <SelectTrigger className="h-8 w-auto min-w-[100px]">
-                                          <SelectValue placeholder="—" />
-                                        </SelectTrigger>
-                                        <SelectContent className="z-50 bg-popover">
-                                          {prompt.options.map((o, idx) => (
-                                            <SelectItem key={`${o.value}-${idx}`} value={o.value}>
-                                              {o.label ?? o.value}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  );
-                                }
-                                
-                                // Number/Integer/Text type
-                                return (
-                                  <div key={prompt.id} className="flex items-center gap-2 py-1">
-                                    <span className="text-sm">{prompt.label}</span>
-                                    <Input
-                                      type={prompt.type === 'number' || prompt.type === 'integer' ? 'number' : 'text'}
-                                      className="h-8 w-24"
-                                      value={value ?? ''}
-                                      onChange={(e) => handlePromptChange(prompt.id, e.target.value)}
-                                      onBlur={(e) => handlePromptCommit(prompt.id, e.target.value)}
-                                    />
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
 
                         {/* Panel de debug solo para SuperAdmin */}
                         {(showDebugTools || isSuperAdmin) && (
