@@ -24,6 +24,11 @@ interface ComponentTabsPromptsFormProps {
   boundProductConfig?: BoundProductConfig | null;
   /** Si el usuario es admin (puede ver prompts admin_only) */
   isAdmin?: boolean;
+  /**
+   * Si es true, renderiza internamente la sección "Opciones restrictivas".
+   * Si es false, los prompts force_result se exponen vía onForceResultPrompts (si se proporciona).
+   */
+  renderForceResultSection?: boolean;
   /** Callback para devolver los prompts marcados como "force_result" para mostrarlos en sección aparte */
   onForceResultPrompts?: (prompts: PromptDef[]) => void;
 }
@@ -85,6 +90,7 @@ export default function ComponentTabsPromptsForm({
   onComponentChange,
   boundProductConfig,
   isAdmin = false,
+  renderForceResultSection = false,
   onForceResultPrompts
 }: ComponentTabsPromptsFormProps) {
   const {
@@ -444,6 +450,41 @@ export default function ComponentTabsPromptsForm({
     return grouped;
   }, [prompts, availableComponents, getPromptComponent, product, promptDefinitions, promptCellLookup, boundProductConfig, activeComponents]);
 
+  // Agrupar prompts force_result por componente (para renderizar en sección aparte)
+  const forceResultByComponent = useMemo(() => {
+    const grouped: Record<string, PromptDef[]> = {};
+    availableComponents.forEach((comp) => {
+      grouped[comp] = [];
+    });
+
+    for (const prompt of forceResultPrompts) {
+      // Intentar obtener la clave estable (celda) para poder asociar al componente.
+      const idStr = String(prompt.id ?? "").trim();
+      const idNorm = extractCellRef(idStr) ?? normalizePromptName(idStr);
+      const labelCell = extractCellRef((prompt as any)?.label);
+
+      const keyFromLookup =
+        promptCellLookup.get(idStr) ??
+        promptCellLookup.get(idStr.toLowerCase()) ??
+        promptCellLookup.get(idStr.toUpperCase()) ??
+        (idNorm ? promptCellLookup.get(idNorm) : undefined) ??
+        (labelCell ? (promptCellLookup.get(labelCell) ?? labelCell) : undefined);
+
+      const promptKey = keyFromLookup ?? labelCell ?? idNorm ?? idStr;
+      const component = getPromptComponent(promptKey);
+
+      // Respetar boundProductConfig (igual que los prompts normales)
+      if (boundProductConfig && component !== "general" && !activeComponents.includes(component)) {
+        continue;
+      }
+
+      if (grouped[component]) grouped[component].push(prompt);
+      else grouped[GENERAL_COMPONENT.value].push(prompt);
+    }
+
+    return grouped;
+  }, [forceResultPrompts, availableComponents, getPromptComponent, promptCellLookup, boundProductConfig, activeComponents]);
+
   // Contar prompts por componente (solo para habilitar/deshabilitar tabs)
   const countByComponent = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -496,33 +537,82 @@ export default function ComponentTabsPromptsForm({
   }, [activeTab, tabComponents, initialTab]);
 
   // Si NO es un producto compuesto (o está cargando), renderizar el formulario normal
-  // (pero aseguramos que los hooks se llamen siempre para evitar "Rendered more hooks")
+  // pero manteniendo la sección "Opciones restrictivas" separada cuando aplique.
   if (!isComposite || isLoading) {
     // Para productos NO compuestos, también aplicamos el filtro admin_only (sin depender de nombres/labels).
     const productForForm = product ? { ...product, prompts } : product;
-    return <PromptsForm product={productForForm} values={values} onChange={onChange} onCommit={onCommit} showAllPrompts={showAllPrompts} />;
+    const forceProductForForm = product ? { ...product, prompts: forceResultPrompts } : { prompts: forceResultPrompts };
+
+    return (
+      <div className="space-y-4">
+        <PromptsForm
+          product={productForForm}
+          values={values}
+          onChange={onChange}
+          onCommit={onCommit}
+          showAllPrompts={showAllPrompts}
+        />
+
+        {renderForceResultSection && forceResultPrompts.length > 0 && (
+          <div className="rounded-lg border border-border bg-card p-4">
+            <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+              Opciones restrictivas
+            </h3>
+            <PromptsForm
+              product={forceProductForForm}
+              values={values}
+              onChange={onChange}
+              onCommit={onCommit}
+              showAllPrompts={showAllPrompts}
+              singleColumn
+            />
+          </div>
+        )}
+      </div>
+    );
   }
 
   // Si no hay componentes (solo general), mostramos el título y el formulario general a ancho completo
   if (tabComponents.length === 0) {
+    const generalForce = forceResultByComponent[GENERAL_COMPONENT.value] || [];
+
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-4">
           <h3 className="font-medium whitespace-nowrap">Configuración del Producto</h3>
         </div>
+
         {generalPrompts.length > 0 && (
-          <PromptsForm 
-            product={createComponentProduct(generalPrompts)} 
-            values={values} 
-            onChange={onChange} 
-            onCommit={onCommit} 
+          <PromptsForm
+            product={createComponentProduct(generalPrompts)}
+            values={values}
+            onChange={onChange}
+            onCommit={onCommit}
             showAllPrompts={showAllPrompts}
             singleColumn
           />
         )}
+
+        {renderForceResultSection && generalForce.length > 0 && (
+          <div className="rounded-lg border border-border bg-card p-4">
+            <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+              Opciones restrictivas
+            </h3>
+            <PromptsForm
+              product={createComponentProduct(generalForce)}
+              values={values}
+              onChange={onChange}
+              onCommit={onCommit}
+              showAllPrompts={showAllPrompts}
+              singleColumn
+            />
+          </div>
+        )}
       </div>
     );
   }
+
+  const generalForcePrompts = forceResultByComponent[GENERAL_COMPONENT.value] || [];
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-4">
@@ -562,6 +652,22 @@ export default function ComponentTabsPromptsForm({
               showAllPrompts={showAllPrompts}
               singleColumn
             />
+
+            {renderForceResultSection && generalForcePrompts.length > 0 && (
+              <div className="mt-4 border-t pt-4">
+                <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                  Opciones restrictivas
+                </h4>
+                <PromptsForm
+                  product={createComponentProduct(generalForcePrompts)}
+                  values={values}
+                  onChange={onChange}
+                  onCommit={onCommit}
+                  showAllPrompts={showAllPrompts}
+                  singleColumn
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -569,6 +675,7 @@ export default function ComponentTabsPromptsForm({
         <div className="rounded-lg border border-border bg-card p-4 self-start">
           {tabComponents.map(comp => {
             const componentPrompts = promptsByComponent[comp] || [];
+            const componentForcePrompts = forceResultByComponent[comp] || [];
             const labels = getComponentLabels(boundProductConfig);
             return (
               <TabsContent key={comp} value={comp} className="mt-0">
@@ -577,14 +684,32 @@ export default function ComponentTabsPromptsForm({
                     No hay campos asignados a {labels[comp] || comp}.
                   </p>
                 ) : (
-                  <PromptsForm
-                    product={createComponentProduct(componentPrompts)}
-                    values={values}
-                    onChange={onChange}
-                    onCommit={onCommit}
-                    showAllPrompts={showAllPrompts}
-                    singleColumn
-                  />
+                  <div className="space-y-4">
+                    <PromptsForm
+                      product={createComponentProduct(componentPrompts)}
+                      values={values}
+                      onChange={onChange}
+                      onCommit={onCommit}
+                      showAllPrompts={showAllPrompts}
+                      singleColumn
+                    />
+
+                    {renderForceResultSection && componentForcePrompts.length > 0 && (
+                      <div className="border-t pt-4">
+                        <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                          Opciones restrictivas
+                        </h4>
+                        <PromptsForm
+                          product={createComponentProduct(componentForcePrompts)}
+                          values={values}
+                          onChange={onChange}
+                          onCommit={onCommit}
+                          showAllPrompts={showAllPrompts}
+                          singleColumn
+                        />
+                      </div>
+                    )}
+                  </div>
                 )}
               </TabsContent>
             );
