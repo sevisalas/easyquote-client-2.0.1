@@ -304,6 +304,7 @@ export default function ComponentTabsPromptsForm({
     // IMPORTANTE: Añadir prompts force_result de las DEFINICIONES que NO estén en el pricing.
     // Esto soluciona el problema de prompts como "Tira y retira" que tienen visibilidad condicional
     // y el API no los devuelve si están ocultos, pero aún así deben aparecer como opción restrictiva.
+    // Solo añadimos si tenemos una etiqueta legible (setting.label o def.promptText).
     for (const setting of (promptSettings ?? []) as any[]) {
       if (!setting?.force_result) continue;
       const cellKey = normalizePromptName(setting.prompt_name);
@@ -317,6 +318,13 @@ export default function ComponentTabsPromptsForm({
         const defCell = extractCellRef(getPromptCell(d)) ?? normalizePromptName(getPromptCell(d));
         return defCell === cellKey;
       });
+
+      // Resolver etiqueta: priorizar setting.label, luego def.promptText/name
+      const resolvedLabel = setting.label ?? def?.promptText ?? def?.name;
+      
+      // Si no hay etiqueta legible (ni en BD ni en API), NO añadir este prompt
+      // (evita mostrar "B24" sin nombre descriptivo)
+      if (!resolvedLabel) continue;
 
       // Construir un PromptDef mínimo. Si hay definición, usarla para tipo/opciones; si no, usar defaults.
       const rawType = def 
@@ -336,7 +344,7 @@ export default function ComponentTabsPromptsForm({
 
       const promptDef: PromptDef = {
         id: def?.id ?? cellKey,
-        label: setting.label ?? def?.promptText ?? def?.name ?? cellKey,
+        label: resolvedLabel,
         type,
         options: options.length > 0 ? options : undefined,
         default: def?.currentValue ?? def?.default ?? def?.defaultValue ?? "No",
