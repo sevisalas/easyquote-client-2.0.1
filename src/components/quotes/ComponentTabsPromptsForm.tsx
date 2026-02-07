@@ -312,26 +312,28 @@ export default function ComponentTabsPromptsForm({
         return defCell === cellKey;
       });
 
-      if (!def) continue; // Sin definición no podemos renderizar el prompt
-
-      // Construir un PromptDef mínimo desde la definición
-      const rawType = String(def?.promptType ?? def?.type ?? "text").toLowerCase();
+      // Construir un PromptDef mínimo. Si hay definición, usarla para tipo/opciones; si no, usar defaults.
+      const rawType = def 
+        ? String(def?.promptType ?? def?.type ?? "text").toLowerCase()
+        : "select"; // Default a select para campos restrictivos sin definición
       let type: PromptDef["type"] = "text";
       if (rawType.includes("checkbox") || rawType.includes("boolean")) type = "checkbox";
       else if (rawType.includes("drop") || rawType.includes("select")) type = "select";
       else if (rawType.includes("number") || rawType.includes("int")) type = "number";
 
-      const options = (def?.valueOptions ?? def?.options ?? []).map((o: any) => {
-        if (typeof o === "string") return { value: o, label: o };
-        return { value: String(o?.value ?? o), label: String(o?.label ?? o?.value ?? o) };
-      });
+      const options = def 
+        ? (def?.valueOptions ?? def?.options ?? []).map((o: any) => {
+            if (typeof o === "string") return { value: o, label: o };
+            return { value: String(o?.value ?? o), label: String(o?.label ?? o?.value ?? o) };
+          })
+        : [{ value: "No", label: "No" }, { value: "Sí", label: "Sí" }]; // Default para campos sin definición
 
       const promptDef: PromptDef = {
         id: def?.id ?? cellKey,
         label: setting.label ?? def?.promptText ?? def?.name ?? cellKey,
         type,
         options: options.length > 0 ? options : undefined,
-        default: def?.currentValue ?? def?.default ?? def?.defaultValue,
+        default: def?.currentValue ?? def?.default ?? def?.defaultValue ?? "No",
       };
 
       forceResult.push(promptDef);
