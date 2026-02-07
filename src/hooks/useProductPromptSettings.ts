@@ -22,40 +22,44 @@ export interface ProductPromptSetting {
  * IMPORTANTE: Usa api_user_id como clave para compartir configuración entre organizaciones del mismo grupo
  */
 export function useProductPromptSettings(easyquoteProductId?: string) {
-  // Obtener organization_id y api_user_id del usuario actual
+  // Resolver organization_id + api_user_id de forma robusta.
+  // Fuente de verdad: organización seleccionada (sessionStorage) → evita inconsistencias
+  // entre Anebri/Campillo y también funciona en impersonación/superadmin.
   const { data: orgData } = useQuery({
-    queryKey: ['current-user-org-data'],
+    queryKey: ["current-user-org-data", sessionStorage.getItem("selected_organization_id")],
     queryFn: async () => {
-      // Primero intentar obtener como owner de organización
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      
-      // Check if user owns an organization
-      const { data: ownedOrg } = await supabase
-        .from('organizations')
-        .select('id, api_user_id')
-        .eq('api_user_id', user.id)
-        .maybeSingle();
-      
-      if (ownedOrg) {
-        return { organization_id: ownedOrg.id, api_user_id: ownedOrg.api_user_id };
+
+      // 1) Preferir siempre la organización seleccionada en la app
+      const selectedOrgId = sessionStorage.getItem("selected_organization_id");
+      if (selectedOrgId) {
+        const { data: selectedOrg, error } = await supabase
+          .from("organizations")
+          .select("id, api_user_id")
+          .eq("id", selectedOrgId)
+          .maybeSingle();
+        if (!error && selectedOrg) {
+          return { organization_id: selectedOrg.id, api_user_id: selectedOrg.api_user_id };
+        }
       }
-      
-      // Otherwise, get from membership
+
+      // 2) Fallback: buscar como miembro (primer registro)
       const { data: membership } = await supabase
-        .from('organization_members')
-        .select('organization_id, organization:organizations(api_user_id)')
-        .eq('user_id', user.id)
+        .from("organization_members")
+        .select("organization_id, organization:organizations(api_user_id)")
+        .eq("user_id", user.id)
+        .limit(1)
         .maybeSingle();
-      
+
       if (membership?.organization_id) {
         const org = membership.organization as any;
-        return { 
-          organization_id: membership.organization_id, 
-          api_user_id: org?.api_user_id 
+        return {
+          organization_id: membership.organization_id,
+          api_user_id: org?.api_user_id,
         };
       }
-      
+
       return null;
     },
     staleTime: 5 * 60 * 1000,
