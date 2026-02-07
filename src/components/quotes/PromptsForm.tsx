@@ -219,6 +219,7 @@ export default function PromptsForm({
   onCommit,
   showAllPrompts = false,
   singleColumn = false,
+  columns,
 }: {
   product: any;
   values: Record<string, any>;
@@ -226,6 +227,8 @@ export default function PromptsForm({
   onCommit?: (id: string, value: any, label: string) => void; // Called on blur/enter for API calls
   showAllPrompts?: boolean;
   singleColumn?: boolean; // Force single column layout (for composite products in tabs)
+  /** Columnas del grid (solo si singleColumn = false). Por defecto: 2. */
+  columns?: 2 | 3;
 }) {
   // Get product ID to filter hidden prompts
   const productId = product?.productId ?? product?.id ?? product?.product_id;
@@ -305,12 +308,19 @@ export default function PromptsForm({
   }
 
   // Check if prompt should span full width (image/color types)
-  const isFullWidth = (type: PromptDef["type"]) => ['image', 'color'].includes(type);
+  const isFullWidth = (type: PromptDef["type"]) => ["image", "color"].includes(type);
+
+  const effectiveColumns = singleColumn ? 1 : (columns ?? 2);
+  const fullSpanClass = singleColumn
+    ? ""
+    : effectiveColumns === 3
+      ? "sm:col-span-2 lg:col-span-3"
+      : "md:col-span-2";
 
   const renderPrompt = (p: PromptDef) => (
     <div 
       key={p.id} 
-      className={`space-y-1 ${isFullWidth(p.type) ? 'md:col-span-2' : ''}`}
+      className={`space-y-1 ${isFullWidth(p.type) ? fullSpanClass : ""}`}
     >
       <Label htmlFor={p.id} className="text-sm">{p.label}{p.required ? " *" : ""}</Label>
       {p.description && (
@@ -539,10 +549,12 @@ export default function PromptsForm({
     </div>
   );
 
-  // Use single column for composite products (tabs), two columns for simple products
-  const gridClass = singleColumn 
-    ? "space-y-3" 
-    : "grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3";
+  // Use single column for composite products (tabs), otherwise grid (default 2 cols; force_result puede pedir 3)
+  const gridClass = singleColumn
+    ? "space-y-3"
+    : effectiveColumns === 3
+      ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3"
+      : "grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3";
 
   return (
     <div className={gridClass}>
