@@ -1371,7 +1371,7 @@ export default function CompositeComponentTabs({
           {parentForceResultPrompts.length > 0 && (
             <div className="border-t pt-4 mt-4">
               <h5 className="text-sm font-semibold text-muted-foreground mb-3">Opciones restrictivas</h5>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
                 {parentForceResultPrompts.map((prompt) => {
                   const effectiveValue = parentPromptValues[prompt.id];
                   const value =
@@ -1509,7 +1509,7 @@ export default function CompositeComponentTabs({
                     {componentForceResultPrompts.length > 0 && (
                       <div className="border-t pt-4 mt-4">
                         <h5 className="text-sm font-semibold text-muted-foreground mb-3">Opciones restrictivas</h5>
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
                           {componentForceResultPrompts.map((prompt: any) => {
                             const value = effectiveComponentValues[prompt.id] ?? prompt.currentValue ?? prompt.default;
                             const typeKey = getPromptTypeKey(prompt);
