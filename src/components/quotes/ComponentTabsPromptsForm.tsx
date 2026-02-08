@@ -271,8 +271,11 @@ export default function ComponentTabsPromptsForm({
   };
 
   // Separar prompts: regulares vs force_result
-  // IMPORTANTE: Depende de promptSettings y promptDefinitions para recalcularse cuando se carguen
+  // PRINCIPIO CLAVE: El API de Pricing es la ÚNICA fuente de verdad.
+  // NO inventamos campos - solo clasificamos los que el API devuelve.
+  // force_result es SOLO una configuración de presentación (mover a sección "Opciones restrictivas").
   const { prompts, forceResultPrompts } = useMemo(() => {
+    // Extraer SOLO los prompts que vienen del producto (respuesta del API de pricing)
     const allPrompts = extractPrompts(product);
 
     // Filtrar admin_only si no es admin
@@ -280,81 +283,25 @@ export default function ComponentTabsPromptsForm({
       ? allPrompts 
       : allPrompts.filter((prompt) => !isPromptAdminOnly(getPromptAdminKey(prompt)));
 
-    // Si los settings o definiciones están cargando, no separar force_result todavía
-    // (se recalculará cuando los datos cambien)
-    if (isPromptSettingsLoading || isPromptDefinitionsLoading) {
+    // Si los settings están cargando, no separar force_result todavía
+    if (isPromptSettingsLoading) {
       return { prompts: accessiblePrompts, forceResultPrompts: [] };
     }
 
     // Separar prompts normales de force_result
+    // IMPORTANTE: Solo clasificamos, NO inventamos campos.
+    // Si el API no devuelve un prompt, NO lo mostramos (aunque tenga force_result en la BD).
     const regular: PromptDef[] = [];
     const forceResult: PromptDef[] = [];
-    const forceResultCellsSeen = new Set<string>();
 
     for (const prompt of accessiblePrompts) {
       const key = getPromptAdminKey(prompt);
       if (isPromptForceResult(key)) {
+        // El prompt existe en el API Y está marcado como force_result -> moverlo a sección especial
         forceResult.push(prompt);
-        forceResultCellsSeen.add(key);
       } else {
         regular.push(prompt);
       }
-    }
-
-    // IMPORTANTE: Añadir prompts force_result de las DEFINICIONES que NO estén en el pricing.
-    // Esto soluciona el problema de prompts como "Tira y retira" que tienen visibilidad condicional
-    // y el API no los devuelve si están ocultos, pero aún así deben aparecer como opción restrictiva.
-    // Solo añadimos si tenemos una etiqueta legible (setting.label o def.promptText).
-    for (const setting of (promptSettings ?? []) as any[]) {
-      if (!setting?.force_result) continue;
-      const cellKey = normalizePromptName(setting.prompt_name);
-      // Solo añadir si no lo vimos ya desde el pricing
-      if (forceResultCellsSeen.has(cellKey)) continue;
-      // Verificar admin_only
-      if (!isAdmin && setting.admin_only) continue;
-
-      // Buscar la definición completa en promptDefinitions para obtener metadata (tipo, opciones, visibilidad)
-      const def = (promptDefinitions as any[]).find((d: any) => {
-        const defCell = extractCellRef(getPromptCell(d)) ?? normalizePromptName(getPromptCell(d));
-        return defCell === cellKey;
-      });
-
-      // Resolver etiqueta: priorizar setting.label, luego def.promptText/name
-      const resolvedLabel = setting.label ?? def?.promptText ?? def?.name;
-      
-      // Si no hay etiqueta legible (ni en BD ni en API), NO añadir este prompt
-      // (evita mostrar "B24" sin nombre descriptivo)
-      if (!resolvedLabel) continue;
-
-      // Construir un PromptDef mínimo. Si hay definición, usarla para tipo/opciones; si no, usar defaults.
-      const rawType = def 
-        ? String(def?.promptType ?? def?.type ?? "text").toLowerCase()
-        : "select"; // Default a select para campos restrictivos sin definición
-      let type: PromptDef["type"] = "text";
-      if (rawType.includes("checkbox") || rawType.includes("boolean")) type = "checkbox";
-      else if (rawType.includes("drop") || rawType.includes("select")) type = "select";
-      else if (rawType.includes("number") || rawType.includes("int")) type = "number";
-
-      const options = def 
-        ? (def?.valueOptions ?? def?.options ?? []).map((o: any) => {
-            if (typeof o === "string") return { value: o, label: o };
-            return { value: String(o?.value ?? o), label: String(o?.label ?? o?.value ?? o) };
-          })
-        : [{ value: "No", label: "No" }, { value: "Sí", label: "Sí" }]; // Default para campos sin definición
-
-      // IMPORTANTE: Incluir visibility/hiddenWhen de la definición para respetar condiciones del API
-      const promptDef: PromptDef = {
-        id: def?.id ?? cellKey,
-        label: resolvedLabel,
-        type,
-        options: options.length > 0 ? options : undefined,
-        default: def?.currentValue ?? def?.default ?? def?.defaultValue ?? "No",
-        visibility: def?.visibility,
-        hiddenWhen: def?.hiddenWhen,
-      };
-
-      forceResult.push(promptDef);
-      forceResultCellsSeen.add(cellKey);
     }
 
     // Ordenar force_result por display_order de promptSettings (para mantener el orden deseado)
@@ -373,7 +320,7 @@ export default function ComponentTabsPromptsForm({
     });
 
     return { prompts: regular, forceResultPrompts: forceResult };
-  }, [product, isAdmin, isPromptAdminOnly, isPromptForceResult, promptCellLookup, promptSettings, isPromptSettingsLoading, isPromptDefinitionsLoading, promptDefinitions]);
+  }, [product, isAdmin, isPromptAdminOnly, isPromptForceResult, promptCellLookup, promptSettings, isPromptSettingsLoading]);
 
   // Notificar los prompts force_result al componente padre
   useEffect(() => {
