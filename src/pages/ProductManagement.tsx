@@ -21,7 +21,8 @@ import { useProductCategoryMappings } from "@/hooks/useProductCategoryMappings";
 import { useProductionVariables } from "@/hooks/useProductionVariables";
 import { useProductVariableMappings } from "@/hooks/useProductVariableMappings";
 import { ProductTable } from "@/components/ProductTable";
-import { Package, Search, AlertCircle, CheckCircle2, XCircle, Loader2, Edit, Settings, Plus, Trash2, Save, TestTube, Layers, GripVertical } from "lucide-react";
+import { Package, Search, AlertCircle, AlertTriangle, CheckCircle2, XCircle, Loader2, Edit, Settings, Plus, Trash2, Save, TestTube, Layers, GripVertical } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Separator } from "@/components/ui/separator";
@@ -783,6 +784,51 @@ export default function ProductManagement() {
     return setting?.label ?? undefined;
   };
 
+  // Helper to detect sheet inconsistencies in prompts
+  // Returns the dominant sheet and which prompts are in different sheets
+  const getSheetInconsistencies = (prompts: ProductPrompt[]): {
+    dominantSheet: string | null;
+    inconsistentPrompts: Set<string>;
+  } => {
+    // Don't apply validation if there are too few prompts
+    if (prompts.length < 3) {
+      return { dominantSheet: null, inconsistentPrompts: new Set() };
+    }
+
+    // Count sheets used by prompts
+    const sheetCounts: Record<string, number> = {};
+    prompts.forEach(p => {
+      const sheet = p.promptSheet || "";
+      if (sheet) {
+        sheetCounts[sheet] = (sheetCounts[sheet] || 0) + 1;
+      }
+    });
+
+    // Find the dominant sheet (most used)
+    const sortedSheets = Object.entries(sheetCounts).sort((a, b) => b[1] - a[1]);
+    if (sortedSheets.length === 0) {
+      return { dominantSheet: null, inconsistentPrompts: new Set() };
+    }
+
+    const [dominantSheet, dominantCount] = sortedSheets[0];
+    const totalWithSheet = prompts.filter(p => p.promptSheet).length;
+
+    // Only flag if dominant sheet has 80%+ of prompts
+    if (dominantCount / totalWithSheet < 0.8) {
+      return { dominantSheet: null, inconsistentPrompts: new Set() };
+    }
+
+    // Find prompts in different sheets
+    const inconsistentPrompts = new Set<string>();
+    prompts.forEach(p => {
+      if (p.promptSheet && p.promptSheet !== dominantSheet) {
+        inconsistentPrompts.add(p.id);
+      }
+    });
+
+    return { dominantSheet, inconsistentPrompts };
+  };
+
   // ALL HOOKS MUST BE DECLARED BEFORE ANY CONDITIONAL LOGIC
   // Queries para tipos de prompts y outputs
   const {
@@ -850,6 +896,13 @@ export default function ProductManagement() {
     enabled: !!selectedProduct?.id,
     staleTime: 1000 * 60 * 5 // 5 minutes
   });
+
+  // Calculate sheet inconsistencies for current product prompts
+  const sheetInconsistencies = useMemo(
+    () => getSheetInconsistencies(productPrompts),
+    [productPrompts]
+  );
+
   const {
     data: productOutputs = [],
     refetch: refetchOutputs,
@@ -2543,7 +2596,23 @@ export default function ProductManagement() {
                         return <>
                             <div className="grid grid-cols-12 gap-2 items-end">
                               <div className="col-span-2">
-                                <Label>Hoja</Label>
+                                <div className="flex items-center gap-1">
+                                  <Label>Hoja</Label>
+                                  {sheetInconsistencies.inconsistentPrompts.has(prompt.id) && (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p className="max-w-xs">
+                                            Este campo usa una hoja diferente al resto ({sheetInconsistencies.dominantSheet}). Verifica si es intencional.
+                                          </p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  )}
+                                </div>
                                 <Select value={prompt.promptSheet || ""} onValueChange={value => {
                                 const updatedPrompt = {
                                   ...prompt,
@@ -2558,7 +2627,7 @@ export default function ProductManagement() {
                                 };
                                 updatePromptMutation.mutate(updatedPrompt);
                               }}>
-                                  <SelectTrigger>
+                                  <SelectTrigger className={sheetInconsistencies.inconsistentPrompts.has(prompt.id) ? "border-amber-500" : ""}>
                                     <SelectValue placeholder={prompt.promptSheet || "Seleccionar hoja"} />
                                   </SelectTrigger>
                                   <SelectContent className="bg-background border shadow-lg z-50">
