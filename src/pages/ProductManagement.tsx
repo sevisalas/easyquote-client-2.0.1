@@ -37,6 +37,7 @@ import { CompositeProductConfig } from "@/components/products/CompositeProductCo
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { normalizeApiUserId } from "@/utils/normalizeApiUserId";
 
 // Interface para productos del API de EasyQuote
 interface EasyQuoteProduct {
@@ -399,7 +400,11 @@ export default function ProductManagement() {
     membership
   } = useSubscription();
   const organizationId = organization?.id || membership?.organization_id;
-  const apiUserId = organization?.api_user_id || (membership?.organization as any)?.api_user_id;
+  const apiUserId = normalizeApiUserId(
+    organization?.api_user_id ??
+      (membership?.organization as any)?.api_user_id ??
+      membership?.organization
+  );
   const queryClient = useQueryClient();
 
   // Hooks for categories
