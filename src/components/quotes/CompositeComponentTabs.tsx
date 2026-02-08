@@ -1371,7 +1371,7 @@ export default function CompositeComponentTabs({
           {parentForceResultPrompts.length > 0 && (
             <div className="border-t pt-4 mt-4">
               <h5 className="text-sm font-semibold text-muted-foreground mb-3">Opciones restrictivas</h5>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {parentForceResultPrompts.map((prompt) => {
                   const effectiveValue = parentPromptValues[prompt.id];
                   const value =
@@ -1389,7 +1389,6 @@ export default function CompositeComponentTabs({
                       value === "1";
                     return (
                       <div key={prompt.id} className="flex items-center gap-2 py-1">
-                        <span className="text-sm">{prompt.label}</span>
                         <Checkbox
                           id={`restrictive-parent-${prompt.id}`}
                           checked={isChecked}
@@ -1399,14 +1398,17 @@ export default function CompositeComponentTabs({
                             onParentPromptCommit?.(prompt.id, newValue);
                           }}
                         />
+                        <label htmlFor={`restrictive-parent-${prompt.id}`} className="text-sm cursor-pointer">
+                          {prompt.label}
+                        </label>
                       </div>
                     );
                   }
 
                   if (prompt.type === "select" && prompt.options?.length) {
                     return (
-                      <div key={prompt.id} className="flex items-center gap-2 py-1">
-                        <span className="text-sm">{prompt.label}</span>
+                      <div key={prompt.id} className="space-y-1.5">
+                        <label className="text-sm font-medium">{prompt.label}</label>
                         <Select
                           value={String(value ?? "")}
                           onValueChange={(v) => {
@@ -1414,7 +1416,7 @@ export default function CompositeComponentTabs({
                             onParentPromptCommit?.(prompt.id, v);
                           }}
                         >
-                          <SelectTrigger className="h-8 w-auto min-w-[100px]">
+                          <SelectTrigger className="h-9 w-full">
                             <SelectValue placeholder="—" />
                           </SelectTrigger>
                           <SelectContent className="z-50 bg-popover">
@@ -1430,11 +1432,11 @@ export default function CompositeComponentTabs({
                   }
 
                   return (
-                    <div key={prompt.id} className="flex items-center gap-2 py-1">
-                      <span className="text-sm">{prompt.label}</span>
+                    <div key={prompt.id} className="space-y-1.5">
+                      <label className="text-sm font-medium">{prompt.label}</label>
                       <Input
                         type={prompt.type === "number" || prompt.type === "integer" ? "number" : "text"}
-                        className="h-8 w-24"
+                        className="h-9 w-full"
                         value={value ?? ""}
                         onChange={(e) => onParentPromptChange(prompt.id, e.target.value)}
                         onBlur={(e) => onParentPromptCommit?.(prompt.id, e.target.value)}
@@ -1509,7 +1511,7 @@ export default function CompositeComponentTabs({
                     {componentForceResultPrompts.length > 0 && (
                       <div className="border-t pt-4 mt-4">
                         <h5 className="text-sm font-semibold text-muted-foreground mb-3">Opciones restrictivas</h5>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {componentForceResultPrompts.map((prompt: any) => {
                             const value = effectiveComponentValues[prompt.id] ?? prompt.currentValue ?? prompt.default;
                             const typeKey = getPromptTypeKey(prompt);
@@ -1524,7 +1526,6 @@ export default function CompositeComponentTabs({
                                 value === "1";
                               return (
                                 <div key={prompt.id} className="flex items-center gap-2 py-1">
-                                  <span className="text-sm">{prompt.promptText || prompt.label || prompt.id}</span>
                                   <Checkbox
                                     id={`restrictive-component-${componentKey}-${prompt.id}`}
                                     checked={isChecked}
@@ -1534,6 +1535,12 @@ export default function CompositeComponentTabs({
                                       onComponentPromptCommit?.(componentKey, prompt.id, newValue);
                                     }}
                                   />
+                                  <label 
+                                    htmlFor={`restrictive-component-${componentKey}-${prompt.id}`} 
+                                    className="text-sm cursor-pointer"
+                                  >
+                                    {prompt.promptText || prompt.label || prompt.id}
+                                  </label>
                                 </div>
                               );
                             }
@@ -1546,8 +1553,10 @@ export default function CompositeComponentTabs({
                               const valueStr = value === undefined || value === null ? "" : String(value);
                               const isValid = valueStr === "" || options.some((o) => o.value === valueStr);
                               return (
-                                <div key={prompt.id} className="flex items-center gap-2 py-1">
-                                  <span className="text-sm">{prompt.promptText || prompt.label || prompt.id}</span>
+                                <div key={prompt.id} className="space-y-1.5">
+                                  <label className="text-sm font-medium">
+                                    {prompt.promptText || prompt.label || prompt.id}
+                                  </label>
                                   <Select
                                     value={isValid ? valueStr : ""}
                                     onValueChange={(val) => {
@@ -1555,7 +1564,7 @@ export default function CompositeComponentTabs({
                                       onComponentPromptCommit?.(componentKey, prompt.id, val);
                                     }}
                                   >
-                                    <SelectTrigger className="h-8 w-auto min-w-[100px]">
+                                    <SelectTrigger className="h-9 w-full">
                                       <SelectValue placeholder="—" />
                                     </SelectTrigger>
                                     <SelectContent className="z-50 bg-popover">
@@ -1571,8 +1580,10 @@ export default function CompositeComponentTabs({
                             }
 
                             return (
-                              <div key={prompt.id} className="flex items-center gap-2 py-1">
-                                <span className="text-sm">{prompt.promptText || prompt.label || prompt.id}</span>
+                              <div key={prompt.id} className="space-y-1.5">
+                                <label className="text-sm font-medium">
+                                  {prompt.promptText || prompt.label || prompt.id}
+                                </label>
                                 <Input
                                   type={
                                     typeKey.includes("number") ||
@@ -1582,7 +1593,7 @@ export default function CompositeComponentTabs({
                                       ? "number"
                                       : "text"
                                   }
-                                  className="h-8 w-24"
+                                  className="h-9 w-full"
                                   value={value ?? ""}
                                   onChange={(e) => onComponentPromptChange?.(componentKey, prompt.id, e.target.value)}
                                   onBlur={(e) => onComponentPromptCommit?.(componentKey, prompt.id, e.target.value)}
