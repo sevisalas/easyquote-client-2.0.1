@@ -127,8 +127,17 @@ export default function ProductTestPage({
     ? !isLoadingOverrideOrg && !!overrideOrgData?.api_user_id
     : !!apiUserId;
   
+  // IMPORTANTE: Para hooks que dependen de api_user_id, pasar undefined si aún no está listo.
+  // Esto evita que el hook use las credenciales del usuario autenticado (superadmin) en lugar
+  // de las de la organización impersonada.
+  const effectiveApiUserId = isApiUserIdReady ? apiUserId : undefined;
+  
   // Check if product is composite
-  const { isComposite, enabledComponents, getPromptComponent } = useProductComponentSettings(productId || undefined, apiUserId);
+  // Nota: pasamos effectiveApiUserId para asegurar que NO se use el api_user_id del superadmin
+  const { isComposite, enabledComponents, getPromptComponent, isLoading: isLoadingComponentSettings } = useProductComponentSettings(
+    productId || undefined, 
+    effectiveApiUserId
+  );
   
   // Fetch composite product components configuration
   const { 
@@ -139,14 +148,15 @@ export default function ProductTestPage({
   const queryClient = useQueryClient();
 
   // Fetch component product IDs (por api_user_id)
-  const { data: componentProductIds = new Set<string>() } = useQuery({
-    queryKey: ["component-product-ids", apiUserId],
+  // Usa effectiveApiUserId para asegurar que se filtre por la org impersonada
+  const { data: componentProductIds = new Set<string>(), isLoading: isLoadingComponentIds } = useQuery({
+    queryKey: ["component-product-ids", effectiveApiUserId],
     queryFn: async () => {
-      if (!apiUserId) return new Set<string>();
+      if (!effectiveApiUserId) return new Set<string>();
       const { data, error } = await supabase
         .from("product_component_settings")
         .select("easyquote_product_id")
-        .eq("api_user_id", apiUserId)
+        .eq("api_user_id", effectiveApiUserId)
         .eq("is_component", true);
       if (error) {
         console.error("Error fetching component products:", error);
@@ -154,7 +164,7 @@ export default function ProductTestPage({
       }
       return new Set((data || []).map((d) => d.easyquote_product_id));
     },
-    enabled: isApiUserIdReady,
+    enabled: isApiUserIdReady && !!effectiveApiUserId,
     staleTime: 5 * 60 * 1000,
   });
 

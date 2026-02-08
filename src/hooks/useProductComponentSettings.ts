@@ -58,8 +58,14 @@ export function useProductComponentSettings(
 ) {
   const queryClient = useQueryClient();
 
+  // Flag para indicar que se espera un override pero aún no está disponible
+  // Esto evita que la query interna se ejecute con credenciales del usuario autenticado
+  // cuando lo que realmente queremos es usar las credenciales de la org impersonada.
+  const isWaitingForOverride = apiUserIdOverride === undefined && easyquoteProductId !== undefined;
+
   // Obtener api_user_id de la organización del usuario actual
-  const { data: orgData } = useQuery({
+  // IMPORTANTE: Solo se ejecuta si NO hay override proporcionado
+  const { data: orgData, isLoading: isLoadingOrgData } = useQuery({
     queryKey: ['current-user-api-user-id'],
     queryFn: async () => {
       // Primero intentar obtener de la organización donde el usuario es dueño
@@ -94,6 +100,7 @@ export function useProductComponentSettings(
       return null;
     },
     staleTime: 5 * 60 * 1000,
+    // Solo ejecutar si NO se proporciona un override
     enabled: !apiUserIdOverride,
   });
 
