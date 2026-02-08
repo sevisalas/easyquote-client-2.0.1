@@ -313,7 +313,7 @@ export default function ComponentTabsPromptsForm({
       // Verificar admin_only
       if (!isAdmin && setting.admin_only) continue;
 
-      // Buscar la definición completa en promptDefinitions para obtener metadata (tipo, opciones, etc.)
+      // Buscar la definición completa en promptDefinitions para obtener metadata (tipo, opciones, visibilidad)
       const def = (promptDefinitions as any[]).find((d: any) => {
         const defCell = extractCellRef(getPromptCell(d)) ?? normalizePromptName(getPromptCell(d));
         return defCell === cellKey;
@@ -342,17 +342,35 @@ export default function ComponentTabsPromptsForm({
           })
         : [{ value: "No", label: "No" }, { value: "Sí", label: "Sí" }]; // Default para campos sin definición
 
+      // IMPORTANTE: Incluir visibility/hiddenWhen de la definición para respetar condiciones del API
       const promptDef: PromptDef = {
         id: def?.id ?? cellKey,
         label: resolvedLabel,
         type,
         options: options.length > 0 ? options : undefined,
         default: def?.currentValue ?? def?.default ?? def?.defaultValue ?? "No",
+        visibility: def?.visibility,
+        hiddenWhen: def?.hiddenWhen,
       };
 
       forceResult.push(promptDef);
       forceResultCellsSeen.add(cellKey);
     }
+
+    // Ordenar force_result por display_order de promptSettings (para mantener el orden deseado)
+    const settingsOrderMap = new Map<string, number>();
+    for (const s of (promptSettings ?? []) as any[]) {
+      if (s?.prompt_name && typeof s?.display_order === "number") {
+        settingsOrderMap.set(normalizePromptName(s.prompt_name), s.display_order);
+      }
+    }
+    forceResult.sort((a, b) => {
+      const keyA = extractCellRef(a.id) ?? normalizePromptName(a.id);
+      const keyB = extractCellRef(b.id) ?? normalizePromptName(b.id);
+      const orderA = settingsOrderMap.get(keyA) ?? 9999;
+      const orderB = settingsOrderMap.get(keyB) ?? 9999;
+      return orderA - orderB;
+    });
 
     return { prompts: regular, forceResultPrompts: forceResult };
   }, [product, isAdmin, isPromptAdminOnly, isPromptForceResult, promptCellLookup, promptSettings, isPromptSettingsLoading, isPromptDefinitionsLoading, promptDefinitions]);
