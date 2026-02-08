@@ -143,6 +143,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [productId, setProductId] = useState<string>("");
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
   const [debouncedPromptValues, setDebouncedPromptValues] = useState<Record<string, any>>({});
+  // Draft values for force_result inputs - prevents API calls on every keystroke
+  const [forceResultDraftValues, setForceResultDraftValues] = useState<Record<string, string>>({});
   const [forceRecalculate, setForceRecalculate] = useState<boolean>(false);
   const [isExpanded, setIsExpanded] = useState<boolean>(shouldExpand === true); // Solo expandir si shouldExpand es explícitamente true
   const [userCollapsed, setUserCollapsed] = useState<boolean>(false); // Flag para colapso manual del usuario
@@ -958,6 +960,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       // Reset EVERYTHING to initial state
       setPromptValues({});
       setDebouncedPromptValues({});
+      setForceResultDraftValues({}); // Clear draft values when product changes
       setMultiEnabled(false);
       setQtyPrompt("");
       setQtyInputs(["", "", "", "", ""]);
@@ -2273,16 +2276,38 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                                   );
                                 }
                                 
-                                // Number/Integer/Text type
+                                // Number/Integer/Text type - use draft values to prevent API calls on every keystroke
+                                const draftValue = forceResultDraftValues[prompt.id];
+                                const displayValue = draftValue !== undefined ? draftValue : (value ?? '');
                                 return (
                                   <div key={prompt.id} className="flex items-center gap-2 py-1">
                                     <span className="text-sm">{prompt.label}</span>
                                     <Input
                                       type={prompt.type === 'number' || prompt.type === 'integer' ? 'number' : 'text'}
                                       className="h-8 w-24"
-                                      value={value ?? ''}
-                                      onChange={(e) => handlePromptChange(prompt.id, e.target.value, prompt.label)}
-                                      onBlur={(e) => handlePromptCommit(prompt.id, e.target.value, prompt.label)}
+                                      value={displayValue}
+                                      onChange={(e) => {
+                                        // Only update draft - no API call
+                                        setForceResultDraftValues(prev => ({
+                                          ...prev,
+                                          [prompt.id]: e.target.value
+                                        }));
+                                      }}
+                                      onBlur={(e) => {
+                                        // Clear draft and commit the value
+                                        setForceResultDraftValues(prev => {
+                                          const next = { ...prev };
+                                          delete next[prompt.id];
+                                          return next;
+                                        });
+                                        handlePromptChange(prompt.id, e.target.value, prompt.label);
+                                        handlePromptCommit(prompt.id, e.target.value, prompt.label);
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.currentTarget.blur();
+                                        }
+                                      }}
                                     />
                                   </div>
                                 );
