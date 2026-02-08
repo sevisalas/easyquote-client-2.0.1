@@ -449,13 +449,23 @@ export default function ProductTestPage({
   });
 
   // Filter products based on viewMode
+  // IMPORTANTE: Para la vista "componentes", debemos esperar a que componentProductIds esté listo
+  // antes de aplicar el filtro, de lo contrario mostraría lista vacía.
+  const isComponentIdsReady = !isLoadingComponentIds && isApiUserIdReady;
+  
   const products = useMemo(() => {
+    // Si estamos en vista componentes pero los IDs aún no están listos, devolver array vacío
+    // (el loading spinner se mostrará mientras tanto)
+    if (viewMode === 'componentes' && !isComponentIdsReady) {
+      return [];
+    }
+    
     return allProducts.filter((p: any) => {
       const isProductComponent = componentProductIds.has(p.id);
       if (viewMode === 'productos') return !isProductComponent;
       return isProductComponent;
     });
-  }, [allProducts, componentProductIds, viewMode]);
+  }, [allProducts, componentProductIds, viewMode, isComponentIdsReady]);
 
   // Reset productId when switching viewMode if current product doesn't match the new filter
   useEffect(() => {
@@ -1260,9 +1270,11 @@ export default function ProductTestPage({
         </Button>
       </div>
 
-      {isLoading ? <div className="text-center py-8">
+      {(isLoading || (viewMode === 'componentes' && !isComponentIdsReady)) ? (
+        <div className="text-center py-8">
           <p>Cargando {viewMode}...</p>
-        </div> : <div className="grid lg:grid-cols-3 gap-6">
+        </div>
+      ) : <div className="grid lg:grid-cols-3 gap-6">
           {/* Product Selection & Configuration */}
           <div className="lg:col-span-2">
             <Card>
