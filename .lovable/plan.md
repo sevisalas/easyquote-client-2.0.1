@@ -1,72 +1,90 @@
 
-# Plan: Layout vertical de 2 columnas para opciones restrictivas en productos compuestos
 
-## Problema
+# Plan: Validación de incongruencia de hojas en campos de entrada
 
-Las "Opciones restrictivas" dentro de productos compuestos usan un layout inline de 3 columnas que resulta muy apretado e ilegible, especialmente con etiquetas largas como "Forzar poses/pags.".
+## Problema identificado
 
-## Solución
+El usuario configuró el campo "Tira y retira" (B23) en una hoja diferente al resto de campos del producto "Cubierta", lo que causó que el campo no apareciera en el cálculo. Este es un error común que debería detectarse automáticamente.
 
-Cambiar **solo** las opciones restrictivas de componentes dentro de productos compuestos a:
-- **2 columnas** (en lugar de 3)
-- **Layout vertical** (etiqueta arriba del campo, no al lado)
+## Solución propuesta
 
-## Cambios en CompositeComponentTabs.tsx
+Añadir una validación visual que alerte al usuario cuando un campo de entrada está configurado en una hoja diferente a la mayoría de los campos del mismo producto.
 
-### 1. Opciones restrictivas del padre (línea 1374)
+## Diseño de la validación
 
-**Antes:**
-```tsx
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
-  <div className="flex items-center gap-2 py-1">
-    <span className="text-sm">{prompt.label}</span>
-    <Select ... className="h-8 w-auto min-w-[100px]">
-```
+### Lógica de detección
 
-**Después:**
-```tsx
-<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-  <div className="space-y-1">
-    <Label className="text-sm">{prompt.label}</Label>
-    <Select ... className="w-full">
-```
+1. Calcular la "hoja dominante" del producto: la hoja que usa la mayoría de los campos
+2. Identificar campos "anómalos": aquellos que usan una hoja diferente a la dominante
+3. Mostrar un indicador visual de advertencia en esos campos
 
-### 2. Opciones restrictivas del componente (línea 1512)
+### Ubicación en la UI
 
-Aplicar el mismo cambio de layout.
+En `ProductManagement.tsx`, sección de edición de campos de entrada (prompts):
+- Mostrar un icono de advertencia naranja junto al selector de hoja cuando difiere de la dominante
+- Añadir tooltip explicativo: "Este campo usa una hoja diferente al resto ({hojaDominante}). Verifica si es intencional."
 
-## Detalle de cada tipo de campo
+### Cuándo se activa
 
-| Tipo | Antes | Después |
-|------|-------|---------|
-| **Select** | `flex items-center gap-2`, `w-auto min-w-[100px]` | `space-y-1`, `w-full` |
-| **Input** | `flex items-center gap-2`, `w-24` | `space-y-1`, `w-full` |
-| **Checkbox** | `flex items-center gap-2` | Mantener inline (es más compacto) |
+- Al renderizar la lista de prompts
+- Cuando el usuario cambia la hoja de un prompt (validación en tiempo real)
 
-## Resultado visual esperado
+## Cambios en código
+
+### Archivo: `src/pages/ProductManagement.tsx`
+
+**1. Nueva función helper para detectar incongruencias (línea ~600)**
+
+Función que analiza todos los prompts y determina:
+- La hoja más usada (dominante)
+- Qué prompts están en hojas diferentes
+
+**2. Indicador visual en el selector de hoja de cada prompt (línea ~2545-2572)**
+
+Añadir junto al `Select` de hoja:
+- Icono `AlertTriangle` de Lucide (color naranja/amber)
+- Tooltip con explicación
+- Solo visible cuando el prompt está en hoja diferente a la dominante
+
+**3. Alerta al guardar/actualizar un prompt (opcional)**
+
+Cuando el usuario guarda un prompt con hoja diferente, mostrar un toast de advertencia (no bloquear, solo informar).
+
+## Mockup visual
 
 ```text
-┌─────────────────────────┐  ┌─────────────────────────┐
-│ Forzar recurso          │  │ Forzar poses/pags.      │
-│ [No                  ▾] │  │ [1                   ▾] │
-└─────────────────────────┘  └─────────────────────────┘
+Campos de entrada actuales:
+┌────────────────────────────────────────────────────────────────┐
+│ ▪ Cantidad ejemplares                                          │
+│   Hoja: [Datos ▾]  Rótulo: [B5]  Valor: [C5]  Orden: [1]       │
+└────────────────────────────────────────────────────────────────┘
 
-┌─────────────────────────┐  ┌─────────────────────────┐
-│ Ancho máximo            │  │ [✓] Usar margen extra   │
-│ [_________________]     │  │                         │
-└─────────────────────────┘  └─────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│ ▪ Tira y retira                                        ⚠️      │
+│   Hoja: [Otros ▾] ⚠️  Rótulo: [B23]  Valor: [C23]  Orden: [8]  │
+│   └──> Tooltip: "Hoja diferente al resto (Datos). Verifica."  │
+└────────────────────────────────────────────────────────────────┘
 ```
+
+## Criterios de activación
+
+| Condición | Acción |
+|-----------|--------|
+| 80%+ de prompts en una hoja | Esa es la hoja dominante |
+| Prompt en hoja diferente a dominante | Mostrar advertencia |
+| Solo 1-2 prompts en total | No aplicar validación (no hay "patrón") |
 
 ## Archivos a modificar
 
-| Archivo | Líneas | Cambio |
-|---------|--------|--------|
-| `src/components/quotes/CompositeComponentTabs.tsx` | 1374-1446 | Layout vertical 2 columnas para opciones restrictivas del padre |
-| `src/components/quotes/CompositeComponentTabs.tsx` | 1512-1594 | Layout vertical 2 columnas para opciones restrictivas del componente |
+| Archivo | Cambio |
+|---------|--------|
+| `src/pages/ProductManagement.tsx` | Añadir función helper `getSheetInconsistencies()` y mostrar indicadores visuales de advertencia |
 
 ## Notas técnicas
 
-- Solo afecta a productos compuestos (CompositeComponentTabs)
-- Los productos simples (PromptsForm) mantienen su layout actual de 3 columnas
-- Los checkboxes mantienen layout horizontal porque son más compactos
-- Se usa el componente `Label` existente para consistencia visual
+- La validación es solo informativa (no bloquea acciones)
+- Se basa en el análisis estadístico de las hojas usadas por todos los prompts del producto
+- El umbral del 80% evita falsos positivos en productos con prompts distribuidos intencionalmente en varias hojas
+- El icono usa el color `text-amber-500` para advertencia (no rojo/error)
+- Se añade un `Tooltip` de Radix UI para explicar el problema sin saturar la interfaz
+
