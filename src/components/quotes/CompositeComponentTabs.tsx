@@ -1594,9 +1594,22 @@ export default function CompositeComponentTabs({
                                       : "text"
                                   }
                                   className="h-9 w-full"
-                                  value={value ?? ""}
-                                  onChange={(e) => onComponentPromptChange?.(componentKey, prompt.id, e.target.value)}
-                                  onBlur={(e) => onComponentPromptCommit?.(componentKey, prompt.id, e.target.value)}
+                                  value={effectiveComponentValues[prompt.id] ?? value ?? ""}
+                                  onChange={(e) => {
+                                    // Guardar en draft local sin disparar recálculo
+                                    setComponentDraftValues((prev) => ({
+                                      ...prev,
+                                      [componentKey]: {
+                                        ...(prev[componentKey] || {}),
+                                        [prompt.id]: e.target.value,
+                                      },
+                                    }));
+                                  }}
+                                  onBlur={(e) => {
+                                    // Al hacer blur, propagar al padre y disparar recálculo
+                                    onComponentPromptChange?.(componentKey, prompt.id, e.target.value);
+                                    onComponentPromptCommit?.(componentKey, prompt.id, e.target.value);
+                                  }}
                                   onKeyDown={handleEnterToBlur}
                                 />
                               </div>
