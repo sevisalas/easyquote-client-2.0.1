@@ -15,8 +15,8 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import PromptsForm, { type PromptDef } from "@/components/quotes/PromptsForm";
 import ComponentTabsPromptsForm, { COMPONENT_LABELS } from "@/components/quotes/ComponentTabsPromptsForm";
 import ProductPromptsDebugPanel from "@/components/diagnostics/ProductPromptsDebugPanel";
-import BoundProductConfigSelector, { 
-  type BoundProductConfig, 
+import BoundProductConfigSelector, {
+  type BoundProductConfig,
   getAvailableConfigs,
   getActiveComponents
 } from "@/components/quotes/BoundProductConfigSelector";
@@ -30,6 +30,7 @@ import { useProductComponentSettings } from "@/hooks/useProductComponentSettings
 import { useCompositeProductConfig } from "@/hooks/useCompositeProductConfig";
 import { ArrowLeft, AlertCircle, Package, Boxes } from "lucide-react";
 import { Link } from "react-router-dom";
+import { normalizeApiUserId } from "@/utils/normalizeApiUserId";
 
 const fetchProducts = async () => {
   // Use getEasyQuoteToken which validates and auto-refreshes expired tokens
@@ -117,20 +118,22 @@ export default function ProductTestPage({
 
   // Use override if provided (for superadmin impersonation), otherwise use subscription context
   const organizationId = overrideOrganizationId || organization?.id || membership?.organization_id;
-  // IMPORTANT: When impersonating, use the impersonated org's api_user_id, not the superadmin's
-  const apiUserId = overrideOrganizationId 
-    ? overrideOrgData?.api_user_id 
+
+  // IMPORTANT: al impersonar, necesitamos un UUID string (evita api_user_id="[object Object]")
+  const apiUserIdRaw = overrideOrganizationId
+    ? overrideOrgData
     : (organization?.api_user_id || (membership?.organization as any)?.api_user_id);
+  const apiUserId = normalizeApiUserId(apiUserIdRaw);
 
   // When impersonating, wait for org data to load before querying component settings
-  const isApiUserIdReady = overrideOrganizationId 
-    ? !isLoadingOverrideOrg && !!overrideOrgData?.api_user_id
+  const isApiUserIdReady = overrideOrganizationId
+    ? !isLoadingOverrideOrg && !!normalizeApiUserId(overrideOrgData)
     : !!apiUserId;
-  
+
   // IMPORTANTE: Para hooks que dependen de api_user_id, pasar undefined si aún no está listo.
   // Esto evita que el hook use las credenciales del usuario autenticado (superadmin) en lugar
   // de las de la organización impersonada.
-  const effectiveApiUserId = isApiUserIdReady ? apiUserId : undefined;
+  const effectiveApiUserId = isApiUserIdReady ? apiUserId ?? undefined : undefined;
   
   // Check if product is composite
   // Nota: pasamos effectiveApiUserId para asegurar que NO se use el api_user_id del superadmin

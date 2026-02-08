@@ -13,16 +13,16 @@ import { invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 import PromptsForm, { extractPrompts, isVisiblePrompt, type PromptDef } from "@/components/quotes/PromptsForm";
 import ComponentTabsPromptsForm from "@/components/quotes/ComponentTabsPromptsForm";
 import ComponentTabsOutputs from "@/components/quotes/ComponentTabsOutputs";
-import BoundProductConfigSelector, { 
-  type BoundProductConfig, 
-  getAvailableConfigs, 
-  getActiveComponents 
+import BoundProductConfigSelector, {
+  type BoundProductConfig,
+  getAvailableConfigs,
+  getActiveComponents
 } from "@/components/quotes/BoundProductConfigSelector";
 import CompositeComponentTabs, { type ComponentsDataMap } from "@/components/quotes/CompositeComponentTabs";
-import CompositeComponentsSelector, { 
-  type ActiveComponent, 
-  getInitialActiveComponents, 
-  hasRequiredComponents 
+import CompositeComponentsSelector, {
+  type ActiveComponent,
+  getInitialActiveComponents,
+  hasRequiredComponents
 } from "@/components/quotes/CompositeComponentsSelector";
 import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { useCompositeProductConfig } from "@/hooks/useCompositeProductConfig";
@@ -35,6 +35,7 @@ import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
 import { ChevronDown, ChevronUp, Pencil, Trash2, Package } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { normalizeApiUserId } from "@/utils/normalizeApiUserId";
 
 // Debug flag: set to false to disable all console logs in this file
 const DEBUG_QUOTE_ITEM = false;
@@ -123,14 +124,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   });
 
   // Si hay mismatch, NO confiar en el contexto hasta resolver desde BD
-  const effectiveApiUserId =
+  const effectiveApiUserIdRaw =
     resolvedApiUserId ??
     (!isOrgMismatch || isResolvedApiUserIdError ? apiUserIdFromContext : null) ??
     null;
 
+  // Defensa extra: garantiza que effectiveApiUserId sea un UUID string (evita "[object Object]")
+  const effectiveApiUserId = normalizeApiUserId(effectiveApiUserIdRaw);
+
   // Si no podemos resolver api_user_id todavía, NO mostramos lista sin filtrar
   const isApiUserIdPending = !!selectedOrganizationId && !effectiveApiUserId;
-
   // Debug desactivado para evitar spam - descomentar solo si es necesario
   // if (import.meta.env.DEV) {
   //   console.log("[QuoteItem] Org context:", { selectedOrganizationId, effectiveApiUserId });
