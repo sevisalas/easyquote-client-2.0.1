@@ -704,6 +704,7 @@ export default function CompositeComponentTabs({
             }
           }
 
+          console.log(`[RECEIVER-PRICING-REQUEST] component=${component.component_alias} productId=${component.component_product_id} inputs=`, JSON.stringify(componentInputs));
           const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
             token,
             productId: component.component_product_id,
@@ -713,6 +714,7 @@ export default function CompositeComponentTabs({
           });
 
           if (error) throw error;
+          console.log(`[RECEIVER-PRICING-RESPONSE] component=${component.component_alias} prompts=`, JSON.stringify(data?.prompts?.map((p:any) => ({id:p.id, text:p.promptText, val:p.currentValue}))));
           
           const prompts = data?.prompts || [];
           const outputs = data?.outputValues || data?.outputs || [];
