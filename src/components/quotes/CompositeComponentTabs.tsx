@@ -201,7 +201,7 @@ export default function CompositeComponentTabs({
     for (const p of rawPricingPrompts) {
       const id = String(p?.id ?? "").trim();
       if (!id) continue;
-      const seq = Number(p?.promptSeq ?? p?.seq);
+      const seq = Number(p?.promptSequence ?? p?.promptSeq ?? p?.seq);
       if (Number.isFinite(seq)) pricingBySeq.set(seq, id);
       const cell = normCell(getPromptCell(p));
       if (cell) pricingByCell.set(cell, id);
@@ -215,8 +215,8 @@ export default function CompositeComponentTabs({
       // Already same? skip
       if (rawPricingPrompts.some((p: any) => String(p?.id ?? "").trim() === defId)) continue;
 
-      // Try by promptSeq first (most reliable)
-      const seq = Number(d?.promptSeq ?? d?.seq);
+      // Try by promptSeq/promptSequence first (most reliable)
+      const seq = Number(d?.promptSequence ?? d?.promptSeq ?? d?.seq);
       if (Number.isFinite(seq) && pricingBySeq.has(seq)) {
         map.set(defId, pricingBySeq.get(seq)!);
         continue;
