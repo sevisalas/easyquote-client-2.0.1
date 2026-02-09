@@ -43,6 +43,7 @@ interface QuoteItem {
   productName?: string;  // Nombre original del producto API
   itemDescription?: string;  // Descripción (solo para productos custom)
   itemAdditionals?: any[];
+  compositeData?: any;
 }
 
 interface SelectedQuoteAdditional {
@@ -284,6 +285,7 @@ export default function QuoteEdit() {
             productName: item.product_name || "",  // Nombre original del producto API
             itemDescription: item.description || "",  // Descripción (solo para productos custom)
             itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
+            compositeData: item.composite_data || undefined,
           };
           console.log(`🔍 Mapped item ${idx}:`, {
             id: mappedItem.id,
@@ -448,6 +450,7 @@ export default function QuoteEdit() {
             outputs: item.outputs || [],
             multi: item.multi || null,
             item_additionals: item.itemAdditionals || [],
+            composite_data: item.compositeData || null,
           };
         });
 
@@ -610,6 +613,7 @@ export default function QuoteEdit() {
               productName: snapshot.productName,
               itemDescription: snapshot.itemDescription,
               itemAdditionals: snapshot.itemAdditionals,
+              compositeData: snapshot.compositeData,
             }
           : item,
       );
@@ -941,6 +945,7 @@ export default function QuoteEdit() {
                           productName: item.productName || item.product_name || "",
                           itemDescription: item.itemDescription || item.description || "",
                           itemAdditionals: item.itemAdditionals || [],
+                          compositeData: item.compositeData,
                         }}
                         onChange={handleItemChange}
                         onRemove={handleItemRemove}

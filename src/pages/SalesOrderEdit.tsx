@@ -204,6 +204,7 @@ export default function SalesOrderEdit() {
       multi: snapshot.multi,
       description: snapshot.itemDescription,
       price: snapshot.price?.total || snapshot.price || 0,
+      composite_data: snapshot.compositeData || null,
     };
     setItems(updatedItems);
   };
@@ -228,6 +229,7 @@ export default function SalesOrderEdit() {
           multi: item.multi,
           description: item.description,
           price: item.price,
+          composite_data: (item as any).composite_data || null,
         })
         .eq("id", item.id);
 
@@ -429,6 +431,7 @@ export default function SalesOrderEdit() {
                 itemDescription: item.description || "",
                 price: item.price,
                 isFinalized: true,
+                compositeData: (item as any).composite_data || undefined,
               }}
               onChange={handleItemChange}
               onRemove={handleRemoveItem}
