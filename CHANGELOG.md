@@ -5,6 +5,16 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.11] - 2026-02-09
+
+### Añadido
+- **Validación de incongruencia de hojas**: Alerta visual cuando un campo de entrada está configurado en una hoja de Excel diferente al resto del producto (icono ámbar con tooltip explicativo)
+
+### Corregido
+- **Comportamiento de campos numéricos**: Los campos numéricos y de texto en opciones restrictivas ahora solo disparan el cálculo al confirmar (Tab/Enter), no durante la edición
+
+---
+
 ## [2.5.8] - 2026-02-04
 
 ### Corregido
