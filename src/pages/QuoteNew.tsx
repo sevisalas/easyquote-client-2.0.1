@@ -83,11 +83,11 @@ export default function QuoteNew() {
   // Track the last added item to keep it expanded
   const [lastAddedItemId, setLastAddedItemId] = useState<number | null>(null);
 
-  // Check if all items are complete and finalized
+  // Check if all items are complete (product selected and valid price)
   const allItemsComplete = useMemo(() => {
     const itemsArray = Object.values(items);
-    if (itemsArray.length === 0) return true; // No items means we can add
-    return itemsArray.every(item => item.productId && item.price && item.price > 0 && item.isFinalized === true);
+    if (itemsArray.length === 0) return true;
+    return itemsArray.every(item => item.productId && item.price && item.price > 0);
   }, [items]);
 
   // Check if there's an item being edited (has productId but not finalized)
