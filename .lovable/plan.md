@@ -1,90 +1,89 @@
 
 
-# Plan: Validación de incongruencia de hojas en campos de entrada
+# Plan: Persistir datos de componentes compuestos en JSONB
 
-## Problema identificado
+## Problema
 
-El usuario configuró el campo "Tira y retira" (B23) en una hoja diferente al resto de campos del producto "Cubierta", lo que causó que el campo no apareciera en el cálculo. Este es un error común que debería detectarse automáticamente.
+Cuando se guarda un presupuesto con un producto compuesto (ej: Encuadernado con Cubierta + Interior), los datos de los componentes individuales (prompts, outputs, precio de cada componente) **no se persisten**. Al recargar el presupuesto, solo se recuperan los datos del producto padre, perdiendo toda la configuracion de componentes.
 
-## Solución propuesta
+## Solucion
 
-Añadir una validación visual que alerte al usuario cuando un campo de entrada está configurado en una hoja diferente a la mayoría de los campos del mismo producto.
+Guardar `compositeComponentsData` y `activeCompositeComponents` dentro del snapshot que `QuoteItem` envia al padre, y persistirlos en un nuevo campo JSONB `composite_data` en las tablas `quote_items` y `sales_order_items`.
 
-## Diseño de la validación
+## Cambios
 
-### Lógica de detección
+### 1. Migracion de base de datos
 
-1. Calcular la "hoja dominante" del producto: la hoja que usa la mayoría de los campos
-2. Identificar campos "anómalos": aquellos que usan una hoja diferente a la dominante
-3. Mostrar un indicador visual de advertencia en esos campos
+Anadir columna `composite_data JSONB` a ambas tablas:
 
-### Ubicación en la UI
-
-En `ProductManagement.tsx`, sección de edición de campos de entrada (prompts):
-- Mostrar un icono de advertencia naranja junto al selector de hoja cuando difiere de la dominante
-- Añadir tooltip explicativo: "Este campo usa una hoja diferente al resto ({hojaDominante}). Verifica si es intencional."
-
-### Cuándo se activa
-
-- Al renderizar la lista de prompts
-- Cuando el usuario cambia la hoja de un prompt (validación en tiempo real)
-
-## Cambios en código
-
-### Archivo: `src/pages/ProductManagement.tsx`
-
-**1. Nueva función helper para detectar incongruencias (línea ~600)**
-
-Función que analiza todos los prompts y determina:
-- La hoja más usada (dominante)
-- Qué prompts están en hojas diferentes
-
-**2. Indicador visual en el selector de hoja de cada prompt (línea ~2545-2572)**
-
-Añadir junto al `Select` de hoja:
-- Icono `AlertTriangle` de Lucide (color naranja/amber)
-- Tooltip con explicación
-- Solo visible cuando el prompt está en hoja diferente a la dominante
-
-**3. Alerta al guardar/actualizar un prompt (opcional)**
-
-Cuando el usuario guarda un prompt con hoja diferente, mostrar un toast de advertencia (no bloquear, solo informar).
-
-## Mockup visual
-
-```text
-Campos de entrada actuales:
-┌────────────────────────────────────────────────────────────────┐
-│ ▪ Cantidad ejemplares                                          │
-│   Hoja: [Datos ▾]  Rótulo: [B5]  Valor: [C5]  Orden: [1]       │
-└────────────────────────────────────────────────────────────────┘
-
-┌────────────────────────────────────────────────────────────────┐
-│ ▪ Tira y retira                                        ⚠️      │
-│   Hoja: [Otros ▾] ⚠️  Rótulo: [B23]  Valor: [C23]  Orden: [8]  │
-│   └──> Tooltip: "Hoja diferente al resto (Datos). Verifica."  │
-└────────────────────────────────────────────────────────────────┘
+```sql
+ALTER TABLE quote_items ADD COLUMN composite_data jsonb;
+ALTER TABLE sales_order_items ADD COLUMN composite_data jsonb;
 ```
 
-## Criterios de activación
+La columna almacenara un objeto con esta estructura:
 
-| Condición | Acción |
-|-----------|--------|
-| 80%+ de prompts en una hoja | Esa es la hoja dominante |
-| Prompt en hoja diferente a dominante | Mostrar advertencia |
-| Solo 1-2 prompts en total | No aplicar validación (no hay "patrón") |
+```text
+{
+  "components": {            -- ComponentsDataMap serializado
+    "componentId:1": {
+      "prompts": [...],
+      "outputs": [...],
+      "price": 123.45,
+      "alias": "Cubierta"
+    },
+    ...
+  },
+  "activeComponents": [...], -- ActiveComponent[] serializado
+  "totalPrice": 456.78,
+  "parentOutputs": [...]
+}
+```
 
-## Archivos a modificar
+### 2. QuoteItem.tsx - syncToParent
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/pages/ProductManagement.tsx` | Añadir función helper `getSheetInconsistencies()` y mostrar indicadores visuales de advertencia |
+Anadir al snapshot los datos compuestos:
 
-## Notas técnicas
+- `compositeData`: objeto con `components`, `activeComponents`, `totalPrice`, `parentOutputs`
+- Solo se incluye si el producto tiene componentes configurados (`hasConfiguredComponents`)
 
-- La validación es solo informativa (no bloquea acciones)
-- Se basa en el análisis estadístico de las hojas usadas por todos los prompts del producto
-- El umbral del 80% evita falsos positivos en productos con prompts distribuidos intencionalmente en varias hojas
-- El icono usa el color `text-amber-500` para advertencia (no rojo/error)
-- Se añade un `Tooltip` de Radix UI para explicar el problema sin saturar la interfaz
+### 3. QuoteNew.tsx - Guardar composite_data
+
+En la funcion de guardado, incluir `composite_data` del snapshot al insertar en `quote_items`.
+
+### 4. QuoteEdit.tsx - Guardar y cargar composite_data
+
+- **Guardar**: Incluir `composite_data` en el insert de items
+- **Cargar**: Leer `composite_data` del item de la BD y pasarlo como parte del `initialData` al QuoteItem
+
+### 5. QuoteItem.tsx - Restaurar estado compuesto desde initialData
+
+Al inicializar, si `initialData.compositeData` existe:
+
+- Restaurar `activeCompositeComponents` desde `compositeData.activeComponents`
+- Restaurar `compositeComponentsData` desde `compositeData.components`
+- Restaurar `compositeTotalPrice` y `compositeParentOutputs`
+
+Esto permite que al abrir un presupuesto guardado, los componentes se muestren con sus datos sin necesidad de recalcular desde la API.
+
+### 6. SalesOrderNew/SalesOrderEdit (si aplica)
+
+Aplicar la misma logica de guardado/carga para pedidos, ya que comparten la misma estructura.
+
+## Secuencia
+
+```text
+1. Migracion DB (composite_data column)
+2. QuoteItem syncToParent (incluir compositeData)
+3. QuoteNew/QuoteEdit guardado (persistir composite_data)
+4. QuoteEdit carga (leer composite_data y pasar a initialData)
+5. QuoteItem init (restaurar estado desde initialData.compositeData)
+6. Repetir para SalesOrder si aplica
+```
+
+## Riesgos y mitigaciones
+
+- **Riesgo**: Los datos guardados pueden quedar desactualizados si se modifican los productos. **Mitigacion**: El comportamiento actual ya es asi con prompts/outputs -- los datos guardados son definitivos.
+- **Riesgo**: Tamano del JSONB. **Mitigacion**: Los datos de componentes son pequenos (prompts + outputs + precio por componente), similar a lo que ya se guarda en `prompts` y `outputs`.
+- **Sin regresiones**: No se modifica la logica de calculo ni de recalculacion; solo se anade persistencia.
 
