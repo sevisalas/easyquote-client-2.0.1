@@ -716,8 +716,49 @@ export default function CompositeComponentTabs({
           if (error) throw error;
           console.log(`[RECEIVER-PRICING-RESPONSE] component=${component.component_alias} prompts=`, JSON.stringify(data?.prompts?.map((p:any) => ({id:p.id, text:p.promptText, val:p.currentValue}))));
           
-          const prompts = data?.prompts || [];
-          const outputs = data?.outputValues || data?.outputs || [];
+          // RE-PATCH: Cuando hay campos condicionales (ej: "Personalizado" activa Ancho/Alto),
+          // el API puede ignorar los valores enviados en la primera llamada.
+          // Detectamos si algún input heredado difiere del valor devuelto y re-enviamos.
+          let finalData = data;
+          const returnedPrompts = data?.prompts || [];
+          const mismatchedInputs: Array<{id: string; value: any}> = [];
+          
+          for (const input of componentInputs) {
+            const returned = returnedPrompts.find((p: any) => p.id === input.id);
+            if (returned) {
+              const sentVal = String(input.value).trim();
+              const gotVal = String(returned.currentValue ?? "").trim();
+              if (sentVal !== gotVal) {
+                mismatchedInputs.push(input);
+              }
+            }
+          }
+          
+          if (mismatchedInputs.length > 0) {
+            console.log(`[RECEIVER-RE-PATCH] component=${component.component_alias} mismatches=`, JSON.stringify(mismatchedInputs.map(m => ({id: m.id, sent: m.value}))));
+            
+            // Build inputs from the response prompts (current state) + override with our desired values
+            const rePatchInputs = returnedPrompts.map((p: any) => {
+              const override = componentInputs.find(i => i.id === p.id);
+              return { id: p.id, value: override ? override.value : p.currentValue };
+            });
+            
+            const { data: data2, error: error2 } = await invokeEasyQuoteFunction("easyquote-pricing", {
+              token,
+              productId: component.component_product_id,
+              inputs: rePatchInputs,
+              productType: "composite",
+              componentId: componentKey,
+            });
+            
+            if (!error2 && data2) {
+              console.log(`[RECEIVER-RE-PATCH-RESPONSE] component=${component.component_alias} prompts=`, JSON.stringify(data2?.prompts?.map((p:any) => ({id:p.id, text:p.promptText, val:p.currentValue}))));
+              finalData = data2;
+            }
+          }
+          
+          const prompts = finalData?.prompts || [];
+          const outputs = finalData?.outputValues || finalData?.outputs || [];
           const priceOutput = outputs.find((o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price");
           const price = priceOutput
             ? parseFloat(String(priceOutput.value ?? "0").replace(/\./g, "").replace(",", ".")) || 0
