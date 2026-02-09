@@ -341,9 +341,13 @@ export default function CompositeComponentTabs({
   // esté “poblado” para poder calcular componentes en la página de test.
   const parentInputs = useMemo(() => {
     const inputs: { id: string; value: any }[] = [];
+    const seenIds = new Set<string>();
+
+    // Fuente 1: prompts del producto padre (parentPromptsForLookup)
     for (const p of parentPromptsForLookup) {
       const id = String((p as any)?.id ?? "").trim();
       if (!id) continue;
+      seenIds.add(id);
 
       const value = parentPromptValues[id] ?? (p as any)?.currentValue;
       if (value === undefined || value === null) continue;
@@ -357,6 +361,23 @@ export default function CompositeComponentTabs({
         inputs.push({ id, value: actualValue });
       }
     }
+
+    // Fuente 2: valores en parentPromptValues que NO están en parentPromptsForLookup.
+    // Cubre el caso donde QuoteItem ya tiene promptValues pero pricing (parentProduct) aún no ha cargado.
+    for (const [id, rawValue] of Object.entries(parentPromptValues)) {
+      if (seenIds.has(id)) continue;
+      if (rawValue === undefined || rawValue === null) continue;
+
+      const actualValue =
+        typeof rawValue === "object" && rawValue !== null && "value" in (rawValue as any)
+          ? (rawValue as any).value
+          : rawValue;
+
+      if (actualValue !== undefined && actualValue !== null) {
+        inputs.push({ id, value: actualValue });
+      }
+    }
+
     return inputs;
   }, [parentPromptsForLookup, parentPromptValues]);
 
