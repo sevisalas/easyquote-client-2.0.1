@@ -103,17 +103,7 @@ export default function CompositeComponentTabs({
     return map;
   }, [parentPromptsForLookup]);
 
-  const getEffectiveParentPromptValue = useCallback(
-    (sourcePromptName: string) => {
-      const key = String(sourcePromptName ?? "").trim();
-      const fromState = parentPromptValues[key];
-      if (fromState !== undefined && fromState !== null) return fromState;
-      const fromProduct = parentPromptValueById.get(key);
-      if (fromProduct !== undefined && fromProduct !== null) return fromProduct;
-      return undefined;
-    },
-    [parentPromptValues, parentPromptValueById]
-  );
+  
 
   // Igual que en PromptsForm: no “commit” mientras se escribe; Enter hace blur y el blur comitea.
   const handleEnterToBlur = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -192,6 +182,48 @@ export default function CompositeComponentTabs({
     gcTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
+
+  // Mapa: definitionUUID -> pricingUUID (resuelve discrepancia de UUIDs entre endpoints)
+  const defUuidToPricingKey = useMemo(() => {
+    const normCell = (v: any) => v ? String(v).replace(/\$/g, "").trim().toUpperCase() : null;
+    const map = new Map<string, string>();
+    const cellToPricing = new Map<string, string>();
+    const rawPricingPrompts = parentProduct?.prompts || parentProduct?.inputs || [];
+    for (const p of rawPricingPrompts) {
+      const id = String(p?.id ?? "").trim();
+      const cell = normCell(getPromptCell(p));
+      if (id && cell) cellToPricing.set(cell, id);
+    }
+    for (const d of parentPromptDefinitions as any[]) {
+      const defId = String(d?.id ?? "").trim();
+      const cell = normCell(getPromptCell(d));
+      if (!defId || !cell) continue;
+      const pricingId = cellToPricing.get(cell);
+      if (pricingId && pricingId !== defId) map.set(defId, pricingId);
+    }
+    return map;
+  }, [parentProduct, parentPromptDefinitions]);
+
+  const getEffectiveParentPromptValue = useCallback(
+    (sourcePromptName: string) => {
+      const key = String(sourcePromptName ?? "").trim();
+      // 1) Búsqueda directa por UUID
+      const fromState = parentPromptValues[key];
+      if (fromState !== undefined && fromState !== null) return fromState;
+      const fromProduct = parentPromptValueById.get(key);
+      if (fromProduct !== undefined && fromProduct !== null) return fromProduct;
+      // 2) Fallback: resolver vía celda (definition UUID -> pricing UUID)
+      const pricingKey = defUuidToPricingKey.get(key);
+      if (pricingKey) {
+        const fromStateViaCell = parentPromptValues[pricingKey];
+        if (fromStateViaCell !== undefined && fromStateViaCell !== null) return fromStateViaCell;
+        const fromProductViaCell = parentPromptValueById.get(pricingKey);
+        if (fromProductViaCell !== undefined && fromProductViaCell !== null) return fromProductViaCell;
+      }
+      return undefined;
+    },
+    [parentPromptValues, parentPromptValueById, defUuidToPricingKey]
+  );
 
   // Fetch prompt connections from database
   // NOTE: Use api_user_id for shared product configurations across organizations
@@ -479,6 +511,7 @@ export default function CompositeComponentTabs({
               }
             }
           }
+
           
           for (const [promptId, value] of Object.entries(userEditedValues)) {
             if (value !== undefined && value !== null) {
@@ -544,6 +577,7 @@ export default function CompositeComponentTabs({
 
   // ¿Los interiores ya terminaron de cargar?
   const sourcesReady = sourceComponentQueriesResults.every(q => !q.isLoading && !q.isFetching);
+
 
 
   // Debug desactivado: evitar spam en consola
