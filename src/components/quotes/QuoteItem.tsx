@@ -58,6 +58,12 @@ type ItemSnapshot = {
   itemAdditionals?: any[];
   isFinalized?: boolean;
   boundProductConfig?: BoundProductConfig | null;  // Configuración de producto encuadernado
+  compositeData?: {  // Datos de componentes compuestos
+    components: any;
+    activeComponents: any[];
+    totalPrice: number;
+    parentOutputs: any[];
+  };
 };
 
 interface QuoteItemProps {
@@ -252,14 +258,25 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     : (!needsConfigSelector || boundProductConfig !== null);
 
   // Al cambiar de producto: resetear UI de compuestos
+  // PERO no resetear si estamos restaurando desde initialData (compositeData ya fue seteado)
+  const compositeResetProductRef = useRef<string>("");
   useEffect(() => {
     if (!productId) return;
-    setActiveComponent(""); // Reset - se auto-selecciona cuando llegan datos
-    setActiveCompositeComponents([]);
-    setCompositeComponentsData({});
-    setCompositeTotalPrice(0);
-    setCompositeParentOutputs([]);
-    setComponentPromptValues({});
+    // Si es el primer seteo (inicialización), no resetear si ya tenemos datos restaurados
+    if (compositeResetProductRef.current === "" && Object.keys(compositeComponentsData).length > 0) {
+      compositeResetProductRef.current = productId;
+      return;
+    }
+    // Solo resetear si el producto realmente cambió
+    if (compositeResetProductRef.current && compositeResetProductRef.current !== productId) {
+      setActiveComponent("");
+      setActiveCompositeComponents([]);
+      setCompositeComponentsData({});
+      setCompositeTotalPrice(0);
+      setCompositeParentOutputs([]);
+      setComponentPromptValues({});
+    }
+    compositeResetProductRef.current = productId;
   }, [productId]);
   
   // Auto-seleccionar el primer componente cuando lleguen los datos
@@ -405,6 +422,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       // Restaurar configuración de producto encuadernado si existe
       if (initialData.boundProductConfig) {
         setBoundProductConfig(initialData.boundProductConfig);
+      }
+      // Restaurar datos de componentes compuestos si existen
+      if ((initialData as any).compositeData) {
+        const cd = (initialData as any).compositeData;
+        if (cd.activeComponents) setActiveCompositeComponents(cd.activeComponents);
+        if (cd.components) setCompositeComponentsData(cd.components);
+        if (typeof cd.totalPrice === 'number') setCompositeTotalPrice(cd.totalPrice);
+        if (cd.parentOutputs) setCompositeParentOutputs(cd.parentOutputs);
       }
     } catch {}
   }, [initialData]);
@@ -1864,6 +1889,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       ? getProductLabel(products.find((p: any) => String(p.id) === String(productId))) 
       : "";
     
+    // Construir compositeData si hay componentes configurados
+    const compositeData = hasConfiguredComponents && Object.keys(compositeComponentsData).length > 0
+      ? {
+          components: compositeComponentsData,
+          activeComponents: activeCompositeComponents,
+          totalPrice: compositeTotalPrice,
+          parentOutputs: compositeParentOutputs,
+        }
+      : undefined;
+
     const snapshot = {
       productId,
       prompts: promptsObj,
@@ -1877,6 +1912,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       itemAdditionals,
       // Preservar isFinalized del padre (initialData) - NO sobrescribirlo aquí
       boundProductConfig, // Guardar configuración de producto encuadernado
+      compositeData, // Datos de componentes compuestos para persistencia
     };
     
     const snapshotString = JSON.stringify(snapshot);
@@ -1885,7 +1921,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       debugLog('✅ Sincronizando snapshot al padre');
       onChange(id, snapshot);
     }
-  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, displayName, itemDescription, itemAdditionals, products, initialData?.isFinalized, isInitializing, isCustomProduct, customPrice, customQuantity, pricing, isPricingLoading, userEditedPrice, boundProductConfig]);
+  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, displayName, itemDescription, itemAdditionals, products, initialData?.isFinalized, isInitializing, isCustomProduct, customPrice, customQuantity, pricing, isPricingLoading, userEditedPrice, boundProductConfig, hasConfiguredComponents, compositeComponentsData, activeCompositeComponents, compositeTotalPrice, compositeParentOutputs]);
 
   // Verificar que el artículo está completo Y no se está recalculando el precio
   const isCalculating = isPricingLoading || multiLoading || compositeMultiLoading;
@@ -1913,6 +1949,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     isInitializing,
     isPricingLoading,
     syncToParent,
+    compositeComponentsData,
+    compositeTotalPrice,
   ]);
 
   // Debug desactivado para evitar spam

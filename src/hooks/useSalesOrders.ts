@@ -52,6 +52,7 @@ export interface SalesOrderItem {
   position: number;
   production_status?: 'pending' | 'in_progress' | 'completed';
   imposition_data?: Record<string, any>;
+  composite_data?: Record<string, any>;
 }
 
 export const useSalesOrders = () => {

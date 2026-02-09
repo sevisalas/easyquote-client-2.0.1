@@ -27,6 +27,7 @@ type ItemSnapshot = {
   itemAdditionals?: any[];
   needsRecalculation?: boolean;
   isFinalized?: boolean;
+  compositeData?: any; // Datos de componentes compuestos
 };
 
 type SelectedAdditional = {
@@ -457,6 +458,7 @@ export default function SalesOrderNew() {
           price: item.price || 0,
           quantity: quantity,
           position: index,
+          composite_data: item.compositeData || null,
         };
       });
 

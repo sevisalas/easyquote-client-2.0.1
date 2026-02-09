@@ -35,6 +35,7 @@ type ItemSnapshot = {
   itemAdditionals?: any[];
   needsRecalculation?: boolean;
   isFinalized?: boolean; // Track if item is finalized
+  compositeData?: any; // Datos de componentes compuestos
 };
 type SelectedAdditional = {
   id: string;
@@ -189,6 +190,7 @@ export default function QuoteNew() {
           itemDescription: item.description || "",
           // Descripción (solo para productos custom)
           itemAdditionals: item.item_additionals || [],
+          compositeData: item.composite_data || undefined,
           needsRecalculation: false,
           isFinalized: true
         };
@@ -504,7 +506,8 @@ export default function QuoteNew() {
           quantity: 1,
           discount_percentage: 0,
           position: index,
-          item_additionals: item.itemAdditionals || []
+          item_additionals: item.itemAdditionals || [],
+          composite_data: item.compositeData || null,
         };
       });
       const {

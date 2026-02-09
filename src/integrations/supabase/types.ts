@@ -2235,6 +2235,7 @@ export type Database = {
         Row: {
           accepted: boolean | null
           accepted_quantity: number | null
+          composite_data: Json | null
           created_at: string
           description: string | null
           discount_percentage: number | null
@@ -2255,6 +2256,7 @@ export type Database = {
         Insert: {
           accepted?: boolean | null
           accepted_quantity?: number | null
+          composite_data?: Json | null
           created_at?: string
           description?: string | null
           discount_percentage?: number | null
@@ -2275,6 +2277,7 @@ export type Database = {
         Update: {
           accepted?: boolean | null
           accepted_quantity?: number | null
+          composite_data?: Json | null
           created_at?: string
           description?: string | null
           discount_percentage?: number | null
@@ -2451,6 +2454,7 @@ export type Database = {
       }
       sales_order_items: {
         Row: {
+          composite_data: Json | null
           created_at: string
           description: string | null
           id: string
@@ -2468,6 +2472,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          composite_data?: Json | null
           created_at?: string
           description?: string | null
           id?: string
@@ -2485,6 +2490,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          composite_data?: Json | null
           created_at?: string
           description?: string | null
           id?: string
