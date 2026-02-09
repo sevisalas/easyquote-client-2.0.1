@@ -108,8 +108,7 @@ export default function SalesOrderNew() {
     return itemsArray.every(item => 
       item.productId && 
       item.price && 
-      item.price > 0 && 
-      item.isFinalized === true
+      item.price > 0
     );
   }, [items]);
   
