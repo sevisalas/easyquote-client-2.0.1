@@ -430,6 +430,28 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         if (cd.components) setCompositeComponentsData(cd.components);
         if (typeof cd.totalPrice === 'number') setCompositeTotalPrice(cd.totalPrice);
         if (cd.parentOutputs) setCompositeParentOutputs(cd.parentOutputs);
+        // Restaurar componentPromptValues desde los prompts guardados de cada componente
+        // para que las queries de pricing usen los valores del usuario (no los defaults del GET)
+        if (cd.components && typeof cd.components === 'object') {
+          const restoredPromptValues: Record<string, Record<string, any>> = {};
+          for (const [compKey, compData] of Object.entries(cd.components as Record<string, any>)) {
+            const prompts = compData?.prompts;
+            if (Array.isArray(prompts)) {
+              const vals: Record<string, any> = {};
+              for (const p of prompts) {
+                if (p?.id && p?.currentValue !== undefined) {
+                  vals[p.id] = p.currentValue;
+                }
+              }
+              if (Object.keys(vals).length > 0) {
+                restoredPromptValues[compKey] = vals;
+              }
+            }
+          }
+          if (Object.keys(restoredPromptValues).length > 0) {
+            setComponentPromptValues(restoredPromptValues);
+          }
+        }
       }
     } catch {}
   }, [initialData]);
