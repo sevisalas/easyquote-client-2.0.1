@@ -532,6 +532,7 @@ export default function CompositeComponentTabs({
 
           for (const conn of connections as any[]) {
             let sourceValue = getEffectiveParentPromptValue(conn.source_prompt_name);
+            console.log(`[INHERIT-DEBUG] conn source=${conn.source_prompt_name} → target=${conn.target_prompt_name} | resolved=${sourceValue} | parentKeys=${Object.keys(parentPromptValues).join(',')}`);
             if (sourceValue !== undefined && sourceValue !== null) {
               const actualValue = (typeof sourceValue === 'object' && sourceValue !== null && 'value' in sourceValue)
                 ? sourceValue.value : sourceValue;
