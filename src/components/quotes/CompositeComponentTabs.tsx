@@ -183,24 +183,53 @@ export default function CompositeComponentTabs({
     refetchOnWindowFocus: false,
   });
 
-  // Mapa: definitionUUID -> pricingUUID (resuelve discrepancia de UUIDs entre endpoints)
+  // Mapa: definitionUUID -> pricingUUID
+  // Las connections usan UUIDs de definiciones (easyquote-prompts), pero parentPromptValues
+  // usa UUIDs de pricing (easyquote-pricing). Necesitamos traducir.
+  // Estrategia: definition.promptSeq == pricing.promptSeq (ambos lo tienen)
+  // Fallback: definition.promptCell == pricing.promptCell (si pricing lo devuelve)
   const defUuidToPricingKey = useMemo(() => {
-    const normCell = (v: any) => v ? String(v).replace(/\$/g, "").trim().toUpperCase() : null;
     const map = new Map<string, string>();
-    const cellToPricing = new Map<string, string>();
     const rawPricingPrompts = parentProduct?.prompts || parentProduct?.inputs || [];
+    if (!rawPricingPrompts.length || !parentPromptDefinitions.length) return map;
+
+    const normCell = (v: any) => v ? String(v).replace(/\$/g, "").trim().toUpperCase() : null;
+
+    // Build pricing lookup maps
+    const pricingBySeq = new Map<number, string>();
+    const pricingByCell = new Map<string, string>();
     for (const p of rawPricingPrompts) {
       const id = String(p?.id ?? "").trim();
+      if (!id) continue;
+      const seq = Number(p?.promptSeq ?? p?.seq);
+      if (Number.isFinite(seq)) pricingBySeq.set(seq, id);
       const cell = normCell(getPromptCell(p));
-      if (id && cell) cellToPricing.set(cell, id);
+      if (cell) pricingByCell.set(cell, id);
     }
+
+    // Map each definition UUID to its pricing UUID counterpart
     for (const d of parentPromptDefinitions as any[]) {
       const defId = String(d?.id ?? "").trim();
+      if (!defId) continue;
+
+      // Already same? skip
+      if (rawPricingPrompts.some((p: any) => String(p?.id ?? "").trim() === defId)) continue;
+
+      // Try by promptSeq first (most reliable)
+      const seq = Number(d?.promptSeq ?? d?.seq);
+      if (Number.isFinite(seq) && pricingBySeq.has(seq)) {
+        map.set(defId, pricingBySeq.get(seq)!);
+        continue;
+      }
+
+      // Try by promptCell
       const cell = normCell(getPromptCell(d));
-      if (!defId || !cell) continue;
-      const pricingId = cellToPricing.get(cell);
-      if (pricingId && pricingId !== defId) map.set(defId, pricingId);
+      if (cell && pricingByCell.has(cell)) {
+        map.set(defId, pricingByCell.get(cell)!);
+      }
     }
+
+    console.log("[CompositeComponentTabs] defUuidToPricingKey built:", map.size, "mappings", Array.from(map.entries()).slice(0, 5));
     return map;
   }, [parentProduct, parentPromptDefinitions]);
 
@@ -212,13 +241,13 @@ export default function CompositeComponentTabs({
       if (fromState !== undefined && fromState !== null) return fromState;
       const fromProduct = parentPromptValueById.get(key);
       if (fromProduct !== undefined && fromProduct !== null) return fromProduct;
-      // 2) Fallback: resolver vía celda (definition UUID -> pricing UUID)
+      // 2) Fallback: resolver vía definición UUID -> pricing UUID
       const pricingKey = defUuidToPricingKey.get(key);
       if (pricingKey) {
-        const fromStateViaCell = parentPromptValues[pricingKey];
-        if (fromStateViaCell !== undefined && fromStateViaCell !== null) return fromStateViaCell;
-        const fromProductViaCell = parentPromptValueById.get(pricingKey);
-        if (fromProductViaCell !== undefined && fromProductViaCell !== null) return fromProductViaCell;
+        const fromStateViaMap = parentPromptValues[pricingKey];
+        if (fromStateViaMap !== undefined && fromStateViaMap !== null) return fromStateViaMap;
+        const fromProductViaMap = parentPromptValueById.get(pricingKey);
+        if (fromProductViaMap !== undefined && fromProductViaMap !== null) return fromProductViaMap;
       }
       return undefined;
     },
