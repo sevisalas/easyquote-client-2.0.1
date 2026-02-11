@@ -1,0 +1,1 @@
+UPDATE organization_members SET display_name = 'Antonio' WHERE user_id = '2e123dbf-1e7f-458c-bfa6-f7167cc476d9' AND display_name IS NULL;
