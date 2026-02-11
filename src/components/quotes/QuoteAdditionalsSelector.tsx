@@ -139,6 +139,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
                   step="0.01"
                   value={additional.value}
                   onChange={(e) => updateAdditionalValue(additional.id, parseFloat(e.target.value) || 0)}
+                  onFocus={(e) => e.target.select()}
                   className="w-24 h-9"
                 />
                 <span className="text-sm text-muted-foreground w-4">
@@ -197,6 +198,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
             step="0.01" 
             value={predefinedValue} 
             onChange={(e) => setPredefinedValue(parseFloat(e.target.value) || 0)}
+            onFocus={(e) => e.target.select()}
             placeholder="0" 
             className="w-24 h-9" 
             disabled={!newAdditionalId}
@@ -230,6 +232,7 @@ export default function QuoteAdditionalsSelector({ selectedAdditionals, onChange
           step="0.01"
           value={customValue}
           onChange={(e) => setCustomValue(parseFloat(e.target.value) || 0)}
+          onFocus={(e) => e.target.select()}
           placeholder="0"
           className="w-24 h-9"
         />

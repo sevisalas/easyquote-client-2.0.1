@@ -52,6 +52,7 @@ interface SelectedQuoteAdditional {
   type: "net_amount" | "quantity_multiplier" | "percentage" | "custom";
   value: number;
   isCustom?: boolean;
+  is_discount?: boolean;
 }
 
 interface Quote {
@@ -361,6 +362,16 @@ export default function QuoteEdit() {
         ? data.customer_id.replace('holded:', '') 
         : data.customer_id;
 
+      // Preparar quote_additionals JSONB para persistencia
+      const quoteAdditionalsJson = quoteAdditionals.map((a) => ({
+        id: a.id,
+        name: a.name,
+        type: a.type,
+        value: a.value,
+        isCustom: a.isCustom || false,
+        is_discount: a.is_discount || false,
+      }));
+
       const { error } = await supabase
         .from("quotes")
         .update({
@@ -371,8 +382,9 @@ export default function QuoteEdit() {
           status: data.status,
           valid_until: data.valid_until,
           subtotal: calculateSubtotal(),
-          final_price: calculateTotal(), // Usar calculateTotal() que incluye ajustes
-          selections: null, // Limpiar selections al guardar
+          final_price: calculateTotal(),
+          selections: null,
+          quote_additionals: quoteAdditionalsJson,
           updated_at: new Date().toISOString(),
         })
         .eq("id", id);
@@ -1116,9 +1128,15 @@ export default function QuoteEdit() {
             )}
           </div>
 
+          {/* Quote Adjustments - inline within items card */}
+          <div className="mt-4 pt-3 border-t border-border">
+            <h4 className="text-sm font-semibold mb-2">Ajustes del presupuesto</h4>
+            <QuoteAdditionalsSelector selectedAdditionals={quoteAdditionals} onChange={setQuoteAdditionals} />
+          </div>
+
           {items.length > 0 && (
             <>
-              <div className="bg-muted/30 rounded-md p-3 border border-border space-y-1.5 mt-2">
+              <div className="bg-muted/30 rounded-md p-3 border border-border space-y-1.5 mt-4">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-muted-foreground">Subtotal:</span>
                   <span className="text-sm font-medium">{fmtEUR(calculateSubtotal())}</span>
@@ -1129,7 +1147,6 @@ export default function QuoteEdit() {
                   <>
                     {quoteAdditionals.map((additional, index) => {
                       let amount = 0;
-                      // Remove "Ajuste sobre el presupuesto" from name if present
                       const cleanName = additional.name
                         .replace(/\s*Ajuste sobre el presupuesto\s*/gi, '')
                         .replace(/\s*Ajuste sobre el pedido\s*/gi, '')
@@ -1177,16 +1194,6 @@ export default function QuoteEdit() {
               </div>
             </>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Quote Adjustments */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Ajustes del presupuesto</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <QuoteAdditionalsSelector selectedAdditionals={quoteAdditionals} onChange={setQuoteAdditionals} />
         </CardContent>
       </Card>
 
