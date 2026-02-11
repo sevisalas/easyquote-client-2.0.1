@@ -30,7 +30,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
 import { ChevronDown, ChevronUp, Pencil, Trash2, Package } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -2296,23 +2296,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                                   : effectiveValue ?? prompt.default;
                                 
                                 // Checkbox type
-                                if (prompt.type === 'checkbox') {
-                                  const isChecked = value === true || value === "true" || value === "Sí" || value === "Si" || value === 1 || value === "1";
-                                  return (
-                                    <div key={prompt.id} className="flex items-center gap-2 py-1">
-                                      <span className="text-sm">{prompt.label}</span>
-                                      <Checkbox
-                                        id={`restrictive-${prompt.id}`}
-                                        checked={isChecked}
-                                        onCheckedChange={(checked) => {
-                                          const newValue = checked ? "Sí" : "No";
-                                          handlePromptChange(prompt.id, newValue, prompt.label);
-                                          handlePromptCommit(prompt.id, newValue, prompt.label);
-                                        }}
-                                      />
-                                    </div>
-                                  );
-                                }
+                                // Checkbox type removed - now handled as select
                                 
                                 // Select type
                                 if (prompt.type === 'select' && prompt.options?.length) {

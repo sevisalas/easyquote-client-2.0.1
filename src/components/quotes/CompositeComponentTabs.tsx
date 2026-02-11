@@ -6,7 +6,7 @@ import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 import PromptsForm, { type PromptDef, extractPrompts } from "./PromptsForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useProductPromptSettings } from "@/hooks/useProductPromptSettings";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 
@@ -1508,30 +1508,8 @@ export default function CompositeComponentTabs({
                       ? (effectiveValue as any).value
                       : effectiveValue ?? prompt.default;
 
-                  if (prompt.type === "checkbox") {
-                    const isChecked =
-                      value === true ||
-                      value === "true" ||
-                      value === "Sí" ||
-                      value === "Si" ||
-                      value === 1 ||
-                      value === "1";
-                    return (
-                      <div key={prompt.id} className="flex items-center gap-2 py-1">
-                        <Checkbox
-                          id={`restrictive-parent-${prompt.id}`}
-                          checked={isChecked}
-                          onCheckedChange={(checked) => {
-                            const newValue = checked ? "Sí" : "No";
-                            onParentPromptChange(prompt.id, newValue);
-                            onParentPromptCommit?.(prompt.id, newValue);
-                          }}
-                        />
-                        <label htmlFor={`restrictive-parent-${prompt.id}`} className="text-sm cursor-pointer">
-                          {prompt.label}
-                        </label>
-                      </div>
-                    );
+                  if (false) {
+                    // checkbox type removed - now handled as select
                   }
 
                   if (prompt.type === "select" && prompt.options?.length) {
@@ -1646,30 +1624,32 @@ export default function CompositeComponentTabs({
                             const typeKey = getPromptTypeKey(prompt);
 
                             if (typeKey.includes("check") || typeKey.includes("boolean")) {
-                              const isChecked =
-                                value === true ||
-                                value === "true" ||
-                                value === "Sí" ||
-                                value === "Si" ||
-                                value === 1 ||
-                                value === "1";
+                              const options = [
+                                { value: "Sí", label: "Sí" },
+                                { value: "No", label: "No" },
+                              ];
+                              const valueStr = value === undefined || value === null ? "" : String(value);
                               return (
-                                <div key={prompt.id} className="flex items-center gap-2 py-1">
-                                  <Checkbox
-                                    id={`restrictive-component-${componentKey}-${prompt.id}`}
-                                    checked={isChecked}
-                                    onCheckedChange={(checked) => {
-                                      const newValue = checked ? "Sí" : "No";
-                                      onComponentPromptChange?.(componentKey, prompt.id, newValue);
-                                      onComponentPromptCommit?.(componentKey, prompt.id, newValue);
+                                <div key={prompt.id} className="space-y-1.5">
+                                  <label className="text-sm font-medium">{prompt.promptText || prompt.label || prompt.id}</label>
+                                  <Select
+                                    value={valueStr}
+                                    onValueChange={(v) => {
+                                      onComponentPromptChange?.(componentKey, prompt.id, v);
+                                      onComponentPromptCommit?.(componentKey, prompt.id, v);
                                     }}
-                                  />
-                                  <label 
-                                    htmlFor={`restrictive-component-${componentKey}-${prompt.id}`} 
-                                    className="text-sm cursor-pointer"
                                   >
-                                    {prompt.promptText || prompt.label || prompt.id}
-                                  </label>
+                                    <SelectTrigger className="h-9 w-full">
+                                      <SelectValue placeholder="—" />
+                                    </SelectTrigger>
+                                    <SelectContent className="z-50 bg-popover">
+                                      {options.map((o, idx) => (
+                                        <SelectItem key={`${o.value}-${idx}`} value={o.value}>
+                                          {o.label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
                                 </div>
                               );
                             }
