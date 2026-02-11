@@ -5,6 +5,7 @@ import PromptsForm, { extractPrompts, type PromptDef } from "./PromptsForm";
 import { GENERAL_COMPONENT, useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { useProductPromptSettings } from "@/hooks/useProductPromptSettings";
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
+import { resolveLivePromptCellLabels } from "@/lib/easyquoteExcelPromptLabels";
 import { type BoundProductConfig, getActiveComponents } from "./BoundProductConfigSelector";
 
 const DEBUG_COMPONENT_TABS = false;
@@ -137,6 +138,30 @@ export default function ComponentTabsPromptsForm({
     staleTime: 30 * 60 * 1000, // 30 minutos - las definiciones de prompts casi nunca cambian
     gcTime: 60 * 60 * 1000, // 1 hora en cache
     refetchOnWindowFocus: false
+  });
+
+  // Resolver etiquetas de celdas de checkbox desde el Excel real
+  // El API de definiciones solo trae promptCell (ej: "B10"), el nombre descriptivo está en la celda del Excel
+  const checkboxCells = useMemo(() => {
+    return (promptDefinitions as any[])
+      .filter(d => Number(d?.promptType) === 6)
+      .map(d => {
+        const cell = getPromptCell(d);
+        return extractCellRef(cell) ?? normalizePromptName(cell);
+      })
+      .filter(Boolean);
+  }, [promptDefinitions]);
+
+  const { data: checkboxExcelLabels = {} } = useQuery({
+    queryKey: ["checkbox-excel-labels", productId, checkboxCells.join(",")],
+    queryFn: async () => {
+      const token = await getEasyQuoteToken();
+      if (!token) return {};
+      return resolveLivePromptCellLabels({ token, productId, promptCells: checkboxCells });
+    },
+    enabled: checkboxCells.length > 0 && !!productId,
+    staleTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   // Usamos siempre los prompts del producto (pricing) porque tienen los labels (promptText) y currentValue.
@@ -305,10 +330,10 @@ export default function ComponentTabsPromptsForm({
       // Respetar is_hidden de product_prompt_settings
       if (cellRef && isPromptHiddenSetting(cellRef)) continue;
       
-      // Jerarquía de labels: 1) Custom label en settings, 2) promptText, 3) "Campo [celda]"
+      // Jerarquía de labels: 1) Custom label en settings, 2) Excel label (desde la celda), 3) "Campo [celda]"
       const customLabel = cellRef ? settingsLabelMap.get(cellRef) : undefined;
-      const promptText = def?.promptText ?? def?.prompt_text;
-      const label = customLabel || promptText || (cellRef ? `Campo ${cellRef}` : `Checkbox ${id.substring(0, 8)}`);
+      const excelLabel = cellRef ? checkboxExcelLabels[cellRef] : undefined;
+      const label = customLabel || excelLabel || (cellRef ? `Campo ${cellRef}` : `Checkbox ${id.substring(0, 8)}`);
 
       checkboxPrompts.push({
         id,
@@ -363,7 +388,7 @@ export default function ComponentTabsPromptsForm({
     });
 
     return { prompts: regular, forceResultPrompts: forceResult };
-  }, [product, isAdmin, isPromptAdminOnly, isPromptForceResult, promptCellLookup, promptSettings, isPromptSettingsLoading, promptDefinitions]);
+  }, [product, isAdmin, isPromptAdminOnly, isPromptForceResult, promptCellLookup, promptSettings, isPromptSettingsLoading, promptDefinitions, checkboxExcelLabels]);
 
   // Notificar los prompts force_result al componente padre
   useEffect(() => {
