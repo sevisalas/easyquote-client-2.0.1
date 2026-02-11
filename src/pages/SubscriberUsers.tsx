@@ -42,6 +42,7 @@ const UsuariosSuscriptor = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [hasHoldedIntegration, setHasHoldedIntegration] = useState(false);
   const [emailNuevoUsuario, setEmailNuevoUsuario] = useState("");
+  const [nombreNuevoUsuario, setNombreNuevoUsuario] = useState("");
   const [rolNuevoUsuario, setRolNuevoUsuario] = useState<"admin" | "gestor" | "comercial" | "operador">("operador");
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   
@@ -223,7 +224,8 @@ const UsuariosSuscriptor = () => {
           password: password,
           role: rolNuevoUsuario,
           organizationId: id,
-          isNewMember: true
+          isNewMember: true,
+          displayName: nombreNuevoUsuario.trim() || emailToCreate.split('@')[0]
         }
       });
 
@@ -257,6 +259,7 @@ const UsuariosSuscriptor = () => {
 
       // Limpiar formulario
       setEmailNuevoUsuario("");
+      setNombreNuevoUsuario("");
       setRolNuevoUsuario("operador");
       setMostrarFormulario(false);
       obtenerDatos();
@@ -697,7 +700,7 @@ const UsuariosSuscriptor = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -706,6 +709,17 @@ const UsuariosSuscriptor = () => {
                   value={emailNuevoUsuario}
                   onChange={(e) => setEmailNuevoUsuario(e.target.value)}
                   placeholder="usuario@ejemplo.com"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="displayName">Nombre</Label>
+                <Input
+                  id="displayName"
+                  type="text"
+                  value={nombreNuevoUsuario}
+                  onChange={(e) => setNombreNuevoUsuario(e.target.value)}
+                  placeholder="Nombre del usuario"
                 />
               </div>
               

@@ -51,8 +51,9 @@ const UserInvitation = () => {
         body: { 
           email, 
           password, 
-          role: 'user', // Default role for new users
-          organizationId 
+          role: 'user',
+          organizationId,
+          displayName: email.split('@')[0]
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`
