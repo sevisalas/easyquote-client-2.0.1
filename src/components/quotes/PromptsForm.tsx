@@ -2,10 +2,8 @@ import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useProductPromptSettings } from "@/hooks/useProductPromptSettings";
-import { isCheckedValue, detectCheckboxFormat, toOriginalFormat, type CheckboxFormat } from "@/utils/checkboxValues";
 
 export type PromptOption = {
   value: string;
@@ -17,7 +15,7 @@ export type PromptOption = {
 export type PromptDef = {
   id: string;
   label: string;
-  type: "number" | "integer" | "text" | "select" | "image" | "color" | "checkbox" | "quantity";
+  type: "number" | "integer" | "text" | "select" | "image" | "color" | "quantity";
   description?: string;
   required?: boolean;
   min?: number;
@@ -155,9 +153,9 @@ function extractPrompts(product: any): PromptDef[] {
     let type: PromptDef["type"] = "text";
     if (rawType.includes("image")) type = "image";
     else if (rawType.includes("color")) type = "color";
-    // Checkbox/Boolean types - render as actual checkbox
+    // Checkbox/Boolean types - render as select dropdown
     else if (rawType.includes("checkbox") || rawType.includes("boolean") || rawType.includes("check")) {
-      type = "checkbox";
+      type = "select";
     }
     else if (rawType.includes("quantity") || rawType.includes("cantidad")) type = "quantity";
     else if (rawType.includes("drop") || rawType.includes("select")) type = "select";
@@ -322,38 +320,9 @@ export default function PromptsForm({
       key={p.id} 
       className={`space-y-1 ${isFullWidth(p.type) ? fullSpanClass : ""}`}
     >
-      {/* Para checkbox, renderizamos label + checkbox en línea horizontal con borde */}
-      {p.type === "checkbox" ? (() => {
-        const currentValue = effectiveValues[p.id];
-        const isChecked = isCheckedValue(currentValue);
-        const originalFormat = detectCheckboxFormat(currentValue);
-        
-        return (
-          <div className="flex items-center gap-2 pt-5">
-            <Checkbox
-              id={p.id}
-              checked={isChecked}
-              onCheckedChange={(checked) => {
-                const newValue = toOriginalFormat(!!checked, originalFormat, currentValue);
-                onChange(p.id, newValue, p.label);
-                handleCommit(p.id, newValue, p.label);
-              }}
-            />
-            <label
-              htmlFor={p.id}
-              className="text-sm leading-none cursor-pointer select-none"
-            >
-              {p.label}{p.required ? " *" : ""}
-            </label>
-          </div>
-        );
-      })() : (
-        <>
-          <Label htmlFor={p.id} className="text-sm">{p.label}{p.required ? " *" : ""}</Label>
-          {p.description && (
-            <p className="text-xs text-muted-foreground">{p.description}</p>
-          )}
-        </>
+      <Label htmlFor={p.id} className="text-sm">{p.label}{p.required ? " *" : ""}</Label>
+      {p.description && (
+        <p className="text-xs text-muted-foreground">{p.description}</p>
       )}
 
       {/* Number / Integer - commits on blur/enter */}

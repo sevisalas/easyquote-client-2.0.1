@@ -338,7 +338,7 @@ export default function ComponentTabsPromptsForm({
       checkboxPrompts.push({
         id,
         label,
-        type: "checkbox",
+        type: "select",
         required: !!def?.valueRequired,
         default: false,
       });
