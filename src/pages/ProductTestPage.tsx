@@ -638,14 +638,23 @@ export default function ProductTestPage({
       console.log("Making pricing call with inputs:", debouncedPromptValues);
 
       // CRITICAL: EasyQuote API PATCH requires ALL prompts to be sent, not just modified ones
-      // Start with all prompt values from productDetail (current values from API)
-      // IMPORTANT: Always use string keys to ensure consistent matching with debouncedPromptValues
+      // Start with all prompt values from the LATEST pricing response (most complete),
+      // then fall back to productDetail (initial GET - may have fewer prompts).
       const allPromptValues: Record<string, any> = {};
 
-      // First, collect all current values from the product prompts (using string keys)
-      (productDetail?.prompts || []).forEach((p: any) => {
+      // Use the most recent pricing response as primary source (has the most prompts)
+      const latestPrompts = pricing?.prompts || productDetail?.prompts || [];
+      (Array.isArray(latestPrompts) ? latestPrompts : []).forEach((p: any) => {
         if (p.currentValue !== undefined && p.currentValue !== null) {
-          const key = String(p.id); // Normalize to string
+          const key = String(p.id);
+          allPromptValues[key] = p.currentValue;
+        }
+      });
+
+      // Also include productDetail prompts as fallback (in case pricing has fewer)
+      (productDetail?.prompts || []).forEach((p: any) => {
+        const key = String(p.id);
+        if (!(key in allPromptValues) && p.currentValue !== undefined && p.currentValue !== null) {
           allPromptValues[key] = p.currentValue;
         }
       });
