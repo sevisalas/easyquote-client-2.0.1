@@ -26,6 +26,16 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.5.12",
+    date: "2026-02-11",
+    changes: {
+      fixed: [
+        "Re-PATCH en productos compuestos: corrección automática cuando el API ignora valores condicionales heredados",
+        "Guardado de datos compuestos: corrección del guardado correcto de composite_data para todas las organizaciones",
+      ],
+    },
+  },
+  {
     version: "2.5.9",
     date: "2026-02-06",
     changes: {
