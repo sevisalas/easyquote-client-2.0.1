@@ -2686,7 +2686,7 @@ export default function ProductManagement() {
                                   <Input defaultValue={prompt.valueOptionRange || ""} placeholder="$E$2:$E$3" onBlur={e => {
                                 const updatedPrompt = {
                                   ...prompt,
-                                  valueOptionRange: e.target.value,
+                                  valueOptionRange: e.target.value.replace(/^=/, ''),
                                   valueQuantityAllowedDecimals: null,
                                   valueQuantityMin: null,
                                   valueQuantityMax: null
@@ -3179,7 +3179,7 @@ export default function ProductManagement() {
                 <Label htmlFor="valueOptionRange">Rango</Label>
                 <Input id="valueOptionRange" value={newPromptData.valueOptionRange} onChange={e => setNewPromptData({
                 ...newPromptData,
-                valueOptionRange: e.target.value
+                valueOptionRange: e.target.value.replace(/^=/, '')
               })} placeholder="ej: $E$2:$E$3" />
               </div>
             </div>

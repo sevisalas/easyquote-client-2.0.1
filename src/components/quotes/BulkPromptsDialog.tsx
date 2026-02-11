@@ -241,7 +241,7 @@ export function BulkPromptsDialog({
                             <Label className="text-xs">Rango</Label>
                             <Input
                               value={prompt.valueOptionRange}
-                              onChange={(e) => updatePrompt(index, 'valueOptionRange', e.target.value)}
+                              onChange={(e) => updatePrompt(index, 'valueOptionRange', e.target.value.replace(/^=/, ''))}
                               placeholder="$E$2:$E$3"
                               className="h-8 text-xs"
                             />
