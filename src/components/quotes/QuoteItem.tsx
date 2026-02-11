@@ -10,7 +10,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
-import { formatOutputValue } from "@/utils/formatOutputValue";
 import PromptsForm, { extractPrompts, isVisiblePrompt, type PromptDef } from "@/components/quotes/PromptsForm";
 import ComponentTabsPromptsForm from "@/components/quotes/ComponentTabsPromptsForm";
 import ComponentTabsOutputs from "@/components/quotes/ComponentTabsOutputs";
@@ -2509,7 +2508,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                             const label = o.label || o.name || "";
                             
                             if (type !== "price" && value.trim() && !/^https?:\/\//i.test(value)) {
-                              parentTextOutputs.push({ label, value: formatOutputValue(value, type) });
+                              parentTextOutputs.push({ label, value });
                             }
                           });
 
@@ -2527,7 +2526,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                             if (/^https?:\/\//i.test(value)) {
                               selectedImageOutputs.push({ label, value });
                             } else if (type !== "price" && value.trim()) {
-                              selectedTextOutputs.push({ label, value: formatOutputValue(value, type) });
+                              selectedTextOutputs.push({ label, value });
                             }
                           });
 
@@ -2658,7 +2657,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                         renderOutput={(o, idx) => (
                           <div key={idx} className="flex items-center justify-between text-sm px-1">
                             <span className="text-muted-foreground">{o.name ?? "Resultado"}</span>
-                            <span className="truncate ml-2">{formatOutputValue(String(o.value), String(o.type || o.outputType || ""))}</span>
+                            <span className="truncate ml-2">{String(o.value)}</span>
                           </div>
                         )}
                       />
