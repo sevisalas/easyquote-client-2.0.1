@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
     }
 
     // Get the request body
-    const { email, password, role = 'user', organizationId, organizationName, subscriptionPlan } = await req.json()
+    const { email, password, role = 'user', organizationId, organizationName, subscriptionPlan, displayName } = await req.json()
 
     if (!email || !password) {
       return new Response(
@@ -171,12 +171,14 @@ Deno.serve(async (req) => {
 
     // If organizationId is provided and user is not superadmin, add user to organization
     if (organizationId && !isSuperAdmin && newUser.user) {
+      const memberDisplayName = displayName || email.split('@')[0];
       const { error: memberError } = await supabaseAdmin
         .from('organization_members')
         .insert({
           organization_id: organizationId,
           user_id: newUser.user.id,
-          role: role
+          role: role,
+          display_name: memberDisplayName
         });
 
       if (memberError) {
