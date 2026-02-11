@@ -750,6 +750,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   return;
                 }
                 norm[k] = trimmed;
+              } else if (typeof actualValue === "boolean") {
+                norm[k] = actualValue ? "Sí" : "No";
               } else {
                 norm[k] = actualValue;
               }
@@ -784,9 +786,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               return;
             }
             norm[k] = trimmed;
-          } else {
-            norm[k] = actualValue;
-          }
+           } else if (typeof actualValue === "boolean") {
+              // Convert booleans to "Sí"/"No" for EasyQuote compatibility
+              norm[k] = actualValue ? "Sí" : "No";
+           } else {
+             norm[k] = actualValue;
+           }
         });
         const inputsArray = Object.entries(norm).map(([id, value]) => ({ id, value }));
         if (inputsArray.length > 0) {

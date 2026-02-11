@@ -126,8 +126,8 @@ export function toOriginalFormat(checked: boolean, originalFormat: CheckboxForma
     
     case 'unknown':
     default:
-      // Default to boolean for unknown formats
-      return checked;
+      // Default to Spanish format for EasyQuote compatibility ("Sí"/"No")
+      return checked ? 'Sí' : 'No';
   }
 }
 
