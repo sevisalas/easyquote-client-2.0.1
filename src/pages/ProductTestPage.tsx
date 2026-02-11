@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
+import { formatOutputValue } from "@/utils/formatOutputValue";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1562,7 +1563,7 @@ export default function ProductTestPage({
                               const label = o.label || o.name || "";
                               
                               if (type !== "price" && value.trim() && !/^https?:\/\//i.test(value)) {
-                                parentTextOutputs.push({ label, value });
+                                parentTextOutputs.push({ label, value: formatOutputValue(value, type) });
                               }
                             });
 
@@ -1580,7 +1581,7 @@ export default function ProductTestPage({
                               if (/^https?:\/\//i.test(value)) {
                                 selectedImageOutputs.push({ label, value });
                               } else if (type !== "price" && value.trim()) {
-                                selectedTextOutputs.push({ label, value });
+                                selectedTextOutputs.push({ label, value: formatOutputValue(value, type) });
                               }
                             });
 
@@ -1768,7 +1769,7 @@ export default function ProductTestPage({
                           {textOutputs.length > 0 && <div className="space-y-2 text-sm">
                               {textOutputs.map((output, index) => <div key={index} className="flex justify-between">
                                   <span>{output.label || output.name}</span>
-                                  <span className="font-medium">{output.value}</span>
+                                  <span className="font-medium">{formatOutputValue(String(output.value ?? ""), String(output.type || output.outputType || ""))}</span>
                                 </div>)}
                             </div>}
 
