@@ -180,6 +180,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
                       step="0.01"
                       value={additional.value}
                       onChange={(e) => updateAdditionalValue(additional.id, parseFloat(e.target.value) || 0)}
+                      onFocus={(e) => e.target.select()}
                       className="w-full h-9"
                     />
                   ) : (
@@ -248,6 +249,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
               step="0.01"
               value={predefinedValue}
               onChange={(e) => setPredefinedValue(parseFloat(e.target.value) || 0)}
+              onFocus={(e) => e.target.select()}
               placeholder="Valor"
               className="w-full h-9"
               disabled={!newAdditionalId}
@@ -287,6 +289,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
               step="1"
               value={customCapacity}
               onChange={(e) => setCustomCapacity(parseInt(e.target.value) || 1)}
+              onFocus={(e) => e.target.select()}
               placeholder="Capacidad"
               className="w-16 h-9"
             />
@@ -299,6 +302,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
             step="0.01"
             value={customValue}
             onChange={(e) => setCustomValue(parseFloat(e.target.value) || 0)}
+            onFocus={(e) => e.target.select()}
             placeholder="Valor"
             className="w-full h-9"
           />
