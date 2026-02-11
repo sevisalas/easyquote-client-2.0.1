@@ -704,6 +704,9 @@ export default function ProductTestPage({
             return;
           }
           norm[k] = v;
+        } else if (typeof v === "boolean") {
+          // Convert booleans to "Sí"/"No" for EasyQuote compatibility
+          norm[k] = v ? "Sí" : "No";
         } else {
           norm[k] = v;
         }

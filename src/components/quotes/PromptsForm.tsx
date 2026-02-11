@@ -322,17 +322,17 @@ export default function PromptsForm({
       key={p.id} 
       className={`space-y-1 ${isFullWidth(p.type) ? fullSpanClass : ""}`}
     >
-      {/* Para checkbox, renderizamos label + checkbox en línea horizontal */}
+      {/* Para checkbox, renderizamos label + checkbox en línea horizontal con borde */}
       {p.type === "checkbox" ? (() => {
         const currentValue = effectiveValues[p.id];
         const isChecked = isCheckedValue(currentValue);
         const originalFormat = detectCheckboxFormat(currentValue);
         
         return (
-          <div className="flex items-center justify-between gap-2 pt-1">
+          <div className="flex items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 h-9">
             <label
               htmlFor={p.id}
-              className="text-sm font-medium leading-none cursor-pointer"
+              className="text-sm leading-none cursor-pointer select-none"
             >
               {p.label}{p.required ? " *" : ""}
             </label>
