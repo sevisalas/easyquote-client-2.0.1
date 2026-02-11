@@ -1819,7 +1819,172 @@ export default function ProductManagement() {
         }, {
           onConflict: 'organization_id,easyquote_product_id'
         });
+        }
+
+      // 12. Copiar product_prompt_settings (etiquetas, visibilidad, force_result, is_hidden, admin_only)
+      {
+        const { data: orgData } = await supabase
+          .from('organizations')
+          .select('api_user_id')
+          .eq('id', orgId)
+          .single();
+        const targetApiUserId = orgData?.api_user_id;
+        if (targetApiUserId) {
+          const { data: sourceSettings } = await supabase
+            .from('product_prompt_settings')
+            .select('*')
+            .eq('api_user_id', targetApiUserId)
+            .eq('easyquote_product_id', sourceProduct.id);
+
+          if (sourceSettings && sourceSettings.length > 0) {
+            const newSettings = sourceSettings.map((s: any) => ({
+              api_user_id: targetApiUserId,
+              organization_id: s.organization_id,
+              easyquote_product_id: newProductId,
+              prompt_name: s.prompt_name,
+              label: s.label,
+              hide_in_documents: s.hide_in_documents,
+              admin_only: s.admin_only,
+              force_result: s.force_result,
+              is_hidden: s.is_hidden,
+              updated_at: new Date().toISOString(),
+            }));
+            await supabase.from('product_prompt_settings').insert(newSettings);
+          }
+        }
       }
+
+      // 13. Copiar product_category_mappings (categoría asignada)
+      {
+        const { data: sourceMapping } = await supabase
+          .from('product_category_mappings')
+          .select('*')
+          .eq('easyquote_product_id', sourceProduct.id)
+          .maybeSingle();
+
+        if (sourceMapping) {
+          const { data: { user } } = await supabase.auth.getUser();
+          await supabase.from('product_category_mappings').insert({
+            easyquote_product_id: newProductId,
+            product_name: `Copia de ${sourceMapping.product_name}`,
+            category_id: sourceMapping.category_id,
+            subcategory_id: sourceMapping.subcategory_id,
+            user_id: user?.id || sourceMapping.user_id,
+          });
+        }
+      }
+
+      // 14. Copiar configuración de producto compuesto (si aplica)
+      {
+        const { data: orgData } = await supabase
+          .from('organizations')
+          .select('api_user_id')
+          .eq('id', orgId)
+          .single();
+        const targetApiUserId = orgData?.api_user_id;
+        if (targetApiUserId) {
+          // composite_product_prompts
+          const { data: srcPrompts } = await supabase
+            .from('composite_product_prompts')
+            .select('*')
+            .eq('api_user_id', targetApiUserId)
+            .eq('easyquote_product_id', sourceProduct.id);
+          if (srcPrompts && srcPrompts.length > 0) {
+            const rows = srcPrompts.map((p: any) => ({
+              api_user_id: targetApiUserId,
+              organization_id: p.organization_id,
+              easyquote_product_id: newProductId,
+              name: p.name,
+              label: p.label,
+              type: p.type,
+              default_value: p.default_value,
+              options: p.options,
+              is_required: p.is_required,
+              is_hidden: p.is_hidden,
+              display_order: p.display_order,
+            }));
+            await supabase.from('composite_product_prompts').insert(rows);
+          }
+
+          // composite_product_outputs
+          const { data: srcOutputs } = await supabase
+            .from('composite_product_outputs')
+            .select('*')
+            .eq('api_user_id', targetApiUserId)
+            .eq('easyquote_product_id', sourceProduct.id);
+          if (srcOutputs && srcOutputs.length > 0) {
+            const rows = srcOutputs.map((o: any) => ({
+              api_user_id: targetApiUserId,
+              organization_id: o.organization_id,
+              easyquote_product_id: newProductId,
+              name: o.name,
+              label: o.label,
+              type: o.type,
+              formula: o.formula,
+              display_order: o.display_order,
+            }));
+            await supabase.from('composite_product_outputs').insert(rows);
+          }
+
+          // composite_product_components
+          const { data: srcComponents } = await supabase
+            .from('composite_product_components')
+            .select('*')
+            .eq('api_user_id', targetApiUserId)
+            .eq('composite_product_id', sourceProduct.id);
+          if (srcComponents && srcComponents.length > 0) {
+            const rows = srcComponents.map((c: any) => ({
+              api_user_id: targetApiUserId,
+              organization_id: c.organization_id,
+              composite_product_id: newProductId,
+              component_product_id: c.component_product_id,
+              component_alias: c.component_alias,
+              is_optional: c.is_optional,
+              display_order: c.display_order,
+            }));
+            await supabase.from('composite_product_components').insert(rows);
+          }
+
+          // composite_prompt_connections
+          const { data: srcConnections } = await supabase
+            .from('composite_prompt_connections')
+            .select('*')
+            .eq('api_user_id', targetApiUserId)
+            .eq('composite_product_id', sourceProduct.id);
+          if (srcConnections && srcConnections.length > 0) {
+            const rows = srcConnections.map((c: any) => ({
+              api_user_id: targetApiUserId,
+              organization_id: c.organization_id,
+              composite_product_id: newProductId,
+              source_prompt_name: c.source_prompt_name,
+              target_component_id: c.target_component_id,
+              target_prompt_name: c.target_prompt_name,
+              transform_formula: c.transform_formula,
+            }));
+            await supabase.from('composite_prompt_connections').insert(rows);
+          }
+
+          // composite_output_aggregations
+          const { data: srcAggs } = await supabase
+            .from('composite_output_aggregations')
+            .select('*')
+            .eq('api_user_id', targetApiUserId)
+            .eq('composite_product_id', sourceProduct.id);
+          if (srcAggs && srcAggs.length > 0) {
+            const rows = srcAggs.map((a: any) => ({
+              api_user_id: targetApiUserId,
+              organization_id: a.organization_id,
+              composite_product_id: newProductId,
+              source_output_name: a.source_output_name,
+              target_output_name: a.target_output_name,
+              target_output_label: a.target_output_label,
+              aggregation_type: a.aggregation_type,
+            }));
+            await supabase.from('composite_output_aggregations').insert(rows);
+          }
+        }
+      }
+
       return newProductId;
     },
     onSuccess: newProductId => {
