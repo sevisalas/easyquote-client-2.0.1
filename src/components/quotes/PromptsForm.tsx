@@ -322,9 +322,38 @@ export default function PromptsForm({
       key={p.id} 
       className={`space-y-1 ${isFullWidth(p.type) ? fullSpanClass : ""}`}
     >
-      <Label htmlFor={p.id} className="text-sm">{p.label}{p.required ? " *" : ""}</Label>
-      {p.description && (
-        <p className="text-xs text-muted-foreground">{p.description}</p>
+      {/* Para checkbox, renderizamos label + checkbox en línea horizontal */}
+      {p.type === "checkbox" ? (() => {
+        const currentValue = effectiveValues[p.id];
+        const isChecked = isCheckedValue(currentValue);
+        const originalFormat = detectCheckboxFormat(currentValue);
+        
+        return (
+          <div className="flex items-center justify-between gap-2 pt-1">
+            <label
+              htmlFor={p.id}
+              className="text-sm font-medium leading-none cursor-pointer"
+            >
+              {p.label}{p.required ? " *" : ""}
+            </label>
+            <Checkbox
+              id={p.id}
+              checked={isChecked}
+              onCheckedChange={(checked) => {
+                const newValue = toOriginalFormat(!!checked, originalFormat, currentValue);
+                onChange(p.id, newValue, p.label);
+                handleCommit(p.id, newValue, p.label);
+              }}
+            />
+          </div>
+        );
+      })() : (
+        <>
+          <Label htmlFor={p.id} className="text-sm">{p.label}{p.required ? " *" : ""}</Label>
+          {p.description && (
+            <p className="text-xs text-muted-foreground">{p.description}</p>
+          )}
+        </>
       )}
 
       {/* Number / Integer - commits on blur/enter */}
@@ -370,34 +399,6 @@ export default function PromptsForm({
           onKeyDown={(e) => handleKeyDown(e, p.id, (e.target as HTMLInputElement).value, p.label)}
         />
       )}
-
-      {/* Checkbox - commits immediately */}
-      {p.type === "checkbox" && (() => {
-        const currentValue = effectiveValues[p.id];
-        const isChecked = isCheckedValue(currentValue);
-        const originalFormat = detectCheckboxFormat(currentValue);
-        
-        return (
-          <div className="flex items-center space-x-2 pt-1">
-            <Checkbox
-              id={p.id}
-              checked={isChecked}
-              onCheckedChange={(checked) => {
-                // Convert back to original format when sending
-                const newValue = toOriginalFormat(!!checked, originalFormat, currentValue);
-                onChange(p.id, newValue, p.label);
-                handleCommit(p.id, newValue, p.label);
-              }}
-            />
-            <label
-              htmlFor={p.id}
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-            >
-              {isChecked ? "Activado" : "Desactivado"}
-            </label>
-          </div>
-        );
-      })()}
 
       {/* Select (dropdown) - commits immediately */}
       {p.type === "select" && (() => {
