@@ -101,7 +101,7 @@ export default function ComponentTabsPromptsForm({
   } = useProductComponentSettings(productId);
 
   // Obtener configuración de prompts (admin_only, hide_in_documents, force_result)
-  const { isPromptAdminOnly, isPromptForceResult, isLoading: isPromptSettingsLoading, promptSettings } = useProductPromptSettings(productId);
+  const { isPromptAdminOnly, isPromptForceResult, isPromptHidden: isPromptHiddenSetting, isLoading: isPromptSettingsLoading, promptSettings } = useProductPromptSettings(productId);
 
   // Obtener componentes activos según la configuración de producto encuadernado
   const activeComponents = useMemo(() => {
@@ -271,12 +271,55 @@ export default function ComponentTabsPromptsForm({
   };
 
   // Separar prompts: regulares vs force_result
-  // PRINCIPIO CLAVE: El API de Pricing es la ÚNICA fuente de verdad.
-  // NO inventamos campos - solo clasificamos los que el API devuelve.
+  // PRINCIPIO CLAVE: El API de Pricing es la ÚNICA fuente de verdad para prompts estándar.
+  // EXCEPCIÓN: Los prompts tipo Checkbox (promptType 6) no son devueltos por el pricing API,
+  // así que los inyectamos desde las definiciones (easyquote-prompts).
   // force_result es SOLO una configuración de presentación (mover a sección "Opciones restrictivas").
   const { prompts, forceResultPrompts } = useMemo(() => {
-    // Extraer SOLO los prompts que vienen del producto (respuesta del API de pricing)
-    const allPrompts = extractPrompts(product);
+    // Extraer los prompts que vienen del producto (respuesta del API de pricing)
+    const pricingPrompts = extractPrompts(product);
+
+    // Inyectar prompts tipo Checkbox (promptType 6) desde las definiciones si no están en pricing.
+    // El API de pricing no devuelve prompts de tipo checkbox, pero existen en las definiciones
+    // y deben mostrarse en la UI para que el usuario pueda configurarlos.
+    const pricingIds = new Set(pricingPrompts.map(p => String(p.id)));
+    const checkboxPrompts: PromptDef[] = [];
+
+    // Mapa de labels personalizados desde product_prompt_settings
+    const settingsLabelMap = new Map<string, string>();
+    for (const s of (promptSettings ?? []) as any[]) {
+      const name = normalizePromptName(s?.prompt_name);
+      const customLabel = s?.label;
+      if (name && customLabel) settingsLabelMap.set(name, customLabel);
+    }
+
+    for (const def of (promptDefinitions as any[])) {
+      const promptType = Number(def?.promptType);
+      if (promptType !== 6) continue; // Solo tipo 6 = Checkbox/Boolean
+      const id = String(def?.id ?? "");
+      if (!id || pricingIds.has(id)) continue; // Ya está en pricing, no duplicar
+
+      const cell = getPromptCell(def) ?? "";
+      const cellRef = extractCellRef(cell) ?? normalizePromptName(cell);
+
+      // Respetar is_hidden de product_prompt_settings
+      if (cellRef && isPromptHiddenSetting(cellRef)) continue;
+      
+      // Jerarquía de labels: 1) Custom label en settings, 2) promptText, 3) "Campo [celda]"
+      const customLabel = cellRef ? settingsLabelMap.get(cellRef) : undefined;
+      const promptText = def?.promptText ?? def?.prompt_text;
+      const label = customLabel || promptText || (cellRef ? `Campo ${cellRef}` : `Checkbox ${id.substring(0, 8)}`);
+
+      checkboxPrompts.push({
+        id,
+        label,
+        type: "checkbox",
+        required: !!def?.valueRequired,
+        default: false,
+      });
+    }
+
+    const allPrompts = [...pricingPrompts, ...checkboxPrompts];
 
     // Filtrar admin_only si no es admin
     const accessiblePrompts = isAdmin 
@@ -320,7 +363,7 @@ export default function ComponentTabsPromptsForm({
     });
 
     return { prompts: regular, forceResultPrompts: forceResult };
-  }, [product, isAdmin, isPromptAdminOnly, isPromptForceResult, promptCellLookup, promptSettings, isPromptSettingsLoading]);
+  }, [product, isAdmin, isPromptAdminOnly, isPromptForceResult, promptCellLookup, promptSettings, isPromptSettingsLoading, promptDefinitions]);
 
   // Notificar los prompts force_result al componente padre
   useEffect(() => {
