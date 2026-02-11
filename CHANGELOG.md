@@ -5,6 +5,14 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.12] - 2026-02-11
+
+### Corregido
+- **Re-PATCH en productos compuestos**: Mecanismo automático de re-envío cuando el API ignora valores condicionales heredados (ej: dimensiones "Personalizado") en la primera llamada
+- **Guardado de datos compuestos**: Corrección del guardado correcto de composite_data para todas las organizaciones
+
+---
+
 ## [2.5.11] - 2026-02-09
 
 ### Añadido
