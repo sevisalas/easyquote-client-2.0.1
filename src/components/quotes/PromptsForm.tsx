@@ -329,13 +329,7 @@ export default function PromptsForm({
         const originalFormat = detectCheckboxFormat(currentValue);
         
         return (
-          <div className="flex items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 h-9">
-            <label
-              htmlFor={p.id}
-              className="text-sm leading-none cursor-pointer select-none"
-            >
-              {p.label}{p.required ? " *" : ""}
-            </label>
+          <div className="flex items-center gap-2 pt-5">
             <Checkbox
               id={p.id}
               checked={isChecked}
@@ -345,6 +339,12 @@ export default function PromptsForm({
                 handleCommit(p.id, newValue, p.label);
               }}
             />
+            <label
+              htmlFor={p.id}
+              className="text-sm leading-none cursor-pointer select-none"
+            >
+              {p.label}{p.required ? " *" : ""}
+            </label>
           </div>
         );
       })() : (
