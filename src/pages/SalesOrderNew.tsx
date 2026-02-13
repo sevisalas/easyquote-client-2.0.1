@@ -17,6 +17,7 @@ import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelect
 import { getEasyQuoteToken } from "@/lib/easyquoteApi";
 import { useNumberingFormat, generateDocumentNumber } from "@/hooks/useNumberingFormat";
 import { findProductionPromptValue, calculateDeliveryDateFromProduction } from "@/utils/businessDays";
+import DocumentAttachments, { type DocumentAttachmentsHandle } from "@/components/quotes/DocumentAttachments";
 
 type ItemSnapshot = {
   productId: string;
@@ -53,6 +54,7 @@ export default function SalesOrderNew() {
   const [loading, setSaving] = useState(false);
   const [isImportingContacts, setIsImportingContacts] = useState(false);
   const isSavingRef = useRef(false); // Protection against double-click
+  const attachmentsRef = useRef<DocumentAttachmentsHandle>(null);
 
   // Auto-calculate delivery date from PRODUCCION prompt when items change
   useEffect(() => {
@@ -586,6 +588,11 @@ export default function SalesOrderNew() {
         }
       }
 
+      // Upload pending attachments
+      if (attachmentsRef.current?.hasPendingFiles()) {
+        await attachmentsRef.current.uploadPendingFiles(order.id, "order");
+      }
+
       // Create order additionals
       if (orderAdditionals.length > 0) {
         const additionalsData = orderAdditionals.map(additional => ({
@@ -827,6 +834,16 @@ export default function SalesOrderNew() {
               </div>
             )}
           </div>
+
+          <Separator />
+
+          {/* Document Attachments */}
+          {currentOrganization?.id && (
+            <DocumentAttachments
+              ref={attachmentsRef}
+              organizationId={currentOrganization.id}
+            />
+          )}
 
           <Separator />
 
