@@ -651,12 +651,11 @@ const SalesOrderDetail = () => {
         </CardContent>
       </Card>
 
-      {/* Document Attachments - read only in detail view */}
+      {/* Document Attachments */}
       {order?.id && viewMode === 'administrative' && (
         <DocumentAttachments
           salesOrderId={order.id}
           organizationId={sessionStorage.getItem('selected_organization_id') || ''}
-          readOnly
         />
       )}
 
