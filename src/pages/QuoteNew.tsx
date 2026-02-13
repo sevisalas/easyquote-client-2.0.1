@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 import { getEasyQuoteToken } from "@/lib/easyquoteApi";
 import { useNumberingFormat, generateDocumentNumber } from "@/hooks/useNumberingFormat";
+import DocumentAttachments, { type DocumentAttachmentsHandle } from "@/components/quotes/DocumentAttachments";
 
 type QuotesInsert = Database["public"]["Tables"]["quotes"]["Insert"];
 type ItemSnapshot = {
@@ -59,6 +60,7 @@ export default function QuoteNew() {
   const [quoteAdditionals, setQuoteAdditionals] = useState<SelectedAdditional[]>([]);
   const [loading, setSaving] = useState(false);
   const [isImportingContacts, setIsImportingContacts] = useState(false);
+  const attachmentsRef = useRef<DocumentAttachmentsHandle>(null);
 
   // Holded integration
   const {
@@ -515,6 +517,11 @@ export default function QuoteNew() {
       } = await supabase.from("quote_items").insert(quoteItemsData);
       if (itemsError) throw itemsError;
 
+      // Upload pending attachments
+      if (attachmentsRef.current?.hasPendingFiles()) {
+        await attachmentsRef.current.uploadPendingFiles(quote.id, "quote");
+      }
+
       // (Sequential update now handled atomically inside next_document_number)
 
       // Si el estado es "sent" y se permite exportar presupuestos a Holded, exportar automáticamente
@@ -694,6 +701,14 @@ export default function QuoteNew() {
         })}
         </CardContent>
       </Card>
+
+      {/* Document Attachments */}
+      {currentOrganization?.id && (
+        <DocumentAttachments
+          ref={attachmentsRef}
+          organizationId={currentOrganization.id}
+        />
+      )}
 
       {/* Quote-level Discounts and Adjustments */}
       <Card>
