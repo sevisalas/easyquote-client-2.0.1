@@ -61,10 +61,10 @@ const Index = () => {
       if (error) throw error;
       return {
         total: data?.length ?? 0,
-        draft: data?.filter(q => q.status === "draft").length ?? 0,
-        sent: data?.filter(q => q.status === "sent").length ?? 0,
-        approved: data?.filter(q => q.status === "approved").length ?? 0,
-        rejected: data?.filter(q => q.status === "rejected").length ?? 0
+        draft: data?.filter((q) => q.status === "draft").length ?? 0,
+        sent: data?.filter((q) => q.status === "sent").length ?? 0,
+        approved: data?.filter((q) => q.status === "approved").length ?? 0,
+        rejected: data?.filter((q) => q.status === "rejected").length ?? 0
       };
     }
   });
@@ -97,10 +97,10 @@ const Index = () => {
       if (error) throw error;
       return {
         total: data?.length ?? 0,
-        draft: data?.filter(o => o.status === "draft").length ?? 0,
-        pending: data?.filter(o => o.status === "pending").length ?? 0,
-        production: data?.filter(o => o.status === "in_production").length ?? 0,
-        completed: data?.filter(o => o.status === "completed").length ?? 0
+        draft: data?.filter((o) => o.status === "draft").length ?? 0,
+        pending: data?.filter((o) => o.status === "pending").length ?? 0,
+        production: data?.filter((o) => o.status === "in_production").length ?? 0,
+        completed: data?.filter((o) => o.status === "completed").length ?? 0
       };
     },
     enabled: canAccessProduccion()
@@ -136,7 +136,7 @@ const Index = () => {
         {/* Hero Section */}
         <div className="mb-6 md:mb-12">
           <div className="flex flex-col md:flex-row items-center md:justify-between gap-4 mb-6">
-            <img src="/lovable-uploads/logo_transparente-removebg-preview.png" alt="EasyQuote" className="h-16 md:h-20 w-auto" onError={e => {
+            <img src="/lovable-uploads/logo_transparente-removebg-preview.png" alt="EasyQuote" className="h-16 md:h-20 w-auto" onError={(e) => {
             const img = e.currentTarget;
             if (!img.dataset.fallbackApplied) {
               img.src = "/lovable-uploads/logo_transparente.png";
@@ -369,7 +369,7 @@ const Index = () => {
         {/* Version Info */}
         <div className="mt-6 md:mt-8 flex justify-end">
           <button onClick={() => navigate("/novedades")} className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-            EasyQuote v2.5.13
+            EasyQuote v2.5.14
           </button>
         </div>
 
