@@ -702,13 +702,6 @@ export default function QuoteNew() {
         </CardContent>
       </Card>
 
-      {/* Document Attachments */}
-      {currentOrganization?.id && (
-        <DocumentAttachments
-          ref={attachmentsRef}
-          organizationId={currentOrganization.id}
-        />
-      )}
 
       {/* Quote-level Discounts and Adjustments */}
       <Card>
@@ -751,6 +744,15 @@ export default function QuoteNew() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Document Attachments */}
+      {currentOrganization?.id && (
+        <DocumentAttachments
+          ref={attachmentsRef}
+          organizationId={currentOrganization.id}
+        />
+      )}
+
 
       {/* Actions */}
       <Card>
