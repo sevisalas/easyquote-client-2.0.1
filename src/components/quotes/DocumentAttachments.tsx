@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Paperclip, Trash2, Upload, FileText, Image, File } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Paperclip, Trash2, Upload, FileText, Image, File, ChevronDown } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 
@@ -246,31 +246,28 @@ const DocumentAttachments = forwardRef<DocumentAttachmentsHandle, DocumentAttach
     };
 
     return (
-      <Card>
-        <CardHeader className="py-3 px-4">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Paperclip className="h-4 w-4" />
-            Documentos adjuntos
-            {totalCount > 0 && (
-              <span className="text-xs text-muted-foreground font-normal">
-                ({totalCount}/{MAX_FILES})
-              </span>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 pt-0">
+      <Collapsible defaultOpen={totalCount > 0}>
+        <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2 w-full">
+          <Paperclip className="h-3.5 w-3.5" />
+          <span>Adjuntos</span>
+          {totalCount > 0 && (
+            <span className="text-xs">({totalCount}/{MAX_FILES})</span>
+          )}
+          <ChevronDown className="h-3.5 w-3.5 ml-auto transition-transform [[data-state=open]>&]:rotate-180" />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-2 pb-2">
           {/* Saved attachments */}
           {attachments.length > 0 && (
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {attachments.map((att) => (
                 <div
                   key={att.id}
-                  className="flex items-center justify-between gap-2 p-2 bg-muted/30 rounded-md border border-border"
+                  className="flex items-center justify-between gap-2 p-1.5 bg-muted/30 rounded border border-border text-xs"
                 >
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
                     {getFileIcon(att.mime_type)}
-                    <span className="text-sm truncate">{att.file_name}</span>
-                    <span className="text-xs text-muted-foreground flex-shrink-0">
+                    <span className="truncate">{att.file_name}</span>
+                    <span className="text-muted-foreground flex-shrink-0">
                       {formatFileSize(att.file_size)}
                     </span>
                   </div>
@@ -278,10 +275,10 @@ const DocumentAttachments = forwardRef<DocumentAttachmentsHandle, DocumentAttach
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                      className="h-6 w-6 p-0 text-destructive hover:text-destructive"
                       onClick={() => handleDelete(att)}
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="h-3 w-3" />
                     </Button>
                   )}
                 </div>
@@ -289,32 +286,30 @@ const DocumentAttachments = forwardRef<DocumentAttachmentsHandle, DocumentAttach
             </div>
           )}
 
-          {/* Pending files (not yet uploaded) */}
+          {/* Pending files */}
           {pendingFiles.length > 0 && (
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {pendingFiles.map((pf) => (
                 <div
                   key={pf.id}
-                  className="flex items-center justify-between gap-2 p-2 bg-accent/20 rounded-md border border-dashed border-accent"
+                  className="flex items-center justify-between gap-2 p-1.5 bg-accent/20 rounded border border-dashed border-accent text-xs"
                 >
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
                     {getFileIcon(pf.file.type || null)}
-                    <span className="text-sm truncate">{pf.file.name}</span>
-                    <span className="text-xs text-muted-foreground flex-shrink-0">
+                    <span className="truncate">{pf.file.name}</span>
+                    <span className="text-muted-foreground flex-shrink-0">
                       {formatFileSize(pf.file.size)}
                     </span>
-                    <span className="text-xs text-accent-foreground/70 flex-shrink-0">
-                      (pendiente)
-                    </span>
+                    <span className="text-accent-foreground/70 flex-shrink-0">(pendiente)</span>
                   </div>
                   {!readOnly && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                      className="h-6 w-6 p-0 text-destructive hover:text-destructive"
                       onClick={() => handleRemovePending(pf.id)}
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="h-3 w-3" />
                     </Button>
                   )}
                 </div>
@@ -326,34 +321,31 @@ const DocumentAttachments = forwardRef<DocumentAttachmentsHandle, DocumentAttach
           {!readOnly && totalCount < MAX_FILES && (
             <div
               {...getRootProps()}
-              className={`border-2 border-dashed rounded-md p-4 text-center cursor-pointer transition-colors ${
+              className={`border border-dashed rounded p-2 text-center cursor-pointer transition-colors text-xs ${
                 isDragActive
                   ? "border-primary bg-primary/5"
                   : "border-border hover:border-primary/50"
               } ${uploading ? "opacity-50 pointer-events-none" : ""}`}
             >
               <input {...getInputProps()} />
-              <Upload className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
-              <p className="text-sm text-muted-foreground">
-                {uploading
-                  ? "Subiendo..."
-                  : isDragActive
-                  ? "Suelta aquí los archivos"
-                  : "Arrastra archivos o haz clic para adjuntar"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Máx. {MAX_FILES} archivos, 10 MB cada uno
-              </p>
+              <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                <Upload className="h-3.5 w-3.5" />
+                <span>
+                  {uploading
+                    ? "Subiendo..."
+                    : isDragActive
+                    ? "Suelta aquí"
+                    : "Arrastra o haz clic para adjuntar"}
+                </span>
+              </div>
             </div>
           )}
 
           {totalCount === 0 && readOnly && (
-            <p className="text-sm text-muted-foreground text-center py-2">
-              Sin documentos adjuntos
-            </p>
+            <p className="text-xs text-muted-foreground">Sin adjuntos</p>
           )}
-        </CardContent>
-      </Card>
+        </CollapsibleContent>
+      </Collapsible>
     );
   }
 );

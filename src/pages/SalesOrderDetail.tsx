@@ -651,13 +651,6 @@ const SalesOrderDetail = () => {
         </CardContent>
       </Card>
 
-      {/* Document Attachments */}
-      {order?.id && viewMode === 'administrative' && (
-        <DocumentAttachments
-          salesOrderId={order.id}
-          organizationId={sessionStorage.getItem('selected_organization_id') || ''}
-        />
-      )}
 
       {/* Artículos del Pedido */}
       <Card className={isMobile ? "rounded-none" : ""}>
@@ -814,6 +807,14 @@ const SalesOrderDetail = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Document Attachments */}
+      {order?.id && viewMode === 'administrative' && (
+        <DocumentAttachments
+          salesOrderId={order.id}
+          organizationId={sessionStorage.getItem('selected_organization_id') || ''}
+        />
+      )}
 
       {/* Panel de Producción eliminado - ahora integrado en cada artículo */}
     </div>

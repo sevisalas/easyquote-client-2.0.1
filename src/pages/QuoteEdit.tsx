@@ -907,13 +907,7 @@ export default function QuoteEdit() {
         </CardContent>
       </Card>
 
-      {/* Document Attachments */}
-      {id && (
-        <DocumentAttachments
-          quoteId={id}
-          organizationId={sessionStorage.getItem('selected_organization_id') || ''}
-        />
-      )}
+      {/* Items card continues below */}
 
       {/* Quote Items */}
       <Card>
@@ -1205,6 +1199,14 @@ export default function QuoteEdit() {
           )}
         </CardContent>
       </Card>
+
+      {/* Document Attachments */}
+      {id && (
+        <DocumentAttachments
+          quoteId={id}
+          organizationId={sessionStorage.getItem('selected_organization_id') || ''}
+        />
+      )}
 
       {/* Cancel Confirmation Dialog */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>

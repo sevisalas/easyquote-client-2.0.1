@@ -837,15 +837,8 @@ export default function SalesOrderNew() {
 
           <Separator />
 
-          {/* Document Attachments */}
-          {currentOrganization?.id && (
-            <DocumentAttachments
-              ref={attachmentsRef}
-              organizationId={currentOrganization.id}
-            />
-          )}
 
-          <Separator />
+
 
           {/* Additionals Section */}
           <div className="space-y-4">
@@ -877,6 +870,15 @@ export default function SalesOrderNew() {
               </div>
             )}
             <Separator />
+
+            {/* Document Attachments */}
+            {currentOrganization?.id && (
+              <DocumentAttachments
+                ref={attachmentsRef}
+                organizationId={currentOrganization.id}
+              />
+            )}
+
             <div className="flex justify-between text-lg font-bold">
               <span>Total:</span>
               <span>{formatEUR(totals.finalPrice)}</span>

@@ -405,13 +405,6 @@ export default function SalesOrderEdit() {
         </CardContent>
       </Card>
 
-      {/* Document Attachments */}
-      {id && (
-        <DocumentAttachments
-          salesOrderId={id}
-          organizationId={sessionStorage.getItem('selected_organization_id') || ''}
-        />
-      )}
 
       <Card>
         <CardHeader>
@@ -469,6 +462,15 @@ export default function SalesOrderEdit() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Document Attachments */}
+      {id && (
+        <DocumentAttachments
+          salesOrderId={id}
+          organizationId={sessionStorage.getItem('selected_organization_id') || ''}
+        />
+      )}
+
     </div>
   );
 }
