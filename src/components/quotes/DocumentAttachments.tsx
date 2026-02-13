@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, forwardRef, useImperativeHandle } fro
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Paperclip, Trash2, Upload, FileText, Image, File, ChevronDown } from "lucide-react";
+import { Paperclip, Trash2, Upload, FileText, Image, File, ChevronDown, RefreshCw } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 
@@ -30,6 +30,8 @@ interface DocumentAttachmentsProps {
   salesOrderId?: string;
   organizationId: string;
   readOnly?: boolean;
+  holdedDocumentId?: string;
+  holdedDocType?: "estimate" | "salesorder";
 }
 
 const MAX_FILES = 5;
@@ -51,12 +53,13 @@ const getFileIcon = (mimeType: string | null) => {
 
 const DocumentAttachments = forwardRef<DocumentAttachmentsHandle, DocumentAttachmentsProps>(
   function DocumentAttachments(
-    { quoteId, salesOrderId, organizationId, readOnly = false },
+    { quoteId, salesOrderId, organizationId, readOnly = false, holdedDocumentId, holdedDocType = "estimate" },
     ref
   ) {
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
     const [uploading, setUploading] = useState(false);
+    const [syncingToHolded, setSyncingToHolded] = useState(false);
 
     const documentId = quoteId || salesOrderId;
     const documentType = quoteId ? "quote" : "order";
@@ -245,6 +248,31 @@ const DocumentAttachments = forwardRef<DocumentAttachmentsHandle, DocumentAttach
       setPendingFiles((prev) => prev.filter((p) => p.id !== pendingId));
     };
 
+    const handleSyncToHolded = async () => {
+      if (!holdedDocumentId || attachments.length === 0) return;
+      setSyncingToHolded(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('holded-attach-document', {
+          body: {
+            holdedDocumentId,
+            docType: holdedDocType,
+            organizationId,
+            quoteId,
+            salesOrderId,
+          },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        const count = data?.attached ?? 0;
+        toast.success(`${count} adjunto(s) sincronizado(s) con Holded`);
+      } catch (err: any) {
+        console.error('Error syncing to Holded:', err);
+        toast.error('Error al sincronizar adjuntos con Holded');
+      } finally {
+        setSyncingToHolded(false);
+      }
+    };
+
     return (
       <Collapsible defaultOpen={totalCount > 0}>
         <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2 w-full">
@@ -343,6 +371,20 @@ const DocumentAttachments = forwardRef<DocumentAttachmentsHandle, DocumentAttach
 
           {totalCount === 0 && readOnly && (
             <p className="text-xs text-muted-foreground">Sin adjuntos</p>
+          )}
+
+          {/* Sync to Holded button */}
+          {holdedDocumentId && attachments.length > 0 && !readOnly && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full text-xs h-7"
+              onClick={handleSyncToHolded}
+              disabled={syncingToHolded}
+            >
+              <RefreshCw className={`h-3 w-3 mr-1.5 ${syncingToHolded ? 'animate-spin' : ''}`} />
+              {syncingToHolded ? 'Sincronizando...' : 'Sincronizar adjuntos con Holded'}
+            </Button>
           )}
         </CollapsibleContent>
       </Collapsible>

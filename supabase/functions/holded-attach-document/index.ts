@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { holdedDocumentId, docType, organizationId } = await req.json();
+    const { holdedDocumentId, docType, organizationId, quoteId, salesOrderId } = await req.json();
 
     if (!holdedDocumentId || !docType || !organizationId) {
       throw new Error('holdedDocumentId, docType and organizationId are required');
@@ -92,16 +92,6 @@ Deno.serve(async (req) => {
       .from('document_attachments')
       .select('*')
       .eq('organization_id', organizationId);
-
-    if (docType === 'estimate') {
-      // Find by quote - we need the quoteId from caller or look up by holdedDocumentId
-      // Caller should provide quoteId or salesOrderId
-      // For simplicity, we'll accept attachmentIds or look up by document reference
-    }
-
-    // Actually, let's accept quoteId or salesOrderId to find attachments
-    const body = await req.clone().json().catch(() => ({}));
-    const { quoteId, salesOrderId } = body;
 
     if (quoteId) {
       attachQuery = attachQuery.eq('quote_id', quoteId);
