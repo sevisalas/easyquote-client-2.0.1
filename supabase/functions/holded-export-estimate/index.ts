@@ -49,20 +49,27 @@ Deno.serve(async (req) => {
 
     // Verify user has access to this quote (either owns it or is in the same organization)
     if (quote.user_id !== user.id) {
-      // Check if both users are in the same organization
-      const { data: userOrg } = await supabase
+      const quoteOrgId = quote.organization_id;
+      if (!quoteOrgId) {
+        throw new Error('No tienes permiso para exportar este presupuesto');
+      }
+      // Check if the current user is a member of the quote's organization
+      const { data: memberCheck } = await supabase
         .from('organization_members')
-        .select('organization_id')
+        .select('id')
         .eq('user_id', user.id)
-        .single();
+        .eq('organization_id', quoteOrgId)
+        .maybeSingle();
 
-      const { data: quoteOwnerOrg } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', quote.user_id)
-        .single();
+      // Also check if user is the organization owner
+      const { data: ownerCheck } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('id', quoteOrgId)
+        .eq('api_user_id', user.id)
+        .maybeSingle();
 
-      if (!userOrg || !quoteOwnerOrg || userOrg.organization_id !== quoteOwnerOrg.organization_id) {
+      if (!memberCheck && !ownerCheck) {
         throw new Error('No tienes permiso para exportar este presupuesto');
       }
     }
