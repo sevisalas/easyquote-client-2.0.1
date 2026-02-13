@@ -87,5 +87,9 @@ verify_jwt = true
 [functions.send-support-notification]
 verify_jwt = false
 
+
+[functions.holded-attach-document]
+verify_jwt = true
+
 [functions.get-support-requests]
 verify_jwt = false

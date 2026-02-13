@@ -13,6 +13,7 @@ import { CustomerSelector } from "@/components/quotes/CustomerSelector";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 import { supabase } from "@/integrations/supabase/client";
 import QuoteItem from "@/components/quotes/QuoteItem";
+import DocumentAttachments from "@/components/quotes/DocumentAttachments";
 
 const fmtEUR = (amount: number) => {
   return new Intl.NumberFormat("es-ES", {
@@ -403,6 +404,14 @@ export default function SalesOrderEdit() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Document Attachments */}
+      {id && (
+        <DocumentAttachments
+          salesOrderId={id}
+          organizationId={sessionStorage.getItem('selected_organization_id') || ''}
+        />
+      )}
 
       <Card>
         <CardHeader>

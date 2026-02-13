@@ -23,6 +23,7 @@ import { WorkOrderItem } from "@/components/production/WorkOrderItem";
 import { generateWorkOrderPDF } from "@/utils/workOrderPdfGenerator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
+import DocumentAttachments from "@/components/quotes/DocumentAttachments";
 
 const statusColors = {
   draft: "outline",
@@ -649,6 +650,15 @@ const SalesOrderDetail = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Document Attachments - read only in detail view */}
+      {order?.id && viewMode === 'administrative' && (
+        <DocumentAttachments
+          salesOrderId={order.id}
+          organizationId={sessionStorage.getItem('selected_organization_id') || ''}
+          readOnly
+        />
+      )}
 
       {/* Artículos del Pedido */}
       <Card className={isMobile ? "rounded-none" : ""}>

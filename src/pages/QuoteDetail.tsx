@@ -20,6 +20,7 @@ import { useState } from "react";
 import { useQuoteApproval } from "@/hooks/useQuoteApproval";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { isVisiblePrompt, type PromptDef } from "@/utils/promptVisibility";
+import DocumentAttachments from "@/components/quotes/DocumentAttachments";
 
 const fetchQuote = async (id: string) => {
   const { data, error } = await supabase
@@ -883,6 +884,15 @@ export default function QuoteDetail() {
           })()}
         </CardContent>
       </Card>
+
+      {/* Document Attachments - read only */}
+      {quote?.id && (
+        <DocumentAttachments
+          quoteId={quote.id}
+          organizationId={sessionStorage.getItem('selected_organization_id') || ''}
+          readOnly
+        />
+      )}
 
     </div>
   );
