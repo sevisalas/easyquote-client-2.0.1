@@ -890,6 +890,8 @@ export default function QuoteDetail() {
         <DocumentAttachments
           quoteId={quote.id}
           organizationId={sessionStorage.getItem('selected_organization_id') || ''}
+          holdedDocumentId={quote.holded_id || quote.holded_estimate_id || undefined}
+          holdedDocType="estimate"
         />
       )}
 
