@@ -276,6 +276,34 @@ export const useQuoteApproval = () => {
         throw itemsError;
       }
 
+      // Copy document attachments from quote to sales order
+      try {
+        const { data: quoteAttachments } = await (supabase
+          .from('document_attachments' as any)
+          .select('*')
+          .eq('quote_id', quoteId) as any);
+
+        if (quoteAttachments && quoteAttachments.length > 0) {
+          const orderAttachments = quoteAttachments.map((att: any) => ({
+            organization_id: att.organization_id,
+            sales_order_id: salesOrder.id,
+            file_name: att.file_name,
+            file_path: att.file_path, // Reuse same storage file
+            file_size: att.file_size,
+            mime_type: att.mime_type,
+            created_by: att.created_by,
+          }));
+
+          await (supabase
+            .from('document_attachments' as any)
+            .insert(orderAttachments) as any);
+
+          console.log(`📎 Copied ${quoteAttachments.length} attachments from quote to order`);
+        }
+      } catch (attachErr) {
+        console.error('Error copying attachments (non-fatal):', attachErr);
+      }
+
       // Update quote status to approved ONLY after order and items are created successfully
       const { error: updateQuoteError } = await supabase
         .from('quotes')

@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Edit, ChevronDown } from "lucide-react";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
+import DocumentAttachments from "@/components/quotes/DocumentAttachments";
 import QuoteItem from "@/components/quotes/QuoteItem";
 import { CustomerSelector } from "@/components/quotes/CustomerSelector";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
@@ -905,6 +906,14 @@ export default function QuoteEdit() {
           )}
         </CardContent>
       </Card>
+
+      {/* Document Attachments */}
+      {id && (
+        <DocumentAttachments
+          quoteId={id}
+          organizationId={sessionStorage.getItem('selected_organization_id') || ''}
+        />
+      )}
 
       {/* Quote Items */}
       <Card>

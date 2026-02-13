@@ -744,6 +744,48 @@ Deno.serve(async (req) => {
       console.error('Error updating order with Holded data:', updateError);
     }
 
+    // Attach documents if any exist
+    if (holdedResult.id) {
+      try {
+        const { data: attachments } = await supabase
+          .from('document_attachments')
+          .select('*')
+          .eq('sales_order_id', orderId);
+
+        if (attachments && attachments.length > 0) {
+          console.log(`Found ${attachments.length} attachments for order, sending to Holded...`);
+          
+          // Get Holded API key (already available as apiKey variable in scope)
+          for (const attRecord of attachments) {
+            try {
+              const { data: fileData } = await supabase.storage
+                .from('document-attachments')
+                .download(attRecord.file_path);
+
+              if (fileData) {
+                const formData = new FormData();
+                formData.append('file', fileData, attRecord.file_name);
+
+                const attachResponse = await fetch(
+                  `https://api.holded.com/api/invoicing/v1/documents/salesorder/${holdedResult.id}/attach`,
+                  {
+                    method: 'POST',
+                    headers: { 'key': apiKey, 'accept': 'application/json' },
+                    body: formData,
+                  }
+                );
+                console.log(`Attach ${attRecord.file_name}: ${attachResponse.status}`);
+              }
+            } catch (fileErr) {
+              console.error(`Error attaching ${attRecord.file_name}:`, fileErr);
+            }
+          }
+        }
+      } catch (attachErr) {
+        console.error('Error attaching documents to order (non-fatal):', attachErr);
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 

@@ -966,6 +966,49 @@ Deno.serve(async (req) => {
         .eq('id', quoteId);
 
       console.log('Quote updated with Holded ID:', holdedData.id);
+
+      // Attach documents if any exist
+      try {
+        const { data: attachments } = await supabase
+          .from('document_attachments')
+          .select('id')
+          .eq('quote_id', quoteId);
+
+        if (attachments && attachments.length > 0) {
+          console.log(`Found ${attachments.length} attachments, sending to Holded...`);
+          for (const attachment of attachments) {
+            // Download and attach each file
+            const { data: attRecord } = await supabase
+              .from('document_attachments')
+              .select('*')
+              .eq('id', attachment.id)
+              .single();
+
+            if (attRecord) {
+              const { data: fileData } = await supabase.storage
+                .from('document-attachments')
+                .download(attRecord.file_path);
+
+              if (fileData) {
+                const formData = new FormData();
+                formData.append('file', fileData, attRecord.file_name);
+
+                const attachResponse = await fetch(
+                  `https://api.holded.com/api/invoicing/v1/documents/estimate/${holdedData.id}/attach`,
+                  {
+                    method: 'POST',
+                    headers: { 'key': apiKey, 'accept': 'application/json' },
+                    body: formData,
+                  }
+                );
+                console.log(`Attach ${attRecord.file_name}: ${attachResponse.status}`);
+              }
+            }
+          }
+        }
+      } catch (attachErr) {
+        console.error('Error attaching documents (non-fatal):', attachErr);
+      }
     }
 
     return new Response(
