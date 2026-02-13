@@ -338,7 +338,7 @@ export function AppSidebar() {
                    {(isSuperAdmin || isOrgAdmin || hasPdfAccess || canAccessExcel() || canAccessProductos() || canAccessCategorias()) && <Collapsible asChild defaultOpen={false}>
                      <SidebarMenuItem>
                        <CollapsibleTrigger asChild>
-                         <SidebarMenuButton isActive={currentPath.startsWith("/configuracion")} className="h-7 px-2">
+                         <SidebarMenuButton isActive={currentPath.startsWith("/configuracion") || currentPath.startsWith("/admin/")} className="h-7 px-2">
                            <Palette className="mr-2 h-4 w-4" />
                            {!isCollapsed && <span>Configuración</span>}
                            {!isCollapsed && <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />}
