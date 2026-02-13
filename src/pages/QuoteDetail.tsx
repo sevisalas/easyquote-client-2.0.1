@@ -885,12 +885,11 @@ export default function QuoteDetail() {
         </CardContent>
       </Card>
 
-      {/* Document Attachments - read only */}
+      {/* Document Attachments */}
       {quote?.id && (
         <DocumentAttachments
           quoteId={quote.id}
           organizationId={sessionStorage.getItem('selected_organization_id') || ''}
-          readOnly
         />
       )}
 
