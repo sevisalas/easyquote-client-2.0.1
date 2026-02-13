@@ -5,6 +5,17 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.13] - 2026-02-13
+
+### Añadido
+- **Adjuntos a Holded**: Los archivos adjuntos a presupuestos y pedidos (máx. 5 archivos de 10MB cada uno) se sincronizan automáticamente a Holded durante la exportación
+- **Interfaz de adjuntos discreta**: Sección colapsable al final de formularios de presupuestos y pedidos para minimizar distracción visual
+
+### Corregido
+- **Permisos de exportación en Holded**: Corrección en la validación de acceso para users que pertenecen a múltiples organizaciones al exportar presupuestos
+
+---
+
 ## [2.5.12] - 2026-02-11
 
 ### Corregido
