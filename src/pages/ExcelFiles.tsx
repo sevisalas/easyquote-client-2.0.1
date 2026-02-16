@@ -533,8 +533,7 @@ export default function ExcelFiles() {
       // File: contenido en base64
       const payload = {
         FileName: file.name,
-        File: base64,
-        isPlanCompliant: true
+        File: base64
       };
       console.log('📤 Actualizando archivo con PUT:', {
         url: `https://api.easyquote.cloud/api/v1/excelfiles/${fileId}`,
