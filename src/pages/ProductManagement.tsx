@@ -2212,14 +2212,17 @@ export default function ProductManagement() {
           });
         }
 
-        // Guardar configuración de ocultar en documentos (usando api_user_id)
-        if (promptData.hideInDocuments && createdPromptKey && apiUserId) {
+        // Guardar configuración de visibilidad (usando api_user_id)
+        const hasSettings = promptData.hideInDocuments || promptData.forceResult || promptData.adminOnly;
+        if (hasSettings && createdPromptKey && apiUserId) {
           await supabase.from("product_prompt_settings").upsert({
             api_user_id: apiUserId,
             organization_id: organizationId,
             easyquote_product_id: selectedProduct.id,
             prompt_name: createdPromptKey,
-            hide_in_documents: true,
+            hide_in_documents: !!promptData.hideInDocuments,
+            force_result: !!promptData.forceResult,
+            admin_only: !!promptData.adminOnly,
           }, {
             onConflict: "api_user_id,easyquote_product_id,prompt_name"
           });
