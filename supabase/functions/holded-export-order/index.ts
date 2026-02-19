@@ -272,7 +272,7 @@ Deno.serve(async (req) => {
     // Hide-in-documents prompt settings (using api_user_id for shared config)
     const { data: hiddenPromptSettings } = await supabase
       .from('product_prompt_settings')
-      .select('easyquote_product_id, prompt_name')
+      .select('easyquote_product_id, prompt_name, label')
       .eq('api_user_id', apiUserId)
       .eq('hide_in_documents', true);
 
@@ -282,8 +282,13 @@ Deno.serve(async (req) => {
       (hiddenPromptSettings || []).map((s: any) => makeHiddenKey(s.easyquote_product_id, s.prompt_name)),
     );
 
-    const isHiddenInDocuments = (productId: unknown, prompt: any): boolean => {
+    const isHiddenInDocuments = (productId: unknown, prompt: any, defsMap?: Record<string, PromptDef> | null): boolean => {
       const candidates = [prompt?.name, prompt?.id, prompt?.label].filter(Boolean);
+      // Also resolve through prompt definitions: label → cell ref (def.id)
+      if (defsMap && prompt?.label) {
+        const def = getPromptDef(defsMap, prompt);
+        if (def?.id) candidates.push(def.id);
+      }
       return candidates.some((c) => hiddenPromptsSet.has(makeHiddenKey(productId, c)));
     };
 
@@ -430,6 +435,32 @@ Deno.serve(async (req) => {
       }),
     );
 
+    // Backfill labels in product_prompt_settings for hidden prompts (so PDF generator can match by label)
+    if (hiddenPromptSettings && hiddenPromptSettings.length > 0) {
+      const labelsToUpdate: { promptName: string; productId: string; label: string }[] = [];
+      for (const s of hiddenPromptSettings as any[]) {
+        if (s.label) continue;
+        const defs = promptDefsByProductId.get(s.easyquote_product_id);
+        if (!defs) continue;
+        for (const kk of keyVariants(s.prompt_name)) {
+          const def = (defs as any)[kk];
+          if (def?.label && def.label !== def.id) {
+            labelsToUpdate.push({ promptName: s.prompt_name, productId: s.easyquote_product_id, label: def.label });
+            break;
+          }
+        }
+      }
+      if (labelsToUpdate.length > 0) {
+        console.log(`📝 Backfilling ${labelsToUpdate.length} labels in product_prompt_settings`);
+        await Promise.all(labelsToUpdate.map(({ promptName, productId, label }) =>
+          supabase.from('product_prompt_settings')
+            .update({ label })
+            .eq('easyquote_product_id', productId)
+            .eq('prompt_name', promptName)
+        ));
+      }
+    }
+
     // Build complete payload with all order data
     const items: any[] = [];
     
@@ -496,7 +527,7 @@ Deno.serve(async (req) => {
 
                 // Hide-in-documents
                 const productId = item.product_id || '';
-                if (isHiddenInDocuments(productId, prompt)) return false;
+                if (isHiddenInDocuments(productId, prompt, defsMap)) return false;
 
                 // Exclude empty values
                 const unwrapped = unwrapPromptValue(prompt.value);
