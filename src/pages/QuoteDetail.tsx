@@ -86,6 +86,23 @@ export default function QuoteDetail() {
     enabled: !!id,
   });
 
+  // Check if customer has holded_id (needed for Holded exports)
+  const { data: customerHoldedId } = useQuery({
+    queryKey: ['customer-holded-id', quote?.customer_id],
+    queryFn: async () => {
+      if (!quote?.customer_id) return null;
+      const { data } = await supabase
+        .from('customers')
+        .select('holded_id')
+        .eq('id', quote.customer_id)
+        .maybeSingle();
+      return data?.holded_id || null;
+    },
+    enabled: !!quote?.customer_id && canExportQuotes,
+  });
+
+  const customerMissingHoldedId = canExportQuotes && !customerHoldedId;
+
   // Check if quote has multi-quantities
   const hasMultiQuantities = quote?.items?.some((item: any) => 
     item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1
@@ -267,6 +284,11 @@ export default function QuoteDetail() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ quoteId, status }: { quoteId: string; status: string }) => {
+      // Block sending/approving if customer has no holded_id and Holded is active
+      if ((status === 'sent' || status === 'approved') && customerMissingHoldedId) {
+        throw new Error('El cliente no está vinculado a Holded. Importa o crea el contacto en Holded primero.');
+      }
+
       const { error } = await supabase
         .from('quotes')
         .update({ status })
@@ -345,6 +367,11 @@ export default function QuoteDetail() {
 
   const handleApprove = async () => {
     if (!id) return;
+
+    if (customerMissingHoldedId) {
+      toast.error('El cliente no está vinculado a Holded. Importa o crea el contacto en Holded primero.');
+      return;
+    }
     
     try {
       await approveQuote({
