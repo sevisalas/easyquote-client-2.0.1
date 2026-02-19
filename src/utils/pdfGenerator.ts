@@ -91,11 +91,12 @@ const getHiddenPromptSettings = async (): Promise<Map<string, Set<string>>> => {
   
   if (!orgInfo?.api_user_id) return new Map();
   
+  // Fetch prompts that should be hidden in documents: hide_in_documents OR admin_only
   const { data: settings, error } = await supabase
     .from('product_prompt_settings')
     .select('easyquote_product_id, prompt_name, label')
     .eq('api_user_id', orgInfo.api_user_id)
-    .eq('hide_in_documents', true);
+    .or('hide_in_documents.eq.true,admin_only.eq.true');
 
   if (error || !settings) return new Map();
   
