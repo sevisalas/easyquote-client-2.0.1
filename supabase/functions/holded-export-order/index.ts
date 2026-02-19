@@ -747,8 +747,10 @@ Deno.serve(async (req) => {
     }
 
     // Mark the source estimate as accepted in Holded
+    console.log('🔍 quoteData for estimate update:', JSON.stringify(quoteData));
     if (quoteData?.holded_estimate_id) {
       try {
+        console.log(`📋 Attempting to mark estimate ${quoteData.holded_estimate_id} as accepted...`);
         const acceptRes = await fetch(
           `https://api.holded.com/api/invoicing/v1/documents/estimate/${quoteData.holded_estimate_id}`,
           {
@@ -760,10 +762,13 @@ Deno.serve(async (req) => {
             body: JSON.stringify({ status: 1 }),
           }
         );
-        console.log(`📋 Estimate ${quoteData.holded_estimate_id} marked as accepted: ${acceptRes.status}`);
+        const acceptBody = await acceptRes.text();
+        console.log(`📋 Estimate ${quoteData.holded_estimate_id} update response: ${acceptRes.status} - ${acceptBody}`);
       } catch (estErr) {
         console.error('Error marking estimate as accepted in Holded (non-fatal):', estErr);
       }
+    } else {
+      console.log('⚠️ No holded_estimate_id found, skipping estimate status update');
     }
 
     // Attach documents if any exist
