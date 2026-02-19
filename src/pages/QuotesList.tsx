@@ -386,11 +386,11 @@ const QuotesList = () => {
                   <TableHead className="py-2 text-right text-xs font-semibold whitespace-nowrap w-[90px]">Total</TableHead>
                   {hasHoldedAccess && (
                     <>
-                      <TableHead className="py-2 text-xs font-semibold">Nº Holded</TableHead>
-                      <TableHead className="py-2 text-xs font-semibold">PDF</TableHead>
+                      <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[90px]">Nº Holded</TableHead>
+                      <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[50px]">PDF</TableHead>
                     </>
                   )}
-                  <TableHead className="py-2 text-xs font-semibold">Estado</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[80px]">Estado</TableHead>
                   <TableHead className="py-2 text-xs font-semibold w-12"></TableHead>
                 </TableRow>
               </TableHeader>
