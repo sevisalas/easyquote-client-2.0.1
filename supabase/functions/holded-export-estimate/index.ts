@@ -561,20 +561,7 @@ Deno.serve(async (req) => {
           }
         }
         
-        // Add item additionals to description
-        if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
-          const additionalsText = item.item_additionals
-            .map((additional: any) => {
-              const value = additional.value || 0;
-              const formattedValue = typeof value === 'number' ? value.toFixed(2) : value;
-              return `${additional.name}: ${formattedValue}€`;
-            })
-            .join('\n');
-          
-          if (additionalsText) {
-            baseDescription += (baseDescription ? '\n' : '') + additionalsText;
-          }
-        }
+        // Item additionals are now exported as separate line items (not in description)
 
         // Append composite component details
         const compositeDesc = buildCompositeDescription(item.composite_data);
@@ -598,37 +585,7 @@ Deno.serve(async (req) => {
             ? rawRowPrice
             : parseFloat(String(rawRowPrice || 0).replace(/\./g, "").replace(",", ".")) || 0;
           
-          // Apply item additionals to the price
-          if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
-            item.item_additionals.forEach((additional: any) => {
-              const value = additional.value || 0;
-              const isDiscount = additional.is_discount === true || value < 0;
-              
-              if (!isDiscount) {
-                switch (additional.type) {
-                  case 'net_amount':
-                    rowPrice += value;
-                    break;
-                  case 'percentage':
-                    rowPrice += (rowPrice * value) / 100;
-                    break;
-                  case 'quantity_multiplier':
-                    rowPrice *= value;
-                    break;
-                }
-              } else {
-                // Apply discounts
-                switch (additional.type) {
-                  case 'net_amount':
-                    rowPrice -= Math.abs(value);
-                    break;
-                  case 'percentage':
-                    rowPrice -= Math.abs((rowPrice * value) / 100);
-                    break;
-                }
-              }
-            });
-          }
+          // Item additionals are now separate line items - don't apply to row price
           
           // Format quantity for display
           const formattedQty = typeof qtyValue === 'number' 
