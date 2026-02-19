@@ -425,6 +425,7 @@ Deno.serve(async (req) => {
     );
 
     // ── Helper: build composite component description ──
+    // ONLY include prompts (user-configured values). Outputs are internal technical data and must NOT be sent to Holded.
     const buildCompositeDescription = (compositeData: any): string => {
       if (!compositeData || typeof compositeData !== 'object') return '';
       const componentsMap = compositeData.components || {};
@@ -443,7 +444,6 @@ Deno.serve(async (req) => {
         if (!comp) continue;
         const alias = comp.alias || 'Componente';
         const compPrompts = Array.isArray(comp.prompts) ? comp.prompts : [];
-        const compOutputs = Array.isArray(comp.outputs) ? comp.outputs : [];
 
         const promptLines = compPrompts
           .filter((p: any) => {
@@ -454,18 +454,8 @@ Deno.serve(async (req) => {
           .map((p: any) => `${p.promptText || p.label || p.id || ''}: ${p.currentValue ?? p.value ?? ''}`)
           .filter(Boolean);
 
-        const outputLines = compOutputs
-          .filter((o: any) => {
-            const type = String(o?.type || '').toLowerCase();
-            const name = String(o?.name || '').toLowerCase();
-            return !type.includes('price') && !name.includes('precio') && !name.includes('price');
-          })
-          .map((o: any) => `${o.name}: ${o.value}`)
-          .filter(Boolean);
-
-        const lines = [...promptLines, ...outputLines];
-        if (lines.length > 0) {
-          sections.push(`── ${alias} ──\n${lines.join('\n')}`);
+        if (promptLines.length > 0) {
+          sections.push(`── ${alias} ──\n${promptLines.join('\n')}`);
         }
       }
       return sections.join('\n\n');

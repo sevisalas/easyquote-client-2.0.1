@@ -553,9 +553,8 @@ Deno.serve(async (req) => {
 
             const alias = comp.alias || 'Componente';
             const compPrompts = Array.isArray(comp.prompts) ? comp.prompts : [];
-            const compOutputs = Array.isArray(comp.outputs) ? comp.outputs : [];
 
-            // Build component prompts text
+            // Build component prompts text (ONLY prompts, outputs are internal data)
             const promptLines = compPrompts
               .filter((p: any) => {
                 const val = p?.currentValue ?? p?.value;
@@ -569,19 +568,8 @@ Deno.serve(async (req) => {
               })
               .filter(Boolean);
 
-            // Build component outputs text (exclude price-type outputs)
-            const outputLines = compOutputs
-              .filter((o: any) => {
-                const type = String(o?.type || '').toLowerCase();
-                const name = String(o?.name || '').toLowerCase();
-                return !type.includes('price') && !name.includes('precio') && !name.includes('price');
-              })
-              .map((o: any) => `${o.name}: ${o.value}`)
-              .filter(Boolean);
-
-            const compLines = [...promptLines, ...outputLines];
-            if (compLines.length > 0) {
-              description += (description ? '\n\n' : '') + `── ${alias} ──\n` + compLines.join('\n');
+            if (promptLines.length > 0) {
+              description += (description ? '\n\n' : '') + `── ${alias} ──\n` + promptLines.join('\n');
             }
           }
 
