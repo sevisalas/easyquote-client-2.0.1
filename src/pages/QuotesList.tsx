@@ -375,13 +375,13 @@ const QuotesList = () => {
             </div>
           ) : (
             // Vista desktop con tabla
-            <Table>
+            <Table className="table-fixed w-full">
               <TableHeader>
                 <TableRow className="h-9">
                   <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[90px]">Fecha</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[90px]">Nº</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold min-w-[180px]">Cliente</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[80px]">Usuario</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[100px]">Nº</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold w-[22%]">Cliente</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[100px]">Usuario</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Descripción</TableHead>
                   <TableHead className="py-2 text-right text-xs font-semibold whitespace-nowrap w-[90px]">Total</TableHead>
                   {hasHoldedAccess && (
@@ -399,11 +399,11 @@ const QuotesList = () => {
                    <TableRow key={q.id} className="h-auto">
                     <TableCell className="py-1.5 px-3 text-sm whitespace-nowrap">{new Date(q.created_at).toLocaleDateString("es-ES")}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm font-medium whitespace-nowrap">{q.quote_number}</TableCell>
-                    <TableCell className="py-1.5 px-3 text-sm">
+                    <TableCell className="py-1.5 px-3 text-sm truncate">
                       <CustomerName customerId={q.customer_id} />
                     </TableCell>
-                    <TableCell className="py-1.5 px-3 text-sm text-muted-foreground whitespace-nowrap">{getUserName(q.user_id)}</TableCell>
-                    <TableCell className="py-1.5 px-3 text-sm">{q.description || ""}</TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm text-muted-foreground truncate">{getUserName(q.user_id)}</TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm truncate">{q.description || ""}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm text-right font-medium whitespace-nowrap">{fmtEUR(q.final_price)}</TableCell>
                     {hasHoldedAccess && (
                       <>
