@@ -9,7 +9,8 @@ interface WorkOrderItemProps {
     prompts?: Array<{ id: string; label: string; value: any; order: number }>;
     outputs?: Array<{ name: string; type: string; value: any }>;
     description?: string;
-    imposition_data?: ImpositionData;
+    imposition_data?: any; // ImpositionData for simple, {componentKey: ImpositionData} for composite
+    composite_data?: any;
   };
   orderNumber: string;
   customerName?: string;
@@ -54,7 +55,13 @@ export const WorkOrderItem = ({
     return String(value);
   };
 
-  const imp = item.imposition_data;
+  // Detectar si es simple o compuesto
+  const isSimpleImposition = (data: any): boolean => data && typeof data.productWidth === 'number';
+  const compositeData = item.composite_data;
+  const isComposite = compositeData?.components && Object.keys(compositeData.components).length > 0;
+
+  // Para simple: imp es el dato directo; para compuesto: extraer por componente
+  const simpleImp = item.imposition_data && isSimpleImposition(item.imposition_data) ? item.imposition_data : null;
 
   return (
     <div className="space-y-2">
@@ -138,44 +145,88 @@ export const WorkOrderItem = ({
       )}
 
       {/* Imposición compacta con esquema + datos lado a lado */}
-      {imp && imp.repetitionsH && imp.repetitionsV && (
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Imposición</p>
-          <div className="flex gap-3 items-start border border-border rounded-sm p-2 bg-muted/10">
-            <div className="flex-shrink-0">
-              <ImpositionScheme data={imp} compact={true} />
-            </div>
-            <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-0.5 text-[11px] self-center">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Producto:</span>
-                <span className="font-medium">{imp.productWidth}×{imp.productHeight} mm</span>
+      {(() => {
+        const renderImpositionBlock = (imp: any, label?: string) => {
+          if (!imp || !imp.repetitionsH || !imp.repetitionsV) return null;
+          return (
+            <div className="flex gap-3 items-start border border-border rounded-sm p-2 bg-muted/10">
+              <div className="flex-shrink-0">
+                <ImpositionScheme data={imp} compact={true} />
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Pliego:</span>
-                <span className="font-medium">{imp.sheetWidth}×{imp.sheetHeight} mm</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Sangrado:</span>
-                <span className="font-medium">{imp.bleed} mm</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Calles:</span>
-                <span className="font-medium">{imp.gutterH}×{imp.gutterV} mm</span>
-              </div>
-              <div className="flex justify-between col-span-2 mt-1 pt-1 border-t border-border/50">
-                <span className="font-bold">Repeticiones:</span>
-                <span className="font-bold">{imp.repetitionsH}×{imp.repetitionsV} = {imp.totalRepetitions} por pliego</span>
-              </div>
-              {imp.utilization !== undefined && (
-                <div className="flex justify-between col-span-2">
-                  <span className="text-muted-foreground">Aprovechamiento:</span>
-                  <span className="font-medium">{imp.utilization.toFixed(1)}%</span>
+              <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-0.5 text-[11px] self-center">
+                {label && (
+                  <div className="col-span-2 mb-0.5">
+                    <span className="font-bold text-xs">{label}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Producto:</span>
+                  <span className="font-medium">{imp.productWidth}×{imp.productHeight} mm</span>
                 </div>
-              )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Pliego:</span>
+                  <span className="font-medium">{imp.sheetWidth}×{imp.sheetHeight} mm</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Sangrado:</span>
+                  <span className="font-medium">{imp.bleed} mm</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Calles:</span>
+                  <span className="font-medium">{imp.gutterH}×{imp.gutterV} mm</span>
+                </div>
+                <div className="flex justify-between col-span-2 mt-1 pt-1 border-t border-border/50">
+                  <span className="font-bold">Repeticiones:</span>
+                  <span className="font-bold">{imp.repetitionsH}×{imp.repetitionsV} = {imp.totalRepetitions} por pliego</span>
+                </div>
+                {imp.utilization !== undefined && (
+                  <div className="flex justify-between col-span-2">
+                    <span className="text-muted-foreground">Aprovechamiento:</span>
+                    <span className="font-medium">{imp.utilization.toFixed(1)}%</span>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          );
+        };
+
+        // Producto simple
+        if (simpleImp) {
+          return (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Imposición</p>
+              {renderImpositionBlock(simpleImp)}
+            </div>
+          );
+        }
+
+        // Producto compuesto: imposición por componente
+        if (isComposite && item.imposition_data && !isSimpleImposition(item.imposition_data)) {
+          const componentEntries = Object.entries(item.imposition_data).filter(
+            ([_, data]) => data && typeof (data as any).productWidth === 'number'
+          );
+          if (componentEntries.length === 0) return null;
+          
+          return (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Imposición por componente</p>
+              <div className="space-y-2">
+                {componentEntries.map(([key, data]) => {
+                  const comp = compositeData?.components?.[key];
+                  const alias = comp?.alias || key;
+                  return (
+                    <div key={key}>
+                      {renderImpositionBlock(data, alias)}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        }
+
+        return null;
+      })()}
 
       {/* Observaciones compactas */}
       <div className="border border-border rounded-sm">

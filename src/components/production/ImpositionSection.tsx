@@ -7,10 +7,16 @@ import { ImpositionData } from "@/utils/impositionCalculator";
 import { ImpositionScheme } from "./ImpositionScheme";
 import { ImpositionModal } from "./ImpositionModal";
 
+interface ComponentInfo {
+  key: string;
+  alias: string;
+}
+
 interface ImpositionSectionProps {
   item: {
     id: string;
     imposition_data?: any;
+    composite_data?: any;
   };
   onStatusUpdate?: () => void;
 }
@@ -27,18 +33,88 @@ const defaultImpositionData: ImpositionData = {
   gutterV: 2,
 };
 
-export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionProps) {
-  const [showImpositionModal, setShowImpositionModal] = useState(false);
+/** Para un producto simple, imposition_data es un ImpositionData directamente.
+ *  Para compuestos, imposition_data es un mapa { [componentKey]: ImpositionData }.
+ *  Detectamos cuál es mirando si tiene "productWidth" (simple) o no (mapa). */
+function isSimpleImposition(data: any): data is ImpositionData {
+  return data && typeof data.productWidth === 'number';
+}
 
-  const handleSaveImposition = async (data: ImpositionData) => {
+function SingleImposition({ 
+  data, 
+  onEdit, 
+  onDelete 
+}: { 
+  data: ImpositionData | null; 
+  onEdit: () => void; 
+  onDelete: () => void;
+  label?: string;
+}) {
+  if (!data) {
+    return (
+      <Button size="sm" variant="outline" onClick={onEdit} className="w-fit">
+        <Settings className="h-3 w-3 mr-1" />
+        Activar imposición
+      </Button>
+    );
+  }
+
+  return (
+    <div className="flex gap-3 items-center p-3 bg-muted/30 rounded-md">
+      <div className="flex-shrink-0">
+        <ImpositionScheme data={data} compact={true} />
+      </div>
+      <div className="flex-1 flex items-center gap-4">
+        <p className="text-sm font-medium text-muted-foreground">
+          {data.repetitionsH}×{data.repetitionsV} = {data.totalRepetitions} por pliego
+        </p>
+        <p className="text-sm font-medium text-muted-foreground">
+          Aprovechamiento: {data.utilization?.toFixed(1)}%
+        </p>
+      </div>
+      <div className="flex gap-2">
+        <Button size="sm" variant="outline" onClick={onEdit} className="h-8">
+          <Settings className="h-3 w-3 mr-1" />
+          Editar
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onDelete} className="h-8">
+          Eliminar
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionProps) {
+  const [activeModal, setActiveModal] = useState<string | null>(null); // null or componentKey or '__simple__'
+
+  const compositeData = item.composite_data;
+  const isComposite = compositeData && compositeData.components && Object.keys(compositeData.components).length > 0;
+
+  // Extraer componentes del composite_data
+  const components: ComponentInfo[] = isComposite
+    ? Object.entries(compositeData.components).map(([key, comp]: [string, any]) => ({
+        key,
+        alias: comp.alias || key,
+      }))
+    : [];
+
+  // Para compuestos: imposition_data es un mapa {componentKey: ImpositionData}
+  // Para simples: imposition_data es un ImpositionData directamente
+  const getComponentImposition = (componentKey: string): ImpositionData | null => {
+    if (!item.imposition_data) return null;
+    if (isSimpleImposition(item.imposition_data)) return null; // Es formato simple, no aplica a componentes
+    return item.imposition_data[componentKey] || null;
+  };
+
+  const saveImposition = async (newData: any) => {
     try {
       const { error } = await supabase
         .from('sales_order_items')
-        .update({ imposition_data: data as any })
+        .update({ imposition_data: newData })
         .eq('id', item.id);
 
       if (error) throw error;
-
       toast.success('Imposición guardada correctamente');
       onStatusUpdate?.();
     } catch (error) {
@@ -47,61 +123,80 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
     }
   };
 
-  const handleDeleteImposition = async () => {
-    try {
-      const { error } = await supabase
-        .from('sales_order_items')
-        .update({ imposition_data: null })
-        .eq('id', item.id);
+  // ─── Producto simple ───
+  if (!isComposite) {
+    const simpleData = item.imposition_data && isSimpleImposition(item.imposition_data)
+      ? item.imposition_data as ImpositionData
+      : null;
 
-      if (error) throw error;
+    return (
+      <>
+        <SingleImposition
+          data={simpleData}
+          onEdit={() => setActiveModal('__simple__')}
+          onDelete={async () => {
+            await saveImposition(null);
+          }}
+        />
+        {activeModal === '__simple__' && (
+          <ImpositionModal
+            open={true}
+            onOpenChange={(open) => { if (!open) setActiveModal(null); }}
+            initialData={simpleData || defaultImpositionData}
+            onSave={async (data) => {
+              await saveImposition(data);
+              setActiveModal(null);
+            }}
+          />
+        )}
+      </>
+    );
+  }
 
-      toast.success('Imposición eliminada');
-      onStatusUpdate?.();
-    } catch (error) {
-      console.error('Error deleting imposition:', error);
-      toast.error('Error al eliminar la imposición');
-    }
+  // ─── Producto compuesto: una imposición por componente ───
+  const handleSaveComponent = async (componentKey: string, data: ImpositionData) => {
+    const currentMap = item.imposition_data && !isSimpleImposition(item.imposition_data)
+      ? { ...item.imposition_data }
+      : {};
+    currentMap[componentKey] = data;
+    await saveImposition(currentMap);
+    setActiveModal(null);
+  };
+
+  const handleDeleteComponent = async (componentKey: string) => {
+    const currentMap = item.imposition_data && !isSimpleImposition(item.imposition_data)
+      ? { ...item.imposition_data }
+      : {};
+    delete currentMap[componentKey];
+    const hasAny = Object.keys(currentMap).length > 0;
+    await saveImposition(hasAny ? currentMap : null);
   };
 
   return (
-    <>
-      {item.imposition_data ? (
-        <div className="flex gap-3 items-center p-3 bg-muted/30 rounded-md">
-          <div className="flex-shrink-0">
-            <ImpositionScheme data={item.imposition_data} compact={true} />
+    <div className="space-y-2">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Imposición por componente</p>
+      {components.map(({ key, alias }) => {
+        const compData = getComponentImposition(key);
+        return (
+          <div key={key} className="space-y-1">
+            <p className="text-xs font-medium text-foreground">{alias}</p>
+            <SingleImposition
+              data={compData}
+              onEdit={() => setActiveModal(key)}
+              onDelete={() => handleDeleteComponent(key)}
+            />
           </div>
-          <div className="flex-1 flex items-center gap-4">
-            <p className="text-sm font-medium text-muted-foreground">
-              {item.imposition_data.repetitionsH}×{item.imposition_data.repetitionsV} = {item.imposition_data.totalRepetitions} por pliego
-            </p>
-            <p className="text-sm font-medium text-muted-foreground">
-              Aprovechamiento: {item.imposition_data.utilization?.toFixed(1)}%
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => setShowImpositionModal(true)} className="h-8">
-              <Settings className="h-3 w-3 mr-1" />
-              Editar
-            </Button>
-            <Button size="sm" variant="ghost" onClick={handleDeleteImposition} className="h-8">
-              Eliminar
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <Button size="sm" variant="outline" onClick={() => setShowImpositionModal(true)} className="w-fit">
-          <Settings className="h-3 w-3 mr-1" />
-          Activar imposición
-        </Button>
-      )}
+        );
+      })}
 
-      <ImpositionModal
-        open={showImpositionModal}
-        onOpenChange={setShowImpositionModal}
-        initialData={item.imposition_data || defaultImpositionData}
-        onSave={handleSaveImposition}
-      />
-    </>
+      {activeModal && activeModal !== '__simple__' && (
+        <ImpositionModal
+          open={true}
+          onOpenChange={(open) => { if (!open) setActiveModal(null); }}
+          initialData={getComponentImposition(activeModal) || defaultImpositionData}
+          onSave={(data) => handleSaveComponent(activeModal, data)}
+        />
+      )}
+    </div>
   );
 }
