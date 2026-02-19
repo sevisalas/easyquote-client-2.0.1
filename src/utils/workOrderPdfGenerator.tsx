@@ -229,10 +229,9 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   impositionBox: {
-    border: '1px solid #ddd',
+    border: '0.5px solid #ccc',
     padding: 6,
-    backgroundColor: '#f9f9f9',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   impositionGrid: {
     flexDirection: 'row',
@@ -253,15 +252,15 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   impositionHighlight: {
-    backgroundColor: '#e8f5e9',
-    padding: 3,
-    borderRadius: 2,
+    paddingTop: 3,
     marginTop: 3,
+    borderTopWidth: 0.5,
+    borderTopColor: '#ccc',
   },
   impositionHighlightText: {
     fontSize: 9,
     fontFamily: 'Helvetica-Bold',
-    color: '#2e7d32',
+    color: '#333',
   },
 });
 
