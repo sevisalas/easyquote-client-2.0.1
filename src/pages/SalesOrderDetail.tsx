@@ -370,6 +370,7 @@ const SalesOrderDetail = () => {
           outputs: item.outputs as any,
           description: item.description || undefined,
           imposition_data: item.imposition_data as any,
+          composite_data: (item as any).composite_data || undefined,
         })),
       });
       
