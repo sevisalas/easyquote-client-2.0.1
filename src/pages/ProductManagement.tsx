@@ -2990,7 +2990,9 @@ export default function ProductManagement() {
                                   upsertPromptSettingMutation.mutate({
                                     productId: selectedProduct.id,
                                     promptName: prompt.promptCell,
-                                    adminOnly: checked
+                                    adminOnly: checked,
+                                    // Si se marca como solo admin, automáticamente ocultar en docs y marcar como restrictiva
+                                    ...(checked ? { hideInDocuments: true, forceResult: true } : {})
                                   });
                                 }
                               }} />
