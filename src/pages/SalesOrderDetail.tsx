@@ -20,6 +20,7 @@ import { CustomerName } from "@/components/quotes/CustomerName";
 import { isVisiblePrompt, type PromptDef } from "@/utils/promptVisibility";
 import { ItemProductionCard } from "@/components/production/ItemProductionCard";
 import { WorkOrderItem } from "@/components/production/WorkOrderItem";
+import { ImpositionSection } from "@/components/production/ImpositionSection";
 import { generateWorkOrderPDF } from "@/utils/workOrderPdfGenerator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -768,6 +769,13 @@ const SalesOrderDetail = () => {
                           {order.status === 'in_production' && viewMode === 'production' && (
                             <div className="pt-2 border-t">
                               <ItemProductionCard item={item} onStatusUpdate={loadOrderData} />
+                            </div>
+                          )}
+
+                          {/* Imposición - Disponible siempre fuera de vista producción */}
+                          {!(order.status === 'in_production' && viewMode === 'production') && (
+                            <div className="pt-2 border-t">
+                              <ImpositionSection item={item} onStatusUpdate={loadOrderData} />
                             </div>
                           )}
                         </div>
