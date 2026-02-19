@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Settings } from "lucide-react";
+import { Plus } from "lucide-react";
 import { ProductionTaskForm } from "./ProductionTaskForm";
 import { ProductionTaskList } from "./ProductionTaskList";
 import { useProductionTasks } from "@/hooks/useProductionTasks";
@@ -8,9 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ImpositionData } from "@/utils/impositionCalculator";
-import { ImpositionScheme } from "./ImpositionScheme";
-import { ImpositionModal } from "./ImpositionModal";
+import { ImpositionSection } from "./ImpositionSection";
 
 interface ItemProductionCardProps {
   item: {
@@ -20,6 +18,7 @@ interface ItemProductionCardProps {
     description?: string | null;
     production_status?: string | null;
     imposition_data?: any;
+    composite_data?: any;
   };
   onStatusUpdate?: () => void;
 }
@@ -27,7 +26,7 @@ interface ItemProductionCardProps {
 export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardProps) {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const [showImpositionModal, setShowImpositionModal] = useState(false);
+  
   const isMobile = useIsMobile();
   const { tasks, refetch } = useProductionTasks(item.id);
   
@@ -35,18 +34,6 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
   const totalHours = Math.floor(totalTimeSeconds / 3600);
   const totalMinutes = Math.floor((totalTimeSeconds % 3600) / 60);
 
-  // Datos por defecto para imposición
-  const defaultImpositionData: ImpositionData = {
-    productWidth: 210,
-    productHeight: 297,
-    bleed: 3,
-    sheetWidth: 700,
-    sheetHeight: 500,
-    validWidth: 680,
-    validHeight: 480,
-    gutterH: 2,
-    gutterV: 2,
-  };
 
   const handleTaskCreated = () => {
     setShowTaskForm(false);
@@ -72,25 +59,6 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
       toast.error('Error al actualizar el estado');
     } finally {
       setIsUpdatingStatus(false);
-    }
-  };
-
-  const handleSaveImposition = async (data: ImpositionData) => {
-    try {
-      const { error } = await supabase
-        .from('sales_order_items')
-        .update({ imposition_data: data as any })
-        .eq('id', item.id);
-
-      if (error) throw error;
-
-      toast.success('Imposición guardada correctamente');
-      if (onStatusUpdate) {
-        onStatusUpdate();
-      }
-    } catch (error) {
-      console.error('Error saving imposition:', error);
-      toast.error('Error al guardar la imposición');
     }
   };
 
@@ -138,69 +106,7 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
       </div>
 
       {/* Imposition Section */}
-      {item.imposition_data ? (
-        <div className="flex gap-3 items-center p-3 bg-muted/30 rounded-md">
-          <div className="flex-shrink-0">
-            <ImpositionScheme data={item.imposition_data} compact={true} />
-          </div>
-          
-          <div className="flex-1 flex items-center gap-4">
-            <p className="text-sm font-medium text-muted-foreground">
-              {item.imposition_data.repetitionsH}×{item.imposition_data.repetitionsV} = {item.imposition_data.totalRepetitions} por pliego
-            </p>
-            <p className="text-sm font-medium text-muted-foreground">
-              Aprovechamiento: {item.imposition_data.utilization?.toFixed(1)}%
-            </p>
-          </div>
-          
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowImpositionModal(true)}
-              className="h-8 flex-shrink-0"
-            >
-              <Settings className="h-3 w-3 mr-1" />
-              Editar
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={async () => {
-                try {
-                  const { error } = await supabase
-                    .from('sales_order_items')
-                    .update({ imposition_data: null })
-                    .eq('id', item.id);
-
-                  if (error) throw error;
-
-                  toast.success('Imposición eliminada');
-                  if (onStatusUpdate) {
-                    onStatusUpdate();
-                  }
-                } catch (error) {
-                  console.error('Error deleting imposition:', error);
-                  toast.error('Error al eliminar la imposición');
-                }
-              }}
-              className="h-8 flex-shrink-0"
-            >
-              Eliminar
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setShowImpositionModal(true)}
-          className="w-fit"
-        >
-          <Settings className="h-3 w-3 mr-1" />
-          Activar imposición
-        </Button>
-      )}
+      <ImpositionSection item={item} onStatusUpdate={onStatusUpdate} />
 
       {/* Task Form */}
       {showTaskForm && (
@@ -213,14 +119,6 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
 
       {/* Task List */}
       <ProductionTaskList itemId={item.id} />
-
-      {/* Imposition Modal */}
-      <ImpositionModal
-        open={showImpositionModal}
-        onOpenChange={setShowImpositionModal}
-        initialData={item.imposition_data || defaultImpositionData}
-        onSave={handleSaveImposition}
-      />
     </div>
   );
 }

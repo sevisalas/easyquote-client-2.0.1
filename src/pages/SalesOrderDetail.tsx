@@ -754,6 +754,7 @@ const SalesOrderDetail = () => {
                               outputs: itemOutputs,
                               description: item.description || undefined,
                               imposition_data: (item.imposition_data as any) || undefined,
+                              composite_data: (item as any).composite_data || undefined,
                             }}
                             orderNumber={order.order_number}
                             customerName={order.customer_id ? undefined : 'Sin cliente'}
@@ -775,7 +776,11 @@ const SalesOrderDetail = () => {
                           {/* Imposición - Disponible siempre fuera de vista producción */}
                           {!(order.status === 'in_production' && viewMode === 'production') && (
                             <div className="pt-2 border-t">
-                              <ImpositionSection item={item} onStatusUpdate={loadOrderData} />
+                              <ImpositionSection item={{
+                                id: item.id,
+                                imposition_data: item.imposition_data,
+                                composite_data: (item as any).composite_data,
+                              }} onStatusUpdate={loadOrderData} />
                             </div>
                           )}
                         </div>
