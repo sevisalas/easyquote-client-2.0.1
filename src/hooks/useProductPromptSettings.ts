@@ -95,6 +95,10 @@ export function useProductPromptSettings(easyquoteProductId?: string) {
     const map = new Map<string, ProductPromptSetting>();
     for (const s of promptSettings) {
       map.set(normalizePromptName(s.prompt_name), s);
+      // Also index by label for UUID-based lookups
+      if (s.label) {
+        map.set(normalizePromptName(s.label), s);
+      }
     }
     return map;
   }, [promptSettings]);

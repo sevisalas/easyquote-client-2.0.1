@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -230,8 +231,9 @@ export default function PromptsForm({
 }) {
   // Get product ID to filter hidden prompts
   const productId = product?.productId ?? product?.id ?? product?.product_id;
-  const { isPromptHidden } = useProductPromptSettings(productId);
-
+  const { isPromptHidden, isPromptAdminOnly } = useProductPromptSettings(productId);
+  const { membership, isSuperAdmin } = useSubscription();
+  const isAdminUser = isSuperAdmin || membership?.role === 'admin';
   const prompts = useMemo(() => extractPrompts(product), [product]);
   const defaultsMap = useMemo(() => Object.fromEntries(prompts.map((p) => [p.id, p.default])), [prompts]);
   const effectiveValues = useMemo(() => {
@@ -250,10 +252,14 @@ export default function PromptsForm({
     return { ...defaultsMap, ...extractedValues };
   }, [defaultsMap, values]);
 
-  // Filtrar prompts ocultos (is_hidden) pero mantener todos visibles para cálculos
+  // Filtrar prompts ocultos (is_hidden) y admin_only para no-admins
   const visiblePrompts = useMemo(() => {
-    return prompts.filter(p => !isPromptHidden(p.id));
-  }, [prompts, isPromptHidden]);
+    return prompts.filter(p => {
+      if (isPromptHidden(p.id) || isPromptHidden(p.label)) return false;
+      if (!isAdminUser && (isPromptAdminOnly(p.id) || isPromptAdminOnly(p.label))) return false;
+      return true;
+    });
+  }, [prompts, isPromptHidden, isPromptAdminOnly, isAdminUser]);
 
   // Clamp numeric value to min/max range
   const clampValue = (value: any, min?: number, max?: number): any => {
