@@ -270,9 +270,14 @@ Deno.serve(async (req) => {
     };
     
     // Create a set of hidden prompts for quick lookup: "productId:PROMPT_KEY"
-    const hiddenPromptsSet = new Set(
-      (hiddenPromptSettings || []).map((s: any) => makeHiddenKey(s.easyquote_product_id, s.prompt_name))
-    );
+    // Include BOTH prompt_name (cell ref like B18) AND label (human name like "Forzar recurso")
+    const hiddenPromptsSet = new Set<string>();
+    (hiddenPromptSettings || []).forEach((s: any) => {
+      hiddenPromptsSet.add(makeHiddenKey(s.easyquote_product_id, s.prompt_name));
+      if (s.label) {
+        hiddenPromptsSet.add(makeHiddenKey(s.easyquote_product_id, s.label));
+      }
+    });
     console.log('🙈 Hidden prompts set:', Array.from(hiddenPromptsSet));
 
     // --- Dynamic prompt visibility (EasyQuote) ---
@@ -478,10 +483,19 @@ Deno.serve(async (req) => {
         const alias = comp.alias || 'Componente';
         const compPrompts = Array.isArray(comp.prompts) ? comp.prompts : [];
 
+        // Resolve real easyquote_product_id via activeComponents
+        const compId = compKey.split(':')[0];
+        const activeComp = activeComponents.find((ac: any) => ac.id === compId);
+        const compProductId = activeComp?.component_product_id || compId;
+
         const promptLines = compPrompts
           .filter((p: any) => {
             const val = p?.currentValue ?? p?.value;
-            return val !== null && val !== undefined && String(val).trim() !== '';
+            if (val === null || val === undefined || String(val).trim() === '') return false;
+            // Filter out hidden/admin-only prompts using the component's real product ID
+            const candidates = [p?.promptText, p?.label, p?.id].filter(Boolean);
+            const hidden = candidates.some((c) => hiddenPromptsSet.has(makeHiddenKey(compProductId, c)));
+            return !hidden;
           })
           .sort((a: any, b: any) => (a.promptSequence || 0) - (b.promptSequence || 0))
           .map((p: any) => `${p.promptText || p.label || p.id || ''}: ${p.currentValue ?? p.value ?? ''}`)

@@ -235,8 +235,11 @@ export const generateQuotePDF = async (
           const alias = comp.alias || 'Componente';
           const compPrompts = Array.isArray(comp.prompts) ? comp.prompts : [];
           
-          // Get hidden prompts for this component's product
-          const compProductId = compKey.split(':')[0];
+          // Get hidden prompts for this component's REAL easyquote product id
+          // compKey format is "componentId:instanceIndex" - map to component_product_id via activeComponents
+          const compId = compKey.split(':')[0];
+          const activeComp = activeComponents.find((ac: any) => ac.id === compId);
+          const compProductId = activeComp?.component_product_id || compId;
           const compHiddenPrompts = compProductId ? hiddenPromptSettings.get(compProductId) : null;
           const isCompHidden = (p: any): boolean => {
             if (!compHiddenPrompts) return false;
