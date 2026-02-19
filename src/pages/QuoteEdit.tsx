@@ -697,6 +697,22 @@ export default function QuoteEdit() {
   };
 
   const handleStatusChange = async (newStatus: string) => {
+    // Block sending if customer has no holded_id and Holded is active
+    if ((newStatus === 'sent' || newStatus === 'approved') && canExportQuotes) {
+      // Check customer holded_id
+      if (formData.customer_id) {
+        const { data: customer } = await supabase
+          .from('customers')
+          .select('holded_id')
+          .eq('id', formData.customer_id)
+          .maybeSingle();
+        if (!customer?.holded_id) {
+          toast.error('El cliente no está vinculado a Holded. Importa o crea el contacto en Holded primero.');
+          return;
+        }
+      }
+    }
+
     // Actualizar formData con el nuevo estado
     const updatedFormData = { ...formData, status: newStatus };
     setFormData(updatedFormData);
@@ -711,20 +727,28 @@ export default function QuoteEdit() {
       // Si el estado es "sent" y se permite exportar presupuestos a Holded, exportar automáticamente
       if (newStatus === 'sent' && canExportQuotes && id) {
         console.log('🚀 Attempting to export to Holded after status change to sent');
-        const { error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
-          body: { quoteId: id }
-        });
+        try {
+          const { error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
+            body: { quoteId: id }
+          });
 
-        if (holdedError) {
-          console.error('❌ Error exporting to Holded:', holdedError);
-          toast.error("El presupuesto se guardó pero hubo un error al exportar a Holded");
-        } else {
-          console.log('✅ Successfully exported to Holded');
-          toast.success("Presupuesto exportado a Holded exitosamente");
-          // Recargar los datos del presupuesto para mostrar el número de Holded
-          queryClient.invalidateQueries({ queryKey: ["quote", id] });
+          if (holdedError) {
+            console.error('❌ Error exporting to Holded:', holdedError);
+            toast.warning("Presupuesto enviado, pero hubo un error al exportar a Holded");
+          } else {
+            console.log('✅ Successfully exported to Holded');
+            toast.success("Presupuesto exportado a Holded exitosamente");
+          }
+        } catch (holdedErr) {
+          console.error('❌ Error exporting to Holded:', holdedErr);
+          toast.warning("Presupuesto enviado, pero hubo un error al exportar a Holded");
         }
       }
+
+      // Redirect to detail view after status change (can't edit non-draft)
+      queryClient.invalidateQueries({ queryKey: ["quote", id] });
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      navigate(`/presupuestos/${id}`);
     } catch (error) {
       console.error('Error in handleStatusChange:', error);
       setIsStatusChange(false); // Reset flag on error
