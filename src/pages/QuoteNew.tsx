@@ -233,15 +233,10 @@ export default function QuoteNew() {
 
     let subtotal = 0;
 
-    // Sum items prices.
-    // If item has multi quantities, subtotal MUST use Q1 as reference.
+    // Use item.price directly — it already includes base price + item additionals,
+    // calculated by QuoteItem's finalPrice logic.
     Object.values(items).forEach((item) => {
-      const q1 = item?.multi?.rows?.[0]?.totalStr;
-      const candidate = (typeof q1 === "number" && Number.isFinite(q1) && q1 >= 0)
-        ? q1
-        : item.price;
-
-      subtotal += safePrice(candidate);
+      subtotal += safePrice(item.price);
     });
 
     // Add quote-level additionals

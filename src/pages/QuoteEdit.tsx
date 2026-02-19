@@ -516,13 +516,10 @@ export default function QuoteEdit() {
       return n > MAX_PRICE ? MAX_PRICE : n;
     };
 
+    // Use item.price directly — it already includes base price + item additionals,
+    // calculated by QuoteItem's finalPrice logic.
     return items.reduce((sum, item) => {
-      const q1 = (item as any)?.multi?.rows?.[0]?.totalStr;
-      const candidate = (typeof q1 === "number" && Number.isFinite(q1) && q1 >= 0)
-        ? q1
-        : (item as any)?.price;
-
-      return sum + safePrice(candidate);
+      return sum + safePrice((item as any)?.price);
     }, 0);
   };
 
