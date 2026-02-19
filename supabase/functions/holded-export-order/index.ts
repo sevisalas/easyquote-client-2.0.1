@@ -149,37 +149,13 @@ Deno.serve(async (req) => {
       console.log('Using sales account:', salesChannelId);
     }
 
-    // Get organization based on order owner (not current user, since user may belong to multiple orgs)
-    let organizationId: string | null = null;
-    const orderOwnerId = order.user_id;
-    
-    const { data: ownedOrg } = await supabase
-      .from('organizations')
-      .select('id')
-      .eq('api_user_id', orderOwnerId)
-      .limit(1)
-      .single();
-    
-    if (ownedOrg) {
-      organizationId = ownedOrg.id;
-      console.log('Found organization as owner:', organizationId);
-    } else {
-      const { data: memberOrg } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', orderOwnerId)
-        .limit(1)
-        .single();
-      
-      if (memberOrg) {
-        organizationId = memberOrg.organization_id;
-        console.log('Found organization as member:', organizationId);
-      }
-    }
+    // Use organization_id directly from the order (source of truth)
+    const organizationId = order.organization_id;
+    console.log('Using organization from order:', organizationId);
     
     if (!organizationId) {
-      console.error('No organization found for order owner:', orderOwnerId);
-      throw new Error('No se encontró organización para el propietario del pedido');
+      console.error('No organization_id found on order:', orderId);
+      throw new Error('No se encontró organización para este pedido');
     }
     
     // Get Holded integration
