@@ -728,68 +728,8 @@ Deno.serve(async (req) => {
       console.error('Error updating order with Holded data:', updateError);
     }
 
-    // PUT to update the sales order with fields that POST ignores
-    if (holdedResult.id) {
-      try {
-        const updatePayload: any = {
-          shipping: 'billing',
-          approvedAt: Math.floor(Date.now() / 1000),
-        };
-
-        if (quoteData?.holded_estimate_id) {
-          updatePayload.from = {
-            id: quoteData.holded_estimate_id,
-            docType: 'estimate'
-          };
-        }
-
-        if (quoteData?.holded_estimate_number) {
-          updatePayload.customFields = [
-            { field: 'Presupuesto', value: quoteData.holded_estimate_number }
-          ];
-        }
-
-        console.log('📝 Updating sales order via PUT:', JSON.stringify(updatePayload));
-        const updateRes = await fetch(
-          `https://api.holded.com/api/invoicing/v1/documents/salesorder/${holdedResult.id}`,
-          {
-            method: 'PUT',
-            headers: {
-              'Key': apiKey,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(updatePayload),
-          }
-        );
-        const updateBody = await updateRes.text();
-        console.log(`📝 Sales order PUT response: ${updateRes.status} - ${updateBody}`);
-      } catch (putErr) {
-        console.error('Error updating sales order in Holded (non-fatal):', putErr);
-      }
-    }
-
-    // Mark the source estimate as accepted in Holded
-    if (quoteData?.holded_estimate_id) {
-      try {
-        const approvedTimestamp = Math.floor(Date.now() / 1000);
-        console.log(`📋 Marking estimate ${quoteData.holded_estimate_id} as accepted...`);
-        const acceptRes = await fetch(
-          `https://api.holded.com/api/invoicing/v1/documents/estimate/${quoteData.holded_estimate_id}`,
-          {
-            method: 'PUT',
-            headers: {
-              'Key': apiKey,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ approvedAt: approvedTimestamp }),
-          }
-        );
-        const acceptBody = await acceptRes.text();
-        console.log(`📋 Estimate update response: ${acceptRes.status} - ${acceptBody}`);
-      } catch (estErr) {
-        console.error('Error marking estimate as accepted (non-fatal):', estErr);
-      }
-    }
+    // Note: Holded API PUT does not support updating 'from', 'customFields', 'approvedAt', or 'shipping'
+    // These fields are silently ignored despite returning 200. Removed dead code.
 
     // Attach documents if any exist
     if (holdedResult.id) {
