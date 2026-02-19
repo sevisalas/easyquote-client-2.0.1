@@ -9,7 +9,7 @@ interface WorkOrderItemProps {
     prompts?: Array<{ id: string; label: string; value: any; order: number }>;
     outputs?: Array<{ name: string; type: string; value: any }>;
     description?: string;
-    imposition_data?: any; // ImpositionData for simple, {componentKey: ImpositionData} for composite
+    imposition_data?: any;
     composite_data?: any;
   };
   orderNumber: string;
@@ -17,6 +17,7 @@ interface WorkOrderItemProps {
   orderDate?: string;
   deliveryDate?: string;
   itemIndex: number;
+  children?: React.ReactNode;
 }
 
 const outputTypesForOT = [
@@ -37,7 +38,8 @@ export const WorkOrderItem = ({
   customerName,
   orderDate,
   deliveryDate,
-  itemIndex 
+  itemIndex,
+  children,
 }: WorkOrderItemProps) => {
   const relevantOutputs = (item.outputs || []).filter(output => 
     outputTypesForOT.includes(output.type)
@@ -144,8 +146,8 @@ export const WorkOrderItem = ({
         </div>
       )}
 
-      {/* Imposición - solo se renderiza en contexto de OT/PDF, no en vista interactiva */}
-      {/* La vista interactiva usa ImpositionSection que integra esquema + botones */}
+      {/* Slot para imposición interactiva */}
+      {children}
 
       {/* Observaciones compactas */}
       <div className="border border-border rounded-sm">

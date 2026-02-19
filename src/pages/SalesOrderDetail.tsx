@@ -764,23 +764,21 @@ const SalesOrderDetail = () => {
                               : undefined
                             }
                             itemIndex={index}
-                          />
-                          
-                          {/* Gestión de Producción integrada - Solo en vista producción */}
-                          {order.status === 'in_production' && viewMode === 'production' && (
-                            <div className="pt-2 border-t">
-                              <ItemProductionCard item={item} onStatusUpdate={loadOrderData} />
-                            </div>
-                          )}
-
-                          {/* Imposición - Disponible siempre fuera de vista producción */}
-                          {!(order.status === 'in_production' && viewMode === 'production') && (
-                            <div className="pt-2 border-t">
+                          >
+                            {/* Imposición integrada antes de observaciones */}
+                            {!(order.status === 'in_production' && viewMode === 'production') && (
                               <ImpositionSection item={{
                                 id: item.id,
                                 imposition_data: item.imposition_data,
                                 composite_data: (item as any).composite_data,
                               }} onStatusUpdate={loadOrderData} />
+                            )}
+                          </WorkOrderItem>
+                          
+                          {/* Gestión de Producción integrada - Solo en vista producción */}
+                          {order.status === 'in_production' && viewMode === 'production' && (
+                            <div className="pt-2 border-t">
+                              <ItemProductionCard item={item} onStatusUpdate={loadOrderData} />
                             </div>
                           )}
                         </div>
