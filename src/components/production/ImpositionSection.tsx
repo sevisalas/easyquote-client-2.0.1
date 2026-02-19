@@ -40,52 +40,30 @@ function isSimpleImposition(data: any): data is ImpositionData {
 function ImpositionBlock({ imp, label, onEdit, onDelete }: { imp: ImpositionData; label?: string; onEdit: () => void; onDelete: () => void }) {
   if (!imp.repetitionsH || !imp.repetitionsV) return null;
   return (
-    <div className="flex gap-3 items-start border border-border rounded-sm p-2 bg-muted/10">
+    <div className="flex gap-3 items-center border border-border rounded-sm p-2 bg-muted/10">
       <div className="flex-shrink-0">
         <ImpositionScheme data={imp} compact={true} />
       </div>
-      <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-0.5 text-[11px] self-center">
-        {label && (
-          <div className="col-span-2 mb-0.5">
-            <span className="font-bold text-xs">{label}</span>
-          </div>
-        )}
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Producto:</span>
-          <span className="font-medium">{imp.productWidth}×{imp.productHeight} mm</span>
+      <div className="flex-1 text-[11px]">
+        {label && <span className="font-bold text-xs block mb-0.5">{label}</span>}
+        <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+          <span><span className="text-muted-foreground">Producto:</span> <span className="font-medium">{imp.productWidth}×{imp.productHeight}</span></span>
+          <span><span className="text-muted-foreground">Pliego:</span> <span className="font-medium">{imp.sheetWidth}×{imp.sheetHeight}</span></span>
+          <span><span className="text-muted-foreground">Sangrado:</span> <span className="font-medium">{imp.bleed}</span></span>
+          <span><span className="text-muted-foreground">Calles:</span> <span className="font-medium">{imp.gutterH}×{imp.gutterV}</span></span>
+          <span className="font-bold">Rep: {imp.repetitionsH}×{imp.repetitionsV} = {imp.totalRepetitions}/pliego</span>
+          {imp.utilization !== undefined && (
+            <span><span className="text-muted-foreground">Aprov:</span> <span className="font-medium">{imp.utilization.toFixed(1)}%</span></span>
+          )}
         </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Pliego:</span>
-          <span className="font-medium">{imp.sheetWidth}×{imp.sheetHeight} mm</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Sangrado:</span>
-          <span className="font-medium">{imp.bleed} mm</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Calles:</span>
-          <span className="font-medium">{imp.gutterH}×{imp.gutterV} mm</span>
-        </div>
-        <div className="flex justify-between col-span-2 mt-1 pt-1 border-t border-border/50">
-          <span className="font-bold">Repeticiones:</span>
-          <span className="font-bold">{imp.repetitionsH}×{imp.repetitionsV} = {imp.totalRepetitions} por pliego</span>
-        </div>
-        {imp.utilization !== undefined && (
-          <div className="flex justify-between col-span-2">
-            <span className="text-muted-foreground">Aprovechamiento:</span>
-            <span className="font-medium">{imp.utilization.toFixed(1)}%</span>
-          </div>
-        )}
-        <div className="col-span-2 flex gap-2 mt-1 pt-1 border-t border-border/50">
-          <Button size="sm" variant="outline" onClick={onEdit} className="h-7 text-xs">
-            <Settings className="h-3 w-3 mr-1" />
-            Editar
-          </Button>
-          <Button size="sm" variant="ghost" onClick={onDelete} className="h-7 text-xs">
-            <Trash2 className="h-3 w-3 mr-1" />
-            Eliminar
-          </Button>
-        </div>
+      </div>
+      <div className="flex-shrink-0 flex gap-1">
+        <Button size="sm" variant="outline" onClick={onEdit} className="h-7 w-7 p-0">
+          <Settings className="h-3 w-3" />
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onDelete} className="h-7 w-7 p-0">
+          <Trash2 className="h-3 w-3" />
+        </Button>
       </div>
     </div>
   );
