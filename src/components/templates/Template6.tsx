@@ -166,6 +166,25 @@ export default function Template6({ data }: Template6Props) {
                       </td>
                     </tr>
                   )}
+                {/* Component details for composite products */}
+                {item.components && item.components.length > 0 && (
+                  <tr className={index % 2 === 0 ? 'bg-white border-b border-slate-300' : 'bg-slate-50 border-b border-slate-300'}>
+                    <td colSpan={4} className="pl-4 py-1">
+                      {item.components.map((comp: any, cIdx: number) => (
+                        <div key={cIdx} className="mb-1">
+                          <div className="text-[10px] font-semibold text-slate-800 uppercase mb-0.5">── {comp.alias} ──</div>
+                          <div className="text-[10px] text-slate-700 space-y-0.5 leading-tight pl-2">
+                            {comp.prompts.map((p: any, pIdx: number) => (
+                              <div key={pIdx}>
+                                <span className="font-medium">{p.label}:</span> {p.value}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </td>
+                  </tr>
+                )}
                 </React.Fragment>
               ))}
             </tbody>
