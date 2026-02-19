@@ -275,22 +275,33 @@ export default function QuoteDetail() {
       if (error) throw error;
 
       // Si el estado es "sent" y se permite exportar presupuestos a Holded, exportar automáticamente
+      // Non-blocking: Holded export failure should NOT block the status change
       if (status === 'sent' && canExportQuotes) {
         console.log('🚀 Attempting to export to Holded after status change to sent');
-        const { error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
-          body: { quoteId }
-        });
+        try {
+          const { error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
+            body: { quoteId }
+          });
 
-        if (holdedError) {
-          console.error('❌ Error exporting to Holded:', holdedError);
-          throw new Error('Error al exportar a Holded: ' + holdedError.message);
+          if (holdedError) {
+            console.error('❌ Error exporting to Holded:', holdedError);
+            return { holdedError: holdedError.message };
+          }
+          console.log('✅ Successfully exported to Holded');
+        } catch (holdedErr: any) {
+          console.error('❌ Error exporting to Holded:', holdedErr);
+          return { holdedError: holdedErr.message || 'Error desconocido al exportar a Holded' };
         }
-        console.log('✅ Successfully exported to Holded');
       }
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
+      const holdedError = result?.holdedError;
       if (variables.status === 'sent' && canExportQuotes) {
-        toast.success('Estado actualizado y presupuesto exportado a Holded');
+        if (holdedError) {
+          toast.warning(`Estado actualizado, pero error al exportar a Holded: ${holdedError}`);
+        } else {
+          toast.success('Estado actualizado y presupuesto exportado a Holded');
+        }
       } else {
         toast.success('Estado actualizado correctamente');
       }
