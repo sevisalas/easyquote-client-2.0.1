@@ -1,112 +1,7 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, pdf, Image, Svg, Rect, Line } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, pdf, Image } from '@react-pdf/renderer';
 import { supabase } from '@/integrations/supabase/client';
 
-// Componente para renderizar el esquema de imposición con componentes nativos
-const ImpositionScheme: React.FC<{ data: any }> = ({ data }) => {
-  try {
-    const {
-      productWidth = 0,
-      productHeight = 0,
-      bleed = 0,
-      sheetWidth = 0,
-      sheetHeight = 0,
-      validWidth,
-      validHeight,
-      gutterH = 0,
-      gutterV = 0,
-      repetitionsH = 0,
-      repetitionsV = 0,
-      orientation = 'horizontal'
-    } = data || {};
-
-    // Guard against invalid data
-    if (!sheetWidth || !sheetHeight || sheetWidth <= 0 || sheetHeight <= 0) return null;
-    if (!repetitionsH || !repetitionsV) return null;
-
-    const safeValidWidth = validWidth || sheetWidth;
-    const safeValidHeight = validHeight || sheetHeight;
-
-    const svgWidth = 300;
-    const svgHeight = sheetWidth >= sheetHeight ? 180 : 220;
-    
-    const margin = 20;
-    const scale = Math.min(
-      (svgWidth - margin * 2) / sheetWidth,
-      (svgHeight - margin * 2) / sheetHeight
-    );
-    
-    if (!isFinite(scale) || scale <= 0) return null;
-
-    const scaledSheetW = sheetWidth * scale;
-    const scaledSheetH = sheetHeight * scale;
-    const offsetX = (svgWidth - scaledSheetW) / 2;
-    const offsetY = (svgHeight - scaledSheetH) / 2;
-    
-    const sx = (v: number) => { const r = offsetX + v * scale; return isFinite(r) ? r : 0; };
-    const sy = (v: number) => { const r = offsetY + v * scale; return isFinite(r) ? r : 0; };
-    const sw = (v: number) => { const r = v * scale; return isFinite(r) && r > 0 ? r : 0; };
-    const sh = (v: number) => { const r = v * scale; return isFinite(r) && r > 0 ? r : 0; };
-    
-    const validOffsetX = (sheetWidth - safeValidWidth) / 2;
-    const validOffsetY = (sheetHeight - safeValidHeight) / 2;
-    
-    const productWithBleedW = productWidth + (bleed * 2);
-    const productWithBleedH = productHeight + (bleed * 2);
-    
-    const prodW = orientation === 'horizontal' ? productWithBleedW : productWithBleedH;
-    const prodH = orientation === 'horizontal' ? productWithBleedH : productWithBleedW;
-    
-    const totalUsedWidth = repetitionsH * prodW + (repetitionsH - 1) * gutterH;
-    const totalUsedHeight = repetitionsV * prodH + (repetitionsV - 1) * gutterV;
-    
-    const impositionOffsetX = validOffsetX + (safeValidWidth - totalUsedWidth) / 2;
-    const impositionOffsetY = validOffsetY + (safeValidHeight - totalUsedHeight) / 2;
-
-    return (
-      <Svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
-        {/* Sheet background */}
-        <Rect
-          x={sx(0)} y={sy(0)}
-          width={sw(sheetWidth)} height={sh(sheetHeight)}
-          fill="#fafafa" stroke="#d1d5db" strokeWidth={2}
-        />
-        {/* Valid area */}
-        <Rect
-          x={sx(validOffsetX)} y={sy(validOffsetY)}
-          width={sw(safeValidWidth)} height={sh(safeValidHeight)}
-          fill="none" stroke="#9ca3af" strokeWidth={1}
-        />
-        {/* Products */}
-        {Array.from({ length: repetitionsV }).map((_, row) =>
-          Array.from({ length: repetitionsH }).map((_, col) => {
-            const x = impositionOffsetX + col * (prodW + gutterH);
-            const y = impositionOffsetY + row * (prodH + gutterV);
-            const pW = orientation === 'horizontal' ? productWidth : productHeight;
-            const pH = orientation === 'horizontal' ? productHeight : productWidth;
-            return (
-              <React.Fragment key={`${row}-${col}`}>
-                <Rect
-                  x={sx(x)} y={sy(y)}
-                  width={sw(prodW)} height={sh(prodH)}
-                  fill="#e5e7eb" stroke="#9ca3af" strokeWidth={0.5}
-                />
-                <Rect
-                  x={sx(x + bleed)} y={sy(y + bleed)}
-                  width={sw(pW)} height={sh(pH)}
-                  fill="#f3f4f6" stroke="#6b7280" strokeWidth={1}
-                />
-              </React.Fragment>
-            );
-          })
-        )}
-      </Svg>
-    );
-  } catch (e) {
-    console.error('ImpositionScheme PDF render error:', e);
-    return null;
-  }
-};
 // Estilos para el PDF
 const styles = StyleSheet.create({
   page: {
@@ -183,57 +78,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 3,
   },
-  observationsBox: {
-    borderWidth: 1, borderColor: '#ddd',
-    padding: 6,
-    minHeight: 40,
-    backgroundColor: '#fafafa',
-    marginTop: 6,
-  },
-  observationsTitle: {
-    fontSize: 9,
-    fontFamily: 'Helvetica-Bold',
-    marginBottom: 4,
-  },
-  observationsText: {
-    fontSize: 7,
-    color: '#666',
-    fontStyle: 'italic',
-  },
-  impositionBox: {
-    borderWidth: 0.5, borderColor: '#ccc',
-    padding: 6,
-    marginBottom: 4,
-  },
-  impositionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 3,
-  },
-  impositionItem: {
-    width: '50%',
-    marginBottom: 3,
-  },
-  impositionLabel: {
-    fontSize: 7,
-    fontFamily: 'Helvetica-Bold',
-    marginBottom: 1,
-  },
-  impositionValue: {
-    fontSize: 8,
-    color: '#333',
-  },
-  impositionHighlight: {
-    paddingTop: 3,
-    marginTop: 3,
-    borderTopWidth: 0.5,
-    borderTopColor: '#ccc',
-  },
-  impositionHighlightText: {
-    fontSize: 9,
-    fontFamily: 'Helvetica-Bold',
-    color: '#333',
-  },
 });
 
 interface WorkOrderPDFOptions {
@@ -273,10 +117,8 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
   // Filtrar outputs relevantes para producción
   const getProductionOutputs = (outputs?: Array<{ name: string; type: string; value: any }>) => {
     if (!outputs) return [];
-    
     const productionTypes = ['Instructions', 'Workflow', 'Width', 'Height', 'Depth', 
                             'ProductImage', 'Quantity', 'Generic', 'Weight'];
-    
     return outputs.filter(output => productionTypes.includes(output.type));
   };
 
@@ -424,58 +266,68 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
                 </View>
               )}
 
-              {/* Imposición */}
+              {/* Imposición - solo texto, sin SVG */}
               {item.imposition_data && (() => {
-                const isSimple = typeof item.imposition_data.productWidth === 'number';
-                const isComposite = item.composite_data?.components && Object.keys(item.composite_data.components).length > 0;
+                try {
+                  const isSimple = typeof item.imposition_data.productWidth === 'number';
+                  const isComposite = item.composite_data?.components && Object.keys(item.composite_data.components).length > 0;
 
-                const renderImpBlock = (imp: any, label?: string) => {
-                  if (!imp || !imp.repetitionsH || !imp.repetitionsV) return null;
-                  return (
-                    <View style={{ flex: 1, borderWidth: 0.5, borderColor: '#ccc', padding: 4, marginRight: 4 }} key={label || '__simple__'}>
-                      {label && (
-                        <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold', marginBottom: 2 }}>
-                          {imp.productWidth}×{imp.productHeight} ({label})
+                  const renderImpText = (imp: any, label?: string) => {
+                    if (!imp || !imp.repetitionsH || !imp.repetitionsV) return null;
+                    return (
+                      <View style={{ flex: 1, borderWidth: 0.5, borderColor: '#ccc', padding: 4, marginRight: 4 }} key={label || '__simple__'}>
+                        {label && (
+                          <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold', marginBottom: 2 }}>
+                            {label}
+                          </Text>
+                        )}
+                        <Text style={{ fontSize: 7 }}>
+                          Producto: {imp.productWidth}×{imp.productHeight} mm · Sangrado: {imp.bleed} mm
                         </Text>
+                        <Text style={{ fontSize: 7 }}>
+                          Pliego: {imp.sheetWidth}×{imp.sheetHeight} mm · Válido: {imp.validWidth || imp.sheetWidth}×{imp.validHeight || imp.sheetHeight} mm
+                        </Text>
+                        <Text style={{ fontSize: 7 }}>
+                          Calles: {imp.gutterH}×{imp.gutterV} mm
+                        </Text>
+                        <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', marginTop: 1 }}>
+                          {imp.repetitionsH}×{imp.repetitionsV} = {imp.totalRepetitions} uds/pliego
+                          {imp.utilization != null ? ` · Aprov: ${Number(imp.utilization).toFixed(1)}%` : ''}
+                        </Text>
+                      </View>
+                    );
+                  };
+
+                  const compositeEntries = !isSimple && isComposite
+                    ? Object.entries(item.imposition_data).filter(([_, d]) => d && typeof (d as any).productWidth === 'number')
+                    : [];
+
+                  return (
+                    <View style={{ marginBottom: 4 }}>
+                      <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', marginBottom: 2, color: '#6c757d' }}>
+                        {compositeEntries.length > 0 ? 'Imposición por componente' : 'Imposición'}
+                      </Text>
+                      {isSimple ? (
+                        renderImpText(item.imposition_data)
+                      ) : compositeEntries.length > 0 ? (
+                        <View style={{ flexDirection: 'row' }}>
+                          {compositeEntries.map(([key, data]) => {
+                            const alias = item.composite_data?.components?.[key]?.alias || key;
+                            return renderImpText(data, alias);
+                          })}
+                        </View>
+                      ) : (
+                        renderImpText(item.imposition_data)
                       )}
-                      <ImpositionScheme data={imp} />
-                      <Text style={{ fontSize: 7, marginTop: 2 }}>
-                        {imp.productWidth}×{imp.productHeight} → {imp.sheetWidth}×{imp.sheetHeight} · Sangr: {imp.bleed} · Calles: {imp.gutterH}×{imp.gutterV}
-                      </Text>
-                      <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', marginTop: 1 }}>
-                        {imp.repetitionsH}×{imp.repetitionsV}={imp.totalRepetitions}/pliego
-                        {imp.utilization !== undefined && imp.utilization !== null ? ` · ${Number(imp.utilization).toFixed(1)}%` : ''}
-                      </Text>
                     </View>
                   );
-                };
-
-                const compositeEntries = !isSimple && isComposite
-                  ? Object.entries(item.imposition_data).filter(([_, d]) => d && typeof (d as any).productWidth === 'number')
-                  : [];
-
-                return (
-                  <View style={{ marginBottom: 4 }}>
-                    <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', marginBottom: 2, color: '#6c757d' }}>
-                      {compositeEntries.length > 0 ? 'Imposición por componente' : 'Imposición'}
-                    </Text>
-                    {isSimple ? (
-                      renderImpBlock(item.imposition_data)
-                    ) : compositeEntries.length > 0 ? (
-                      <View style={{ flexDirection: 'row' }}>
-                        {compositeEntries.map(([key, data]) => {
-                          const alias = item.composite_data?.components?.[key]?.alias || key;
-                          return renderImpBlock(data, alias);
-                        })}
-                      </View>
-                    ) : (
-                      renderImpBlock(item.imposition_data)
-                    )}
-                  </View>
-                );
+                } catch (e) {
+                  console.error('Error rendering imposition in PDF:', e);
+                  return null;
+                }
               })()}
 
-              {/* Observaciones mini */}
+              {/* Observaciones */}
               <View style={{ 
                 borderWidth: 1, borderColor: '#ced4da', 
                 padding: 4, 
