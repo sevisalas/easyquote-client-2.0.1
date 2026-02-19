@@ -4,147 +4,109 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Componente para renderizar el esquema de imposición con componentes nativos
 const ImpositionScheme: React.FC<{ data: any }> = ({ data }) => {
-  const {
-    productWidth = 0,
-    productHeight = 0,
-    bleed = 0,
-    sheetWidth = 1,
-    sheetHeight = 1,
-    validWidth,
-    validHeight,
-    gutterH = 0,
-    gutterV = 0,
-    repetitionsH = 0,
-    repetitionsV = 0,
-    orientation = 'horizontal'
-  } = data;
+  try {
+    const {
+      productWidth = 0,
+      productHeight = 0,
+      bleed = 0,
+      sheetWidth = 0,
+      sheetHeight = 0,
+      validWidth,
+      validHeight,
+      gutterH = 0,
+      gutterV = 0,
+      repetitionsH = 0,
+      repetitionsV = 0,
+      orientation = 'horizontal'
+    } = data || {};
 
-  // Guard against invalid data that would produce Infinity
-  if (!sheetWidth || !sheetHeight || sheetWidth <= 0 || sheetHeight <= 0) {
+    // Guard against invalid data
+    if (!sheetWidth || !sheetHeight || sheetWidth <= 0 || sheetHeight <= 0) return null;
+    if (!repetitionsH || !repetitionsV) return null;
+
+    const safeValidWidth = validWidth || sheetWidth;
+    const safeValidHeight = validHeight || sheetHeight;
+
+    const svgWidth = 300;
+    const svgHeight = sheetWidth >= sheetHeight ? 180 : 220;
+    
+    const margin = 20;
+    const scale = Math.min(
+      (svgWidth - margin * 2) / sheetWidth,
+      (svgHeight - margin * 2) / sheetHeight
+    );
+    
+    if (!isFinite(scale) || scale <= 0) return null;
+
+    const scaledSheetW = sheetWidth * scale;
+    const scaledSheetH = sheetHeight * scale;
+    const offsetX = (svgWidth - scaledSheetW) / 2;
+    const offsetY = (svgHeight - scaledSheetH) / 2;
+    
+    const sx = (v: number) => { const r = offsetX + v * scale; return isFinite(r) ? r : 0; };
+    const sy = (v: number) => { const r = offsetY + v * scale; return isFinite(r) ? r : 0; };
+    const sw = (v: number) => { const r = v * scale; return isFinite(r) && r > 0 ? r : 0; };
+    const sh = (v: number) => { const r = v * scale; return isFinite(r) && r > 0 ? r : 0; };
+    
+    const validOffsetX = (sheetWidth - safeValidWidth) / 2;
+    const validOffsetY = (sheetHeight - safeValidHeight) / 2;
+    
+    const productWithBleedW = productWidth + (bleed * 2);
+    const productWithBleedH = productHeight + (bleed * 2);
+    
+    const prodW = orientation === 'horizontal' ? productWithBleedW : productWithBleedH;
+    const prodH = orientation === 'horizontal' ? productWithBleedH : productWithBleedW;
+    
+    const totalUsedWidth = repetitionsH * prodW + (repetitionsH - 1) * gutterH;
+    const totalUsedHeight = repetitionsV * prodH + (repetitionsV - 1) * gutterV;
+    
+    const impositionOffsetX = validOffsetX + (safeValidWidth - totalUsedWidth) / 2;
+    const impositionOffsetY = validOffsetY + (safeValidHeight - totalUsedHeight) / 2;
+
+    return (
+      <Svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
+        {/* Sheet background */}
+        <Rect
+          x={sx(0)} y={sy(0)}
+          width={sw(sheetWidth)} height={sh(sheetHeight)}
+          fill="#fafafa" stroke="#d1d5db" strokeWidth={2}
+        />
+        {/* Valid area */}
+        <Rect
+          x={sx(validOffsetX)} y={sy(validOffsetY)}
+          width={sw(safeValidWidth)} height={sh(safeValidHeight)}
+          fill="none" stroke="#9ca3af" strokeWidth={1}
+        />
+        {/* Products */}
+        {Array.from({ length: repetitionsV }).map((_, row) =>
+          Array.from({ length: repetitionsH }).map((_, col) => {
+            const x = impositionOffsetX + col * (prodW + gutterH);
+            const y = impositionOffsetY + row * (prodH + gutterV);
+            const pW = orientation === 'horizontal' ? productWidth : productHeight;
+            const pH = orientation === 'horizontal' ? productHeight : productWidth;
+            return (
+              <React.Fragment key={`${row}-${col}`}>
+                <Rect
+                  x={sx(x)} y={sy(y)}
+                  width={sw(prodW)} height={sh(prodH)}
+                  fill="#e5e7eb" stroke="#9ca3af" strokeWidth={0.5}
+                />
+                <Rect
+                  x={sx(x + bleed)} y={sy(y + bleed)}
+                  width={sw(pW)} height={sh(pH)}
+                  fill="#f3f4f6" stroke="#6b7280" strokeWidth={1}
+                />
+              </React.Fragment>
+            );
+          })
+        )}
+      </Svg>
+    );
+  } catch (e) {
+    console.error('ImpositionScheme PDF render error:', e);
     return null;
   }
-
-  const safeValidWidth = validWidth || sheetWidth;
-  const safeValidHeight = validHeight || sheetHeight;
-
-  const isLandscape = sheetWidth >= sheetHeight;
-  const svgWidth = 300;
-  const svgHeight = isLandscape ? 180 : 220;
-  
-  const margin = 20;
-  const scaleX = (svgWidth - margin * 2) / sheetWidth;
-  const scaleY = (svgHeight - margin * 2) / sheetHeight;
-  const scale = Math.min(scaleX, scaleY);
-  
-  if (!isFinite(scale) || scale <= 0) return null;
-
-  const scaledSheetW = sheetWidth * scale;
-  const scaledSheetH = sheetHeight * scale;
-  const offsetX = (svgWidth - scaledSheetW) / 2;
-  const offsetY = (svgHeight - scaledSheetH) / 2;
-  
-  const sx = (x: number) => offsetX + x * scale;
-  const sy = (y: number) => offsetY + y * scale;
-  const sw = (w: number) => w * scale;
-  const sh = (h: number) => h * scale;
-  
-  const validOffsetX = (sheetWidth - safeValidWidth) / 2;
-  const validOffsetY = (sheetHeight - safeValidHeight) / 2;
-  
-  const productWithBleedW = productWidth + (bleed * 2);
-  const productWithBleedH = productHeight + (bleed * 2);
-  
-  const prodW = orientation === 'horizontal' ? productWithBleedW : productWithBleedH;
-  const prodH = orientation === 'horizontal' ? productWithBleedH : productWithBleedW;
-  
-  const totalUsedWidth = repetitionsH * prodW + (repetitionsH - 1) * gutterH;
-  const totalUsedHeight = repetitionsV * prodH + (repetitionsV - 1) * gutterV;
-  
-  const impositionOffsetX = validOffsetX + (safeValidWidth - totalUsedWidth) / 2;
-  const impositionOffsetY = validOffsetY + (safeValidHeight - totalUsedHeight) / 2;
-  
-  const cropMarkLength = 8;
-
-  return (
-    <Svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
-      {/* Sheet background */}
-      <Rect
-        x={sx(0)}
-        y={sy(0)}
-        width={sw(sheetWidth)}
-        height={sh(sheetHeight)}
-        fill="#fafafa"
-        stroke="#d1d5db"
-        strokeWidth={2}
-      />
-      
-      {/* Valid area */}
-      <Rect
-        x={sx(validOffsetX)}
-        y={sy(validOffsetY)}
-        width={sw(safeValidWidth)}
-        height={sh(safeValidHeight)}
-        fill="none"
-        stroke="#9ca3af"
-        strokeWidth={1}
-        strokeDasharray="4,4"
-      />
-      
-      {/* Products */}
-      {Array.from({ length: repetitionsV }).map((_, row) =>
-        Array.from({ length: repetitionsH }).map((_, col) => {
-          const x = impositionOffsetX + col * (prodW + gutterH);
-          const y = impositionOffsetY + row * (prodH + gutterV);
-          
-          return (
-            <React.Fragment key={`${row}-${col}`}>
-              {/* Product with bleed */}
-              <Rect
-                x={sx(x)}
-                y={sy(y)}
-                width={sw(prodW)}
-                height={sh(prodH)}
-                fill="#e5e7eb"
-                stroke="#9ca3af"
-                strokeWidth={0.5}
-              />
-              
-              {/* Product area */}
-              <Rect
-                x={sx(x + bleed)}
-                y={sy(y + bleed)}
-                width={sw(orientation === 'horizontal' ? productWidth : productHeight)}
-                height={sh(orientation === 'horizontal' ? productHeight : productWidth)}
-                fill="#f3f4f6"
-                stroke="#6b7280"
-                strokeWidth={1}
-              />
-              
-              {/* Crop marks */}
-              <Line
-                x1={sx(x + bleed - cropMarkLength)}
-                y1={sy(y + bleed)}
-                x2={sx(x + bleed + cropMarkLength)}
-                y2={sy(y + bleed)}
-                stroke="#374151"
-                strokeWidth={0.8}
-              />
-              <Line
-                x1={sx(x + bleed)}
-                y1={sy(y + bleed - cropMarkLength)}
-                x2={sx(x + bleed)}
-                y2={sy(y + bleed + cropMarkLength)}
-                stroke="#374151"
-                strokeWidth={0.8}
-              />
-            </React.Fragment>
-          );
-        })
-      )}
-    </Svg>
-  );
 };
-
 // Estilos para el PDF
 const styles = StyleSheet.create({
   page: {
