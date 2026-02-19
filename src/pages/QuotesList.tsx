@@ -396,15 +396,15 @@ const QuotesList = () => {
               </TableHeader>
               <TableBody>
                 {paginatedQuotes.map((q: any) => (
-                  <TableRow key={q.id} className="h-auto">
-                    <TableCell className="py-1.5 px-3 text-sm">{new Date(q.created_at).toLocaleDateString("es-ES")}</TableCell>
-                    <TableCell className="py-1.5 px-3 text-sm font-medium">{q.quote_number}</TableCell>
+                   <TableRow key={q.id} className="h-auto">
+                    <TableCell className="py-1.5 px-3 text-sm whitespace-nowrap">{new Date(q.created_at).toLocaleDateString("es-ES")}</TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm font-medium whitespace-nowrap">{q.quote_number}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm">
                       <CustomerName customerId={q.customer_id} />
                     </TableCell>
-                    <TableCell className="py-1.5 px-3 text-sm text-muted-foreground">{getUserName(q.user_id)}</TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm text-muted-foreground whitespace-nowrap">{getUserName(q.user_id)}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm">{q.description || ""}</TableCell>
-                    <TableCell className="py-1.5 px-3 text-sm text-right font-medium">{fmtEUR(q.final_price)}</TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm text-right font-medium whitespace-nowrap">{fmtEUR(q.final_price)}</TableCell>
                     {hasHoldedAccess && (
                       <>
                         <TableCell className="py-1.5 px-3">
