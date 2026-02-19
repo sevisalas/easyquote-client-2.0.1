@@ -1525,10 +1525,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   };
 
   const multiRows = useMemo(() => {
-    // First, check if we have saved multi data from initialData
-    const hasNewMultiResults = hasConfiguredComponents ? compositeMultiResults : multiResults;
+    // First, check if we have NEW calculation results (not just truthy but with actual data)
+    const rawNewResults = hasConfiguredComponents ? compositeMultiResults : multiResults;
+    const hasNewMultiResults = Array.isArray(rawNewResults) && rawNewResults.length > 0;
+    
     if (initialData?.multi?.rows && Array.isArray(initialData.multi.rows) && !hasNewMultiResults) {
-      // Use saved data
+      // Use saved data — preserved until a real recalculation produces results
       return initialData.multi.rows.map((r: any) => {
         const outs: any[] = Array.isArray(r?.outs) ? r.outs : [];
         return { 
