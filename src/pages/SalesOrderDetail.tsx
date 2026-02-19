@@ -20,6 +20,7 @@ import { CustomerName } from "@/components/quotes/CustomerName";
 import { isVisiblePrompt, type PromptDef } from "@/utils/promptVisibility";
 import { ItemProductionCard } from "@/components/production/ItemProductionCard";
 import { WorkOrderItem } from "@/components/production/WorkOrderItem";
+import { ImpositionSection } from "@/components/production/ImpositionSection";
 
 import { generateWorkOrderPDF } from "@/utils/workOrderPdfGenerator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -768,7 +769,18 @@ const SalesOrderDetail = () => {
                           >
                           </WorkOrderItem>
                           
-                          {/* Gestión de Producción integrada - Solo en vista producción */}
+                          {/* Imposición - Solo en vista producción */}
+                          {viewMode === 'production' && !(order.status === 'in_production') && (
+                            <div className="pt-2 border-t">
+                              <ImpositionSection item={{
+                                id: item.id,
+                                imposition_data: item.imposition_data,
+                                composite_data: (item as any).composite_data,
+                              }} onStatusUpdate={loadOrderData} />
+                            </div>
+                          )}
+
+                          {/* Gestión de Producción integrada - Solo en vista producción y en producción */}
                           {order.status === 'in_production' && viewMode === 'production' && (
                             <div className="pt-2 border-t">
                               <ItemProductionCard item={item} onStatusUpdate={loadOrderData} />
