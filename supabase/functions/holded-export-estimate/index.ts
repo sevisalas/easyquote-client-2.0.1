@@ -424,6 +424,53 @@ Deno.serve(async (req) => {
       }),
     );
 
+    // ── Helper: build composite component description ──
+    const buildCompositeDescription = (compositeData: any): string => {
+      if (!compositeData || typeof compositeData !== 'object') return '';
+      const componentsMap = compositeData.components || {};
+      const activeComponents = compositeData.activeComponents || [];
+
+      const sortedKeys = Object.keys(componentsMap).sort((a, b) => {
+        const orderA = activeComponents.find((ac: any) => a.startsWith(ac.id))?.display_order ?? 99;
+        const orderB = activeComponents.find((ac: any) => b.startsWith(ac.id))?.display_order ?? 99;
+        if (orderA !== orderB) return orderA - orderB;
+        return a.localeCompare(b);
+      });
+
+      const sections: string[] = [];
+      for (const compKey of sortedKeys) {
+        const comp = componentsMap[compKey];
+        if (!comp) continue;
+        const alias = comp.alias || 'Componente';
+        const compPrompts = Array.isArray(comp.prompts) ? comp.prompts : [];
+        const compOutputs = Array.isArray(comp.outputs) ? comp.outputs : [];
+
+        const promptLines = compPrompts
+          .filter((p: any) => {
+            const val = p?.currentValue ?? p?.value;
+            return val !== null && val !== undefined && String(val).trim() !== '';
+          })
+          .sort((a: any, b: any) => (a.promptSequence || 0) - (b.promptSequence || 0))
+          .map((p: any) => `${p.promptText || p.label || p.id || ''}: ${p.currentValue ?? p.value ?? ''}`)
+          .filter(Boolean);
+
+        const outputLines = compOutputs
+          .filter((o: any) => {
+            const type = String(o?.type || '').toLowerCase();
+            const name = String(o?.name || '').toLowerCase();
+            return !type.includes('price') && !name.includes('precio') && !name.includes('price');
+          })
+          .map((o: any) => `${o.name}: ${o.value}`)
+          .filter(Boolean);
+
+        const lines = [...promptLines, ...outputLines];
+        if (lines.length > 0) {
+          sections.push(`── ${alias} ──\n${lines.join('\n')}`);
+        }
+      }
+      return sections.join('\n\n');
+    };
+
     // Build complete payload with all quote data
     const items: any[] = [];
     const appliedDiscounts: string[] = [];
@@ -516,6 +563,12 @@ Deno.serve(async (req) => {
           if (additionalsText) {
             baseDescription += (baseDescription ? '\n' : '') + additionalsText;
           }
+        }
+
+        // Append composite component details
+        const compositeDesc = buildCompositeDescription(item.composite_data);
+        if (compositeDesc) {
+          baseDescription += (baseDescription ? '\n\n' : '') + compositeDesc;
         }
         
         // Create one item per quantity row (each with its own price)
@@ -678,6 +731,12 @@ Deno.serve(async (req) => {
           if (additionalsText) {
             description += (description ? '\n' : '') + additionalsText;
           }
+        }
+
+        // Append composite component details
+        const compositeDescSingle = buildCompositeDescription(item.composite_data);
+        if (compositeDescSingle) {
+          description += (description ? '\n\n' : '') + compositeDescSingle;
         }
         
         // Get price ONLY from outputs type "Price" (sin IVA)

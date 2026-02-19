@@ -515,7 +515,7 @@ Deno.serve(async (req) => {
           }
         }
         
-        // Add outputs to description
+        // Add outputs to description (non-price, non-quantity)
         if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
           const outputsText = item.outputs
             .filter((out: any) => {
@@ -529,6 +529,63 @@ Deno.serve(async (req) => {
           if (outputsText) {
             description += (description ? '\n' : '') + outputsText;
           }
+        }
+
+        // ── Composite product: append component details ──
+        if (item.composite_data && typeof item.composite_data === 'object') {
+          const compositeData = item.composite_data as any;
+          const componentsMap = compositeData.components || {};
+          const activeComponents = compositeData.activeComponents || [];
+
+          // Sort by display_order then instance_index
+          const sortedKeys = Object.keys(componentsMap).sort((a, b) => {
+            const compA = componentsMap[a];
+            const compB = componentsMap[b];
+            const orderA = activeComponents.find((ac: any) => a.startsWith(ac.id))?.display_order ?? 99;
+            const orderB = activeComponents.find((ac: any) => b.startsWith(ac.id))?.display_order ?? 99;
+            if (orderA !== orderB) return orderA - orderB;
+            return a.localeCompare(b);
+          });
+
+          for (const compKey of sortedKeys) {
+            const comp = componentsMap[compKey];
+            if (!comp) continue;
+
+            const alias = comp.alias || 'Componente';
+            const compPrompts = Array.isArray(comp.prompts) ? comp.prompts : [];
+            const compOutputs = Array.isArray(comp.outputs) ? comp.outputs : [];
+
+            // Build component prompts text
+            const promptLines = compPrompts
+              .filter((p: any) => {
+                const val = p?.currentValue ?? p?.value;
+                return val !== null && val !== undefined && String(val).trim() !== '';
+              })
+              .sort((a: any, b: any) => (a.promptSequence || 0) - (b.promptSequence || 0))
+              .map((p: any) => {
+                const label = p.promptText || p.label || p.id || '';
+                const value = p.currentValue ?? p.value ?? '';
+                return `${label}: ${value}`;
+              })
+              .filter(Boolean);
+
+            // Build component outputs text (exclude price-type outputs)
+            const outputLines = compOutputs
+              .filter((o: any) => {
+                const type = String(o?.type || '').toLowerCase();
+                const name = String(o?.name || '').toLowerCase();
+                return !type.includes('price') && !name.includes('precio') && !name.includes('price');
+              })
+              .map((o: any) => `${o.name}: ${o.value}`)
+              .filter(Boolean);
+
+            const compLines = [...promptLines, ...outputLines];
+            if (compLines.length > 0) {
+              description += (description ? '\n\n' : '') + `── ${alias} ──\n` + compLines.join('\n');
+            }
+          }
+
+          console.log('📦 Composite data processed, components:', sortedKeys.length);
         }
       }
       
