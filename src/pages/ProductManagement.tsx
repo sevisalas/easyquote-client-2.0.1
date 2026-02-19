@@ -649,7 +649,14 @@ export default function ProductManagement() {
       };
 
       if (hideInDocuments !== undefined) updateData.hide_in_documents = hideInDocuments;
-      if (adminOnly !== undefined) updateData.admin_only = adminOnly;
+      if (adminOnly !== undefined) {
+        updateData.admin_only = adminOnly;
+        // Si se marca como solo admin, forzar ocultar en docs y opción restrictiva
+        if (adminOnly) {
+          updateData.hide_in_documents = true;
+          updateData.force_result = true;
+        }
+      }
       if (forceResult !== undefined) updateData.force_result = forceResult;
       if (isHidden !== undefined) updateData.is_hidden = isHidden;
       if (label !== undefined) updateData.label = label;
@@ -2213,16 +2220,18 @@ export default function ProductManagement() {
         }
 
         // Guardar configuración de visibilidad (usando api_user_id)
-        const hasSettings = promptData.hideInDocuments || promptData.forceResult || promptData.adminOnly;
+        const isAdminOnly = !!promptData.adminOnly;
+        const hasSettings = promptData.hideInDocuments || promptData.forceResult || isAdminOnly;
         if (hasSettings && createdPromptKey && apiUserId) {
           await supabase.from("product_prompt_settings").upsert({
             api_user_id: apiUserId,
             organization_id: organizationId,
             easyquote_product_id: selectedProduct.id,
             prompt_name: createdPromptKey,
-            hide_in_documents: !!promptData.hideInDocuments,
-            force_result: !!promptData.forceResult,
-            admin_only: !!promptData.adminOnly,
+            // Si admin_only, forzar hide_in_documents y force_result
+            hide_in_documents: isAdminOnly ? true : !!promptData.hideInDocuments,
+            force_result: isAdminOnly ? true : !!promptData.forceResult,
+            admin_only: isAdminOnly,
           }, {
             onConflict: "api_user_id,easyquote_product_id,prompt_name"
           });
@@ -2991,8 +3000,6 @@ export default function ProductManagement() {
                                     productId: selectedProduct.id,
                                     promptName: prompt.promptCell,
                                     adminOnly: checked,
-                                    // Si se marca como solo admin, automáticamente ocultar en docs y marcar como restrictiva
-                                    ...(checked ? { hideInDocuments: true, forceResult: true } : {})
                                   });
                                 }
                               }} />
