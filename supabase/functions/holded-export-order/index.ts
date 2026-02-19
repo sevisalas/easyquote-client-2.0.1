@@ -52,19 +52,35 @@ Deno.serve(async (req) => {
 
     // Verify user has access to this order
     if (order.user_id !== user.id) {
-      const { data: userOrg } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', user.id)
-        .single();
+      // Check if user belongs to the same organization as the order
+      const orderOrgId = order.organization_id;
+      let hasAccess = false;
 
-      const { data: orderOwnerOrg } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', order.user_id)
-        .single();
+      if (orderOrgId) {
+        // Check if user is org owner
+        const { data: ownedOrg } = await supabase
+          .from('organizations')
+          .select('id')
+          .eq('id', orderOrgId)
+          .eq('api_user_id', user.id)
+          .maybeSingle();
 
-      if (!userOrg || !orderOwnerOrg || userOrg.organization_id !== orderOwnerOrg.organization_id) {
+        if (ownedOrg) {
+          hasAccess = true;
+        } else {
+          // Check if user is org member
+          const { data: membership } = await supabase
+            .from('organization_members')
+            .select('id')
+            .eq('organization_id', orderOrgId)
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          hasAccess = !!membership;
+        }
+      }
+
+      if (!hasAccess) {
         throw new Error('No tienes permiso para exportar este pedido');
       }
     }
