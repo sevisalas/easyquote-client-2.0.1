@@ -649,34 +649,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Build the payload for Holded API
+    // Build the payload for Holded API (POST only accepts basic fields)
     const payload: any = {
       contactId,
       contactName: contactData?.name || '',
       desc: order.description || order.title || '',
       date: Math.floor(new Date(order.order_date).getTime() / 1000),
       items,
-      shipping: 'billing',
-      approvedAt: Math.floor(Date.now() / 1000),
     };
-
-    // Add relation to source estimate if order comes from a quote
+    
     if (quoteData?.holded_estimate_id) {
-      payload.from = {
-        id: quoteData.holded_estimate_id,
-        docType: 'estimate'
-      };
-      
-      // Add customFields with estimate number for traceability
-      if (quoteData.holded_estimate_number) {
-        payload.customFields = [
-          {
-            field: 'Presupuesto',
-            value: quoteData.holded_estimate_number
-          }
-        ];
-      }
-      
       console.log('📎 Linking to estimate:', quoteData.holded_estimate_id, '(', quoteData.holded_estimate_number, ')');
     }
 
@@ -746,12 +728,51 @@ Deno.serve(async (req) => {
       console.error('Error updating order with Holded data:', updateError);
     }
 
+    // PUT to update the sales order with fields that POST ignores
+    if (holdedResult.id) {
+      try {
+        const updatePayload: any = {
+          shipping: 'billing',
+          approvedAt: Math.floor(Date.now() / 1000),
+        };
+
+        if (quoteData?.holded_estimate_id) {
+          updatePayload.from = {
+            id: quoteData.holded_estimate_id,
+            docType: 'estimate'
+          };
+        }
+
+        if (quoteData?.holded_estimate_number) {
+          updatePayload.customFields = [
+            { field: 'Presupuesto', value: quoteData.holded_estimate_number }
+          ];
+        }
+
+        console.log('📝 Updating sales order via PUT:', JSON.stringify(updatePayload));
+        const updateRes = await fetch(
+          `https://api.holded.com/api/invoicing/v1/documents/salesorder/${holdedResult.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Key': apiKey,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updatePayload),
+          }
+        );
+        const updateBody = await updateRes.text();
+        console.log(`📝 Sales order PUT response: ${updateRes.status} - ${updateBody}`);
+      } catch (putErr) {
+        console.error('Error updating sales order in Holded (non-fatal):', putErr);
+      }
+    }
+
     // Mark the source estimate as accepted in Holded
-    console.log('🔍 quoteData for estimate update:', JSON.stringify(quoteData));
     if (quoteData?.holded_estimate_id) {
       try {
-        console.log(`📋 Attempting to mark estimate ${quoteData.holded_estimate_id} as accepted...`);
         const approvedTimestamp = Math.floor(Date.now() / 1000);
+        console.log(`📋 Marking estimate ${quoteData.holded_estimate_id} as accepted...`);
         const acceptRes = await fetch(
           `https://api.holded.com/api/invoicing/v1/documents/estimate/${quoteData.holded_estimate_id}`,
           {
@@ -764,12 +785,10 @@ Deno.serve(async (req) => {
           }
         );
         const acceptBody = await acceptRes.text();
-        console.log(`📋 Estimate ${quoteData.holded_estimate_id} update response: ${acceptRes.status} - ${acceptBody}`);
+        console.log(`📋 Estimate update response: ${acceptRes.status} - ${acceptBody}`);
       } catch (estErr) {
-        console.error('Error marking estimate as accepted in Holded (non-fatal):', estErr);
+        console.error('Error marking estimate as accepted (non-fatal):', estErr);
       }
-    } else {
-      console.log('⚠️ No holded_estimate_id found, skipping estimate status update');
     }
 
     // Attach documents if any exist
