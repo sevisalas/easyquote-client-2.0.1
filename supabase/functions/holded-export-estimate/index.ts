@@ -438,10 +438,21 @@ Deno.serve(async (req) => {
 
 
     // ONLY include prompts (user-configured values). Outputs are internal technical data and must NOT be sent to Holded.
-    const buildCompositeDescription = (compositeData: any): string => {
+    // parentPromptsArray: prompts del item padre (nivel general del producto compuesto) para evitar repetirlos en los componentes
+    const buildCompositeDescription = (compositeData: any, parentPromptsArray?: any[]): string => {
       if (!compositeData || typeof compositeData !== 'object') return '';
       const componentsMap = compositeData.components || {};
       const activeComponents = compositeData.activeComponents || [];
+
+      // Build a set of "label:value" pairs from the parent prompts so we can skip them in components
+      const parentPromptSignatures = new Set<string>();
+      if (Array.isArray(parentPromptsArray)) {
+        for (const p of parentPromptsArray) {
+          const label = normalizePromptKey(p?.label ?? p?.promptText ?? p?.id ?? '');
+          const val = String(p?.value ?? p?.currentValue ?? '').trim();
+          if (label) parentPromptSignatures.add(`${label}:${val}`);
+        }
+      }
 
       const sortedKeys = Object.keys(componentsMap).sort((a, b) => {
         const orderA = activeComponents.find((ac: any) => a.startsWith(ac.id))?.display_order ?? 99;
@@ -469,7 +480,14 @@ Deno.serve(async (req) => {
             // Filter out hidden/admin-only prompts using the component's real product ID
             const candidates = [p?.promptText, p?.label, p?.id].filter(Boolean);
             const hidden = candidates.some((c) => hiddenPromptsSet.has(makeHiddenKey(compProductId, c)));
-            return !hidden;
+            if (hidden) return false;
+            // Skip prompts that are already shown in the parent (propagated/general fields)
+            if (parentPromptSignatures.size > 0) {
+              const label = normalizePromptKey(p?.promptText ?? p?.label ?? p?.id ?? '');
+              const valStr = String(val).trim();
+              if (parentPromptSignatures.has(`${label}:${valStr}`)) return false;
+            }
+            return true;
           })
           .sort((a: any, b: any) => (a.promptSequence || 0) - (b.promptSequence || 0))
           .map((p: any) => `${p.promptText || p.label || p.id || ''}: ${p.currentValue ?? p.value ?? ''}`)
@@ -563,8 +581,8 @@ Deno.serve(async (req) => {
         
         // Item additionals are now exported as separate line items (not in description)
 
-        // Append composite component details
-        const compositeDesc = buildCompositeDescription(item.composite_data);
+        // Append composite component details (pass parent prompts to avoid repeating propagated fields)
+        const compositeDesc = buildCompositeDescription(item.composite_data, promptsArray);
         if (compositeDesc) {
           baseDescription += (baseDescription ? '\n\n' : '') + compositeDesc;
         }
@@ -701,8 +719,19 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Append composite component details
-        const compositeDescSingle = buildCompositeDescription(item.composite_data);
+        // Append composite component details (pass parent prompts to avoid repeating propagated fields)
+        let singlePromptsArray: any[] = [];
+        if (item.prompts && !isCustomProduct) {
+          if (Array.isArray(item.prompts)) {
+            singlePromptsArray = item.prompts;
+          } else if (typeof item.prompts === 'object') {
+            singlePromptsArray = Object.entries(item.prompts).map(([key, value]) => ({
+              id: key,
+              ...(typeof value === 'object' ? value : { value })
+            }));
+          }
+        }
+        const compositeDescSingle = buildCompositeDescription(item.composite_data, singlePromptsArray);
         if (compositeDescSingle) {
           description += (description ? '\n\n' : '') + compositeDescSingle;
         }
