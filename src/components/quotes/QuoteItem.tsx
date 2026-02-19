@@ -1257,8 +1257,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       activeCompositeComponents.map(c => `${c.id}:${c.instance_index}`).join(","),
       JSON.stringify(componentPromptValues),
       organizationId,
+      effectiveApiUserId,
     ],
-    enabled: !!hasToken && !!productId && multiEnabled && !!qtyPrompt && allQtysComplete && hasConfiguredComponents && activeCompositeComponents.length > 0,
+    enabled: !!hasToken && !!productId && multiEnabled && !!qtyPrompt && allQtysComplete && hasConfiguredComponents && activeCompositeComponents.length > 0 && !!organizationId && !!effectiveApiUserId,
     refetchOnWindowFocus: false,
     retry: 1,
     staleTime: 30000,
@@ -1271,14 +1272,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         .filter((n) => !Number.isNaN(n) && n > 0);
       if (qtys.length === 0) return [] as any[];
 
-      debugLog("🔢 Multi-cantidad (compuesto): lanzando cálculos para", qtys.length, "cantidades:", qtys, "con", activeCompositeComponents.length, "componentes. qtyPrompt:", qtyPrompt);
+      console.warn("🔢 [compositeMulti] Lanzando cálculos para cantidades:", qtys, "componentes:", activeCompositeComponents.length, "qtyPrompt:", qtyPrompt, "orgId:", organizationId);
 
-      // Fetch prompt connections for this composite product
+      // Fetch prompt connections for this composite product — use api_user_id (canonical key)
       const { data: promptConnections } = await supabase
         .from("composite_prompt_connections")
         .select("*")
-        .eq("organization_id", organizationId)
+        .eq("api_user_id", effectiveApiUserId)
         .eq("composite_product_id", productId);
+
+      console.warn("🔢 [compositeMulti] Conexiones encontradas:", promptConnections?.length ?? 0);
 
       // For each quantity, calculate all components in parallel
       const results = await Promise.all(
@@ -1296,6 +1299,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   conn.target_component_id === component.component_product_id
               );
 
+              // Track which target prompts are connected to the quantity source
+              const qtyTargetPrompts = new Set<string>();
+
               // Add inherited values from parent prompts (with quantity replaced)
               for (const conn of connections as any[]) {
                 let sourceValue: any;
@@ -1303,6 +1309,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 // If this is the quantity prompt connection, use the current qty
                 if (conn.source_prompt_name === qtyPrompt) {
                   sourceValue = qty;
+                  qtyTargetPrompts.add(conn.target_prompt_name);
                 } else {
                   // Get value from parent prompt values
                   sourceValue = debouncedPromptValues[conn.source_prompt_name];
@@ -1322,11 +1329,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               // Add user-edited component values (if any)
               // BUT skip prompts that are targets of the quantity connection —
               // those must use the per-row `qty`, not the stored single value.
-              const qtyTargetPrompts = new Set(
-                (connections as any[])
-                  .filter((conn: any) => conn.source_prompt_name === qtyPrompt)
-                  .map((conn: any) => conn.target_prompt_name)
-              );
               const componentKey = `${component.id}:${component.instance_index || 1}`;
               const userEditedValues = componentPromptValues[componentKey] || {};
               for (const [promptId, value] of Object.entries(userEditedValues)) {
@@ -1340,7 +1342,25 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 }
               }
 
-              debugLog(`🔢 Multi comp=${component.component_alias} qty=${qty} inputs:`, JSON.stringify(componentInputs), "qtyTargets:", [...qtyTargetPrompts]);
+              // SAFETY NET: If no connections found for qty but we know the qtyPrompt,
+              // force-override the quantity value in componentInputs.
+              // This handles cases where connections data is empty/delayed.
+              if (qtyTargetPrompts.size === 0 && connections.length === 0) {
+                // No connections at all — try to find and override the qty prompt directly
+                // by looking for a numeric prompt that matches the parent qty prompt pattern
+                const qtyIdx = componentInputs.findIndex(i => {
+                  // Check if this input's current value matches Q1 (the "base" qty)
+                  const numVal = Number(String(i.value).replace(/\./g, "").replace(",", "."));
+                  const q1Val = Number(String(qtyInputs[0]).replace(/\./g, "").replace(",", "."));
+                  return !isNaN(numVal) && !isNaN(q1Val) && numVal === q1Val;
+                });
+                if (qtyIdx >= 0) {
+                  console.warn(`🔢 [compositeMulti] SAFETY: overriding input[${qtyIdx}] (${componentInputs[qtyIdx].id}) from ${componentInputs[qtyIdx].value} to ${qty}`);
+                  componentInputs[qtyIdx].value = qty;
+                }
+              }
+
+              console.warn(`🔢 [compositeMulti] comp=${component.component_alias} qty=${qty} qtyTargets:`, [...qtyTargetPrompts], "inputCount:", componentInputs.length);
               try {
                 const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
                   token,
@@ -1385,7 +1405,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         })
       );
 
-      debugLog("🔢 Multi-cantidad (compuesto) resultados:", results.map(r => ({ qty: r.qty, price: r.totalPrice })));
+      console.warn("🔢 [compositeMulti] Resultados:", results.map(r => ({ qty: r.qty, price: r.totalPrice })));
 
       return results;
     },
