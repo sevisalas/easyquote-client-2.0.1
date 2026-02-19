@@ -123,7 +123,7 @@ const ImpositionScheme: React.FC<{ data: any }> = ({ data }) => {
               {/* Crop marks */}
               <Line
                 x1={sx(x + bleed - cropMarkLength)}
-                y1={sy(x + bleed)}
+                y1={sy(y + bleed)}
                 x2={sx(x + bleed + cropMarkLength)}
                 y2={sy(y + bleed)}
                 stroke="#374151"
@@ -482,7 +482,7 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
                       </Text>
                       <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', marginTop: 1 }}>
                         {imp.repetitionsH}×{imp.repetitionsV}={imp.totalRepetitions}/pliego
-                        {imp.utilization !== undefined ? ` · ${imp.utilization.toFixed(1)}%` : ''}
+                        {imp.utilization !== undefined && imp.utilization !== null ? ` · ${Number(imp.utilization).toFixed(1)}%` : ''}
                       </Text>
                     </View>
                   );

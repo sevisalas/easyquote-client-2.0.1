@@ -766,7 +766,6 @@ const SalesOrderDetail = () => {
                             }
                             itemIndex={index}
                           >
-                            {/* Imposición solo visible en vista producción */}
                           </WorkOrderItem>
                           
                           {/* Gestión de Producción integrada - Solo en vista producción */}
