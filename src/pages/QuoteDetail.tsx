@@ -580,15 +580,42 @@ export default function QuoteDetail() {
                   </Button>
                 )}
                 {quote.status === 'sent' && (!isComercial || isOwnQuote) && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => updateStatusMutation.mutate({ quoteId: quote.id, status: 'rejected' })}
-                    disabled={updateStatusMutation.isPending}
-                    className="h-6 text-xs px-2"
-                  >
-                    Rechazar
-                  </Button>
+                  <>
+                    {canExportQuotes && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          try {
+                            toast.info('Reenviando a Holded...');
+                            const { error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
+                              body: { quoteId: quote.id }
+                            });
+                            if (holdedError) {
+                              toast.error(`Error al reenviar a Holded: ${holdedError.message}`);
+                            } else {
+                              toast.success('Presupuesto reenviado a Holded correctamente');
+                              queryClient.invalidateQueries({ queryKey: ['quote', id] });
+                            }
+                          } catch (err: any) {
+                            toast.error(`Error al reenviar: ${err.message || 'Error desconocido'}`);
+                          }
+                        }}
+                        className="h-6 text-xs px-2"
+                      >
+                        Reenviar a Holded
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => updateStatusMutation.mutate({ quoteId: quote.id, status: 'rejected' })}
+                      disabled={updateStatusMutation.isPending}
+                      className="h-6 text-xs px-2"
+                    >
+                      Rechazar
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
