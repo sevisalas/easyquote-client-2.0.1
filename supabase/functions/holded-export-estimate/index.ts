@@ -247,12 +247,12 @@ Deno.serve(async (req) => {
     
     const apiUserId = orgData?.api_user_id;
     
-    // Get hidden prompt settings using api_user_id (shared across org group)
+    // Get hidden prompt settings: hide_in_documents OR admin_only (if user can't see it, client shouldn't either)
     const { data: hiddenPromptSettings } = await supabase
       .from('product_prompt_settings')
       .select('easyquote_product_id, prompt_name, label')
       .eq('api_user_id', apiUserId)
-      .eq('hide_in_documents', true);
+      .or('hide_in_documents.eq.true,admin_only.eq.true');
 
     // IMPORTANT: in product_prompt_settings we store prompt_name (prompt id/name), not the human label.
     // Match using normalized keys to avoid issues with $, casing, spaces, etc.
