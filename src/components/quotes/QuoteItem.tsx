@@ -1271,7 +1271,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         .filter((n) => !Number.isNaN(n) && n > 0);
       if (qtys.length === 0) return [] as any[];
 
-      debugLog("🔢 Multi-cantidad (compuesto): lanzando cálculos para", qtys.length, "cantidades con", activeCompositeComponents.length, "componentes");
+      debugLog("🔢 Multi-cantidad (compuesto): lanzando cálculos para", qtys.length, "cantidades:", qtys, "con", activeCompositeComponents.length, "componentes. qtyPrompt:", qtyPrompt);
 
       // Fetch prompt connections for this composite product
       const { data: promptConnections } = await supabase
@@ -1340,6 +1340,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 }
               }
 
+              debugLog(`🔢 Multi comp=${component.component_alias} qty=${qty} inputs:`, JSON.stringify(componentInputs), "qtyTargets:", [...qtyTargetPrompts]);
               try {
                 const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
                   token,
