@@ -73,7 +73,8 @@ export default function QuoteDetail() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { isHoldedActive, canExportQuotes } = useHoldedIntegration();
-  const { membership, isOrgAdmin } = useSubscription();
+  const { membership, isOrgAdmin, isSuperAdmin } = useSubscription();
+  const isAdminUser = isSuperAdmin || membership?.role === 'admin';
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
@@ -105,7 +106,7 @@ export default function QuoteDetail() {
   const { data: adminOnlyPrompts } = useQuery({
     queryKey: ['admin-only-prompts', quote?.organization_id],
     queryFn: async () => {
-      if (isOrgAdmin) return new Set<string>(); // Admin sees everything
+      if (isAdminUser) return new Set<string>(); // Admin sees everything
       
       const { data: orgData } = await supabase
         .from('organizations')
@@ -129,11 +130,11 @@ export default function QuoteDetail() {
       });
       return hiddenSet;
     },
-    enabled: !!quote?.organization_id && !isOrgAdmin,
+    enabled: !!quote?.organization_id && !isAdminUser,
   });
 
   const isAdminOnlyPrompt = (label: string) => {
-    if (isOrgAdmin || !adminOnlyPrompts) return false;
+    if (isAdminUser || !adminOnlyPrompts) return false;
     return adminOnlyPrompts.has(label.trim().toUpperCase());
   };
 
