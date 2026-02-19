@@ -490,7 +490,7 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
                     {isSimple ? (
                       renderImpBlock(item.imposition_data)
                     ) : compositeEntries.length > 0 ? (
-                      <View style={{ flexDirection: 'row', gap: 4 }}>
+                      <View style={{ flexDirection: 'row', columnGap: 4 }}>
                         {compositeEntries.map(([key, data]) => {
                           const alias = item.composite_data?.components?.[key]?.alias || key;
                           return renderImpBlock(data, alias);
