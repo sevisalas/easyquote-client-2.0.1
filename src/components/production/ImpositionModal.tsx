@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ImpositionData } from "@/utils/impositionCalculator";
+import { ImpositionData, updateCalculatedValues } from "@/utils/impositionCalculator";
 import { ImpositionForm } from "./ImpositionForm";
 import { ImpositionScheme } from "./ImpositionScheme";
 
@@ -13,7 +13,7 @@ interface ImpositionModalProps {
 }
 
 export function ImpositionModal({ open, onOpenChange, initialData, onSave }: ImpositionModalProps) {
-  const [data, setData] = useState<ImpositionData>(initialData);
+  const [data, setData] = useState<ImpositionData>(() => updateCalculatedValues(initialData));
 
   const handleSave = () => {
     onSave(data);
