@@ -130,6 +130,25 @@ export default function Template3({ data }: Template3Props) {
                     </td>
                   </tr>
                 )}
+                {/* Component details for composite products */}
+                {item.components && item.components.length > 0 && (
+                  <tr className="border-b border-gray-100">
+                    <td colSpan={4} className="pl-4 py-1">
+                      {item.components.map((comp: any, cIdx: number) => (
+                        <div key={cIdx} className="mb-1">
+                          <div className="text-[10px] font-semibold text-gray-800 uppercase mb-0.5">── {comp.alias} ──</div>
+                          <div className="text-[10px] text-gray-700 space-y-0.5 leading-tight pl-2">
+                            {comp.prompts.map((p: any, pIdx: number) => (
+                              <div key={pIdx}>
+                                <span className="font-medium">{p.label}:</span> {p.value}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </td>
+                  </tr>
+                )}
               </React.Fragment>
             ))}
           </tbody>

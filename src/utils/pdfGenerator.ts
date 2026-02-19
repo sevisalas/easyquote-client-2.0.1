@@ -216,12 +216,60 @@ export const generateQuotePDF = async (
         });
       }
 
+      // Extract component details from composite_data
+      const componentSections: Array<{alias: string, prompts: Array<{label: string, value: string}>}> = [];
+      if (item.composite_data?.components) {
+        const componentsMap = item.composite_data.components;
+        const activeComponents = item.composite_data.activeComponents || [];
+        
+        const sortedKeys = Object.keys(componentsMap).sort((a, b) => {
+          const orderA = activeComponents.find((ac: any) => a.startsWith(ac.id))?.display_order ?? 99;
+          const orderB = activeComponents.find((ac: any) => b.startsWith(ac.id))?.display_order ?? 99;
+          if (orderA !== orderB) return orderA - orderB;
+          return a.localeCompare(b);
+        });
+        
+        for (const compKey of sortedKeys) {
+          const comp = componentsMap[compKey];
+          if (!comp) continue;
+          const alias = comp.alias || 'Componente';
+          const compPrompts = Array.isArray(comp.prompts) ? comp.prompts : [];
+          
+          // Get hidden prompts for this component's product
+          const compProductId = compKey.split(':')[0];
+          const compHiddenPrompts = compProductId ? hiddenPromptSettings.get(compProductId) : null;
+          const isCompHidden = (p: any): boolean => {
+            if (!compHiddenPrompts) return false;
+            const candidates = [p?.promptText, p?.label, p?.id].filter(Boolean).map(normalize);
+            return candidates.some(c => compHiddenPrompts.has(c));
+          };
+          
+          const compPromptsFormatted = compPrompts
+            .filter((p: any) => {
+              const val = p?.currentValue ?? p?.value;
+              if (val === null || val === undefined || String(val).trim() === '') return false;
+              if (isCompHidden(p)) return false;
+              return true;
+            })
+            .sort((a: any, b: any) => (a.promptSequence || 0) - (b.promptSequence || 0))
+            .map((p: any) => ({
+              label: p.promptText || p.label || p.id || '',
+              value: String(p.currentValue ?? p.value ?? '')
+            }));
+          
+          if (compPromptsFormatted.length > 0) {
+            componentSections.push({ alias, prompts: compPromptsFormatted });
+          }
+        }
+      }
+
       return {
         name: item.product_name || item.name || 'Producto',
         prompts: promptsFormatted,
         price: item.price || 0,
         quantity: item.quantity || 1,
-        images: images
+        images: images,
+        components: componentSections
       };
     });
 
