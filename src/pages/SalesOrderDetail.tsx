@@ -752,6 +752,7 @@ const SalesOrderDetail = () => {
                               prompts: itemPrompts,
                               outputs: itemOutputs,
                               description: item.description || undefined,
+                              imposition_data: (item.imposition_data as any) || undefined,
                             }}
                             orderNumber={order.order_number}
                             customerName={order.customer_id ? undefined : 'Sin cliente'}
