@@ -278,9 +278,14 @@ Deno.serve(async (req) => {
 
     const normalizeHiddenKey = (v: unknown) => normalizePromptKey(v).toUpperCase();
     const makeHiddenKey = (productId: unknown, promptKey: unknown) => `${String(productId ?? '')}:${normalizeHiddenKey(promptKey)}`;
-    const hiddenPromptsSet = new Set(
-      (hiddenPromptSettings || []).map((s: any) => makeHiddenKey(s.easyquote_product_id, s.prompt_name)),
-    );
+    // Include BOTH prompt_name (cell ref) AND label (human name) for matching
+    const hiddenPromptsSet = new Set<string>();
+    (hiddenPromptSettings || []).forEach((s: any) => {
+      hiddenPromptsSet.add(makeHiddenKey(s.easyquote_product_id, s.prompt_name));
+      if (s.label) {
+        hiddenPromptsSet.add(makeHiddenKey(s.easyquote_product_id, s.label));
+      }
+    });
 
     const isHiddenInDocuments = (productId: unknown, prompt: any, defsMap?: Record<string, PromptDef> | null): boolean => {
       const candidates = [prompt?.name, prompt?.id, prompt?.label].filter(Boolean);
@@ -585,11 +590,20 @@ Deno.serve(async (req) => {
             const alias = comp.alias || 'Componente';
             const compPrompts = Array.isArray(comp.prompts) ? comp.prompts : [];
 
+            // Resolve real easyquote_product_id via activeComponents
+            const compId = compKey.split(':')[0];
+            const activeComp = activeComponents.find((ac: any) => ac.id === compId);
+            const compProductId = activeComp?.component_product_id || compId;
+
             // Build component prompts text (ONLY prompts, outputs are internal data)
+            // Filter out hidden/admin-only prompts
             const promptLines = compPrompts
               .filter((p: any) => {
                 const val = p?.currentValue ?? p?.value;
-                return val !== null && val !== undefined && String(val).trim() !== '';
+                if (val === null || val === undefined || String(val).trim() === '') return false;
+                const candidates = [p?.promptText, p?.label, p?.id].filter(Boolean);
+                const hidden = candidates.some((c) => hiddenPromptsSet.has(makeHiddenKey(compProductId, c)));
+                return !hidden;
               })
               .sort((a: any, b: any) => (a.promptSequence || 0) - (b.promptSequence || 0))
               .map((p: any) => {
