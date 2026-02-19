@@ -655,7 +655,9 @@ Deno.serve(async (req) => {
       contactName: contactData?.name || '',
       desc: order.description || order.title || '',
       date: Math.floor(new Date(order.order_date).getTime() / 1000),
-      items
+      items,
+      shipping: 'billing',
+      approvedAt: Math.floor(Date.now() / 1000),
     };
 
     // Add relation to source estimate if order comes from a quote
