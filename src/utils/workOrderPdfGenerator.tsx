@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   observationsBox: {
-    border: '1px solid #ddd',
+    borderWidth: 1, borderColor: '#ddd',
     padding: 6,
     minHeight: 40,
     backgroundColor: '#fafafa',
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   impositionBox: {
-    border: '0.5px solid #ccc',
+    borderWidth: 0.5, borderColor: '#ccc',
     padding: 6,
     marginBottom: 4,
   },
@@ -460,7 +460,7 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
                 const renderImpBlock = (imp: any, label?: string) => {
                   if (!imp || !imp.repetitionsH || !imp.repetitionsV) return null;
                   return (
-                    <View style={{ flex: 1, border: '0.5px solid #ccc', padding: 4, marginRight: 4 }} key={label || '__simple__'}>
+                    <View style={{ flex: 1, borderWidth: 0.5, borderColor: '#ccc', padding: 4, marginRight: 4 }} key={label || '__simple__'}>
                       {label && (
                         <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold', marginBottom: 2 }}>
                           {imp.productWidth}×{imp.productHeight} ({label})
@@ -505,7 +505,7 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
 
               {/* Observaciones mini */}
               <View style={{ 
-                border: '1px solid #ced4da', 
+                borderWidth: 1, borderColor: '#ced4da', 
                 padding: 4, 
                 backgroundColor: '#ffffff',
                 marginTop: 4,
@@ -593,8 +593,8 @@ export const generateWorkOrderPDF = async (
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error('Error generando PDF de orden de trabajo:', error);
-    throw new Error('No se pudo generar el PDF de la orden de trabajo');
+  } catch (error: any) {
+    console.error('Error generando PDF de orden de trabajo:', error?.message || error, error?.stack);
+    throw new Error(`No se pudo generar el PDF de la orden de trabajo: ${error?.message || error}`);
   }
 };
