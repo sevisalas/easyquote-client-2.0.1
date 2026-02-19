@@ -270,12 +270,11 @@ Deno.serve(async (req) => {
     const apiUserId = orgData?.api_user_id;
     
     // Hide-in-documents prompt settings (using api_user_id for shared config)
-    // Include both hide_in_documents AND admin_only prompts
     const { data: hiddenPromptSettings } = await supabase
       .from('product_prompt_settings')
       .select('easyquote_product_id, prompt_name, label')
       .eq('api_user_id', apiUserId)
-      .or('hide_in_documents.eq.true,admin_only.eq.true');
+      .eq('hide_in_documents', true);
 
     const normalizeHiddenKey = (v: unknown) => normalizePromptKey(v).toUpperCase();
     const makeHiddenKey = (productId: unknown, promptKey: unknown) => `${String(productId ?? '')}:${normalizeHiddenKey(promptKey)}`;
