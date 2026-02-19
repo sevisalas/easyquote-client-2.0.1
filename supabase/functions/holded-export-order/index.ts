@@ -751,6 +751,7 @@ Deno.serve(async (req) => {
     if (quoteData?.holded_estimate_id) {
       try {
         console.log(`📋 Attempting to mark estimate ${quoteData.holded_estimate_id} as accepted...`);
+        const approvedTimestamp = Math.floor(Date.now() / 1000);
         const acceptRes = await fetch(
           `https://api.holded.com/api/invoicing/v1/documents/estimate/${quoteData.holded_estimate_id}`,
           {
@@ -759,7 +760,7 @@ Deno.serve(async (req) => {
               'Key': apiKey,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ status: 1 }),
+            body: JSON.stringify({ approvedAt: approvedTimestamp }),
           }
         );
         const acceptBody = await acceptRes.text();
