@@ -5,11 +5,11 @@ import { supabase } from '@/integrations/supabase/client';
 // Componente para renderizar el esquema de imposición con componentes nativos
 const ImpositionScheme: React.FC<{ data: any }> = ({ data }) => {
   const {
-    productWidth,
-    productHeight,
+    productWidth = 0,
+    productHeight = 0,
     bleed = 0,
-    sheetWidth,
-    sheetHeight,
+    sheetWidth = 1,
+    sheetHeight = 1,
     validWidth,
     validHeight,
     gutterH = 0,
@@ -18,6 +18,14 @@ const ImpositionScheme: React.FC<{ data: any }> = ({ data }) => {
     repetitionsV = 0,
     orientation = 'horizontal'
   } = data;
+
+  // Guard against invalid data that would produce Infinity
+  if (!sheetWidth || !sheetHeight || sheetWidth <= 0 || sheetHeight <= 0) {
+    return null;
+  }
+
+  const safeValidWidth = validWidth || sheetWidth;
+  const safeValidHeight = validHeight || sheetHeight;
 
   const isLandscape = sheetWidth >= sheetHeight;
   const svgWidth = 300;
@@ -28,6 +36,8 @@ const ImpositionScheme: React.FC<{ data: any }> = ({ data }) => {
   const scaleY = (svgHeight - margin * 2) / sheetHeight;
   const scale = Math.min(scaleX, scaleY);
   
+  if (!isFinite(scale) || scale <= 0) return null;
+
   const scaledSheetW = sheetWidth * scale;
   const scaledSheetH = sheetHeight * scale;
   const offsetX = (svgWidth - scaledSheetW) / 2;
@@ -38,8 +48,8 @@ const ImpositionScheme: React.FC<{ data: any }> = ({ data }) => {
   const sw = (w: number) => w * scale;
   const sh = (h: number) => h * scale;
   
-  const validOffsetX = (sheetWidth - validWidth) / 2;
-  const validOffsetY = (sheetHeight - validHeight) / 2;
+  const validOffsetX = (sheetWidth - safeValidWidth) / 2;
+  const validOffsetY = (sheetHeight - safeValidHeight) / 2;
   
   const productWithBleedW = productWidth + (bleed * 2);
   const productWithBleedH = productHeight + (bleed * 2);
@@ -50,8 +60,8 @@ const ImpositionScheme: React.FC<{ data: any }> = ({ data }) => {
   const totalUsedWidth = repetitionsH * prodW + (repetitionsH - 1) * gutterH;
   const totalUsedHeight = repetitionsV * prodH + (repetitionsV - 1) * gutterV;
   
-  const impositionOffsetX = validOffsetX + (validWidth - totalUsedWidth) / 2;
-  const impositionOffsetY = validOffsetY + (validHeight - totalUsedHeight) / 2;
+  const impositionOffsetX = validOffsetX + (safeValidWidth - totalUsedWidth) / 2;
+  const impositionOffsetY = validOffsetY + (safeValidHeight - totalUsedHeight) / 2;
   
   const cropMarkLength = 8;
 
@@ -72,8 +82,8 @@ const ImpositionScheme: React.FC<{ data: any }> = ({ data }) => {
       <Rect
         x={sx(validOffsetX)}
         y={sy(validOffsetY)}
-        width={sw(validWidth)}
-        height={sh(validHeight)}
+        width={sw(safeValidWidth)}
+        height={sh(safeValidHeight)}
         fill="none"
         stroke="#9ca3af"
         strokeWidth={1}
@@ -113,7 +123,7 @@ const ImpositionScheme: React.FC<{ data: any }> = ({ data }) => {
               {/* Crop marks */}
               <Line
                 x1={sx(x + bleed - cropMarkLength)}
-                y1={sy(y + bleed)}
+                y1={sy(x + bleed)}
                 x2={sx(x + bleed + cropMarkLength)}
                 y2={sy(y + bleed)}
                 stroke="#374151"
