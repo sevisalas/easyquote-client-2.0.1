@@ -123,39 +123,13 @@ Deno.serve(async (req) => {
       console.log('Using sales account:', salesChannelId);
     }
 
-    // Get organization based on quote owner (not current user, since user may belong to multiple orgs)
-    let organizationId: string | null = null;
-    const quoteOwnerId = quote.user_id;
-    
-    // First check if quote owner is an organization owner
-    const { data: ownedOrg } = await supabase
-      .from('organizations')
-      .select('id')
-      .eq('api_user_id', quoteOwnerId)
-      .limit(1)
-      .single();
-    
-    if (ownedOrg) {
-      organizationId = ownedOrg.id;
-      console.log('Found organization as owner:', organizationId);
-    } else {
-      // Check if quote owner is a member of an organization
-      const { data: memberOrg } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', quoteOwnerId)
-        .limit(1)
-        .single();
-      
-      if (memberOrg) {
-        organizationId = memberOrg.organization_id;
-        console.log('Found organization as member:', organizationId);
-      }
-    }
+    // Use organization_id directly from the quote (source of truth)
+    const organizationId = quote.organization_id;
+    console.log('Using organization from quote:', organizationId);
     
     if (!organizationId) {
-      console.error('No organization found for quote owner:', quoteOwnerId);
-      throw new Error('No se encontró organización para el propietario del presupuesto');
+      console.error('No organization_id found on quote:', quoteId);
+      throw new Error('No se encontró organización para este presupuesto');
     }
     
     // Get Holded integration
