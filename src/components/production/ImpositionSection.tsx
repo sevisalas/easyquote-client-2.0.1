@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { Settings, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ImpositionData } from "@/utils/impositionCalculator";
-import { ImpositionScheme } from "./ImpositionScheme";
 import { ImpositionModal } from "./ImpositionModal";
 
 interface ComponentInfo {
@@ -33,65 +32,16 @@ const defaultImpositionData: ImpositionData = {
   gutterV: 2,
 };
 
-/** Para un producto simple, imposition_data es un ImpositionData directamente.
- *  Para compuestos, imposition_data es un mapa { [componentKey]: ImpositionData }.
- *  Detectamos cuál es mirando si tiene "productWidth" (simple) o no (mapa). */
 function isSimpleImposition(data: any): data is ImpositionData {
   return data && typeof data.productWidth === 'number';
 }
 
-function SingleImposition({ 
-  data, 
-  onEdit, 
-  onDelete 
-}: { 
-  data: ImpositionData | null; 
-  onEdit: () => void; 
-  onDelete: () => void;
-  label?: string;
-}) {
-  if (!data) {
-    return (
-      <Button size="sm" variant="outline" onClick={onEdit} className="w-fit">
-        <Settings className="h-3 w-3 mr-1" />
-        Activar imposición
-      </Button>
-    );
-  }
-
-  return (
-    <div className="flex gap-3 items-center p-3 bg-muted/30 rounded-md">
-      <div className="flex-shrink-0">
-        <ImpositionScheme data={data} compact={true} />
-      </div>
-      <div className="flex-1 flex items-center gap-4">
-        <p className="text-sm font-medium text-muted-foreground">
-          {data.repetitionsH}×{data.repetitionsV} = {data.totalRepetitions} por pliego
-        </p>
-        <p className="text-sm font-medium text-muted-foreground">
-          Aprovechamiento: {data.utilization?.toFixed(1)}%
-        </p>
-      </div>
-      <div className="flex gap-2">
-        <Button size="sm" variant="outline" onClick={onEdit} className="h-8">
-          <Settings className="h-3 w-3 mr-1" />
-          Editar
-        </Button>
-        <Button size="sm" variant="ghost" onClick={onDelete} className="h-8">
-          Eliminar
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionProps) {
-  const [activeModal, setActiveModal] = useState<string | null>(null); // null or componentKey or '__simple__'
+  const [activeModal, setActiveModal] = useState<string | null>(null);
 
   const compositeData = item.composite_data;
-  const isComposite = compositeData && compositeData.components && Object.keys(compositeData.components).length > 0;
+  const isComposite = compositeData?.components && Object.keys(compositeData.components).length > 0;
 
-  // Extraer componentes del composite_data
   const components: ComponentInfo[] = isComposite
     ? Object.entries(compositeData.components).map(([key, comp]: [string, any]) => ({
         key,
@@ -99,11 +49,8 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
       }))
     : [];
 
-  // Para compuestos: imposition_data es un mapa {componentKey: ImpositionData}
-  // Para simples: imposition_data es un ImpositionData directamente
   const getComponentImposition = (componentKey: string): ImpositionData | null => {
-    if (!item.imposition_data) return null;
-    if (isSimpleImposition(item.imposition_data)) return null; // Es formato simple, no aplica a componentes
+    if (!item.imposition_data || isSimpleImposition(item.imposition_data)) return null;
     return item.imposition_data[componentKey] || null;
   };
 
@@ -113,7 +60,6 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
         .from('sales_order_items')
         .update({ imposition_data: newData })
         .eq('id', item.id);
-
       if (error) throw error;
       toast.success('Imposición guardada correctamente');
       onStatusUpdate?.();
@@ -131,13 +77,24 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
 
     return (
       <>
-        <SingleImposition
-          data={simpleData}
-          onEdit={() => setActiveModal('__simple__')}
-          onDelete={async () => {
-            await saveImposition(null);
-          }}
-        />
+        {simpleData ? (
+          // Ya se muestra el esquema en WorkOrderItem, solo botones de acción
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setActiveModal('__simple__')} className="h-8">
+              <Settings className="h-3 w-3 mr-1" />
+              Editar imposición
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => saveImposition(null)} className="h-8">
+              <Trash2 className="h-3 w-3 mr-1" />
+              Eliminar
+            </Button>
+          </div>
+        ) : (
+          <Button size="sm" variant="outline" onClick={() => setActiveModal('__simple__')} className="w-fit">
+            <Settings className="h-3 w-3 mr-1" />
+            Activar imposición
+          </Button>
+        )}
         {activeModal === '__simple__' && (
           <ImpositionModal
             open={true}
@@ -153,7 +110,7 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
     );
   }
 
-  // ─── Producto compuesto: una imposición por componente ───
+  // ─── Producto compuesto: botones por componente ───
   const handleSaveComponent = async (componentKey: string, data: ImpositionData) => {
     const currentMap = item.imposition_data && !isSimpleImposition(item.imposition_data)
       ? { ...item.imposition_data }
@@ -168,8 +125,7 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
       ? { ...item.imposition_data }
       : {};
     delete currentMap[componentKey];
-    const hasAny = Object.keys(currentMap).length > 0;
-    await saveImposition(hasAny ? currentMap : null);
+    await saveImposition(Object.keys(currentMap).length > 0 ? currentMap : null);
   };
 
   return (
@@ -178,13 +134,25 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
       {components.map(({ key, alias }) => {
         const compData = getComponentImposition(key);
         return (
-          <div key={key} className="space-y-1">
-            <p className="text-xs font-medium text-foreground">{alias}</p>
-            <SingleImposition
-              data={compData}
-              onEdit={() => setActiveModal(key)}
-              onDelete={() => handleDeleteComponent(key)}
-            />
+          <div key={key} className="flex items-center gap-2">
+            <span className="text-xs font-medium text-foreground min-w-[80px]">{alias}:</span>
+            {compData ? (
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => setActiveModal(key)} className="h-7 text-xs">
+                  <Settings className="h-3 w-3 mr-1" />
+                  Editar
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => handleDeleteComponent(key)} className="h-7 text-xs">
+                  <Trash2 className="h-3 w-3 mr-1" />
+                  Eliminar
+                </Button>
+              </div>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => setActiveModal(key)} className="h-7 text-xs">
+                <Settings className="h-3 w-3 mr-1" />
+                Activar
+              </Button>
+            )}
           </div>
         );
       })}
