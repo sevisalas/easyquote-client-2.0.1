@@ -40,25 +40,51 @@ function isSimpleImposition(data: any): data is ImpositionData {
 function ImpositionBlock({ imp, label, onEdit, onDelete }: { imp: ImpositionData; label?: string; onEdit: () => void; onDelete: () => void }) {
   if (!imp.repetitionsH || !imp.repetitionsV) return null;
   return (
-    <div className="border border-border rounded-sm p-1.5 bg-background">
-      {label && <p className="text-[10px] font-bold uppercase tracking-wider mb-1">{label}</p>}
-      <div className="flex gap-2 items-center">
-        <div className="flex-shrink-0">
-          <ImpositionScheme data={imp} compact={true} />
-        </div>
-        <div className="text-[10px] leading-tight space-y-0">
-          <p>{imp.productWidth}×{imp.productHeight} → {imp.sheetWidth}×{imp.sheetHeight}</p>
-          <p>Sangr: {imp.bleed} · Calles: {imp.gutterH}×{imp.gutterV}</p>
-          <p className="font-bold">{imp.repetitionsH}×{imp.repetitionsV}={imp.totalRepetitions}/pliego</p>
-          {imp.utilization !== undefined && <p>Aprov: {imp.utilization.toFixed(1)}%</p>}
-          <div className="flex gap-1 pt-0.5">
-            <Button size="sm" variant="outline" onClick={onEdit} className="h-5 w-5 p-0">
-              <Settings className="h-2.5 w-2.5" />
-            </Button>
-            <Button size="sm" variant="ghost" onClick={onDelete} className="h-5 w-5 p-0">
-              <Trash2 className="h-2.5 w-2.5" />
-            </Button>
+    <div className="flex gap-3 items-start border border-border rounded-sm p-2">
+      <div className="flex-shrink-0">
+        <ImpositionScheme data={imp} compact={true} />
+      </div>
+      <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-0.5 text-[11px] self-center">
+        {label && (
+          <div className="col-span-2 mb-0.5">
+            <span className="font-bold text-xs">{label}</span>
           </div>
+        )}
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Producto:</span>
+          <span className="font-medium">{imp.productWidth}×{imp.productHeight} mm</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Pliego:</span>
+          <span className="font-medium">{imp.sheetWidth}×{imp.sheetHeight} mm</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Sangrado:</span>
+          <span className="font-medium">{imp.bleed} mm</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Calles:</span>
+          <span className="font-medium">{imp.gutterH}×{imp.gutterV} mm</span>
+        </div>
+        <div className="flex justify-between col-span-2 mt-1 pt-1 border-t border-border/50">
+          <span className="font-bold">Repeticiones:</span>
+          <span className="font-bold">{imp.repetitionsH}×{imp.repetitionsV} = {imp.totalRepetitions} por pliego</span>
+        </div>
+        {imp.utilization !== undefined && (
+          <div className="flex justify-between col-span-2">
+            <span className="text-muted-foreground">Aprovechamiento:</span>
+            <span className="font-medium">{imp.utilization.toFixed(1)}%</span>
+          </div>
+        )}
+        <div className="col-span-2 flex gap-2 mt-1">
+          <Button size="sm" variant="outline" onClick={onEdit} className="h-6 text-[10px] px-2">
+            <Settings className="h-3 w-3 mr-1" />
+            Editar
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onDelete} className="h-6 text-[10px] px-2">
+            <Trash2 className="h-3 w-3 mr-1" />
+            Eliminar
+          </Button>
         </div>
       </div>
     </div>
