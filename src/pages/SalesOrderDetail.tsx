@@ -61,6 +61,7 @@ const SalesOrderDetail = () => {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [viewMode, setViewMode] = useState<'production' | 'administrative'>('production');
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [sourceQuoteNumber, setSourceQuoteNumber] = useState<string | null>(null);
   const { isHoldedActive } = useHoldedIntegration();
 
   useEffect(() => {
@@ -96,6 +97,18 @@ const SalesOrderDetail = () => {
       
       const additionalsData = await fetchSalesOrderAdditionals(id);
       setAdditionals(additionalsData);
+      
+      // Load source quote number if exists
+      if (orderData.quote_id) {
+        const { data: quoteData } = await supabase
+          .from('quotes')
+          .select('quote_number')
+          .eq('id', orderData.quote_id)
+          .single();
+        if (quoteData) {
+          setSourceQuoteNumber(quoteData.quote_number);
+        }
+      }
       
       // Auto-sync Holded number if missing
       if (orderData.holded_document_id && !orderData.holded_document_number) {
@@ -516,7 +529,7 @@ const SalesOrderDetail = () => {
           {viewMode === 'administrative' ? (
             /* Vista Administrativa - Con precios y detalles comerciales */
             <>
-              <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 md:grid-cols-4 gap-2'}`}>
+              <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 md:grid-cols-5 gap-2'}`}>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">cliente</label>
                   <p className="text-sm font-medium mt-0.5">
@@ -555,6 +568,21 @@ const SalesOrderDetail = () => {
                     }
                   </p>
                 </div>
+                {sourceQuoteNumber && (
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">presupuesto origen</label>
+                    <p className="text-sm font-medium mt-0.5">
+                      <Button 
+                        variant="link" 
+                        className="h-auto p-0 text-sm font-medium"
+                        onClick={() => navigate(`/presupuestos/${order.quote_id}`)}
+                      >
+                        <FileText className="h-3.5 w-3.5 mr-1" />
+                        {sourceQuoteNumber}
+                      </Button>
+                    </p>
+                  </div>
+                )}
               </div>
             </>
           ) : (

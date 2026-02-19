@@ -744,6 +744,26 @@ Deno.serve(async (req) => {
       console.error('Error updating order with Holded data:', updateError);
     }
 
+    // Mark the source estimate as accepted in Holded
+    if (quoteData?.holded_estimate_id) {
+      try {
+        const acceptRes = await fetch(
+          `https://api.holded.com/api/invoicing/v1/documents/estimate/${quoteData.holded_estimate_id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Key': apiKey,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: 1 }),
+          }
+        );
+        console.log(`📋 Estimate ${quoteData.holded_estimate_id} marked as accepted: ${acceptRes.status}`);
+      } catch (estErr) {
+        console.error('Error marking estimate as accepted in Holded (non-fatal):', estErr);
+      }
+    }
+
     // Attach documents if any exist
     if (holdedResult.id) {
       try {
