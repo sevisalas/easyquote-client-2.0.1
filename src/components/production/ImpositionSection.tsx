@@ -40,30 +40,26 @@ function isSimpleImposition(data: any): data is ImpositionData {
 function ImpositionBlock({ imp, label, onEdit, onDelete }: { imp: ImpositionData; label?: string; onEdit: () => void; onDelete: () => void }) {
   if (!imp.repetitionsH || !imp.repetitionsV) return null;
   return (
-    <div className="flex gap-3 items-center border border-border rounded-sm p-2 bg-muted/10">
-      <div className="flex-shrink-0">
-        <ImpositionScheme data={imp} compact={true} />
-      </div>
-      <div className="flex-1 text-[11px]">
-        {label && <span className="font-bold text-xs block mb-0.5">{label}</span>}
-        <div className="flex flex-wrap gap-x-4 gap-y-0.5">
-          <span><span className="text-muted-foreground">Producto:</span> <span className="font-medium">{imp.productWidth}×{imp.productHeight}</span></span>
-          <span><span className="text-muted-foreground">Pliego:</span> <span className="font-medium">{imp.sheetWidth}×{imp.sheetHeight}</span></span>
-          <span><span className="text-muted-foreground">Sangrado:</span> <span className="font-medium">{imp.bleed}</span></span>
-          <span><span className="text-muted-foreground">Calles:</span> <span className="font-medium">{imp.gutterH}×{imp.gutterV}</span></span>
-          <span className="font-bold">Rep: {imp.repetitionsH}×{imp.repetitionsV} = {imp.totalRepetitions}/pliego</span>
-          {imp.utilization !== undefined && (
-            <span><span className="text-muted-foreground">Aprov:</span> <span className="font-medium">{imp.utilization.toFixed(1)}%</span></span>
-          )}
+    <div className="border border-border rounded-sm p-1.5 bg-background">
+      {label && <p className="text-[10px] font-bold uppercase tracking-wider mb-1">{label}</p>}
+      <div className="flex gap-2 items-center">
+        <div className="flex-shrink-0">
+          <ImpositionScheme data={imp} compact={true} />
         </div>
-      </div>
-      <div className="flex-shrink-0 flex gap-1">
-        <Button size="sm" variant="outline" onClick={onEdit} className="h-7 w-7 p-0">
-          <Settings className="h-3 w-3" />
-        </Button>
-        <Button size="sm" variant="ghost" onClick={onDelete} className="h-7 w-7 p-0">
-          <Trash2 className="h-3 w-3" />
-        </Button>
+        <div className="text-[10px] leading-tight space-y-0">
+          <p>{imp.productWidth}×{imp.productHeight} → {imp.sheetWidth}×{imp.sheetHeight}</p>
+          <p>Sangr: {imp.bleed} · Calles: {imp.gutterH}×{imp.gutterV}</p>
+          <p className="font-bold">{imp.repetitionsH}×{imp.repetitionsV}={imp.totalRepetitions}/pliego</p>
+          {imp.utilization !== undefined && <p>Aprov: {imp.utilization.toFixed(1)}%</p>}
+          <div className="flex gap-1 pt-0.5">
+            <Button size="sm" variant="outline" onClick={onEdit} className="h-5 w-5 p-0">
+              <Settings className="h-2.5 w-2.5" />
+            </Button>
+            <Button size="sm" variant="ghost" onClick={onDelete} className="h-5 w-5 p-0">
+              <Trash2 className="h-2.5 w-2.5" />
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -159,31 +155,33 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Imposición por componente</p>
-      {components.map(({ key, alias }) => {
-        const compData = getComponentImposition(key);
-        return (
-          <div key={key}>
-            {compData ? (
-              <ImpositionBlock
-                imp={compData}
-                label={alias}
-                onEdit={() => setActiveModal(key)}
-                onDelete={() => handleDeleteComponent(key)}
-              />
-            ) : (
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-foreground min-w-[80px]">{alias}:</span>
-                <Button size="sm" variant="outline" onClick={() => setActiveModal(key)} className="h-7 text-xs">
-                  <Settings className="h-3 w-3 mr-1" />
-                  Activar
-                </Button>
-              </div>
-            )}
-          </div>
-        );
-      })}
+      <div className="flex flex-wrap gap-2">
+        {components.map(({ key, alias }) => {
+          const compData = getComponentImposition(key);
+          return (
+            <div key={key} className="flex-1 min-w-[200px]">
+              {compData ? (
+                <ImpositionBlock
+                  imp={compData}
+                  label={alias}
+                  onEdit={() => setActiveModal(key)}
+                  onDelete={() => handleDeleteComponent(key)}
+                />
+              ) : (
+                <div className="border border-dashed border-border rounded-sm p-1.5 flex items-center gap-2">
+                  <span className="text-[10px] font-medium">{alias}:</span>
+                  <Button size="sm" variant="outline" onClick={() => setActiveModal(key)} className="h-5 text-[10px] px-1.5">
+                    <Settings className="h-2.5 w-2.5 mr-0.5" />
+                    Activar
+                  </Button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
       {activeModal && activeModal !== '__simple__' && (
         <ImpositionModal

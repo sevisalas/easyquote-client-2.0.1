@@ -460,55 +460,45 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
                 const renderImpBlock = (imp: any, label?: string) => {
                   if (!imp || !imp.repetitionsH || !imp.repetitionsV) return null;
                   return (
-                    <View style={styles.impositionBox} key={label || '__simple__'}>
+                    <View style={{ flex: 1, border: '0.5px solid #ccc', padding: 4 }} key={label || '__simple__'}>
                       {label && (
-                        <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', marginBottom: 3 }}>{label}</Text>
+                        <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold', marginBottom: 2 }}>
+                          {imp.productWidth}×{imp.productHeight} ({label})
+                        </Text>
                       )}
                       <ImpositionScheme data={imp} />
-                      <View style={styles.impositionGrid}>
-                        <View style={styles.impositionItem}>
-                          <Text style={styles.impositionLabel}>Producto:</Text>
-                          <Text style={styles.impositionValue}>{imp.productWidth}×{imp.productHeight} mm</Text>
-                        </View>
-                        <View style={styles.impositionItem}>
-                          <Text style={styles.impositionLabel}>Pliego:</Text>
-                          <Text style={styles.impositionValue}>{imp.sheetWidth}×{imp.sheetHeight} mm</Text>
-                        </View>
-                        <View style={styles.impositionItem}>
-                          <Text style={styles.impositionLabel}>Sangrado:</Text>
-                          <Text style={styles.impositionValue}>{imp.bleed} mm</Text>
-                        </View>
-                        <View style={styles.impositionItem}>
-                          <Text style={styles.impositionLabel}>Calles:</Text>
-                          <Text style={styles.impositionValue}>{imp.gutterH}×{imp.gutterV} mm</Text>
-                        </View>
-                      </View>
-                      <View style={styles.impositionHighlight}>
-                        <Text style={styles.impositionHighlightText}>
-                          {imp.repetitionsH}×{imp.repetitionsV} = {imp.totalRepetitions} por pliego
-                          {imp.utilization !== undefined ? ` · Aprovechamiento: ${imp.utilization.toFixed(1)}%` : ''}
-                        </Text>
-                      </View>
+                      <Text style={{ fontSize: 7, marginTop: 2 }}>
+                        {imp.productWidth}×{imp.productHeight} → {imp.sheetWidth}×{imp.sheetHeight} · Sangr: {imp.bleed} · Calles: {imp.gutterH}×{imp.gutterV}
+                      </Text>
+                      <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', marginTop: 1 }}>
+                        {imp.repetitionsH}×{imp.repetitionsV}={imp.totalRepetitions}/pliego
+                        {imp.utilization !== undefined ? ` · ${imp.utilization.toFixed(1)}%` : ''}
+                      </Text>
                     </View>
                   );
                 };
 
+                const compositeEntries = !isSimple && isComposite
+                  ? Object.entries(item.imposition_data).filter(([_, d]) => d && typeof (d as any).productWidth === 'number')
+                  : [];
+
                 return (
-                  <View style={{ marginBottom: 6 }}>
-                    <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', marginBottom: 3, color: '#6c757d' }}>
-                      {isComposite && !isSimple ? 'Imposición por componente' : 'Imposición'}
+                  <View style={{ marginBottom: 4 }}>
+                    <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', marginBottom: 2, color: '#6c757d' }}>
+                      {compositeEntries.length > 0 ? 'Imposición por componente' : 'Imposición'}
                     </Text>
-                    {isSimple
-                      ? renderImpBlock(item.imposition_data)
-                      : isComposite
-                        ? Object.entries(item.imposition_data)
-                            .filter(([_, data]) => data && typeof (data as any).productWidth === 'number')
-                            .map(([key, data]) => {
-                              const alias = item.composite_data?.components?.[key]?.alias || key;
-                              return renderImpBlock(data, alias);
-                            })
-                        : renderImpBlock(item.imposition_data)
-                    }
+                    {isSimple ? (
+                      renderImpBlock(item.imposition_data)
+                    ) : compositeEntries.length > 0 ? (
+                      <View style={{ flexDirection: 'row', gap: 4 }}>
+                        {compositeEntries.map(([key, data]) => {
+                          const alias = item.composite_data?.components?.[key]?.alias || key;
+                          return renderImpBlock(data, alias);
+                        })}
+                      </View>
+                    ) : (
+                      renderImpBlock(item.imposition_data)
+                    )}
                   </View>
                 );
               })()}
