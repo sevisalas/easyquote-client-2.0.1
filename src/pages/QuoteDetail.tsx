@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { CustomerName } from "@/components/quotes/CustomerName";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { generateQuotePDF } from "@/utils/pdfGenerator";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuoteApproval } from "@/hooks/useQuoteApproval";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { isVisiblePrompt, type PromptDef } from "@/utils/promptVisibility";
@@ -73,7 +73,7 @@ export default function QuoteDetail() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { isHoldedActive, canExportQuotes } = useHoldedIntegration();
-  const { membership } = useSubscription();
+  const { membership, isOrgAdmin } = useSubscription();
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
@@ -100,6 +100,42 @@ export default function QuoteDetail() {
     },
     enabled: !!quote?.customer_id && canExportQuotes,
   });
+
+  // Fetch admin_only prompt settings to filter prompts for non-admin users
+  const { data: adminOnlyPrompts } = useQuery({
+    queryKey: ['admin-only-prompts', quote?.organization_id],
+    queryFn: async () => {
+      if (isOrgAdmin) return new Set<string>(); // Admin sees everything
+      
+      const { data: orgData } = await supabase
+        .from('organizations')
+        .select('api_user_id')
+        .eq('id', quote!.organization_id)
+        .maybeSingle();
+      
+      if (!orgData?.api_user_id) return new Set<string>();
+      
+      const { data: settings } = await supabase
+        .from('product_prompt_settings')
+        .select('easyquote_product_id, prompt_name, label')
+        .eq('api_user_id', orgData.api_user_id)
+        .eq('admin_only', true);
+      
+      // Build a Set of "productId:label" for quick lookup
+      const hiddenSet = new Set<string>();
+      settings?.forEach(s => {
+        if (s.label) hiddenSet.add(s.label.trim().toUpperCase());
+        if (s.prompt_name) hiddenSet.add(s.prompt_name.trim().toUpperCase());
+      });
+      return hiddenSet;
+    },
+    enabled: !!quote?.organization_id && !isOrgAdmin,
+  });
+
+  const isAdminOnlyPrompt = (label: string) => {
+    if (isOrgAdmin || !adminOnlyPrompts) return false;
+    return adminOnlyPrompts.has(label.trim().toUpperCase());
+  };
 
   const customerMissingHoldedId = canExportQuotes && !customerHoldedId;
 
@@ -787,7 +823,13 @@ export default function QuoteDetail() {
                                     if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('#'))) return false;
                                     
                                     const hasLabel = typeof promptData === 'object' && promptData.label && promptData.label.trim() !== '';
-                                    return hasLabel;
+                                    if (!hasLabel) return false;
+                                    
+                                    // Filter admin_only prompts for non-admin users
+                                    const label = typeof promptData === 'object' ? promptData.label : key;
+                                    if (isAdminOnlyPrompt(label)) return false;
+                                    
+                                    return true;
                                   })
                                   .sort(([, a]: [string, any], [, b]: [string, any]) => (a.order ?? 999) - (b.order ?? 999));
 
