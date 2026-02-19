@@ -93,22 +93,28 @@ const getHiddenPromptSettings = async (): Promise<Map<string, Set<string>>> => {
   
   const { data: settings, error } = await supabase
     .from('product_prompt_settings')
-    .select('easyquote_product_id, prompt_name')
+    .select('easyquote_product_id, prompt_name, label')
     .eq('api_user_id', orgInfo.api_user_id)
     .eq('hide_in_documents', true);
 
   if (error || !settings) return new Map();
   
   // Map: productId -> Set of hidden prompt names (normalized for comparison)
-  // We store the NORMALIZED prompt_name so we can match by id, name, or label.
+  // We store BOTH the prompt_name (cell ref like B21) AND the label (human name like "Tarifa")
+  // because saved prompts may only have labels, not cell refs.
   const normalize = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
   
   const hiddenMap = new Map<string, Set<string>>();
-  settings.forEach(s => {
+  settings.forEach((s: any) => {
     if (!hiddenMap.has(s.easyquote_product_id)) {
       hiddenMap.set(s.easyquote_product_id, new Set());
     }
-    hiddenMap.get(s.easyquote_product_id)!.add(normalize(s.prompt_name));
+    const set = hiddenMap.get(s.easyquote_product_id)!;
+    set.add(normalize(s.prompt_name));
+    // Also add the human label if available
+    if (s.label) {
+      set.add(normalize(s.label));
+    }
   });
   
   return hiddenMap;
