@@ -378,12 +378,12 @@ const QuotesList = () => {
             <Table>
               <TableHeader>
                 <TableRow className="h-9">
-                  <TableHead className="py-2 text-xs font-semibold">Fecha</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold">Nº</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold">Cliente</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold">Usuario</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[90px]">Fecha</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[90px]">Nº</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold min-w-[180px]">Cliente</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[80px]">Usuario</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Descripción</TableHead>
-                  <TableHead className="py-2 text-right text-xs font-semibold">Total</TableHead>
+                  <TableHead className="py-2 text-right text-xs font-semibold whitespace-nowrap w-[90px]">Total</TableHead>
                   {hasHoldedAccess && (
                     <>
                       <TableHead className="py-2 text-xs font-semibold">Nº Holded</TableHead>
