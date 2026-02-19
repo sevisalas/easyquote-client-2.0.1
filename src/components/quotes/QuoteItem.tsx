@@ -1320,10 +1320,17 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               }
               
               // Add user-edited component values (if any)
+              // BUT skip prompts that are targets of the quantity connection —
+              // those must use the per-row `qty`, not the stored single value.
+              const qtyTargetPrompts = new Set(
+                (connections as any[])
+                  .filter((conn: any) => conn.source_prompt_name === qtyPrompt)
+                  .map((conn: any) => conn.target_prompt_name)
+              );
               const componentKey = `${component.id}:${component.instance_index || 1}`;
               const userEditedValues = componentPromptValues[componentKey] || {};
               for (const [promptId, value] of Object.entries(userEditedValues)) {
-                if (value !== undefined && value !== null) {
+                if (value !== undefined && value !== null && !qtyTargetPrompts.has(promptId)) {
                   const existingIdx = componentInputs.findIndex(i => i.id === promptId);
                   if (existingIdx >= 0) {
                     componentInputs[existingIdx].value = value;
