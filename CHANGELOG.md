@@ -5,11 +5,12 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
-## [2.5.14] - 2026-02-13
+## [2.5.14] - 2026-02-20
 
 ### Corregido
 - **Permisos de adjuntos para propietarios**: Corregidas políticas de storage para que propietarios de organizaciones puedan subir adjuntos (no solo miembros)
 - **Edición de adjuntos en presupuestos enviados**: Ahora se pueden agregar o modificar adjuntos en presupuestos ya exportados a Holded
+- **Descripción compuesta en Holded sin campos repetidos**: Los campos generales del producto compuesto (cantidad, tamaño, dimensiones, encuadernación, etc.) ya no se repiten en las secciones de cada componente al exportar a Holded
 
 ---
 
