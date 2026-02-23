@@ -81,13 +81,57 @@ const defaultTemplates: TemplateInfo[] = [
   }
 ];
 
-// Fetch available templates from database
+// Fetch available templates from database (filtered by organization)
 export const fetchAvailableTemplates = async (): Promise<TemplateInfo[]> => {
   try {
-    const { data, error } = await supabase
+    // Get current user's organization_id
+    let orgId: string | null = null;
+    const stored = sessionStorage.getItem('selectedOrganization');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        orgId = parsed.id || null;
+      } catch { /* ignore */ }
+    }
+
+    if (!orgId) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: orgData } = await supabase
+          .from('organizations')
+          .select('id')
+          .eq('api_user_id', user.id)
+          .limit(1);
+        if (orgData && orgData.length > 0) {
+          orgId = orgData[0].id;
+        } else {
+          const { data: memberData } = await supabase
+            .from('organization_members')
+            .select('organization_id')
+            .eq('user_id', user.id)
+            .limit(1);
+          if (memberData && memberData.length > 0) {
+            orgId = memberData[0].organization_id;
+          }
+        }
+      }
+    }
+
+    // Fetch only global templates + templates for this specific organization
+    let query = supabase
       .from('pdf_templates')
       .select('*')
-      .eq('is_active', true)
+      .eq('is_active', true);
+
+    if (orgId) {
+      // Show global templates OR templates belonging to this organization
+      query = query.or(`is_global.eq.true,organization_id.eq.${orgId}`);
+    } else {
+      // No org context: only show global templates
+      query = query.eq('is_global', true);
+    }
+
+    const { data, error } = await query
       .order('is_global', { ascending: false })
       .order('template_number');
 
