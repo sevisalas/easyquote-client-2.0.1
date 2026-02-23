@@ -248,7 +248,8 @@ Deno.serve(async (req) => {
     const hiddenPromptsSet = new Set<string>();
     (hiddenPromptSettings || []).forEach((s: any) => {
       hiddenPromptsSet.add(makeHiddenKey(s.easyquote_product_id, s.prompt_name));
-      if (s.label) {
+      // Only add label to set if it's a real human label (not just a copy of prompt_name)
+      if (s.label && s.label !== s.prompt_name) {
         hiddenPromptsSet.add(makeHiddenKey(s.easyquote_product_id, s.label));
       }
     });
@@ -413,7 +414,8 @@ Deno.serve(async (req) => {
     if (hiddenPromptSettings && hiddenPromptSettings.length > 0) {
       const labelsToUpdate: { promptName: string; productId: string; label: string }[] = [];
       for (const s of hiddenPromptSettings as any[]) {
-        if (s.label) continue; // Already has label
+      // Skip if label is already a real human label (not just a copy of prompt_name)
+      if (s.label && s.label !== s.prompt_name) continue;
         const defs = promptDefsByProductId.get(s.easyquote_product_id);
         if (!defs) continue;
         // Look up the cell ref in defs to find its human label
