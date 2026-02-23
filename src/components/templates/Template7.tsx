@@ -6,8 +6,9 @@ interface Template7Props {
   data: any;
 }
 
-const CAMPILLO_GREEN = '#4a7c59';
-const CAMPILLO_GREEN_LIGHT = '#6b9e5a';
+// Colors extracted from the original Campillo letterhead
+const GREEN_PRIMARY = '#6a9e3a'; // Bright green from the gradient bar & waves
+const GREEN_DARK = '#4a7c2e';   // Darker green accent
 
 export default function Template7({ data }: Template7Props) {
   const config = data.config || {};
@@ -25,7 +26,7 @@ export default function Template7({ data }: Template7Props) {
       <div
         className="bg-white relative"
         style={{
-          fontFamily: 'Arial, sans-serif',
+          fontFamily: 'Arial, Helvetica, sans-serif',
           width: '210mm',
           minHeight: '297mm',
           position: 'relative',
@@ -52,59 +53,48 @@ export default function Template7({ data }: Template7Props) {
           </div>
         )}
 
-        {/* ── CABECERA VERDE DEGRADADA ── */}
-        <header
+        {/* ── BARRA VERDE SUPERIOR (fina, degradada) ── */}
+        <div
           style={{
-            background: `linear-gradient(135deg, ${CAMPILLO_GREEN} 0%, ${CAMPILLO_GREEN_LIGHT} 100%)`,
-            color: 'white',
-            padding: '14px 24px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            height: '8px',
+            background: `linear-gradient(90deg, ${GREEN_PRIMARY} 0%, ${GREEN_DARK} 50%, ${GREEN_PRIMARY} 100%)`,
           }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '10px', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.85 }}>
-              Artes Gráficas
-            </span>
-            <img
-              src="/lovable-uploads/logo_transparente.png"
-              alt="Campillo Nevado"
-              style={{ height: '40px' }}
-              crossOrigin="anonymous"
-            />
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '1px' }}>
-              CAMPILLO NEVADO S.A.
-            </div>
-            <div style={{ fontSize: '9px', opacity: 0.8 }}>NIF: A-28083293</div>
-          </div>
-        </header>
+        />
+
+        {/* ── LOGO CAMPILLO (arriba izquierda) ── */}
+        <div style={{ padding: '12px 24px 0 24px' }}>
+          <img
+            src="/assets/campillo-logo.png"
+            alt="Campillo Nevado S.A. - Artes Gráficas"
+            style={{ height: '90px' }}
+            crossOrigin="anonymous"
+          />
+        </div>
 
         {/* ── TEXTO VERTICAL REGISTRO MERCANTIL (izquierda) ── */}
         <div
           style={{
             position: 'absolute',
-            left: '2px',
-            top: '80px',
+            left: '4px',
+            top: '140px',
+            bottom: '120px',
             writingMode: 'vertical-rl',
             transform: 'rotate(180deg)',
-            fontSize: '6px',
-            color: '#999',
-            lineHeight: '1.2',
-            maxHeight: '80%',
+            fontSize: '6.5px',
+            color: '#888',
+            lineHeight: '1.3',
+            letterSpacing: '0.3px',
           }}
         >
-          Reg. Mercantil de Madrid. Tomo 1.848, Libro 0, Folio 189, Sección 8ª, Hoja M-33.228
+          Inscrita en el Reg. Merc. nº 1 de Madrid. Tomo 781, General, 756 de la Sección 3ª, Folio 37, Hoja 67855-1, Inscripción 1ª.
         </div>
 
         {/* ── CONTENIDO PRINCIPAL ── */}
         <div style={{ padding: '16px 28px 16px 28px' }}>
           {/* Info presupuesto + cliente */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', alignItems: 'flex-start' }}>
             <div>
-              <h2 style={{ fontSize: '15px', fontWeight: 'bold', color: CAMPILLO_GREEN, marginBottom: '4px' }}>
+              <h2 style={{ fontSize: '15px', fontWeight: 'bold', color: '#1a3a5c', marginBottom: '4px' }}>
                 PRESUPUESTO
               </h2>
               <p style={{ fontSize: '10px', color: '#555' }}>Nº {quote.quote_number || '-'}</p>
@@ -119,17 +109,17 @@ export default function Template7({ data }: Template7Props) {
             </div>
             <div
               style={{
-                background: '#f5f9f5',
-                border: `1px solid ${CAMPILLO_GREEN}33`,
-                borderRadius: '4px',
+                background: '#f7faf5',
+                border: `1px solid #d0dfc8`,
+                borderRadius: '3px',
                 padding: '8px 12px',
                 minWidth: '200px',
               }}
             >
-              <p style={{ fontSize: '9px', color: CAMPILLO_GREEN, fontWeight: 'bold', marginBottom: '2px', textTransform: 'uppercase' }}>
+              <p style={{ fontSize: '9px', color: GREEN_DARK, fontWeight: 'bold', marginBottom: '2px', textTransform: 'uppercase' }}>
                 Cliente
               </p>
-              <p style={{ fontSize: '11px', fontWeight: 'bold' }}>{customer.name || 'Cliente'}</p>
+              <p style={{ fontSize: '11px', fontWeight: 'bold', color: '#1a1a1a' }}>{customer.name || 'Cliente'}</p>
               {customer.email && <p style={{ fontSize: '9px', color: '#555' }}>{customer.email}</p>}
               {customer.phone && <p style={{ fontSize: '9px', color: '#555' }}>{customer.phone}</p>}
               {customer.address && <p style={{ fontSize: '9px', color: '#555' }}>{customer.address}</p>}
@@ -139,7 +129,7 @@ export default function Template7({ data }: Template7Props) {
           {/* Título/Descripción */}
           {(quote.title || quote.description) && (
             <div style={{ marginBottom: '10px' }}>
-              {quote.title && <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '2px' }}>{quote.title}</h3>}
+              {quote.title && <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '2px', color: '#1a1a1a' }}>{quote.title}</h3>}
               {quote.description && <p style={{ fontSize: '10px', color: '#444' }}>{quote.description}</p>}
             </div>
           )}
@@ -147,7 +137,7 @@ export default function Template7({ data }: Template7Props) {
           {/* ── TABLA DE ITEMS ── */}
           <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '14px' }}>
             <thead>
-              <tr style={{ backgroundColor: CAMPILLO_GREEN, color: 'white' }}>
+              <tr style={{ backgroundColor: GREEN_PRIMARY, color: 'white' }}>
                 <th style={{ textAlign: 'left', padding: '6px 8px', fontSize: '10px', fontWeight: 'bold' }}>CONCEPTO</th>
                 <th style={{ textAlign: 'right', padding: '6px 8px', fontSize: '10px', fontWeight: 'bold', width: '70px' }}>PRECIO</th>
                 <th style={{ textAlign: 'center', padding: '6px 8px', fontSize: '10px', fontWeight: 'bold', width: '50px' }}>UNID.</th>
@@ -244,8 +234,8 @@ export default function Template7({ data }: Template7Props) {
                 justifyContent: 'space-between',
                 fontSize: '13px',
                 fontWeight: 'bold',
-                color: CAMPILLO_GREEN,
-                borderTop: `2px solid ${CAMPILLO_GREEN}`,
+                color: GREEN_DARK,
+                borderTop: `2px solid ${GREEN_DARK}`,
                 paddingTop: '6px',
               }}
             >
@@ -257,7 +247,7 @@ export default function Template7({ data }: Template7Props) {
           {/* Notas */}
           {quote.notes && (
             <div style={{ marginBottom: '10px' }}>
-              <h3 style={{ fontSize: '9px', fontWeight: 'bold', color: CAMPILLO_GREEN, textTransform: 'uppercase', marginBottom: '2px' }}>
+              <h3 style={{ fontSize: '9px', fontWeight: 'bold', color: '#1a3a5c', textTransform: 'uppercase', marginBottom: '2px' }}>
                 Notas
               </h3>
               <p style={{ fontSize: '9px', color: '#444', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{quote.notes}</p>
@@ -265,7 +255,7 @@ export default function Template7({ data }: Template7Props) {
           )}
         </div>
 
-        {/* ── PIE CON OLAS VERDES ── */}
+        {/* ── PIE: OLA VERDE DERECHA + DATOS ALINEADOS A LA DERECHA ── */}
         <footer
           style={{
             position: 'absolute',
@@ -274,34 +264,41 @@ export default function Template7({ data }: Template7Props) {
             right: 0,
           }}
         >
-          {/* SVG wave decoration */}
-          <svg viewBox="0 0 800 60" style={{ width: '100%', display: 'block' }}>
+          {/* SVG ola verde orgánica (lado derecho, como el original) */}
+          <svg
+            viewBox="0 0 800 120"
+            style={{ width: '100%', display: 'block' }}
+            preserveAspectRatio="none"
+          >
+            {/* Ola clara de fondo */}
             <path
-              d="M0,30 C200,60 400,0 800,30 L800,60 L0,60 Z"
-              fill={CAMPILLO_GREEN}
+              d="M300,120 C400,40 500,80 600,30 C650,10 700,20 800,0 L800,120 Z"
+              fill={GREEN_PRIMARY}
+              opacity="0.15"
+            />
+            {/* Ola más oscura */}
+            <path
+              d="M400,120 C480,70 550,90 650,40 C700,20 750,25 800,15 L800,120 Z"
+              fill={GREEN_PRIMARY}
               opacity="0.3"
             />
-            <path
-              d="M0,40 C200,10 400,50 800,20 L800,60 L0,60 Z"
-              fill={CAMPILLO_GREEN}
-              opacity="0.6"
-            />
           </svg>
+
+          {/* Datos de contacto alineados a la derecha */}
           <div
             style={{
-              backgroundColor: CAMPILLO_GREEN,
-              color: 'white',
-              padding: '6px 24px',
-              display: 'flex',
-              justifyContent: 'center',
-              gap: '24px',
-              fontSize: '8px',
+              textAlign: 'right',
+              padding: '4px 28px 14px 28px',
+              fontSize: '9px',
+              color: '#333',
+              lineHeight: '1.6',
             }}
           >
-            <span>Desierto de Tabernas, 8 / 28320 PINTO (Madrid)</span>
-            <span>Telef. 91 560 93 34</span>
-            <span>contabilidad@campillonevado.es</span>
-            <span>www.campillonevado.es</span>
+            <div>Desierto de Tabernas, 8</div>
+            <div>28320 PINTO (Madrid)</div>
+            <div>Teléf. 91 560 93 34</div>
+            <div>contabilidad@campillonevado.es</div>
+            <div>www.campillonevado.es</div>
           </div>
         </footer>
       </div>
@@ -312,7 +309,7 @@ export default function Template7({ data }: Template7Props) {
           data-terms-page="true"
           className="bg-white relative"
           style={{
-            fontFamily: 'Arial, sans-serif',
+            fontFamily: 'Arial, Helvetica, sans-serif',
             width: '210mm',
             minHeight: '297mm',
             position: 'relative',
@@ -320,46 +317,34 @@ export default function Template7({ data }: Template7Props) {
             pageBreakBefore: 'always',
           }}
         >
-          {/* Cabecera repetida */}
-          <header
+          {/* Barra verde superior */}
+          <div
             style={{
-              background: `linear-gradient(135deg, ${CAMPILLO_GREEN} 0%, ${CAMPILLO_GREEN_LIGHT} 100%)`,
-              color: 'white',
-              padding: '14px 24px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
+              height: '8px',
+              background: `linear-gradient(90deg, ${GREEN_PRIMARY} 0%, ${GREEN_DARK} 50%, ${GREEN_PRIMARY} 100%)`,
             }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '10px', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.85 }}>
-                Artes Gráficas
-              </span>
-              <img
-                src="/lovable-uploads/logo_transparente.png"
-                alt="Campillo Nevado"
-                style={{ height: '40px' }}
-                crossOrigin="anonymous"
-              />
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '1px' }}>
-                CAMPILLO NEVADO S.A.
-              </div>
-              <div style={{ fontSize: '9px', opacity: 0.8 }}>NIF: A-28083293</div>
-            </div>
-          </header>
+          />
 
           {/* Contenido condiciones */}
-          <div style={{ padding: '24px 28px' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: CAMPILLO_GREEN, marginBottom: '16px', textAlign: 'center', textTransform: 'uppercase' }}>
+          <div style={{ padding: '40px 60px 120px 60px' }}>
+            <h2
+              style={{
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: '#1a1a1a',
+                marginBottom: '28px',
+                textAlign: 'center',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+              }}
+            >
               Condiciones de venta
             </h2>
             <div
               style={{
-                fontSize: '9px',
+                fontSize: '10px',
                 color: '#333',
-                lineHeight: '1.6',
+                lineHeight: '1.7',
                 whiteSpace: 'pre-wrap',
               }}
             >
@@ -367,35 +352,30 @@ export default function Template7({ data }: Template7Props) {
             </div>
           </div>
 
-          {/* Pie repetido */}
+          {/* Cláusula LOPD al pie */}
           <footer
             style={{
               position: 'absolute',
               bottom: 0,
               left: 0,
               right: 0,
+              borderTop: '2px solid #1a3a5c',
+              padding: '8px 28px 12px 28px',
+              backgroundColor: '#f8f8f8',
             }}
           >
-            <svg viewBox="0 0 800 60" style={{ width: '100%', display: 'block' }}>
-              <path d="M0,30 C200,60 400,0 800,30 L800,60 L0,60 Z" fill={CAMPILLO_GREEN} opacity="0.3" />
-              <path d="M0,40 C200,10 400,50 800,20 L800,60 L0,60 Z" fill={CAMPILLO_GREEN} opacity="0.6" />
-            </svg>
-            <div
-              style={{
-                backgroundColor: CAMPILLO_GREEN,
-                color: 'white',
-                padding: '6px 24px',
-                display: 'flex',
-                justifyContent: 'center',
-                gap: '24px',
-                fontSize: '8px',
-              }}
-            >
-              <span>Desierto de Tabernas, 8 / 28320 PINTO (Madrid)</span>
-              <span>Telef. 91 560 93 34</span>
-              <span>contabilidad@campillonevado.es</span>
-              <span>www.campillonevado.es</span>
-            </div>
+            <p style={{ fontSize: '7px', fontWeight: 'bold', color: '#1a3a5c', marginBottom: '4px', textTransform: 'uppercase' }}>
+              Ley orgánica de protección de datos de carácter personal. Cláusula informativa clientes - albaranes o facturas
+            </p>
+            <p style={{ fontSize: '6.5px', color: '#555', lineHeight: '1.5' }}>
+              De conformidad con lo que establece la Ley Orgánica 15/1999 de Protección de Datos de Carácter Personal, le informamos que sus datos personales serán incorporados a un fichero bajo la responsabilidad de ARTES GRÁFICAS CAMPILLO NEVADO S.A., con la finalidad de poder atender los compromisos derivados de la relación que mantenemos con usted.
+            </p>
+            <p style={{ fontSize: '6.5px', color: '#555', lineHeight: '1.5', marginTop: '2px' }}>
+              Puede ejercer sus derechos de acceso, cancelación, rectificación y oposición mediante un escrito a la dirección: C/ ANTONIO GONZÁLEZ PORRAS, 35-37 - 28019 MADRID.
+            </p>
+            <p style={{ fontSize: '6.5px', color: '#555', lineHeight: '1.5', marginTop: '2px' }}>
+              Si en el período de 30 días no nos comunica lo contrario, entenderemos que sus datos no han sido modificados, que se compromete a notificarnos cualquier variación y que tenemos su consentimiento para tratarlos para la finalidad mencionada con anterioridad así como, para poder enviarle información de carácter promocional o publicitario, que consideremos pueda ser de su interés, a la dirección de correo postal que nos ha proporcionado.
+            </p>
           </footer>
         </div>
       )}
