@@ -143,16 +143,34 @@ const getHiddenPromptSettings = async (): Promise<Map<string, Set<string>>> => {
         await Promise.all(
           Array.from(productsNeedingResolution).map(async (productId) => {
             try {
-              const { data: prompts } = await invokeEasyQuoteFunction<any[]>('easyquote-prompts', {
-                token,
-                productId,
-              });
+              // Call BOTH APIs in parallel:
+              // 1. easyquote-prompts → returns {id: UUID, promptCell: cellRef} (NO promptText)
+              // 2. easyquote-pricing → returns {id: UUID, promptText: humanLabel} (HAS promptText)
+              const [promptsResult, pricingResult] = await Promise.all([
+                invokeEasyQuoteFunction<any[]>('easyquote-prompts', { token, productId }),
+                invokeEasyQuoteFunction<any>('easyquote-pricing', { token, productId }),
+              ]);
+              
+              // Build UUID → humanLabel map from pricing API
+              const uuidToHumanLabel = new Map<string, string>();
+              const pricingPrompts = pricingResult.data?.prompts || [];
+              if (Array.isArray(pricingPrompts)) {
+                pricingPrompts.forEach((p: any) => {
+                  if (p?.id && p?.promptText) {
+                    uuidToHumanLabel.set(String(p.id).trim(), String(p.promptText).trim());
+                  }
+                });
+              }
+              
+              const prompts = promptsResult.data;
               if (Array.isArray(prompts)) {
                 const map = new Map<string, string>();
                 prompts.forEach((p: any) => {
                   const cell = p.promptCell || p.id;
-                  const label = p.promptText || p.label || p.name;
-                  if (cell && label && label !== cell) {
+                  const uuid = String(p.id || '').trim();
+                  // Get human label from pricing API (prompts/list doesn't have promptText)
+                  const label = uuidToHumanLabel.get(uuid) || p.promptText || p.label || p.name;
+                  if (cell && label && label !== cell && !isCellRef(label)) {
                     map.set(normalize(cell), label);
                   }
                 });
