@@ -23,20 +23,26 @@ export const usePdfConfiguration = () => {
 
   // Fetch configuration
   const { data: configuration, isLoading, error } = useQuery({
-    queryKey: ['pdf-configuration'],
+    queryKey: ['pdf-configuration', organization?.id],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('pdf_configurations')
         .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        .eq('user_id', user.id);
+
+      if (organization?.id) {
+        query = query.eq('organization_id', organization.id);
+      }
+
+      const { data, error } = await query.maybeSingle();
 
       if (error) throw error;
       return data;
     },
+    enabled: !!organization?.id,
   });
 
   // Save/Update configuration
@@ -53,7 +59,7 @@ export const usePdfConfiguration = () => {
 
       const { data, error } = await supabase
         .from('pdf_configurations')
-        .upsert(configData, { onConflict: 'user_id' })
+        .upsert(configData, { onConflict: 'user_id,organization_id' })
         .select()
         .single();
 
