@@ -5,6 +5,14 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.15] - 2026-02-23
+
+### Corregido
+- **Campos ocultos en PDF y Holded**: Los campos marcados como ocultos (ej: "Tarifa", "Forzar máquina") ahora se excluyen correctamente tanto en la generación de PDF como en la exportación a Holded, mediante resolución dual de etiquetas (API prompts/list + pricing)
+- **Configuración de plantilla PDF**: Corrección del fallback para obtener la organización del usuario cuando no está en sessionStorage, evitando que el PDF muestre datos por defecto en lugar de los corporativos
+
+---
+
 ## [2.5.14] - 2026-02-20
 
 ### Corregido
