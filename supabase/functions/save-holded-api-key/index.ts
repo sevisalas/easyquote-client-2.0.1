@@ -11,6 +11,33 @@ serve(async (req) => {
   }
 
   try {
+    // CRITICAL: Authenticate the caller
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'No authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Initialize Supabase client with service role for DB operations
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Verify the user's JWT
+    const { data: { user }, error: userError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { organizationId, apiKey } = await req.json()
 
     if (!organizationId || !apiKey) {
@@ -23,11 +50,20 @@ serve(async (req) => {
       )
     }
 
-    // Initialize Supabase client
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    // Verify user owns this organization
+    const { data: orgData, error: orgError } = await supabase
+      .from('organizations')
+      .select('id')
+      .eq('id', organizationId)
+      .eq('api_user_id', user.id)
+      .maybeSingle();
+
+    if (orgError || !orgData) {
+      return new Response(
+        JSON.stringify({ error: 'Organization not found or access denied' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     console.log('Saving API key for organization:', organizationId)
 
