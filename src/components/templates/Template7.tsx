@@ -6,9 +6,16 @@ interface Template7Props {
   data: any;
 }
 
-// Colors extracted from the original Campillo letterhead
-const GREEN_PRIMARY = '#6a9e3a'; // Bright green from the gradient bar & waves
-const GREEN_DARK = '#4a7c2e';   // Darker green accent
+const PAGE_STYLE: React.CSSProperties = {
+  fontFamily: 'Arial, Helvetica, sans-serif',
+  width: '210mm',
+  height: '297mm',
+  position: 'relative',
+  overflow: 'hidden',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundRepeat: 'no-repeat',
+};
 
 export default function Template7({ data }: Template7Props) {
   const config = data.config || {};
@@ -22,15 +29,12 @@ export default function Template7({ data }: Template7Props) {
 
   return (
     <>
-      {/* ===== PÁGINA 1 - PRESUPUESTO ===== */}
+      {/* ===== PÁGINA 1 - PRESUPUESTO (fondo = hoja membretada) ===== */}
       <div
-        className="bg-white relative"
+        className="bg-white"
         style={{
-          fontFamily: 'Arial, Helvetica, sans-serif',
-          width: '210mm',
-          minHeight: '297mm',
-          position: 'relative',
-          overflow: 'hidden',
+          ...PAGE_STYLE,
+          backgroundImage: 'url(/assets/campillo-page1-bg.png)',
         }}
       >
         {/* Watermark for Draft */}
@@ -53,44 +57,8 @@ export default function Template7({ data }: Template7Props) {
           </div>
         )}
 
-        {/* ── BARRA VERDE SUPERIOR (fina, degradada) ── */}
-        <div
-          style={{
-            height: '8px',
-            background: `linear-gradient(90deg, ${GREEN_PRIMARY} 0%, ${GREEN_DARK} 50%, ${GREEN_PRIMARY} 100%)`,
-          }}
-        />
-
-        {/* ── LOGO CAMPILLO (arriba izquierda) ── */}
-        <div style={{ padding: '12px 24px 0 24px' }}>
-          <img
-            src="/assets/campillo-logo.png"
-            alt="Campillo Nevado S.A. - Artes Gráficas"
-            style={{ height: '90px' }}
-            crossOrigin="anonymous"
-          />
-        </div>
-
-        {/* ── TEXTO VERTICAL REGISTRO MERCANTIL (izquierda) ── */}
-        <div
-          style={{
-            position: 'absolute',
-            left: '4px',
-            top: '140px',
-            bottom: '120px',
-            writingMode: 'vertical-rl',
-            transform: 'rotate(180deg)',
-            fontSize: '6.5px',
-            color: '#888',
-            lineHeight: '1.3',
-            letterSpacing: '0.3px',
-          }}
-        >
-          Inscrita en el Reg. Merc. nº 1 de Madrid. Tomo 781, General, 756 de la Sección 3ª, Folio 37, Hoja 67855-1, Inscripción 1ª.
-        </div>
-
-        {/* ── CONTENIDO PRINCIPAL ── */}
-        <div style={{ padding: '16px 28px 16px 28px' }}>
+        {/* Contenido superpuesto sobre el fondo */}
+        <div style={{ position: 'absolute', top: '160px', left: '40px', right: '40px', bottom: '160px' }}>
           {/* Info presupuesto + cliente */}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', alignItems: 'flex-start' }}>
             <div>
@@ -109,14 +77,14 @@ export default function Template7({ data }: Template7Props) {
             </div>
             <div
               style={{
-                background: '#f7faf5',
-                border: `1px solid #d0dfc8`,
+                background: 'rgba(247, 250, 245, 0.9)',
+                border: '1px solid #d0dfc8',
                 borderRadius: '3px',
                 padding: '8px 12px',
                 minWidth: '200px',
               }}
             >
-              <p style={{ fontSize: '9px', color: GREEN_DARK, fontWeight: 'bold', marginBottom: '2px', textTransform: 'uppercase' }}>
+              <p style={{ fontSize: '9px', color: '#4a7c2e', fontWeight: 'bold', marginBottom: '2px', textTransform: 'uppercase' }}>
                 Cliente
               </p>
               <p style={{ fontSize: '11px', fontWeight: 'bold', color: '#1a1a1a' }}>{customer.name || 'Cliente'}</p>
@@ -137,7 +105,7 @@ export default function Template7({ data }: Template7Props) {
           {/* ── TABLA DE ITEMS ── */}
           <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '14px' }}>
             <thead>
-              <tr style={{ backgroundColor: GREEN_PRIMARY, color: 'white' }}>
+              <tr style={{ backgroundColor: '#6a9e3a', color: 'white' }}>
                 <th style={{ textAlign: 'left', padding: '6px 8px', fontSize: '10px', fontWeight: 'bold' }}>CONCEPTO</th>
                 <th style={{ textAlign: 'right', padding: '6px 8px', fontSize: '10px', fontWeight: 'bold', width: '70px' }}>PRECIO</th>
                 <th style={{ textAlign: 'center', padding: '6px 8px', fontSize: '10px', fontWeight: 'bold', width: '50px' }}>UNID.</th>
@@ -147,7 +115,7 @@ export default function Template7({ data }: Template7Props) {
             <tbody>
               {items.map((item: any, index: number) => (
                 <React.Fragment key={index}>
-                  <tr style={{ borderBottom: '1px solid #ddd' }}>
+                  <tr style={{ borderBottom: '1px solid #ddd', backgroundColor: 'rgba(255,255,255,0.85)' }}>
                     <td style={{ padding: '6px 8px' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
                         {item.images && item.images.length > 0 && (
@@ -173,7 +141,7 @@ export default function Template7({ data }: Template7Props) {
                     </td>
                   </tr>
                   {item.prompts && item.prompts.length > 0 && (
-                    <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <tr style={{ borderBottom: '1px solid #eee', backgroundColor: 'rgba(255,255,255,0.85)' }}>
                       <td colSpan={4} style={{ padding: '3px 8px 3px 20px' }}>
                         <div style={{ fontSize: '9px', color: '#555', lineHeight: '1.4' }}>
                           {item.prompts.map((prompt: any, pIdx: number) => (
@@ -186,7 +154,7 @@ export default function Template7({ data }: Template7Props) {
                     </tr>
                   )}
                   {item.components && item.components.length > 0 && (
-                    <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <tr style={{ borderBottom: '1px solid #eee', backgroundColor: 'rgba(255,255,255,0.85)' }}>
                       <td colSpan={4} style={{ padding: '3px 8px 3px 20px' }}>
                         {item.components.map((comp: any, cIdx: number) => (
                           <div key={cIdx} style={{ marginBottom: '4px' }}>
@@ -234,8 +202,8 @@ export default function Template7({ data }: Template7Props) {
                 justifyContent: 'space-between',
                 fontSize: '13px',
                 fontWeight: 'bold',
-                color: GREEN_DARK,
-                borderTop: `2px solid ${GREEN_DARK}`,
+                color: '#4a7c2e',
+                borderTop: '2px solid #4a7c2e',
                 paddingTop: '6px',
               }}
             >
@@ -254,79 +222,28 @@ export default function Template7({ data }: Template7Props) {
             </div>
           )}
         </div>
-
-        {/* ── PIE: OLA VERDE DERECHA + DATOS ALINEADOS A LA DERECHA ── */}
-        <footer
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-          }}
-        >
-          {/* SVG ola verde orgánica (lado derecho, como el original) */}
-          <svg
-            viewBox="0 0 800 120"
-            style={{ width: '100%', display: 'block' }}
-            preserveAspectRatio="none"
-          >
-            {/* Ola clara de fondo */}
-            <path
-              d="M300,120 C400,40 500,80 600,30 C650,10 700,20 800,0 L800,120 Z"
-              fill={GREEN_PRIMARY}
-              opacity="0.15"
-            />
-            {/* Ola más oscura */}
-            <path
-              d="M400,120 C480,70 550,90 650,40 C700,20 750,25 800,15 L800,120 Z"
-              fill={GREEN_PRIMARY}
-              opacity="0.3"
-            />
-          </svg>
-
-          {/* Datos de contacto alineados a la derecha */}
-          <div
-            style={{
-              textAlign: 'right',
-              padding: '4px 28px 14px 28px',
-              fontSize: '9px',
-              color: '#333',
-              lineHeight: '1.6',
-            }}
-          >
-            <div>Desierto de Tabernas, 8</div>
-            <div>28320 PINTO (Madrid)</div>
-            <div>Teléf. 91 560 93 34</div>
-            <div>contabilidad@campillonevado.es</div>
-            <div>www.campillonevado.es</div>
-          </div>
-        </footer>
       </div>
 
-      {/* ===== PÁGINA 2 - CONDICIONES DE VENTA (solo si hay texto) ===== */}
+      {/* ===== PÁGINA 2 - CONDICIONES (fondo = página 2 del PDF) ===== */}
       {termsPageText && (
         <div
           data-terms-page="true"
-          className="bg-white relative"
+          className="bg-white"
           style={{
-            fontFamily: 'Arial, Helvetica, sans-serif',
-            width: '210mm',
-            minHeight: '297mm',
-            position: 'relative',
-            overflow: 'hidden',
+            ...PAGE_STYLE,
+            backgroundImage: 'url(/assets/campillo-page2-bg.png)',
             pageBreakBefore: 'always',
           }}
         >
-          {/* Barra verde superior */}
-          <div
-            style={{
-              height: '8px',
-              background: `linear-gradient(90deg, ${GREEN_PRIMARY} 0%, ${GREEN_DARK} 50%, ${GREEN_PRIMARY} 100%)`,
-            }}
-          />
-
-          {/* Contenido condiciones */}
-          <div style={{ padding: '40px 60px 120px 60px' }}>
+          {/* El fondo ya tiene el título "CONDICIONES DE VENTA" y la LOPD,
+              pero como el texto es editable, lo superponemos */}
+          <div style={{
+            position: 'absolute',
+            top: '80px',
+            left: '60px',
+            right: '60px',
+            bottom: '120px',
+          }}>
             <h2
               style={{
                 fontSize: '16px',
@@ -351,32 +268,6 @@ export default function Template7({ data }: Template7Props) {
               {termsPageText}
             </div>
           </div>
-
-          {/* Cláusula LOPD al pie */}
-          <footer
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              borderTop: '2px solid #1a3a5c',
-              padding: '8px 28px 12px 28px',
-              backgroundColor: '#f8f8f8',
-            }}
-          >
-            <p style={{ fontSize: '7px', fontWeight: 'bold', color: '#1a3a5c', marginBottom: '4px', textTransform: 'uppercase' }}>
-              Ley orgánica de protección de datos de carácter personal. Cláusula informativa clientes - albaranes o facturas
-            </p>
-            <p style={{ fontSize: '6.5px', color: '#555', lineHeight: '1.5' }}>
-              De conformidad con lo que establece la Ley Orgánica 15/1999 de Protección de Datos de Carácter Personal, le informamos que sus datos personales serán incorporados a un fichero bajo la responsabilidad de ARTES GRÁFICAS CAMPILLO NEVADO S.A., con la finalidad de poder atender los compromisos derivados de la relación que mantenemos con usted.
-            </p>
-            <p style={{ fontSize: '6.5px', color: '#555', lineHeight: '1.5', marginTop: '2px' }}>
-              Puede ejercer sus derechos de acceso, cancelación, rectificación y oposición mediante un escrito a la dirección: C/ ANTONIO GONZÁLEZ PORRAS, 35-37 - 28019 MADRID.
-            </p>
-            <p style={{ fontSize: '6.5px', color: '#555', lineHeight: '1.5', marginTop: '2px' }}>
-              Si en el período de 30 días no nos comunica lo contrario, entenderemos que sus datos no han sido modificados, que se compromete a notificarnos cualquier variación y que tenemos su consentimiento para tratarlos para la finalidad mencionada con anterioridad así como, para poder enviarle información de carácter promocional o publicitario, que consideremos pueda ser de su interés, a la dirección de correo postal que nos ha proporcionado.
-            </p>
-          </footer>
         </div>
       )}
     </>
