@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { fetchAvailableTemplates, TemplateInfo } from "@/utils/templateRegistry";
 import QuoteTemplate from "@/components/QuoteTemplate";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ export default function SettingsPdfTemplate() {
   const [brandColor, setBrandColor] = useState("#0ea5e9");
   const [footerText, setFooterText] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState(1);
+  const [termsPageText, setTermsPageText] = useState("");
   const [templates, setTemplates] = useState<TemplateInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -45,6 +47,7 @@ export default function SettingsPdfTemplate() {
       setBrandColor(configuration.brand_color || "#0ea5e9");
       setFooterText(configuration.footer_text || "");
       setSelectedTemplate(configuration.selected_template || 1);
+      setTermsPageText(configuration.terms_page_text || "");
     }
   }, [configuration]);
 
@@ -55,6 +58,7 @@ export default function SettingsPdfTemplate() {
       brand_color: brandColor,
       footer_text: footerText,
       selected_template: selectedTemplate,
+      terms_page_text: termsPageText,
     });
   };
 
@@ -64,7 +68,8 @@ export default function SettingsPdfTemplate() {
       companyName: companyName || "Mi Empresa",
       logoUrl: logoUrl,
       brandColor: brandColor,
-      footerText: footerText
+      footerText: footerText,
+      termsPageText: termsPageText
     },
     quote: {
       quote_number: "01-01-2024-00001",
@@ -163,6 +168,17 @@ export default function SettingsPdfTemplate() {
             <Label className="text-xs">Texto de pie</Label>
             <Input value={footerText} onChange={(e) => setFooterText(e.target.value)} placeholder="Condiciones, contacto, etc." className="h-8 text-sm mt-1" />
           </div>
+          {selectedTemplate === 7 && (
+            <div className="sm:col-span-2">
+              <Label className="text-xs">Condiciones de venta (página 2)</Label>
+              <Textarea 
+                value={termsPageText} 
+                onChange={(e) => setTermsPageText(e.target.value)} 
+                placeholder="Escribe aquí las condiciones de venta que aparecerán en la segunda página del PDF..."
+                className="text-sm mt-1 min-h-[120px]"
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -5,6 +5,7 @@ import Template3 from '@/components/templates/Template3';
 import Template4 from '@/components/templates/Template4';
 import Template5 from '@/components/templates/Template5';
 import Template6 from '@/components/templates/Template6';
+import Template7 from '@/components/templates/Template7';
 
 export interface TemplateInfo {
   id: number;
@@ -25,6 +26,7 @@ const templateComponents: Record<number, React.ComponentType<{ data: any }>> = {
   4: Template4,
   5: Template5,
   6: Template6,
+  7: Template7,
 };
 
 // Fallback templates (used if DB is unavailable)
