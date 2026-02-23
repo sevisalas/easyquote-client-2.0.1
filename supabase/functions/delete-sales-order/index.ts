@@ -124,7 +124,10 @@ Deno.serve(async (req) => {
 
     if (itemsError) {
       console.error('Error deleting items:', itemsError);
-      throw itemsError;
+      return new Response(
+        JSON.stringify({ error: 'Failed to delete order items' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Delete additionals
@@ -135,7 +138,10 @@ Deno.serve(async (req) => {
 
     if (additionalsError) {
       console.error('Error deleting additionals:', additionalsError);
-      throw additionalsError;
+      return new Response(
+        JSON.stringify({ error: 'Failed to delete order data' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Delete the order
@@ -146,7 +152,10 @@ Deno.serve(async (req) => {
 
     if (orderError) {
       console.error('Error deleting order:', orderError);
-      throw orderError;
+      return new Response(
+        JSON.stringify({ error: 'Failed to delete order' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log(`Successfully deleted order ${orderId} by user ${userId}`);
@@ -156,9 +165,9 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Delete order error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'An error occurred while deleting the order' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
