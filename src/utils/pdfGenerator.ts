@@ -115,7 +115,8 @@ const getHiddenPromptSettings = async (): Promise<Map<string, Set<string>>> => {
     const set = hiddenMap.get(s.easyquote_product_id)!;
     set.add(normalize(s.prompt_name));
     // Also add the human label if available
-    if (s.label) {
+    // Only add label if it's a real human label (not just a copy of prompt_name)
+    if (s.label && s.label !== s.prompt_name) {
       set.add(normalize(s.label));
     }
   });
