@@ -362,35 +362,78 @@ Deno.serve(async (req) => {
       if (!easyquoteToken || !productId) return null;
       try {
         const cacheBuster = `_t=${Date.now()}`;
-        const res = await fetch(
-          `https://api.easyquote.cloud/api/v1/products/prompts/list/${productId}?${cacheBuster}`,
-          {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${easyquoteToken}`,
-              'Accept': 'application/json',
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache',
+        
+        // Call BOTH APIs in parallel:
+        // 1. prompts/list → returns {id: UUID, promptCell: cellRef} (no human labels)
+        // 2. pricing GET → returns {id: UUID, promptText: humanLabel} (has human labels)
+        const [promptsRes, pricingRes] = await Promise.all([
+          fetch(
+            `https://api.easyquote.cloud/api/v1/products/prompts/list/${productId}?${cacheBuster}`,
+            {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${easyquoteToken}`,
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+              },
             },
-          },
-        );
+          ),
+          fetch(
+            `https://api.easyquote.cloud/api/v1/products/pricing/${productId}?${cacheBuster}`,
+            {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${easyquoteToken}`,
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+              },
+            },
+          ),
+        ]);
 
-        if (!res.ok) {
-          const text = await res.text();
-          console.warn('[Holded export] No se pudieron cargar prompts de EasyQuote', { productId, status: res.status, textPreview: text.slice(0, 200) });
+        if (!promptsRes.ok) {
+          const text = await promptsRes.text();
+          console.warn('[Holded export] No se pudieron cargar prompts de EasyQuote', { productId, status: promptsRes.status, textPreview: text.slice(0, 200) });
           return null;
         }
 
-        const data = await res.json();
-        if (!Array.isArray(data)) return null;
+        const promptsData = await promptsRes.json();
+        if (!Array.isArray(promptsData)) return null;
+
+        // Build UUID → promptText map from pricing API
+        const uuidToHumanLabel = new Map<string, string>();
+        if (pricingRes.ok) {
+          try {
+            const pricingData = await pricingRes.json();
+            const pricingPrompts = pricingData?.prompts || (Array.isArray(pricingData) ? pricingData : []);
+            for (const p of pricingPrompts) {
+              if (p?.id && p?.promptText) {
+                uuidToHumanLabel.set(String(p.id).trim(), String(p.promptText).trim());
+              }
+            }
+          } catch (e) {
+            console.warn('[Holded export] Could not parse pricing response', e);
+          }
+        }
 
         const map: Record<string, PromptDef> = {};
-        for (const raw of data) {
+        for (const raw of promptsData) {
+          // Enrich with human label from pricing API before normalizing
+          const uuid = String(raw?.id ?? '').trim();
+          if (uuid && uuidToHumanLabel.has(uuid) && !raw.promptText) {
+            raw.promptText = uuidToHumanLabel.get(uuid);
+          }
           const def = normalizeEasyQuotePromptDef(raw);
           if (!def) continue;
           for (const kk of keyVariants(def.id)) map[kk] = def;
           if (def.label) {
             for (const kk of keyVariants(def.label)) map[kk] = def;
+          }
+          // Also index by promptCell so backfill can find by cell ref
+          if (raw.promptCell) {
+            for (const kk of keyVariants(raw.promptCell)) map[kk] = def;
           }
         }
         return map;
