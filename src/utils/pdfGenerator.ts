@@ -3,6 +3,7 @@ import jsPDF from 'jspdf';
 import { supabase } from '@/integrations/supabase/client';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { getEasyQuoteToken, invokeEasyQuoteFunction } from '@/lib/easyquoteApi';
 
 export interface PDFGeneratorOptions {
   filename?: string;
@@ -14,11 +15,27 @@ const getTemplateConfig = async () => {
   const { data: { user } } = await supabase.auth.getUser();
   
   if (user) {
-    const { data, error } = await supabase
+    // Get organization_id from sessionStorage
+    let orgId: string | null = null;
+    const stored = sessionStorage.getItem('selectedOrganization');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        orgId = parsed.id || null;
+      } catch { /* ignore */ }
+    }
+    
+    // Build query with organization filter if available
+    let query = supabase
       .from('pdf_configurations')
       .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle();
+      .eq('user_id', user.id);
+    
+    if (orgId) {
+      query = query.eq('organization_id', orgId);
+    }
+    
+    const { data, error } = await query.maybeSingle();
     
     if (!error && data) {
       return {
@@ -41,6 +58,9 @@ const getTemplateConfig = async () => {
     termsPageText: ''
   };
 };
+
+// Check if a string looks like an Excel cell reference (e.g., B19, C5)
+const isCellRef = (v: string) => /^[A-Z]+\d+$/i.test(v.trim());
 
 // Get prompt settings for hiding in documents (quotes only)
 const getHiddenPromptSettings = async (): Promise<Map<string, Set<string>>> => {
@@ -102,22 +122,93 @@ const getHiddenPromptSettings = async (): Promise<Map<string, Set<string>>> => {
 
   if (error || !settings) return new Map();
   
-  // Map: productId -> Set of hidden prompt names (normalized for comparison)
-  // We store BOTH the prompt_name (cell ref like B21) AND the label (human name like "Tarifa")
-  // because saved prompts may only have labels, not cell refs.
   const normalize = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
   
   const hiddenMap = new Map<string, Set<string>>();
+  
+  // Find products that need label resolution (cell-ref-only labels)
+  const productsNeedingResolution = new Set<string>();
+  settings.forEach((s: any) => {
+    if (!s.label || s.label === s.prompt_name || isCellRef(s.label)) {
+      productsNeedingResolution.add(s.easyquote_product_id);
+    }
+  });
+  
+  // Try to resolve cell ref labels via EasyQuote API
+  const cellRefToLabel = new Map<string, Map<string, string>>(); // productId -> (cellRef -> humanLabel)
+  if (productsNeedingResolution.size > 0) {
+    try {
+      const token = await getEasyQuoteToken();
+      if (token) {
+        await Promise.all(
+          Array.from(productsNeedingResolution).map(async (productId) => {
+            try {
+              const { data: prompts } = await invokeEasyQuoteFunction<any[]>('easyquote-prompts', {
+                token,
+                productId,
+              });
+              if (Array.isArray(prompts)) {
+                const map = new Map<string, string>();
+                prompts.forEach((p: any) => {
+                  const cell = p.promptCell || p.id;
+                  const label = p.promptText || p.label || p.name;
+                  if (cell && label && label !== cell) {
+                    map.set(normalize(cell), label);
+                  }
+                });
+                cellRefToLabel.set(productId, map);
+                
+                // Backfill labels in DB for future use
+                const labelsToUpdate: { promptName: string; label: string }[] = [];
+                settings.filter((s: any) => s.easyquote_product_id === productId).forEach((s: any) => {
+                  if (!s.label || s.label === s.prompt_name || isCellRef(s.label)) {
+                    const humanLabel = map.get(normalize(s.prompt_name));
+                    if (humanLabel) {
+                      labelsToUpdate.push({ promptName: s.prompt_name, label: humanLabel });
+                    }
+                  }
+                });
+                if (labelsToUpdate.length > 0) {
+                  await Promise.all(labelsToUpdate.map(({ promptName, label }) =>
+                    supabase.from('product_prompt_settings')
+                      .update({ label })
+                      .eq('easyquote_product_id', productId)
+                      .eq('prompt_name', promptName)
+                      .eq('api_user_id', orgInfo.api_user_id)
+                  ));
+                }
+              }
+            } catch (e) {
+              console.warn(`[PDF] Could not resolve labels for product ${productId}:`, e);
+            }
+          })
+        );
+      }
+    } catch (e) {
+      console.warn('[PDF] Could not get EasyQuote token for label resolution:', e);
+    }
+  }
+  
+  // Build hidden map with resolved labels
   settings.forEach((s: any) => {
     if (!hiddenMap.has(s.easyquote_product_id)) {
       hiddenMap.set(s.easyquote_product_id, new Set());
     }
     const set = hiddenMap.get(s.easyquote_product_id)!;
     set.add(normalize(s.prompt_name));
-    // Also add the human label if available
-    // Only add label if it's a real human label (not just a copy of prompt_name)
-    if (s.label && s.label !== s.prompt_name) {
+    
+    // Add human label if available and real
+    if (s.label && s.label !== s.prompt_name && !isCellRef(s.label)) {
       set.add(normalize(s.label));
+    }
+    
+    // Add resolved label from API if we have it
+    const resolvedMap = cellRefToLabel.get(s.easyquote_product_id);
+    if (resolvedMap) {
+      const resolved = resolvedMap.get(normalize(s.prompt_name));
+      if (resolved) {
+        set.add(normalize(resolved));
+      }
     }
   });
   
