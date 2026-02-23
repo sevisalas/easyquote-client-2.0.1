@@ -14,42 +14,7 @@ export interface PDFGeneratorOptions {
 const getTemplateConfig = async () => {
   const { data: { user } } = await supabase.auth.getUser();
   
-  if (user) {
-    // Get organization_id from sessionStorage
-    let orgId: string | null = null;
-    const stored = sessionStorage.getItem('selectedOrganization');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        orgId = parsed.id || null;
-      } catch { /* ignore */ }
-    }
-    
-    // Build query with organization filter if available
-    let query = supabase
-      .from('pdf_configurations')
-      .select('*')
-      .eq('user_id', user.id);
-    
-    if (orgId) {
-      query = query.eq('organization_id', orgId);
-    }
-    
-    const { data, error } = await query.maybeSingle();
-    
-    if (!error && data) {
-      return {
-        selectedTemplate: data.selected_template || 1,
-        companyName: data.company_name || '',
-        logoUrl: data.logo_url || '',
-        brandColor: data.brand_color || '#0ea5e9',
-        footerText: data.footer_text || '',
-        termsPageText: data.terms_page_text || ''
-      };
-    }
-  }
-  
-  return {
+  const defaults = {
     selectedTemplate: 1,
     companyName: '',
     logoUrl: '',
@@ -57,6 +22,92 @@ const getTemplateConfig = async () => {
     footerText: '',
     termsPageText: ''
   };
+  
+  if (!user) return defaults;
+
+  // Get organization_id from sessionStorage
+  let orgId: string | null = null;
+  const stored = sessionStorage.getItem('selectedOrganization');
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      orgId = parsed.id || null;
+    } catch { /* ignore */ }
+  }
+  
+  // Fallback: resolve org via DB if not in sessionStorage
+  if (!orgId) {
+    const { data: orgData } = await supabase
+      .from('organizations')
+      .select('id')
+      .eq('api_user_id', user.id)
+      .limit(1);
+    
+    if (orgData && orgData.length > 0) {
+      orgId = orgData[0].id;
+    } else {
+      const { data: memberData } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .limit(1);
+      
+      if (memberData && memberData.length > 0) {
+        orgId = memberData[0].organization_id;
+      }
+    }
+  }
+  
+  console.log('[PDF] getTemplateConfig orgId:', orgId, 'userId:', user.id);
+  
+  // Query with organization filter
+  let query = supabase
+    .from('pdf_configurations')
+    .select('*')
+    .eq('user_id', user.id);
+  
+  if (orgId) {
+    query = query.eq('organization_id', orgId);
+  }
+  
+  const { data, error } = await query.maybeSingle();
+  
+  console.log('[PDF] getTemplateConfig result:', { data: data ? { company_name: data.company_name, selected_template: data.selected_template } : null, error });
+  
+  if (!error && data) {
+    return {
+      selectedTemplate: data.selected_template || 1,
+      companyName: data.company_name || '',
+      logoUrl: data.logo_url || '',
+      brandColor: data.brand_color || '#0ea5e9',
+      footerText: data.footer_text || '',
+      termsPageText: data.terms_page_text || ''
+    };
+  }
+  
+  // If maybeSingle failed (e.g. multiple rows), try with limit
+  if (error && orgId) {
+    const { data: fallbackData } = await supabase
+      .from('pdf_configurations')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('organization_id', orgId)
+      .limit(1);
+    
+    if (fallbackData && fallbackData.length > 0) {
+      const d = fallbackData[0];
+      return {
+        selectedTemplate: d.selected_template || 1,
+        companyName: d.company_name || '',
+        logoUrl: d.logo_url || '',
+        brandColor: d.brand_color || '#0ea5e9',
+        footerText: d.footer_text || '',
+        termsPageText: d.terms_page_text || ''
+      };
+    }
+  }
+  
+  return defaults;
 };
 
 // Check if a string looks like an Excel cell reference (e.g., B19, C5)
