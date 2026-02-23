@@ -1,120 +1,85 @@
 
-# Adjuntar documentos externos a presupuestos y pedidos para Holded
 
-## Objetivo
-Permitir que los usuarios adjunten archivos (PDF, imágenes, etc.) a presupuestos y pedidos mientras los crean o editan. Cuando el documento se envie a Holded, los archivos adjuntos se envian automaticamente al documento creado en Holded usando su API de attach.
+# Plantilla PDF personalizada para Campillo Nevado
 
-## Flujo de usuario
-1. En la pantalla de crear/editar presupuesto o pedido, el usuario ve una seccion "Documentos adjuntos"
-2. Puede subir uno o varios archivos (drag & drop o selector)
-3. Los archivos se almacenan en Supabase Storage
-4. Al enviar a Holded (presupuesto con "Enviar a Holded" o pedido al aprobar), los archivos se envian al documento Holded via `POST /documents/{docType}/{documentId}/attach`
+## Resumen
 
-## Cambios necesarios
+Crear una nueva plantilla PDF (Template7 - "Campillo") exclusiva para la organizacion Campillo Nevado, replicando el diseno de su hoja de factura corporativa. Incluye una segunda pagina con condiciones de venta editables desde la configuracion de la app.
 
-### 1. Base de datos
+## Que se hara
 
-**Nuevo bucket de storage:** `document-attachments` (privado)
+### 1. Nueva plantilla: Template7 (Campillo)
 
-**Nueva tabla:** `document_attachments`
-- `id` (uuid, PK)
-- `organization_id` (uuid, FK organizations, NOT NULL)
-- `quote_id` (uuid, FK quotes, nullable)
-- `sales_order_id` (uuid, FK sales_orders, nullable)
-- `file_name` (text, NOT NULL)
-- `file_path` (text, NOT NULL) -- ruta en storage
-- `file_size` (integer)
-- `mime_type` (text)
-- `created_by` (uuid)
-- `created_at` (timestamptz, default now())
+**Pagina 1 - Presupuesto:**
+- Banda verde degradada superior con logo de Campillo Nevado hardcoded
+- Texto "ARTES GRAFICAS" + logo + "CAMPILLO NEVADO S.A." + NIF
+- Texto vertical izquierdo con datos del Registro Mercantil
+- Zona central con datos del cliente, tabla de items (misma estructura que las demas plantillas)
+- Pie de pagina con decoracion de olas verdes y datos fijos:
+  - Desierto de Tabernas, 8 / 28320 PINTO (Madrid)
+  - Telef. 91 560 93 34
+  - contabilidad@campillonevado.es / www.campillonevado.es
 
-Con RLS: miembros de la organizacion pueden CRUD sus propios adjuntos.
+**Pagina 2 - Condiciones (opcional, solo si hay texto configurado):**
+- Titulo "CONDICIONES DE VENTA"
+- Texto de condiciones leido desde `pdf_configurations.terms_page_text`
+- Clausula LOPD al pie (tambien configurable)
 
-### 2. Componente UI: `DocumentAttachments`
+### 2. Base de datos
 
-Nuevo componente reutilizable (`src/components/quotes/DocumentAttachments.tsx`):
-- Acepta props: `quoteId?`, `salesOrderId?`, `organizationId`, `readOnly?`
-- Muestra lista de archivos adjuntos con nombre, tamano y boton eliminar
-- Boton "Adjuntar archivo" que usa `react-dropzone` (ya instalado)
-- Sube archivos a bucket `document-attachments` con ruta `{orgId}/{quoteId|orderId}/{filename}`
-- Inserta registro en `document_attachments`
-- Modo solo lectura para vistas de detalle
+- Agregar columna `terms_page_text` (text, nullable) a la tabla `pdf_configurations`
+- Insertar registro en `pdf_templates` con `template_number: 7`, `organization_id: 108bcc37-fc60-4bc0-a81f-c30641d0ebc9` (Campillo Nevado), `is_global: false`, `is_custom: true`
 
-### 3. Integracion en paginas
+### 3. Registro de plantilla
 
-Anadir el componente `DocumentAttachments` en:
-- `QuoteNew.tsx` -- despues de guardar el presupuesto (se habilita tras primer guardado, o se almacenan temporalmente)
-- `QuoteEdit.tsx` -- en la seccion de detalles, debajo de notas
-- `SalesOrderNew.tsx` -- similar a quotes
-- `SalesOrderEdit.tsx` -- similar a quotes
-- `QuoteDetail.tsx` y `SalesOrderDetail.tsx` -- en modo solo lectura
+- Anadir Template7 al mapa `templateComponents` en `src/utils/templateRegistry.ts`
+- La plantilla solo aparecera para Campillo porque `pdf_templates` la filtra por `organization_id`
 
-### 4. Edge function: `holded-attach-document`
+### 4. Configuracion de condiciones en la UI
 
-Nueva edge function que:
-1. Recibe `documentId` (Holded), `docType` ("estimate" o "salesorder"), y `attachmentIds` (array de IDs de `document_attachments`)
-2. Obtiene la API key de Holded de la organizacion (mismo patron que export-estimate/export-order)
-3. Para cada archivo:
-   - Descarga el archivo de Supabase Storage usando service_role
-   - Envia a Holded via `POST /documents/{docType}/{documentId}/attach` como `multipart/form-data`
-4. Devuelve resultado de cada attach
+- En `SettingsPdfTemplate.tsx`, anadir un campo de texto largo (textarea) para `terms_page_text` que solo se muestre cuando la plantilla seleccionada lo soporte (template 7)
+- El campo se guarda y carga junto con el resto de la configuracion
 
-### 5. Modificacion de edge functions existentes
+### 5. Generador de PDF
 
-**`holded-export-estimate/index.ts`:**
-- Despues de crear el documento en Holded y obtener `holdedData.id`, consultar `document_attachments` donde `quote_id` = quoteId
-- Si hay adjuntos, invocar `holded-attach-document` pasando el `holdedData.id`, docType `"estimate"`, y los attachment IDs
+- Modificar `pdfGenerator.ts` para que al renderizar Template7, tambien renderice la segunda pagina de condiciones y la anada como pagina adicional al PDF
 
-**`holded-export-order/index.ts`:**
-- Mismo patron: despues de crear el salesorder en Holded, consultar adjuntos del pedido
-- Si hay adjuntos, invocar `holded-attach-document`
+### 6. Imagen de logo
 
-### 6. Detalles tecnicos
+- Copiar el logo de Campillo al proyecto (o usar la URL del logo ya subido) para incrustarlo directamente en la plantilla
 
-**API de Holded para attach:**
-```
-POST https://api.holded.com/api/invoicing/v1/documents/{docType}/{documentId}/attach
-Headers: key: {apiKey}, content-type: multipart/form-data
-Body: FormData con el archivo
+## Secuencia tecnica
+
+```text
+1. Migracion SQL
+   +-- Agregar columna terms_page_text a pdf_configurations
+   +-- Insertar pdf_templates para template 7 (Campillo)
+
+2. Crear src/components/templates/Template7.tsx
+   +-- Pagina 1: cabecera verde, datos fijos Campillo, items, pie verde
+   +-- Pagina 2: condiciones de venta (desde data.config.termsPageText)
+
+3. Actualizar src/utils/templateRegistry.ts
+   +-- Importar Template7
+   +-- Agregar al mapa templateComponents[7]
+
+4. Actualizar src/utils/pdfGenerator.ts
+   +-- Cargar terms_page_text desde pdf_configurations
+   +-- Pasarlo como config.termsPageText al templateData
+   +-- Manejar renderizado multi-pagina para la pagina de condiciones
+
+5. Actualizar src/pages/SettingsPdfTemplate.tsx
+   +-- Agregar textarea para terms_page_text
+   +-- Mostrar solo cuando selectedTemplate == 7
+
+6. Actualizar src/hooks/usePdfConfiguration.ts
+   +-- Agregar terms_page_text al tipo PdfConfiguration
 ```
 
-Donde `docType` es `estimate` para presupuestos y `salesorder` para pedidos.
+## Restricciones
 
-**Storage path pattern:** `{organization_id}/{document_type}/{document_id}/{timestamp}_{filename}`
+- La plantilla 7 solo sera visible para Campillo Nevado (filtrada por organization_id en pdf_templates)
+- Anebri y otras organizaciones no la veran en su selector
+- Los datos de empresa (direccion, telefono, etc.) van hardcoded en el componente, no desde la configuracion
+- El logo tambien va fijo en la plantilla
 
-**Limites sugeridos:** Maximo 5 archivos por documento, maximo 10MB por archivo.
-
-### 7. Migracion SQL resumida
-
-```sql
--- Bucket
-INSERT INTO storage.buckets (id, name, public) VALUES ('document-attachments', 'document-attachments', false);
-
--- Tabla
-CREATE TABLE document_attachments (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  organization_id uuid NOT NULL REFERENCES organizations(id),
-  quote_id uuid REFERENCES quotes(id) ON DELETE CASCADE,
-  sales_order_id uuid REFERENCES sales_orders(id) ON DELETE CASCADE,
-  file_name text NOT NULL,
-  file_path text NOT NULL,
-  file_size integer,
-  mime_type text,
-  created_by uuid,
-  created_at timestamptz DEFAULT now(),
-  CONSTRAINT chk_one_parent CHECK (
-    (quote_id IS NOT NULL AND sales_order_id IS NULL) OR
-    (quote_id IS NULL AND sales_order_id IS NOT NULL)
-  )
-);
-
--- RLS
-ALTER TABLE document_attachments ENABLE ROW LEVEL SECURITY;
--- Politicas para miembros de la organizacion
-```
-
-**Storage RLS:** Politicas para que miembros de la organizacion puedan subir/leer/eliminar archivos en su carpeta de organizacion.
-
-### 8. Propagacion quote -> order
-
-Cuando se aprueba un presupuesto (`useQuoteApproval`), los adjuntos del presupuesto se copian al pedido resultante (se duplican los registros en `document_attachments` apuntando al `sales_order_id`, reutilizando el mismo `file_path` en storage).
