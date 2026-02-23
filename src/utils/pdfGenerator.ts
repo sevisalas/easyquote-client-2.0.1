@@ -26,7 +26,8 @@ const getTemplateConfig = async () => {
         companyName: data.company_name || '',
         logoUrl: data.logo_url || '',
         brandColor: data.brand_color || '#0ea5e9',
-        footerText: data.footer_text || ''
+        footerText: data.footer_text || '',
+        termsPageText: data.terms_page_text || ''
       };
     }
   }
@@ -36,7 +37,8 @@ const getTemplateConfig = async () => {
     companyName: '',
     logoUrl: '',
     brandColor: '#0ea5e9',
-    footerText: ''
+    footerText: '',
+    termsPageText: ''
   };
 };
 
@@ -322,53 +324,74 @@ export const generateQuotePDF = async (
     // Wait for render and images to load
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // Capture as canvas with better quality
-    const canvas = await html2canvas(container.firstChild as HTMLElement, {
-      scale: quality,
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#ffffff',
-      windowWidth: 794, // A4 width in pixels at 96 DPI
-      windowHeight: 1123 // A4 height in pixels at 96 DPI
-    });
+    // Check if template has multiple pages (e.g., Template7 with terms page)
+    const pages = container.querySelectorAll('[data-terms-page]');
+    const hasMultiplePages = pages.length > 0;
 
-    // Clean up
-    root.unmount();
-    document.body.removeChild(container);
-
-    // Create PDF with proper dimensions
+    // Create PDF
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
-    
-    // Calculate scaling to fit content
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    
-    // Scale to fit page width
-    const ratio = pdfWidth / imgWidth;
-    const scaledHeight = imgHeight * ratio;
-    
-    // If content fits in one page
-    if (scaledHeight <= pdfHeight) {
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, scaledHeight);
+
+    if (hasMultiplePages) {
+      // Multi-page template: render each top-level child as a separate PDF page
+      const children = container.firstChild
+        ? (container.firstChild as HTMLElement).parentElement === container
+          ? Array.from(container.children) as HTMLElement[]
+          : Array.from((container.firstChild as HTMLElement).children) as HTMLElement[]
+        : [];
+
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i];
+        const canvas = await html2canvas(child, {
+          scale: quality,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          windowWidth: 794,
+          windowHeight: 1123,
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const ratio = pdfWidth / canvas.width;
+        const scaledHeight = canvas.height * ratio;
+
+        if (i > 0) pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
+      }
     } else {
-      // Content spans multiple pages
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      let heightLeft = scaledHeight;
-      let position = 0;
+      // Single-page or overflow template (existing logic)
+      const canvas = await html2canvas(container.firstChild as HTMLElement, {
+        scale: quality,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: 794,
+        windowHeight: 1123,
+      });
 
-      // First page
-      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, scaledHeight);
-      heightLeft -= pdfHeight;
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = pdfWidth / imgWidth;
+      const scaledHeight = imgHeight * ratio;
 
-      // Add subsequent pages if needed
-      while (heightLeft > 0) {
-        position = heightLeft - scaledHeight;
-        pdf.addPage();
+      if (scaledHeight <= pdfHeight) {
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, scaledHeight);
+      } else {
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        let heightLeft = scaledHeight;
+        let position = 0;
+
         pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, scaledHeight);
         heightLeft -= pdfHeight;
+
+        while (heightLeft > 0) {
+          position = heightLeft - scaledHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, scaledHeight);
+          heightLeft -= pdfHeight;
+        }
       }
     }
 

@@ -1531,6 +1531,7 @@ export type Database = {
           logo_url: string | null
           organization_id: string | null
           selected_template: number
+          terms_page_text: string | null
           updated_at: string
           user_id: string
         }
@@ -1543,6 +1544,7 @@ export type Database = {
           logo_url?: string | null
           organization_id?: string | null
           selected_template?: number
+          terms_page_text?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1555,6 +1557,7 @@ export type Database = {
           logo_url?: string | null
           organization_id?: string | null
           selected_template?: number
+          terms_page_text?: string | null
           updated_at?: string
           user_id?: string
         }

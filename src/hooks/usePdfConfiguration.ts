@@ -12,6 +12,7 @@ export interface PdfConfiguration {
   brand_color?: string;
   footer_text?: string;
   selected_template: number;
+  terms_page_text?: string;
   created_at?: string;
   updated_at?: string;
 }
