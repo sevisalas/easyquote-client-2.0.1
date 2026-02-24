@@ -215,11 +215,13 @@ Deno.serve(async (req) => {
     // Get api_user_id for the organization (to get shared prompt settings)
     const { data: orgData } = await supabase
       .from('organizations')
-      .select('api_user_id')
+      .select('api_user_id, hide_all_prompts_in_documents')
       .eq('id', organizationId)
       .single();
     
     const apiUserId = orgData?.api_user_id;
+    const hideAllPromptsInDocs = orgData?.hide_all_prompts_in_documents === true;
+    console.log('🙈 hideAllPromptsInDocs:', hideAllPromptsInDocs);
     
     // Get hidden prompt settings: hide_in_documents OR admin_only (if user can't see it, client shouldn't either)
     const { data: hiddenPromptSettings } = await supabase
@@ -565,6 +567,12 @@ Deno.serve(async (req) => {
         
         // Build base description from prompts (excluding quantity prompt)
         let baseDescription = '';
+        
+        // If org-level flag hides all prompts, use item.description directly
+        if (hideAllPromptsInDocs) {
+          baseDescription = item.description || '';
+        } else {
+        let qtyPromptLabel = 'Cantidad';
         let qtyPromptLabel = 'Cantidad';
         
         if (item.prompts) {
@@ -623,13 +631,16 @@ Deno.serve(async (req) => {
               .join('\n');
           }
         }
+        } // end else (not hideAllPromptsInDocs)
         
         // Item additionals are now exported as separate line items (not in description)
 
         // Append composite component details (pass parent prompts to avoid repeating propagated fields)
-        const compositeDesc = buildCompositeDescription(item.composite_data, promptsArray);
-        if (compositeDesc) {
-          baseDescription += (baseDescription ? '\n\n' : '') + compositeDesc;
+        if (!hideAllPromptsInDocs) {
+          const compositeDesc = buildCompositeDescription(item.composite_data, promptsArray);
+          if (compositeDesc) {
+            baseDescription += (baseDescription ? '\n\n' : '') + compositeDesc;
+          }
         }
         
         // Create one item per quantity row (each with its own price)
@@ -695,6 +706,9 @@ Deno.serve(async (req) => {
           description = item.description || '';
           
           console.log('📦 Custom product detected:', { customQuantity, customUnitPrice, description, qtyPrompt, pricePrompt });
+        } else if (hideAllPromptsInDocs) {
+          // Org-level flag: use item.description directly, skip all prompts
+          description = item.description || '';
         } else {
           // Build description from prompts (filter using visibility rules)
           if (item.prompts) {
@@ -764,21 +778,23 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Append composite component details (pass parent prompts to avoid repeating propagated fields)
-        let singlePromptsArray: any[] = [];
-        if (item.prompts && !isCustomProduct) {
-          if (Array.isArray(item.prompts)) {
-            singlePromptsArray = item.prompts;
-          } else if (typeof item.prompts === 'object') {
-            singlePromptsArray = Object.entries(item.prompts).map(([key, value]) => ({
-              id: key,
-              ...(typeof value === 'object' ? value : { value })
-            }));
+        // Append composite component details (only when prompts are NOT hidden)
+        if (!hideAllPromptsInDocs) {
+          let singlePromptsArray: any[] = [];
+          if (item.prompts && !isCustomProduct) {
+            if (Array.isArray(item.prompts)) {
+              singlePromptsArray = item.prompts;
+            } else if (typeof item.prompts === 'object') {
+              singlePromptsArray = Object.entries(item.prompts).map(([key, value]) => ({
+                id: key,
+                ...(typeof value === 'object' ? value : { value })
+              }));
+            }
           }
-        }
-        const compositeDescSingle = buildCompositeDescription(item.composite_data, singlePromptsArray);
-        if (compositeDescSingle) {
-          description += (description ? '\n\n' : '') + compositeDescSingle;
+          const compositeDescSingle = buildCompositeDescription(item.composite_data, singlePromptsArray);
+          if (compositeDescSingle) {
+            description += (description ? '\n\n' : '') + compositeDescSingle;
+          }
         }
         
         // Get price ONLY from outputs type "Price" (sin IVA)

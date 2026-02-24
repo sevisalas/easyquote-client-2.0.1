@@ -1484,6 +1484,7 @@ export type Database = {
           created_at: string
           excel_extra: number
           excel_limit: number
+          hide_all_prompts_in_documents: boolean
           holded_external_customers: boolean
           id: string
           max_daily_orders: number | null
@@ -1498,6 +1499,7 @@ export type Database = {
           created_at?: string
           excel_extra?: number
           excel_limit?: number
+          hide_all_prompts_in_documents?: boolean
           holded_external_customers?: boolean
           id?: string
           max_daily_orders?: number | null
@@ -1512,6 +1514,7 @@ export type Database = {
           created_at?: string
           excel_extra?: number
           excel_limit?: number
+          hide_all_prompts_in_documents?: boolean
           holded_external_customers?: boolean
           id?: string
           max_daily_orders?: number | null
