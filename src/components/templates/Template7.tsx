@@ -50,7 +50,7 @@ export default function Template7({ data }: Template7Props) {
         <img
           src="/assets/campillo-logo.png"
           alt="Campillo Nevado"
-          style={{ width: '220px', objectFit: 'contain' }}
+          style={{ width: '350px', objectFit: 'contain' }}
           onError={(e) => { e.currentTarget.style.display = 'none'; }}
         />
       </div>
