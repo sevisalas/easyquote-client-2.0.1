@@ -11,7 +11,7 @@ export interface PDFGeneratorOptions {
 }
 
 // Get saved template configuration from Supabase
-const getTemplateConfig = async () => {
+const getTemplateConfig = async (overrideOrgId?: string | null) => {
   const { data: { user } } = await supabase.auth.getUser();
   
   const defaults = {
@@ -25,14 +25,16 @@ const getTemplateConfig = async () => {
   
   if (!user) return defaults;
 
-  // Get organization_id from sessionStorage
-  let orgId: string | null = null;
-  const stored = sessionStorage.getItem('selectedOrganization');
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored);
-      orgId = parsed.id || null;
-    } catch { /* ignore */ }
+  // Use override org if provided (from quote data), else fallback to sessionStorage
+  let orgId: string | null = overrideOrgId || null;
+  if (!orgId) {
+    const stored = sessionStorage.getItem('selectedOrganization');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        orgId = parsed.id || null;
+      } catch { /* ignore */ }
+    }
   }
   
   // Fallback: resolve org via DB if not in sessionStorage
@@ -321,8 +323,8 @@ export const generateQuotePDF = async (
       }
     }
 
-    // Get template configuration
-    const config = await getTemplateConfig();
+    // Get template configuration using the quote's own organization_id
+    const config = await getTemplateConfig(quote.organization_id);
 
     // Get hidden prompt settings for quotes
     const hiddenPromptSettings = await getHiddenPromptSettings();
