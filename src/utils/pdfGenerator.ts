@@ -444,7 +444,7 @@ export const generateQuotePDF = async (
       // If org flag hides all prompts, return only name + description
       if (hideAllPromptsInDocs) {
         return {
-          name: item.product_name || item.name || 'Producto',
+          name: item.name || item.product_name || 'Producto',
           description: item.description || '',
           prompts: [],
           price: item.price || 0,
@@ -455,7 +455,7 @@ export const generateQuotePDF = async (
       }
 
       return {
-        name: item.product_name || item.name || 'Producto',
+        name: item.name || item.product_name || 'Producto',
         description: '',
         prompts: promptsFormatted,
         price: item.price || 0,
