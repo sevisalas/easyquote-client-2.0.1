@@ -5,6 +5,18 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.16] - 2026-02-24
+
+### Añadido
+- **Plantilla PDF Anebri (Template 8)**: Nueva plantilla corporativa exclusiva para Anebri con logo, fondo personalizado y paleta de colores roja
+- **Previews de plantillas 7 y 8**: Nuevas imágenes de vista previa para las plantillas de Campillo y Anebri
+
+### Corregido
+- **Plantilla PDF incorrecta en presupuestos multi-organización**: El generador de PDF ahora usa el `organization_id` del presupuesto en lugar de la organización seleccionada en sesión, evitando que un presupuesto de Anebri use la plantilla de Campillo
+- **Toast "Bienvenido" persistente**: Añadida duración de 3 segundos al toast de inicio de sesión que se quedaba visible indefinidamente
+
+---
+
 ## [2.5.15] - 2026-02-23
 
 ### Corregido
