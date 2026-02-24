@@ -56,7 +56,7 @@ export default function Template7({ data }: Template7Props) {
       {/* Cabecera: Solo Logo */}
       <div data-logo-container style={{ margin: 0, padding: '12px 20px 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start' }}>
         <img
-          src="/assets/campillo-logo.png?v=20260224b"
+          src="/assets/campillo-logo.png?v=20260224c"
           alt="Campillo Nevado"
           style={{ height: '100px', width: 'auto', display: 'block' }}
           onError={(e) => { e.currentTarget.style.display = 'none'; }}
