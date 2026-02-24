@@ -497,6 +497,23 @@ export const generateQuotePDF = async (
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
+    // Template7: add background directly to PDF at full resolution (bypass html2canvas)
+    const isTemplate7 = config.selectedTemplate === 7;
+    if (isTemplate7) {
+      try {
+        const bgResponse = await fetch('/assets/campillo-page1-bg.jpg');
+        const bgBlob = await bgResponse.blob();
+        const bgDataUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(bgBlob);
+        });
+        pdf.addImage(bgDataUrl, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      } catch (e) {
+        console.warn('[PDF] Could not load background image:', e);
+      }
+    }
+
     if (hasMultiplePages) {
       // Multi-page template: render each top-level child as a separate PDF page
       const children = container.firstChild
@@ -511,25 +528,38 @@ export const generateQuotePDF = async (
           scale: renderScale,
           useCORS: true,
           logging: false,
-          backgroundColor: '#ffffff',
+          backgroundColor: isTemplate7 ? null : '#ffffff',
           windowWidth: 794,
           windowHeight: 1123,
         });
 
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const imgData = canvas.toDataURL('image/png');
         const ratio = pdfWidth / canvas.width;
         const scaledHeight = canvas.height * ratio;
 
         if (i > 0) pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
+        if (isTemplate7 && i > 0) {
+          // Re-add background for additional pages
+          try {
+            const bgResponse = await fetch('/assets/campillo-page1-bg.jpg');
+            const bgBlob = await bgResponse.blob();
+            const bgDataUrl = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(bgBlob);
+            });
+            pdf.addImage(bgDataUrl, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+          } catch (e) { /* ignore */ }
+        }
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
       }
     } else {
-      // Single-page or overflow template (existing logic)
+      // Single-page or overflow template
       const canvas = await html2canvas(container.firstChild as HTMLElement, {
         scale: renderScale,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff',
+        backgroundColor: isTemplate7 ? null : '#ffffff',
         windowWidth: 794,
         windowHeight: 1123,
       });
@@ -539,25 +569,24 @@ export const generateQuotePDF = async (
       const ratio = pdfWidth / imgWidth;
       const scaledHeight = imgHeight * ratio;
 
-      // For fixed-height templates (like Template7 with exact A4 dimensions),
-      // clamp to single page to avoid blank overflow pages
-      const isFixedPage = config.selectedTemplate === 7;
+      // For fixed-height templates, clamp to single page
+      const isFixedPage = isTemplate7;
 
       if (isFixedPage || scaledHeight <= pdfHeight) {
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
+        const imgData = canvas.toDataURL('image/png');
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
       } else {
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const imgData = canvas.toDataURL('image/png');
         let heightLeft = scaledHeight;
         let position = 0;
 
-        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, scaledHeight);
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, scaledHeight);
         heightLeft -= pdfHeight;
 
         while (heightLeft > 0) {
           position = heightLeft - scaledHeight;
           pdf.addPage();
-          pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, scaledHeight);
+          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, scaledHeight);
           heightLeft -= pdfHeight;
         }
       }
