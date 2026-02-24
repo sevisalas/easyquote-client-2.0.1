@@ -1965,7 +1965,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       multi: multiEnabled ? { qtyPrompt, qtyInputs, rows: multiRows } : null,
       displayName: displayName || originalProductName, // Nombre a mostrar (editable)
       productName: originalProductName, // Nombre original del producto API
-      itemDescription: isCustomProduct ? (itemDescription || "Artículo personalizado") : "", // Solo para productos custom
+      itemDescription: isCustomProduct ? (itemDescription || "Artículo personalizado") : (itemDescription || ""), // Descripción para todos los productos
       itemAdditionals,
       // Preservar isFinalized del padre (initialData) - NO sobrescribirlo aquí
       boundProductConfig, // Guardar configuración de producto encuadernado
@@ -2178,6 +2178,19 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               </div>
             )}
           </div>
+
+          {/* Descripción del artículo - disponible para TODOS los productos */}
+          {productId && !isCustomProduct && (
+            <div className="space-y-2 mb-4">
+              <Label>Descripción del artículo</Label>
+              <Textarea
+                value={itemDescription}
+                onChange={(e) => setItemDescription(e.target.value)}
+                placeholder="Descripción detallada del artículo (aparecerá en el PDF cuando se oculten los prompts)..."
+                rows={3}
+              />
+            </div>
+          )}
         </>
       )}
 

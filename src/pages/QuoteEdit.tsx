@@ -455,7 +455,7 @@ export default function QuoteEdit() {
             quote_id: id,
             product_name: item.product_name || item.productName || "",  // Nombre original del producto API
             name: item.name || item.displayName || item.product_name || "",  // Nombre a mostrar
-            description: item.description || item.itemDescription || "",  // Descripción (solo para custom)
+            description: item.description || item.itemDescription || "",  // Descripción del artículo
             price: item.price || 0,
             position: index,
             product_id: item.productId || null,
@@ -612,7 +612,7 @@ export default function QuoteEdit() {
               ...item,
               product_name: snapshot.productName || item.product_name,  // Nombre original del producto API
               name: snapshot.displayName || item.name,  // Nombre a mostrar
-              description: snapshot.itemDescription || item.description,  // Descripción (solo para custom)
+              description: snapshot.itemDescription || item.description,  // Descripción del artículo
               price: snapshot.price || 0,
               // Update QuoteItem fields
               productId: snapshot.productId,
@@ -957,7 +957,8 @@ export default function QuoteEdit() {
               // Debug: mostrar los prompts en consola
               console.log('📋 Item prompts para', item.product_name || item.name, ':', itemPrompts);
               
-              const hasDetails = itemOutputs.length > 0 || Object.keys(itemPrompts).length > 0;
+              const itemDescription = item.description || item.itemDescription || '';
+              const hasDetails = itemOutputs.length > 0 || Object.keys(itemPrompts).length > 0 || !!itemDescription;
 
               return (
                 <div
@@ -1069,6 +1070,13 @@ export default function QuoteEdit() {
                                         <span className="text-foreground">{customQuantity}</span>
                                       </div>
                                     )}
+                                  </div>
+                                )}
+                                {/* Descripción del artículo - para productos NO personalizados */}
+                                {!isCustomProduct && itemDescription && (
+                                  <div className="pl-8 space-y-1 border-l-2 border-muted mb-2">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase">Descripción</p>
+                                    <div className="text-sm text-foreground whitespace-pre-line">{itemDescription}</div>
                                   </div>
                                 )}
                                 {/* Prompts - solo para productos NO personalizados */}

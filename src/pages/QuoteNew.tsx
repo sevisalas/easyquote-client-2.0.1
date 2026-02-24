@@ -495,7 +495,7 @@ export default function QuoteNew() {
           name: item.displayName || item.productName || "",
           // Nombre a mostrar (editable)
           description: item.itemDescription || "",
-          // Descripción (solo para productos custom)
+          // Descripción del artículo
           prompts: promptsArray,
           outputs: item.outputs || [],
           multi: item.multi || null,
