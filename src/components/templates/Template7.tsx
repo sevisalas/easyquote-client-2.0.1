@@ -13,6 +13,8 @@ const PAGE_STYLE: React.CSSProperties = {
   position: 'relative',
   overflow: 'hidden',
   backgroundColor: '#ffffff',
+  margin: '0',
+  padding: '0',
 };
 
 export default function Template7({ data }: Template7Props) {
@@ -25,6 +27,19 @@ export default function Template7({ data }: Template7Props) {
 
   return (
     <div data-template7-page style={PAGE_STYLE}>
+      <style>{`
+        [data-template7-page] {
+          margin: 0;
+          padding: 0;
+        }
+        [data-template7-page] p,
+        [data-template7-page] h1,
+        [data-template7-page] h2,
+        [data-template7-page] h3,
+        [data-template7-page] table {
+          margin: 0;
+        }
+      `}</style>
       {/* Watermark for Draft */}
       {quote.status === 'draft' && (
         <div
