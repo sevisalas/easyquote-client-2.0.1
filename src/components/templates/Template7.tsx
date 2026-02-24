@@ -215,8 +215,8 @@ export default function Template7({ data }: Template7Props) {
       <div
         style={{
           position: 'absolute',
-          right: '0',
-          bottom: '0',
+          right: '20px',
+          bottom: '15px',
           fontSize: '8px',
           color: '#555',
           lineHeight: '1.5',
