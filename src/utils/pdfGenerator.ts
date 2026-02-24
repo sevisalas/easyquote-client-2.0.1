@@ -539,9 +539,13 @@ export const generateQuotePDF = async (
       const ratio = pdfWidth / imgWidth;
       const scaledHeight = imgHeight * ratio;
 
-      if (scaledHeight <= pdfHeight) {
+      // For fixed-height templates (like Template7 with exact A4 dimensions),
+      // clamp to single page to avoid blank overflow pages
+      const isFixedPage = config.selectedTemplate === 7;
+
+      if (isFixedPage || scaledHeight <= pdfHeight) {
         const imgData = canvas.toDataURL('image/jpeg', 0.95);
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, scaledHeight);
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
       } else {
         const imgData = canvas.toDataURL('image/jpeg', 0.95);
         let heightLeft = scaledHeight;
