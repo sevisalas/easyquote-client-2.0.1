@@ -27,6 +27,21 @@ export default function Template7({ data }: Template7Props) {
 
   return (
     <div data-template7-page style={PAGE_STYLE}>
+      {/* Background image */}
+      <img
+        src="/assets/campillo-page1-bg.png?v=20260224b"
+        alt=""
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '210mm',
+          height: '296mm',
+          objectFit: 'cover',
+          zIndex: 0,
+          pointerEvents: 'none',
+        }}
+      />
       <style>{`
         [data-template7-page] [data-logo-container] img {
           margin: 0 !important;
@@ -54,7 +69,7 @@ export default function Template7({ data }: Template7Props) {
       )}
 
       {/* Cabecera: Solo Logo */}
-      <div data-logo-container style={{ margin: 0, padding: '12px 20px 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start' }}>
+      <div data-logo-container style={{ margin: 0, padding: '12px 20px 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start', position: 'relative', zIndex: 1 }}>
         <img
           src="/assets/campillo-logo.png?v=20260224c"
           alt="Campillo Nevado"
@@ -64,7 +79,7 @@ export default function Template7({ data }: Template7Props) {
       </div>
 
       {/* Contenido */}
-      <div style={{ padding: '5px 20px 0' }}>
+      <div style={{ padding: '5px 20px 0', position: 'relative', zIndex: 1 }}>
         {/* Info presupuesto + cliente */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', alignItems: 'flex-start' }}>
           <div>
@@ -220,6 +235,7 @@ export default function Template7({ data }: Template7Props) {
           color: '#555',
           lineHeight: '1.5',
           textAlign: 'right',
+          zIndex: 1,
         }}
       >
         <p style={{ margin: 0, fontWeight: 'bold', fontSize: '10px', color: '#1a3a5c' }}>CAMPILLO NEVADO S.L.</p>
