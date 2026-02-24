@@ -522,7 +522,7 @@ export const generateQuotePDF = async (
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    const isTemplate7 = false;
+    const isTemplate7 = config.selectedTemplate === 7;
 
     if (hasMultiplePages) {
       // Multi-page template: render each top-level child as a separate PDF page
