@@ -515,30 +515,14 @@ export const generateQuotePDF = async (
     const pages = container.querySelectorAll('[data-terms-page]');
     const hasMultiplePages = pages.length > 0;
 
-    // Use higher quality for custom templates with background images
-    const renderScale = config.selectedTemplate === 7 ? 3 : quality;
+    const renderScale = quality;
 
     // Create PDF
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    // Template7: add background directly to PDF at full resolution (bypass html2canvas)
-    const isTemplate7 = config.selectedTemplate === 7;
-    if (isTemplate7) {
-      try {
-        const bgResponse = await fetch('/assets/campillo-page1-bg.jpg');
-        const bgBlob = await bgResponse.blob();
-        const bgDataUrl = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(bgBlob);
-        });
-        pdf.addImage(bgDataUrl, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-      } catch (e) {
-        console.warn('[PDF] Could not load background image:', e);
-      }
-    }
+    const isTemplate7 = false;
 
     if (hasMultiplePages) {
       // Multi-page template: render each top-level child as a separate PDF page
@@ -564,19 +548,7 @@ export const generateQuotePDF = async (
         const scaledHeight = canvas.height * ratio;
 
         if (i > 0) pdf.addPage();
-        if (isTemplate7 && i > 0) {
-          // Re-add background for additional pages
-          try {
-            const bgResponse = await fetch('/assets/campillo-page1-bg.jpg');
-            const bgBlob = await bgResponse.blob();
-            const bgDataUrl = await new Promise<string>((resolve) => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result as string);
-              reader.readAsDataURL(bgBlob);
-            });
-            pdf.addImage(bgDataUrl, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-          } catch (e) { /* ignore */ }
-        }
+        
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
       }
     } else {
@@ -595,10 +567,7 @@ export const generateQuotePDF = async (
       const ratio = pdfWidth / imgWidth;
       const scaledHeight = imgHeight * ratio;
 
-      // For fixed-height templates, clamp to single page
-      const isFixedPage = isTemplate7;
-
-      if (isFixedPage || scaledHeight <= pdfHeight) {
+      if (scaledHeight <= pdfHeight) {
         const imgData = canvas.toDataURL('image/png');
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
       } else {
