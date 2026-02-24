@@ -28,16 +28,11 @@ export default function Template7({ data }: Template7Props) {
   return (
     <div data-template7-page style={PAGE_STYLE}>
       <style>{`
-        [data-template7-page] {
-          margin: 0;
-          padding: 0;
-        }
-        [data-template7-page] p,
-        [data-template7-page] h1,
-        [data-template7-page] h2,
-        [data-template7-page] h3,
-        [data-template7-page] table {
-          margin: 0;
+        [data-template7-page],
+        [data-template7-page] * {
+          margin: 0 !important;
+          padding: 0 !important;
+          gap: 0 !important;
         }
       `}</style>
       {/* Watermark for Draft */}
