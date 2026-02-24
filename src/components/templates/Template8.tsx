@@ -17,14 +17,16 @@ const PAGE_STYLE: React.CSSProperties = {
   padding: '0',
 };
 
-// Anebri brand colors (placeholder — update when branding is confirmed)
+// Anebri brand colors — red & grey from logo
 const BRAND = {
-  primary: '#1a3a5c',      // dark navy
-  accent: '#2563eb',        // blue accent
-  accentLight: '#eff6ff',   // light blue bg
-  accentBorder: '#bfdbfe',  // blue border
-  totalColor: '#2563eb',
-  headerBg: '#2563eb',
+  primary: '#c41e1e',        // Anebri red
+  primaryDark: '#9a1818',
+  accent: '#c41e1e',
+  accentLight: '#fef2f2',    // light red bg
+  accentBorder: '#fecaca',   // red border
+  totalColor: '#c41e1e',
+  headerBg: '#c41e1e',
+  textDark: '#1a1a1a',
 };
 
 export default function Template8({ data }: Template8Props) {
@@ -37,8 +39,21 @@ export default function Template8({ data }: Template8Props) {
 
   return (
     <div data-template8-page style={PAGE_STYLE}>
-      {/* Background image — replace with Anebri background when available */}
-      {/* <img src="/assets/anebri-page1-bg.png" alt="" style={{ position: 'absolute', top: 0, left: 0, width: '210mm', height: '296mm', objectFit: 'cover', zIndex: 0, pointerEvents: 'none' }} /> */}
+      {/* Background image */}
+      <img
+        src="/assets/anebri-page1-bg.png"
+        alt=""
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '210mm',
+          height: '296mm',
+          objectFit: 'cover',
+          zIndex: 0,
+          pointerEvents: 'none',
+        }}
+      />
 
       <style>{`
         [data-template8-page] [data-logo-container] img {
@@ -69,10 +84,12 @@ export default function Template8({ data }: Template8Props) {
 
       {/* Cabecera: Logo */}
       <div data-logo-container style={{ margin: 0, padding: '12px 20px 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start', position: 'relative', zIndex: 1 }}>
-        {/* Replace with Anebri logo when available */}
-        <div style={{ height: '100px', display: 'flex', alignItems: 'center' }}>
-          <span style={{ fontSize: '28px', fontWeight: 'bold', color: BRAND.primary, letterSpacing: '2px' }}>ANEBRI</span>
-        </div>
+        <img
+          src="/assets/anebri-logo.png"
+          alt="Anebri"
+          style={{ height: '100px', width: 'auto', display: 'block' }}
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        />
       </div>
 
       {/* Contenido */}
@@ -105,7 +122,7 @@ export default function Template8({ data }: Template8Props) {
             <p style={{ fontSize: '9px', color: BRAND.accent, fontWeight: 'bold', marginBottom: '2px', textTransform: 'uppercase' }}>
               Cliente
             </p>
-            <p style={{ fontSize: '11px', fontWeight: 'bold', color: '#1a1a1a' }}>{customer.name || 'Cliente'}</p>
+            <p style={{ fontSize: '11px', fontWeight: 'bold', color: BRAND.textDark }}>{customer.name || 'Cliente'}</p>
             {customer.email && <p style={{ fontSize: '9px', color: '#555' }}>{customer.email}</p>}
             {customer.phone && <p style={{ fontSize: '9px', color: '#555' }}>{customer.phone}</p>}
             {customer.address && <p style={{ fontSize: '9px', color: '#555' }}>{customer.address}</p>}
@@ -115,7 +132,7 @@ export default function Template8({ data }: Template8Props) {
         {/* Título/Descripción */}
         {(quote.title || quote.description) && (
           <div style={{ marginBottom: '10px' }}>
-            {quote.title && <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '2px', color: '#1a1a1a' }}>{quote.title}</h3>}
+            {quote.title && <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '2px', color: BRAND.textDark }}>{quote.title}</h3>}
             {quote.description && <p style={{ fontSize: '10px', color: '#444' }}>{quote.description}</p>}
           </div>
         )}
@@ -222,7 +239,7 @@ export default function Template8({ data }: Template8Props) {
         )}
       </div>
 
-      {/* Datos Anebri - abajo derecha */}
+      {/* Datos contacto - abajo derecha (mismos que Campillo de momento) */}
       <div
         style={{
           position: 'absolute',
@@ -235,10 +252,12 @@ export default function Template8({ data }: Template8Props) {
           zIndex: 1,
         }}
       >
-        <p style={{ margin: 0, fontWeight: 'bold', fontSize: '10px', color: BRAND.primary }}>ANEBRI</p>
-        <p style={{ margin: 0 }}>Dirección por confirmar</p>
-        <p style={{ margin: 0 }}>info@anebri.com</p>
-        <p style={{ margin: 0 }}>www.anebri.com</p>
+        <p style={{ margin: 0, fontWeight: 'bold', fontSize: '10px', color: BRAND.primary }}>CAMPILLO NEVADO S.L.</p>
+        <p style={{ margin: 0 }}>Desierto de Tabernas, 8</p>
+        <p style={{ margin: 0 }}>28320 PINTO (Madrid)</p>
+        <p style={{ margin: 0 }}>Teléf. 91 560 93 34</p>
+        <p style={{ margin: 0 }}>contabilidad@campillonevado.es</p>
+        <p style={{ margin: 0 }}>www.campillonevado.es</p>
       </div>
     </div>
   );
