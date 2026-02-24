@@ -46,11 +46,11 @@ export default function Template7({ data }: Template7Props) {
       )}
 
       {/* Cabecera: Solo Logo */}
-      <div style={{ padding: '30px 40px 20px' }}>
+      <div style={{ padding: '20px 40px 10px' }}>
         <img
           src="/assets/campillo-logo.png"
           alt="Campillo Nevado"
-          style={{ width: '460px', objectFit: 'contain' }}
+          style={{ width: '220px', objectFit: 'contain' }}
           onError={(e) => { e.currentTarget.style.display = 'none'; }}
         />
       </div>
