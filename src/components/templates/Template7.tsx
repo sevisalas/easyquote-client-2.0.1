@@ -65,7 +65,7 @@ export default function Template7({ data }: Template7Props) {
       </div>
 
       {/* Contenido */}
-      <div style={{ padding: '0' }}>
+      <div style={{ padding: '10px 40px 0' }}>
         {/* Info presupuesto + cliente */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', alignItems: 'flex-start' }}>
           <div>
