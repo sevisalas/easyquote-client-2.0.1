@@ -2204,7 +2204,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               <Textarea
                 value={itemDescription}
                 onChange={(e) => setItemDescription(e.target.value)}
-                placeholder="Descripción detallada del artículo (aparecerá en el PDF cuando se oculten los prompts)..."
+                placeholder="Descripción detallada del artículo..."
                 rows={3}
               />
             </div>
