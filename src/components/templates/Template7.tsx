@@ -32,9 +32,9 @@ export default function Template7({ data }: Template7Props) {
       {/* ===== PÁGINA 1 - PRESUPUESTO (fondo = hoja membretada) ===== */}
       <div
         className="bg-white"
+        data-bg-image="/assets/campillo-page1-bg.png"
         style={{
           ...PAGE_STYLE,
-          backgroundImage: 'url(/assets/campillo-page1-bg.png)',
         }}
       >
         {/* Watermark for Draft */}
@@ -229,9 +229,9 @@ export default function Template7({ data }: Template7Props) {
         <div
           data-terms-page="true"
           className="bg-white"
+          data-bg-image="/assets/campillo-page2-bg.png"
           style={{
             ...PAGE_STYLE,
-            backgroundImage: 'url(/assets/campillo-page2-bg.png)',
             pageBreakBefore: 'always',
           }}
         >

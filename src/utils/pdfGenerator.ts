@@ -502,23 +502,50 @@ export const generateQuotePDF = async (
           : Array.from((container.firstChild as HTMLElement).children) as HTMLElement[]
         : [];
 
+      // Pre-load background images referenced by data-bg-image attributes
+      const loadBgImage = (src: string): Promise<string | null> =>
+        new Promise((resolve) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            const c = document.createElement('canvas');
+            c.width = img.naturalWidth;
+            c.height = img.naturalHeight;
+            c.getContext('2d')!.drawImage(img, 0, 0);
+            resolve(c.toDataURL('image/png'));
+          };
+          img.onerror = () => resolve(null);
+          img.src = src;
+        });
+
       for (let i = 0; i < children.length; i++) {
         const child = children[i];
+        const bgSrc = child.getAttribute('data-bg-image');
+        const bgData = bgSrc ? await loadBgImage(bgSrc) : null;
+
+        // Render content with transparent background (no BG image in HTML)
         const canvas = await html2canvas(child, {
           scale: quality,
           useCORS: true,
           logging: false,
-          backgroundColor: '#ffffff',
+          backgroundColor: null, // transparent when BG handled separately
           windowWidth: 794,
           windowHeight: 1123,
         });
 
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const imgData = canvas.toDataURL('image/png');
         const ratio = pdfWidth / canvas.width;
         const scaledHeight = canvas.height * ratio;
 
         if (i > 0) pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
+
+        // Layer 1: high-res background image (full page)
+        if (bgData) {
+          pdf.addImage(bgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        }
+
+        // Layer 2: content overlay (transparent background)
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
       }
     } else {
       // Single-page or overflow template (existing logic)
