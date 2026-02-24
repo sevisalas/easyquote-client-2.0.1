@@ -119,11 +119,29 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       if (!selectedOrganizationId) return null;
       const { data, error } = await supabase
         .from("organizations")
-        .select("api_user_id")
+        .select("api_user_id, hide_all_prompts_in_documents")
         .eq("id", selectedOrganizationId)
         .single();
       if (error) throw error;
       return data?.api_user_id ?? null;
+    },
+    enabled: !!selectedOrganizationId,
+    staleTime: 5 * 60 * 1000,
+    select: (data) => data, // passthrough for now
+  });
+
+  // Check if org hides prompts in documents
+  const { data: orgHidePrompts } = useQuery({
+    queryKey: ["organization-hide-prompts", selectedOrganizationId],
+    queryFn: async () => {
+      if (!selectedOrganizationId) return false;
+      const { data, error } = await supabase
+        .from("organizations")
+        .select("hide_all_prompts_in_documents")
+        .eq("id", selectedOrganizationId)
+        .single();
+      if (error) return false;
+      return data?.hide_all_prompts_in_documents === true;
     },
     enabled: !!selectedOrganizationId,
     staleTime: 5 * 60 * 1000,
@@ -2179,8 +2197,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             )}
           </div>
 
-          {/* Descripción del artículo - disponible para TODOS los productos */}
-          {productId && !isCustomProduct && (
+          {/* Descripción del artículo - solo cuando la org oculta prompts en documentos */}
+          {productId && !isCustomProduct && orgHidePrompts && (
             <div className="space-y-2 mb-4">
               <Label>Descripción del artículo</Label>
               <Textarea
