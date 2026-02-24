@@ -232,11 +232,11 @@ export default function Template7({ data }: Template7Props) {
         style={{
           position: 'absolute',
           bottom: '30px',
-          left: '40px',
+          right: '40px',
           fontSize: '8px',
           color: '#555',
           lineHeight: '1.5',
-          textAlign: 'left',
+          textAlign: 'right',
         }}
       >
         <p style={{ margin: 0 }}>Desierto de Tabernas, 8</p>
