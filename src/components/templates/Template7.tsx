@@ -12,13 +12,10 @@ const PAGE_STYLE: React.CSSProperties = {
   height: '297mm',
   position: 'relative',
   overflow: 'hidden',
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-  backgroundRepeat: 'no-repeat',
+  backgroundColor: '#ffffff',
 };
 
 export default function Template7({ data }: Template7Props) {
-  const config = data.config || {};
   const quote = data.quote || {};
   const customer = data.customer || {};
   const items = data.items || [];
@@ -27,13 +24,7 @@ export default function Template7({ data }: Template7Props) {
     new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
 
   return (
-    <div
-      data-template7-page
-      style={{
-        ...PAGE_STYLE,
-        backgroundColor: 'transparent',
-      }}
-    >
+    <div data-template7-page style={PAGE_STYLE}>
       {/* Watermark for Draft */}
       {quote.status === 'draft' && (
         <div
@@ -54,8 +45,29 @@ export default function Template7({ data }: Template7Props) {
         </div>
       )}
 
-      {/* Contenido superpuesto sobre el fondo */}
-      <div style={{ position: 'absolute', top: '160px', left: '40px', right: '40px', bottom: '160px' }}>
+      {/* Cabecera: Logo + Datos empresa */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '30px 40px 0' }}>
+        <img
+          src="/assets/campillo-logo.png"
+          alt="Campillo Nevado"
+          style={{ height: '60px', objectFit: 'contain' }}
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        />
+        <div style={{ fontSize: '9px', color: '#555', lineHeight: '1.5', textAlign: 'right' }}>
+          <p style={{ margin: 0, fontWeight: 'bold', fontSize: '11px', color: '#1a3a5c' }}>CAMPILLO NEVADO S.L.</p>
+          <p style={{ margin: 0 }}>Desierto de Tabernas, 8</p>
+          <p style={{ margin: 0 }}>28320 PINTO (Madrid)</p>
+          <p style={{ margin: 0 }}>Teléf. 91 560 93 34</p>
+          <p style={{ margin: 0 }}>contabilidad@campillonevado.es</p>
+          <p style={{ margin: 0 }}>www.campillonevado.es</p>
+        </div>
+      </div>
+
+      {/* Línea separadora */}
+      <div style={{ margin: '12px 40px', borderBottom: '2px solid #4a7c2e' }} />
+
+      {/* Contenido */}
+      <div style={{ padding: '0 40px' }}>
         {/* Info presupuesto + cliente */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', alignItems: 'flex-start' }}>
           <div>
@@ -74,7 +86,7 @@ export default function Template7({ data }: Template7Props) {
           </div>
           <div
             style={{
-              background: 'rgba(247, 250, 245, 0.9)',
+              background: '#f7faf5',
               border: '1px solid #d0dfc8',
               borderRadius: '3px',
               padding: '8px 12px',
@@ -99,7 +111,7 @@ export default function Template7({ data }: Template7Props) {
           </div>
         )}
 
-        {/* ── TABLA DE ITEMS ── */}
+        {/* Tabla de items */}
         <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '14px' }}>
           <thead>
             <tr style={{ backgroundColor: '#6a9e3a', color: 'white' }}>
@@ -112,19 +124,13 @@ export default function Template7({ data }: Template7Props) {
           <tbody>
             {items.map((item: any, index: number) => (
               <React.Fragment key={index}>
-                <tr style={{ borderBottom: '1px solid #ddd', backgroundColor: 'rgba(255,255,255,0.85)' }}>
+                <tr style={{ borderBottom: '1px solid #ddd' }}>
                   <td style={{ padding: '6px 8px' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
                       {item.images && item.images.length > 0 && (
                         <div style={{ display: 'flex', gap: '3px', flexShrink: 0 }}>
                           {item.images.map((imgUrl: string, imgIdx: number) => (
-                            <img
-                              key={imgIdx}
-                              src={imgUrl}
-                              alt=""
-                              style={{ width: '30px', height: '30px', objectFit: 'cover', border: '1px solid #e5e7eb' }}
-                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                            />
+                            <img key={imgIdx} src={imgUrl} alt="" style={{ width: '30px', height: '30px', objectFit: 'cover', border: '1px solid #e5e7eb' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                           ))}
                         </div>
                       )}
@@ -133,43 +139,35 @@ export default function Template7({ data }: Template7Props) {
                   </td>
                   <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '10px' }}>{fmtEUR(item.price || 0)}</td>
                   <td style={{ padding: '6px 8px', textAlign: 'center', fontSize: '10px' }}>{item.quantity || 1}</td>
-                  <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '10px', fontWeight: 'bold' }}>
-                    {fmtEUR((item.price || 0) * (item.quantity || 1))}
-                  </td>
+                  <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '10px', fontWeight: 'bold' }}>{fmtEUR((item.price || 0) * (item.quantity || 1))}</td>
                 </tr>
                 {(!item.prompts || item.prompts.length === 0) && item.description && (
-                  <tr style={{ borderBottom: '1px solid #eee', backgroundColor: 'rgba(255,255,255,0.85)' }}>
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
                     <td colSpan={4} style={{ padding: '3px 8px 3px 20px' }}>
                       <div style={{ fontSize: '9px', color: '#555', lineHeight: '1.4', whiteSpace: 'pre-line' }} dangerouslySetInnerHTML={{ __html: item.description.replace(/\n/g, '<br/>') }} />
                     </td>
                   </tr>
                 )}
                 {item.prompts && item.prompts.length > 0 && (
-                  <tr style={{ borderBottom: '1px solid #eee', backgroundColor: 'rgba(255,255,255,0.85)' }}>
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
                     <td colSpan={4} style={{ padding: '3px 8px 3px 20px' }}>
                       <div style={{ fontSize: '9px', color: '#555', lineHeight: '1.4' }}>
                         {item.prompts.map((prompt: any, pIdx: number) => (
-                          <div key={pIdx}>
-                            <span style={{ fontWeight: 600, textTransform: 'uppercase' }}>{prompt.label}:</span> {prompt.value}
-                          </div>
+                          <div key={pIdx}><span style={{ fontWeight: 600, textTransform: 'uppercase' }}>{prompt.label}:</span> {prompt.value}</div>
                         ))}
                       </div>
                     </td>
                   </tr>
                 )}
                 {item.components && item.components.length > 0 && (
-                  <tr style={{ borderBottom: '1px solid #eee', backgroundColor: 'rgba(255,255,255,0.85)' }}>
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
                     <td colSpan={4} style={{ padding: '3px 8px 3px 20px' }}>
                       {item.components.map((comp: any, cIdx: number) => (
                         <div key={cIdx} style={{ marginBottom: '4px' }}>
-                          <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#333', textTransform: 'uppercase', marginBottom: '1px' }}>
-                            ── {comp.alias} ──
-                          </div>
+                          <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#333', textTransform: 'uppercase', marginBottom: '1px' }}>── {comp.alias} ──</div>
                           <div style={{ fontSize: '9px', color: '#555', lineHeight: '1.4', paddingLeft: '8px' }}>
                             {comp.prompts.map((p: any, pIdx: number) => (
-                              <div key={pIdx}>
-                                <span style={{ fontWeight: 600 }}>{p.label}:</span> {p.value}
-                              </div>
+                              <div key={pIdx}><span style={{ fontWeight: 600 }}>{p.label}:</span> {p.value}</div>
                             ))}
                           </div>
                         </div>
@@ -182,7 +180,7 @@ export default function Template7({ data }: Template7Props) {
           </tbody>
         </table>
 
-        {/* ── TOTALES ── */}
+        {/* Totales */}
         <div style={{ marginLeft: 'auto', width: '200px', marginBottom: '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginBottom: '3px' }}>
             <span style={{ color: '#666' }}>Subtotal:</span>
@@ -200,17 +198,7 @@ export default function Template7({ data }: Template7Props) {
               <span>-{fmtEUR(quote.discount_amount || 0)}</span>
             </div>
           )}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontSize: '13px',
-              fontWeight: 'bold',
-              color: '#4a7c2e',
-              borderTop: '2px solid #4a7c2e',
-              paddingTop: '6px',
-            }}
-          >
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 'bold', color: '#4a7c2e', borderTop: '2px solid #4a7c2e', paddingTop: '6px' }}>
             <span>TOTAL:</span>
             <span>{fmtEUR(quote.final_price || 0)}</span>
           </div>
@@ -219,31 +207,10 @@ export default function Template7({ data }: Template7Props) {
         {/* Notas */}
         {quote.notes && (
           <div style={{ marginBottom: '10px' }}>
-            <h3 style={{ fontSize: '9px', fontWeight: 'bold', color: '#1a3a5c', textTransform: 'uppercase', marginBottom: '2px' }}>
-              Notas
-            </h3>
+            <h3 style={{ fontSize: '9px', fontWeight: 'bold', color: '#1a3a5c', textTransform: 'uppercase', marginBottom: '2px' }}>Notas</h3>
             <p style={{ fontSize: '9px', color: '#444', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{quote.notes}</p>
           </div>
         )}
-      </div>
-
-      {/* Dirección Campillo - abajo a la izquierda */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '30px',
-          right: '40px',
-          fontSize: '8px',
-          color: '#555',
-          lineHeight: '1.5',
-          textAlign: 'right',
-        }}
-      >
-        <p style={{ margin: 0 }}>Desierto de Tabernas, 8</p>
-        <p style={{ margin: 0 }}>28320 PINTO (Madrid)</p>
-        <p style={{ margin: 0 }}>Teléf. 91 560 93 34</p>
-        <p style={{ margin: 0 }}>contabilidad@campillonevado.es</p>
-        <p style={{ margin: 0 }}>www.campillonevado.es</p>
       </div>
     </div>
   );
