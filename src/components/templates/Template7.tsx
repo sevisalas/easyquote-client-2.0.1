@@ -9,9 +9,8 @@ interface Template7Props {
 const PAGE_STYLE: React.CSSProperties = {
   fontFamily: 'Arial, Helvetica, sans-serif',
   width: '210mm',
-  height: '297mm',
+  minHeight: '297mm',
   position: 'relative',
-  overflow: 'hidden',
   backgroundColor: '#ffffff',
 };
 
@@ -50,7 +49,7 @@ export default function Template7({ data }: Template7Props) {
         <img
           src="/assets/campillo-logo.png"
           alt="Campillo Nevado"
-          style={{ height: '60px', objectFit: 'contain' }}
+          style={{ height: '120px', objectFit: 'contain' }}
           onError={(e) => { e.currentTarget.style.display = 'none'; }}
         />
         <div style={{ fontSize: '9px', color: '#555', lineHeight: '1.5', textAlign: 'right' }}>
