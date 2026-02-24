@@ -28,11 +28,10 @@ export default function Template7({ data }: Template7Props) {
   return (
     <div data-template7-page style={PAGE_STYLE}>
       <style>{`
-        [data-template7-page],
-        [data-template7-page] * {
+        [data-template7-page] [data-logo-container],
+        [data-template7-page] [data-logo-container] img {
           margin: 0 !important;
           padding: 0 !important;
-          gap: 0 !important;
         }
       `}</style>
       {/* Watermark for Draft */}
@@ -56,7 +55,7 @@ export default function Template7({ data }: Template7Props) {
       )}
 
       {/* Cabecera: Solo Logo */}
-      <div style={{ padding: '0', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start' }}>
+      <div data-logo-container style={{ margin: 0, padding: 0, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start' }}>
         <img
           src="/assets/campillo-logo.png?v=20260224"
           alt="Campillo Nevado"
