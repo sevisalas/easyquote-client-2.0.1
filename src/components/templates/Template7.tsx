@@ -44,26 +44,15 @@ export default function Template7({ data }: Template7Props) {
         </div>
       )}
 
-      {/* Cabecera: Logo + Datos empresa */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '30px 40px 0' }}>
+      {/* Cabecera: Solo Logo */}
+      <div style={{ padding: '30px 40px 0' }}>
         <img
           src="/assets/campillo-logo.png"
           alt="Campillo Nevado"
           style={{ height: '120px', objectFit: 'contain' }}
           onError={(e) => { e.currentTarget.style.display = 'none'; }}
         />
-        <div style={{ fontSize: '9px', color: '#555', lineHeight: '1.5', textAlign: 'right' }}>
-          <p style={{ margin: 0, fontWeight: 'bold', fontSize: '11px', color: '#1a3a5c' }}>CAMPILLO NEVADO S.L.</p>
-          <p style={{ margin: 0 }}>Desierto de Tabernas, 8</p>
-          <p style={{ margin: 0 }}>28320 PINTO (Madrid)</p>
-          <p style={{ margin: 0 }}>Teléf. 91 560 93 34</p>
-          <p style={{ margin: 0 }}>contabilidad@campillonevado.es</p>
-          <p style={{ margin: 0 }}>www.campillonevado.es</p>
-        </div>
       </div>
-
-      {/* Línea separadora */}
-      <div style={{ margin: '12px 40px', borderBottom: '2px solid #4a7c2e' }} />
 
       {/* Contenido */}
       <div style={{ padding: '0 40px' }}>
@@ -210,6 +199,18 @@ export default function Template7({ data }: Template7Props) {
             <p style={{ fontSize: '9px', color: '#444', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{quote.notes}</p>
           </div>
         )}
+      </div>
+
+      {/* Datos Campillo - abajo derecha */}
+      <div style={{ padding: '20px 40px 30px', display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ fontSize: '8px', color: '#555', lineHeight: '1.5', textAlign: 'right' }}>
+          <p style={{ margin: 0, fontWeight: 'bold', fontSize: '10px', color: '#1a3a5c' }}>CAMPILLO NEVADO S.L.</p>
+          <p style={{ margin: 0 }}>Desierto de Tabernas, 8</p>
+          <p style={{ margin: 0 }}>28320 PINTO (Madrid)</p>
+          <p style={{ margin: 0 }}>Teléf. 91 560 93 34</p>
+          <p style={{ margin: 0 }}>contabilidad@campillonevado.es</p>
+          <p style={{ margin: 0 }}>www.campillonevado.es</p>
+        </div>
       </div>
     </div>
   );
