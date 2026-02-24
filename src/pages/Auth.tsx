@@ -160,7 +160,8 @@ const Auth = () => {
 
     toast({
       title: "Bienvenido",
-      description: "Sesión iniciada correctamente"
+      description: "Sesión iniciada correctamente",
+      duration: 3000,
     });
     
     // Force full page reload to ensure SubscriptionContext loads with the selected organization
