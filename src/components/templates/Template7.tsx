@@ -86,8 +86,8 @@ export default function Template7({ data }: Template7Props) {
               background: '#f7faf5',
               border: '1px solid #d0dfc8',
               borderRadius: '3px',
-              padding: '8px 12px',
-              minWidth: '200px',
+              padding: '10px 14px',
+              minWidth: '280px',
             }}
           >
             <p style={{ fontSize: '9px', color: '#4a7c2e', fontWeight: 'bold', marginBottom: '2px', textTransform: 'uppercase' }}>
