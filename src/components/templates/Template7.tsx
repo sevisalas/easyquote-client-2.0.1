@@ -28,10 +28,10 @@ export default function Template7({ data }: Template7Props) {
 
   return (
     <div
-      className="bg-white"
+      data-template7-page
       style={{
         ...PAGE_STYLE,
-        backgroundImage: 'url(/assets/campillo-page1-bg.jpg)',
+        backgroundColor: 'transparent',
       }}
     >
       {/* Watermark for Draft */}
