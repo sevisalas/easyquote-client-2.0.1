@@ -239,11 +239,13 @@ Deno.serve(async (req) => {
     // Get api_user_id for the organization (to get shared prompt settings)
     const { data: orgData } = await supabase
       .from('organizations')
-      .select('api_user_id')
+      .select('api_user_id, hide_all_prompts_in_documents')
       .eq('id', organizationId)
       .single();
     
     const apiUserId = orgData?.api_user_id;
+    const hideAllPromptsInDocs = orgData?.hide_all_prompts_in_documents === true;
+    console.log('🙈 hideAllPromptsInDocs:', hideAllPromptsInDocs);
     
     // Hide prompts: hide_in_documents OR admin_only (if user can't see it, client shouldn't either)
     const { data: hiddenPromptSettings } = await supabase
@@ -503,7 +505,10 @@ Deno.serve(async (req) => {
       let customQuantity = 1;
       let customUnitPrice = 0;
       
-      if (isCustomProduct) {
+      // If org-level flag hides all prompts, use item.description directly
+      if (hideAllPromptsInDocs && !isCustomProduct) {
+        description = item.description || '';
+      } else if (isCustomProduct) {
         // For custom products, extract quantity and unit price from prompts
         const promptsArray = Array.isArray(item.prompts) ? item.prompts : [];
         const qtyPrompt = promptsArray.find((p: any) => p.id === 'custom_quantity');
@@ -588,16 +593,13 @@ Deno.serve(async (req) => {
           }
         }
 
-        // ── Composite product: append component details ──
-        if (item.composite_data && typeof item.composite_data === 'object') {
+        // ── Composite product: append component details (only when prompts are NOT hidden) ──
+        if (!hideAllPromptsInDocs && item.composite_data && typeof item.composite_data === 'object') {
           const compositeData = item.composite_data as any;
           const componentsMap = compositeData.components || {};
           const activeComponents = compositeData.activeComponents || [];
 
-          // Sort by display_order then instance_index
           const sortedKeys = Object.keys(componentsMap).sort((a, b) => {
-            const compA = componentsMap[a];
-            const compB = componentsMap[b];
             const orderA = activeComponents.find((ac: any) => a.startsWith(ac.id))?.display_order ?? 99;
             const orderB = activeComponents.find((ac: any) => b.startsWith(ac.id))?.display_order ?? 99;
             if (orderA !== orderB) return orderA - orderB;
@@ -611,13 +613,10 @@ Deno.serve(async (req) => {
             const alias = comp.alias || 'Componente';
             const compPrompts = Array.isArray(comp.prompts) ? comp.prompts : [];
 
-            // Resolve real easyquote_product_id via activeComponents
             const compId = compKey.split(':')[0];
             const activeComp = activeComponents.find((ac: any) => ac.id === compId);
             const compProductId = activeComp?.component_product_id || compId;
 
-            // Build component prompts text (ONLY prompts, outputs are internal data)
-            // Filter out hidden/admin-only prompts
             const promptLines = compPrompts
               .filter((p: any) => {
                 const val = p?.currentValue ?? p?.value;

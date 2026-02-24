@@ -327,6 +327,18 @@ export const generateQuotePDF = async (
     // Get hidden prompt settings for quotes
     const hiddenPromptSettings = await getHiddenPromptSettings();
 
+    // Check organization-level flag: hide ALL prompts in documents
+    let hideAllPromptsInDocs = false;
+    if (quote.organization_id) {
+      const { data: orgFlags } = await supabase
+        .from('organizations')
+        .select('hide_all_prompts_in_documents')
+        .eq('id', quote.organization_id)
+        .single();
+      hideAllPromptsInDocs = orgFlags?.hide_all_prompts_in_documents === true;
+    }
+    console.log('[PDF] hideAllPromptsInDocs:', hideAllPromptsInDocs);
+
     // Format items - mantener orden original de prompts, filtrando los ocultos
     const formattedItems = (quote.items || []).map((item: any) => {
       const images: string[] = [];
@@ -429,8 +441,22 @@ export const generateQuotePDF = async (
         }
       }
 
+      // If org flag hides all prompts, return only name + description
+      if (hideAllPromptsInDocs) {
+        return {
+          name: item.product_name || item.name || 'Producto',
+          description: item.description || '',
+          prompts: [],
+          price: item.price || 0,
+          quantity: item.quantity || 1,
+          images: images,
+          components: []
+        };
+      }
+
       return {
         name: item.product_name || item.name || 'Producto',
+        description: '',
         prompts: promptsFormatted,
         price: item.price || 0,
         quantity: item.quantity || 1,

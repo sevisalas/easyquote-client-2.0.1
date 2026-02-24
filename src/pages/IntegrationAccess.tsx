@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { Settings, Plus, Trash2, FileText } from "lucide-react";
+import { Settings, Plus, Trash2, FileText, EyeOff } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
@@ -55,6 +55,7 @@ const IntegrationAccess = () => {
   const [selectedOrg, setSelectedOrg] = useState("");
   const [selectedIntegration, setSelectedIntegration] = useState("");
   const [granting, setGranting] = useState(false);
+  const [orgDocSettings, setOrgDocSettings] = useState<Record<string, boolean>>({});
 
   const { toast } = useToast();
   const { isSuperAdmin } = useSubscription();
@@ -69,11 +70,18 @@ const IntegrationAccess = () => {
       // Load organizations
       const { data: orgsData, error: orgsError } = await supabase
         .from("organizations")
-        .select("id, name")
+        .select("id, name, hide_all_prompts_in_documents")
         .order("name");
 
       if (orgsError) throw orgsError;
       setOrganizations(orgsData || []);
+
+      // Build doc settings map
+      const docSettings: Record<string, boolean> = {};
+      (orgsData || []).forEach((org: any) => {
+        docSettings[org.id] = org.hide_all_prompts_in_documents || false;
+      });
+      setOrgDocSettings(docSettings);
 
       // Load integration accesses with integration details
       const { data: accessData, error: accessError } = await supabase
@@ -203,6 +211,31 @@ const IntegrationAccess = () => {
     }
   };
 
+  const toggleHideAllPrompts = async (orgId: string, currentValue: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("organizations")
+        .update({ hide_all_prompts_in_documents: !currentValue } as any)
+        .eq("id", orgId);
+
+      if (error) throw error;
+
+      setOrgDocSettings((prev) => ({ ...prev, [orgId]: !currentValue }));
+
+      toast({
+        title: "Éxito",
+        description: `Prompts en documentos: ${!currentValue ? "ocultos" : "visibles"}`,
+      });
+    } catch (error) {
+      console.error("Error updating hide_all_prompts:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la configuración",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!isSuperAdmin) {
     return (
       <div className="container mx-auto py-8">
@@ -280,6 +313,43 @@ const IntegrationAccess = () => {
             <Button onClick={grantAccess} disabled={!selectedOrg || !selectedIntegration || granting}>
               {granting ? "Concediendo..." : "Conceder Acceso"}
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Organization Document Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <EyeOff className="h-5 w-5" />
+            Configuración de documentos por organización
+          </CardTitle>
+          <CardDescription>Controla si los prompts se incluyen en PDFs y exportaciones a Holded</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {organizations.map((org) => (
+              <div key={org.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <div className="font-medium">{org.name}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {orgDocSettings[org.id]
+                      ? "Solo se muestra nombre del producto y descripción en documentos"
+                      : "Los prompts se incluyen en PDFs y exportaciones"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor={`hide-prompts-${org.id}`} className="text-sm cursor-pointer">
+                    Ocultar prompts
+                  </Label>
+                  <Switch
+                    id={`hide-prompts-${org.id}`}
+                    checked={orgDocSettings[org.id] || false}
+                    onCheckedChange={() => toggleHideAllPrompts(org.id, orgDocSettings[org.id] || false)}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

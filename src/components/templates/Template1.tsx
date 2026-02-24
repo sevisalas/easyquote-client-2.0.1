@@ -126,6 +126,14 @@ export default function Template1({ data }: Template1Props) {
                     {fmtEUR((item.price || 0) * (item.quantity || 1))}
                   </td>
                 </tr>
+                {/* Description (when prompts are hidden at org level) */}
+                {(!item.prompts || item.prompts.length === 0) && item.description && (
+                  <tr className="border-b border-gray-300">
+                    <td colSpan={4} className="pl-4 pr-1.5 py-1">
+                      <div className="text-[10px] text-gray-700 leading-tight whitespace-pre-line" dangerouslySetInnerHTML={{ __html: item.description.replace(/\n/g, '<br/>') }} />
+                    </td>
+                  </tr>
+                )}
                 {/* Prompts debajo en fila separada */}
                 {item.prompts && item.prompts.length > 0 && (
                   <tr className="border-b border-gray-300">

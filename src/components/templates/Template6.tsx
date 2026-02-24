@@ -152,6 +152,14 @@ export default function Template6({ data }: Template6Props) {
                     <td className="p-1.5 text-center text-xs">{item.quantity || 1}</td>
                     <td className="p-1.5 text-right text-xs font-bold text-slate-800 whitespace-nowrap">{fmtEUR((item.price || 0) * (item.quantity || 1))}</td>
                   </tr>
+                  {/* Description (when prompts are hidden at org level) */}
+                  {(!item.prompts || item.prompts.length === 0) && item.description && (
+                    <tr className={index % 2 === 0 ? 'bg-white border-b border-slate-300' : 'bg-slate-50 border-b border-slate-300'}>
+                      <td colSpan={4} className="pl-4 py-1">
+                        <div className="text-[10px] text-slate-700 leading-tight whitespace-pre-line" dangerouslySetInnerHTML={{ __html: item.description.replace(/\n/g, '<br/>') }} />
+                      </td>
+                    </tr>
+                  )}
                   {/* Prompts debajo en fila separada */}
                   {item.prompts && item.prompts.length > 0 && (
                     <tr className={index % 2 === 0 ? 'bg-white border-b border-slate-300' : 'bg-slate-50 border-b border-slate-300'}>

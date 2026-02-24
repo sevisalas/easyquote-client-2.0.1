@@ -137,6 +137,13 @@ export default function Template7({ data }: Template7Props) {
                     {fmtEUR((item.price || 0) * (item.quantity || 1))}
                   </td>
                 </tr>
+                {(!item.prompts || item.prompts.length === 0) && item.description && (
+                  <tr style={{ borderBottom: '1px solid #eee', backgroundColor: 'rgba(255,255,255,0.85)' }}>
+                    <td colSpan={4} style={{ padding: '3px 8px 3px 20px' }}>
+                      <div style={{ fontSize: '9px', color: '#555', lineHeight: '1.4', whiteSpace: 'pre-line' }} dangerouslySetInnerHTML={{ __html: item.description.replace(/\n/g, '<br/>') }} />
+                    </td>
+                  </tr>
+                )}
                 {item.prompts && item.prompts.length > 0 && (
                   <tr style={{ borderBottom: '1px solid #eee', backgroundColor: 'rgba(255,255,255,0.85)' }}>
                     <td colSpan={4} style={{ padding: '3px 8px 3px 20px' }}>
