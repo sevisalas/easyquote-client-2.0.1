@@ -168,17 +168,6 @@ export default function SettingsPdfTemplate() {
             <Label className="text-xs">Texto de pie</Label>
             <Input value={footerText} onChange={(e) => setFooterText(e.target.value)} placeholder="Condiciones, contacto, etc." className="h-8 text-sm mt-1" />
           </div>
-          {selectedTemplate === 7 && (
-            <div className="sm:col-span-2">
-              <Label className="text-xs">Condiciones de venta (página 2)</Label>
-              <Textarea 
-                value={termsPageText} 
-                onChange={(e) => setTermsPageText(e.target.value)} 
-                placeholder="Escribe aquí las condiciones de venta que aparecerán en la segunda página del PDF..."
-                className="text-sm mt-1 min-h-[120px]"
-              />
-            </div>
-          )}
         </CardContent>
       </Card>
 
