@@ -485,9 +485,12 @@ export const generateQuotePDF = async (
     // Wait for render and images to load
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // Check if template uses background layering (data-bg-image) or multi-page
-    const hasBgLayers = container.querySelectorAll('[data-bg-image]').length > 0;
-    const hasMultiplePages = hasBgLayers || container.querySelectorAll('[data-terms-page]').length > 0;
+    // Check if template has multiple pages (e.g., data-terms-page markers)
+    const pages = container.querySelectorAll('[data-terms-page]');
+    const hasMultiplePages = pages.length > 0;
+
+    // Use higher quality for custom templates with background images
+    const renderScale = config.selectedTemplate === 7 ? 3 : quality;
 
     // Create PDF
     const pdf = new jsPDF('p', 'mm', 'a4');
@@ -502,66 +505,28 @@ export const generateQuotePDF = async (
           : Array.from((container.firstChild as HTMLElement).children) as HTMLElement[]
         : [];
 
-      // Pre-load background images referenced by data-bg-image attributes
-      const loadBgImage = async (src: string): Promise<string | null> => {
-        try {
-          // Use fetch to get the image as blob, then convert to data URL
-          const response = await fetch(src);
-          if (!response.ok) {
-            console.error('[PDF] Failed to fetch bg image:', src, response.status);
-            return null;
-          }
-          const blob = await response.blob();
-          return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = () => {
-              console.error('[PDF] FileReader error for bg image');
-              resolve(null);
-            };
-            reader.readAsDataURL(blob);
-          });
-        } catch (e) {
-          console.error('[PDF] Error loading bg image:', src, e);
-          return null;
-        }
-      };
-
       for (let i = 0; i < children.length; i++) {
         const child = children[i];
-        const bgSrc = child.getAttribute('data-bg-image');
-        console.log('[PDF] Page', i, 'bgSrc:', bgSrc);
-        const bgData = bgSrc ? await loadBgImage(bgSrc) : null;
-        console.log('[PDF] Page', i, 'bgData loaded:', bgData ? `${bgData.substring(0, 50)}... (${bgData.length} chars)` : 'null');
-
-        // Render content with transparent background (no BG image in HTML)
         const canvas = await html2canvas(child, {
-          scale: quality,
+          scale: renderScale,
           useCORS: true,
           logging: false,
-          backgroundColor: null, // transparent when BG handled separately
+          backgroundColor: '#ffffff',
           windowWidth: 794,
           windowHeight: 1123,
         });
 
-        const imgData = canvas.toDataURL('image/png');
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
         const ratio = pdfWidth / canvas.width;
         const scaledHeight = canvas.height * ratio;
 
         if (i > 0) pdf.addPage();
-
-        // Layer 1: high-res background image (full page)
-        if (bgData) {
-          pdf.addImage(bgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        }
-
-        // Layer 2: content overlay (transparent background)
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
       }
     } else {
       // Single-page or overflow template (existing logic)
       const canvas = await html2canvas(container.firstChild as HTMLElement, {
-        scale: quality,
+        scale: renderScale,
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
