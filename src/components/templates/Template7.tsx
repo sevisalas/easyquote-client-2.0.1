@@ -46,7 +46,7 @@ export default function Template7({ data }: Template7Props) {
       )}
 
       {/* Cabecera: Solo Logo */}
-      <div style={{ padding: '0 40px', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start' }}>
+      <div style={{ padding: '0', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start' }}>
         <img
           src="/assets/campillo-logo.png?v=20260224"
           alt="Campillo Nevado"
