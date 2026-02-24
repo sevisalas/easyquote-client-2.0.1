@@ -56,7 +56,7 @@ export default function Template7({ data }: Template7Props) {
       </div>
 
       {/* Contenido */}
-      <div style={{ padding: '0 40px 95px' }}>
+      <div style={{ padding: '0' }}>
         {/* Info presupuesto + cliente */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', alignItems: 'flex-start' }}>
           <div>
@@ -206,8 +206,8 @@ export default function Template7({ data }: Template7Props) {
       <div
         style={{
           position: 'absolute',
-          right: '40px',
-          bottom: '20px',
+          right: '0',
+          bottom: '0',
           fontSize: '8px',
           color: '#555',
           lineHeight: '1.5',
