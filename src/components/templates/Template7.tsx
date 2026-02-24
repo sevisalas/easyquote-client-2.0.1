@@ -9,7 +9,9 @@ interface Template7Props {
 const PAGE_STYLE: React.CSSProperties = {
   fontFamily: 'Arial, Helvetica, sans-serif',
   width: '210mm',
+  height: '296mm',
   position: 'relative',
+  overflow: 'hidden',
   backgroundColor: '#ffffff',
 };
 
@@ -48,13 +50,13 @@ export default function Template7({ data }: Template7Props) {
         <img
           src="/assets/campillo-logo.png"
           alt="Campillo Nevado"
-          style={{ width: '280px', objectFit: 'contain' }}
+          style={{ width: '460px', objectFit: 'contain' }}
           onError={(e) => { e.currentTarget.style.display = 'none'; }}
         />
       </div>
 
       {/* Contenido */}
-      <div style={{ padding: '0 40px' }}>
+      <div style={{ padding: '0 40px 95px' }}>
         {/* Info presupuesto + cliente */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', alignItems: 'flex-start' }}>
           <div>
@@ -201,15 +203,23 @@ export default function Template7({ data }: Template7Props) {
       </div>
 
       {/* Datos Campillo - abajo derecha */}
-      <div style={{ padding: '20px 40px 30px', display: 'flex', justifyContent: 'flex-end' }}>
-        <div style={{ fontSize: '8px', color: '#555', lineHeight: '1.5', textAlign: 'right' }}>
-          <p style={{ margin: 0, fontWeight: 'bold', fontSize: '10px', color: '#1a3a5c' }}>CAMPILLO NEVADO S.L.</p>
-          <p style={{ margin: 0 }}>Desierto de Tabernas, 8</p>
-          <p style={{ margin: 0 }}>28320 PINTO (Madrid)</p>
-          <p style={{ margin: 0 }}>Teléf. 91 560 93 34</p>
-          <p style={{ margin: 0 }}>contabilidad@campillonevado.es</p>
-          <p style={{ margin: 0 }}>www.campillonevado.es</p>
-        </div>
+      <div
+        style={{
+          position: 'absolute',
+          right: '40px',
+          bottom: '20px',
+          fontSize: '8px',
+          color: '#555',
+          lineHeight: '1.5',
+          textAlign: 'right',
+        }}
+      >
+        <p style={{ margin: 0, fontWeight: 'bold', fontSize: '10px', color: '#1a3a5c' }}>CAMPILLO NEVADO S.L.</p>
+        <p style={{ margin: 0 }}>Desierto de Tabernas, 8</p>
+        <p style={{ margin: 0 }}>28320 PINTO (Madrid)</p>
+        <p style={{ margin: 0 }}>Teléf. 91 560 93 34</p>
+        <p style={{ margin: 0 }}>contabilidad@campillonevado.es</p>
+        <p style={{ margin: 0 }}>www.campillonevado.es</p>
       </div>
     </div>
   );
