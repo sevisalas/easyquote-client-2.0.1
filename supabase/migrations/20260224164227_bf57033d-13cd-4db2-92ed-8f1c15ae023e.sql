@@ -1,0 +1,2 @@
+INSERT INTO pdf_templates (organization_id, template_number, name, description, thumbnail_url, is_global, is_custom, is_active, price)
+VALUES ('95abc5cd-77dd-4f55-8380-f9de4dd85cac', 8, 'Anebri', 'Plantilla corporativa exclusiva de Anebri', '/assets/template8-preview.png', false, true, true, 0);
