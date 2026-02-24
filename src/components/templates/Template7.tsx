@@ -28,7 +28,6 @@ export default function Template7({ data }: Template7Props) {
   return (
     <div data-template7-page style={PAGE_STYLE}>
       <style>{`
-        [data-template7-page] [data-logo-container],
         [data-template7-page] [data-logo-container] img {
           margin: 0 !important;
           padding: 0 !important;
