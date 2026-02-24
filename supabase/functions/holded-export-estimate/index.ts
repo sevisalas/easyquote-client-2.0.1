@@ -573,7 +573,6 @@ Deno.serve(async (req) => {
           baseDescription = item.description || '';
         } else {
         let qtyPromptLabel = 'Cantidad';
-        let qtyPromptLabel = 'Cantidad';
         
         if (item.prompts) {
           let promptsArray: any[] = [];
