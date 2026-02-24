@@ -58,7 +58,7 @@ export default function Template7({ data }: Template7Props) {
         <img
           src="/assets/campillo-logo.png?v=20260224"
           alt="Campillo Nevado"
-          style={{ height: '192px', width: 'auto', maxWidth: '880px', objectFit: 'contain', display: 'block' }}
+          style={{ height: '192px', width: 'auto', display: 'block' }}
           onError={(e) => { e.currentTarget.style.display = 'none'; }}
         />
       </div>
