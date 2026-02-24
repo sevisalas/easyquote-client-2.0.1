@@ -503,25 +503,36 @@ export const generateQuotePDF = async (
         : [];
 
       // Pre-load background images referenced by data-bg-image attributes
-      const loadBgImage = (src: string): Promise<string | null> =>
-        new Promise((resolve) => {
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          img.onload = () => {
-            const c = document.createElement('canvas');
-            c.width = img.naturalWidth;
-            c.height = img.naturalHeight;
-            c.getContext('2d')!.drawImage(img, 0, 0);
-            resolve(c.toDataURL('image/png'));
-          };
-          img.onerror = () => resolve(null);
-          img.src = src;
-        });
+      const loadBgImage = async (src: string): Promise<string | null> => {
+        try {
+          // Use fetch to get the image as blob, then convert to data URL
+          const response = await fetch(src);
+          if (!response.ok) {
+            console.error('[PDF] Failed to fetch bg image:', src, response.status);
+            return null;
+          }
+          const blob = await response.blob();
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = () => {
+              console.error('[PDF] FileReader error for bg image');
+              resolve(null);
+            };
+            reader.readAsDataURL(blob);
+          });
+        } catch (e) {
+          console.error('[PDF] Error loading bg image:', src, e);
+          return null;
+        }
+      };
 
       for (let i = 0; i < children.length; i++) {
         const child = children[i];
         const bgSrc = child.getAttribute('data-bg-image');
+        console.log('[PDF] Page', i, 'bgSrc:', bgSrc);
         const bgData = bgSrc ? await loadBgImage(bgSrc) : null;
+        console.log('[PDF] Page', i, 'bgData loaded:', bgData ? `${bgData.substring(0, 50)}... (${bgData.length} chars)` : 'null');
 
         // Render content with transparent background (no BG image in HTML)
         const canvas = await html2canvas(child, {
