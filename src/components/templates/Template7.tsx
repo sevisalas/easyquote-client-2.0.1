@@ -32,7 +32,7 @@ export default function Template7({ data }: Template7Props) {
       {/* ===== PÁGINA 1 - PRESUPUESTO (fondo = hoja membretada) ===== */}
       <div
         className="bg-white"
-        data-bg-image="/assets/campillo-page1-bg.png"
+        data-bg-image="/assets/campillo-page1-bg.jpg"
         style={{
           ...PAGE_STYLE,
         }}
@@ -224,52 +224,6 @@ export default function Template7({ data }: Template7Props) {
         </div>
       </div>
 
-      {/* ===== PÁGINA 2 - CONDICIONES (fondo = página 2 del PDF) ===== */}
-      {termsPageText && (
-        <div
-          data-terms-page="true"
-          className="bg-white"
-          data-bg-image="/assets/campillo-page2-bg.png"
-          style={{
-            ...PAGE_STYLE,
-            pageBreakBefore: 'always',
-          }}
-        >
-          {/* El fondo ya tiene el título "CONDICIONES DE VENTA" y la LOPD,
-              pero como el texto es editable, lo superponemos */}
-          <div style={{
-            position: 'absolute',
-            top: '80px',
-            left: '60px',
-            right: '60px',
-            bottom: '120px',
-          }}>
-            <h2
-              style={{
-                fontSize: '16px',
-                fontWeight: 'bold',
-                color: '#1a1a1a',
-                marginBottom: '28px',
-                textAlign: 'center',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-              }}
-            >
-              Condiciones de venta
-            </h2>
-            <div
-              style={{
-                fontSize: '10px',
-                color: '#333',
-                lineHeight: '1.7',
-                whiteSpace: 'pre-wrap',
-              }}
-            >
-              {termsPageText}
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

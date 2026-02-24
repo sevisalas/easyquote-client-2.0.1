@@ -485,9 +485,9 @@ export const generateQuotePDF = async (
     // Wait for render and images to load
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // Check if template has multiple pages (e.g., Template7 with terms page)
-    const pages = container.querySelectorAll('[data-terms-page]');
-    const hasMultiplePages = pages.length > 0;
+    // Check if template uses background layering (data-bg-image) or multi-page
+    const hasBgLayers = container.querySelectorAll('[data-bg-image]').length > 0;
+    const hasMultiplePages = hasBgLayers || container.querySelectorAll('[data-terms-page]').length > 0;
 
     // Create PDF
     const pdf = new jsPDF('p', 'mm', 'a4');
