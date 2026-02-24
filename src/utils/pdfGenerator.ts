@@ -543,13 +543,13 @@ export const generateQuotePDF = async (
           windowHeight: 1123,
         });
 
-        const imgData = canvas.toDataURL('image/png');
+        const imgData = canvas.toDataURL('image/jpeg', 0.85);
         const ratio = pdfWidth / canvas.width;
         const scaledHeight = canvas.height * ratio;
 
         if (i > 0) pdf.addPage();
         
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
       }
     } else {
       // Single-page or overflow template
@@ -568,20 +568,20 @@ export const generateQuotePDF = async (
       const scaledHeight = imgHeight * ratio;
 
       if (scaledHeight <= pdfHeight) {
-        const imgData = canvas.toDataURL('image/png');
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
+        const imgData = canvas.toDataURL('image/jpeg', 0.85);
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
       } else {
-        const imgData = canvas.toDataURL('image/png');
+        const imgData = canvas.toDataURL('image/jpeg', 0.85);
         let heightLeft = scaledHeight;
         let position = 0;
 
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, scaledHeight);
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, scaledHeight);
         heightLeft -= pdfHeight;
 
         while (heightLeft > 0) {
           position = heightLeft - scaledHeight;
           pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, scaledHeight);
+          pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, scaledHeight);
           heightLeft -= pdfHeight;
         }
       }
