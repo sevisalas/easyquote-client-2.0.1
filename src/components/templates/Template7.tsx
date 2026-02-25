@@ -225,18 +225,18 @@ export default function Template7({ data }: Template7Props) {
         )}
       </div>
 
-      {/* Texto legal configurable - centro del pie */}
+      {/* Texto legal configurable - derecha, mitad de ancho */}
       {data.config?.footerText && (
         <div
           style={{
             position: 'absolute',
-            bottom: '15px',
-            left: '20px',
+            bottom: '55px',
             right: '20px',
+            width: '50%',
             fontSize: '7px',
             color: '#666',
             lineHeight: '1.4',
-            textAlign: 'center',
+            textAlign: 'right',
             zIndex: 1,
           }}
           dangerouslySetInnerHTML={{ __html: data.config.footerText }}
