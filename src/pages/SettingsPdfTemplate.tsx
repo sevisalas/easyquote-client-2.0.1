@@ -165,8 +165,8 @@ export default function SettingsPdfTemplate() {
             />
           </div>
           <div className="sm:col-span-2">
-            <Label className="text-xs">Texto de pie</Label>
-            <Input value={footerText} onChange={(e) => setFooterText(e.target.value)} placeholder="Condiciones, contacto, etc." className="h-8 text-sm mt-1" />
+            <Label className="text-xs">Texto de pie (admite HTML)</Label>
+            <Textarea value={footerText} onChange={(e) => setFooterText(e.target.value)} placeholder='<p style="font-weight:bold">Mi Empresa S.L.</p><p>Dirección</p><p>Teléfono</p>' className="text-sm mt-1 min-h-[80px]" />
           </div>
         </CardContent>
       </Card>
