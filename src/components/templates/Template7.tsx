@@ -225,22 +225,26 @@ export default function Template7({ data }: Template7Props) {
         )}
       </div>
 
-      {/* Pie de página - datos de contacto */}
-      {data.config?.footerText && (
-        <div
-          style={{
-            position: 'absolute',
-            right: '20px',
-            bottom: '15px',
-            fontSize: '8px',
-            color: '#555',
-            lineHeight: '1.5',
-            textAlign: 'right',
-            zIndex: 1,
-          }}
-          dangerouslySetInnerHTML={{ __html: data.config.footerText }}
-        />
-      )}
+      {/* Datos Campillo - abajo derecha */}
+      <div
+        style={{
+          position: 'absolute',
+          right: '20px',
+          bottom: '15px',
+          fontSize: '8px',
+          color: '#555',
+          lineHeight: '1.5',
+          textAlign: 'right',
+          zIndex: 1,
+        }}
+      >
+        <p style={{ margin: 0, fontWeight: 'bold', fontSize: '10px', color: '#1a3a5c' }}>CAMPILLO NEVADO S.L.</p>
+        <p style={{ margin: 0 }}>Desierto de Tabernas, 8</p>
+        <p style={{ margin: 0 }}>28320 PINTO (Madrid)</p>
+        <p style={{ margin: 0 }}>Teléf. 91 560 93 34</p>
+        <p style={{ margin: 0 }}>contabilidad@campillonevado.es</p>
+        <p style={{ margin: 0 }}>www.campillonevado.es</p>
+      </div>
     </div>
   );
 }
