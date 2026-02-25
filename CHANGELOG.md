@@ -5,6 +5,13 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.17] - 2026-02-25
+
+### Corregido
+- **Plantilla PDF compartida por organización**: Corregidas políticas RLS de `pdf_configurations` para que todos los miembros de una organización vean y usen la misma plantilla corporativa, no solo el usuario que la creó
+
+---
+
 ## [2.5.16] - 2026-02-24
 
 ### Añadido
