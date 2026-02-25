@@ -25,19 +25,14 @@ export const usePdfConfiguration = () => {
   const { data: configuration, isLoading, error } = useQuery({
     queryKey: ['pdf-configuration', organization?.id],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
+      if (!organization?.id) throw new Error('No organization found');
 
-      let query = supabase
+      const { data, error } = await supabase
         .from('pdf_configurations')
         .select('*')
-        .eq('user_id', user.id);
-
-      if (organization?.id) {
-        query = query.eq('organization_id', organization.id);
-      }
-
-      const { data, error } = await query.maybeSingle();
+        .eq('organization_id', organization.id)
+        .limit(1)
+        .maybeSingle();
 
       if (error) throw error;
       return data;
@@ -50,21 +45,45 @@ export const usePdfConfiguration = () => {
     mutationFn: async (config: Partial<PdfConfiguration>) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
+      if (!organization?.id) throw new Error('No organization found');
 
       const configData = {
         ...config,
         user_id: user.id,
-        organization_id: organization?.id,
+        organization_id: organization.id,
       };
 
-      const { data, error } = await supabase
+      // Try to find existing config for this org (any user)
+      const { data: existing } = await supabase
         .from('pdf_configurations')
-        .upsert(configData, { onConflict: 'user_id,organization_id' })
-        .select()
-        .single();
+        .select('id')
+        .eq('organization_id', organization.id)
+        .limit(1)
+        .maybeSingle();
 
-      if (error) throw error;
-      return data;
+      let result;
+      if (existing?.id) {
+        // Update existing org config
+        const { data, error } = await supabase
+          .from('pdf_configurations')
+          .update(configData)
+          .eq('id', existing.id)
+          .select()
+          .single();
+        if (error) throw error;
+        result = data;
+      } else {
+        // Insert new
+        const { data, error } = await supabase
+          .from('pdf_configurations')
+          .insert(configData)
+          .select()
+          .single();
+        if (error) throw error;
+        result = data;
+      }
+
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pdf-configuration'] });

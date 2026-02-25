@@ -62,17 +62,15 @@ const getTemplateConfig = async (overrideOrgId?: string | null) => {
   
   console.log('[PDF] getTemplateConfig orgId:', orgId, 'userId:', user.id);
   
-  // Query with organization filter
-  let query = supabase
+  // Query by organization only (shared config for all members)
+  if (!orgId) return defaults;
+  
+  const { data, error } = await supabase
     .from('pdf_configurations')
     .select('*')
-    .eq('user_id', user.id);
-  
-  if (orgId) {
-    query = query.eq('organization_id', orgId);
-  }
-  
-  const { data, error } = await query.maybeSingle();
+    .eq('organization_id', orgId)
+    .limit(1)
+    .maybeSingle();
   
   console.log('[PDF] getTemplateConfig result:', { data: data ? { company_name: data.company_name, selected_template: data.selected_template } : null, error });
   
@@ -92,7 +90,6 @@ const getTemplateConfig = async (overrideOrgId?: string | null) => {
     const { data: fallbackData } = await supabase
       .from('pdf_configurations')
       .select('*')
-      .eq('user_id', user.id)
       .eq('organization_id', orgId)
       .limit(1);
     
