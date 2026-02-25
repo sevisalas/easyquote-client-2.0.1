@@ -5,6 +5,16 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.18] - 2026-02-25
+
+### Añadido
+- **Texto legal en pie de PDF**: Las plantillas Campillo y Anebri muestran un texto legal configurable (HTML) en la parte inferior izquierda, editable desde Configuración > Plantilla PDF
+
+### Corregido
+- **Nombre de empresa en Template 8**: Corregido el nombre en el pie de "CAMPILLO NEVADO S.L." a "ANEBRI S.L."
+
+---
+
 ## [2.5.17] - 2026-02-25
 
 ### Corregido
