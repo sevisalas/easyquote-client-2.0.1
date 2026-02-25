@@ -239,6 +239,24 @@ export default function Template8({ data }: Template8Props) {
         )}
       </div>
 
+      {/* Texto legal configurable - centro del pie */}
+      {data.config?.footerText && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '15px',
+            left: '20px',
+            right: '20px',
+            fontSize: '7px',
+            color: '#666',
+            lineHeight: '1.4',
+            textAlign: 'center',
+            zIndex: 1,
+          }}
+          dangerouslySetInnerHTML={{ __html: data.config.footerText }}
+        />
+      )}
+
       {/* Datos Anebri - abajo derecha */}
       <div
         style={{
