@@ -21,6 +21,7 @@ export default function Template7({ data }: Template7Props) {
   const quote = data.quote || {};
   const customer = data.customer || {};
   const items = data.items || [];
+  const quoteAdditionals = data.quote_additionals || [];
 
   const fmtEUR = (amount: number) =>
     new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
@@ -259,6 +260,26 @@ export default function Template7({ data }: Template7Props) {
                 )}
               </React.Fragment>
             ))}
+            {quoteAdditionals.length > 0 && quoteAdditionals.map((adj: any, aIdx: number) => {
+              let amount = adj.value;
+              let label = adj.name;
+              if (adj.type === 'percentage') {
+                amount = ((quote.subtotal || 0) * adj.value) / 100;
+                label = `${adj.name} (${adj.value}%)`;
+              }
+              return (
+                <tr key={`qa-${aIdx}`} style={{ borderBottom: '1px solid #ddd' }}>
+                  <td colSpan={2} style={{ padding: '6px 8px' }}>
+                    <span style={{ fontSize: '10px', color: '#555' }}>
+                      {adj.is_discount ? '↓ ' : '+ '}{label}
+                    </span>
+                  </td>
+                  <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '10px', fontWeight: 'bold' }}>
+                    {fmtEUR(amount)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
