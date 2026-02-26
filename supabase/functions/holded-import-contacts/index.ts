@@ -68,15 +68,28 @@ async function importContactsBackground(
     }
 
     // Transform and insert contacts in batches with source='holded'
-    const contactsToInsert = allContacts.map((contact: any) => ({
-      holded_id: contact.id,
-      organization_id: organizationId,
-      user_id: orgData.api_user_id,
-      name: contact.name || 'Sin nombre',
-      email: contact.email || null,
-      phone: contact.phone || contact.mobile || null,
-      source: 'holded'
-    }));
+    const contactsToInsert = allContacts.map((contact: any) => {
+      const addressParts = [
+        contact.billAddress || contact.address || '',
+        contact.billCity || contact.city || '',
+        contact.billProvince || contact.province || '',
+        contact.billPostalCode || contact.zipcode || contact.postalCode || '',
+        contact.billCountry || contact.country || '',
+      ].filter(Boolean);
+      const fullAddress = addressParts.join(', ') || null;
+
+      return {
+        holded_id: contact.id,
+        organization_id: organizationId,
+        user_id: orgData.api_user_id,
+        name: contact.name || 'Sin nombre',
+        email: contact.email || null,
+        phone: contact.phone || contact.mobile || null,
+        address: fullAddress,
+        notes: contact.note || contact.notes || null,
+        source: 'holded'
+      };
+    });
 
     let imported = 0;
     let errors = 0;
@@ -314,15 +327,29 @@ serve(async (req) => {
     }
 
     // Transform and insert contacts in batches with source='holded'
-    const contactsToInsert = allContacts.map((contact: any) => ({
-      holded_id: contact.id,
-      organization_id: organizationId,
-      user_id: orgData.api_user_id,
-      name: contact.name || 'Sin nombre',
-      email: contact.email || null,
-      phone: contact.phone || contact.mobile || null,
-      source: 'holded'
-    }));
+    const contactsToInsert = allContacts.map((contact: any) => {
+      // Build full address from Holded fields
+      const addressParts = [
+        contact.billAddress || contact.address || '',
+        contact.billCity || contact.city || '',
+        contact.billProvince || contact.province || '',
+        contact.billPostalCode || contact.zipcode || contact.postalCode || '',
+        contact.billCountry || contact.country || '',
+      ].filter(Boolean);
+      const fullAddress = addressParts.join(', ') || null;
+
+      return {
+        holded_id: contact.id,
+        organization_id: organizationId,
+        user_id: orgData.api_user_id,
+        name: contact.name || 'Sin nombre',
+        email: contact.email || null,
+        phone: contact.phone || contact.mobile || null,
+        address: fullAddress,
+        notes: contact.note || contact.notes || null,
+        source: 'holded'
+      };
+    });
 
     let imported = 0;
     let errors = 0;
