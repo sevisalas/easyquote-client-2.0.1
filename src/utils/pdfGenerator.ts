@@ -440,27 +440,17 @@ export const generateQuotePDF = async (
         }
       }
 
-      // If org flag hides all prompts, return only name + description
-      if (hideAllPromptsInDocs) {
-        return {
-          name: item.name || item.product_name || 'Producto',
-          description: item.description || '',
-          prompts: [],
-          price: item.price || 0,
-          quantity: item.quantity || 1,
-          images: images,
-          components: []
-        };
-      }
-
+      // Always pass both description and prompts.
+      // Template decides: if description exists → show it; otherwise → show visible prompts.
+      // If org flag hides all prompts, clear prompts and components.
       return {
         name: item.name || item.product_name || 'Producto',
-        description: '',
-        prompts: promptsFormatted,
+        description: item.description || '',
+        prompts: hideAllPromptsInDocs ? [] : promptsFormatted,
         price: item.price || 0,
         quantity: item.quantity || 1,
         images: images,
-        components: componentSections
+        components: hideAllPromptsInDocs ? [] : componentSections
       };
     });
 
