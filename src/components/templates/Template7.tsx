@@ -243,6 +243,20 @@ export default function Template7({ data }: Template7Props) {
                     </td>
                   </tr>
                 )}
+                {item.multi_extra && item.multi_extra.length > 0 && (
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
+                      <div style={{ fontSize: '9px', color: '#555', lineHeight: '1.5' }}>
+                        {item.multi_extra.map((me: any, meIdx: number) => (
+                          <div key={meIdx}>
+                            <span style={{ fontWeight: 600 }}>Precio para {new Intl.NumberFormat('es-ES').format(me.qty)} ejemplares:</span>{' '}
+                            {fmtEUR(me.price)}
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </React.Fragment>
             ))}
           </tbody>
