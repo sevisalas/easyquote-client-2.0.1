@@ -465,6 +465,18 @@ export const generateQuotePDF = async (
         capacity_value: adj.capacity_value || null,
       }));
 
+      // Format multi-quantity rows (Q2, Q3, etc.) for informational display
+      const multiExtraRows: Array<{qty: number, price: number}> = [];
+      if (item.multi?.rows && Array.isArray(item.multi.rows) && item.multi.rows.length > 1) {
+        for (let i = 1; i < item.multi.rows.length; i++) {
+          const row = item.multi.rows[i];
+          if (row?.qty && row?.totalStr != null) {
+            const price = typeof row.totalStr === 'number' ? row.totalStr : parseFloat(String(row.totalStr).replace(/\./g, '').replace(',', '.')) || 0;
+            multiExtraRows.push({ qty: row.qty, price });
+          }
+        }
+      }
+
       // If org flag hides all prompts, return only name + description
       if (hideAllPromptsInDocs) {
         return {
@@ -477,6 +489,7 @@ export const generateQuotePDF = async (
           images: images,
           components: [],
           item_additionals: formattedAdditionals,
+          multi_extra: multiExtraRows,
         };
       }
 
@@ -490,6 +503,7 @@ export const generateQuotePDF = async (
         images: images,
         components: componentSections,
         item_additionals: formattedAdditionals,
+        multi_extra: multiExtraRows,
       };
     });
 
