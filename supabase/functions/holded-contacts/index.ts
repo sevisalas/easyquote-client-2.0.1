@@ -52,9 +52,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Decrypt the access token from bytes
-    const decoder = new TextDecoder();
-    const accessToken = decoder.decode(access.access_token_encrypted);
+    // Decrypt the access token
+    const { data: decryptedKey, error: decryptError } = await supabaseClient
+      .rpc('decrypt_credential', { encrypted_data: access.access_token_encrypted });
+    
+    if (decryptError || !decryptedKey) {
+      console.error('Error decrypting API key:', decryptError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to decrypt API key' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const accessToken = decryptedKey.trim();
 
     // Call Holded API to get contacts
     const holdedResponse = await fetch('https://api.holded.com/api/contacts', {
