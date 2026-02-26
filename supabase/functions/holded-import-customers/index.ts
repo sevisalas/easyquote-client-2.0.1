@@ -1,6 +1,41 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { corsHeaders } from '../_shared/cors.ts';
+const pickString = (...values: any[]): string => {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value.trim();
+    }
+  }
+  return '';
+};
 
+const buildContactAddress = (contact: any): string | null => {
+  const billObj = typeof contact?.billAddress === 'object' && contact?.billAddress !== null ? contact.billAddress : {};
+  const addressObj = typeof contact?.address === 'object' && contact?.address !== null ? contact.address : {};
+  const billingObj = typeof contact?.billingAddress === 'object' && contact?.billingAddress !== null ? contact.billingAddress : {};
+
+  const street = pickString(
+    contact?.billAddress,
+    contact?.address,
+    billObj?.address,
+    billObj?.street,
+    billObj?.line1,
+    addressObj?.address,
+    addressObj?.street,
+    addressObj?.line1,
+    billingObj?.address,
+    billingObj?.street,
+    billingObj?.line1,
+  );
+
+  const city = pickString(contact?.billCity, contact?.city, billObj?.city, addressObj?.city, billingObj?.city);
+  const province = pickString(contact?.billProvince, contact?.province, billObj?.province, addressObj?.province, billingObj?.province, billingObj?.state);
+  const postalCode = pickString(contact?.billPostalCode, contact?.zipcode, contact?.postalCode, billObj?.postalCode, addressObj?.postalCode, billingObj?.postalCode, billingObj?.zip);
+  const country = pickString(contact?.billCountry, contact?.country, billObj?.country, addressObj?.country, billingObj?.country);
+
+  const parts = [street, city, province, postalCode, country].filter(Boolean);
+  return parts.length > 0 ? parts.join(', ') : null;
+};
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -43,10 +78,41 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Validate organization and access
+    const { data: organization, error: organizationError } = await supabaseClient
+      .from('organizations')
+      .select('id, api_user_id')
+      .eq('id', organizationId)
+      .single();
+
+    if (organizationError || !organization) {
+      return new Response(
+        JSON.stringify({ error: 'Organization not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const isOwner = organization.api_user_id === user.id;
+    if (!isOwner) {
+      const { data: membership, error: membershipError } = await supabaseClient
+        .from('organization_members')
+        .select('id')
+        .eq('organization_id', organizationId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (membershipError || !membership) {
+        return new Response(
+          JSON.stringify({ error: 'Organization not found or access denied' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // Get Holded integration configuration
     const { data: integration, error: integrationError } = await supabaseClient
       .from('integrations')
-      .select('id, configuration')
+      .select('id')
       .eq('name', 'Holded')
       .single();
 
@@ -88,11 +154,12 @@ Deno.serve(async (req) => {
 
     const apiKey = decryptedKey.trim();
 
-    // Get existing customers with holded_id to avoid duplicates
+    // Existing contacts in this organization
     const { data: existingCustomers, error: existingError } = await supabaseClient
       .from('customers')
       .select('holded_id')
-      .eq('user_id', user.id)
+      .eq('organization_id', organizationId)
+      .eq('source', 'holded')
       .not('holded_id', 'is', null);
 
     if (existingError) {
@@ -117,8 +184,8 @@ Deno.serve(async (req) => {
         {
           method: 'GET',
           headers: {
-            'key': apiKey,
-            'Accept': 'application/json'
+            key: apiKey,
+            Accept: 'application/json'
           }
         }
       );
@@ -141,7 +208,7 @@ Deno.serve(async (req) => {
       try {
         const parsed = JSON.parse(rawBody);
         pageContacts = Array.isArray(parsed) ? parsed : [];
-      } catch (parseError) {
+      } catch {
         console.error('Invalid Holded response (non-JSON):', rawBody?.slice?.(0, 300));
         return new Response(
           JSON.stringify({
@@ -164,20 +231,18 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Filter only contacts that are clients (when type exists) and don't exist yet
+    // Filter client contacts
     const isClientContact = (contact: any) => !contact?.type || contact.type === 'client';
-    const newContacts = holdedContacts.filter((contact: any) => 
-      isClientContact(contact) && !existingHoldedIds.has(contact.id)
-    );
+    const clientContacts = holdedContacts.filter((contact: any) => isClientContact(contact));
+    const newContactsCount = clientContacts.filter((contact: any) => !existingHoldedIds.has(contact.id)).length;
 
-    const totalClients = holdedContacts.filter((c: any) => isClientContact(c)).length;
-    console.log(`Total contacts: ${holdedContacts.length}, Clients: ${totalClients}, New clients to import: ${newContacts.length}`);
+    console.log(`Total contacts: ${holdedContacts.length}, Clients: ${clientContacts.length}, New clients: ${newContactsCount}`);
 
-    if (newContacts.length === 0) {
+    if (clientContacts.length === 0) {
       return new Response(
-        JSON.stringify({ 
-          message: 'No hay nuevos clientes para importar',
-          total: totalClients,
+        JSON.stringify({
+          message: 'No se encontraron clientes en Holded',
+          total: 0,
           new: 0,
           imported: 0
         }),
@@ -185,31 +250,36 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Process and insert new contacts in batches
-    const batchSize = 50;
+    // Upsert all client contacts to also refresh existing address/phone/email
+    const batchSize = 100;
     let importedCount = 0;
     const errors: any[] = [];
 
-    for (let i = 0; i < newContacts.length; i += batchSize) {
-      const batch = newContacts.slice(i, i + batchSize);
-      
-      const customersToInsert = batch.map((contact: any) => ({
-        user_id: user.id,
+    for (let i = 0; i < clientContacts.length; i += batchSize) {
+      const batch = clientContacts.slice(i, i + batchSize);
+
+      const customersToUpsert = batch.map((contact: any) => ({
+        organization_id: organizationId,
+        user_id: organization.api_user_id,
+        source: 'holded',
         holded_id: contact.id,
         name: contact.name || contact.customName || 'Sin nombre',
-        email: contact.email || '',
-        phone: contact.phone || '',
-        notes: contact.notes || '',
-        address: contact.billAddress || ''
+        email: pickString(contact.email) || null,
+        phone: pickString(contact.phone, contact.mobile) || null,
+        notes: pickString(contact.notes, contact.note) || null,
+        address: buildContactAddress(contact),
       }));
 
       const { data, error } = await supabaseClient
         .from('customers')
-        .insert(customersToInsert)
-        .select();
+        .upsert(customersToUpsert, {
+          onConflict: 'holded_id,organization_id',
+          ignoreDuplicates: false,
+        })
+        .select('id');
 
       if (error) {
-        console.error('Error inserting batch:', error);
+        console.error('Error upserting batch:', error);
         errors.push({ batch: i / batchSize, error: error.message });
       } else {
         importedCount += data?.length || 0;
@@ -217,10 +287,10 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         message: 'Importación completada',
-        total: totalClients,
-        new: newContacts.length,
+        total: clientContacts.length,
+        new: newContactsCount,
         imported: importedCount,
         errors: errors.length > 0 ? errors : undefined
       }),
