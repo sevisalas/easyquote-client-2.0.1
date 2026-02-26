@@ -166,14 +166,14 @@ export default function Template7({ data }: Template7Props) {
                   <td style={{ padding: '6px 8px', textAlign: 'center', fontSize: '10px' }}>{item.quantity || 1}</td>
                   <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '10px', fontWeight: 'bold' }}>{fmtEUR((item.price || 0) * (item.quantity || 1))}</td>
                 </tr>
-                {(!item.prompts || item.prompts.length === 0) && item.description && (
+                {/* Priority: description if filled, otherwise visible prompts as fallback */}
+                {item.description ? (
                   <tr style={{ borderBottom: '1px solid #eee' }}>
                     <td colSpan={4} style={{ padding: '3px 8px 3px 20px' }}>
                       <div style={{ fontSize: '9px', color: '#555', lineHeight: '1.4', whiteSpace: 'pre-line' }} dangerouslySetInnerHTML={{ __html: item.description.replace(/\n/g, '<br/>') }} />
                     </td>
                   </tr>
-                )}
-                {item.prompts && item.prompts.length > 0 && (
+                ) : item.prompts && item.prompts.length > 0 ? (
                   <tr style={{ borderBottom: '1px solid #eee' }}>
                     <td colSpan={4} style={{ padding: '3px 8px 3px 20px' }}>
                       <div style={{ fontSize: '9px', color: '#555', lineHeight: '1.4' }}>
@@ -183,7 +183,7 @@ export default function Template7({ data }: Template7Props) {
                       </div>
                     </td>
                   </tr>
-                )}
+                ) : null}
                 {item.components && item.components.length > 0 && (
                   <tr style={{ borderBottom: '1px solid #eee' }}>
                     <td colSpan={4} style={{ padding: '3px 8px 3px 20px' }}>
