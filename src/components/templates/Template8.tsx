@@ -37,6 +37,18 @@ export default function Template8({ data }: Template8Props) {
   const fmtEUR = (amount: number) =>
     new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
 
+  const getItemQuantity = (item: any) => {
+    if (item.prompts && item.prompts.length > 0) {
+      const qtyPrompt = item.prompts.find((p: any) => 
+        p.label?.toLowerCase().includes('cantidad') || p.label?.toLowerCase().includes('ejemplares')
+      );
+      if (qtyPrompt?.value) return qtyPrompt.value;
+    }
+    return item.quantity || 1;
+  };
+
+  const hasSubtotalDifference = (quote.tax_amount > 0) || (quote.discount_amount > 0);
+
   return (
     <div data-template8-page style={PAGE_STYLE}>
       {/* Background image */}
@@ -178,7 +190,7 @@ export default function Template8({ data }: Template8Props) {
                     </div>
                   </td>
                   <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '10px' }}>{fmtEUR(item.price || 0)}</td>
-                  <td style={{ padding: '6px 8px', textAlign: 'center', fontSize: '10px' }}>{item.quantity || 1}</td>
+                  <td style={{ padding: '6px 8px', textAlign: 'center', fontSize: '10px' }}>{getItemQuantity(item)}</td>
                   <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '10px', fontWeight: 'bold' }}>{fmtEUR((item.price || 0) * (item.quantity || 1))}</td>
                 </tr>
                 {(!item.prompts || item.prompts.length === 0) && item.description && (
@@ -222,10 +234,12 @@ export default function Template8({ data }: Template8Props) {
 
         {/* Totales */}
         <div style={{ marginLeft: 'auto', width: '200px', marginBottom: '14px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginBottom: '3px' }}>
-            <span style={{ color: '#666' }}>Subtotal:</span>
-            <span style={{ fontWeight: 500 }}>{fmtEUR(quote.subtotal || 0)}</span>
-          </div>
+          {hasSubtotalDifference && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginBottom: '3px' }}>
+              <span style={{ color: '#666' }}>Subtotal:</span>
+              <span style={{ fontWeight: 500 }}>{fmtEUR(quote.subtotal || 0)}</span>
+            </div>
+          )}
           {quote.tax_amount > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginBottom: '3px' }}>
               <span style={{ color: '#666' }}>IVA (21%):</span>
