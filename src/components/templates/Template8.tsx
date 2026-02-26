@@ -125,15 +125,30 @@ export default function Template8({ data }: Template8Props) {
             <p style={{ fontSize: '11px', fontWeight: 'bold', color: BRAND.textDark }}>{customer.name || 'Cliente'}</p>
             {customer.email && <p style={{ fontSize: '9px', color: '#555' }}>{customer.email}</p>}
             {customer.phone && <p style={{ fontSize: '9px', color: '#555' }}>{customer.phone}</p>}
-            {customer.address && <p style={{ fontSize: '9px', color: '#555' }}>{customer.address}</p>}
+            {customer.address && (() => {
+              const parts = customer.address.split(',').map((s: string) => s.trim());
+              if (parts.length >= 4) {
+                // Expected: street, city, province, postalCode, country
+                const street = parts.slice(0, -3).join(', ');
+                const cpCity = [parts[parts.length - 2], parts[parts.length - 3]].filter(Boolean).join(' ');
+                const provCountry = [parts[parts.length - 1]].filter(Boolean).join(', ');
+                return (
+                  <>
+                    <p style={{ fontSize: '9px', color: '#555', margin: 0 }}>{street}</p>
+                    <p style={{ fontSize: '9px', color: '#555', margin: 0 }}>{cpCity}</p>
+                    {provCountry && <p style={{ fontSize: '9px', color: '#555', margin: 0 }}>{provCountry}</p>}
+                  </>
+                );
+              }
+              return <p style={{ fontSize: '9px', color: '#555' }}>{customer.address}</p>;
+            })()}
           </div>
         </div>
 
-        {/* Título/Descripción */}
-        {(quote.title || quote.description) && (
-          <div style={{ marginBottom: '10px' }}>
-            {quote.title && <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '2px', color: BRAND.textDark }}>{quote.title}</h3>}
-            {quote.description && <p style={{ fontSize: '10px', color: '#444' }}>{quote.description}</p>}
+        {/* Título del presupuesto */}
+        {quote.title && (
+          <div style={{ marginBottom: '6px' }}>
+            <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '2px', color: BRAND.textDark }}>{quote.title}</h3>
           </div>
         )}
 
@@ -148,6 +163,13 @@ export default function Template8({ data }: Template8Props) {
             </tr>
           </thead>
           <tbody>
+            {quote.description && (
+              <tr style={{ borderBottom: '1px solid #eee' }}>
+                <td colSpan={4} style={{ padding: '4px 8px' }}>
+                  <p style={{ fontSize: '10px', color: '#444', margin: 0 }}>{quote.description}</p>
+                </td>
+              </tr>
+            )}
             {items.map((item: any, index: number) => (
               <React.Fragment key={index}>
                 <tr style={{ borderBottom: '1px solid #ddd' }}>
