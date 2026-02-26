@@ -588,11 +588,13 @@ export default function QuoteDetail() {
                         onClick={async () => {
                           try {
                             toast.info('Reenviando a Holded...');
-                            const { error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
+                            const { data: holdedData, error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
                               body: { quoteId: quote.id }
                             });
                             if (holdedError) {
-                              toast.error(`Error al reenviar a Holded: ${holdedError.message}`);
+                              // Extract real error message from response body
+                              const realMessage = holdedData?.error || holdedError.message;
+                              toast.error(`Error al reenviar a Holded: ${realMessage}`);
                             } else {
                               toast.success('Presupuesto reenviado a Holded correctamente');
                               queryClient.invalidateQueries({ queryKey: ['quote', id] });
