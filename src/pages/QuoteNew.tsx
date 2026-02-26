@@ -33,6 +33,7 @@ type ItemSnapshot = {
   displayName?: string; // Nombre a mostrar (editable)
   productName?: string; // Nombre original del producto API
   itemDescription?: string; // Descripción (solo para productos custom)
+  descriptionManual?: boolean; // Flag: usuario editó la descripción manualmente
   itemAdditionals?: any[];
   needsRecalculation?: boolean;
   isFinalized?: boolean; // Track if item is finalized
@@ -487,15 +488,23 @@ export default function QuoteNew() {
           return [] as any[];
         })().sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
 
+        // Auto-generar descripción desde prompts visibles si no fue editada manualmente
+        let description = item.itemDescription || "";
+        const isManual = item.descriptionManual || false;
+        if (!isManual && !description && promptsArray.length > 0) {
+          description = promptsArray
+            .filter((p: any) => p.value !== undefined && p.value !== null && String(p.value).trim() !== "")
+            .map((p: any) => String(p.value).trim())
+            .join(", ");
+        }
+
         return {
           quote_id: quote.id,
           product_id: item.productId,
           product_name: item.productName || item.displayName || "",
-          // Nombre original del producto API
           name: item.displayName || item.productName || "",
-          // Nombre a mostrar (editable)
-          description: item.itemDescription || "",
-          // Descripción del artículo
+          description,
+          description_manual: isManual,
           prompts: promptsArray,
           outputs: item.outputs || [],
           multi: item.multi || null,

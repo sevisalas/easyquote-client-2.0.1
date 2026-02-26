@@ -2312,6 +2312,7 @@ export type Database = {
           composite_data: Json | null
           created_at: string
           description: string | null
+          description_manual: boolean
           discount_percentage: number | null
           id: string
           item_additionals: Json | null
@@ -2333,6 +2334,7 @@ export type Database = {
           composite_data?: Json | null
           created_at?: string
           description?: string | null
+          description_manual?: boolean
           discount_percentage?: number | null
           id?: string
           item_additionals?: Json | null
@@ -2354,6 +2356,7 @@ export type Database = {
           composite_data?: Json | null
           created_at?: string
           description?: string | null
+          description_manual?: boolean
           discount_percentage?: number | null
           id?: string
           item_additionals?: Json | null
@@ -2531,6 +2534,7 @@ export type Database = {
           composite_data: Json | null
           created_at: string
           description: string | null
+          description_manual: boolean
           id: string
           imposition_data: Json | null
           multi: Json | null
@@ -2549,6 +2553,7 @@ export type Database = {
           composite_data?: Json | null
           created_at?: string
           description?: string | null
+          description_manual?: boolean
           id?: string
           imposition_data?: Json | null
           multi?: Json | null
@@ -2567,6 +2572,7 @@ export type Database = {
           composite_data?: Json | null
           created_at?: string
           description?: string | null
+          description_manual?: boolean
           id?: string
           imposition_data?: Json | null
           multi?: Json | null

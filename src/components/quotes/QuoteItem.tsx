@@ -55,6 +55,7 @@ type ItemSnapshot = {
   needsRecalculation?: boolean;
   displayName?: string;  // Nombre a mostrar del producto (editable)
   itemDescription?: string;  // Descripción (para productos custom)
+  descriptionManual?: boolean;  // Flag: usuario editó la descripción manualmente
   productName?: string;  // Nombre original del producto API
   itemAdditionals?: any[];
   isFinalized?: boolean;
@@ -175,6 +176,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [userCollapsed, setUserCollapsed] = useState<boolean>(false); // Flag para colapso manual del usuario
   const [displayName, setDisplayName] = useState<string>(""); // Nombre a mostrar (editable)
   const [itemDescription, setItemDescription] = useState<string>(""); // Descripción (solo para productos custom)
+  const [descriptionManual, setDescriptionManual] = useState<boolean>(false); // Flag: usuario editó la descripción manualmente
   const [isNewProduct, setIsNewProduct] = useState<boolean>(true);
   const [hasInitialOutputs, setHasInitialOutputs] = useState<boolean>(false);
   const [userHasChangedCurrentProduct, setUserHasChangedCurrentProduct] = useState<boolean>(false);
@@ -387,6 +389,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setDebouncedPromptValues(promptValuesOnly);
       setDisplayName(initialData.displayName || "");
       setItemDescription(initialData.itemDescription || "");
+      setDescriptionManual(initialData.descriptionManual || false);
       
       // Handle custom product initialization
       if (initialData.productId === CUSTOM_PRODUCT_ID) {
@@ -1039,6 +1042,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setLocalQtyInputs(["", "", "", "", ""]); // Reset estado local también
       setItemAdditionals([]);
       setItemDescription("");
+      setDescriptionManual(false);
       setIsNewProduct(true);
       setHasInitialOutputs(false);
       setForceRecalculate(false);
@@ -1984,6 +1988,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       displayName: displayName || originalProductName, // Nombre a mostrar (editable)
       productName: originalProductName, // Nombre original del producto API
       itemDescription: isCustomProduct ? (itemDescription || "Artículo personalizado") : (itemDescription || ""), // Descripción para todos los productos
+      descriptionManual, // Flag: usuario editó la descripción manualmente
       itemAdditionals,
       // Preservar isFinalized del padre (initialData) - NO sobrescribirlo aquí
       boundProductConfig, // Guardar configuración de producto encuadernado
@@ -2203,7 +2208,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               <Label>Descripción del artículo</Label>
               <Textarea
                 value={itemDescription}
-                onChange={(e) => setItemDescription(e.target.value)}
+                onChange={(e) => { setItemDescription(e.target.value); setDescriptionManual(true); }}
                 placeholder="Descripción detallada del artículo..."
                 rows={3}
               />

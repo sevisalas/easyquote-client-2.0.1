@@ -43,6 +43,8 @@ interface QuoteItem {
   displayName?: string;  // Nombre a mostrar (editable)
   productName?: string;  // Nombre original del producto API
   itemDescription?: string;  // Descripción (solo para productos custom)
+  descriptionManual?: boolean;  // Flag: usuario editó la descripción manualmente
+  description_manual?: boolean;  // From DB
   itemAdditionals?: any[];
   compositeData?: any;
 }
@@ -286,6 +288,7 @@ export default function QuoteEdit() {
             displayName: item.name || item.product_name || "",  // Nombre a mostrar
             productName: item.product_name || "",  // Nombre original del producto API
             itemDescription: item.description || "",  // Descripción (solo para productos custom)
+            descriptionManual: item.description_manual || false,  // Flag: usuario editó la descripción
             itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
             compositeData: item.composite_data || undefined,
           };
@@ -451,11 +454,22 @@ export default function QuoteEdit() {
             all: promptsArray
           });
 
+          // Auto-generar descripción desde prompts visibles si no fue editada manualmente
+          let description = item.description || item.itemDescription || "";
+          const isManual = (item as any).descriptionManual || (item as any).description_manual || false;
+          if (!isManual && !description && promptsArray.length > 0) {
+            description = promptsArray
+              .filter((p: any) => p.value !== undefined && p.value !== null && String(p.value).trim() !== "")
+              .map((p: any) => String(p.value).trim())
+              .join(", ");
+          }
+
           return {
             quote_id: id,
             product_name: item.product_name || item.productName || "",  // Nombre original del producto API
             name: item.name || item.displayName || item.product_name || "",  // Nombre a mostrar
-            description: item.description || item.itemDescription || "",  // Descripción del artículo
+            description,
+            description_manual: isManual,
             price: item.price || 0,
             position: index,
             product_id: item.productId || null,

@@ -1,0 +1,2 @@
+ALTER TABLE public.quote_items ADD COLUMN IF NOT EXISTS description_manual boolean NOT NULL DEFAULT false;
+ALTER TABLE public.sales_order_items ADD COLUMN IF NOT EXISTS description_manual boolean NOT NULL DEFAULT false;
