@@ -492,7 +492,7 @@ export default function QuoteEdit() {
       if (quoteAdditionals.length > 0) {
         const additionalsToInsert = quoteAdditionals.map((additional) => ({
           quote_id: id,
-          additional_id: additional.isCustom ? null : additional.id,
+          additional_id: additional.isCustom || !additional.id || String(additional.id).startsWith('temp-') ? null : additional.id,
           name: additional.name,
           type: additional.type,
           value: additional.value,
