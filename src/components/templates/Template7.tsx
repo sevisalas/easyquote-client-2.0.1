@@ -154,9 +154,8 @@ export default function Template7({ data }: Template7Props) {
           <thead>
             <tr style={{ backgroundColor: '#6a9e3a', color: 'white' }}>
               <th style={{ textAlign: 'left', padding: '6px 8px', fontSize: '10px', fontWeight: 'bold' }}>CONCEPTO</th>
-              <th style={{ textAlign: 'right', padding: '6px 8px', fontSize: '10px', fontWeight: 'bold', width: '70px' }}>PRECIO</th>
               <th style={{ textAlign: 'center', padding: '6px 8px', fontSize: '10px', fontWeight: 'bold', width: '50px' }}>UNID.</th>
-              <th style={{ textAlign: 'right', padding: '6px 8px', fontSize: '10px', fontWeight: 'bold', width: '80px' }}>SUBTOTAL</th>
+              <th style={{ textAlign: 'right', padding: '6px 8px', fontSize: '10px', fontWeight: 'bold', width: '80px' }}>PRECIO</th>
             </tr>
           </thead>
           <tbody>
@@ -175,20 +174,19 @@ export default function Template7({ data }: Template7Props) {
                       <span style={{ fontWeight: 'bold', fontSize: '10px' }}>{item.name}</span>
                     </div>
                   </td>
-                  <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '10px' }}>{fmtEUR(item.price || 0)}</td>
                   <td style={{ padding: '6px 8px', textAlign: 'center', fontSize: '10px' }}>{getItemQuantity(item)}</td>
-                  <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '10px', fontWeight: 'bold' }}>{fmtEUR((item.price || 0) * (item.quantity || 1))}</td>
+                  <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '10px', fontWeight: 'bold' }}>{fmtEUR(item.price || 0)}</td>
                 </tr>
                 {(!item.prompts || item.prompts.length === 0) && item.description && (
                   <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td colSpan={4} style={{ padding: '3px 8px 3px 20px' }}>
+                    <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
                       <div style={{ fontSize: '9px', color: '#555', lineHeight: '1.4', whiteSpace: 'pre-line' }} dangerouslySetInnerHTML={{ __html: item.description.replace(/\n/g, '<br/>') }} />
                     </td>
                   </tr>
                 )}
                 {item.prompts && item.prompts.length > 0 && (
                   <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td colSpan={4} style={{ padding: '3px 8px 3px 20px' }}>
+                    <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
                       <div style={{ fontSize: '9px', color: '#555', lineHeight: '1.4' }}>
                         {item.prompts.map((prompt: any, pIdx: number) => (
                           <div key={pIdx}><span style={{ fontWeight: 600, textTransform: 'uppercase' }}>{prompt.label}:</span> {prompt.value}</div>
@@ -199,7 +197,7 @@ export default function Template7({ data }: Template7Props) {
                 )}
                 {item.components && item.components.length > 0 && (
                   <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td colSpan={4} style={{ padding: '3px 8px 3px 20px' }}>
+                    <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
                       {item.components.map((comp: any, cIdx: number) => (
                         <div key={cIdx} style={{ marginBottom: '4px' }}>
                           <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#333', textTransform: 'uppercase', marginBottom: '1px' }}>── {comp.alias} ──</div>

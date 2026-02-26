@@ -354,9 +354,13 @@ export const generateQuotePDF = async (
         return candidates.some(c => hiddenPrompts.has(c));
       };
       
-      // Extract displayQuantity from prompts BEFORE any filtering
+      // Extract displayQuantity: prefer Q1 from multi, then prompts
       let displayQuantity: string | number | null = null;
-      if (item.prompts && Array.isArray(item.prompts)) {
+      if (item.multi?.rows?.length > 0) {
+        displayQuantity = item.multi.rows[0].qty;
+      } else if (item.multi?.qtyInputs?.length > 0) {
+        displayQuantity = item.multi.qtyInputs[0];
+      } else if (item.prompts && Array.isArray(item.prompts)) {
         const qtyPrompt = item.prompts.find((prompt: any) => {
           const label = (prompt.label || '').toLowerCase();
           return label.includes('cantidad') || label.includes('ejemplares');
