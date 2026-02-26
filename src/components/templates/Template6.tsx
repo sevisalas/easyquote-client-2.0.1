@@ -75,26 +75,7 @@ export default function Template6({ data }: Template6Props) {
               Estimado Cliente
             </h3>
             <p className="font-serif font-bold text-sm mb-1 text-slate-800">{customer.name || 'Cliente'}</p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              {customer.email && (
-                <div>
-                  <span className="text-slate-500">Email:</span>
-                  <p className="font-medium text-slate-700">{customer.email}</p>
-                </div>
-              )}
-              {customer.phone && (
-                <div>
-                  <span className="text-slate-500">Teléfono:</span>
-                  <p className="font-medium text-slate-700">{customer.phone}</p>
-                </div>
-              )}
-              {customer.address && (
-                <div className="col-span-2">
-                  <span className="text-slate-500">Dirección:</span>
-                  <p className="font-medium text-slate-700">{customer.address}</p>
-                </div>
-              )}
-            </div>
+            {customer.address && <p className="text-xs text-slate-700">{customer.address}</p>}
           </div>
         </section>
 

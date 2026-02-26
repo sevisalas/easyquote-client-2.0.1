@@ -123,8 +123,6 @@ export default function Template8({ data }: Template8Props) {
               Cliente
             </p>
             <p style={{ fontSize: '11px', fontWeight: 'bold', color: BRAND.textDark }}>{customer.name || 'Cliente'}</p>
-            {customer.email && <p style={{ fontSize: '9px', color: '#555' }}>{customer.email}</p>}
-            {customer.phone && <p style={{ fontSize: '9px', color: '#555' }}>{customer.phone}</p>}
             {customer.address && (() => {
               const parts = customer.address.split(',').map((s: string) => s.trim());
               if (parts.length >= 4) {
