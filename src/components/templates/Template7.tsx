@@ -211,6 +211,38 @@ export default function Template7({ data }: Template7Props) {
                     </td>
                   </tr>
                 )}
+                {item.item_additionals && item.item_additionals.length > 0 && (
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
+                      <div style={{ fontSize: '9px', color: '#555', lineHeight: '1.4' }}>
+                        {item.item_additionals.map((adj: any, aIdx: number) => {
+                          const qty = getItemQuantity(item);
+                          const numQty = typeof qty === 'string' ? parseFloat(qty.replace(/\./g, '').replace(',', '.')) : (qty || 1);
+                          let subtotal = adj.value;
+                          let detail = '';
+                          if (adj.type === 'quantity_multiplier') {
+                            subtotal = adj.value * numQty;
+                            detail = ` (${adj.value} €/ud × ${numQty})`;
+                          } else if (adj.type === 'capacity_divider') {
+                            const cap = adj.capacity_value || 1;
+                            const units = Math.ceil(numQty / cap);
+                            subtotal = adj.value * units;
+                            detail = ` (${adj.value} € × ${units} uds)`;
+                          }
+                          return (
+                            <div key={aIdx}>
+                              <span style={{ fontWeight: 600 }}>
+                                {adj.is_discount ? '↓ ' : '+ '}
+                                {adj.name}:
+                              </span>{' '}
+                              {fmtEUR(subtotal)}{detail}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </React.Fragment>
             ))}
           </tbody>
