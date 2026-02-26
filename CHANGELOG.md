@@ -5,6 +5,14 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.19] - 2026-02-26
+
+### Cambiado
+- **Datos de cliente en PDF simplificados**: Eliminados email y teléfono del cliente en las 8 plantillas de documentos, mostrando solo empresa y dirección completa
+- **Descripción del presupuesto reubicada**: La descripción general del presupuesto se muestra ahora fuera de la tabla de artículos (plantillas Campillo y Anebri) para no confundirse con las descripciones individuales
+
+---
+
 ## [2.5.18] - 2026-02-25
 
 ### Añadido
