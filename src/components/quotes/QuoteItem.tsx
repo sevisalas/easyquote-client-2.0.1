@@ -26,6 +26,7 @@ import CompositeComponentsSelector, {
 } from "@/components/quotes/CompositeComponentsSelector";
 import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { useCompositeProductConfig } from "@/hooks/useCompositeProductConfig";
+import { useProductPromptSettings } from "@/hooks/useProductPromptSettings";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -180,6 +181,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [isInitializing, setIsInitializing] = useState<boolean>(false); // Flag para prevenir sync durante inicialización
   const [hasPerformedInitialLoad, setHasPerformedInitialLoad] = useState<boolean>(false); // Flag para primera carga de artículos guardados
   const selectRef = useRef<HTMLButtonElement>(null);
+
+  // Per-product prompt settings (hide_in_documents, admin_only)
+  const { isPromptHiddenInDocuments, isPromptAdminOnly } = useProductPromptSettings(productId || undefined);
 
   // Auto-expand/collapse based on shouldExpand prop - pero respetar colapso manual del usuario
   useEffect(() => {
@@ -1011,6 +1015,43 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pricing, isNewProduct, initialData, hasPerformedInitialLoad]);
 
+  // Auto-fill description with visible prompts (only for new products, not saved ones)
+  const hasAutoFilledDescriptionRef = useRef<boolean>(false);
+  useEffect(() => {
+    if (!pricing?.prompts || !Array.isArray(pricing.prompts)) return;
+    if (!isNewProduct || initialData || hasAutoFilledDescriptionRef.current) return;
+    if (itemDescription) return; // Don't overwrite user-typed description
+    
+    // If org hides ALL prompts in documents, leave description empty
+    if (orgHidePrompts) return;
+    
+    // Build description from prompts visible in docs
+    const visibleLines: string[] = [];
+    const sortedPrompts = [...pricing.prompts].sort(
+      (a: any, b: any) => (a.promptSequence ?? a.order ?? 999) - (b.promptSequence ?? b.order ?? 999)
+    );
+    
+    for (const prompt of sortedPrompts) {
+      const label = prompt.promptText || prompt.label || prompt.id || '';
+      const value = prompt.currentValue ?? '';
+      if (!label || value === '' || value === null || value === undefined) continue;
+      
+      // Skip prompts hidden in documents or admin-only
+      const promptName = prompt.promptText || prompt.label || prompt.id || '';
+      if (isPromptHiddenInDocuments(promptName) || isPromptAdminOnly(promptName)) continue;
+      
+      // Skip image URLs
+      if (String(value).startsWith('http')) continue;
+      
+      visibleLines.push(`${label}: ${value}`);
+    }
+    
+    if (visibleLines.length > 0) {
+      hasAutoFilledDescriptionRef.current = true;
+      setItemDescription(visibleLines.join('\n'));
+    }
+  }, [pricing, isNewProduct, initialData, itemDescription, orgHidePrompts, isPromptHiddenInDocuments, isPromptAdminOnly]);
+
   // Track if prompts were initialized from saved data
   const previousProductIdRef = useRef<string>("");
   const hasMarkedAsLoadedRef = useRef<boolean>(false);
@@ -1046,20 +1087,18 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       setBoundProductConfig(null); // Reset configuración de producto encuadernado
       setUserEditedPrice(null); // Reset precio editado por usuario
       hasMarkedAsLoadedRef.current = false;
+      hasAutoFilledDescriptionRef.current = false;
       
       debugLog("✅ Estados reseteados completamente, listo para cargar nuevo producto");
     }
     previousProductIdRef.current = productId;
     
-    // Auto-fill product description when product is selected
+    // Auto-fill displayName when product is selected (description is filled later with prompts)
     if (productId && products) {
       const selectedProduct = products.find((p: any) => String(p.id) === String(productId));
-      if (selectedProduct) {
+      if (selectedProduct && !displayName) {
         const productLabel = getProductLabel(selectedProduct);
-        // Only auto-fill if description is empty
-        if (!itemDescription) {
-          setItemDescription(productLabel);
-        }
+        setDisplayName(productLabel);
       }
     }
     
