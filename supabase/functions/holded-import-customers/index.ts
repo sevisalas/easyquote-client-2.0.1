@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
       .eq('integration_id', integration.id)
       .single();
 
-    if (accessError || !access) {
+    if (accessError || !access || !access.access_token_encrypted) {
       console.error('Error fetching Holded access:', accessError);
       return new Response(
         JSON.stringify({ error: 'Holded integration not configured for this organization' }),
@@ -74,9 +74,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Decrypt the access token from bytes
-    const decoder = new TextDecoder();
-    const apiKey = decoder.decode(access.access_token_encrypted);
+    // Decrypt the API key
+    const { data: decryptedKey, error: decryptError } = await supabaseClient
+      .rpc('decrypt_credential', { encrypted_data: access.access_token_encrypted });
+
+    if (decryptError || !decryptedKey) {
+      console.error('Error decrypting Holded API key:', decryptError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to decrypt Holded API key' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const apiKey = decryptedKey.trim();
 
     // Get existing customers with holded_id to avoid duplicates
     const { data: existingCustomers, error: existingError } = await supabaseClient
