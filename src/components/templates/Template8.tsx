@@ -145,10 +145,11 @@ export default function Template8({ data }: Template8Props) {
           </div>
         </div>
 
-        {/* Título del presupuesto */}
-        {quote.title && (
+        {/* Título y descripción del presupuesto */}
+        {(quote.title || quote.description) && (
           <div style={{ marginBottom: '6px' }}>
-            <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '2px', color: BRAND.textDark }}>{quote.title}</h3>
+            {quote.title && <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '2px', color: BRAND.textDark }}>{quote.title}</h3>}
+            {quote.description && <p style={{ fontSize: '10px', color: '#444', margin: 0 }}>{quote.description}</p>}
           </div>
         )}
 
@@ -163,13 +164,6 @@ export default function Template8({ data }: Template8Props) {
             </tr>
           </thead>
           <tbody>
-            {quote.description && (
-              <tr style={{ borderBottom: '1px solid #eee' }}>
-                <td colSpan={4} style={{ padding: '4px 8px' }}>
-                  <p style={{ fontSize: '10px', color: '#444', margin: 0 }}>{quote.description}</p>
-                </td>
-              </tr>
-            )}
             {items.map((item: any, index: number) => (
               <React.Fragment key={index}>
                 <tr style={{ borderBottom: '1px solid #ddd' }}>
