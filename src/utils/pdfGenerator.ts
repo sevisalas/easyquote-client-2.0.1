@@ -456,6 +456,15 @@ export const generateQuotePDF = async (
         }
       }
 
+      // Format item_additionals for display
+      const formattedAdditionals = (item.item_additionals || []).map((adj: any) => ({
+        name: adj.name || '',
+        type: adj.type || 'net_amount',
+        value: adj.value || 0,
+        is_discount: adj.is_discount || false,
+        capacity_value: adj.capacity_value || null,
+      }));
+
       // If org flag hides all prompts, return only name + description
       if (hideAllPromptsInDocs) {
         return {
@@ -466,7 +475,8 @@ export const generateQuotePDF = async (
           quantity: item.quantity || 1,
           displayQuantity,
           images: images,
-          components: []
+          components: [],
+          item_additionals: formattedAdditionals,
         };
       }
 
@@ -478,7 +488,8 @@ export const generateQuotePDF = async (
         quantity: item.quantity || 1,
         displayQuantity,
         images: images,
-        components: componentSections
+        components: componentSections,
+        item_additionals: formattedAdditionals,
       };
     });
 
