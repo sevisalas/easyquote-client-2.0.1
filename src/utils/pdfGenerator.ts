@@ -440,6 +440,19 @@ export const generateQuotePDF = async (
         }
       }
 
+      // Parse multi-quantity rows if available
+      const multiRows: Array<{qty: number, total: number, unit: number}> = [];
+      if (item.multi?.rows && Array.isArray(item.multi.rows)) {
+        item.multi.rows.forEach((row: any) => {
+          const total = parseFloat(String(row.totalStr || '0').replace(',', '.')) || 0;
+          multiRows.push({
+            qty: row.qty || 0,
+            total,
+            unit: row.unit || (row.qty ? total / row.qty : 0)
+          });
+        });
+      }
+
       // Always pass both description and prompts.
       // Template decides: if description exists → show it; otherwise → show visible prompts.
       // If org flag hides all prompts, clear prompts and components.
@@ -450,7 +463,8 @@ export const generateQuotePDF = async (
         price: item.price || 0,
         quantity: item.quantity || 1,
         images: images,
-        components: hideAllPromptsInDocs ? [] : componentSections
+        components: hideAllPromptsInDocs ? [] : componentSections,
+        multi: multiRows
       };
     });
 
