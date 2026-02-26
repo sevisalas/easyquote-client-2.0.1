@@ -567,76 +567,74 @@ Deno.serve(async (req) => {
         
         // Build base description from prompts (excluding quantity prompt)
         let baseDescription = '';
-        
+        let qtyPromptLabel = 'Cantidad';
+        let parentPromptsArray: any[] = [];
+
         // If org-level flag hides all prompts, use item.description directly
         if (hideAllPromptsInDocs) {
           baseDescription = item.description || '';
         } else {
-        let qtyPromptLabel = 'Cantidad';
-        
-        if (item.prompts) {
-          let promptsArray: any[] = [];
-          
-          // Handle both array and object formats
-          if (Array.isArray(item.prompts)) {
-            promptsArray = item.prompts;
-          } else if (typeof item.prompts === 'object') {
-            promptsArray = Object.entries(item.prompts).map(([key, value]) => ({
-              id: key,
-              ...(typeof value === 'object' ? value : { value })
-            }));
-          }
-          
-           // Convert to object for visibility checking (add id + label keys for robust matching)
-           const promptsObj = promptsArray.reduce((acc: any, p: any) => {
-             const keys = [p?.id, p?.name, p?.key, p?.label].filter(Boolean);
-             for (const k of keys) {
-               const sk = String(k);
-               if (!(sk in acc)) acc[sk] = p;
-             }
-             return acc;
-           }, {});
+          if (item.prompts) {
+            // Handle both array and object formats
+            if (Array.isArray(item.prompts)) {
+              parentPromptsArray = item.prompts;
+            } else if (typeof item.prompts === 'object') {
+              parentPromptsArray = Object.entries(item.prompts).map(([key, value]) => ({
+                id: key,
+                ...(typeof value === 'object' ? value : { value })
+              }));
+            }
 
-           const valuesMap = enrichValuesMapWithDefs(defsMap, promptsArray, buildValuesMap(promptsObj));
-          
-          // Find the quantity prompt label
-          const qtyPromptData = promptsArray.find(p => p.id === item.multi.qtyPrompt);
-          if (qtyPromptData?.label) {
-            qtyPromptLabel = qtyPromptData.label;
-          }
-          
-          if (promptsArray.length > 0) {
-            baseDescription = promptsArray
-               .filter(prompt => {
-                if (!prompt || !prompt.label) return false;
-                // Skip the quantity prompt - we'll show it separately
-                if (prompt.id === item.multi.qtyPrompt) return false;
+            // Convert to object for visibility checking (add id + label keys for robust matching)
+            const promptsObj = parentPromptsArray.reduce((acc: any, p: any) => {
+              const keys = [p?.id, p?.name, p?.key, p?.label].filter(Boolean);
+              for (const k of keys) {
+                const sk = String(k);
+                if (!(sk in acc)) acc[sk] = p;
+              }
+              return acc;
+            }, {});
 
-                 // Dynamic visibility (based on EasyQuote prompt definitions)
-                 const def = getPromptDef(defsMap, prompt);
-                 if (def && !isVisiblePromptDef(def, valuesMap)) return false;
+            const valuesMap = enrichValuesMapWithDefs(defsMap, parentPromptsArray, buildValuesMap(promptsObj));
 
-                 // Check if this prompt is hidden in documents
-                 const productId = item.product_id || '';
+            // Find the quantity prompt label
+            const qtyPromptData = parentPromptsArray.find(p => p.id === item.multi.qtyPrompt);
+            if (qtyPromptData?.label) {
+              qtyPromptLabel = qtyPromptData.label;
+            }
+
+            if (parentPromptsArray.length > 0) {
+              baseDescription = parentPromptsArray
+                .filter(prompt => {
+                  if (!prompt || !prompt.label) return false;
+                  // Skip the quantity prompt - we'll show it separately
+                  if (prompt.id === item.multi.qtyPrompt) return false;
+
+                  // Dynamic visibility (based on EasyQuote prompt definitions)
+                  const def = getPromptDef(defsMap, prompt);
+                  if (def && !isVisiblePromptDef(def, valuesMap)) return false;
+
+                  // Check if this prompt is hidden in documents
+                  const productId = item.product_id || '';
                   if (isHiddenInDocuments(productId, prompt, defsMap)) {
-                   console.log(`🙈 Hiding prompt "${prompt.label}" (id=${prompt.id ?? 'n/a'}) for product ${productId}`);
-                   return false;
-                 }
-                return true;
-              })
-              .sort((a, b) => (a.order || 999) - (b.order || 999))
-               .map((prompt) => `${prompt.label}: ${formatPromptValue(prompt.value)}`)
-              .filter(Boolean)
-              .join('\n');
+                    console.log(`🙈 Hiding prompt "${prompt.label}" (id=${prompt.id ?? 'n/a'}) for product ${productId}`);
+                    return false;
+                  }
+                  return true;
+                })
+                .sort((a, b) => (a.order || 999) - (b.order || 999))
+                .map((prompt) => `${prompt.label}: ${formatPromptValue(prompt.value)}`)
+                .filter(Boolean)
+                .join('\n');
+            }
           }
-        }
         } // end else (not hideAllPromptsInDocs)
-        
+
         // Item additionals are now exported as separate line items (not in description)
 
         // Append composite component details (pass parent prompts to avoid repeating propagated fields)
         if (!hideAllPromptsInDocs) {
-          const compositeDesc = buildCompositeDescription(item.composite_data, promptsArray);
+          const compositeDesc = buildCompositeDescription(item.composite_data, parentPromptsArray);
           if (compositeDesc) {
             baseDescription += (baseDescription ? '\n\n' : '') + compositeDesc;
           }
