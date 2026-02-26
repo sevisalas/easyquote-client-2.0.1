@@ -65,8 +65,6 @@ export default function Template3({ data }: Template3Props) {
         <div>
           <h3 className="text-xs font-semibold mb-1.5 uppercase tracking-wider text-gray-500">Cliente</h3>
           <p className="font-medium text-sm mb-0.5">{customer.name || 'Cliente'}</p>
-          {customer.email && <p className="text-xs text-gray-600">{customer.email}</p>}
-          {customer.phone && <p className="text-xs text-gray-600">{customer.phone}</p>}
           {customer.address && <p className="text-xs text-gray-600 mt-0.5">{customer.address}</p>}
         </div>
         {(quote.title || quote.description) && (

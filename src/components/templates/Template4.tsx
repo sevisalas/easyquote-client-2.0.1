@@ -86,8 +86,6 @@ export default function Template4({ data }: Template4Props) {
                 Cliente
               </h3>
               <p className="font-serif font-bold text-sm mb-0.5">{customer.name || 'Cliente'}</p>
-              {customer.email && <p className="text-xs text-gray-600">{customer.email}</p>}
-              {customer.phone && <p className="text-xs text-gray-600">{customer.phone}</p>}
               {customer.address && <p className="text-xs text-gray-600">{customer.address}</p>}
             </div>
           </div>

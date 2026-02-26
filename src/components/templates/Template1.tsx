@@ -67,8 +67,6 @@ export default function Template1({ data }: Template1Props) {
         </h3>
         <div className="bg-gray-50 p-2 rounded">
           <p className="font-semibold text-sm">{customer.name || 'Cliente'}</p>
-          {customer.email && <p className="text-xs text-gray-600">{customer.email}</p>}
-          {customer.phone && <p className="text-xs text-gray-600">{customer.phone}</p>}
           {customer.address && <p className="text-xs text-gray-600">{customer.address}</p>}
         </div>
       </section>
