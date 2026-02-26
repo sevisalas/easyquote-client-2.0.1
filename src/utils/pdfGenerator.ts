@@ -354,6 +354,18 @@ export const generateQuotePDF = async (
         return candidates.some(c => hiddenPrompts.has(c));
       };
       
+      // Extract displayQuantity from prompts BEFORE any filtering
+      let displayQuantity: string | number | null = null;
+      if (item.prompts && Array.isArray(item.prompts)) {
+        const qtyPrompt = item.prompts.find((prompt: any) => {
+          const label = (prompt.label || '').toLowerCase();
+          return label.includes('cantidad') || label.includes('ejemplares');
+        });
+        if (qtyPrompt?.value) {
+          displayQuantity = qtyPrompt.value;
+        }
+      }
+
       // Extraer imágenes y prompts EN ORDEN
       if (item.prompts && Array.isArray(item.prompts)) {
         item.prompts.forEach((prompt: any) => {
@@ -448,6 +460,7 @@ export const generateQuotePDF = async (
           prompts: [],
           price: item.price || 0,
           quantity: item.quantity || 1,
+          displayQuantity,
           images: images,
           components: []
         };
@@ -459,6 +472,7 @@ export const generateQuotePDF = async (
         prompts: promptsFormatted,
         price: item.price || 0,
         quantity: item.quantity || 1,
+        displayQuantity,
         images: images,
         components: componentSections
       };
