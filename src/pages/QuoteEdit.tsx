@@ -467,7 +467,7 @@ export default function QuoteEdit() {
                 if (excludeLabels.some(ex => label.includes(ex))) return false;
                 return true;
               })
-              .map((p: any) => String(p.value).trim())
+              .map((p: any) => `${p.label}: ${String(p.value).trim()}`)
               .join(", ");
           }
 
