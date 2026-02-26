@@ -105,32 +105,72 @@ Deno.serve(async (req) => {
 
     const existingHoldedIds = new Set(existingCustomers?.map(c => c.holded_id) || []);
 
-    // Call Holded API to get contacts
-    const holdedResponse = await fetch('https://api.holded.com/api/contacts', {
-      method: 'GET',
-      headers: {
-        'key': apiKey,
-        'Accept': 'application/json'
-      }
-    });
+    // Call Holded API to get contacts (paginated)
+    const holdedContacts: any[] = [];
+    let page = 1;
+    const limit = 500;
+    let hasMore = true;
 
-    if (!holdedResponse.ok) {
-      const errorText = await holdedResponse.text();
-      console.error('Holded API error:', errorText);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch contacts from Holded', details: errorText }),
-        { status: holdedResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    while (hasMore) {
+      const holdedResponse = await fetch(
+        `https://api.holded.com/api/invoicing/v1/contacts?page=${page}&limit=${limit}`,
+        {
+          method: 'GET',
+          headers: {
+            'key': apiKey,
+            'Accept': 'application/json'
+          }
+        }
       );
+
+      const rawBody = await holdedResponse.text();
+
+      if (!holdedResponse.ok) {
+        console.error('Holded API error:', holdedResponse.status, rawBody);
+        return new Response(
+          JSON.stringify({
+            error: 'Failed to fetch contacts from Holded',
+            details: rawBody,
+            status: holdedResponse.status,
+          }),
+          { status: holdedResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      let pageContacts: any[] = [];
+      try {
+        const parsed = JSON.parse(rawBody);
+        pageContacts = Array.isArray(parsed) ? parsed : [];
+      } catch (parseError) {
+        console.error('Invalid Holded response (non-JSON):', rawBody?.slice?.(0, 300));
+        return new Response(
+          JSON.stringify({
+            error: 'Invalid response from Holded API',
+            details: 'Response is not valid JSON',
+          }),
+          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (pageContacts.length === 0) {
+        hasMore = false;
+      } else {
+        holdedContacts.push(...pageContacts);
+        if (pageContacts.length < limit) {
+          hasMore = false;
+        } else {
+          page++;
+        }
+      }
     }
 
-    const holdedContacts = await holdedResponse.json();
-
-    // Filter only contacts that are clients (type === 'client') and don't exist yet
+    // Filter only contacts that are clients (when type exists) and don't exist yet
+    const isClientContact = (contact: any) => !contact?.type || contact.type === 'client';
     const newContacts = holdedContacts.filter((contact: any) => 
-      contact.type === 'client' && !existingHoldedIds.has(contact.id)
+      isClientContact(contact) && !existingHoldedIds.has(contact.id)
     );
 
-    const totalClients = holdedContacts.filter((c: any) => c.type === 'client').length;
+    const totalClients = holdedContacts.filter((c: any) => isClientContact(c)).length;
     console.log(`Total contacts: ${holdedContacts.length}, Clients: ${totalClients}, New clients to import: ${newContacts.length}`);
 
     if (newContacts.length === 0) {
