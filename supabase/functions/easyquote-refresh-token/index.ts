@@ -64,31 +64,33 @@ Deno.serve(async (req: Request): Promise<Response> => {
     let credentials: any = null
     let credError: any = null
 
-    // If superadmin passes organization_id, use the impersonation RPC
+    // If organization_id is passed, check if superadmin (impersonation) or regular member
     if (organizationId) {
-      console.log('easyquote-refresh-token: SuperAdmin impersonation requested for org:', organizationId)
-      
-      // Check if user is superadmin first
       const { data: roles } = await supabaseAdmin
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
         .eq('role', 'superadmin')
       
-      if (!roles || roles.length === 0) {
-        return new Response(
-          JSON.stringify({ error: 'Acceso denegado: solo superadmins pueden impersonar organizaciones' }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
+      const isSuperAdmin = roles && roles.length > 0
 
-      // Use the superadmin-specific RPC, passing user.id for verification since service role doesn't have auth.uid()
-      const result = await supabaseAdmin.rpc('get_organization_easyquote_credentials_for_superadmin', {
-        p_organization_id: organizationId,
-        p_calling_user_id: user.id
-      })
-      credentials = result.data
-      credError = result.error
+      if (isSuperAdmin) {
+        console.log('easyquote-refresh-token: SuperAdmin impersonation for org:', organizationId)
+        const result = await supabaseAdmin.rpc('get_organization_easyquote_credentials_for_superadmin', {
+          p_organization_id: organizationId,
+          p_calling_user_id: user.id
+        })
+        credentials = result.data
+        credError = result.error
+      } else {
+        // Regular user with selected org - use normal credential flow
+        console.log('easyquote-refresh-token: Regular user with org context, using normal flow for user:', user.id)
+        const result = await supabaseAdmin.rpc('get_organization_easyquote_credentials', {
+          p_user_id: user.id
+        })
+        credentials = result.data
+        credError = result.error
+      }
     } else {
       // Normal flow: get credentials for the authenticated user's organization
       const result = await supabaseAdmin.rpc('get_organization_easyquote_credentials', {
