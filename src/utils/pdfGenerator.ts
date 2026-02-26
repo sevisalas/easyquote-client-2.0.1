@@ -299,7 +299,8 @@ export const generateQuotePDF = async (
       .from('quotes')
       .select(`
         *,
-        items:quote_items(*)
+        items:quote_items(*),
+        quote_additionals:quote_additionals(*)
       `)
       .eq('id', quoteId)
       .single();
@@ -529,7 +530,13 @@ export const generateQuotePDF = async (
         phone: '',
         address: ''
       },
-      items: formattedItems
+      items: formattedItems,
+      quote_additionals: (quote.quote_additionals || []).map((a: any) => ({
+        name: (a.name || '').replace(/\s*Ajuste sobre el presupuesto\s*/gi, '').replace(/\s*Ajuste sobre el pedido\s*/gi, '').trim(),
+        type: a.type || 'net_amount',
+        value: a.value || 0,
+        is_discount: a.is_discount || false,
+      })),
     };
 
     // Create temporary container
