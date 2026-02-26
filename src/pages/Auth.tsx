@@ -141,8 +141,9 @@ const Auth = () => {
     // Obtener token de EasyQuote usando la edge function segura
     // La edge function obtiene las credenciales server-side y solo devuelve el token
     try {
+      const orgId = sessionStorage.getItem('selected_organization_id');
       const { data, error: fxError } = await supabase.functions.invoke("easyquote-refresh-token", {
-        body: {}
+        body: orgId ? { organization_id: orgId } : {}
       });
       
       if (fxError) {
