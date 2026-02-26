@@ -492,8 +492,15 @@ export default function QuoteNew() {
         let description = item.itemDescription || "";
         const isManual = item.descriptionManual || false;
         if (!isManual && !description && promptsArray.length > 0) {
+          const excludeLabels = ["tarifa", "forzar máquina", "forzar maquina", "tira y retira", "forzar poses", "forzar poses/pags.", "modelos"];
           description = promptsArray
-            .filter((p: any) => p.value !== undefined && p.value !== null && String(p.value).trim() !== "")
+            .filter((p: any) => {
+              const val = String(p.value ?? "").trim();
+              const label = String(p.label ?? "").toLowerCase();
+              if (!val || val === "" || val.toLowerCase() === "no") return false;
+              if (excludeLabels.some(ex => label.includes(ex))) return false;
+              return true;
+            })
             .map((p: any) => String(p.value).trim())
             .join(", ");
         }
