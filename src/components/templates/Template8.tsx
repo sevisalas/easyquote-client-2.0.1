@@ -38,6 +38,7 @@ export default function Template8({ data }: Template8Props) {
     new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
 
   const getItemQuantity = (item: any) => {
+    if (item.displayQuantity != null) return item.displayQuantity;
     if (item.prompts && item.prompts.length > 0) {
       const qtyPrompt = item.prompts.find((p: any) => 
         p.label?.toLowerCase().includes('cantidad') || p.label?.toLowerCase().includes('ejemplares')
