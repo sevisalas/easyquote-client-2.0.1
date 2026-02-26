@@ -32,9 +32,8 @@ async function refreshEasyQuoteToken(): Promise<string | null> {
     }
     console.log("[EasyQuote] User ID:", user.id);
 
-    const orgId = sessionStorage.getItem('selected_organization_id');
     const { data, error } = await supabase.functions.invoke("easyquote-refresh-token", {
-      body: orgId ? { organization_id: orgId } : {},
+      body: {},
     });
 
     if (error) {
