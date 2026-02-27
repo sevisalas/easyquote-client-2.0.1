@@ -535,43 +535,10 @@ export default function QuoteNew() {
 
       // (Sequential update now handled atomically inside next_document_number)
 
-      // Si el estado es "sent" y se permite exportar presupuestos a Holded, exportar automáticamente
-      if (status === 'sent' && canExportQuotes) {
-        try {
-          const {
-            error: holdedError
-          } = await supabase.functions.invoke('holded-export-estimate', {
-            body: {
-              quoteId: quote.id
-            }
-          });
-          if (holdedError) {
-            console.error('Error exporting to Holded:', holdedError);
-            toast({
-              title: "Advertencia",
-              description: "El presupuesto se guardó pero hubo un error al exportar a Holded",
-              variant: "destructive"
-            });
-          } else {
-            toast({
-              title: "Presupuesto guardado y exportado",
-              description: `Presupuesto ${quoteNumber} enviado y exportado a Holded correctamente`
-            });
-          }
-        } catch (holdedError: any) {
-          console.error('Error exporting to Holded:', holdedError);
-          toast({
-            title: "Advertencia",
-            description: "El presupuesto se guardó pero hubo un error al exportar a Holded",
-            variant: "destructive"
-          });
-        }
-      } else {
-        toast({
-          title: "Presupuesto guardado",
-          description: `Presupuesto ${quoteNumber} ${status === 'draft' ? 'guardado como borrador' : 'enviado'} correctamente`
-        });
-      }
+      toast({
+        title: "Presupuesto guardado",
+        description: `Presupuesto ${quoteNumber} ${status === 'draft' ? 'guardado como borrador' : 'enviado'} correctamente`
+      });
       navigate(`/presupuestos/${quote.id}`);
     } catch (error: any) {
       console.error("Error saving quote:", error);
@@ -775,7 +742,7 @@ export default function QuoteNew() {
             </Button>
             <Button onClick={() => handleSave("sent")} disabled={loading || !quoteFormat}>
               <Save className="w-4 h-4 mr-2" />
-              {canExportQuotes ? 'Guardar y enviar a Holded' : 'Guardar y enviar'}
+              Guardar y enviar
             </Button>
           </div>
         </CardContent>

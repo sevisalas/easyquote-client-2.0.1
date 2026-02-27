@@ -742,27 +742,6 @@ export default function QuoteEdit() {
       // Guardar automáticamente con el nuevo estado y esperar a que se complete
       await updateQuoteMutation.mutateAsync(updatedFormData);
 
-      // Si el estado es "sent" y se permite exportar presupuestos a Holded, exportar automáticamente
-      if (newStatus === 'sent' && canExportQuotes && id) {
-        console.log('🚀 Attempting to export to Holded after status change to sent');
-        try {
-          const { error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
-            body: { quoteId: id }
-          });
-
-          if (holdedError) {
-            console.error('❌ Error exporting to Holded:', holdedError);
-            toast.warning("Presupuesto enviado, pero hubo un error al exportar a Holded");
-          } else {
-            console.log('✅ Successfully exported to Holded');
-            toast.success("Presupuesto exportado a Holded exitosamente");
-          }
-        } catch (holdedErr) {
-          console.error('❌ Error exporting to Holded:', holdedErr);
-          toast.warning("Presupuesto enviado, pero hubo un error al exportar a Holded");
-        }
-      }
-
       // Redirect to detail view after status change (can't edit non-draft)
       queryClient.invalidateQueries({ queryKey: ["quote", id] });
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
@@ -878,7 +857,7 @@ export default function QuoteEdit() {
                     onClick={() => handleStatusChange('sent')}
                     className="h-7 text-xs"
                   >
-                    {canExportQuotes ? 'Enviar a Holded' : 'Enviar'}
+                    Enviar
                   </Button>
                 )}
               </div>
