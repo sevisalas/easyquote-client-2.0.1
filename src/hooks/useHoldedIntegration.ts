@@ -3,7 +3,7 @@ import { useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 
-export type HoldedExportMode = 'all' | 'orders_only';
+export type HoldedExportMode = 'all' | 'orders_only' | 'estimates_on_approval';
 
 export interface HoldedConfiguration {
   export_mode?: HoldedExportMode;
@@ -74,9 +74,21 @@ export const useHoldedIntegration = () => {
   const isHoldedActive = data?.isActive ?? false;
   const exportMode = data?.exportMode ?? 'all';
 
-  // Helper to check if quotes can be exported
-  const canExportQuotes = useMemo(
+  // Helper to check if quotes can be exported on send (only 'all' mode)
+  const canExportQuotesOnSend = useMemo(
     () => isHoldedActive && exportMode === 'all',
+    [isHoldedActive, exportMode]
+  );
+
+  // Helper to check if quotes can be exported on approval (both 'all' and 'estimates_on_approval')
+  const canExportQuotesOnApproval = useMemo(
+    () => isHoldedActive && (exportMode === 'all' || exportMode === 'estimates_on_approval'),
+    [isHoldedActive, exportMode]
+  );
+
+  // Helper to check if quotes can be exported at all (for UI: holded_id warnings, reenviar button)
+  const canExportQuotes = useMemo(
+    () => isHoldedActive && exportMode !== 'orders_only',
     [isHoldedActive, exportMode]
   );
   
@@ -92,6 +104,8 @@ export const useHoldedIntegration = () => {
     isHoldedActive,
     exportMode,
     canExportQuotes,
+    canExportQuotesOnSend,
+    canExportQuotesOnApproval,
     canExportOrders,
     loading,
     refreshIntegration

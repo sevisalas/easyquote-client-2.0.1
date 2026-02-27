@@ -417,6 +417,8 @@ export default function Integrations() {
         title: "Configuración guardada",
         description: mode === 'orders_only' 
           ? "Solo se exportarán pedidos a Holded" 
+          : mode === 'estimates_on_approval'
+          ? "Se exportarán presupuestos (solo al aprobar) y pedidos a Holded"
           : "Se exportarán presupuestos y pedidos a Holded",
       });
     } catch (error) {
@@ -625,6 +627,12 @@ export default function Integrations() {
                         <RadioGroupItem value="all" id="export-all" />
                         <Label htmlFor="export-all" className="cursor-pointer">
                           Presupuestos y pedidos
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="estimates_on_approval" id="export-approval" />
+                        <Label htmlFor="export-approval" className="cursor-pointer">
+                          Presupuestos (solo al aprobar) y pedidos
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2">
