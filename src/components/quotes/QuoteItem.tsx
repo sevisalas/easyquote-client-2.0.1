@@ -1642,19 +1642,31 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     }
     
     // Para productos COMPUESTOS: usar compositeTotalPrice (suma de componentes)
-    if (hasConfiguredComponents && compositeTotalPrice > 0) {
+    // Cuando multi-cantidades está activo, priorizar el precio de Q1 desde multiRows
+    if (hasConfiguredComponents && (compositeTotalPrice > 0 || (multiEnabled && multiRows.length > 0))) {
       let additionalsTotal = 0;
       let quantity = 1;
       
-      // Obtener cantidad del prompt
-      if (qtyPrompt && promptValues[qtyPrompt]) {
-        const qtyValue = promptValues[qtyPrompt];
-        const rawQty = (qtyValue && typeof qtyValue === 'object' && 'value' in qtyValue) 
-          ? qtyValue.value 
-          : qtyValue;
-        const parsedQty = parseFloat(String(rawQty).replace(/\./g, "").replace(",", "."));
-        if (!isNaN(parsedQty) && parsedQty > 0) {
-          quantity = parsedQty;
+      // Determinar el precio base: de multiRows Q1 si multi está activo, sino compositeTotalPrice
+      let baseCompositePrice: number;
+      if (multiEnabled && multiRows.length > 0) {
+        const q1Price = multiRows[0]?.totalStr;
+        baseCompositePrice = typeof q1Price === 'number' && Number.isFinite(q1Price) 
+          ? safePrice(q1Price) 
+          : safePrice(parseEsNumber(q1Price ?? 0));
+        quantity = multiRows[0]?.qty || 1;
+      } else {
+        baseCompositePrice = compositeTotalPrice;
+        // Obtener cantidad del prompt
+        if (qtyPrompt && promptValues[qtyPrompt]) {
+          const qtyValue = promptValues[qtyPrompt];
+          const rawQty = (qtyValue && typeof qtyValue === 'object' && 'value' in qtyValue) 
+            ? qtyValue.value 
+            : qtyValue;
+          const parsedQty = parseFloat(String(rawQty).replace(/\./g, "").replace(",", "."));
+          if (!isNaN(parsedQty) && parsedQty > 0) {
+            quantity = parsedQty;
+          }
         }
       }
       
@@ -1672,7 +1684,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         });
       }
       
-      return safePrice(compositeTotalPrice + additionalsTotal);
+      return safePrice(baseCompositePrice + additionalsTotal);
     }
     
     // Para productos API simples: el precio que queremos mostrar/guardar es el output con type=Price.
