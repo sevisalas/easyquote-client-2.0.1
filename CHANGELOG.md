@@ -5,6 +5,14 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.21] - 2026-02-27
+
+### Añadido
+- **Modo de exportación "Presupuestos solo al aprobar"**: Nuevo modo de integración con Holded que exporta presupuestos únicamente al aprobarlos (no al enviarlos), manteniendo la exportación de pedidos sin cambios
+- **Tres modos de exportación configurables**: "Todo" (presupuestos al enviar + pedidos), "Solo pedidos" y "Presupuestos solo al aprobar y pedidos", seleccionables desde Configuración > Integraciones
+
+---
+
 ## [2.5.20] - 2026-02-27
 
 ### Corregido
