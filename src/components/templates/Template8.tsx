@@ -33,6 +33,7 @@ export default function Template8({ data }: Template8Props) {
   const quote = data.quote || {};
   const customer = data.customer || {};
   const items = data.items || [];
+  const quoteAdditionals = data.quote_additionals || [];
 
   const fmtEUR = (amount: number) =>
     new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
@@ -226,8 +227,74 @@ export default function Template8({ data }: Template8Props) {
                     </td>
                   </tr>
                 )}
+                {item.item_additionals && item.item_additionals.length > 0 && (
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
+                      <div style={{ fontSize: '9px', color: '#555', lineHeight: '1.4' }}>
+                        {item.item_additionals.map((adj: any, aIdx: number) => {
+                          const qty = getItemQuantity(item);
+                          const numQty = typeof qty === 'string' ? parseFloat(qty.replace(/\./g, '').replace(',', '.')) : (qty || 1);
+                          let subtotal = adj.value;
+                          let detail = '';
+                          if (adj.type === 'quantity_multiplier') {
+                            subtotal = adj.value * numQty;
+                            detail = ` (${adj.value} €/ud × ${numQty})`;
+                          } else if (adj.type === 'capacity_divider') {
+                            const cap = adj.capacity_value || 1;
+                            const units = Math.ceil(numQty / cap);
+                            subtotal = adj.value * units;
+                            detail = ` (${adj.value} € × ${units} uds)`;
+                          }
+                          return (
+                            <div key={aIdx}>
+                              <span style={{ fontWeight: 600 }}>
+                                {adj.is_discount ? '↓ ' : '+ '}
+                                {adj.name}:
+                              </span>{' '}
+                              {fmtEUR(subtotal)}{detail}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                {item.multi_extra && item.multi_extra.length > 0 && (
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
+                      <div style={{ fontSize: '9px', color: '#555', lineHeight: '1.5' }}>
+                        {item.multi_extra.map((me: any, meIdx: number) => (
+                          <div key={meIdx}>
+                            <span style={{ fontWeight: 600 }}>Precio para {new Intl.NumberFormat('es-ES').format(me.qty)} ejemplares:</span>{' '}
+                            {fmtEUR(me.price)}
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </React.Fragment>
             ))}
+            {quoteAdditionals.length > 0 && quoteAdditionals.map((adj: any, aIdx: number) => {
+              let amount = adj.value;
+              let label = adj.name;
+              if (adj.type === 'percentage') {
+                amount = ((quote.subtotal || 0) * adj.value) / 100;
+                label = `${adj.name} (${adj.value}%)`;
+              }
+              return (
+                <tr key={`qa-${aIdx}`} style={{ borderBottom: '1px solid #ddd' }}>
+                  <td colSpan={2} style={{ padding: '6px 8px' }}>
+                    <span style={{ fontSize: '10px', color: '#555' }}>
+                      {adj.is_discount ? '↓ ' : '+ '}{label}
+                    </span>
+                  </td>
+                  <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '10px', fontWeight: 'bold' }}>
+                    {fmtEUR(amount)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
