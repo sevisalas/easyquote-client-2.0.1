@@ -322,7 +322,7 @@ export default function QuoteDetail() {
   const updateStatusMutation = useMutation({
     mutationFn: async ({ quoteId, status }: { quoteId: string; status: string }) => {
       // Block sending/approving if customer has no holded_id and Holded is active
-      if ((status === 'sent' || status === 'approved') && customerMissingHoldedId) {
+      if (status === 'approved' && customerMissingHoldedId) {
         throw new Error('El cliente no está vinculado a Holded. Importa o crea el contacto en Holded primero.');
       }
 
@@ -333,37 +333,10 @@ export default function QuoteDetail() {
 
       if (error) throw error;
 
-      // Si el estado es "sent" y se permite exportar presupuestos a Holded, exportar automáticamente
-      // Non-blocking: Holded export failure should NOT block the status change
-      if (status === 'sent' && canExportQuotes) {
-        console.log('🚀 Attempting to export to Holded after status change to sent');
-        try {
-          const { error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
-            body: { quoteId }
-          });
-
-          if (holdedError) {
-            console.error('❌ Error exporting to Holded:', holdedError);
-            return { holdedError: holdedError.message };
-          }
-          console.log('✅ Successfully exported to Holded');
-        } catch (holdedErr: any) {
-          console.error('❌ Error exporting to Holded:', holdedErr);
-          return { holdedError: holdedErr.message || 'Error desconocido al exportar a Holded' };
-        }
-      }
+      // Holded export removed from 'sent' status - now handled in approval flow
     },
-    onSuccess: (result, variables) => {
-      const holdedError = result?.holdedError;
-      if (variables.status === 'sent' && canExportQuotes) {
-        if (holdedError) {
-          toast.warning(`Estado actualizado, pero error al exportar a Holded: ${holdedError}`);
-        } else {
-          toast.success('Estado actualizado y presupuesto exportado a Holded');
-        }
-      } else {
-        toast.success('Estado actualizado correctamente');
-      }
+    onSuccess: (_result, _variables) => {
+      toast.success('Estado actualizado correctamente');
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
     },
@@ -576,48 +549,45 @@ export default function QuoteDetail() {
                     disabled={updateStatusMutation.isPending}
                     className="h-6 text-xs px-2"
                   >
-                    {canExportQuotes ? 'Enviar a Holded' : 'Enviar'}
+                    Enviar
                   </Button>
                 )}
                 {quote.status === 'sent' && (!isComercial || isOwnQuote) && (
-                  <>
-                    {canExportQuotes && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={async () => {
-                          try {
-                            toast.info('Reenviando a Holded...');
-                            const { data: holdedData, error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
-                              body: { quoteId: quote.id }
-                            });
-                            if (holdedError) {
-                              // Extract real error message from response body
-                              const realMessage = holdedData?.error || holdedError.message;
-                              toast.error(`Error al reenviar a Holded: ${realMessage}`);
-                            } else {
-                              toast.success('Presupuesto reenviado a Holded correctamente');
-                              queryClient.invalidateQueries({ queryKey: ['quote', id] });
-                            }
-                          } catch (err: any) {
-                            toast.error(`Error al reenviar: ${err.message || 'Error desconocido'}`);
-                          }
-                        }}
-                        className="h-6 text-xs px-2"
-                      >
-                        Reenviar a Holded
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => updateStatusMutation.mutate({ quoteId: quote.id, status: 'rejected' })}
-                      disabled={updateStatusMutation.isPending}
-                      className="h-6 text-xs px-2"
-                    >
-                      Rechazar
-                    </Button>
-                  </>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => updateStatusMutation.mutate({ quoteId: quote.id, status: 'rejected' })}
+                    disabled={updateStatusMutation.isPending}
+                    className="h-6 text-xs px-2"
+                  >
+                    Rechazar
+                  </Button>
+                )}
+                {quote.status === 'approved' && canExportQuotes && (!isComercial || isOwnQuote) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        toast.info('Reenviando a Holded...');
+                        const { data: holdedData, error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
+                          body: { quoteId: quote.id }
+                        });
+                        if (holdedError) {
+                          const realMessage = holdedData?.error || holdedError.message;
+                          toast.error(`Error al reenviar a Holded: ${realMessage}`);
+                        } else {
+                          toast.success('Presupuesto reenviado a Holded correctamente');
+                          queryClient.invalidateQueries({ queryKey: ['quote', id] });
+                        }
+                      } catch (err: any) {
+                        toast.error(`Error al reenviar: ${err.message || 'Error desconocido'}`);
+                      }
+                    }}
+                    className="h-6 text-xs px-2"
+                  >
+                    Reenviar a Holded
+                  </Button>
                 )}
               </div>
             </div>

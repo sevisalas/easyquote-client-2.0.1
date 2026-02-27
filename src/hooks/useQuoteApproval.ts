@@ -13,7 +13,7 @@ interface ApproveQuoteParams {
 export const useQuoteApproval = () => {
   const { toast } = useToast();
   const { membership, organization } = useSubscription();
-  const { canExportOrders } = useHoldedIntegration();
+  const { canExportOrders, canExportQuotes } = useHoldedIntegration();
   const [loading, setLoading] = useState(false);
 
   const approveQuote = async ({ quoteId, selectedItemIds, itemQuantities }: ApproveQuoteParams) => {
@@ -315,7 +315,24 @@ export const useQuoteApproval = () => {
         // Don't throw - the order was created successfully
       }
 
-      // Export to Holded if integration is active
+      // Export quote (estimate) to Holded with only approved items
+      if (canExportQuotes) {
+        try {
+          console.log('🚀 Exporting estimate to Holded:', quoteId);
+          const { error: estimateError } = await supabase.functions.invoke('holded-export-estimate', {
+            body: { quoteId }
+          });
+          if (estimateError) {
+            console.error('❌ Error exporting estimate to Holded:', estimateError);
+          } else {
+            console.log('✅ Successfully exported estimate to Holded');
+          }
+        } catch (estimateErr) {
+          console.error('Error exporting estimate to Holded:', estimateErr);
+        }
+      }
+
+      // Export order to Holded if integration is active
       if (canExportOrders) {
         try {
           console.log('🚀 Exporting new order to Holded:', salesOrder.id);
