@@ -318,7 +318,7 @@ export default function Template8({ data }: Template8Props) {
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: 'bold', color: BRAND.totalColor, borderTop: `2px solid ${BRAND.totalColor}`, paddingTop: '6px' }}>
-            <span>TOTAL:</span>
+            <span>TOTAL (sin I.V.A.):</span>
             <span>{fmtEUR(quote.final_price || 0)}</span>
           </div>
         </div>
