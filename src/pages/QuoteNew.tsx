@@ -502,7 +502,7 @@ export default function QuoteNew() {
               return true;
             })
             .map((p: any) => `${p.label}: ${String(p.value).trim()}`)
-            .join(", ");
+            .join("\n");
         }
 
         return {
