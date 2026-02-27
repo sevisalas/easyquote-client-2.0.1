@@ -344,10 +344,14 @@ export const useQuoteApproval = () => {
         }
       }
 
-      // Update quote status to approved ONLY after order and items are created successfully
+      // Update quote status AND recalculate totals based on approved items only
       const { error: updateQuoteError } = await supabase
         .from('quotes')
-        .update({ status: 'approved' })
+        .update({ 
+          status: 'approved',
+          subtotal,
+          final_price: finalPrice,
+        })
         .eq('id', quoteId);
 
       if (updateQuoteError) {
