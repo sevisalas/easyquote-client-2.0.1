@@ -126,7 +126,7 @@ export default function QuoteEdit() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
-  const { isHoldedActive, canExportQuotes } = useHoldedIntegration();
+  const { isHoldedActive, canExportQuotesOnSend } = useHoldedIntegration();
 
   const [formData, setFormData] = useState<Partial<Quote>>({});
   const [items, setItems] = useState<QuoteItem[]>([]);
@@ -716,7 +716,7 @@ export default function QuoteEdit() {
 
   const handleStatusChange = async (newStatus: string) => {
     // Block sending if customer has no holded_id and Holded is active
-    if ((newStatus === 'sent' || newStatus === 'approved') && canExportQuotes) {
+    if ((newStatus === 'sent' && canExportQuotesOnSend) || newStatus === 'approved') {
       // Check customer holded_id
       if (formData.customer_id) {
         const { data: customer } = await supabase
@@ -742,10 +742,27 @@ export default function QuoteEdit() {
       // Guardar automáticamente con el nuevo estado y esperar a que se complete
       await updateQuoteMutation.mutateAsync(updatedFormData);
 
+      // Export to Holded on 'sent' only for 'all' mode
+      if (newStatus === 'sent' && canExportQuotesOnSend && id) {
+        console.log('🚀 Attempting to export to Holded after status change to sent');
+        try {
+          const { error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
+            body: { quoteId: id }
+          });
+          if (holdedError) {
+            console.error('❌ Error exporting to Holded:', holdedError);
+            toast.warning("Presupuesto enviado, pero hubo un error al exportar a Holded");
+          } else {
+            console.log('✅ Successfully exported to Holded');
+            toast.success("Presupuesto exportado a Holded exitosamente");
+          }
+        } catch (holdedErr) {
+          console.error('❌ Error exporting to Holded:', holdedErr);
+          toast.warning("Presupuesto enviado, pero hubo un error al exportar a Holded");
+        }
+      }
+
       // Redirect to detail view after status change (can't edit non-draft)
-      queryClient.invalidateQueries({ queryKey: ["quote", id] });
-      queryClient.invalidateQueries({ queryKey: ["quotes"] });
-      navigate(`/presupuestos/${id}`);
     } catch (error) {
       console.error('Error in handleStatusChange:', error);
       setIsStatusChange(false); // Reset flag on error
@@ -857,7 +874,7 @@ export default function QuoteEdit() {
                     onClick={() => handleStatusChange('sent')}
                     className="h-7 text-xs"
                   >
-                    Enviar
+                    {canExportQuotesOnSend ? 'Enviar a Holded' : 'Enviar'}
                   </Button>
                 )}
               </div>
