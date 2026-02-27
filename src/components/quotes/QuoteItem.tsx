@@ -2551,7 +2551,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                                   : "text-lg font-semibold"
                               }
                             >
-                              {formatEUR(compositeTotalPrice)}
+                              {formatEUR(finalPrice)}
                             </span>
                           </div>
 
@@ -2567,7 +2567,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setUserEditedPrice(userEditedPrice === null ? compositeTotalPrice : null)}
+                                onClick={() => setUserEditedPrice(userEditedPrice === null ? finalPrice : null)}
                               >
                                 {userEditedPrice !== null ? "Usar precio calculado" : "Editar precio"}
                               </Button>
