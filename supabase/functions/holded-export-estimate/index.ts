@@ -91,18 +91,27 @@ Deno.serve(async (req) => {
     console.log('📦 Quote items fetched:', JSON.stringify(quoteItems, null, 2));
     console.log('📦 Quote additionals from quote JSON:', JSON.stringify(quoteAdditionals, null, 2));
 
-    // Get customer holded_id if customer_id exists
+    // Get customer Holded data if customer_id exists
     let contactId: string | null = null;
+    let contactData: any = null;
     
     if (quote.customer_id) {
       const { data: customer } = await supabase
         .from('customers')
-        .select('holded_id')
+        .select('holded_id, name, email, phone, address, organization_id')
         .eq('id', quote.customer_id)
         .maybeSingle();
       
-      if (customer?.holded_id) {
-        contactId = customer.holded_id;
+      if (customer) {
+        // Safety guard: customer must belong to the same organization as the quote
+        if (quote.organization_id && customer.organization_id && customer.organization_id !== quote.organization_id) {
+          throw new Error('El cliente seleccionado no pertenece a la organización del presupuesto');
+        }
+
+        contactData = customer;
+        if (customer.holded_id) {
+          contactId = customer.holded_id;
+        }
       }
     }
 
@@ -1020,6 +1029,7 @@ Deno.serve(async (req) => {
       docType: 'estimate',
       date: Math.floor(new Date(quote.created_at).getTime() / 1000), // Unix timestamp
       contactId: contactId,
+      contactName: contactData?.name || '',
       desc: quote.description || 'Pruebas de EasyQuote',
       notes: quote.notes || '',
       items: items,
@@ -1036,6 +1046,19 @@ Deno.serve(async (req) => {
       estimatePayload.shipping = 'hidden';
     }
     
+    // Add contact address/email/phone if available (helps Holded contact auto-creation fallback)
+    if (contactData?.address) {
+      estimatePayload.contactAddress = contactData.address;
+    }
+
+    if (contactData?.email) {
+      estimatePayload.contactEmail = contactData.email;
+    }
+
+    if (contactData?.phone) {
+      estimatePayload.contactPhone = contactData.phone;
+    }
+
     // Add global discount if exists
     if (globalDiscount > 0) {
       estimatePayload.discount = globalDiscount;
