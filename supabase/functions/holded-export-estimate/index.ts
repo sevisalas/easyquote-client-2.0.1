@@ -28,8 +28,8 @@ Deno.serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { quoteId } = await req.json();
-    console.log('Exporting quote to Holded:', quoteId);
+    const { quoteId, approvedItemIds } = await req.json();
+    console.log('Exporting quote to Holded:', quoteId, 'approvedItemIds:', approvedItemIds);
 
     if (!quoteId) {
       throw new Error('quoteId is required');
@@ -85,10 +85,17 @@ Deno.serve(async (req) => {
       throw new Error('Failed to fetch quote items');
     }
 
+    // Filter by approved items if specified (when called from approval flow)
+    let filteredItems = quoteItems || [];
+    if (Array.isArray(approvedItemIds) && approvedItemIds.length > 0) {
+      filteredItems = filteredItems.filter((item: any) => approvedItemIds.includes(item.id));
+      console.log(`📋 Filtered to ${filteredItems.length} approved items out of ${quoteItems?.length || 0} total`);
+    }
+
     // Get quote additionals from the quote's JSON field (not from separate table)
     const quoteAdditionals = quote.quote_additionals || [];
 
-    console.log('📦 Quote items fetched:', JSON.stringify(quoteItems, null, 2));
+    console.log('📦 Quote items (filtered):', JSON.stringify(filteredItems, null, 2));
     console.log('📦 Quote additionals from quote JSON:', JSON.stringify(quoteAdditionals, null, 2));
 
     // Get customer Holded data if customer_id exists
@@ -450,7 +457,7 @@ Deno.serve(async (req) => {
     // Prefetch prompt definitions for all products present in the quote (to evaluate dynamic visibility)
     const productIdsForVisibility = Array.from(
       new Set(
-        (quoteItems || [])
+        (filteredItems || [])
           .map((i: any) => i?.product_id)
           .filter((id: any) => typeof id === 'string' && id && id !== '__CUSTOM_PRODUCT__'),
       ),
@@ -562,7 +569,7 @@ Deno.serve(async (req) => {
     let hasMultiQuantities = false;
     let globalQtyCounter = 0; // Counter for continuous Q1, Q2, Q3, Q4 numbering
     
-    quoteItems.forEach((item: any) => {
+    filteredItems.forEach((item: any) => {
       console.log('🔍 Processing item - ALL FIELDS:', JSON.stringify(item, null, 2));
 
       const itemProductId = String(item.product_id || '');

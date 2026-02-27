@@ -318,9 +318,11 @@ export const useQuoteApproval = () => {
       // Export quote (estimate) to Holded with only approved items
       if (canExportQuotesOnApproval) {
         try {
-          console.log('🚀 Exporting estimate to Holded:', quoteId);
+          // Send approved item IDs so the edge function only exports those
+          const approvedItemIds = itemsToApprove.map((item: any) => item.id);
+          console.log('🚀 Exporting estimate to Holded:', quoteId, 'with approved items:', approvedItemIds);
           const { error: estimateError } = await supabase.functions.invoke('holded-export-estimate', {
-            body: { quoteId }
+            body: { quoteId, approvedItemIds }
           });
           if (estimateError) {
             console.error('❌ Error exporting estimate to Holded:', estimateError);
