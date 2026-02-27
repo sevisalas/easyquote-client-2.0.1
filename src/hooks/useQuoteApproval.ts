@@ -304,6 +304,46 @@ export const useQuoteApproval = () => {
         console.error('Error copying attachments (non-fatal):', attachErr);
       }
 
+      // Mark approved items as accepted and non-approved items as not accepted
+      const allItemIds = quote.items.map((item: any) => item.id);
+      const approvedIds = itemsToApprove.map((item: any) => item.id);
+      const nonApprovedIds = allItemIds.filter((id: string) => !approvedIds.includes(id));
+
+      // Mark approved items
+      if (approvedIds.length > 0) {
+        const { error: acceptError } = await supabase
+          .from('quote_items')
+          .update({ accepted: true })
+          .in('id', approvedIds);
+        
+        if (acceptError) {
+          console.error('Error marking items as accepted:', acceptError);
+        }
+      }
+
+      // Mark non-approved items explicitly as not accepted
+      if (nonApprovedIds.length > 0) {
+        const { error: rejectError } = await supabase
+          .from('quote_items')
+          .update({ accepted: false })
+          .in('id', nonApprovedIds);
+        
+        if (rejectError) {
+          console.error('Error marking items as not accepted:', rejectError);
+        }
+      }
+
+      // Update multi-quantity items with the selected quantity
+      for (const item of itemsToApprove) {
+        const multi = item.multi as any;
+        if (multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1 && itemQuantities?.[item.id]) {
+          await supabase
+            .from('quote_items')
+            .update({ accepted_quantity: itemQuantities[item.id] })
+            .eq('id', item.id);
+        }
+      }
+
       // Update quote status to approved ONLY after order and items are created successfully
       const { error: updateQuoteError } = await supabase
         .from('quotes')

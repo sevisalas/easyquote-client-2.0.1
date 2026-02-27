@@ -339,8 +339,12 @@ export const generateQuotePDF = async (
     }
     console.log('[PDF] hideAllPromptsInDocs:', hideAllPromptsInDocs);
 
-    // Format items - mantener orden original de prompts, filtrando los ocultos
-    const formattedItems = (quote.items || []).map((item: any) => {
+    // Format items - filter to only accepted items when quote is approved
+    const itemsToRender = quote.status === 'approved'
+      ? (quote.items || []).filter((item: any) => item.accepted === true)
+      : (quote.items || []);
+    
+    const formattedItems = itemsToRender.map((item: any) => {
       const images: string[] = [];
       const promptsFormatted: Array<{label: string, value: string}> = [];
       
