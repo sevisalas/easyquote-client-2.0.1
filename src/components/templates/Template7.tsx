@@ -304,7 +304,7 @@ export default function Template7({ data }: Template7Props) {
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: 'bold', color: '#4a7c2e', borderTop: '2px solid #4a7c2e', paddingTop: '6px' }}>
-            <span>TOTAL:</span>
+            <span>TOTAL (sin I.V.A.):</span>
             <span>{fmtEUR(quote.final_price || 0)}</span>
           </div>
         </div>
