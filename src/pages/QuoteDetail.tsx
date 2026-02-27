@@ -379,7 +379,7 @@ export default function QuoteDetail() {
   
   const isEditable = (quote?.status === 'draft' || quote?.status === 'pending') && 
     (!isComercial || isOwnQuote);
-  const canApprove = (membership?.role === 'admin' || (membership?.role === 'comercial' && isOwnQuote));
+  const canApprove = (membership?.role === 'admin' || membership?.role === 'gestor' || (membership?.role === 'comercial' && isOwnQuote));
   const isApprovable = quote?.status === 'sent' && canApprove;
 
   const handleEditOrDuplicate = () => {
