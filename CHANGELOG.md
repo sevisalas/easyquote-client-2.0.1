@@ -5,6 +5,13 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.20] - 2026-02-27
+
+### Corregido
+- **Precio de productos compuestos no se actualizaba**: El bloque "Resultado" de productos compuestos (ej: encuadernados) ahora muestra el precio dinámico (`finalPrice`) en lugar del estático, actualizándose correctamente al cambiar la cantidad de ejemplares
+
+---
+
 ## [2.5.19] - 2026-02-26
 
 ### Cambiado
