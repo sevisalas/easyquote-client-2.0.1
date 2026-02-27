@@ -22,7 +22,7 @@ export const useQuoteApproval = () => {
 
       // Check user role
       const userRole = membership?.role;
-      if (!userRole || !['admin', 'comercial'].includes(userRole)) {
+      if (!userRole || !['admin', 'gestor', 'comercial'].includes(userRole)) {
         throw new Error('No tienes permisos para aprobar presupuestos');
       }
 
