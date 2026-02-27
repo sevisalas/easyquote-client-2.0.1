@@ -1,56 +1,72 @@
 
-Objetivo: arreglar de forma definitiva que en los PDFs de plantillas 7 y 8 siga saliendo “cantidad 1” y aparezca el subtotal cuando no toca, sin tocar nada hasta tu aprobación.
+# Cambio: Exportar a Holded solo al aprobar (no al enviar)
 
-1) Diagnóstico claro de por qué te sigue saliendo mal
-- El PDF que genera la app NO usa la edge function `format-quote-for-pdf`; usa `src/utils/pdfGenerator.ts`.
-- En tu presupuesto `PR-26-000100`, en base de datos:
-  - `quote_items.quantity = 1` (valor técnico)
-  - pero en prompts existe `Cantidad ejemplares = 2000` (valor real que quieres ver)
-- Tu organización tiene `hide_all_prompts_in_documents = true`.
-  - Eso hace que `pdfGenerator` borre todos los prompts antes de enviar datos al template.
-  - Como el template busca “Cantidad ejemplares” dentro de prompts y ya no existe, cae al fallback `quantity || 1`.
-  - Resultado: sale 1.
-- El cambio previo en template 7/8 era correcto, pero insuficiente con “ocultar todos los prompts”.
+## Resumen del cambio
 
-2) Qué voy a cambiar (sin ambigüedad)
-A) Fuente de cantidad (fix principal)
-- Archivo: `src/utils/pdfGenerator.ts`
-- Antes de filtrar/ocultar prompts, voy a extraer la cantidad visible real (ej. “Cantidad ejemplares”).
-- Añadiré un campo explícito por item (por ejemplo `displayQuantity`) que viaje al template aunque los prompts estén ocultos.
-- Mantendré `quantity` técnico para no romper cálculos actuales.
+Actualmente, el presupuesto se exporta a Holded cuando su estado cambia a **"enviado"**. El nuevo comportamiento sera:
 
-B) Render de UNID. en plantillas 7 y 8
-- Archivos:
-  - `src/components/templates/Template7.tsx`
-  - `src/components/templates/Template8.tsx`
-- `getItemQuantity` priorizará `item.displayQuantity` y solo si no existe hará fallback.
-- Así, aunque ocultemos prompts en documentos, UNID. mostrará 2000 (o lo que corresponda).
+- **Estado "enviado"**: Solo cambia el estado del presupuesto internamente. **No se exporta nada a Holded**.
+- **Estado "aprobado"**: Al aprobar, ocurren dos cosas simultaneas:
+  1. Se exporta el **presupuesto** a Holded (solo con los items aprobados)
+  2. Se genera el **pedido** y se exporta a Holded (esto ya ocurre)
 
-C) Subtotal (según lo acordado)
-- Mantener en 7/8 la regla: “mostrar subtotal de resumen solo si hay IVA o descuento”.
-- No cambiaré más comportamiento fuera de 7 y 8 para no tocar otras marcas/plantillas.
+## Archivos a modificar
 
-D) Endurecer selección de plantilla (evitar PDF “equivocado” por fallback)
-- Archivo: `src/utils/pdfGenerator.ts`
-- Ajustaré `getTemplateConfig` para que priorice siempre `quote.organization_id` cuando está disponible, incluso si `getUser()` falla en ese momento.
-- Esto evita que vuelva por defecto a plantilla 1 y parezca que “no cambió nada”.
+### 1. `src/pages/QuoteDetail.tsx`
+- **Eliminar** la exportacion a Holded en `updateStatusMutation` cuando `status === 'sent'` (lineas 336-354, y el manejo en onSuccess lineas 356-363)
+- **Eliminar** el boton "Reenviar a Holded" que aparece en estado `sent` (lineas 584-609)
+- Cambiar el texto del boton de "Enviar a Holded" a simplemente **"Enviar"** (linea 579)
+- **Mover** la logica de exportar presupuesto a Holded al flujo de aprobacion (o delegarla al hook `useQuoteApproval`)
 
-3) Resultado esperado tras aplicar
-- En plantillas 7 y 8:
-  - UNID. mostrará la cantidad real (ej. 2000), no 1.
-  - El subtotal del bloque de totales se ocultará cuando IVA=0 y descuento=0.
-- Seguirás pudiendo tener prompts ocultos en documentos sin romper la cantidad visible.
+### 2. `src/pages/QuoteNew.tsx`
+- **Eliminar** la exportacion a Holded cuando `status === 'sent'` (lineas 538-568)
+- Cambiar el texto del boton de "Guardar y enviar a Holded" a **"Guardar y enviar"** (linea 778)
 
-4) Verificación que haré después del cambio
-- Regenerar el PDF del mismo presupuesto (`PR-26-000100`).
-- Comprobar:
-  1) UNID. = 2000 en ambos ítems.
-  2) bloque “Subtotal” oculto cuando IVA y descuento son 0.
-  3) plantilla aplicada realmente es 7/8 (no fallback).
+### 3. `src/pages/QuoteEdit.tsx`
+- **Eliminar** la exportacion a Holded en `handleStatusChange` cuando `newStatus === 'sent'` (lineas 745-763)
+- Cambiar el texto del boton de "Enviar a Holded" a **"Enviar"** (linea 881)
 
-5) Riesgo controlado
-- Bajo riesgo: cambios acotados a `pdfGenerator` + templates 7/8.
-- No toca estructura de base de datos ni edge functions.
-- No cambia lógica de precios, solo presentación de cantidad y selección robusta de plantilla.
+### 4. `src/hooks/useQuoteApproval.ts`
+- **Agregar** la exportacion del presupuesto a Holded (`holded-export-estimate`) al flujo de aprobacion, **antes** de la exportacion del pedido
+- El presupuesto exportado reflejara solo los items aprobados (los `selectedItemIds`), que es exactamente lo mismo que se envia como pedido
+- La exportacion del pedido (`holded-export-order`) ya existe y se mantiene igual
 
-Si apruebas este plan, lo implemento exactamente así, en ese orden.
+### 5. `src/pages/QuoteDetail.tsx` (aprobacion)
+- Eliminar la validacion de `customerMissingHoldedId` para el estado `sent` (mantenerla solo para `approved`)
+- Agregar un boton "Reenviar a Holded" en estado `approved` (en lugar de en `sent`)
+
+## Flujo resultante
+
+```text
+Borrador --> Enviado --> Aprobado
+                          |
+                          +--> Exporta presupuesto a Holded (solo items aprobados)
+                          +--> Genera pedido
+                          +--> Exporta pedido a Holded
+```
+
+## Detalle tecnico
+
+En `useQuoteApproval.ts`, justo antes del bloque existente `if (canExportOrders)`, se agregara:
+
+```typescript
+// Export quote (estimate) to Holded with only approved items
+if (canExportQuotes) {
+  try {
+    const { error } = await supabase.functions.invoke('holded-export-estimate', {
+      body: { quoteId }
+    });
+    if (error) console.error('Error exporting estimate to Holded:', error);
+  } catch (err) {
+    console.error('Error exporting estimate to Holded:', err);
+  }
+}
+```
+
+El hook necesitara acceso a `canExportQuotes` desde `useHoldedIntegration` (actualmente solo usa `canExportOrders`).
+
+## Lo que NO cambia
+- El edge function `holded-export-estimate` no necesita cambios (ya exporta el presupuesto completo)
+- El edge function `holded-export-order` no necesita cambios
+- La logica de seleccion de items y cantidades en la aprobacion se mantiene igual
+- La validacion de `holded_id` del cliente se mantiene, pero solo se aplica al aprobar
