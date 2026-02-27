@@ -468,7 +468,7 @@ export default function QuoteEdit() {
                 return true;
               })
               .map((p: any) => `${p.label}: ${String(p.value).trim()}`)
-              .join(", ");
+              .join("\n");
           }
 
           return {
