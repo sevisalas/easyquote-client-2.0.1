@@ -349,7 +349,7 @@ export default function Template7({ data }: Template7Props) {
           zIndex: 1,
         }}
       >
-        <p style={{ margin: 0, fontWeight: 'bold', fontSize: '12px', color: '#1a3a5c' }}>CAMPILLO NEVADO S.L.</p>
+        <p style={{ margin: 0, fontWeight: 'bold', fontSize: '12px', color: '#1a3a5c' }}>CAMPILLO NEVADO S.A.</p>
         <p style={{ margin: 0 }}>Desierto de Tabernas, 8</p>
         <p style={{ margin: 0 }}>28320 PINTO (Madrid)</p>
         <p style={{ margin: 0 }}>Teléf. 91 560 93 34</p>
