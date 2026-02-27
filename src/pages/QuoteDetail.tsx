@@ -850,6 +850,41 @@ export default function QuoteDetail() {
                               </div>
                             )}
                             
+                            {/* Display all multi-quantity rows after approval, highlighting the selected one */}
+                            {hasMultipleQuantities && quote.status === 'approved' && item.accepted && item.accepted_quantity && (
+                              <div className="mt-2 space-y-1">
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Cantidades presupuestadas:</p>
+                                {multi.rows
+                                  .filter((row: any) => {
+                                    const qty = row.qty || row.quantity;
+                                    return qty != null && qty !== '' && qty !== 0 && qty !== '0';
+                                  })
+                                  .map((row: any, idx: number) => {
+                                    const qty = row.qty || row.quantity;
+                                    const rowPrice = parseFloat(row.outs?.find((o: any) => o.type === 'Price')?.value || row.price || 0);
+                                    const isApproved = Number(qty) === Number(item.accepted_quantity);
+                                    return (
+                                      <div 
+                                        key={idx} 
+                                        className={`flex items-center justify-between text-xs px-2 py-1 rounded border ${
+                                          isApproved 
+                                            ? 'bg-green-500/10 border-green-500/30 text-foreground font-medium' 
+                                            : 'bg-muted/30 border-transparent text-muted-foreground opacity-50 line-through'
+                                        }`}
+                                      >
+                                        <span>{qty} uds.</span>
+                                        <span>{fmtEUR(rowPrice)}</span>
+                                        {isApproved && (
+                                          <Badge variant="outline" className="text-[10px] h-4 bg-green-500/10 text-green-600 border-green-500/20 ml-1">
+                                            Aprobada
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            )}
+                            
                             {/* Collapsible details */}
                             <CollapsibleContent className="mt-2 space-y-0.5">
                               {/* Descripción y cantidad para productos personalizados */}
