@@ -1858,6 +1858,22 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     // Marcar que el usuario ha cambiado valores (solo en commit, no en cada keystroke)
     setUserHasChangedCurrentProduct(true);
     
+    // Si multi-cantidades está activo y el usuario cambia el prompt de cantidad principal,
+    // sincronizar ese valor con Q1 para que la multi-query lo recoja
+    if (multiEnabled && qtyPrompt && String(id) === String(qtyPrompt)) {
+      const strValue = String(value ?? "");
+      setQtyInputs(prev => {
+        const next = [...prev];
+        next[0] = strValue;
+        return next;
+      });
+      setLocalQtyInputs(prev => {
+        const next = [...prev];
+        next[0] = strValue;
+        return next;
+      });
+    }
+    
     // Actualizar el estado de prompts con el valor final
     setPromptValues((prev) => {
       let order = prev[id]?.order;
@@ -1886,7 +1902,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       
       return newValues;
     });
-  }, [pricing]);
+  }, [pricing, multiEnabled, qtyPrompt]);
 
   // Sync with parent only on specific user actions, not automatically
   const syncToParent = useCallback(() => {
