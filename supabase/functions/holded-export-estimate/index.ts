@@ -1101,19 +1101,29 @@ Deno.serve(async (req) => {
 
     const holdedData = JSON.parse(holdedResponseText);
 
-    // Update quote with Holded estimate ID
+    // Update quote with Holded estimate ID (do NOT override status - let the caller manage it)
     if (holdedData.id) {
+      // Check current quote status to avoid overwriting 'approved' with 'sent'
+      const { data: currentQuote } = await supabase
+        .from('quotes')
+        .select('status')
+        .eq('id', quoteId)
+        .single();
+      
+      const updatePayload: any = {
+        holded_estimate_id: holdedData.id,
+        holded_estimate_number: holdedData.invoiceNum ?? null,
+        holded_id: holdedData.id,
+      };
+      
+      // Only set status to 'sent' if the quote is NOT already approved
+      if (currentQuote?.status !== 'approved') {
+        updatePayload.status = 'sent';
+      }
+      
       await supabase
         .from('quotes')
-        .update({
-          // Backwards-compatible fields used by the UI + PDF download
-          holded_estimate_id: holdedData.id,
-          holded_estimate_number: holdedData.invoiceNum ?? null,
-
-          // New canonical field
-          holded_id: holdedData.id,
-          status: 'sent'
-        })
+        .update(updatePayload)
         .eq('id', quoteId);
 
       console.log('Quote updated with Holded ID:', holdedData.id);

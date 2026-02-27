@@ -747,7 +747,9 @@ export default function QuoteDetail() {
                       }}
                     >
                       <div className={`bg-card border rounded-md p-2 border-r-2 hover:shadow transition-all duration-200 ${
-                        item.accepted ? 'border-r-green-500 bg-green-50/5' : 'border-r-primary'
+                        quote.status === 'approved' 
+                          ? (item.accepted ? 'border-r-green-500 bg-green-50/5' : 'border-r-muted opacity-50 bg-muted/20')
+                          : (item.accepted ? 'border-r-green-500 bg-green-50/5' : 'border-r-primary')
                       }`}>
                         <div className="flex justify-between items-start gap-3">
                           {isApprovable && !item.accepted && (
@@ -768,6 +770,11 @@ export default function QuoteDetail() {
                               {item.accepted && (
                                 <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
                                   Aprobado {item.accepted_quantity && `(${item.accepted_quantity})`}
+                                </Badge>
+                              )}
+                              {quote.status === 'approved' && item.accepted === false && (
+                                <Badge variant="outline" className="text-xs bg-muted text-muted-foreground">
+                                  No aprobado
                                 </Badge>
                               )}
                               {hasDetails && (
