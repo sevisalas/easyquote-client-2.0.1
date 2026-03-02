@@ -778,15 +778,19 @@ export default function ProductTestPage({
         if (!id) continue;
 
         const apiValue = p?.currentValue;
-        const options = Array.isArray(p?.valueOptions) ? p.valueOptions : [];
+        const rawOptions = Array.isArray(p?.valueOptions) ? p.valueOptions : [];
+        // Normalizar opciones: pueden ser strings o objetos {value, label}
+        const optionValues = rawOptions.map((o: any) =>
+          typeof o === 'string' ? o : (o?.value ?? o?.label ?? String(o))
+        );
 
         const prevVal = next[id];
         const hasPrev = prevVal !== undefined && prevVal !== null && String(prevVal).trim() !== "";
 
         // Si deja de ser válido, o el API cambió explícitamente el currentValue, corregimos.
-        const inOptions = options.length === 0
+        const inOptions = optionValues.length === 0
           ? true
-          : (!hasPrev || options.some((o: any) => norm(o) === norm(prevVal)));
+          : (!hasPrev || optionValues.some((ov: any) => norm(ov) === norm(prevVal)));
         const apiChangedExplicitly = apiValue !== undefined && apiValue !== null && norm(apiValue) !== norm(prevVal);
 
         if ((!inOptions || apiChangedExplicitly) && apiValue !== undefined && apiValue !== null) {
