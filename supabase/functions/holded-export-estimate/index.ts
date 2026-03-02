@@ -238,6 +238,15 @@ Deno.serve(async (req) => {
     const apiUserId = orgData?.api_user_id;
     const hideAllPromptsInDocs = orgData?.hide_all_prompts_in_documents === true;
     console.log('🙈 hideAllPromptsInDocs:', hideAllPromptsInDocs);
+
+    // Check if org uses template 7/8 (Campillo/Anebri) → skip adjustments in Holded
+    const { data: pdfConfig } = await supabase
+      .from('pdf_configurations')
+      .select('selected_template')
+      .eq('organization_id', organizationId)
+      .maybeSingle();
+    const hideAdjustmentsInHolded = pdfConfig?.selected_template === 7 || pdfConfig?.selected_template === 8;
+    console.log('🔧 hideAdjustmentsInHolded:', hideAdjustmentsInHolded, 'template:', pdfConfig?.selected_template);
     
     // Get hidden prompt settings: hide_in_documents OR admin_only (if user can't see it, client shouldn't either)
     const { data: hiddenPromptSettings } = await supabase
@@ -777,7 +786,7 @@ Deno.serve(async (req) => {
         // OUTPUTS SON DATOS INTERNOS - NO SE ENVÍAN A HOLDED
         
         // Add item additionals (ajustes sobre el artículo) at the end
-        if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
+        if (!hideAdjustmentsInHolded && item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
           const additionalsText = item.item_additionals
             .map((additional: any) => {
               const value = additional.value || 0;
@@ -896,7 +905,7 @@ Deno.serve(async (req) => {
         
         // Apply item additionals to the price and calculate discounts
         let discountAmount = 0;
-        if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
+        if (!hideAdjustmentsInHolded && item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
           item.item_additionals.forEach((additional: any) => {
             const value = additional.value || 0;
             // Detect discount: either explicitly marked or has negative value
@@ -971,7 +980,7 @@ Deno.serve(async (req) => {
     let globalDiscount = 0;
     
     // Add quote additionals (ajustes sobre el presupuesto)
-    if (quoteAdditionals && Array.isArray(quoteAdditionals) && quoteAdditionals.length > 0) {
+    if (!hideAdjustmentsInHolded && quoteAdditionals && Array.isArray(quoteAdditionals) && quoteAdditionals.length > 0) {
       quoteAdditionals.forEach((additional: any) => {
         const value = additional.value || 0;
         // Detect discount: either explicitly marked or has negative value

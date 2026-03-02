@@ -246,6 +246,15 @@ Deno.serve(async (req) => {
     const apiUserId = orgData?.api_user_id;
     const hideAllPromptsInDocs = orgData?.hide_all_prompts_in_documents === true;
     console.log('🙈 hideAllPromptsInDocs:', hideAllPromptsInDocs);
+
+    // Check if org uses template 7/8 (Campillo/Anebri) → skip adjustments in Holded
+    const { data: pdfConfig } = await supabase
+      .from('pdf_configurations')
+      .select('selected_template')
+      .eq('organization_id', organizationId)
+      .maybeSingle();
+    const hideAdjustmentsInHolded = pdfConfig?.selected_template === 7 || pdfConfig?.selected_template === 8;
+    console.log('🔧 hideAdjustmentsInHolded:', hideAdjustmentsInHolded, 'template:', pdfConfig?.selected_template);
     
     // Hide prompts: hide_in_documents OR admin_only (if user can't see it, client shouldn't either)
     const { data: hiddenPromptSettings } = await supabase
@@ -746,7 +755,7 @@ Deno.serve(async (req) => {
     });
 
     // Add order additionals
-    if (orderAdditionals && Array.isArray(orderAdditionals) && orderAdditionals.length > 0) {
+    if (!hideAdjustmentsInHolded && orderAdditionals && Array.isArray(orderAdditionals) && orderAdditionals.length > 0) {
       orderAdditionals.forEach((additional: any) => {
         const value = additional.value || 0;
         const isDiscount = additional.is_discount === true || value < 0;
