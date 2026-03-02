@@ -1,0 +1,1 @@
+UPDATE customers SET address = NULL WHERE address = '[object Object]';
