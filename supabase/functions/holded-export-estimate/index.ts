@@ -828,6 +828,13 @@ Deno.serve(async (req) => {
               ? priceValue 
               : parseFloat(String(priceValue || 0).replace(/\./g, "").replace(",", ".")) || 0;
             console.log('💰 Price from output type=Price (sin IVA):', { totalPrice, outputName: priceOutput.name, outputType: priceOutput.type });
+            
+            // Fallback: if output Price is 0 but item.price has a real value, use item.price
+            // This happens with composite products where the price is stored directly on the item
+            if (totalPrice === 0 && parseFloat(item.price) > 0) {
+              totalPrice = parseFloat(item.price);
+              console.log('💰 Output Price was 0, using item.price fallback:', totalPrice);
+            }
           } else {
             console.log('⚠️ No output with type=Price found! Available types:', item.outputs.map((o: any) => ({ type: o.type, name: o.name })));
             // Fallback: use item.price but it might include IVA
