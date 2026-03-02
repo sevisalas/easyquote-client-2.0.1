@@ -4,6 +4,28 @@ import { corsHeaders } from "../_shared/cors.ts";
 
 const HOLDED_API_BASE = "https://api.holded.com/api";
 
+// Extract a plain string from a Holded address field (which can be string or object)
+const extractString = (val: unknown): string => {
+  if (typeof val === 'string') return val;
+  if (val && typeof val === 'object') {
+    // Holded address objects may have street, address, info etc.
+    const obj = val as Record<string, unknown>;
+    return (obj.street || obj.address || obj.info || obj.line1 || '') as string;
+  }
+  return '';
+};
+
+const buildAddressString = (contact: any): string | null => {
+  const addressParts = [
+    extractString(contact.billAddress) || extractString(contact.address) || '',
+    typeof contact.billCity === 'string' ? contact.billCity : (typeof contact.city === 'string' ? contact.city : ''),
+    typeof contact.billProvince === 'string' ? contact.billProvince : (typeof contact.province === 'string' ? contact.province : ''),
+    typeof contact.billPostalCode === 'string' ? contact.billPostalCode : (typeof contact.zipcode === 'string' ? contact.zipcode : (typeof contact.postalCode === 'string' ? contact.postalCode : '')),
+    typeof contact.billCountry === 'string' ? contact.billCountry : (typeof contact.country === 'string' ? contact.country : ''),
+  ].filter(Boolean);
+  return addressParts.join(', ') || null;
+};
+
 // Background task to import contacts
 async function importContactsBackground(
   organizationId: string, 
@@ -69,14 +91,7 @@ async function importContactsBackground(
 
     // Transform and insert contacts in batches with source='holded'
     const contactsToInsert = allContacts.map((contact: any) => {
-      const addressParts = [
-        contact.billAddress || contact.address || '',
-        contact.billCity || contact.city || '',
-        contact.billProvince || contact.province || '',
-        contact.billPostalCode || contact.zipcode || contact.postalCode || '',
-        contact.billCountry || contact.country || '',
-      ].filter(Boolean);
-      const fullAddress = addressParts.join(', ') || null;
+      const fullAddress = buildAddressString(contact);
 
       return {
         holded_id: contact.id,
@@ -328,15 +343,7 @@ serve(async (req) => {
 
     // Transform and insert contacts in batches with source='holded'
     const contactsToInsert = allContacts.map((contact: any) => {
-      // Build full address from Holded fields
-      const addressParts = [
-        contact.billAddress || contact.address || '',
-        contact.billCity || contact.city || '',
-        contact.billProvince || contact.province || '',
-        contact.billPostalCode || contact.zipcode || contact.postalCode || '',
-        contact.billCountry || contact.country || '',
-      ].filter(Boolean);
-      const fullAddress = addressParts.join(', ') || null;
+      const fullAddress = buildAddressString(contact);
 
       return {
         holded_id: contact.id,
