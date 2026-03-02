@@ -890,10 +890,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 : prevEntry;
 
             const apiValue = p.currentValue;
-            const options = Array.isArray(p.valueOptions) ? p.valueOptions : [];
+            const rawOptions = Array.isArray(p.valueOptions) ? p.valueOptions : [];
+            // Normalizar opciones: pueden ser strings o objetos {value, label}
+            const optionValues = rawOptions.map((o: any) =>
+              typeof o === 'string' ? o : (o?.value ?? o?.label ?? String(o))
+            );
 
             const hasPrevValue = prevValue !== undefined && prevValue !== null && String(prevValue).trim() !== "";
-            const prevValueIsValid = options.length === 0 ? true : options.some((o: any) => norm(o) === norm(prevValue));
+            const prevValueIsValid = optionValues.length === 0 ? true : optionValues.some((ov: any) => norm(ov) === norm(prevValue));
 
             // Mantener el valor previo si existe y sigue siendo válido; si no, usar el currentValue del API.
             const value = hasPrevValue && prevValueIsValid ? prevValue : apiValue;
