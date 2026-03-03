@@ -10,6 +10,10 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 ### Añadido
 - **Modo de exportación "Presupuestos solo al aprobar"**: Nuevo modo de integración con Holded que exporta presupuestos únicamente al aprobarlos (no al enviarlos), manteniendo la exportación de pedidos sin cambios
 - **Tres modos de exportación configurables**: "Todo" (presupuestos al enviar + pedidos), "Solo pedidos" y "Presupuestos solo al aprobar y pedidos", seleccionables desde Configuración > Integraciones
+- **Detalles de artículos visibles en consulta**: Los ajustes y detalles técnicos de los artículos son consultables en la vista de detalle de presupuestos aunque el documento esté bloqueado o aprobado
+
+### Corregido
+- **Ajustes ocultos en Holded (Campillo/Anebri)**: Los ajustes de artículo y presupuesto ya no aparecen como líneas independientes en Holded; su importe se distribuye proporcionalmente entre los subtotales de los artículos existentes para que el total coincida
 
 ---
 
