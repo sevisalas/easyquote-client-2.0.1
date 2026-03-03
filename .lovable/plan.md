@@ -1,72 +1,62 @@
 
-# Cambio: Exportar a Holded solo al aprobar (no al enviar)
+# Corregir nombre del articulo en pedidos
 
-## Resumen del cambio
+## Problema
 
-Actualmente, el presupuesto se exporta a Holded cuando su estado cambia a **"enviado"**. El nuevo comportamiento sera:
+En `SalesOrderNew.tsx` y `SalesOrderEdit.tsx`, el campo `product_name` se rellena con `itemDescription` (la descripcion larga con los parametros del producto) en lugar del nombre real (ej. "Encuadernado"). En `QuoteNew.tsx` ya esta bien hecho usando `productName` y `displayName`.
 
-- **Estado "enviado"**: Solo cambia el estado del presupuesto internamente. **No se exporta nada a Holded**.
-- **Estado "aprobado"**: Al aprobar, ocurren dos cosas simultaneas:
-  1. Se exporta el **presupuesto** a Holded (solo con los items aprobados)
-  2. Se genera el **pedido** y se exporta a Holded (esto ya ocurre)
+## Cambios
 
-## Archivos a modificar
+La columna `description` ya existe en `sales_order_items`, asi que no hace falta migracion.
 
-### 1. `src/pages/QuoteDetail.tsx`
-- **Eliminar** la exportacion a Holded en `updateStatusMutation` cuando `status === 'sent'` (lineas 336-354, y el manejo en onSuccess lineas 356-363)
-- **Eliminar** el boton "Reenviar a Holded" que aparece en estado `sent` (lineas 584-609)
-- Cambiar el texto del boton de "Enviar a Holded" a simplemente **"Enviar"** (linea 579)
-- **Mover** la logica de exportar presupuesto a Holded al flujo de aprobacion (o delegarla al hook `useQuoteApproval`)
+### 1. `SalesOrderNew.tsx` - Tipo ItemSnapshot (lineas 22-32)
 
-### 2. `src/pages/QuoteNew.tsx`
-- **Eliminar** la exportacion a Holded cuando `status === 'sent'` (lineas 538-568)
-- Cambiar el texto del boton de "Guardar y enviar a Holded" a **"Guardar y enviar"** (linea 778)
-
-### 3. `src/pages/QuoteEdit.tsx`
-- **Eliminar** la exportacion a Holded en `handleStatusChange` cuando `newStatus === 'sent'` (lineas 745-763)
-- Cambiar el texto del boton de "Enviar a Holded" a **"Enviar"** (linea 881)
-
-### 4. `src/hooks/useQuoteApproval.ts`
-- **Agregar** la exportacion del presupuesto a Holded (`holded-export-estimate`) al flujo de aprobacion, **antes** de la exportacion del pedido
-- El presupuesto exportado reflejara solo los items aprobados (los `selectedItemIds`), que es exactamente lo mismo que se envia como pedido
-- La exportacion del pedido (`holded-export-order`) ya existe y se mantiene igual
-
-### 5. `src/pages/QuoteDetail.tsx` (aprobacion)
-- Eliminar la validacion de `customerMissingHoldedId` para el estado `sent` (mantenerla solo para `approved`)
-- Agregar un boton "Reenviar a Holded" en estado `approved` (en lugar de en `sent`)
-
-## Flujo resultante
-
-```text
-Borrador --> Enviado --> Aprobado
-                          |
-                          +--> Exporta presupuesto a Holded (solo items aprobados)
-                          +--> Genera pedido
-                          +--> Exporta pedido a Holded
-```
-
-## Detalle tecnico
-
-En `useQuoteApproval.ts`, justo antes del bloque existente `if (canExportOrders)`, se agregara:
+Anadir `displayName`, `productName` y `descriptionManual` al tipo:
 
 ```typescript
-// Export quote (estimate) to Holded with only approved items
-if (canExportQuotes) {
-  try {
-    const { error } = await supabase.functions.invoke('holded-export-estimate', {
-      body: { quoteId }
-    });
-    if (error) console.error('Error exporting estimate to Holded:', error);
-  } catch (err) {
-    console.error('Error exporting estimate to Holded:', err);
-  }
-}
+type ItemSnapshot = {
+  productId: string;
+  prompts: Record<string, any>;
+  outputs: any[];
+  price?: number;
+  displayName?: string;
+  productName?: string;
+  itemDescription?: string;
+  descriptionManual?: boolean;
+  itemAdditionals?: any[];
+  needsRecalculation?: boolean;
+  isFinalized?: boolean;
+  compositeData?: any;
+};
 ```
 
-El hook necesitara acceso a `canExportQuotes` desde `useHoldedIntegration` (actualmente solo usa `canExportOrders`).
+### 2. `SalesOrderNew.tsx` - Guardado de items (lineas 454-456)
 
-## Lo que NO cambia
-- El edge function `holded-export-estimate` no necesita cambios (ya exporta el presupuesto completo)
-- El edge function `holded-export-order` no necesita cambios
-- La logica de seleccion de items y cantidades en la aprobacion se mantiene igual
-- La validacion de `holded_id` del cliente se mantiene, pero solo se aplica al aprobar
+Cambiar:
+```typescript
+// ANTES
+product_name: item.itemDescription || "",
+description: item.itemDescription || "",
+
+// DESPUES
+product_name: item.displayName || item.productName || item.productId || "",
+description: item.itemDescription || "",
+description_manual: item.descriptionManual || false,
+```
+
+### 3. `SalesOrderEdit.tsx` - handleItemChange (linea 202)
+
+Cambiar:
+```typescript
+// ANTES
+product_name: snapshot.itemDescription || updatedItems[itemIndex].product_name,
+
+// DESPUES
+product_name: snapshot.displayName || snapshot.productName || updatedItems[itemIndex].product_name,
+```
+
+## Impacto
+
+- Pedidos nuevos guardaran el nombre correcto (ej. "Encuadernado") en `product_name` y la descripcion larga en `description`
+- Pedidos existentes no cambian automaticamente (habria que re-guardarlos)
+- No requiere migracion de base de datos
