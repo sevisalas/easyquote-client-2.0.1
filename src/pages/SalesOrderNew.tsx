@@ -24,7 +24,10 @@ type ItemSnapshot = {
   prompts: Record<string, any>;
   outputs: any[];
   price?: number;
+  displayName?: string;
+  productName?: string;
   itemDescription?: string;
+  descriptionManual?: boolean;
   itemAdditionals?: any[];
   needsRecalculation?: boolean;
   isFinalized?: boolean;
@@ -452,8 +455,9 @@ export default function SalesOrderNew() {
         return {
           sales_order_id: order.id,
           product_id: item.productId,
-          product_name: item.itemDescription || "",
+          product_name: item.displayName || item.productName || item.productId || "",
           description: item.itemDescription || "",
+          description_manual: item.descriptionManual || false,
           prompts: promptsArray,
           outputs: item.outputs || [],
           price: item.price || 0,
