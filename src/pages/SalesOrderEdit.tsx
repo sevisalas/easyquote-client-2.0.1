@@ -199,7 +199,7 @@ export default function SalesOrderEdit() {
     updatedItems[itemIndex] = {
       ...updatedItems[itemIndex],
       product_id: snapshot.productId || updatedItems[itemIndex].product_id,
-      product_name: snapshot.itemDescription || updatedItems[itemIndex].product_name,
+      product_name: snapshot.displayName || snapshot.productName || updatedItems[itemIndex].product_name,
       prompts: snapshot.prompts,
       outputs: snapshot.outputs,
       multi: snapshot.multi,
