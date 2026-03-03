@@ -755,7 +755,7 @@ Deno.serve(async (req) => {
     });
 
     // Add order additionals
-    if (!hideAdjustmentsInHolded && orderAdditionals && Array.isArray(orderAdditionals) && orderAdditionals.length > 0) {
+    if (orderAdditionals && Array.isArray(orderAdditionals) && orderAdditionals.length > 0) {
       orderAdditionals.forEach((additional: any) => {
         const value = additional.value || 0;
         const isDiscount = additional.is_discount === true || value < 0;
@@ -772,21 +772,34 @@ Deno.serve(async (req) => {
             price = Math.round(parseFloat(String(value)) * 1000000) / 1000000;
           }
           
-          // Remove "Ajuste sobre el presupuesto/pedido" from name
-          const cleanName = (additional.name || 'Ajuste')
-            .replace(/\s*Ajuste sobre el presupuesto\s*/gi, '')
-            .replace(/\s*Ajuste sobre el pedido\s*/gi, '')
-            .trim() || 'Ajuste';
-          
-          const itemData: any = {
-            name: cleanName,
-            desc: '',
-            units: 1,
-            subtotal: price,
-            taxes: ["s_iva_21"]
-          };
-          
-          items.push(itemData);
+          if (hideAdjustmentsInHolded) {
+            // When hiding: distribute proportionally across existing items
+            if (price !== 0 && items.length > 0) {
+              const currentSubtotal = items.reduce((sum, item) => sum + (item.subtotal * item.units), 0);
+              if (currentSubtotal > 0) {
+                const factor = 1 + (price / currentSubtotal);
+                items.forEach(item => {
+                  item.subtotal = Math.round(item.subtotal * factor * 1000000) / 1000000;
+                });
+              }
+            }
+          } else {
+            // Remove "Ajuste sobre el presupuesto/pedido" from name
+            const cleanName = (additional.name || 'Ajuste')
+              .replace(/\s*Ajuste sobre el presupuesto\s*/gi, '')
+              .replace(/\s*Ajuste sobre el pedido\s*/gi, '')
+              .trim() || 'Ajuste';
+            
+            const itemData: any = {
+              name: cleanName,
+              desc: '',
+              units: 1,
+              subtotal: price,
+              taxes: ["s_iva_21"]
+            };
+            
+            items.push(itemData);
+          }
         }
       });
     }

@@ -785,7 +785,7 @@ Deno.serve(async (req) => {
         
         // OUTPUTS SON DATOS INTERNOS - NO SE ENVÍAN A HOLDED
         
-        // Add item additionals (ajustes sobre el artículo) at the end
+        // Add item additionals text to description (only when not hiding adjustments)
         if (!hideAdjustmentsInHolded && item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
           const additionalsText = item.item_additionals
             .map((additional: any) => {
@@ -904,8 +904,9 @@ Deno.serve(async (req) => {
         }
         
         // Apply item additionals to the price and calculate discounts
+        // ALWAYS apply to price (even when hiding from Holded display, values must sum)
         let discountAmount = 0;
-        if (!hideAdjustmentsInHolded && item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
+        if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
           item.item_additionals.forEach((additional: any) => {
             const value = additional.value || 0;
             // Detect discount: either explicitly marked or has negative value
@@ -980,7 +981,7 @@ Deno.serve(async (req) => {
     let globalDiscount = 0;
     
     // Add quote additionals (ajustes sobre el presupuesto)
-    if (!hideAdjustmentsInHolded && quoteAdditionals && Array.isArray(quoteAdditionals) && quoteAdditionals.length > 0) {
+    if (quoteAdditionals && Array.isArray(quoteAdditionals) && quoteAdditionals.length > 0) {
       quoteAdditionals.forEach((additional: any) => {
         const value = additional.value || 0;
         // Detect discount: either explicitly marked or has negative value
@@ -992,32 +993,41 @@ Deno.serve(async (req) => {
           const subtotal = items.reduce((sum, item) => sum + (item.subtotal * item.units), 0);
           
           if (additional.type === 'percentage') {
-            // For percentage type, calculate the percentage of the current subtotal
             price = Math.round((subtotal * value / 100) * 100) / 100;
           } else if (additional.type === 'quantity_multiplier' || additional.type === 'multiplier') {
-            // For multiplier type, calculate the additional amount
-            // If multiplier is 1.5, the additional amount is 0.5 * subtotal
             price = Math.round((subtotal * (value - 1)) * 100) / 100;
           } else {
-            // For net_amount or default, use the value directly
             price = Math.round(parseFloat(String(value)) * 100) / 100;
           }
           
-          // Remove "Ajuste sobre el presupuesto/pedido" from name
-          const cleanName = (additional.name || 'Ajuste')
-            .replace(/\s*Ajuste sobre el presupuesto\s*/gi, '')
-            .replace(/\s*Ajuste sobre el pedido\s*/gi, '')
-            .trim() || 'Ajuste';
-          
-          const itemData: any = {
-            name: cleanName,
-            desc: '',
-            units: 1,
-            subtotal: price,
-            taxes: ["s_iva_21"]
-          };
-          
-          items.push(itemData);
+          if (hideAdjustmentsInHolded) {
+            // When hiding: distribute the additional amount proportionally across existing items
+            if (price !== 0 && items.length > 0) {
+              const currentSubtotal = items.reduce((sum, item) => sum + (item.subtotal * item.units), 0);
+              if (currentSubtotal > 0) {
+                const factor = 1 + (price / currentSubtotal);
+                items.forEach(item => {
+                  item.subtotal = Math.round(item.subtotal * factor * 1000000) / 1000000;
+                });
+              }
+            }
+          } else {
+            // When showing: add as separate line item
+            const cleanName = (additional.name || 'Ajuste')
+              .replace(/\s*Ajuste sobre el presupuesto\s*/gi, '')
+              .replace(/\s*Ajuste sobre el pedido\s*/gi, '')
+              .trim() || 'Ajuste';
+            
+            const itemData: any = {
+              name: cleanName,
+              desc: '',
+              units: 1,
+              subtotal: price,
+              taxes: ["s_iva_21"]
+            };
+            
+            items.push(itemData);
+          }
         } else {
           // Add to applied discounts list
           if (additional.name && !appliedDiscounts.includes(additional.name)) {

@@ -727,7 +727,7 @@ export default function QuoteDetail() {
                   const hasMultipleQuantities = multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1;
                   const itemPrompts = item.prompts && typeof item.prompts === 'object' ? item.prompts : {};
                   const isCustomProduct = !item.product_id || item.product_id === '__CUSTOM_PRODUCT__';
-                  const hasDetails = isCustomProduct ? !!item.description : Object.keys(itemPrompts).length > 0; // Todos pueden desplegar
+                  const hasDetails = isCustomProduct ? !!item.description : (Object.keys(itemPrompts).length > 0 || (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0));
                   const isExpanded = expandedItems.has(index);
                   
                   return (
@@ -957,6 +957,27 @@ export default function QuoteDetail() {
                                   );
                                 });
                               })()}
+                              
+                              {/* Ajustes del artículo */}
+                              {item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0 && (
+                                <div className="pt-1 mt-1 border-t border-border/50">
+                                  <p className="text-xs font-medium text-muted-foreground mb-0.5">Ajustes:</p>
+                                  {item.item_additionals.map((additional: any, idx: number) => {
+                                    const cleanName = (additional.name || 'Ajuste')
+                                      .replace(/\s*Ajuste sobre el artículo\s*/gi, '')
+                                      .trim();
+                                    const isDiscount = additional.is_discount === true || (additional.value || 0) < 0;
+                                    return (
+                                      <div key={idx} className="text-xs flex justify-between">
+                                        <span className={isDiscount ? 'text-green-600' : 'text-muted-foreground'}>{cleanName}</span>
+                                        <span className={isDiscount ? 'text-green-600 font-medium' : 'font-medium'}>
+                                          {additional.type === 'percentage' ? `${additional.value}%` : fmtEUR(additional.value || 0)}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
                             </CollapsibleContent>
                           </div>
                           <div className="text-right">
