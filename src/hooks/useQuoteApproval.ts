@@ -64,60 +64,27 @@ export const useQuoteApproval = () => {
         }
       }
 
-      // Generate sales order number based on configured format
+      // Generate sales order number using the atomic DB function (prevents duplicates)
       const organizationId = quote.organization_id || sessionStorage.getItem('selected_organization_id');
       
-      // Get numbering format for orders
-      const { data: orderFormat } = await supabase
-        .from('numbering_formats')
-        .select('*')
-        .eq('document_type', 'order')
-        .eq('organization_id', organizationId)
-        .maybeSingle();
-      
-      // Build prefix with year if configured
-      let prefix = orderFormat?.prefix || 'SO-';
-      const useYear = orderFormat?.use_year ?? true;
-      const yearFormat = orderFormat?.year_format || 'YYYY';
-      const sequentialDigits = orderFormat?.sequential_digits || 4;
-      const suffix = orderFormat?.suffix || '';
-      
-      if (useYear) {
-        const year = new Date().getFullYear();
-        const yearStr = yearFormat === 'YY' ? year.toString().slice(-2) : year.toString();
-        prefix += yearStr + '-';
+      if (!organizationId) {
+        throw new Error('No se pudo determinar la organización');
       }
-      
-      // Query existing orders with this prefix in this organization
-      const { data: existingOrders } = await supabase
-        .from('sales_orders')
-        .select('order_number')
-        .eq('organization_id', organizationId)
-        .like('order_number', `${prefix}%`)
-        .order('order_number', { ascending: false })
-        .limit(100);
-      
-      // Extract max sequential number
-      let maxSequential = 0;
-      for (const order of existingOrders || []) {
-        const on = order.order_number || '';
-        let seqPart = on.replace(prefix, '');
-        if (suffix && seqPart.endsWith(suffix)) {
-          seqPart = seqPart.slice(0, -suffix.length);
-        }
-        const seqNum = parseInt(seqPart, 10);
-        if (!isNaN(seqNum) && seqNum > maxSequential) {
-          maxSequential = seqNum;
-        }
+
+      const { data: docNumber, error: docNumError } = await supabase
+        .rpc('next_document_number', {
+          p_organization_id: organizationId,
+          p_document_type: 'order',
+        });
+
+      if (docNumError || !docNumber || docNumber.length === 0) {
+        throw new Error('Error generando número de pedido: ' + (docNumError?.message || 'sin resultado'));
       }
+
+      const orderNumber = docNumber[0].document_number;
+      const nextSequential = docNumber[0].sequential_number;
       
-      const nextSequential = maxSequential + 1;
-      let orderNumber = prefix + nextSequential.toString().padStart(sequentialDigits, '0');
-      if (suffix) {
-        orderNumber += suffix;
-      }
-      
-      console.log(`📋 Approval order numbering: prefix="${prefix}", maxFound=${maxSequential}, next=${nextSequential}, number="${orderNumber}"`);
+      console.log(`📋 Approval order numbering (atomic): number="${orderNumber}", seq=${nextSequential}`);
 
       // Fetch quote additionals
       const { data: quoteAdditionals } = await supabase
@@ -195,13 +162,7 @@ export const useQuoteApproval = () => {
 
       if (orderError) throw orderError;
 
-      // Update last_sequential_number in numbering_formats
-      if (orderFormat?.id) {
-        await supabase
-          .from('numbering_formats')
-          .update({ last_sequential_number: nextSequential })
-          .eq('id', orderFormat.id);
-      }
+      // Sequence already updated by next_document_number DB function
       // Copy quote additionals to sales order additionals
       if (quoteAdditionals && quoteAdditionals.length > 0) {
         const orderAdditionals = quoteAdditionals.map((qa: any) => ({
