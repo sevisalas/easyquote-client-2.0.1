@@ -644,6 +644,7 @@ export default function ProductManagement() {
         admin_only?: boolean;
         force_result?: boolean;
         is_hidden?: boolean;
+        is_quantity?: boolean;
         label?: string;
         updated_at: string;
       } = {
