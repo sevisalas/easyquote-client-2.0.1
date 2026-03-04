@@ -539,7 +539,7 @@ export const generateQuotePDF = async (
         address: ''
       },
       items: hideAdjustmentsInQuotePdf
-        ? formattedItems.map(item => ({ ...item, item_additionals: [] }))
+        ? formattedItems.map(item => ({ ...item, _raw_additionals: item.item_additionals, item_additionals: [] }))
         : formattedItems,
       quote_additionals: hideAdjustmentsInQuotePdf
         ? []
