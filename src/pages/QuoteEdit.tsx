@@ -934,14 +934,6 @@ export default function QuoteEdit() {
             </div>
           </div>
 
-          {isHoldedActive && hasMultiQuantities && (
-            <div className="pt-2">
-              <p className="text-sm text-muted-foreground">
-                (Este presupuesto tiene múltiples cantidades, cada cantidad se exportará como un artículo separado en
-                Holded)
-              </p>
-            </div>
-          )}
         </CardContent>
       </Card>
 
