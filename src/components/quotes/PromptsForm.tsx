@@ -230,7 +230,7 @@ export default function PromptsForm({
 }) {
   // Get product ID to filter hidden prompts
   const productId = product?.productId ?? product?.id ?? product?.product_id;
-  const { isPromptHidden } = useProductPromptSettings(productId);
+  const { isPromptHidden, isPromptQuantity, getQuantityPromptName } = useProductPromptSettings(productId);
   const prompts = useMemo(() => extractPrompts(product), [product]);
   const defaultsMap = useMemo(() => Object.fromEntries(prompts.map((p) => [p.id, p.default])), [prompts]);
   const effectiveValues = useMemo(() => {
