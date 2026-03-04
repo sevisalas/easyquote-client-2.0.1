@@ -662,7 +662,19 @@ export default function ProductManagement() {
       }
       if (forceResult !== undefined) updateData.force_result = forceResult;
       if (isHidden !== undefined) updateData.is_hidden = isHidden;
-      if (isQuantity !== undefined) updateData.is_quantity = isQuantity;
+      if (isQuantity !== undefined) {
+        updateData.is_quantity = isQuantity;
+        // If marking as quantity, clear any other prompt marked as quantity for this product
+        if (isQuantity) {
+          await supabase
+            .from("product_prompt_settings")
+            .update({ is_quantity: false, updated_at: new Date().toISOString() })
+            .eq("api_user_id", apiUserId)
+            .eq("easyquote_product_id", productId)
+            .eq("is_quantity", true)
+            .neq("prompt_name", promptKey);
+        }
+      }
       if (label !== undefined) updateData.label = label;
 
       if (existing?.id) {
