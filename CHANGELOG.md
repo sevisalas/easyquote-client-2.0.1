@@ -5,6 +5,18 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.24] - En desarrollo
+
+---
+
+## [2.5.23] - 2026-03-04
+
+### Corregido
+- **Error de clave duplicada al aprobar presupuestos**: Añadida verificación de pedido existente y reintento automático para evitar conflictos de número de pedido duplicado
+- **Cliente recién importado no reconocido al aprobar**: La verificación de `holded_id` del cliente ahora se refresca siempre, permitiendo aprobar presupuestos de clientes importados recientemente
+
+---
+
 ## [2.5.22] - 2026-03-04
 
 ### Corregido
