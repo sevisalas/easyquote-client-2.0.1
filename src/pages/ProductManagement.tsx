@@ -788,6 +788,14 @@ export default function ProductManagement() {
     return setting?.is_hidden || false;
   };
 
+  // Helper to check if prompt is the quantity field
+  const isPromptQuantity = (promptName: string): boolean => {
+    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+    const key = normalizePromptKey(promptName);
+    const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
+    return setting?.is_quantity || false;
+  };
+
   // Helper to get saved label for a prompt
   const getPromptLabel = (promptName: string): string | undefined => {
     const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
