@@ -359,19 +359,36 @@ export const generateQuotePDF = async (
         return candidates.some(c => hiddenPrompts.has(c));
       };
       
-      // Extract displayQuantity: prefer Q1 from multi, then prompts
+      // Extract displayQuantity: prefer Q1 from multi, then is_quantity prompt, then heuristic
       let displayQuantity: string | number | null = null;
       if (item.multi?.rows?.length > 0) {
         displayQuantity = item.multi.rows[0].qty;
       } else if (item.multi?.qtyInputs?.length > 0) {
         displayQuantity = item.multi.qtyInputs[0];
       } else if (item.prompts && Array.isArray(item.prompts)) {
-        const qtyPrompt = item.prompts.find((prompt: any) => {
-          const label = (prompt.label || '').toLowerCase();
-          return label.includes('cantidad') || label.includes('ejemplares');
-        });
-        if (qtyPrompt?.value) {
-          displayQuantity = qtyPrompt.value;
+        // First try: look for the prompt marked as is_quantity in product_prompt_settings
+        const qtySettingName = item.quantity_prompt_name;
+        if (qtySettingName) {
+          const normalizeKey = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
+          const qtyKey = normalizeKey(qtySettingName);
+          const markedPrompt = item.prompts.find((prompt: any) => {
+            const label = normalizeKey(prompt.label || '');
+            const id = normalizeKey(prompt.id || prompt.name || '');
+            return label === qtyKey || id === qtyKey;
+          });
+          if (markedPrompt?.value) {
+            displayQuantity = markedPrompt.value;
+          }
+        }
+        // Fallback: heuristic by label text
+        if (!displayQuantity) {
+          const qtyPrompt = item.prompts.find((prompt: any) => {
+            const label = (prompt.label || '').toLowerCase();
+            return label.includes('cantidad') || label.includes('ejemplares');
+          });
+          if (qtyPrompt?.value) {
+            displayQuantity = qtyPrompt.value;
+          }
         }
       }
 
