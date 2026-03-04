@@ -662,6 +662,7 @@ export default function ProductManagement() {
       }
       if (forceResult !== undefined) updateData.force_result = forceResult;
       if (isHidden !== undefined) updateData.is_hidden = isHidden;
+      if (isQuantity !== undefined) updateData.is_quantity = isQuantity;
       if (label !== undefined) updateData.label = label;
 
       if (existing?.id) {
