@@ -1464,9 +1464,44 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       .map((sp: any) => ({ id: String(sp.id), label: sp.promptText ?? sp.name ?? sp.id }));
   }, [pricing]);
 
+  // Query para obtener el prompt marcado como is_quantity en product_prompt_settings
+  const { data: quantityPromptSetting } = useQuery({
+    queryKey: ['quantity-prompt-setting', productId, effectiveApiUserId],
+    queryFn: async () => {
+      if (!productId || !effectiveApiUserId || productId === CUSTOM_PRODUCT_ID) return null;
+      const { data, error } = await supabase
+        .from('product_prompt_settings')
+        .select('prompt_name, label')
+        .eq('api_user_id', effectiveApiUserId)
+        .eq('easyquote_product_id', productId)
+        .eq('is_quantity', true)
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!productId && !!effectiveApiUserId && productId !== CUSTOM_PRODUCT_ID,
+    staleTime: 5 * 60 * 1000,
+  });
+
   useEffect(() => {
-    if (!qtyPrompt && numericPrompts.length > 0) setQtyPrompt(numericPrompts[0].id);
-  }, [numericPrompts, qtyPrompt]);
+    if (!qtyPrompt && numericPrompts.length > 0) {
+      // If there's an is_quantity setting, find the matching numeric prompt
+      if (quantityPromptSetting?.prompt_name) {
+        const normalizeKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+        const qtyKey = normalizeKey(quantityPromptSetting.prompt_name);
+        const match = numericPrompts.find(p => {
+          // Match by prompt ID or by label
+          return normalizeKey(p.id) === qtyKey || normalizeKey(p.label) === qtyKey;
+        });
+        if (match) {
+          setQtyPrompt(match.id);
+          return;
+        }
+      }
+      // Fallback: first numeric prompt
+      setQtyPrompt(numericPrompts[0].id);
+    }
+  }, [numericPrompts, qtyPrompt, quantityPromptSetting]);
 
   // Sync Q1 with the selected qtyPrompt field value - SOLO cuando hay commit (debouncedPromptValues)
   // IMPORTANTE: Usar debouncedPromptValues para evitar sincronizar en cada keystroke

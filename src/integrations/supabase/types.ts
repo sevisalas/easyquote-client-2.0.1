@@ -1903,6 +1903,7 @@ export type Database = {
           hide_in_documents: boolean
           id: string
           is_hidden: boolean
+          is_quantity: boolean
           label: string | null
           organization_id: string
           prompt_name: string
@@ -1917,6 +1918,7 @@ export type Database = {
           hide_in_documents?: boolean
           id?: string
           is_hidden?: boolean
+          is_quantity?: boolean
           label?: string | null
           organization_id: string
           prompt_name: string
@@ -1931,6 +1933,7 @@ export type Database = {
           hide_in_documents?: boolean
           id?: string
           is_hidden?: boolean
+          is_quantity?: boolean
           label?: string | null
           organization_id?: string
           prompt_name?: string

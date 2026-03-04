@@ -339,6 +339,28 @@ export const generateQuotePDF = async (
     }
     console.log('[PDF] hideAllPromptsInDocs:', hideAllPromptsInDocs);
 
+    // Get is_quantity settings for all products in this quote
+    const quantityPromptMap = new Map<string, string>(); // productId -> prompt_name
+    if (quote.organization_id) {
+      const { data: orgInfo } = await supabase
+        .from('organizations')
+        .select('api_user_id')
+        .eq('id', quote.organization_id)
+        .single();
+      if (orgInfo?.api_user_id) {
+        const { data: qtySettings } = await supabase
+          .from('product_prompt_settings')
+          .select('easyquote_product_id, prompt_name')
+          .eq('api_user_id', orgInfo.api_user_id)
+          .eq('is_quantity', true);
+        if (qtySettings) {
+          qtySettings.forEach((s: any) => {
+            quantityPromptMap.set(s.easyquote_product_id, s.prompt_name);
+          });
+        }
+      }
+    }
+
     // Format items - filter to only accepted items when quote is approved
     const itemsToRender = quote.status === 'approved'
       ? (quote.items || []).filter((item: any) => item.accepted === true)
@@ -359,19 +381,36 @@ export const generateQuotePDF = async (
         return candidates.some(c => hiddenPrompts.has(c));
       };
       
-      // Extract displayQuantity: prefer Q1 from multi, then prompts
+      // Extract displayQuantity: prefer Q1 from multi, then is_quantity prompt, then heuristic
       let displayQuantity: string | number | null = null;
+      const qtySettingName = item.product_id ? quantityPromptMap.get(item.product_id) : undefined;
       if (item.multi?.rows?.length > 0) {
         displayQuantity = item.multi.rows[0].qty;
       } else if (item.multi?.qtyInputs?.length > 0) {
         displayQuantity = item.multi.qtyInputs[0];
       } else if (item.prompts && Array.isArray(item.prompts)) {
-        const qtyPrompt = item.prompts.find((prompt: any) => {
-          const label = (prompt.label || '').toLowerCase();
-          return label.includes('cantidad') || label.includes('ejemplares');
-        });
-        if (qtyPrompt?.value) {
-          displayQuantity = qtyPrompt.value;
+        // First try: look for the prompt marked as is_quantity in product_prompt_settings
+        if (qtySettingName) {
+          const normalizeKey = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
+          const qtyKey = normalizeKey(qtySettingName);
+          const markedPrompt = item.prompts.find((prompt: any) => {
+            const label = normalizeKey(prompt.label || '');
+            const id = normalizeKey(prompt.id || prompt.name || '');
+            return label === qtyKey || id === qtyKey;
+          });
+          if (markedPrompt?.value) {
+            displayQuantity = markedPrompt.value;
+          }
+        }
+        // Fallback: heuristic by label text
+        if (!displayQuantity) {
+          const qtyPrompt = item.prompts.find((prompt: any) => {
+            const label = (prompt.label || '').toLowerCase();
+            return label.includes('cantidad') || label.includes('ejemplares');
+          });
+          if (qtyPrompt?.value) {
+            displayQuantity = qtyPrompt.value;
+          }
         }
       }
 

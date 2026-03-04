@@ -600,6 +600,7 @@ export default function ProductManagement() {
       adminOnly,
       forceResult,
       isHidden,
+      isQuantity,
       label,
     }: {
       productId: string;
@@ -608,6 +609,7 @@ export default function ProductManagement() {
       adminOnly?: boolean;
       forceResult?: boolean;
       isHidden?: boolean;
+      isQuantity?: boolean;
       label?: string;
     }) => {
       const normalizePromptKey = (v: string) =>
@@ -642,6 +644,7 @@ export default function ProductManagement() {
         admin_only?: boolean;
         force_result?: boolean;
         is_hidden?: boolean;
+        is_quantity?: boolean;
         label?: string;
         updated_at: string;
       } = {
@@ -659,6 +662,19 @@ export default function ProductManagement() {
       }
       if (forceResult !== undefined) updateData.force_result = forceResult;
       if (isHidden !== undefined) updateData.is_hidden = isHidden;
+      if (isQuantity !== undefined) {
+        updateData.is_quantity = isQuantity;
+        // If marking as quantity, clear any other prompt marked as quantity for this product
+        if (isQuantity) {
+          await supabase
+            .from("product_prompt_settings")
+            .update({ is_quantity: false, updated_at: new Date().toISOString() })
+            .eq("api_user_id", apiUserId)
+            .eq("easyquote_product_id", productId)
+            .eq("is_quantity", true)
+            .neq("prompt_name", promptKey);
+        }
+      }
       if (label !== undefined) updateData.label = label;
 
       if (existing?.id) {
@@ -677,6 +693,7 @@ export default function ProductManagement() {
           admin_only: adminOnly ?? false,
           force_result: forceResult ?? false,
           is_hidden: isHidden ?? false,
+          is_quantity: isQuantity ?? false,
           label: label ?? null,
         });
         if (error) throw error;
@@ -781,6 +798,14 @@ export default function ProductManagement() {
     const key = normalizePromptKey(promptName);
     const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
     return setting?.is_hidden || false;
+  };
+
+  // Helper to check if prompt is the quantity field
+  const isPromptQuantity = (promptName: string): boolean => {
+    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+    const key = normalizePromptKey(promptName);
+    const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
+    return setting?.is_quantity || false;
   };
 
   // Helper to get saved label for a prompt
@@ -3024,6 +3049,18 @@ export default function ProductManagement() {
                                     productId: selectedProduct.id,
                                     promptName: prompt.promptCell,
                                     isHidden: checked
+                                  });
+                                }
+                              }} />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Label className="text-sm font-medium whitespace-nowrap">Cantidad</Label>
+                                <Switch checked={isPromptQuantity(prompt.promptCell)} onCheckedChange={checked => {
+                                if (selectedProduct) {
+                                  upsertPromptSettingMutation.mutate({
+                                    productId: selectedProduct.id,
+                                    promptName: prompt.promptCell,
+                                    isQuantity: checked
                                   });
                                 }
                               }} />

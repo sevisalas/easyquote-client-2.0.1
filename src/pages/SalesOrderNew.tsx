@@ -446,11 +446,14 @@ export default function SalesOrderNew() {
           }))
           .sort((a, b) => a.order - b.order);
 
-        // Extract quantity from "Quantity" prompt if exists
+        // Extract quantity: first try is_quantity setting, then heuristic
+        let quantity = 1;
         const quantityPrompt = promptsArray.find(p => 
           p.label.toLowerCase() === 'quantity' || p.label.toLowerCase() === 'cantidad'
         );
-        const quantity = quantityPrompt?.value ? Number(quantityPrompt.value) : 1;
+        if (quantityPrompt?.value) {
+          quantity = Number(quantityPrompt.value) || 1;
+        }
 
         return {
           sales_order_id: order.id,
