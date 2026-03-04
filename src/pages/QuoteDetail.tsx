@@ -100,6 +100,7 @@ export default function QuoteDetail() {
       return data?.holded_id || null;
     },
     enabled: !!quote?.customer_id && canExportQuotes,
+    staleTime: 0, // Always refetch to pick up recently imported customers
   });
 
   // Fetch admin_only prompt settings to filter prompts for non-admin users
