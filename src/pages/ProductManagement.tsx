@@ -3053,6 +3053,18 @@ export default function ProductManagement() {
                                 }
                               }} />
                               </div>
+                              <div className="flex items-center gap-2">
+                                <Label className="text-sm font-medium whitespace-nowrap">Cantidad</Label>
+                                <Switch checked={isPromptQuantity(prompt.promptCell)} onCheckedChange={checked => {
+                                if (selectedProduct) {
+                                  upsertPromptSettingMutation.mutate({
+                                    productId: selectedProduct.id,
+                                    promptName: prompt.promptCell,
+                                    isQuantity: checked
+                                  });
+                                }
+                              }} />
+                              </div>
                               {/* Etiqueta y Variable de prod. en la misma línea */}
                               <div className="flex items-center gap-4 flex-1">
                                 <div className="flex items-center gap-2 flex-1">
