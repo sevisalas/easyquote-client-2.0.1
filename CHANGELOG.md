@@ -5,6 +5,14 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.22] - 2026-03-04
+
+### Corregido
+- **Precios multi-cantidad con ajustes en PDF**: Los precios de Q2 y Q3 en los PDFs de Campillo/Anebri ahora incluyen los ajustes (retractilado, cajas, etc.) recalculados para cada cantidad
+- **Mensaje incorrecto de multi-cantidades eliminado**: Se elimina el aviso sobre exportación separada de cantidades múltiples a Holded en las vistas de presupuesto
+
+---
+
 ## [2.5.21] - 2026-02-27
 
 ### Añadido
