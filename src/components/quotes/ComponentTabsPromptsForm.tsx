@@ -488,20 +488,8 @@ export default function ComponentTabsPromptsForm({
         grouped[GENERAL_COMPONENT.value].push(prompt);
       }
     });
-    // Mover el prompt marcado como is_quantity a la primera posición de su grupo
-    const qtyName = getQuantityPromptName();
-    if (qtyName) {
-      for (const comp of Object.keys(grouped)) {
-        const arr = grouped[comp];
-        const qtyIdx = arr.findIndex(p => isPromptQuantity(p.id) || isPromptQuantity(p.label));
-        if (qtyIdx > 0) {
-          const [qtyPrompt] = arr.splice(qtyIdx, 1);
-          arr.unshift(qtyPrompt);
-        }
-      }
-    }
     return grouped;
-  }, [prompts, availableComponents, getPromptComponent, product, promptDefinitions, promptCellLookup, boundProductConfig, activeComponents, isPromptQuantity, getQuantityPromptName]);
+  }, [prompts, availableComponents, getPromptComponent, product, promptDefinitions, promptCellLookup, boundProductConfig, activeComponents]);
 
   // Agrupar prompts force_result por componente (para renderizar en sección aparte)
   const forceResultByComponent = useMemo(() => {
