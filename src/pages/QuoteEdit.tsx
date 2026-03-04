@@ -934,9 +934,6 @@ export default function QuoteEdit() {
             </div>
           </div>
 
-          {isHoldedActive && hasMultiQuantities && (
-            </div>
-          )}
         </CardContent>
       </Card>
 

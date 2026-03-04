@@ -677,8 +677,6 @@ export default function QuoteDetail() {
             </div>
           )}
 
-          {isHoldedActive && hasMultiQuantities && (
-          )}
         </CardContent>
       </Card>
 
