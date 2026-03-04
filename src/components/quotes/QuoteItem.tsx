@@ -1483,25 +1483,35 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     staleTime: 5 * 60 * 1000,
   });
 
+  // Track whether the quantity prompt was explicitly set by the is_quantity setting
+  const qtySetBySettingRef = useRef(false);
+
   useEffect(() => {
-    if (!qtyPrompt && numericPrompts.length > 0) {
-      // If there's an is_quantity setting, find the matching numeric prompt
-      if (quantityPromptSetting?.prompt_name) {
-        const normalizeKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
-        const qtyKey = normalizeKey(quantityPromptSetting.prompt_name);
-        const qtyLabel = quantityPromptSetting.label ? normalizeKey(quantityPromptSetting.label) : "";
-        const match = numericPrompts.find(p => {
-          // Match by prompt ID, cell ref, or by label from settings
-          return normalizeKey(p.id) === qtyKey 
-            || normalizeKey(p.label) === qtyKey
-            || (qtyLabel && normalizeKey(p.label) === qtyLabel);
-        });
-        if (match) {
-          setQtyPrompt(match.id);
-          return;
-        }
+    if (numericPrompts.length === 0) return;
+
+    // If there's an is_quantity setting, always prefer it (even if qtyPrompt is already set by fallback)
+    if (quantityPromptSetting?.prompt_name) {
+      const normalizeKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+      const qtyKey = normalizeKey(quantityPromptSetting.prompt_name);
+      const qtyLabel = quantityPromptSetting.label ? normalizeKey(quantityPromptSetting.label) : "";
+      const match = numericPrompts.find(p => {
+        return normalizeKey(p.id) === qtyKey 
+          || normalizeKey(p.label) === qtyKey
+          || (qtyLabel && normalizeKey(p.label) === qtyLabel);
+      });
+      if (match && match.id !== qtyPrompt) {
+        setQtyPrompt(match.id);
+        qtySetBySettingRef.current = true;
+        return;
       }
-      // Fallback: first numeric prompt
+      if (match) {
+        qtySetBySettingRef.current = true;
+        return;
+      }
+    }
+
+    // Fallback: first numeric prompt (only if no qtyPrompt yet)
+    if (!qtyPrompt) {
       setQtyPrompt(numericPrompts[0].id);
     }
   }, [numericPrompts, qtyPrompt, quantityPromptSetting]);
