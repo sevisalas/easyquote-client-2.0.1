@@ -13,6 +13,7 @@ export interface ProductPromptSetting {
   admin_only: boolean;
   force_result: boolean;
   is_hidden: boolean;
+  is_quantity: boolean;
   created_at: string;
   updated_at: string;
 }
