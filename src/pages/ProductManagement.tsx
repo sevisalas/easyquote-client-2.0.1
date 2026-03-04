@@ -600,6 +600,7 @@ export default function ProductManagement() {
       adminOnly,
       forceResult,
       isHidden,
+      isQuantity,
       label,
     }: {
       productId: string;
@@ -608,6 +609,7 @@ export default function ProductManagement() {
       adminOnly?: boolean;
       forceResult?: boolean;
       isHidden?: boolean;
+      isQuantity?: boolean;
       label?: string;
     }) => {
       const normalizePromptKey = (v: string) =>
