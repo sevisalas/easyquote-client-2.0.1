@@ -1489,9 +1489,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       if (quantityPromptSetting?.prompt_name) {
         const normalizeKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
         const qtyKey = normalizeKey(quantityPromptSetting.prompt_name);
+        const qtyLabel = quantityPromptSetting.label ? normalizeKey(quantityPromptSetting.label) : "";
         const match = numericPrompts.find(p => {
-          // Match by prompt ID or by label
-          return normalizeKey(p.id) === qtyKey || normalizeKey(p.label) === qtyKey;
+          // Match by prompt ID, cell ref, or by label from settings
+          return normalizeKey(p.id) === qtyKey 
+            || normalizeKey(p.label) === qtyKey
+            || (qtyLabel && normalizeKey(p.label) === qtyLabel);
         });
         if (match) {
           setQtyPrompt(match.id);

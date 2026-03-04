@@ -102,7 +102,7 @@ export default function ComponentTabsPromptsForm({
   } = useProductComponentSettings(productId);
 
   // Obtener configuración de prompts (admin_only, hide_in_documents, force_result)
-  const { isPromptAdminOnly, isPromptForceResult, isPromptHidden: isPromptHiddenSetting, isPromptQuantity, getQuantityPromptName, isLoading: isPromptSettingsLoading, promptSettings } = useProductPromptSettings(productId);
+  const { isPromptAdminOnly, isPromptForceResult, isPromptHidden: isPromptHiddenSetting, isLoading: isPromptSettingsLoading, promptSettings } = useProductPromptSettings(productId);
 
   // Obtener componentes activos según la configuración de producto encuadernado
   const activeComponents = useMemo(() => {
