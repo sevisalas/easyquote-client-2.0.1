@@ -1,62 +1,43 @@
 
-# Corregir nombre del articulo en pedidos
 
 ## Problema
 
-En `SalesOrderNew.tsx` y `SalesOrderEdit.tsx`, el campo `product_name` se rellena con `itemDescription` (la descripcion larga con los parametros del producto) en lugar del nombre real (ej. "Encuadernado"). En `QuoteNew.tsx` ya esta bien hecho usando `productName` y `displayName`.
+Cuando se activan multi-cantidades, el sistema auto-selecciona el **primer prompt numérico** como campo de cantidad (`numericPrompts[0]`). En "Libros digitales", el campo "Páginas" aparece antes que "Ejemplares/Cantidad", así que se usa incorrectamente.
 
-## Cambios
+Esto también afecta a los PDFs (Templates 7/8 y `pdfGenerator.ts`) donde la cantidad se busca por heurística de texto (`label.includes('cantidad') || label.includes('ejemplares')`).
 
-La columna `description` ya existe en `sales_order_items`, asi que no hace falta migracion.
+## Propuesta: Añadir `is_quantity` a `product_prompt_settings`
 
-### 1. `SalesOrderNew.tsx` - Tipo ItemSnapshot (lineas 22-32)
+Añadir un flag `is_quantity` (boolean) a la tabla `product_prompt_settings` para que cada producto tenga marcado explícitamente cuál es su campo de cantidad. Esto se configura una vez por producto y se usa en toda la app.
 
-Anadir `displayName`, `productName` y `descriptionManual` al tipo:
+### Cambios necesarios
 
-```typescript
-type ItemSnapshot = {
-  productId: string;
-  prompts: Record<string, any>;
-  outputs: any[];
-  price?: number;
-  displayName?: string;
-  productName?: string;
-  itemDescription?: string;
-  descriptionManual?: boolean;
-  itemAdditionals?: any[];
-  needsRecalculation?: boolean;
-  isFinalized?: boolean;
-  compositeData?: any;
-};
-```
+**1. Base de datos** — Añadir columna `is_quantity` (boolean, default false) a `product_prompt_settings`. Crear constraint para que solo un prompt por producto pueda tener `is_quantity = true`.
 
-### 2. `SalesOrderNew.tsx` - Guardado de items (lineas 454-456)
+**2. Pantalla de gestión de productos** (`src/pages/ProductManagement.tsx`) — En la tabla de configuración de prompts de cada producto, añadir un toggle/radio "Es campo de cantidad" que permita marcar un solo prompt como el de cantidad. Visualmente claro: un icono o badge junto al prompt seleccionado.
 
-Cambiar:
-```typescript
-// ANTES
-product_name: item.itemDescription || "",
-description: item.itemDescription || "",
+**3. Multi-cantidades en QuoteItem** (`src/components/quotes/QuoteItem.tsx`):
+- Al activar multi-cantidades, pre-seleccionar el prompt marcado como `is_quantity` en lugar del primer numérico.
+- Si no hay ninguno marcado, mantener el comportamiento actual (primer numérico) como fallback.
+- El selector manual sigue disponible para que el usuario pueda cambiar si lo necesita.
 
-// DESPUES
-product_name: item.displayName || item.productName || item.productId || "",
-description: item.itemDescription || "",
-description_manual: item.descriptionManual || false,
-```
+**4. PDFs** (`src/utils/pdfGenerator.ts`, `Template7.tsx`, `Template8.tsx`):
+- Consultar `product_prompt_settings` para identificar el campo `is_quantity` del producto.
+- Usar ese campo para la columna "Cantidad" en lugar de la heurística por texto.
+- Mantener la heurística como fallback si no hay configuración.
 
-### 3. `SalesOrderEdit.tsx` - handleItemChange (linea 202)
+**5. Pedidos de venta** (`src/pages/SalesOrderNew.tsx`):
+- Usar el campo marcado como `is_quantity` para extraer la cantidad del artículo en lugar de buscar por label "quantity"/"cantidad".
 
-Cambiar:
-```typescript
-// ANTES
-product_name: snapshot.itemDescription || updatedItems[itemIndex].product_name,
+### Flujo del usuario
 
-// DESPUES
-product_name: snapshot.displayName || snapshot.productName || updatedItems[itemIndex].product_name,
-```
+1. En Gestión de productos, al ver los prompts de "Libros digitales", marca "Ejemplares" como campo de cantidad.
+2. Al crear un presupuesto con multi-cantidades, el sistema ya pre-selecciona "Ejemplares" automáticamente.
+3. En el PDF, la columna cantidad muestra el valor de "Ejemplares", no de "Páginas".
 
-## Impacto
+### Ventajas
+- Configuración explícita por producto, sin heurísticas frágiles.
+- Se reutiliza la infraestructura existente de `product_prompt_settings`.
+- Compatible con todos los productos: cada uno puede tener su propio campo de cantidad.
+- Fallback al comportamiento actual si no se configura.
 
-- Pedidos nuevos guardaran el nombre correcto (ej. "Encuadernado") en `product_name` y la descripcion larga en `description`
-- Pedidos existentes no cambian automaticamente (habria que re-guardarlos)
-- No requiere migracion de base de datos
