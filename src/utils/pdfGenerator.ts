@@ -339,6 +339,28 @@ export const generateQuotePDF = async (
     }
     console.log('[PDF] hideAllPromptsInDocs:', hideAllPromptsInDocs);
 
+    // Get is_quantity settings for all products in this quote
+    const quantityPromptMap = new Map<string, string>(); // productId -> prompt_name
+    if (quote.organization_id) {
+      const { data: orgInfo } = await supabase
+        .from('organizations')
+        .select('api_user_id')
+        .eq('id', quote.organization_id)
+        .single();
+      if (orgInfo?.api_user_id) {
+        const { data: qtySettings } = await supabase
+          .from('product_prompt_settings')
+          .select('easyquote_product_id, prompt_name')
+          .eq('api_user_id', orgInfo.api_user_id)
+          .eq('is_quantity', true);
+        if (qtySettings) {
+          qtySettings.forEach((s: any) => {
+            quantityPromptMap.set(s.easyquote_product_id, s.prompt_name);
+          });
+        }
+      }
+    }
+
     // Format items - filter to only accepted items when quote is approved
     const itemsToRender = quote.status === 'approved'
       ? (quote.items || []).filter((item: any) => item.accepted === true)
