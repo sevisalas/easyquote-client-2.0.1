@@ -681,6 +681,7 @@ export default function ProductManagement() {
           admin_only: adminOnly ?? false,
           force_result: forceResult ?? false,
           is_hidden: isHidden ?? false,
+          is_quantity: isQuantity ?? false,
           label: label ?? null,
         });
         if (error) throw error;
