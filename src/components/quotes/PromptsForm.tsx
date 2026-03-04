@@ -253,8 +253,17 @@ export default function PromptsForm({
   // NOTA: el filtro admin_only se aplica en ComponentTabsPromptsForm/CompositeComponentTabs,
   // que son los que conocen el contexto de permisos del usuario.
   const visiblePrompts = useMemo(() => {
-    return prompts.filter(p => !isPromptHidden(p.id) && !isPromptHidden(p.label));
-  }, [prompts, isPromptHidden]);
+    const filtered = prompts.filter(p => !isPromptHidden(p.id) && !isPromptHidden(p.label));
+    // Mover el prompt marcado como is_quantity a la primera posición
+    const qtyName = getQuantityPromptName();
+    if (!qtyName) return filtered;
+    const qtyIndex = filtered.findIndex(p => isPromptQuantity(p.id) || isPromptQuantity(p.label));
+    if (qtyIndex > 0) {
+      const [qtyPrompt] = filtered.splice(qtyIndex, 1);
+      filtered.unshift(qtyPrompt);
+    }
+    return filtered;
+  }, [prompts, isPromptHidden, isPromptQuantity, getQuantityPromptName]);
 
   // Clamp numeric value to min/max range
   const clampValue = (value: any, min?: number, max?: number): any => {
