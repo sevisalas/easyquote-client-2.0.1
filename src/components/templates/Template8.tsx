@@ -262,12 +262,29 @@ export default function Template8({ data }: Template8Props) {
                   <tr style={{ borderBottom: '1px solid #eee' }}>
                     <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
                       <div style={{ fontSize: '11px', color: '#555', lineHeight: '1.5' }}>
-                        {item.multi_extra.map((me: any, meIdx: number) => (
-                          <div key={meIdx}>
-                            <span style={{ fontWeight: 600 }}>Precio para {new Intl.NumberFormat('es-ES').format(me.qty)} ejemplares:</span>{' '}
-                            {fmtEUR(me.price)}
-                          </div>
-                        ))}
+                        {item.multi_extra.map((me: any, meIdx: number) => {
+                          // Calculate adjustments total for this specific quantity
+                          let adjTotal = 0;
+                          const adjs = item._raw_additionals || item.item_additionals || [];
+                          if (adjs.length > 0) {
+                            adjs.forEach((adj: any) => {
+                              let subtotal = adj.value;
+                              if (adj.type === 'quantity_multiplier') {
+                                subtotal = adj.value * me.qty;
+                              } else if (adj.type === 'capacity_divider') {
+                                const cap = adj.capacity_value || 1;
+                                subtotal = adj.value * Math.ceil(me.qty / cap);
+                              }
+                              adjTotal += adj.is_discount ? -subtotal : subtotal;
+                            });
+                          }
+                          return (
+                            <div key={meIdx}>
+                              <span style={{ fontWeight: 600 }}>Precio para {new Intl.NumberFormat('es-ES').format(me.qty)} ejemplares:</span>{' '}
+                              {fmtEUR(me.price + adjTotal)}
+                            </div>
+                          );
+                        })}
                       </div>
                     </td>
                   </tr>
