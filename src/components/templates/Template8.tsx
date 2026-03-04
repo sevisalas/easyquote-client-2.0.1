@@ -265,8 +265,9 @@ export default function Template8({ data }: Template8Props) {
                         {item.multi_extra.map((me: any, meIdx: number) => {
                           // Calculate adjustments total for this specific quantity
                           let adjTotal = 0;
-                          if (item.item_additionals && item.item_additionals.length > 0) {
-                            item.item_additionals.forEach((adj: any) => {
+                          const adjs = item._raw_additionals || item.item_additionals || [];
+                          if (adjs.length > 0) {
+                            adjs.forEach((adj: any) => {
                               let subtotal = adj.value;
                               if (adj.type === 'quantity_multiplier') {
                                 subtotal = adj.value * me.qty;
