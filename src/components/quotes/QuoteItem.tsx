@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import { invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
+import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
 import PromptsForm, { extractPrompts, isVisiblePrompt, type PromptDef } from "@/components/quotes/PromptsForm";
 import ComponentTabsPromptsForm from "@/components/quotes/ComponentTabsPromptsForm";
 import ComponentTabsOutputs from "@/components/quotes/ComponentTabsOutputs";
@@ -1483,6 +1483,42 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     staleTime: 5 * 60 * 1000,
   });
 
+  // Definiciones de prompts (para mapear UUID del pricing ↔ celda del Excel)
+  // Reutiliza la misma queryKey que ComponentTabsPromptsForm → comparte caché
+  const { data: promptDefsForQty } = useQuery({
+    queryKey: ["easyquote-prompts-definitions", productId],
+    queryFn: async () => {
+      if (!productId) return [];
+      const token = await getEasyQuoteToken();
+      if (!token) return [];
+      const { data, error } = await invokeEasyQuoteFunction<any[]>("easyquote-prompts", { token, productId });
+      if (error) return [];
+      return Array.isArray(data) ? data : [];
+    },
+    enabled: !!productId && productId !== CUSTOM_PRODUCT_ID,
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  // Mapa UUID → celda normalizada (ej: "b1f64922..." → "B2")
+  const uuidToCellMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const def of (promptDefsForQty ?? []) as any[]) {
+      const uuid = String(def?.id ?? "").trim();
+      const rawCell = def?.promptCell ?? def?.prompt_cell ?? def?.cell ?? def?.promptcell;
+      const cellStr = String(rawCell ?? "").replace(/\$/g, "").trim().toUpperCase();
+      const cellMatch = cellStr.match(/\b[A-Z]{1,3}\d{1,4}\b/);
+      const cell = cellMatch?.[0];
+      if (uuid && cell) {
+        map.set(uuid, cell);
+        map.set(uuid.toUpperCase(), cell);
+        map.set(uuid.toLowerCase(), cell);
+      }
+    }
+    return map;
+  }, [promptDefsForQty]);
+
   // Track whether the quantity prompt was explicitly set by the is_quantity setting
   const qtySetBySettingRef = useRef(false);
 
@@ -1492,13 +1528,20 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     // If there's an is_quantity setting, always prefer it (even if qtyPrompt is already set by fallback)
     if (quantityPromptSetting?.prompt_name) {
       const normalizeKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
-      const qtyKey = normalizeKey(quantityPromptSetting.prompt_name);
+      const qtyCellKey = normalizeKey(quantityPromptSetting.prompt_name); // e.g. "B4"
       const qtyLabel = quantityPromptSetting.label ? normalizeKey(quantityPromptSetting.label) : "";
+      
       const match = numericPrompts.find(p => {
-        return normalizeKey(p.id) === qtyKey 
-          || normalizeKey(p.label) === qtyKey
-          || (qtyLabel && normalizeKey(p.label) === qtyLabel);
+        // 1. Direct match by UUID or label text
+        if (normalizeKey(p.id) === qtyCellKey) return true;
+        if (normalizeKey(p.label) === qtyCellKey) return true;
+        if (qtyLabel && normalizeKey(p.label) === qtyLabel) return true;
+        // 2. Match via UUID→cell mapping (the key path: UUID → cell → compare with setting's cell)
+        const cell = uuidToCellMap.get(p.id) ?? uuidToCellMap.get(p.id.toUpperCase()) ?? uuidToCellMap.get(p.id.toLowerCase());
+        if (cell && cell === qtyCellKey) return true;
+        return false;
       });
+      
       if (match && match.id !== qtyPrompt) {
         setQtyPrompt(match.id);
         qtySetBySettingRef.current = true;
@@ -1514,7 +1557,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     if (!qtyPrompt) {
       setQtyPrompt(numericPrompts[0].id);
     }
-  }, [numericPrompts, qtyPrompt, quantityPromptSetting]);
+  }, [numericPrompts, qtyPrompt, quantityPromptSetting, uuidToCellMap]);
 
   // Sync Q1 with the selected qtyPrompt field value - SOLO cuando hay commit (debouncedPromptValues)
   // IMPORTANTE: Usar debouncedPromptValues para evitar sincronizar en cada keystroke
