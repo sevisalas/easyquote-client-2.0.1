@@ -102,7 +102,7 @@ export default function ComponentTabsPromptsForm({
   } = useProductComponentSettings(productId);
 
   // Obtener configuración de prompts (admin_only, hide_in_documents, force_result)
-  const { isPromptAdminOnly, isPromptForceResult, isPromptHidden: isPromptHiddenSetting, isLoading: isPromptSettingsLoading, promptSettings } = useProductPromptSettings(productId);
+  const { isPromptAdminOnly, isPromptForceResult, isPromptHidden: isPromptHiddenSetting, isPromptQuantity, getQuantityPromptName, isLoading: isPromptSettingsLoading, promptSettings } = useProductPromptSettings(productId);
 
   // Obtener componentes activos según la configuración de producto encuadernado
   const activeComponents = useMemo(() => {
@@ -488,8 +488,20 @@ export default function ComponentTabsPromptsForm({
         grouped[GENERAL_COMPONENT.value].push(prompt);
       }
     });
+    // Mover el prompt marcado como is_quantity a la primera posición de su grupo
+    const qtyName = getQuantityPromptName();
+    if (qtyName) {
+      for (const comp of Object.keys(grouped)) {
+        const arr = grouped[comp];
+        const qtyIdx = arr.findIndex(p => isPromptQuantity(p.id) || isPromptQuantity(p.label));
+        if (qtyIdx > 0) {
+          const [qtyPrompt] = arr.splice(qtyIdx, 1);
+          arr.unshift(qtyPrompt);
+        }
+      }
+    }
     return grouped;
-  }, [prompts, availableComponents, getPromptComponent, product, promptDefinitions, promptCellLookup, boundProductConfig, activeComponents]);
+  }, [prompts, availableComponents, getPromptComponent, product, promptDefinitions, promptCellLookup, boundProductConfig, activeComponents, isPromptQuantity, getQuantityPromptName]);
 
   // Agrupar prompts force_result por componente (para renderizar en sección aparte)
   const forceResultByComponent = useMemo(() => {
