@@ -383,7 +383,7 @@ export const generateQuotePDF = async (
       
       // Extract displayQuantity: prefer Q1 from multi, then is_quantity prompt, then heuristic
       let displayQuantity: string | number | null = null;
-      if (item.multi?.rows?.length > 0) {
+      const qtySettingName = item.product_id ? quantityPromptMap.get(item.product_id) : undefined;
         displayQuantity = item.multi.rows[0].qty;
       } else if (item.multi?.qtyInputs?.length > 0) {
         displayQuantity = item.multi.qtyInputs[0];
