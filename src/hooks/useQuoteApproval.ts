@@ -40,6 +40,17 @@ export const useQuoteApproval = () => {
       if (quoteError) throw quoteError;
       if (!quote) throw new Error('Presupuesto no encontrado');
 
+      // Check if this quote already has a sales order (prevent duplicate approvals)
+      const { data: existingOrder } = await supabase
+        .from('sales_orders')
+        .select('id, order_number')
+        .eq('quote_id', quoteId)
+        .maybeSingle();
+
+      if (existingOrder) {
+        throw new Error(`Este presupuesto ya tiene un pedido asociado (${existingOrder.order_number}). No se puede aprobar de nuevo.`);
+      }
+
       // Check permissions: comercial can only approve their own quotes
       if (userRole === 'comercial' && quote.user_id !== user.id) {
         throw new Error('Solo puedes aprobar tus propios presupuestos');
@@ -71,18 +82,41 @@ export const useQuoteApproval = () => {
         throw new Error('No se pudo determinar la organización');
       }
 
-      const { data: docNumber, error: docNumError } = await supabase
-        .rpc('next_document_number', {
-          p_organization_id: organizationId,
-          p_document_type: 'order',
-        });
+      // Retry logic for order number generation (handles race conditions)
+      let orderNumber: string;
+      let nextSequential: number;
+      const MAX_RETRIES = 3;
+      
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        const { data: docNumber, error: docNumError } = await supabase
+          .rpc('next_document_number', {
+            p_organization_id: organizationId,
+            p_document_type: 'order',
+          });
 
-      if (docNumError || !docNumber || docNumber.length === 0) {
-        throw new Error('Error generando número de pedido: ' + (docNumError?.message || 'sin resultado'));
+        if (docNumError || !docNumber || docNumber.length === 0) {
+          throw new Error('Error generando número de pedido: ' + (docNumError?.message || 'sin resultado'));
+        }
+
+        orderNumber = docNumber[0].document_number;
+        nextSequential = docNumber[0].sequential_number;
+
+        // Verify the number doesn't already exist
+        const { data: existing } = await supabase
+          .from('sales_orders')
+          .select('id')
+          .eq('organization_id', organizationId)
+          .eq('order_number', orderNumber)
+          .maybeSingle();
+
+        if (!existing) break; // Number is available
+
+        console.warn(`⚠️ Order number ${orderNumber} already exists, retrying (attempt ${attempt + 1}/${MAX_RETRIES})`);
+        
+        if (attempt === MAX_RETRIES - 1) {
+          throw new Error(`No se pudo generar un número de pedido único después de ${MAX_RETRIES} intentos. Contacta con soporte.`);
+        }
       }
-
-      const orderNumber = docNumber[0].document_number;
-      const nextSequential = docNumber[0].sequential_number;
       
       console.log(`📋 Approval order numbering (atomic): number="${orderNumber}", seq=${nextSequential}`);
 
