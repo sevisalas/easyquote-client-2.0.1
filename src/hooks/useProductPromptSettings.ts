@@ -128,6 +128,20 @@ export function useProductPromptSettings(easyquoteProductId?: string) {
     return setting?.is_hidden ?? false;
   };
 
+  // Helper: verificar si un prompt es el campo de cantidad
+  const isPromptQuantity = (promptName: string): boolean => {
+    const setting = settingsByPromptName.get(normalizePromptName(promptName));
+    return setting?.is_quantity ?? false;
+  };
+
+  // Helper: obtener el prompt marcado como cantidad para el producto actual
+  const getQuantityPromptName = (): string | undefined => {
+    for (const s of promptSettings) {
+      if (s.is_quantity) return s.prompt_name;
+    }
+    return undefined;
+  };
+
   // Helper: obtener la configuración completa de un prompt
   const getPromptSetting = (promptName: string): ProductPromptSetting | undefined => {
     return settingsByPromptName.get(normalizePromptName(promptName));
@@ -142,6 +156,8 @@ export function useProductPromptSettings(easyquoteProductId?: string) {
     isPromptHiddenInDocuments,
     isPromptForceResult,
     isPromptHidden,
+    isPromptQuantity,
+    getQuantityPromptName,
     getPromptSetting,
   };
 }
