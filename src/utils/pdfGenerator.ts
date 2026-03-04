@@ -384,12 +384,12 @@ export const generateQuotePDF = async (
       // Extract displayQuantity: prefer Q1 from multi, then is_quantity prompt, then heuristic
       let displayQuantity: string | number | null = null;
       const qtySettingName = item.product_id ? quantityPromptMap.get(item.product_id) : undefined;
+      if (item.multi?.rows?.length > 0) {
         displayQuantity = item.multi.rows[0].qty;
       } else if (item.multi?.qtyInputs?.length > 0) {
         displayQuantity = item.multi.qtyInputs[0];
       } else if (item.prompts && Array.isArray(item.prompts)) {
         // First try: look for the prompt marked as is_quantity in product_prompt_settings
-        const qtySettingName = item.quantity_prompt_name;
         if (qtySettingName) {
           const normalizeKey = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
           const qtyKey = normalizeKey(qtySettingName);
