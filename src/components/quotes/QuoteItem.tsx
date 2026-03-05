@@ -217,6 +217,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [activeComponent, setActiveComponent] = useState<string>("cubierta");
   const [boundProductConfig, setBoundProductConfig] = useState<BoundProductConfig | null>(null);
   const [userEditedPrice, setUserEditedPrice] = useState<number | null>(null); // Precio editado por usuario
+  const [isEditingCompositePrice, setIsEditingCompositePrice] = useState(false);
+  const [localCompositePrice, setLocalCompositePrice] = useState("");
   const [forceResultPrompts, setForceResultPrompts] = useState<PromptDef[]>([]); // Prompts marcados como "Opc. restrictiva"
   const initialStateRef = useRef<string>("");
   
@@ -2634,41 +2636,97 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                     {hasConfiguredComponents && isCompositeReady && (
                       <>
                         {/* Precio Total del producto compuesto */}
-                        <div className="p-3 rounded-md border bg-accent/10 mb-4 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-muted-foreground">
-                              {userEditedPrice !== null ? "Precio calculado" : "Precio Total"}
-                            </span>
-                            <span
-                              className={
-                                userEditedPrice !== null
-                                  ? "text-sm text-muted-foreground line-through"
-                                  : "text-lg font-semibold"
-                              }
-                            >
-                              {formatEUR(finalPrice)}
-                            </span>
-                          </div>
+                        {(() => {
+                          const parseCompositePrice = (v: string) => parseFloat(v.replace(/\./g, "").replace(",", ".")) || 0;
 
-                          {userEditedPrice !== null && (
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-muted-foreground">Precio modificado</span>
-                              <span className="text-lg font-semibold text-primary">{formatEUR(userEditedPrice)}</span>
-                            </div>
-                          )}
+                          return (
+                            <div className="p-3 rounded-md border bg-accent/10 mb-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-muted-foreground">
+                                  {userEditedPrice !== null ? "Precio calculado" : "Precio Total"}
+                                </span>
+                                <span
+                                  className={
+                                    userEditedPrice !== null
+                                      ? "text-sm text-muted-foreground line-through"
+                                      : "text-lg font-semibold"
+                                  }
+                                >
+                                  {formatEUR(finalPrice)}
+                                </span>
+                              </div>
 
-                          {canEditPrice && (
-                            <div className="flex justify-end">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setUserEditedPrice(userEditedPrice === null ? finalPrice : null)}
-                              >
-                                {userEditedPrice !== null ? "Usar precio calculado" : "Editar precio"}
-                              </Button>
+                              {userEditedPrice !== null && !isEditingCompositePrice && (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium text-muted-foreground">Precio modificado</span>
+                                  <span className="text-lg font-semibold text-primary">{formatEUR(userEditedPrice)}</span>
+                                </div>
+                              )}
+
+                              {isEditingCompositePrice && (
+                                <div className="flex items-center gap-2 pt-2 border-t">
+                                  <Input
+                                    type="text"
+                                    value={localCompositePrice}
+                                    onChange={(e) => setLocalCompositePrice(e.target.value)}
+                                    placeholder="Nuevo precio"
+                                    className="flex-1"
+                                    autoFocus
+                                  />
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      const parsed = parseCompositePrice(localCompositePrice);
+                                      setUserEditedPrice(parsed > 0 ? parsed : null);
+                                      setIsEditingCompositePrice(false);
+                                    }}
+                                  >
+                                    Aplicar
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setIsEditingCompositePrice(false)}
+                                  >
+                                    Cancelar
+                                  </Button>
+                                </div>
+                              )}
+
+                              {canEditPrice && !isEditingCompositePrice && !multiEnabled && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="w-full text-xs"
+                                  onClick={() => {
+                                    const prefill = (userEditedPrice ?? finalPrice).toFixed(2).replace(".", ",");
+                                    setLocalCompositePrice(prefill);
+                                    setIsEditingCompositePrice(true);
+                                  }}
+                                >
+                                  {userEditedPrice !== null ? "Editar precio modificado" : "Modificar precio final"}
+                                </Button>
+                              )}
+
+                              {multiEnabled && !isEditingCompositePrice && (
+                                <p className="text-xs text-muted-foreground text-center py-1">
+                                  El precio se calcula desde las cantidades múltiples
+                                </p>
+                              )}
+
+                              {userEditedPrice !== null && !isEditingCompositePrice && canEditPrice && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="w-full text-xs text-muted-foreground"
+                                  onClick={() => setUserEditedPrice(null)}
+                                >
+                                  Usar precio calculado
+                                </Button>
+                              )}
                             </div>
-                          )}
-                        </div>
+                          );
+                        })()}
 
                         {/* Datos de salida: generales del padre + tabs para componente seleccionado */}
                         {(() => {
