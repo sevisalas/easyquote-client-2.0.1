@@ -551,6 +551,10 @@ export const generateQuotePDF = async (
       };
     });
 
+    // Templates 7 & 8 (Campillo/Anebri): hide ITEM adjustments in PDFs
+    // but SHOW quote-level adjustments (they appear as separate lines)
+    const hideItemAdjustmentsInPdf = config.selectedTemplate === 7 || config.selectedTemplate === 8;
+
     // Prepare data for template
     const templateData = {
       config,
@@ -573,7 +577,9 @@ export const generateQuotePDF = async (
         phone: '',
         address: ''
       },
-      items: formattedItems,
+      items: hideItemAdjustmentsInPdf
+        ? formattedItems.map(item => ({ ...item, _raw_additionals: item.item_additionals, item_additionals: [] }))
+        : formattedItems,
       quote_additionals: (quote.quote_additionals || []).map((a: any) => ({
             name: (a.name || '').replace(/\s*Ajuste sobre el presupuesto\s*/gi, '').replace(/\s*Ajuste sobre el pedido\s*/gi, '').trim(),
             type: a.type || 'net_amount',

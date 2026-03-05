@@ -245,8 +245,10 @@ Deno.serve(async (req) => {
       .select('selected_template')
       .eq('organization_id', organizationId)
       .maybeSingle();
-    // Campillo/Anebri (templates 7/8) now show adjustments as separate line items in Holded
-    const hideAdjustmentsInHolded = false;
+    // Item adjustments: always bake into item price (hidden in Holded)
+    // Quote adjustments: always show as separate line items in Holded
+    const hideItemAdjustmentsInHolded = pdfConfig?.selected_template === 7 || pdfConfig?.selected_template === 8;
+    const hideAdjustmentsInHolded = false; // Quote-level adjustments always visible
     console.log('🔧 hideAdjustmentsInHolded:', hideAdjustmentsInHolded, 'template:', pdfConfig?.selected_template);
     
     // Get hidden prompt settings: hide_in_documents OR admin_only (if user can't see it, client shouldn't either)
@@ -786,20 +788,7 @@ Deno.serve(async (req) => {
         
         // OUTPUTS SON DATOS INTERNOS - NO SE ENVÍAN A HOLDED
         
-        // Add item additionals text to description (only when not hiding adjustments)
-        if (!hideAdjustmentsInHolded && item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
-          const additionalsText = item.item_additionals
-            .map((additional: any) => {
-              const value = additional.value || 0;
-              const formattedValue = typeof value === 'number' ? value.toFixed(2) : value;
-              return `${additional.name}: ${formattedValue}€`;
-            })
-            .join('\n');
-          
-          if (additionalsText) {
-            description += (description ? '\n' : '') + additionalsText;
-          }
-        }
+        // Item additionals text is handled later in the item_additionals processing block
 
         // Append composite component details (only when prompts are NOT hidden)
         if (!hideAllPromptsInDocs) {
@@ -904,15 +893,11 @@ Deno.serve(async (req) => {
           units = customQuantity;
         }
         
-        // Item additionals are exported as separate line items (not applied to the item price)
-        // Collect them for later insertion after the main item
-        const itemAdditionalLines: any[] = [];
+        // Apply item additionals to the price and calculate discounts
+        // For Campillo/Anebri (T7/T8): bake into item price (not shown as separate lines)
+        // For other templates: also bake into price (item adjustments are always part of the item)
         let discountAmount = 0;
         if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
-          // Get quantity for capacity_divider calculation
-          let itemQty = units;
-          if (item.quantity && item.quantity > 1) itemQty = item.quantity;
-          
           item.item_additionals.forEach((additional: any) => {
             const value = additional.value || 0;
             const isDiscount = additional.is_discount === true || value < 0;
@@ -930,42 +915,42 @@ Deno.serve(async (req) => {
                   break;
               }
             } else {
-              // Calculate price for this additional
-              let adjPrice = 0;
+              // Apply non-discount adjustments to total price
               switch (additional.type) {
                 case 'net_amount':
-                  adjPrice = value;
+                  totalPrice += value;
                   break;
                 case 'percentage':
-                  adjPrice = (totalPrice * value) / 100;
+                  totalPrice += (totalPrice * value) / 100;
                   break;
                 case 'quantity_multiplier':
-                  adjPrice = value * itemQty;
+                  totalPrice *= value;
                   break;
                 case 'capacity_divider': {
                   const cap = additional.capacity_value || 1;
+                  const itemQty = units > 1 ? units : (item.quantity || 1);
                   const divUnits = Math.ceil(itemQty / cap);
-                  adjPrice = value * divUnits;
+                  totalPrice += value * divUnits;
                   break;
                 }
-                default:
-                  adjPrice = value;
               }
-              adjPrice = Math.round(adjPrice * 1000000) / 1000000;
-              
-              const cleanName = (additional.name || 'Ajuste')
-                .replace(/\s*Ajuste sobre el artículo\s*/gi, '')
-                .trim() || 'Ajuste';
-              
-              itemAdditionalLines.push({
-                name: cleanName,
-                desc: '',
-                units: 1,
-                subtotal: adjPrice,
-                taxes: ["s_iva_21"]
-              });
             }
           });
+        }
+        
+        // Item additionals text in description (only when NOT hiding)
+        if (!hideItemAdjustmentsInHolded && item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
+          const additionalsText = item.item_additionals
+            .map((additional: any) => {
+              const value = additional.value || 0;
+              const formattedValue = typeof value === 'number' ? value.toFixed(2) : value;
+              return `${additional.name}: ${formattedValue}€`;
+            })
+            .join('\n');
+          
+          if (additionalsText) {
+            description += (description ? '\n' : '') + additionalsText;
+          }
         }
         
         // Calculate unit price from total price and units
@@ -998,9 +983,6 @@ Deno.serve(async (req) => {
         }
         
         items.push(itemData);
-        
-        // Push item additionals as separate line items
-        itemAdditionalLines.forEach(line => items.push(line));
       }
     });
 
