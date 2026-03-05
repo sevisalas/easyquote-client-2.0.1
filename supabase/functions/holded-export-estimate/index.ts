@@ -904,21 +904,23 @@ Deno.serve(async (req) => {
           units = customQuantity;
         }
         
-        // Apply item additionals to the price and calculate discounts
-        // ALWAYS apply to price (even when hiding from Holded display, values must sum)
+        // Item additionals are exported as separate line items (not applied to the item price)
+        // Collect them for later insertion after the main item
+        const itemAdditionalLines: any[] = [];
         let discountAmount = 0;
         if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
+          // Get quantity for capacity_divider calculation
+          let itemQty = units;
+          if (item.quantity && item.quantity > 1) itemQty = item.quantity;
+          
           item.item_additionals.forEach((additional: any) => {
             const value = additional.value || 0;
-            // Detect discount: either explicitly marked or has negative value
             const isDiscount = additional.is_discount === true || value < 0;
             
             if (isDiscount) {
-              // Add to applied discounts list
               if (additional.name && !appliedDiscounts.includes(additional.name)) {
                 appliedDiscounts.push(additional.name);
               }
-              // Calculate discount amount
               switch (additional.type) {
                 case 'net_amount':
                   discountAmount += Math.abs(value);
@@ -928,18 +930,40 @@ Deno.serve(async (req) => {
                   break;
               }
             } else {
-              // Apply non-discount adjustments to total price
+              // Calculate price for this additional
+              let adjPrice = 0;
               switch (additional.type) {
                 case 'net_amount':
-                  totalPrice += value;
+                  adjPrice = value;
                   break;
                 case 'percentage':
-                  totalPrice += (totalPrice * value) / 100;
+                  adjPrice = (totalPrice * value) / 100;
                   break;
                 case 'quantity_multiplier':
-                  totalPrice *= value;
+                  adjPrice = value * itemQty;
                   break;
+                case 'capacity_divider': {
+                  const cap = additional.capacity_value || 1;
+                  const divUnits = Math.ceil(itemQty / cap);
+                  adjPrice = value * divUnits;
+                  break;
+                }
+                default:
+                  adjPrice = value;
               }
+              adjPrice = Math.round(adjPrice * 1000000) / 1000000;
+              
+              const cleanName = (additional.name || 'Ajuste')
+                .replace(/\s*Ajuste sobre el artículo\s*/gi, '')
+                .trim() || 'Ajuste';
+              
+              itemAdditionalLines.push({
+                name: cleanName,
+                desc: '',
+                units: 1,
+                subtotal: adjPrice,
+                taxes: ["s_iva_21"]
+              });
             }
           });
         }
@@ -954,7 +978,6 @@ Deno.serve(async (req) => {
         console.log('💰 Price calculation:', { totalPrice, units, unitPrice: roundedUnitPrice, productName: item.product_name });
         
         // All products use units + subtotal (unit price)
-        // For custom products, use 'name' field (display name); for API products use 'product_name'
         const itemName = isCustomProduct 
           ? (item.name || 'Artículo personalizado')
           : (item.name || item.product_name || 'Producto');
@@ -975,6 +998,9 @@ Deno.serve(async (req) => {
         }
         
         items.push(itemData);
+        
+        // Push item additionals as separate line items
+        itemAdditionalLines.forEach(line => items.push(line));
       }
     });
 
