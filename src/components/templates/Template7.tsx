@@ -233,7 +233,7 @@ export default function Template7({ data }: Template7Props) {
                           return (
                             <div key={aIdx}>
                               <span style={{ fontWeight: 600 }}>
-                                {adj.is_discount ? '↓ ' : ''}
+                                
                                 {adj.name}:
                               </span>{' '}
                               {fmtEUR(subtotal)}{detail}
