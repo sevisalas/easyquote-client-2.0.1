@@ -247,7 +247,7 @@ export default function Template8({ data }: Template8Props) {
                           return (
                             <div key={aIdx}>
                               <span style={{ fontWeight: 600 }}>
-                                {adj.is_discount ? '↓ ' : '+ '}
+                                {adj.is_discount ? '↓ ' : ''}
                                 {adj.name}:
                               </span>{' '}
                               {fmtEUR(subtotal)}{detail}
