@@ -233,7 +233,7 @@ export default function Template7({ data }: Template7Props) {
                           return (
                             <div key={aIdx}>
                               <span style={{ fontWeight: 600 }}>
-                                {adj.is_discount ? '↓ ' : ''}
+                                
                                 {adj.name}:
                               </span>{' '}
                               {fmtEUR(subtotal)}{detail}
@@ -288,7 +288,7 @@ export default function Template7({ data }: Template7Props) {
                 <tr key={`qa-${aIdx}`} style={{ borderBottom: '1px solid #ddd' }}>
                   <td colSpan={2} style={{ padding: '6px 8px' }}>
                     <span style={{ fontSize: '12px', color: '#555' }}>
-                      {adj.is_discount ? '↓ ' : ''}{label}
+                      {label}
                     </span>
                   </td>
                   <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold' }}>
