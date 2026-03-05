@@ -675,14 +675,14 @@ export default function ComponentTabsOutputs({
     );
   }
 
-  // Renderizar edición de precio para productos simples (sin desglose por componente)
+  // Renderizar edición de precio para productos simples (dentro del mismo recuadro que el precio)
   const renderSimplePriceEdit = () => {
     if (!canEditPrice || !onPriceChange) return null;
     
     const hasModifiedPrice = editablePrice !== null && editablePrice !== undefined;
 
     return (
-      <div className="p-3 rounded-md border bg-card/50 space-y-3">
+      <>
         {/* Precio modificado */}
         {hasModifiedPrice && (
           <div className="flex items-center justify-between">
@@ -758,6 +758,29 @@ export default function ComponentTabsOutputs({
             Usar precio calculado
           </Button>
         )}
+      </>
+    );
+  };
+
+  // Indica si el simple price edit está disponible
+  const showSimplePriceEdit = !hasComponentPrices && canEditPrice && !!onPriceChange;
+
+  // Helper: renderizar precio + edición en el mismo recuadro para productos simples
+  const renderPriceWithEdit = () => {
+    if (!renderPrice) return null;
+    const priceContent = renderPrice();
+    if (!priceContent) return null;
+
+    if (!showSimplePriceEdit) return priceContent;
+
+    // Envolver precio y controles de edición en un solo contenedor
+    return (
+      <div className="p-3 rounded-md border bg-card/50 space-y-3">
+        {/* Contenido del precio (extraemos los hijos del div wrapper) */}
+        {typeof priceContent === 'object' && priceContent !== null && 'props' in priceContent
+          ? priceContent.props?.children ?? priceContent
+          : priceContent}
+        {renderSimplePriceEdit()}
       </div>
     );
   };
@@ -766,8 +789,7 @@ export default function ComponentTabsOutputs({
   if (!isComposite || tabComponents.length === 0) {
     return (
       <div className="space-y-4">
-        {renderPrice && renderPrice()}
-        {!hasComponentPrices && renderSimplePriceEdit()}
+        {renderPriceWithEdit()}
         {renderImages && generalImages.length > 0 && renderImages(generalImages)}
         {generalTextOutputs.length > 0 && (
           <section className="space-y-2">
