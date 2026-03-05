@@ -253,7 +253,7 @@ Deno.serve(async (req) => {
       .select('selected_template')
       .eq('organization_id', organizationId)
       .maybeSingle();
-    // Campillo/Anebri (templates 7/8) now show adjustments as separate line items in Holded
+    // Quote/order-level adjustments always show as separate line items
     const hideAdjustmentsInHolded = false;
     console.log('🔧 hideAdjustmentsInHolded:', hideAdjustmentsInHolded, 'template:', pdfConfig?.selected_template);
     
