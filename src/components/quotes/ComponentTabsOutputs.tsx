@@ -777,7 +777,9 @@ export default function ComponentTabsOutputs({
     return (
       <div className="p-3 rounded-md border bg-card/50 space-y-3">
         {/* Contenido del precio (extraemos los hijos del div wrapper) */}
-        {priceContent.props?.children ?? priceContent}
+        {typeof priceContent === 'object' && priceContent !== null && 'props' in priceContent
+          ? priceContent.props?.children ?? priceContent
+          : priceContent}
         {renderSimplePriceEdit()}
       </div>
     );
