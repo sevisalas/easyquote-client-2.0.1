@@ -217,6 +217,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [activeComponent, setActiveComponent] = useState<string>("cubierta");
   const [boundProductConfig, setBoundProductConfig] = useState<BoundProductConfig | null>(null);
   const [userEditedPrice, setUserEditedPrice] = useState<number | null>(null); // Precio editado por usuario
+  const [isEditingCompositePrice, setIsEditingCompositePrice] = useState(false);
+  const [localCompositePrice, setLocalCompositePrice] = useState("");
   const [forceResultPrompts, setForceResultPrompts] = useState<PromptDef[]>([]); // Prompts marcados como "Opc. restrictiva"
   const initialStateRef = useRef<string>("");
   
