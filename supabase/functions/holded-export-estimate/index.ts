@@ -788,20 +788,7 @@ Deno.serve(async (req) => {
         
         // OUTPUTS SON DATOS INTERNOS - NO SE ENVÍAN A HOLDED
         
-        // Add item additionals text to description (only when not hiding adjustments)
-        if (!hideAdjustmentsInHolded && item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
-          const additionalsText = item.item_additionals
-            .map((additional: any) => {
-              const value = additional.value || 0;
-              const formattedValue = typeof value === 'number' ? value.toFixed(2) : value;
-              return `${additional.name}: ${formattedValue}€`;
-            })
-            .join('\n');
-          
-          if (additionalsText) {
-            description += (description ? '\n' : '') + additionalsText;
-          }
-        }
+        // Item additionals text is handled later in the item_additionals processing block
 
         // Append composite component details (only when prompts are NOT hidden)
         if (!hideAllPromptsInDocs) {
