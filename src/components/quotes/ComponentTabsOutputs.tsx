@@ -675,11 +675,97 @@ export default function ComponentTabsOutputs({
     );
   }
 
+  // Renderizar edición de precio para productos simples (sin desglose por componente)
+  const renderSimplePriceEdit = () => {
+    if (!canEditPrice || !onPriceChange) return null;
+    
+    const hasModifiedPrice = editablePrice !== null && editablePrice !== undefined;
+
+    return (
+      <div className="space-y-2">
+        {hasModifiedPrice && (
+          <div className="p-3 rounded-md border bg-card/50 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">Precio modificado</span>
+              <span className="text-lg font-semibold text-primary">{formatEUR(editablePrice!)}</span>
+            </div>
+          </div>
+        )}
+
+        {isEditingPrice && (
+          <div className="flex items-center gap-2 pt-2">
+            <Input
+              type="text"
+              value={localEditPrice}
+              onChange={(e) => setLocalEditPrice(e.target.value)}
+              placeholder="Nuevo precio"
+              className="flex-1"
+              autoFocus
+            />
+            <Button
+              size="sm"
+              onClick={() => {
+                const parsed = parsePrice(localEditPrice);
+                onPriceChange(parsed > 0 ? parsed : null);
+                setIsEditingPrice(false);
+              }}
+            >
+              Aplicar
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setIsEditingPrice(false);
+              }}
+            >
+              Cancelar
+            </Button>
+          </div>
+        )}
+
+        {!isEditingPrice && !multiEnabled && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="w-full text-xs"
+            onClick={() => {
+              // Get price from the pricing output
+              const currentPrice = editablePrice ?? 0;
+              setLocalEditPrice(currentPrice.toFixed(2).replace(".", ","));
+              setIsEditingPrice(true);
+            }}
+          >
+            {hasModifiedPrice ? "Editar precio modificado" : "Modificar precio final"}
+          </Button>
+        )}
+
+        {multiEnabled && (
+          <p className="text-xs text-muted-foreground text-center py-1">
+            El precio se calcula desde las cantidades múltiples
+          </p>
+        )}
+
+        {hasModifiedPrice && !isEditingPrice && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="w-full text-xs text-muted-foreground"
+            onClick={() => onPriceChange(null)}
+          >
+            Usar precio calculado
+          </Button>
+        )}
+      </div>
+    );
+  };
+
   // Si NO es compuesto o no hay tabs, mostrar outputs planos
   if (!isComposite || tabComponents.length === 0) {
     return (
       <div className="space-y-4">
         {renderPrice && renderPrice()}
+        {!hasComponentPrices && renderSimplePriceEdit()}
         {renderImages && generalImages.length > 0 && renderImages(generalImages)}
         {generalTextOutputs.length > 0 && (
           <section className="space-y-2">
