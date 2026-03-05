@@ -765,12 +765,29 @@ export default function ComponentTabsOutputs({
   // Indica si el simple price edit está disponible
   const showSimplePriceEdit = !hasComponentPrices && canEditPrice && !!onPriceChange;
 
+  // Helper: renderizar precio + edición en el mismo recuadro para productos simples
+  const renderPriceWithEdit = () => {
+    if (!renderPrice) return null;
+    const priceContent = renderPrice();
+    if (!priceContent) return null;
+
+    if (!showSimplePriceEdit) return priceContent;
+
+    // Envolver precio y controles de edición en un solo contenedor
+    return (
+      <div className="p-3 rounded-md border bg-card/50 space-y-3">
+        {/* Contenido del precio (extraemos los hijos del div wrapper) */}
+        {priceContent.props?.children ?? priceContent}
+        {renderSimplePriceEdit()}
+      </div>
+    );
+  };
+
   // Si NO es compuesto o no hay tabs, mostrar outputs planos
   if (!isComposite || tabComponents.length === 0) {
     return (
       <div className="space-y-4">
-        {renderPrice && renderPrice()}
-        {!hasComponentPrices && renderSimplePriceEdit()}
+        {renderPriceWithEdit()}
         {renderImages && generalImages.length > 0 && renderImages(generalImages)}
         {generalTextOutputs.length > 0 && (
           <section className="space-y-2">
