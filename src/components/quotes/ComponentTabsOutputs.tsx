@@ -675,14 +675,14 @@ export default function ComponentTabsOutputs({
     );
   }
 
-  // Renderizar edición de precio para productos simples (sin desglose por componente)
+  // Renderizar edición de precio para productos simples (dentro del mismo recuadro que el precio)
   const renderSimplePriceEdit = () => {
     if (!canEditPrice || !onPriceChange) return null;
     
     const hasModifiedPrice = editablePrice !== null && editablePrice !== undefined;
 
     return (
-      <div className="p-3 rounded-md border bg-card/50 space-y-3">
+      <>
         {/* Precio modificado */}
         {hasModifiedPrice && (
           <div className="flex items-center justify-between">
@@ -758,9 +758,12 @@ export default function ComponentTabsOutputs({
             Usar precio calculado
           </Button>
         )}
-      </div>
+      </>
     );
   };
+
+  // Indica si el simple price edit está disponible
+  const showSimplePriceEdit = !hasComponentPrices && canEditPrice && !!onPriceChange;
 
   // Si NO es compuesto o no hay tabs, mostrar outputs planos
   if (!isComposite || tabComponents.length === 0) {
