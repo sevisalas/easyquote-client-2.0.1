@@ -2637,9 +2637,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                       <>
                         {/* Precio Total del producto compuesto */}
                         {(() => {
-                          const [isEditingCompositePrice, setIsEditingCompositePrice] = React.useState(false);
-                          const [localCompositePrice, setLocalCompositePrice] = React.useState("");
-
                           const parseCompositePrice = (v: string) => parseFloat(v.replace(/\./g, "").replace(",", ".")) || 0;
 
                           return (
