@@ -253,7 +253,8 @@ Deno.serve(async (req) => {
       .select('selected_template')
       .eq('organization_id', organizationId)
       .maybeSingle();
-    const hideAdjustmentsInHolded = pdfConfig?.selected_template === 7 || pdfConfig?.selected_template === 8;
+    // Campillo/Anebri (templates 7/8) now show adjustments as separate line items in Holded
+    const hideAdjustmentsInHolded = false;
     console.log('🔧 hideAdjustmentsInHolded:', hideAdjustmentsInHolded, 'template:', pdfConfig?.selected_template);
     
     // Hide prompts: hide_in_documents OR admin_only (if user can't see it, client shouldn't either)
