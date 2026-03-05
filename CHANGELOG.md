@@ -5,7 +5,10 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
-## [2.5.24] - En desarrollo
+## [2.5.24] - 2026-03-05
+
+### Mejorado
+- **Bloque de precio unificado en productos simples**: El precio y el botón "Modificar precio final" ahora comparten el mismo contenedor visual, igualando el diseño de productos compuestos (encuadernados)
 
 ---
 
