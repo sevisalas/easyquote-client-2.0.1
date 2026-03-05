@@ -682,18 +682,18 @@ export default function ComponentTabsOutputs({
     const hasModifiedPrice = editablePrice !== null && editablePrice !== undefined;
 
     return (
-      <div className="space-y-2">
+      <div className="p-3 rounded-md border bg-card/50 space-y-3">
+        {/* Precio modificado */}
         {hasModifiedPrice && (
-          <div className="p-3 rounded-md border bg-card/50 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Precio modificado</span>
-              <span className="text-lg font-semibold text-primary">{formatEUR(editablePrice!)}</span>
-            </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-muted-foreground">Precio modificado</span>
+            <span className="text-lg font-semibold text-primary">{formatEUR(editablePrice!)}</span>
           </div>
         )}
 
+        {/* Campo de edición */}
         {isEditingPrice && (
-          <div className="flex items-center gap-2 pt-2">
+          <div className="flex items-center gap-2 pt-2 border-t">
             <Input
               type="text"
               value={localEditPrice}
@@ -724,13 +724,13 @@ export default function ComponentTabsOutputs({
           </div>
         )}
 
+        {/* Botón para activar edición */}
         {!isEditingPrice && !multiEnabled && (
           <Button
             size="sm"
             variant="ghost"
             className="w-full text-xs"
             onClick={() => {
-              // Get price from the pricing output
               const currentPrice = editablePrice ?? 0;
               setLocalEditPrice(currentPrice.toFixed(2).replace(".", ","));
               setIsEditingPrice(true);
@@ -740,12 +740,14 @@ export default function ComponentTabsOutputs({
           </Button>
         )}
 
+        {/* Mensaje informativo cuando multiEnabled */}
         {multiEnabled && (
           <p className="text-xs text-muted-foreground text-center py-1">
             El precio se calcula desde las cantidades múltiples
           </p>
         )}
 
+        {/* Botón para quitar precio modificado */}
         {hasModifiedPrice && !isEditingPrice && (
           <Button
             size="sm"
