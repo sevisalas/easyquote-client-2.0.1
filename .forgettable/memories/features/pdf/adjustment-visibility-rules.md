@@ -1,4 +1,20 @@
 # Memory: features/pdf/adjustment-visibility-rules
 Updated: 2026-03-05
 
-Item-level and budget-level adjustments are now shown in ALL templates (including 7 and 8 / Campillo and Anebri) for both Quote PDFs and Sales Order PDFs. They are also exported to Holded as separate line items (discounts as discounts, surcharges as additional lines). The previous behavior of hiding adjustments in Quote PDFs and distributing them proportionally in Holded exports for templates 7/8 has been removed. In multi-quantity PDFs, adjustments are dynamically recalculated for each quantity tier (Q2, Q3) using their specific logic (multiplier, divider) to ensure accurate pricing for all options.
+## Reglas de visibilidad de ajustes para Templates 7/8 (Campillo/Anebri)
+
+### Ajustes de ARTÍCULO (item_additionals)
+- **PDF**: NO se muestran (se ocultan, se integran en el precio del artículo)
+- **Holded**: NO se suben como líneas separadas (se integran en el precio del artículo)
+- Los valores se suman al precio base del producto silenciosamente
+
+### Ajustes de PRESUPUESTO (quote_additionals)
+- **PDF**: SÍ se muestran como filas al final de la tabla de items
+- **Holded**: SÍ se suben como líneas separadas (descuentos como descuentos)
+- Si están marcados como descuento (is_discount), se aplican como descuento global
+
+### Nota técnica
+- `hideItemAdjustmentsInPdf`: controla si los item_additionals se ocultan en el PDF
+- `hideItemAdjustmentsInHolded`: controla si los item_additionals se muestran en la descripción del artículo en Holded
+- `hideAdjustmentsInHolded`: ahora siempre `false` - los quote_additionals siempre se muestran como líneas separadas
+- En multi-quantity PDFs, los ajustes se recalculan dinámicamente para cada tier (Q2, Q3)
