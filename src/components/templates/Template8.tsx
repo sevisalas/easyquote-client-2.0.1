@@ -273,7 +273,9 @@ export default function Template8({ data }: Template8Props) {
                           if (adjs.length > 0) {
                             adjs.forEach((adj: any) => {
                               let subtotal = adj.value;
-                              if (adj.type === 'quantity_multiplier') {
+                              if (adj.type === 'percentage') {
+                                subtotal = (me.price * adj.value) / 100;
+                              } else if (adj.type === 'quantity_multiplier') {
                                 subtotal = adj.value * me.qty;
                               } else if (adj.type === 'capacity_divider') {
                                 const cap = adj.capacity_value || 1;
