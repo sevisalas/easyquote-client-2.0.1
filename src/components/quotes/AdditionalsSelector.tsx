@@ -147,6 +147,9 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
             if (additional.type === "net_amount") {
               subtotal = additional.value;
               subtotalLabel = `${subtotal.toFixed(2)} €`;
+            } else if (additional.type === "percentage") {
+              subtotal = (basePrice * additional.value) / 100;
+              subtotalLabel = `${subtotal.toFixed(2)} €`;
             } else if (additional.type === "quantity_multiplier") {
               subtotal = additional.value * quantity;
               subtotalLabel = `${subtotal.toFixed(2)} €`;
