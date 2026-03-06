@@ -277,12 +277,13 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
           placeholder="Concepto personalizado"
           className="w-64 h-9"
         />
-        <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier" | "capacity_divider") => setCustomType(value)}>
+        <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier" | "capacity_divider" | "percentage") => setCustomType(value)}>
           <SelectTrigger className="w-32 h-9">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="net_amount">Importe</SelectItem>
+            <SelectItem value="percentage">Porcentaje</SelectItem>
             <SelectItem value="quantity_multiplier">Precio ud.</SelectItem>
             <SelectItem value="capacity_divider">Por capacidad</SelectItem>
           </SelectContent>
