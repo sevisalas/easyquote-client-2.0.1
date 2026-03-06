@@ -1864,6 +1864,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         let additionalValue = 0;
         if (additional.type === 'net_amount') {
           additionalValue = additional.value;
+        } else if (additional.type === 'percentage') {
+          // For per-qty breakdown, calculate percentage of that qty's base price
+          // Use the main row price as reference
+          const rowPrice = multiRows.length > 0 ? (parseFloat(String(multiRows[0]?.totalStr || 0).replace(/\./g, '').replace(',', '.')) || 0) : 0;
+          additionalValue = (rowPrice * additional.value) / 100;
         } else if (additional.type === 'quantity_multiplier') {
           additionalValue = additional.value * qty;
         } else if (additional.type === 'capacity_divider') {
