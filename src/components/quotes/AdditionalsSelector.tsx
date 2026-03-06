@@ -12,7 +12,7 @@ interface Additional {
   id: string
   name: string
   description: string | null
-  type: "net_amount" | "quantity_multiplier" | "capacity_divider"
+  type: "net_amount" | "quantity_multiplier" | "capacity_divider" | "percentage"
   default_value: number
   is_discount: boolean
   capacity_value: number | null
@@ -21,7 +21,7 @@ interface Additional {
 interface SelectedAdditional {
   id: string
   name: string
-  type: "net_amount" | "quantity_multiplier" | "capacity_divider" | "custom"
+  type: "net_amount" | "quantity_multiplier" | "capacity_divider" | "percentage" | "custom"
   value: number
   isCustom?: boolean
   is_discount?: boolean
