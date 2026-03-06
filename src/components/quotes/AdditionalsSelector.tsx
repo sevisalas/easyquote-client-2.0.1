@@ -60,7 +60,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
         id: item.id,
         name: item.name,
         description: item.description,
-        type: (item.type as "net_amount" | "quantity_multiplier" | "capacity_divider") || "net_amount",
+        type: (item.type as "net_amount" | "quantity_multiplier" | "capacity_divider" | "percentage") || "net_amount",
         default_value: item.default_value || 0,
         is_discount: item.is_discount || false,
         capacity_value: item.capacity_value || null
