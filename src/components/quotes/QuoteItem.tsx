@@ -2592,6 +2592,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   quantity={isCustomProduct ? customQuantity : (qtyPrompt && promptValues[qtyPrompt]
                     ? parseFloat(String((promptValues[qtyPrompt] as any)?.value ?? promptValues[qtyPrompt]).replace(/\./g, "").replace(",", ".")) || 1
                     : 1)}
+                  basePrice={(() => {
+                    // Base price without additionals for percentage calculation
+                    if (isCustomProduct) return customPrice * customQuantity;
+                    if (hasConfiguredComponents && compositeTotalPrice > 0) return compositeTotalPrice;
+                    const outputPrice = (priceOutput as any)?.value;
+                    if (outputPrice !== undefined && outputPrice !== null) {
+                      return parseFloat(String(outputPrice).replace(/\./g, "").replace(",", ".")) || 0;
+                    }
+                    return (pricing as any)?.price || 0;
+                  })()}
                 />
               </CardContent>
             </Card>
