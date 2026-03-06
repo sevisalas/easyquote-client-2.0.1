@@ -12,7 +12,7 @@ interface Additional {
   id: string
   name: string
   description: string | null
-  type: "net_amount" | "quantity_multiplier" | "capacity_divider"
+  type: "net_amount" | "quantity_multiplier" | "capacity_divider" | "percentage"
   default_value: number
   is_discount: boolean
   capacity_value: number | null
@@ -21,7 +21,7 @@ interface Additional {
 interface SelectedAdditional {
   id: string
   name: string
-  type: "net_amount" | "quantity_multiplier" | "capacity_divider" | "custom"
+  type: "net_amount" | "quantity_multiplier" | "capacity_divider" | "percentage" | "custom"
   value: number
   isCustom?: boolean
   is_discount?: boolean
@@ -32,16 +32,17 @@ interface AdditionalsSelectorProps {
   selectedAdditionals: SelectedAdditional[]
   onChange: (additionals: SelectedAdditional[]) => void
   quantity?: number
+  basePrice?: number
 }
 
-export default function AdditionalsSelector({ selectedAdditionals, onChange, quantity = 1 }: AdditionalsSelectorProps) {
+export default function AdditionalsSelector({ selectedAdditionals, onChange, quantity = 1, basePrice = 0 }: AdditionalsSelectorProps) {
   const [newAdditionalId, setNewAdditionalId] = useState<string>("")
-  const [predefinedType, setPredefinedType] = useState<"net_amount" | "quantity_multiplier" | "capacity_divider">("net_amount")
+  const [predefinedType, setPredefinedType] = useState<"net_amount" | "quantity_multiplier" | "capacity_divider" | "percentage">("net_amount")
   const [predefinedValue, setPredefinedValue] = useState<number>(0)
   const [predefinedCapacity, setPredefinedCapacity] = useState<number | null>(null)
   const [customName, setCustomName] = useState("")
   const [customValue, setCustomValue] = useState(0)
-  const [customType, setCustomType] = useState<"net_amount" | "quantity_multiplier" | "capacity_divider">("net_amount")
+  const [customType, setCustomType] = useState<"net_amount" | "quantity_multiplier" | "capacity_divider" | "percentage">("net_amount")
   const [customCapacity, setCustomCapacity] = useState<number>(1)
 
   const { data: availableAdditionals = [] } = useQuery({
@@ -59,7 +60,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
         id: item.id,
         name: item.name,
         description: item.description,
-        type: (item.type as "net_amount" | "quantity_multiplier" | "capacity_divider") || "net_amount",
+        type: (item.type as "net_amount" | "quantity_multiplier" | "capacity_divider" | "percentage") || "net_amount",
         default_value: item.default_value || 0,
         is_discount: item.is_discount || false,
         capacity_value: item.capacity_value || null
@@ -146,6 +147,9 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
             if (additional.type === "net_amount") {
               subtotal = additional.value;
               subtotalLabel = `${subtotal.toFixed(2)} €`;
+            } else if (additional.type === "percentage") {
+              subtotal = (basePrice * additional.value) / 100;
+              subtotalLabel = `${subtotal.toFixed(2)} €`;
             } else if (additional.type === "quantity_multiplier") {
               subtotal = additional.value * quantity;
               subtotalLabel = `${subtotal.toFixed(2)} €`;
@@ -169,6 +173,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {additional.type === "net_amount" ? "Importe neto" : 
+                     additional.type === "percentage" ? "Porcentaje" :
                      additional.type === "quantity_multiplier" ? "Precio unidad" :
                      additional.type === "capacity_divider" ? `Por capacidad (${additional.capacity_value || '?'} uds)` : "Personalizado"}
                   </div>
@@ -189,7 +194,8 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
                     </div>
                   )}
                   <span className="text-sm text-muted-foreground whitespace-nowrap">
-                    {additional.type === "net_amount" ? "€" : 
+                    {additional.type === "percentage" ? "%" :
+                     additional.type === "net_amount" ? "€" : 
                      additional.type === "capacity_divider" ? "€/ud" : "x"}
                   </span>
                 </div>
@@ -271,12 +277,13 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
           placeholder="Concepto personalizado"
           className="w-64 h-9"
         />
-        <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier" | "capacity_divider") => setCustomType(value)}>
+        <Select value={customType} onValueChange={(value: "net_amount" | "quantity_multiplier" | "capacity_divider" | "percentage") => setCustomType(value)}>
           <SelectTrigger className="w-32 h-9">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="net_amount">Importe</SelectItem>
+            <SelectItem value="percentage">Porcentaje</SelectItem>
             <SelectItem value="quantity_multiplier">Precio ud.</SelectItem>
             <SelectItem value="capacity_divider">Por capacidad</SelectItem>
           </SelectContent>

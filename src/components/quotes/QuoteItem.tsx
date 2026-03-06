@@ -1724,6 +1724,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         itemAdditionals.forEach((additional) => {
           if (additional.type === 'net_amount') {
             additionalsTotal += additional.value;
+          } else if (additional.type === 'percentage') {
+            additionalsTotal += (basePrice * additional.value) / 100;
           } else if (additional.type === 'quantity_multiplier') {
             additionalsTotal += additional.value * customQuantity;
           } else if (additional.type === 'capacity_divider') {
@@ -1771,6 +1773,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         itemAdditionals.forEach((additional) => {
           if (additional.type === 'net_amount') {
             additionalsTotal += additional.value;
+          } else if (additional.type === 'percentage') {
+            additionalsTotal += (baseCompositePrice * additional.value) / 100;
           } else if (additional.type === 'quantity_multiplier') {
             additionalsTotal += additional.value * quantity;
           } else if (additional.type === 'capacity_divider') {
@@ -1829,6 +1833,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       itemAdditionals.forEach((additional) => {
         if (additional.type === 'net_amount') {
           additionalsTotal += additional.value;
+        } else if (additional.type === 'percentage') {
+          additionalsTotal += (basePrice * additional.value) / 100;
         } else if (additional.type === 'quantity_multiplier') {
           additionalsTotal += additional.value * quantity;
         } else if (additional.type === 'capacity_divider') {
@@ -1858,6 +1864,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         let additionalValue = 0;
         if (additional.type === 'net_amount') {
           additionalValue = additional.value;
+        } else if (additional.type === 'percentage') {
+          // For per-qty breakdown, calculate percentage of that qty's base price
+          // Use the main row price as reference
+          const rowPrice = multiRows.length > 0 ? (parseFloat(String(multiRows[0]?.totalStr || 0).replace(/\./g, '').replace(',', '.')) || 0) : 0;
+          additionalValue = (rowPrice * additional.value) / 100;
         } else if (additional.type === 'quantity_multiplier') {
           additionalValue = additional.value * qty;
         } else if (additional.type === 'capacity_divider') {
@@ -2581,6 +2592,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   quantity={isCustomProduct ? customQuantity : (qtyPrompt && promptValues[qtyPrompt]
                     ? parseFloat(String((promptValues[qtyPrompt] as any)?.value ?? promptValues[qtyPrompt]).replace(/\./g, "").replace(",", ".")) || 1
                     : 1)}
+                  basePrice={(() => {
+                    // Base price without additionals for percentage calculation
+                    if (isCustomProduct) return customPrice * customQuantity;
+                    if (hasConfiguredComponents && compositeTotalPrice > 0) return compositeTotalPrice;
+                    const outputPrice = (priceOutput as any)?.value;
+                    if (outputPrice !== undefined && outputPrice !== null) {
+                      return parseFloat(String(outputPrice).replace(/\./g, "").replace(",", ".")) || 0;
+                    }
+                    return (pricing as any)?.price || 0;
+                  })()}
                 />
               </CardContent>
             </Card>
