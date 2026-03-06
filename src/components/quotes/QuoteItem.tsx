@@ -1773,6 +1773,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         itemAdditionals.forEach((additional) => {
           if (additional.type === 'net_amount') {
             additionalsTotal += additional.value;
+          } else if (additional.type === 'percentage') {
+            additionalsTotal += (baseCompositePrice * additional.value) / 100;
           } else if (additional.type === 'quantity_multiplier') {
             additionalsTotal += additional.value * quantity;
           } else if (additional.type === 'capacity_divider') {
