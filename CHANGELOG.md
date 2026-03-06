@@ -5,6 +5,13 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.5.25] - 2026-03-06
+
+### Añadido
+- **Ajuste tipo porcentaje para artículos**: Los ajustes de artículo ahora soportan el tipo "Porcentaje sobre subtotal", disponible en configuración para todos los tenants y calculado correctamente en presupuestos y PDFs
+
+---
+
 ## [2.5.24] - 2026-03-05
 
 ### Mejorado
