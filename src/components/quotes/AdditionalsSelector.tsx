@@ -42,7 +42,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
   const [predefinedCapacity, setPredefinedCapacity] = useState<number | null>(null)
   const [customName, setCustomName] = useState("")
   const [customValue, setCustomValue] = useState(0)
-  const [customType, setCustomType] = useState<"net_amount" | "quantity_multiplier" | "capacity_divider">("net_amount")
+  const [customType, setCustomType] = useState<"net_amount" | "quantity_multiplier" | "capacity_divider" | "percentage">("net_amount")
   const [customCapacity, setCustomCapacity] = useState<number>(1)
 
   const { data: availableAdditionals = [] } = useQuery({
