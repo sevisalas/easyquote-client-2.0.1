@@ -173,6 +173,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {additional.type === "net_amount" ? "Importe neto" : 
+                     additional.type === "percentage" ? "Porcentaje" :
                      additional.type === "quantity_multiplier" ? "Precio unidad" :
                      additional.type === "capacity_divider" ? `Por capacidad (${additional.capacity_value || '?'} uds)` : "Personalizado"}
                   </div>
