@@ -35,9 +35,9 @@ interface AdditionalsSelectorProps {
   basePrice?: number
 }
 
-export default function AdditionalsSelector({ selectedAdditionals, onChange, quantity = 1 }: AdditionalsSelectorProps) {
+export default function AdditionalsSelector({ selectedAdditionals, onChange, quantity = 1, basePrice = 0 }: AdditionalsSelectorProps) {
   const [newAdditionalId, setNewAdditionalId] = useState<string>("")
-  const [predefinedType, setPredefinedType] = useState<"net_amount" | "quantity_multiplier" | "capacity_divider">("net_amount")
+  const [predefinedType, setPredefinedType] = useState<"net_amount" | "quantity_multiplier" | "capacity_divider" | "percentage">("net_amount")
   const [predefinedValue, setPredefinedValue] = useState<number>(0)
   const [predefinedCapacity, setPredefinedCapacity] = useState<number | null>(null)
   const [customName, setCustomName] = useState("")
