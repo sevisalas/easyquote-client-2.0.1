@@ -329,13 +329,12 @@ export default function Additionals() {
                     </SelectTrigger>
                     <SelectContent>
                        <SelectItem value="net_amount">Importe neto</SelectItem>
-                       {form.assignment_type === "article" ? (
+                       <SelectItem value="percentage">Porcentaje sobre subtotal</SelectItem>
+                       {form.assignment_type === "article" && (
                          <>
                            <SelectItem value="quantity_multiplier">Importe unitario (por cantidad)</SelectItem>
                            <SelectItem value="capacity_divider">Por capacidad (ej: cajas)</SelectItem>
                          </>
-                       ) : (
-                         <SelectItem value="percentage">Porcentaje sobre subtotal</SelectItem>
                        )}
                     </SelectContent>
                   </Select>
