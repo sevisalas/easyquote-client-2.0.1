@@ -235,7 +235,11 @@ export default function Template8({ data }: Template8Props) {
                           const numQty = typeof qty === 'string' ? parseFloat(qty.replace(/\./g, '').replace(',', '.')) : (qty || 1);
                           let subtotal = adj.value;
                           let detail = '';
-                          if (adj.type === 'quantity_multiplier') {
+                          if (adj.type === 'percentage') {
+                            const itemPrice = parseFloat(String(item.price || 0).replace(/\./g, '').replace(',', '.')) || 0;
+                            subtotal = (itemPrice * adj.value) / 100;
+                            detail = ` (${adj.value}%)`;
+                          } else if (adj.type === 'quantity_multiplier') {
                             subtotal = adj.value * numQty;
                             detail = ` (${adj.value} €/ud × ${numQty})`;
                           } else if (adj.type === 'capacity_divider') {
