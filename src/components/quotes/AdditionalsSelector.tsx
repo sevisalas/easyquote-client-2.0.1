@@ -194,7 +194,8 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
                     </div>
                   )}
                   <span className="text-sm text-muted-foreground whitespace-nowrap">
-                    {additional.type === "net_amount" ? "€" : 
+                    {additional.type === "percentage" ? "%" :
+                     additional.type === "net_amount" ? "€" : 
                      additional.type === "capacity_divider" ? "€/ud" : "x"}
                   </span>
                 </div>
