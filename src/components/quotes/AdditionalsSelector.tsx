@@ -32,6 +32,7 @@ interface AdditionalsSelectorProps {
   selectedAdditionals: SelectedAdditional[]
   onChange: (additionals: SelectedAdditional[]) => void
   quantity?: number
+  basePrice?: number
 }
 
 export default function AdditionalsSelector({ selectedAdditionals, onChange, quantity = 1 }: AdditionalsSelectorProps) {
