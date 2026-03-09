@@ -28,6 +28,8 @@ export const WorkOrderItem = ({
   item, 
   orderNumber, 
   customerName,
+  customerEmail,
+  customerPhone,
   orderDate,
   deliveryDate,
   itemIndex,
