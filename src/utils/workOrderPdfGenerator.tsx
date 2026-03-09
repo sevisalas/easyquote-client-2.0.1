@@ -180,6 +180,7 @@ interface WorkOrderPDFOptions {
   }>;
   logoUrl?: string;
   companyName?: string;
+  adminOnlyLabels?: Set<string>;
 }
 
 // ─── Visual Imposition Diagram (mirrors ImpositionScheme.tsx logic) ──────
