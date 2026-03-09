@@ -2,8 +2,6 @@ import React from 'react';
 import { Document, Page, Text, View, StyleSheet, pdf, Image } from '@react-pdf/renderer';
 import { supabase } from '@/integrations/supabase/client';
 
-const RED = '#CC0000';
-
 const styles = StyleSheet.create({
   page: {
     padding: 24,
@@ -31,7 +29,6 @@ const styles = StyleSheet.create({
   otTitle: {
     fontSize: 18,
     fontFamily: 'Helvetica-Bold',
-    color: RED,
   },
   otNumber: {
     fontSize: 14,
@@ -44,13 +41,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   // --- Client info ---
-  clientBlock: {
-    marginBottom: 2,
-  },
   clientTitle: {
     fontSize: 10,
     fontFamily: 'Helvetica-Bold',
-    color: RED,
     marginBottom: 3,
   },
   clientRow: {
@@ -66,21 +59,20 @@ const styles = StyleSheet.create({
     fontSize: 9,
   },
   // --- Separators ---
-  redSeparator: {
-    height: 3,
-    backgroundColor: RED,
+  thickSeparator: {
+    height: 2,
+    backgroundColor: '#333',
     marginVertical: 6,
   },
   thinSeparator: {
-    height: 1,
-    backgroundColor: '#ddd',
+    height: 0.5,
+    backgroundColor: '#ccc',
     marginVertical: 4,
   },
   // --- Section titles ---
   sectionTitle: {
     fontSize: 11,
     fontFamily: 'Helvetica-Bold',
-    color: RED,
     marginBottom: 4,
   },
   subsectionTitle: {
@@ -120,25 +112,22 @@ const styles = StyleSheet.create({
   impositionBox: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#999',
     padding: 6,
     backgroundColor: '#fafafa',
+    alignItems: 'center',
   },
   impositionTitle: {
     fontSize: 9,
     fontFamily: 'Helvetica-Bold',
-    marginBottom: 4,
+    marginBottom: 6,
     textAlign: 'center',
-    color: RED,
   },
-  impositionText: {
+  impositionCaption: {
     fontSize: 7,
-    marginBottom: 1,
-  },
-  impositionBold: {
-    fontSize: 8,
-    fontFamily: 'Helvetica-Bold',
-    marginTop: 2,
+    color: '#555',
+    marginTop: 4,
+    textAlign: 'center',
   },
   // --- Observations ---
   observationsBlock: {
@@ -157,13 +146,7 @@ const styles = StyleSheet.create({
     color: '#aaa',
     fontStyle: 'italic',
   },
-  // --- Dates row ---
-  datesRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 16,
-    marginBottom: 2,
-  },
+  // --- Dates ---
   dateItem: {
     flexDirection: 'row',
     fontSize: 8,
@@ -199,30 +182,103 @@ interface WorkOrderPDFOptions {
   companyName?: string;
 }
 
-// ─── Helper: render imposition box ──────────────────────────
+// ─── Visual Imposition Diagram ──────────────────────────────
 
-const ImpositionBox: React.FC<{ data: any; title: string }> = ({ data, title }) => {
+const DIAGRAM_MAX_W = 200;
+const DIAGRAM_MAX_H = 140;
+
+const ImpositionDiagram: React.FC<{ data: any; title: string }> = ({ data, title }) => {
   if (!data || !data.repetitionsH || !data.repetitionsV) return null;
+
+  const pw = Number(data.productWidth) || 50;
+  const ph = Number(data.productHeight) || 50;
+  const sw = Number(data.sheetWidth) || 320;
+  const sh = Number(data.sheetHeight) || 450;
+  const bleed = Number(data.bleed) || 0;
+  const gutterH = Number(data.gutterH) || 0;
+  const gutterV = Number(data.gutterV) || 0;
+  const repsH = Number(data.repetitionsH) || 1;
+  const repsV = Number(data.repetitionsV) || 1;
+
+  // Scale to fit
+  const scaleX = DIAGRAM_MAX_W / sw;
+  const scaleY = DIAGRAM_MAX_H / sh;
+  const scale = Math.min(scaleX, scaleY, 1);
+
+  const sheetW = sw * scale;
+  const sheetH = sh * scale;
+  const cellW = pw * scale;
+  const cellH = ph * scale;
+  const bleedS = bleed * scale;
+  const gutH = gutterH * scale;
+  const gutV = gutterV * scale;
+
+  // Calculate starting offset to center the grid
+  const totalGridW = repsH * cellW + (repsH - 1) * gutH + repsH * bleedS * 2;
+  const totalGridH = repsV * cellH + (repsV - 1) * gutV + repsV * bleedS * 2;
+  const offsetX = Math.max(0, (sheetW - totalGridW) / 2);
+  const offsetY = Math.max(0, (sheetH - totalGridH) / 2);
+
+  // Build cells
+  const cells: React.ReactNode[] = [];
+  for (let row = 0; row < repsV; row++) {
+    for (let col = 0; col < repsH; col++) {
+      const x = offsetX + col * (cellW + gutH + bleedS * 2);
+      const y = offsetY + row * (cellH + gutV + bleedS * 2);
+
+      // Bleed area (lighter)
+      if (bleedS > 0.5) {
+        cells.push(
+          <View
+            key={`bleed-${row}-${col}`}
+            style={{
+              position: 'absolute',
+              left: x,
+              top: y,
+              width: cellW + bleedS * 2,
+              height: cellH + bleedS * 2,
+              backgroundColor: '#ddd',
+            }}
+          />
+        );
+      }
+
+      // Product cell
+      cells.push(
+        <View
+          key={`cell-${row}-${col}`}
+          style={{
+            position: 'absolute',
+            left: x + bleedS,
+            top: y + bleedS,
+            width: cellW,
+            height: cellH,
+            backgroundColor: '#e8e8e8',
+            borderWidth: 0.5,
+            borderColor: '#666',
+          }}
+        />
+      );
+    }
+  }
+
+  const totalReps = data.totalRepetitions || repsH * repsV;
+  const utilStr = data.utilization != null ? ` · ${Number(data.utilization).toFixed(1)}%` : '';
+
   return (
     <View style={styles.impositionBox}>
       <Text style={styles.impositionTitle}>{title}</Text>
-      <Text style={styles.impositionText}>
-        Producto: {data.productWidth}×{data.productHeight} mm · Sangrado: {data.bleed} mm
+
+      {/* Sheet outline with cells */}
+      <View style={{ width: sheetW, height: sheetH, borderWidth: 1, borderColor: '#333', backgroundColor: '#fff', position: 'relative' }}>
+        {cells}
+      </View>
+
+      <Text style={styles.impositionCaption}>
+        {pw}×{ph} mm → {repsH}×{repsV} = {totalReps} uds/pliego{utilStr}
       </Text>
-      <Text style={styles.impositionText}>
-        Pliego: {data.sheetWidth}×{data.sheetHeight} mm
-      </Text>
-      {(data.validWidth || data.validHeight) && (
-        <Text style={styles.impositionText}>
-          Válido: {data.validWidth || data.sheetWidth}×{data.validHeight || data.sheetHeight} mm
-        </Text>
-      )}
-      <Text style={styles.impositionText}>
-        Calles: {data.gutterH}×{data.gutterV} mm
-      </Text>
-      <Text style={styles.impositionBold}>
-        {data.repetitionsH}×{data.repetitionsV} = {data.totalRepetitions} uds/pliego
-        {data.utilization != null ? ` · Aprov: ${Number(data.utilization).toFixed(1)}%` : ''}
+      <Text style={styles.impositionCaption}>
+        Pliego: {sw}×{sh} mm · Sangrado: {bleed} mm · Calles: {gutterH}×{gutterV} mm
       </Text>
     </View>
   );
@@ -264,7 +320,8 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
     <Document>
       {items.map((item, itemIndex) => {
         const sortedPrompts = [...(item.prompts || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
-        const outputs = item.outputs || [];
+        // Outputs already come pre-filtered by production visibility from the caller
+        const outputs = [...(item.outputs || [])].sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
         // Detect imposition type
         const isSimple = item.imposition_data && typeof item.imposition_data.productWidth === 'number';
@@ -327,13 +384,12 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
               </View>
             </View>
 
-            {/* ═══ RED SEPARATOR ═══ */}
-            <View style={styles.redSeparator} />
+            <View style={styles.thickSeparator} />
 
             {/* ═══ ARTÍCULO ═══ */}
             <View style={{ marginBottom: 4 }}>
               <Text style={styles.sectionTitle}>
-                ARTÍCULO {items.length > 1 ? `${itemIndex + 1}` : ''}: {item.product_name}
+                ARTÍCULO{items.length > 1 ? ` ${itemIndex + 1}` : ''}: {item.product_name}
               </Text>
             </View>
 
@@ -347,46 +403,45 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
               </View>
             )}
 
-            {/* ═══ RED SEPARATOR ═══ */}
-            {outputs.length > 0 && <View style={styles.redSeparator} />}
-
             {/* Outputs (Datos técnicos) in 3-col grid */}
             {outputs.length > 0 && (
-              <View style={{ marginBottom: 6 }}>
-                <Text style={styles.sectionTitle}>DATOS TÉCNICOS</Text>
-                <DataGrid
-                  items={outputs.map(o => ({ label: o.name, value: formatVal(o.value) }))}
-                />
-              </View>
+              <>
+                <View style={styles.thinSeparator} />
+                <View style={{ marginBottom: 6 }}>
+                  <Text style={styles.subsectionTitle}>Datos técnicos</Text>
+                  <DataGrid
+                    items={outputs.map(o => ({ label: o.name, value: formatVal(o.value) }))}
+                  />
+                </View>
+              </>
             )}
 
-            {/* ═══ IMPOSICIÓN ═══ */}
+            {/* ═══ IMPOSICIÓN (visual diagram) ═══ */}
             {item.imposition_data && (
               <>
-                <View style={styles.redSeparator} />
+                <View style={styles.thickSeparator} />
                 <Text style={styles.sectionTitle}>IMPOSICIÓN</Text>
 
                 {isSimple ? (
                   <View style={styles.impositionRow}>
-                    <ImpositionBox data={item.imposition_data} title="IMPOSICIÓN" />
+                    <ImpositionDiagram data={item.imposition_data} title="IMPOSICIÓN" />
                   </View>
                 ) : compositeImpositions.length > 0 ? (
                   <View style={styles.impositionRow}>
                     {compositeImpositions.map(([key, data]) => {
                       const alias = item.composite_data?.components?.[key]?.alias || key;
-                      return <ImpositionBox key={key} data={data} title={alias.toUpperCase()} />;
+                      return <ImpositionDiagram key={key} data={data} title={alias.toUpperCase()} />;
                     })}
                   </View>
                 ) : (
                   <View style={styles.impositionRow}>
-                    <ImpositionBox data={item.imposition_data} title="IMPOSICIÓN" />
+                    <ImpositionDiagram data={item.imposition_data} title="IMPOSICIÓN" />
                   </View>
                 )}
               </>
             )}
 
-            {/* ═══ RED SEPARATOR ═══ */}
-            <View style={styles.redSeparator} />
+            <View style={styles.thickSeparator} />
 
             {/* ═══ OBSERVACIONES ═══ */}
             <View style={styles.observationsBlock}>
