@@ -776,6 +776,11 @@ const SalesOrderDetail = () => {
                                 id: item.id,
                                 imposition_data: item.imposition_data,
                                 composite_data: (item as any).composite_data,
+                                observations: (item as any).observations,
+                                product_id: item.product_id,
+                                prompts: item.prompts,
+                                outputs: item.outputs,
+                                organization_id: sessionStorage.getItem('selected_organization_id') || undefined,
                               }} onStatusUpdate={loadOrderData} />
                             </div>
                           )}
@@ -783,7 +788,11 @@ const SalesOrderDetail = () => {
                           {/* Gestión de Producción integrada - Solo en vista producción y en producción */}
                           {order.status === 'in_production' && viewMode === 'production' && (
                             <div className="pt-2 border-t">
-                              <ItemProductionCard item={item} onStatusUpdate={loadOrderData} />
+                              <ItemProductionCard item={{
+                                ...item,
+                                observations: (item as any).observations,
+                                organization_id: sessionStorage.getItem('selected_organization_id') || undefined,
+                              }} onStatusUpdate={loadOrderData} />
                             </div>
                           )}
                         </div>
