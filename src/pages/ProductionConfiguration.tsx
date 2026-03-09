@@ -36,9 +36,9 @@ function OutputTypeVisibilitySection() {
 
   if (isLoading || settings.length === 0) return null;
 
-  // Split into 3 columns
-  const colSize = Math.ceil(settings.length / 3);
-  const columns = [settings.slice(0, colSize), settings.slice(colSize, colSize * 2), settings.slice(colSize * 2)];
+  // Split into 4 columns
+  const colSize = Math.ceil(settings.length / 4);
+  const columns = [settings.slice(0, colSize), settings.slice(colSize, colSize * 2), settings.slice(colSize * 2, colSize * 3), settings.slice(colSize * 3)];
 
   return (
     <Card>
@@ -46,7 +46,7 @@ function OutputTypeVisibilitySection() {
         <CardTitle className="text-sm">Visibilidad de tipos de output</CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-3 pt-0">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           {columns.map((col, ci) => (
             <div key={ci} className="border rounded overflow-hidden text-xs">
               <div className="grid grid-cols-[1fr_44px_44px] px-2 py-1 bg-muted/50 font-semibold text-muted-foreground uppercase tracking-wider">
