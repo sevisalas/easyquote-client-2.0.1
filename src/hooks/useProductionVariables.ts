@@ -42,6 +42,7 @@ export interface UpdateProductionVariableData {
   task_phase_id?: string;
   task_exclude_values?: string[];
   imposition_field?: string | null;
+  default_value?: string | null;
 }
 
 export function useProductionVariables() {
