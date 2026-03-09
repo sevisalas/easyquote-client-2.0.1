@@ -93,6 +93,8 @@ export function useProductionVariables() {
           task_exclude_values: newVariable.task_exclude_values || [],
           imposition_field: newVariable.imposition_field || null,
           default_value: newVariable.default_value || null,
+          show_in_admin: newVariable.show_in_admin ?? true,
+          show_in_production: newVariable.show_in_production ?? true,
         })
         .select()
         .single();
