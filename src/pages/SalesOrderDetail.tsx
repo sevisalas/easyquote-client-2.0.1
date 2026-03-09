@@ -66,6 +66,7 @@ const SalesOrderDetail = () => {
   const [viewMode, setViewMode] = useState<'production' | 'administrative'>('production');
   const [userRole, setUserRole] = useState<string | null>(null);
   const [sourceQuoteNumber, setSourceQuoteNumber] = useState<string | null>(null);
+  const [adminOnlyPrompts, setAdminOnlyPrompts] = useState<Set<string>>(new Set());
   const { isHoldedActive } = useHoldedIntegration();
 
   useEffect(() => {
