@@ -67,7 +67,8 @@ export default function ProductionConfiguration() {
     has_implicit_task: false,
     task_name: "",
     task_phase_id: "",
-    task_exclude_values: [] as string[]
+    task_exclude_values: [] as string[],
+    imposition_field: "" as string,
   });
   useEffect(() => {
     if (organization) {
