@@ -1755,6 +1755,7 @@ export type Database = {
           created_at: string
           easyquote_product_id: string
           enabled_components: string[]
+          has_imposition: boolean
           id: string
           is_component: boolean
           is_composite: boolean
@@ -1767,6 +1768,7 @@ export type Database = {
           created_at?: string
           easyquote_product_id: string
           enabled_components?: string[]
+          has_imposition?: boolean
           id?: string
           is_component?: boolean
           is_composite?: boolean
@@ -1779,6 +1781,7 @@ export type Database = {
           created_at?: string
           easyquote_product_id?: string
           enabled_components?: string[]
+          has_imposition?: boolean
           id?: string
           is_component?: boolean
           is_composite?: boolean

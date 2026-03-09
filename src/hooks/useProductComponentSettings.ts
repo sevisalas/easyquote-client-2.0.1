@@ -11,6 +11,7 @@ export interface ProductComponentSettings {
   is_component: boolean;
   enabled_components: string[];
   product_type: 'sencillo' | 'compuesto' | 'kit';
+  has_imposition: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -157,6 +158,7 @@ export function useProductComponentSettings(
       is_component?: boolean;
       enabled_components?: string[];
       product_type?: 'sencillo' | 'compuesto' | 'kit';
+      has_imposition?: boolean;
     }) => {
       if (!apiUserId) throw new Error('No api_user_id found');
       if (!organizationId) throw new Error('No organization found');
@@ -171,6 +173,7 @@ export function useProductComponentSettings(
           is_component: settings.is_component,
           enabled_components: settings.enabled_components,
           product_type: settings.product_type,
+          has_imposition: settings.has_imposition,
           updated_at: new Date().toISOString(),
         }, {
           onConflict: 'api_user_id,easyquote_product_id',
@@ -262,6 +265,9 @@ export function useProductComponentSettings(
   // Helper: obtener tipo de producto
   const productType = componentSettings?.product_type ?? 'sencillo';
 
+  // Helper: verificar si tiene imposición activada
+  const hasImposition = componentSettings?.has_imposition ?? false;
+
   const normalizePromptName = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
 
   const componentByPromptName = useMemo(() => {
@@ -285,6 +291,7 @@ export function useProductComponentSettings(
     isComponent,
     enabledComponents,
     productType,
+    hasImposition,
     apiUserId,
     organizationId,
     

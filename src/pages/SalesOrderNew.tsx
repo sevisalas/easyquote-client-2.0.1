@@ -598,7 +598,20 @@ export default function SalesOrderNew() {
       // Auto-populate imposition data from mapped production variables
       if (insertedItems && insertedItems.length > 0 && currentOrganization?.id) {
         try {
+          // Get api_user_id for the organization
+          const apiUserId = currentOrganization.api_user_id;
+
           for (const item of insertedItems) {
+            // Check if product has imposition enabled
+            const { data: prodSettings } = await supabase
+              .from("product_component_settings")
+              .select("has_imposition")
+              .eq("api_user_id", apiUserId)
+              .eq("easyquote_product_id", item.product_id)
+              .maybeSingle();
+
+            if (!prodSettings?.has_imposition) continue;
+
             const { data: impMappings } = await supabase
               .from("product_variable_mappings")
               .select(`

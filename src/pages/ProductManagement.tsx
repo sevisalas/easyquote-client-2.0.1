@@ -2735,6 +2735,28 @@ export default function ProductManagement() {
                   })} />
                     <Label htmlFor="isActive">Producto activo</Label>
                   </div>
+
+                  <div className="flex items-center space-x-2 pb-2">
+                    <Switch id="hasImposition" checked={componentSettings?.has_imposition ?? false} onCheckedChange={async (checked) => {
+                      if (selectedProduct) {
+                        try {
+                          await upsertComponentSettings({
+                            easyquote_product_id: selectedProduct.id,
+                            has_imposition: checked,
+                          });
+                          toast({
+                            title: checked ? "Imposición activada" : "Imposición desactivada",
+                            description: checked 
+                              ? "Se generará automáticamente el esquema de imposición al crear pedidos"
+                              : "La imposición solo se podrá activar manualmente por artículo",
+                          });
+                        } catch (error) {
+                          console.error("Error updating imposition setting:", error);
+                        }
+                      }
+                    }} />
+                    <Label htmlFor="hasImposition">Imposición automática</Label>
+                  </div>
                 </div>
 
                 {selectedCategoryId && <div className="max-w-xs">
