@@ -16,7 +16,7 @@ export interface OutputTypeVisibility {
 
 export interface EasyQuoteOutputType {
   id: number;
-  name: string;
+  outputType: string;
 }
 
 export function useOutputTypeVisibility() {
@@ -64,10 +64,10 @@ export function useOutputTypeVisibility() {
 
   // Merge DB settings with API types — default both to true if no DB entry
   const mergedSettings = apiOutputTypes.map((t) => {
-    const saved = visibilitySettings?.find((s) => s.output_type === t.name);
+    const saved = visibilitySettings?.find((s) => s.output_type === t.outputType);
     return {
-      output_type: t.name,
-      label: t.name,
+      output_type: t.outputType,
+      label: t.outputType,
       api_id: t.id,
       show_in_admin: saved ? saved.show_in_admin : true,
       show_in_production: saved ? saved.show_in_production : true,
