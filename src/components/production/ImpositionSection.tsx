@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Settings, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ImpositionData } from "@/utils/impositionCalculator";
+import { ImpositionData, updateCalculatedValues } from "@/utils/impositionCalculator";
 import { ImpositionModal } from "./ImpositionModal";
 import { ImpositionScheme } from "./ImpositionScheme";
 
@@ -18,6 +18,10 @@ interface ImpositionSectionProps {
     imposition_data?: any;
     composite_data?: any;
     observations?: any[];
+    product_id?: string;
+    prompts?: any;
+    outputs?: any;
+    organization_id?: string;
   };
   onStatusUpdate?: () => void;
 }
@@ -66,8 +70,75 @@ function ImpositionBlock({ imp, label, onEdit, onDelete }: { imp: ImpositionData
   );
 }
 
+/**
+ * Resolve imposition defaults from production variable mappings.
+ * Returns calculated ImpositionData if mappings exist, otherwise null.
+ */
+async function resolveImpositionFromMappings(
+  productId: string,
+  organizationId: string,
+  prompts: any[],
+  outputs: any[]
+): Promise<ImpositionData | null> {
+  try {
+    const { data: impMappings } = await supabase
+      .from("product_variable_mappings")
+      .select(`
+        prompt_or_output_name,
+        production_variable_id,
+        production_variables (
+          imposition_field,
+          default_value
+        )
+      `)
+      .eq("easyquote_product_id", productId)
+      .eq("organization_id", organizationId);
+
+    if (!impMappings || impMappings.length === 0) return null;
+
+    const impFieldMappings = impMappings.filter((m: any) => m.production_variables?.imposition_field);
+    if (impFieldMappings.length === 0) return null;
+
+    const impositionData: Record<string, number> = {
+      productWidth: 210,
+      productHeight: 297,
+      bleed: 3,
+      sheetWidth: 700,
+      sheetHeight: 500,
+      validWidth: 680,
+      validHeight: 480,
+      gutterH: 2,
+      gutterV: 2,
+    };
+
+    for (const mapping of impFieldMappings) {
+      const variable = mapping.production_variables as any;
+      const field = variable.imposition_field;
+      const promptOrOutputName = mapping.prompt_or_output_name;
+
+      const promptMatch = prompts.find((p: any) => p.label === promptOrOutputName);
+      const outputMatch = outputs.find((o: any) => o.name === promptOrOutputName);
+      const rawValue = promptMatch?.value || outputMatch?.value || variable.default_value;
+
+      if (rawValue !== undefined && rawValue !== null) {
+        const numValue = parseFloat(String(rawValue));
+        if (!isNaN(numValue) && numValue > 0) {
+          impositionData[field] = numValue;
+        }
+      }
+    }
+
+    return updateCalculatedValues(impositionData as any);
+  } catch (error) {
+    console.error("Error resolving imposition mappings:", error);
+    return null;
+  }
+}
+
 export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionProps) {
   const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [resolvedDefaults, setResolvedDefaults] = useState<ImpositionData | null>(null);
+  const [isResolving, setIsResolving] = useState(false);
 
   const compositeData = item.composite_data;
   const isComposite = compositeData?.components && Object.keys(compositeData.components).length > 0;
@@ -91,7 +162,6 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
     try {
       const updatePayload: any = { imposition_data: newData };
       
-      // Add observation if user manually modified
       if (isUserModified) {
         const currentObs = (item as any).observations || [];
         const newObs = [
@@ -118,6 +188,34 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
     }
   };
 
+  /**
+   * When "Activar imposición" is clicked, try to resolve values from
+   * production variable mappings first, then open modal with those values.
+   */
+  const handleActivateImposition = async (modalKey: string) => {
+    if (item.product_id && item.organization_id) {
+      setIsResolving(true);
+      const prompts = Array.isArray(item.prompts) ? item.prompts : [];
+      const outputs = Array.isArray(item.outputs) ? item.outputs : [];
+      const resolved = await resolveImpositionFromMappings(
+        item.product_id,
+        item.organization_id,
+        prompts,
+        outputs
+      );
+      setResolvedDefaults(resolved);
+      setIsResolving(false);
+
+      // If we got valid data with repetitions, save it directly without opening modal
+      if (resolved && resolved.repetitionsH && resolved.repetitionsV) {
+        await saveImposition(JSON.parse(JSON.stringify(resolved)), false);
+        return;
+      }
+    }
+    // Fallback: open modal with defaults or resolved partial data
+    setActiveModal(modalKey);
+  };
+
   // ─── Producto simple ───
   if (!isComposite) {
     const simpleData = item.imposition_data && isSimpleImposition(item.imposition_data)
@@ -141,19 +239,26 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
             />
           </div>
         ) : (
-          <Button size="sm" variant="outline" onClick={() => setActiveModal('__simple__')} className="w-fit">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => handleActivateImposition('__simple__')} 
+            className="w-fit"
+            disabled={isResolving}
+          >
             <Settings className="h-3 w-3 mr-1" />
-            Activar imposición
+            {isResolving ? 'Calculando...' : 'Activar imposición'}
           </Button>
         )}
         {activeModal === '__simple__' && (
           <ImpositionModal
             open={true}
-            onOpenChange={(open) => { if (!open) setActiveModal(null); }}
-            initialData={simpleData || defaultImpositionData}
+            onOpenChange={(open) => { if (!open) { setActiveModal(null); setResolvedDefaults(null); } }}
+            initialData={resolvedDefaults || simpleData || defaultImpositionData}
             onSave={async (data) => {
               await saveImposition(data);
               setActiveModal(null);
+              setResolvedDefaults(null);
             }}
           />
         )}
@@ -169,6 +274,7 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
     currentMap[componentKey] = data;
     await saveImposition(currentMap);
     setActiveModal(null);
+    setResolvedDefaults(null);
   };
 
   const handleDeleteComponent = async (componentKey: string) => {
@@ -197,9 +303,15 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
               ) : (
                 <div className="border border-dashed border-border rounded-sm p-1.5 flex items-center gap-2">
                   <span className="text-[10px] font-medium">{alias}:</span>
-                  <Button size="sm" variant="outline" onClick={() => setActiveModal(key)} className="h-5 text-[10px] px-1.5">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => handleActivateImposition(key)} 
+                    className="h-5 text-[10px] px-1.5"
+                    disabled={isResolving}
+                  >
                     <Settings className="h-2.5 w-2.5 mr-0.5" />
-                    Activar
+                    {isResolving ? '...' : 'Activar'}
                   </Button>
                 </div>
               )}
@@ -211,8 +323,8 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
       {activeModal && activeModal !== '__simple__' && (
         <ImpositionModal
           open={true}
-          onOpenChange={(open) => { if (!open) setActiveModal(null); }}
-          initialData={getComponentImposition(activeModal) || defaultImpositionData}
+          onOpenChange={(open) => { if (!open) { setActiveModal(null); setResolvedDefaults(null); } }}
+          initialData={resolvedDefaults || getComponentImposition(activeModal) || defaultImpositionData}
           onSave={(data) => handleSaveComponent(activeModal, data)}
         />
       )}
