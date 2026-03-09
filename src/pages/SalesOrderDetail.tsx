@@ -67,6 +67,7 @@ const SalesOrderDetail = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [sourceQuoteNumber, setSourceQuoteNumber] = useState<string | null>(null);
   const [adminOnlyPrompts, setAdminOnlyPrompts] = useState<Set<string>>(new Set());
+  const [customerInfo, setCustomerInfo] = useState<{ name: string; email?: string; phone?: string }>({ name: 'Sin cliente' });
   const { isHoldedActive } = useHoldedIntegration();
 
   useEffect(() => {
@@ -222,6 +223,18 @@ const SalesOrderDetail = () => {
       
       const additionalsData = await fetchSalesOrderAdditionals(id);
       setAdditionals(additionalsData);
+
+      // Load customer info
+      if (orderData.customer_id) {
+        const { data: customer } = await supabase
+          .from('customers')
+          .select('name, email, phone')
+          .eq('id', orderData.customer_id)
+          .single();
+        if (customer) {
+          setCustomerInfo({ name: customer.name, email: customer.email || undefined, phone: customer.phone || undefined });
+        }
+      }
       
       // Load source quote number if exists
       if (orderData.quote_id) {
@@ -909,7 +922,9 @@ const SalesOrderDetail = () => {
                               composite_data: (item as any).composite_data || undefined,
                             }}
                             orderNumber={order.order_number}
-                            customerName={order.customer_id ? undefined : 'Sin cliente'}
+                            customerName={customerInfo.name}
+                            customerEmail={customerInfo.email}
+                            customerPhone={customerInfo.phone}
                             orderDate={format(new Date(order.order_date), 'dd/MM/yyyy', { locale: es })}
                             deliveryDate={order.delivery_date 
                               ? format(new Date(order.delivery_date), 'dd/MM/yyyy', { locale: es })

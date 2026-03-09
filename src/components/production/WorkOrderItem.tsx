@@ -14,6 +14,8 @@ interface WorkOrderItemProps {
   };
   orderNumber: string;
   customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
   orderDate?: string;
   deliveryDate?: string;
   itemIndex: number;
@@ -26,6 +28,8 @@ export const WorkOrderItem = ({
   item, 
   orderNumber, 
   customerName,
+  customerEmail,
+  customerPhone,
   orderDate,
   deliveryDate,
   itemIndex,
@@ -59,9 +63,12 @@ export const WorkOrderItem = ({
   return (
     <div className="space-y-2">
       {/* Header compacto estilo OT */}
-      <div className="flex items-center justify-between border-b border-foreground/20 pb-1">
-        <div className="flex items-center gap-3 text-xs">
+      <div className="flex items-start justify-between border-b border-foreground/20 pb-1">
+        <div className="flex flex-col gap-0.5">
           <span className="font-bold text-sm">{item.product_name}</span>
+          {customerName && <span className="text-xs text-muted-foreground">{customerName}</span>}
+          {customerEmail && <span className="text-xs text-muted-foreground">{customerEmail}</span>}
+          {customerPhone && <span className="text-xs text-muted-foreground">{customerPhone}</span>}
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           {orderDate && <span>F. Pedido: <span className="font-medium text-foreground">{orderDate}</span></span>}
