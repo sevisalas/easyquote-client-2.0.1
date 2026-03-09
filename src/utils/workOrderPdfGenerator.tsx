@@ -95,12 +95,12 @@ const styles = StyleSheet.create({
   },
   gridLabel: {
     fontFamily: 'Helvetica-Bold',
-    fontSize: 8,
-    color: '#555',
-    marginRight: 3,
+    fontSize: 10,
+    color: '#444',
+    marginRight: 4,
   },
   gridValue: {
-    fontSize: 8,
+    fontSize: 10,
     flex: 1,
   },
   // --- Imposition ---
