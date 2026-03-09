@@ -82,6 +82,7 @@ export function useProductionVariables() {
           task_name: newVariable.task_name || null,
           task_phase_id: newVariable.task_phase_id || null,
           task_exclude_values: newVariable.task_exclude_values || [],
+          imposition_field: newVariable.imposition_field || null,
         })
         .select()
         .single();
