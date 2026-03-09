@@ -250,7 +250,7 @@ export const useQuoteApproval = () => {
         return {
           sales_order_id: salesOrder.id,
           product_id: item.product_id,
-          product_name: item.product_name,
+          product_name: item.name || item.product_name,
           description: item.description,
           quantity: finalQuantity,
           price: finalPrice,
