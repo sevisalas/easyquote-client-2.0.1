@@ -46,7 +46,7 @@ function OutputTypeVisibilitySection() {
         <CardTitle className="text-sm">Visibilidad de tipos de output</CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-3 pt-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           {columns.map((col, ci) => (
             <div key={ci} className="border rounded overflow-hidden text-xs">
               <div className="grid grid-cols-[1fr_44px_44px] px-2 py-1 bg-muted/50 font-semibold text-muted-foreground uppercase tracking-wider">
