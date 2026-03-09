@@ -82,6 +82,7 @@ export default function ProductionConfiguration() {
     task_phase_id: "",
     task_exclude_values: [] as string[],
     imposition_field: "" as string,
+    default_value: "" as string,
   });
   useEffect(() => {
     if (organization) {
