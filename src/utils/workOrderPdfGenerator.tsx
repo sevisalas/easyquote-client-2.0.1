@@ -320,6 +320,7 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
   items,
   logoUrl,
   companyName,
+  adminOnlyLabels,
 }) => {
   const formatVal = (v: any): string => {
     if (v === null || v === undefined) return '-';
