@@ -31,9 +31,7 @@ export const WorkOrderItem = ({
   itemIndex,
   children,
 }: WorkOrderItemProps) => {
-  const relevantOutputs = (item.outputs || []).filter(output => 
-    outputTypesForOT.includes(output.type)
-  );
+  const relevantOutputs = item.outputs || [];
 
   const sortedPrompts = [...(item.prompts || [])].sort((a, b) => 
     (a.order || 0) - (b.order || 0)
