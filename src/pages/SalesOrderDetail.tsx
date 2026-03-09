@@ -856,9 +856,11 @@ const SalesOrderDetail = () => {
                 const itemPrompts = (item.prompts && Array.isArray(item.prompts) ? item.prompts : [])
                   .filter((p: any) => {
                     const label = p.label || '';
+                    // Admin in administrative view sees everything
+                    if (userRole === 'admin' && viewMode === 'administrative') return true;
                     // In production view, always hide admin_only prompts (even for admins)
                     if (viewMode === 'production' && adminOnlyPrompts.has(label.trim().toUpperCase())) return false;
-                    // In admin view, hide only for non-admin roles
+                    // In admin view for non-admin roles, hide admin_only
                     return !isAdminOnlyPrompt(label);
                   });
                 const isExpanded = expandedItems.has(item.id);
