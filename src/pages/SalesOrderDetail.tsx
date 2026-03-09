@@ -66,6 +66,7 @@ const SalesOrderDetail = () => {
   const [viewMode, setViewMode] = useState<'production' | 'administrative'>('production');
   const [userRole, setUserRole] = useState<string | null>(null);
   const [sourceQuoteNumber, setSourceQuoteNumber] = useState<string | null>(null);
+  const [adminOnlyPrompts, setAdminOnlyPrompts] = useState<Set<string>>(new Set());
   const { isHoldedActive } = useHoldedIntegration();
 
   useEffect(() => {
@@ -87,7 +88,39 @@ const SalesOrderDetail = () => {
       if (roleData.role === 'comercial') {
         setViewMode('administrative');
       }
+      // Load admin_only prompts for non-admin users
+      if (roleData.role !== 'admin') {
+        loadAdminOnlyPrompts(roleData.organization_id);
+      }
     }
+  };
+
+  const loadAdminOnlyPrompts = async (organizationId: string) => {
+    const { data: orgData } = await supabase
+      .from('organizations')
+      .select('api_user_id')
+      .eq('id', organizationId)
+      .maybeSingle();
+    
+    if (!orgData?.api_user_id) return;
+    
+    const { data: settings } = await supabase
+      .from('product_prompt_settings')
+      .select('prompt_name, label')
+      .eq('api_user_id', orgData.api_user_id)
+      .eq('admin_only', true);
+    
+    const hiddenSet = new Set<string>();
+    settings?.forEach(s => {
+      if (s.label) hiddenSet.add(s.label.trim().toUpperCase());
+      if (s.prompt_name) hiddenSet.add(s.prompt_name.trim().toUpperCase());
+    });
+    setAdminOnlyPrompts(hiddenSet);
+  };
+
+  const isAdminOnlyPrompt = (label: string) => {
+    if (userRole === 'admin' || adminOnlyPrompts.size === 0) return false;
+    return adminOnlyPrompts.has(label.trim().toUpperCase());
   };
 
   const loadOrderData = async () => {
@@ -715,7 +748,8 @@ const SalesOrderDetail = () => {
                 const filteredOutputs = (itemOutputs as Array<{ name: string; type: string; value: any }>).filter(
                   (o) => isVisibleIn(o.type, visibilityContext)
                 );
-                const itemPrompts = item.prompts && Array.isArray(item.prompts) ? item.prompts : [];
+                const itemPrompts = (item.prompts && Array.isArray(item.prompts) ? item.prompts : [])
+                  .filter((p: any) => !isAdminOnlyPrompt(p.label || ''));
                 const isExpanded = expandedItems.has(item.id);
                 
                 return (
