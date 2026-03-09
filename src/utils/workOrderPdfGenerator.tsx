@@ -475,8 +475,8 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
             <View style={styles.thickSeparator} />
 
             {/* ═══ OBSERVACIONES ═══ */}
-            <View style={styles.observationsBlock}>
-              <Text style={styles.observationsTitle}>OBSERVACIONES</Text>
+            <View style={{ marginTop: 6 }}>
+              <Text style={styles.sectionTitle}>OBSERVACIONES</Text>
             </View>
           </Page>
         );
