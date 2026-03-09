@@ -16,7 +16,7 @@ export interface OutputTypeVisibility {
 
 export interface EasyQuoteOutputType {
   id: number;
-  name: string;
+  outputType: string;
 }
 
 export function useOutputTypeVisibility() {
