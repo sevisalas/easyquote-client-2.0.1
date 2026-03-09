@@ -144,7 +144,7 @@ serve(async (req: Request): Promise<Response> => {
 
     if (!finalDownloadUrl) {
       if (finalSubscriberId && finalFileName) {
-        finalDownloadUrl = `https://sheets.easyquote.cloud/${finalSubscriberId}/${fileId}/${finalFileName}`;
+        finalDownloadUrl = `https://sheets.easyquote.cloud/${encodeURIComponent(finalSubscriberId)}/${encodeURIComponent(fileId)}/${encodeURIComponent(finalFileName)}`;
       }
     }
 
