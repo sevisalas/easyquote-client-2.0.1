@@ -512,10 +512,10 @@ const SalesOrdersList = () => {
               <TableHeader>
                 <TableRow className="h-9">
                   <TableHead className="py-2 text-xs font-semibold">Fecha</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold">Nº</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold min-w-[140px]">Nº</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Cliente</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Usuario</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold">Descripción</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold max-w-[200px]">Descripción</TableHead>
                   <TableHead className="py-2 text-right text-xs font-semibold">Total</TableHead>
                   {hasHoldedAccess && (
                     <>
