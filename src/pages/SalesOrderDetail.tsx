@@ -711,6 +711,10 @@ const SalesOrderDetail = () => {
           ) : (
             <div className="space-y-2">{items.map((item, index) => {
                 const itemOutputs = item.outputs && Array.isArray(item.outputs) ? item.outputs : [];
+                const visibilityContext = viewMode === 'administrative' ? 'admin' : 'production';
+                const filteredOutputs = (itemOutputs as Array<{ name: string; type: string; value: any }>).filter(
+                  (o) => isVisibleIn(o.type, visibilityContext)
+                );
                 const itemPrompts = item.prompts && Array.isArray(item.prompts) ? item.prompts : [];
                 const isExpanded = expandedItems.has(item.id);
                 
