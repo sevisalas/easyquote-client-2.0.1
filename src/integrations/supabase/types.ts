@@ -2151,6 +2151,7 @@ export type Database = {
       production_variables: {
         Row: {
           created_at: string
+          default_value: string | null
           description: string | null
           has_implicit_task: boolean
           id: string
@@ -2166,6 +2167,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          default_value?: string | null
           description?: string | null
           has_implicit_task?: boolean
           id?: string
@@ -2181,6 +2183,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          default_value?: string | null
           description?: string | null
           has_implicit_task?: boolean
           id?: string

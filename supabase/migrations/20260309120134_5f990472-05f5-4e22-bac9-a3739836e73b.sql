@@ -1,0 +1,2 @@
+ALTER TABLE public.production_variables ADD COLUMN default_value text DEFAULT NULL;
+COMMENT ON COLUMN public.production_variables.default_value IS 'Valor por defecto de la variable (ej: 3 para sangrado)';
