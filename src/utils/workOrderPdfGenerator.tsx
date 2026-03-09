@@ -184,10 +184,10 @@ interface WorkOrderPDFOptions {
 
 // ─── Visual Imposition Diagram (mirrors ImpositionScheme.tsx logic) ──────
 
-const DIAGRAM_MAX_W = 400;
-const DIAGRAM_MAX_H = 220;
+const DIAGRAM_DEFAULT_W = 400;
+const DIAGRAM_DEFAULT_H = 220;
 
-const ImpositionDiagram: React.FC<{ data: any; title: string }> = ({ data, title }) => {
+const ImpositionDiagram: React.FC<{ data: any; title: string; maxWidth?: number; maxHeight?: number }> = ({ data, title, maxWidth, maxHeight }) => {
   if (!data || !data.repetitionsH || !data.repetitionsV) return null;
 
   const productWidth = Number(data.productWidth) || 50;
@@ -215,8 +215,10 @@ const ImpositionDiagram: React.FC<{ data: any; title: string }> = ({ data, title
 
   // Scale to fit diagram
   const margin = 4;
-  const scaleX = (DIAGRAM_MAX_W - margin * 2) / vw;
-  const scaleY = (DIAGRAM_MAX_H - margin * 2) / vh;
+  const dMaxW = maxWidth || DIAGRAM_DEFAULT_W;
+  const dMaxH = maxHeight || DIAGRAM_DEFAULT_H;
+  const scaleX = (dMaxW - margin * 2) / vw;
+  const scaleY = (dMaxH - margin * 2) / vh;
   const scale = Math.min(scaleX, scaleY);
 
   const scaledW = vw * scale;
@@ -438,7 +440,8 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
                   <View style={styles.impositionRow}>
                     {compositeImpositions.map(([key, data]) => {
                       const alias = item.composite_data?.components?.[key]?.alias || key;
-                      return <ImpositionDiagram key={key} data={data} title={alias.toUpperCase()} />;
+                      const halfW = Math.floor((DIAGRAM_DEFAULT_W - 20) / compositeImpositions.length);
+                      return <ImpositionDiagram key={key} data={data} title={alias.toUpperCase()} maxWidth={halfW} maxHeight={180} />;
                     })}
                   </View>
                 ) : (
