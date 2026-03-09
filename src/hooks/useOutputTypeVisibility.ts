@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { getEasyQuoteToken } from "@/lib/easyquoteApi";
 
 export interface OutputTypeVisibility {
   id: string;
@@ -13,35 +14,34 @@ export interface OutputTypeVisibility {
   updated_at: string;
 }
 
-// All known EasyQuote output types with sensible defaults
-export const DEFAULT_OUTPUT_TYPES: Array<{
-  output_type: string;
-  label: string;
-  show_in_admin: boolean;
-  show_in_production: boolean;
-}> = [
-  { output_type: "Price", label: "Precio", show_in_admin: true, show_in_production: false },
-  { output_type: "BestOption", label: "Mejor opción", show_in_admin: true, show_in_production: false },
-  { output_type: "RunCost", label: "Coste tirada", show_in_admin: true, show_in_production: false },
-  { output_type: "UnitCost", label: "Coste unitario", show_in_admin: true, show_in_production: false },
-  { output_type: "Quantity", label: "Cantidad", show_in_admin: true, show_in_production: true },
-  { output_type: "Instructions", label: "Instrucciones", show_in_admin: true, show_in_production: true },
-  { output_type: "Workflow", label: "Flujo de trabajo", show_in_admin: true, show_in_production: true },
-  { output_type: "Width", label: "Ancho", show_in_admin: false, show_in_production: true },
-  { output_type: "Height", label: "Alto", show_in_admin: false, show_in_production: true },
-  { output_type: "Depth", label: "Profundidad", show_in_admin: false, show_in_production: true },
-  { output_type: "Weight", label: "Peso", show_in_admin: true, show_in_production: true },
-  { output_type: "TotalSheets", label: "Total hojas", show_in_admin: true, show_in_production: true },
-  { output_type: "ProductImage", label: "Imagen producto", show_in_admin: true, show_in_production: true },
-  { output_type: "Generic", label: "Genérico", show_in_admin: true, show_in_production: true },
-];
+export interface EasyQuoteOutputType {
+  id: number;
+  name: string;
+}
 
 export function useOutputTypeVisibility() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { organization } = useSubscription();
 
-  const { data: visibilitySettings, isLoading } = useQuery({
+  // Fetch real output types from EasyQuote API
+  const { data: apiOutputTypes = [], isLoading: isLoadingTypes } = useQuery({
+    queryKey: ["easyquote-output-types"],
+    queryFn: async () => {
+      const token = await getEasyQuoteToken();
+      if (!token) return [];
+      const resp = await fetch("https://api.easyquote.cloud/api/v1/products/outputs/types", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!resp.ok) return [];
+      const data = await resp.json();
+      return (Array.isArray(data) ? data : []) as EasyQuoteOutputType[];
+    },
+    staleTime: 1000 * 60 * 60, // 1h — types rarely change
+    refetchOnWindowFocus: false,
+  });
+
+  const { data: visibilitySettings, isLoading: isLoadingSettings } = useQuery({
     queryKey: ["output-type-visibility", organization?.id],
     queryFn: async () => {
       if (!organization?.id) return [];
@@ -58,14 +58,15 @@ export function useOutputTypeVisibility() {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Merge DB settings with defaults — any type not in DB uses its default
-  const mergedSettings = DEFAULT_OUTPUT_TYPES.map((def) => {
-    const saved = visibilitySettings?.find((s) => s.output_type === def.output_type);
+  // Merge DB settings with API types — default both to true if no DB entry
+  const mergedSettings = apiOutputTypes.map((t) => {
+    const saved = visibilitySettings?.find((s) => s.output_type === t.name);
     return {
-      output_type: def.output_type,
-      label: def.label,
-      show_in_admin: saved ? saved.show_in_admin : def.show_in_admin,
-      show_in_production: saved ? saved.show_in_production : def.show_in_production,
+      output_type: t.name,
+      label: t.name,
+      api_id: t.id,
+      show_in_admin: saved ? saved.show_in_admin : true,
+      show_in_production: saved ? saved.show_in_production : true,
       id: saved?.id,
     };
   });
@@ -82,7 +83,6 @@ export function useOutputTypeVisibility() {
     }) => {
       if (!organization?.id) throw new Error("No organization found");
 
-      // Get current merged values to preserve the other field
       const current = mergedSettings.find((s) => s.output_type === output_type);
       const row = {
         organization_id: organization.id,
@@ -119,7 +119,7 @@ export function useOutputTypeVisibility() {
 
   return {
     settings: mergedSettings,
-    isLoading,
+    isLoading: isLoadingTypes || isLoadingSettings,
     toggleVisibility: toggleMutation.mutate,
     isVisibleIn,
   };
