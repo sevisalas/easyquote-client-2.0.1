@@ -742,7 +742,7 @@ const SalesOrderDetail = () => {
                                 isExpanded ? "transform rotate-180" : ""
                               }`}
                             />
-                            <h3 className={`font-semibold truncate ${isMobile ? 'text-base' : 'text-lg'}`}>{item.description || item.product_name}</h3>
+                            <h3 className={`font-semibold truncate ${isMobile ? 'text-base' : 'text-lg'}`}>{item.product_name}</h3>
                             {/* Mini barra de estados del artículo - oculta en móvil */}
                             {!isMobile && (
                               <div className="flex items-center gap-1 ml-3">
