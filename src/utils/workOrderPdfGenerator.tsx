@@ -329,7 +329,13 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
   return (
     <Document>
       {items.map((item, itemIndex) => {
-        const sortedPrompts = [...(item.prompts || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
+        // Filter out prompts with value "No" and sort by order
+        const sortedPrompts = [...(item.prompts || [])]
+          .filter(p => {
+            const val = formatVal(p.value);
+            return val !== 'No' && val !== 'no';
+          })
+          .sort((a, b) => (a.order || 0) - (b.order || 0));
         // Outputs already come pre-filtered by production visibility from the caller
         const outputs = [...(item.outputs || [])].sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
