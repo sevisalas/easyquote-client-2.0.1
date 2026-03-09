@@ -384,14 +384,6 @@ export default function ProductionConfiguration() {
                         <span className="text-muted-foreground">Imposición:</span>{" "}
                         <span className="font-medium text-primary">{impositionFieldLabels[variable.imposition_field] || variable.imposition_field}</span>
                       </div>}
-                    <div className="flex gap-2 mb-2">
-                      {variable.show_in_admin && (
-                        <Badge variant="outline" className="text-[10px]">Admin</Badge>
-                      )}
-                      {variable.show_in_production && (
-                        <Badge variant="secondary" className="text-[10px]">Producción</Badge>
-                      )}
-                    </div>
                     {variable.has_implicit_task && variable.task_name && <div className="space-y-2 text-sm">
                         <div>
                           <span className="text-muted-foreground">Tarea:</span>{" "}
