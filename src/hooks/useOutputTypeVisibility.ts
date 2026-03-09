@@ -82,16 +82,19 @@ export function useOutputTypeVisibility() {
     }) => {
       if (!organization?.id) throw new Error("No organization found");
 
+      // Get current merged values to preserve the other field
+      const current = mergedSettings.find((s) => s.output_type === output_type);
+      const row = {
+        organization_id: organization.id,
+        output_type,
+        show_in_admin: current?.show_in_admin ?? true,
+        show_in_production: current?.show_in_production ?? true,
+        [field]: value,
+      };
+
       const { error } = await supabase
         .from("output_type_visibility")
-        .upsert(
-          {
-            organization_id: organization.id,
-            output_type,
-            [field]: value,
-          },
-          { onConflict: "organization_id,output_type" }
-        );
+        .upsert(row, { onConflict: "organization_id,output_type" });
 
       if (error) throw error;
     },
