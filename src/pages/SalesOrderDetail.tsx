@@ -489,16 +489,20 @@ const SalesOrderDetail = () => {
         deliveryDate: order.delivery_date 
           ? format(new Date(order.delivery_date), 'dd/MM/yyyy', { locale: es })
           : undefined,
-        items: items.map((item, index) => ({
-          id: item.id,
-          product_name: item.product_name,
-          quantity: item.quantity,
-          prompts: item.prompts as any,
-          outputs: item.outputs as any,
-          description: item.description || undefined,
-          imposition_data: item.imposition_data as any,
-          composite_data: (item as any).composite_data || undefined,
-        })),
+        items: items.map((item) => {
+          const allOutputs = (item.outputs && Array.isArray(item.outputs) ? item.outputs : []) as Array<{ name: string; type: string; value: any }>;
+          const filteredOutputs = allOutputs.filter(o => isVisibleIn(o.type, 'production'));
+          return {
+            id: item.id,
+            product_name: item.product_name,
+            quantity: item.quantity,
+            prompts: item.prompts as any,
+            outputs: filteredOutputs,
+            description: item.description || undefined,
+            imposition_data: item.imposition_data as any,
+            composite_data: (item as any).composite_data || undefined,
+          };
+        }),
       });
       
       toast.success('PDF de Orden de Trabajo generado correctamente');
