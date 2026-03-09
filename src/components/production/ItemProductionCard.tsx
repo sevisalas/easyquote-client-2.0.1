@@ -19,6 +19,11 @@ interface ItemProductionCardProps {
     production_status?: string | null;
     imposition_data?: any;
     composite_data?: any;
+    observations?: any[];
+    product_id?: string;
+    prompts?: any;
+    outputs?: any;
+    organization_id?: string;
   };
   onStatusUpdate?: () => void;
 }
