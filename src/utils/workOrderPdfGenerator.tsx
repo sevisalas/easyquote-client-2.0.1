@@ -440,7 +440,9 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
                   <View style={styles.impositionRow}>
                     {compositeImpositions.map(([key, data]) => {
                       const alias = item.composite_data?.components?.[key]?.alias || key;
-                      return <ImpositionDiagram key={key} data={data} title={alias.toUpperCase()} />;
+                      const halfW = Math.floor((DIAGRAM_DEFAULT_W - 20) / compositeImpositions.length);
+                      return <ImpositionDiagram key={key} data={data} title={alias.toUpperCase()} maxWidth={halfW} maxHeight={180} />;
+                    })}
                     })}
                   </View>
                 ) : (
