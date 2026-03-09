@@ -381,8 +381,7 @@ export default function ProductionConfiguration() {
         </Card>
       </div>
 
-      {/* Output Type Visibility */}
-      <OutputTypeVisibilitySection />
+      {/* Output Type Visibility moved to end */}
 
       {/* Bottom Row: Production Variables */}
       <Card>
