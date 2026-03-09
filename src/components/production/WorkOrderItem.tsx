@@ -59,9 +59,6 @@ export const WorkOrderItem = ({
       <div className="flex items-center justify-between border-b border-foreground/20 pb-1">
         <div className="flex items-center gap-3 text-xs">
           <span className="font-bold text-sm">{item.product_name}</span>
-          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
-            Cant: {item.quantity}
-          </span>
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           {orderDate && <span>F. Pedido: <span className="font-medium text-foreground">{orderDate}</span></span>}
