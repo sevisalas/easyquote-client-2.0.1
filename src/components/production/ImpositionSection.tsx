@@ -119,7 +119,7 @@ async function resolveImpositionFromMappings(
     const impositionData: Record<string, number> = {
       productWidth: 210,
       productHeight: 297,
-      bleed: 0,
+      bleed: 3,
       validWidth: 680,
       validHeight: 480,
       gutterH: 0,
