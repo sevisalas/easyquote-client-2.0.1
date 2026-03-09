@@ -663,8 +663,8 @@ export default function SalesOrderNew() {
             await supabase
               .from("sales_order_items")
               .update({ 
-                imposition_data: fullData,
-                observations: observations,
+                imposition_data: JSON.parse(JSON.stringify(fullData)),
+                observations: observations as any,
               })
               .eq("id", item.id);
           }
