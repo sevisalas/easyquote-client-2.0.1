@@ -84,11 +84,11 @@ export function useOutputTypeVisibility() {
       field: "show_in_admin" | "show_in_production";
       value: boolean;
     }) => {
-      if (!organization?.id) throw new Error("No organization found");
+      if (!organizationId) throw new Error("No organization found");
 
       const current = mergedSettings.find((s) => s.output_type === output_type);
       const row = {
-        organization_id: organization.id,
+        organization_id: organizationId,
         output_type,
         show_in_admin: current?.show_in_admin ?? true,
         show_in_production: current?.show_in_production ?? true,
