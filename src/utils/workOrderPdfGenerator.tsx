@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
   },
   // --- Separators ---
   thickSeparator: {
-    height: 2,
+    height: 1,
     backgroundColor: '#333',
     marginVertical: 6,
   },
@@ -414,6 +414,8 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
                 <Text style={{ fontSize: 9, color: '#444', marginTop: 2 }}>{item.description}</Text>
               )}
             </View>
+
+            <View style={styles.thinSeparator} />
 
             {/* Prompts + Outputs unified grid (no section labels) */}
             {(sortedPrompts.length > 0 || outputs.length > 0) && (
