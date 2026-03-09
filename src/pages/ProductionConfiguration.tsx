@@ -169,6 +169,7 @@ export default function ProductionConfiguration() {
       task_phase_id: varFormData.has_implicit_task ? varFormData.task_phase_id : null,
       task_exclude_values: varFormData.has_implicit_task ? varFormData.task_exclude_values : null,
       imposition_field: varFormData.imposition_field || null,
+      default_value: varFormData.default_value || null,
     });
     setIsCreateVarDialogOpen(false);
     setVarFormData({
@@ -180,6 +181,7 @@ export default function ProductionConfiguration() {
       task_phase_id: "",
       task_exclude_values: [],
       imposition_field: "",
+      default_value: "",
     });
   };
   const handleEditVariable = () => {
@@ -195,6 +197,7 @@ export default function ProductionConfiguration() {
         task_phase_id: varFormData.has_implicit_task ? varFormData.task_phase_id : null,
         task_exclude_values: varFormData.has_implicit_task ? varFormData.task_exclude_values : null,
         imposition_field: varFormData.imposition_field || null,
+        default_value: varFormData.default_value || null,
       }
     });
     setIsEditVarDialogOpen(false);
@@ -208,6 +211,7 @@ export default function ProductionConfiguration() {
       task_phase_id: "",
       task_exclude_values: [],
       imposition_field: "",
+      default_value: "",
     });
   };
   const handleDeleteVariable = () => {
@@ -227,6 +231,7 @@ export default function ProductionConfiguration() {
       task_phase_id: variable.task_phase_id || "",
       task_exclude_values: variable.task_exclude_values || [],
       imposition_field: variable.imposition_field || "",
+      default_value: variable.default_value || "",
     });
     setIsEditVarDialogOpen(true);
   };
