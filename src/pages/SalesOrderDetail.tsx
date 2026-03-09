@@ -21,6 +21,7 @@ import { isVisiblePrompt, type PromptDef } from "@/utils/promptVisibility";
 import { ItemProductionCard } from "@/components/production/ItemProductionCard";
 import { WorkOrderItem } from "@/components/production/WorkOrderItem";
 import { ImpositionSection } from "@/components/production/ImpositionSection";
+import { useOutputTypeVisibility } from "@/hooks/useOutputTypeVisibility";
 
 import { generateWorkOrderPDF } from "@/utils/workOrderPdfGenerator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
