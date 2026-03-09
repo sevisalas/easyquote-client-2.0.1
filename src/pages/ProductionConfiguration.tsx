@@ -633,6 +633,24 @@ export default function ProductionConfiguration() {
               description: e.target.value
             })} />
             </div>
+
+            <div>
+              <Label htmlFor="edit-var-imposition">Campo de imposición (opcional)</Label>
+              <Select value={varFormData.imposition_field} onValueChange={value => setVarFormData({
+                ...varFormData,
+                imposition_field: value === "__none__" ? "" : value
+              })}>
+                <SelectTrigger id="edit-var-imposition">
+                  <SelectValue placeholder="No asignado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">No asignado</SelectItem>
+                  {Object.entries(impositionFieldLabels).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             
             <div className="flex items-center space-x-2">
               <Checkbox id="edit-has-implicit-task" checked={varFormData.has_implicit_task} onCheckedChange={checked => setVarFormData({
