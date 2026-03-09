@@ -16,6 +16,8 @@ export interface ProductionVariable {
   task_exclude_values: string[];
   imposition_field: string | null;
   default_value: string | null;
+  show_in_admin: boolean;
+  show_in_production: boolean;
   created_at: string;
   updated_at: string;
 }
