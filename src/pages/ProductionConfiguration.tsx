@@ -31,7 +31,59 @@ const impositionFieldLabels: Record<string, string> = {
   gutterV: "Calle vertical",
 };
 
-export default function ProductionConfiguration() {
+function OutputTypeVisibilitySection() {
+  const { settings, toggleVisibility, isLoading } = useOutputTypeVisibility();
+
+  if (isLoading) return null;
+
+  return (
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle>Visibilidad de tipos de output</CardTitle>
+        <CardDescription>
+          Controla qué tipos de datos de salida se muestran en cada contexto
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="border rounded-lg overflow-hidden">
+          <div className="grid grid-cols-[1fr_80px_80px] gap-2 px-4 py-2 bg-muted/50 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <span>Tipo</span>
+            <span className="text-center">Admin</span>
+            <span className="text-center">Producción</span>
+          </div>
+          {settings.map((s) => (
+            <div
+              key={s.output_type}
+              className="grid grid-cols-[1fr_80px_80px] gap-2 px-4 py-2 border-t items-center"
+            >
+              <div>
+                <span className="text-sm font-medium">{s.label}</span>
+                <span className="text-xs text-muted-foreground ml-2">({s.output_type})</span>
+              </div>
+              <div className="flex justify-center">
+                <Switch
+                  checked={s.show_in_admin}
+                  onCheckedChange={(v) =>
+                    toggleVisibility({ output_type: s.output_type, field: "show_in_admin", value: v })
+                  }
+                />
+              </div>
+              <div className="flex justify-center">
+                <Switch
+                  checked={s.show_in_production}
+                  onCheckedChange={(v) =>
+                    toggleVisibility({ output_type: s.output_type, field: "show_in_production", value: v })
+                  }
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
   const {
     organization
   } = useSubscription();
