@@ -81,23 +81,40 @@ async function resolveImpositionFromMappings(
   outputs: any[]
 ): Promise<ImpositionData | null> {
   try {
-    const { data: impMappings } = await supabase
-      .from("product_variable_mappings")
-      .select(`
-        prompt_or_output_name,
-        production_variable_id,
-        production_variables (
-          imposition_field,
-          default_value
-        )
-      `)
-      .eq("easyquote_product_id", productId)
-      .eq("organization_id", organizationId);
+    // Fetch mappings and label translations in parallel
+    const [mappingsResult, labelsResult] = await Promise.all([
+      supabase
+        .from("product_variable_mappings")
+        .select(`
+          prompt_or_output_name,
+          production_variable_id,
+          production_variables (
+            imposition_field,
+            default_value
+          )
+        `)
+        .eq("easyquote_product_id", productId)
+        .eq("organization_id", organizationId),
+      supabase
+        .from("product_prompt_settings")
+        .select("prompt_name, label")
+        .eq("easyquote_product_id", productId)
+        .eq("organization_id", organizationId),
+    ]);
 
+    const impMappings = mappingsResult.data;
     if (!impMappings || impMappings.length === 0) return null;
 
     const impFieldMappings = impMappings.filter((m: any) => m.production_variables?.imposition_field);
     if (impFieldMappings.length === 0) return null;
+
+    // Build cell→displayName lookup from product_prompt_settings
+    const cellToLabel: Record<string, string> = {};
+    for (const row of labelsResult.data || []) {
+      if (row.prompt_name && row.label) {
+        cellToLabel[row.prompt_name] = row.label;
+      }
+    }
 
     const impositionData: Record<string, number> = {
       productWidth: 210,
@@ -114,10 +131,12 @@ async function resolveImpositionFromMappings(
     for (const mapping of impFieldMappings) {
       const variable = mapping.production_variables as any;
       const field = variable.imposition_field;
-      const promptOrOutputName = mapping.prompt_or_output_name;
+      const cellName = mapping.prompt_or_output_name;
+      const displayName = cellToLabel[cellName] || cellName;
 
-      const promptMatch = prompts.find((p: any) => p.label === promptOrOutputName);
-      const outputMatch = outputs.find((o: any) => o.name === promptOrOutputName);
+      // Match by cell name OR display name against prompts and outputs
+      const promptMatch = prompts.find((p: any) => p.label === cellName || p.label === displayName);
+      const outputMatch = outputs.find((o: any) => o.name === cellName || o.name === displayName);
       const rawValue = promptMatch?.value || outputMatch?.value || variable.default_value;
 
       if (rawValue !== undefined && rawValue !== null) {
