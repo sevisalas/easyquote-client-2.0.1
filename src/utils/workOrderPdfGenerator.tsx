@@ -370,18 +370,14 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
                       <Text style={styles.clientValue}>{customerName}</Text>
                     </View>
                   )}
-                  {customerEmail && (
-                    <View style={styles.clientRow}>
-                      <Text style={styles.clientLabel}>Email:</Text>
-                      <Text style={styles.clientValue}>{customerEmail}</Text>
-                    </View>
-                  )}
-                  {customerPhone && (
-                    <View style={styles.clientRow}>
-                      <Text style={styles.clientLabel}>Teléfono:</Text>
-                      <Text style={styles.clientValue}>{customerPhone}</Text>
-                    </View>
-                  )}
+                  <View style={styles.clientRow}>
+                    <Text style={styles.clientLabel}>Email:</Text>
+                    <Text style={styles.clientValue}>{customerEmail || ''}</Text>
+                  </View>
+                  <View style={styles.clientRow}>
+                    <Text style={styles.clientLabel}>Teléfono:</Text>
+                    <Text style={styles.clientValue}>{customerPhone || ''}</Text>
+                  </View>
                 </View>
               </View>
 
