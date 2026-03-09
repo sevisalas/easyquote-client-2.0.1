@@ -130,7 +130,9 @@ const SalesOrderDetail = () => {
     
     if (orderData) {
       const itemsData = await fetchSalesOrderItems(id);
-      setItems(itemsData);
+      // Refresh output types from EasyQuote API
+      const refreshedItems = await refreshOutputTypes(itemsData);
+      setItems(refreshedItems);
       
       const additionalsData = await fetchSalesOrderAdditionals(id);
       setAdditionals(additionalsData);
