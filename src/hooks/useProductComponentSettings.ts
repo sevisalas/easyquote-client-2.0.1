@@ -55,7 +55,8 @@ export const GENERAL_COMPONENT = { value: 'general', label: 'General' };
  */
 export function useProductComponentSettings(
   easyquoteProductId?: string,
-  apiUserIdOverride?: string
+  apiUserIdOverride?: string,
+  organizationIdOverride?: string
 ) {
   const queryClient = useQueryClient();
 
