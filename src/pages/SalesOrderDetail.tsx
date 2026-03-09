@@ -208,7 +208,8 @@ const SalesOrderDetail = () => {
     
     if (orderData) {
       const itemsData = await fetchSalesOrderItems(id);
-      // Refresh output types from EasyQuote API
+      // Refresh output types from EasyQuote API (v2)
+      console.log('[SalesOrderDetail] Items loaded, refreshing output types...');
       const refreshedItems = await refreshOutputTypes(itemsData);
       setItems(refreshedItems);
       
