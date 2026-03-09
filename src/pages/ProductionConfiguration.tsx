@@ -36,9 +36,9 @@ function OutputTypeVisibilitySection() {
 
   if (isLoading || settings.length === 0) return null;
 
-  // Split into 3 columns
-  const colSize = Math.ceil(settings.length / 3);
-  const columns = [settings.slice(0, colSize), settings.slice(colSize, colSize * 2), settings.slice(colSize * 2)];
+  // Split into 4 columns
+  const colSize = Math.ceil(settings.length / 4);
+  const columns = [settings.slice(0, colSize), settings.slice(colSize, colSize * 2), settings.slice(colSize * 2, colSize * 3), settings.slice(colSize * 3)];
 
   return (
     <Card>
