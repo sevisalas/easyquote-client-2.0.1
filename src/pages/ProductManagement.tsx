@@ -443,7 +443,7 @@ export default function ProductManagement() {
     getPromptComponent,
     isUpserting: isUpsertingComponents,
     isAssigning: isAssigningComponent
-  } = useProductComponentSettings(selectedProduct?.id, apiUserId);
+  } = useProductComponentSettings(selectedProduct?.id, apiUserId, organizationId);
 
   // Sincronizar productType con el valor guardado en BD
   useEffect(() => {
