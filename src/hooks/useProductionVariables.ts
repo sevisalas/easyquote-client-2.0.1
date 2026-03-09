@@ -14,6 +14,7 @@ export interface ProductionVariable {
   task_name: string | null;
   task_phase_id: string | null;
   task_exclude_values: string[];
+  imposition_field: string | null;
   created_at: string;
   updated_at: string;
 }
