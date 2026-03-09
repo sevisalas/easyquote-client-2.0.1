@@ -125,7 +125,12 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
       <>
         {simpleData ? (
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Imposición</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+              Imposición
+              {hasUserModification && (
+                <span className="ml-1 text-[9px] font-normal text-amber-600">• modificada</span>
+              )}
+            </p>
             <ImpositionBlock
               imp={simpleData}
               onEdit={() => setActiveModal('__simple__')}
