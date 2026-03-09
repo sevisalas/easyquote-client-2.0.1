@@ -67,6 +67,7 @@ const SalesOrderDetail = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [sourceQuoteNumber, setSourceQuoteNumber] = useState<string | null>(null);
   const [adminOnlyPrompts, setAdminOnlyPrompts] = useState<Set<string>>(new Set());
+  const [customerInfo, setCustomerInfo] = useState<{ name: string; email?: string; phone?: string }>({ name: 'Sin cliente' });
   const { isHoldedActive } = useHoldedIntegration();
 
   useEffect(() => {
