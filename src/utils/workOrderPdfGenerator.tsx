@@ -184,8 +184,8 @@ interface WorkOrderPDFOptions {
 
 // ─── Visual Imposition Diagram ──────────────────────────────
 
-const DIAGRAM_MAX_W = 200;
-const DIAGRAM_MAX_H = 140;
+const DIAGRAM_MAX_W = 350;
+const DIAGRAM_MAX_H = 240;
 
 const ImpositionDiagram: React.FC<{ data: any; title: string }> = ({ data, title }) => {
   if (!data || !data.repetitionsH || !data.repetitionsV) return null;
@@ -200,62 +200,53 @@ const ImpositionDiagram: React.FC<{ data: any; title: string }> = ({ data, title
   const repsH = Number(data.repetitionsH) || 1;
   const repsV = Number(data.repetitionsV) || 1;
 
-  // Scale to fit
+  // Use valid area if available, otherwise sheet
+  const vw = Number(data.validWidth) || sw;
+  const vh = Number(data.validHeight) || sh;
+
+  // Scale sheet to fit diagram area
   const scaleX = DIAGRAM_MAX_W / sw;
   const scaleY = DIAGRAM_MAX_H / sh;
-  const scale = Math.min(scaleX, scaleY, 1);
+  const scale = Math.min(scaleX, scaleY);
 
   const sheetW = sw * scale;
   const sheetH = sh * scale;
   const cellW = pw * scale;
   const cellH = ph * scale;
-  const bleedS = bleed * scale;
   const gutH = gutterH * scale;
   const gutV = gutterV * scale;
 
-  // Calculate starting offset to center the grid
-  const totalGridW = repsH * cellW + (repsH - 1) * gutH + repsH * bleedS * 2;
-  const totalGridH = repsV * cellH + (repsV - 1) * gutV + repsV * bleedS * 2;
-  const offsetX = Math.max(0, (sheetW - totalGridW) / 2);
-  const offsetY = Math.max(0, (sheetH - totalGridH) / 2);
+  // Margin from sheet edge to valid area
+  const marginX = ((sw - vw) / 2) * scale;
+  const marginY = ((sh - vh) / 2) * scale;
+
+  // Grid occupies the valid area; center cells within it
+  const gridTotalW = repsH * cellW + Math.max(0, repsH - 1) * gutH;
+  const gridTotalH = repsV * cellH + Math.max(0, repsV - 1) * gutV;
+  const validW = vw * scale;
+  const validH = vh * scale;
+  const offsetX = marginX + Math.max(0, (validW - gridTotalW) / 2);
+  const offsetY = marginY + Math.max(0, (validH - gridTotalH) / 2);
 
   // Build cells
   const cells: React.ReactNode[] = [];
   for (let row = 0; row < repsV; row++) {
     for (let col = 0; col < repsH; col++) {
-      const x = offsetX + col * (cellW + gutH + bleedS * 2);
-      const y = offsetY + row * (cellH + gutV + bleedS * 2);
+      const x = offsetX + col * (cellW + gutH);
+      const y = offsetY + row * (cellH + gutV);
 
-      // Bleed area (lighter)
-      if (bleedS > 0.5) {
-        cells.push(
-          <View
-            key={`bleed-${row}-${col}`}
-            style={{
-              position: 'absolute',
-              left: x,
-              top: y,
-              width: cellW + bleedS * 2,
-              height: cellH + bleedS * 2,
-              backgroundColor: '#ddd',
-            }}
-          />
-        );
-      }
-
-      // Product cell
       cells.push(
         <View
           key={`cell-${row}-${col}`}
           style={{
             position: 'absolute',
-            left: x + bleedS,
-            top: y + bleedS,
+            left: x,
+            top: y,
             width: cellW,
             height: cellH,
-            backgroundColor: '#e8e8e8',
+            backgroundColor: '#e0e0e0',
             borderWidth: 0.5,
-            borderColor: '#666',
+            borderColor: '#555',
           }}
         />
       );
@@ -270,15 +261,19 @@ const ImpositionDiagram: React.FC<{ data: any; title: string }> = ({ data, title
       <Text style={styles.impositionTitle}>{title}</Text>
 
       {/* Sheet outline with cells */}
-      <View style={{ width: sheetW, height: sheetH, borderWidth: 1, borderColor: '#333', backgroundColor: '#fff', position: 'relative' }}>
+      <View style={{
+        width: sheetW,
+        height: sheetH,
+        borderWidth: 1,
+        borderColor: '#333',
+        backgroundColor: '#fff',
+        position: 'relative',
+      }}>
         {cells}
       </View>
 
       <Text style={styles.impositionCaption}>
-        {pw}×{ph} mm → {repsH}×{repsV} = {totalReps} uds/pliego{utilStr}
-      </Text>
-      <Text style={styles.impositionCaption}>
-        Pliego: {sw}×{sh} mm · Sangrado: {bleed} mm · Calles: {gutterH}×{gutterV} mm
+        {pw}×{ph} mm · {repsH}×{repsV} = {totalReps} uds/pliego{utilStr}
       </Text>
     </View>
   );
