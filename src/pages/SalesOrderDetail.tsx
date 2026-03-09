@@ -922,7 +922,9 @@ const SalesOrderDetail = () => {
                               composite_data: (item as any).composite_data || undefined,
                             }}
                             orderNumber={order.order_number}
-                            customerName={order.customer_id ? undefined : 'Sin cliente'}
+                            customerName={customerInfo.name}
+                            customerEmail={customerInfo.email}
+                            customerPhone={customerInfo.phone}
                             orderDate={format(new Date(order.order_date), 'dd/MM/yyyy', { locale: es })}
                             deliveryDate={order.delivery_date 
                               ? format(new Date(order.delivery_date), 'dd/MM/yyyy', { locale: es })
