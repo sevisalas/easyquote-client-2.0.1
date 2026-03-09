@@ -233,8 +233,6 @@ export default function ProductionConfiguration() {
       task_exclude_values: variable.task_exclude_values || [],
       imposition_field: variable.imposition_field || "",
       default_value: variable.default_value || "",
-      show_in_admin: variable.show_in_admin ?? true,
-      show_in_production: variable.show_in_production ?? true,
     });
     setIsEditVarDialogOpen(true);
   };
