@@ -680,25 +680,6 @@ export default function ProductionConfiguration() {
               })} placeholder="ej: 3" />
             </div>
 
-            <div className="border-t pt-3">
-              <Label className="text-sm font-medium mb-2 block">Visibilidad</Label>
-              <div className="flex gap-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="edit-show-in-admin" checked={varFormData.show_in_admin} onCheckedChange={checked => setVarFormData({
-                    ...varFormData,
-                    show_in_admin: checked as boolean
-                  })} />
-                  <Label htmlFor="edit-show-in-admin" className="text-sm">Admin</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="edit-show-in-production" checked={varFormData.show_in_production} onCheckedChange={checked => setVarFormData({
-                    ...varFormData,
-                    show_in_production: checked as boolean
-                  })} />
-                  <Label htmlFor="edit-show-in-production" className="text-sm">Producción</Label>
-                </div>
-              </div>
-            </div>
             
             <div className="flex items-center space-x-2">
               <Checkbox id="edit-has-implicit-task" checked={varFormData.has_implicit_task} onCheckedChange={checked => setVarFormData({
