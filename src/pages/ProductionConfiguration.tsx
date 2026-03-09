@@ -15,6 +15,19 @@ import { useDefaultProductionTasks } from "@/hooks/useDefaultProductionTasks";
 import { useProductionPhases } from "@/hooks/useProductionPhases";
 import { useProductionVariables } from "@/hooks/useProductionVariables";
 import type { DefaultProductionTask } from "@/hooks/useDefaultProductionTasks";
+
+const impositionFieldLabels: Record<string, string> = {
+  productWidth: "Ancho producto",
+  productHeight: "Alto producto",
+  validWidth: "Ancho válido pliego",
+  validHeight: "Alto válido pliego",
+  bleed: "Sangrado",
+  sheetWidth: "Ancho hoja",
+  sheetHeight: "Alto hoja",
+  gutterH: "Calle horizontal",
+  gutterV: "Calle vertical",
+};
+
 export default function ProductionConfiguration() {
   const {
     organization
