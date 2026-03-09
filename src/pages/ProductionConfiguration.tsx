@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -83,6 +84,8 @@ export default function ProductionConfiguration() {
     task_exclude_values: [] as string[],
     imposition_field: "" as string,
     default_value: "" as string,
+    show_in_admin: true,
+    show_in_production: true,
   });
   useEffect(() => {
     if (organization) {
@@ -170,6 +173,8 @@ export default function ProductionConfiguration() {
       task_exclude_values: varFormData.has_implicit_task ? varFormData.task_exclude_values : null,
       imposition_field: varFormData.imposition_field || null,
       default_value: varFormData.default_value || null,
+      show_in_admin: varFormData.show_in_admin,
+      show_in_production: varFormData.show_in_production,
     });
     setIsCreateVarDialogOpen(false);
     setVarFormData({
@@ -182,6 +187,8 @@ export default function ProductionConfiguration() {
       task_exclude_values: [],
       imposition_field: "",
       default_value: "",
+      show_in_admin: true,
+      show_in_production: true,
     });
   };
   const handleEditVariable = () => {
@@ -198,6 +205,8 @@ export default function ProductionConfiguration() {
         task_exclude_values: varFormData.has_implicit_task ? varFormData.task_exclude_values : null,
         imposition_field: varFormData.imposition_field || null,
         default_value: varFormData.default_value || null,
+        show_in_admin: varFormData.show_in_admin,
+        show_in_production: varFormData.show_in_production,
       }
     });
     setIsEditVarDialogOpen(false);
@@ -212,6 +221,8 @@ export default function ProductionConfiguration() {
       task_exclude_values: [],
       imposition_field: "",
       default_value: "",
+      show_in_admin: true,
+      show_in_production: true,
     });
   };
   const handleDeleteVariable = () => {
@@ -232,6 +243,8 @@ export default function ProductionConfiguration() {
       task_exclude_values: variable.task_exclude_values || [],
       imposition_field: variable.imposition_field || "",
       default_value: variable.default_value || "",
+      show_in_admin: variable.show_in_admin ?? true,
+      show_in_production: variable.show_in_production ?? true,
     });
     setIsEditVarDialogOpen(true);
   };
@@ -383,6 +396,14 @@ export default function ProductionConfiguration() {
                         <span className="text-muted-foreground">Imposición:</span>{" "}
                         <span className="font-medium text-primary">{impositionFieldLabels[variable.imposition_field] || variable.imposition_field}</span>
                       </div>}
+                    <div className="flex gap-2 mb-2">
+                      {variable.show_in_admin && (
+                        <Badge variant="outline" className="text-[10px]">Admin</Badge>
+                      )}
+                      {variable.show_in_production && (
+                        <Badge variant="secondary" className="text-[10px]">Producción</Badge>
+                      )}
+                    </div>
                     {variable.has_implicit_task && variable.task_name && <div className="space-y-2 text-sm">
                         <div>
                           <span className="text-muted-foreground">Tarea:</span>{" "}
@@ -570,6 +591,26 @@ export default function ProductionConfiguration() {
                 default_value: e.target.value
               })} placeholder="ej: 3" />
             </div>
+
+            <div className="border-t pt-3">
+              <Label className="text-sm font-medium mb-2 block">Visibilidad</Label>
+              <div className="flex gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="show-in-admin" checked={varFormData.show_in_admin} onCheckedChange={checked => setVarFormData({
+                    ...varFormData,
+                    show_in_admin: checked as boolean
+                  })} />
+                  <Label htmlFor="show-in-admin" className="text-sm">Admin</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="show-in-production" checked={varFormData.show_in_production} onCheckedChange={checked => setVarFormData({
+                    ...varFormData,
+                    show_in_production: checked as boolean
+                  })} />
+                  <Label htmlFor="show-in-production" className="text-sm">Producción</Label>
+                </div>
+              </div>
+            </div>
             
             <div className="flex items-center space-x-2">
               <Checkbox id="has-implicit-task" checked={varFormData.has_implicit_task} onCheckedChange={checked => setVarFormData({
@@ -676,6 +717,26 @@ export default function ProductionConfiguration() {
                 ...varFormData,
                 default_value: e.target.value
               })} placeholder="ej: 3" />
+            </div>
+
+            <div className="border-t pt-3">
+              <Label className="text-sm font-medium mb-2 block">Visibilidad</Label>
+              <div className="flex gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="edit-show-in-admin" checked={varFormData.show_in_admin} onCheckedChange={checked => setVarFormData({
+                    ...varFormData,
+                    show_in_admin: checked as boolean
+                  })} />
+                  <Label htmlFor="edit-show-in-admin" className="text-sm">Admin</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="edit-show-in-production" checked={varFormData.show_in_production} onCheckedChange={checked => setVarFormData({
+                    ...varFormData,
+                    show_in_production: checked as boolean
+                  })} />
+                  <Label htmlFor="edit-show-in-production" className="text-sm">Producción</Label>
+                </div>
+              </div>
             </div>
             
             <div className="flex items-center space-x-2">
