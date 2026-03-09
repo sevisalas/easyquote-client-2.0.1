@@ -458,12 +458,25 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
 
             <View style={styles.thickSeparator} />
 
+            {/* ═══ AJUSTES PERSONALIZADOS ═══ */}
+            <View style={{ marginBottom: 6 }}>
+              <Text style={styles.sectionTitle}>AJUSTES PERSONALIZADOS</Text>
+              {additionals && additionals.length > 0 ? (
+                <View style={styles.grid3}>
+                  {additionals.map((adj, idx) => (
+                    <View key={idx} style={styles.gridItem}>
+                      <Text style={styles.gridLabel}>{adj.name}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+            </View>
+
+            <View style={styles.thickSeparator} />
+
             {/* ═══ OBSERVACIONES ═══ */}
             <View style={styles.observationsBlock}>
               <Text style={styles.observationsTitle}>OBSERVACIONES</Text>
-              <Text style={styles.observationsPlaceholder}>
-                Espacio para notas durante la producción...
-              </Text>
             </View>
           </Page>
         );
