@@ -415,6 +415,8 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
               )}
             </View>
 
+            <View style={styles.thinSeparator} />
+
             {/* Prompts + Outputs unified grid (no section labels) */}
             {(sortedPrompts.length > 0 || outputs.length > 0) && (
               <View style={{ marginBottom: 6 }}>
