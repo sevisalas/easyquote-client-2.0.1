@@ -204,6 +204,8 @@ export default function ProductionConfiguration() {
         task_exclude_values: varFormData.has_implicit_task ? varFormData.task_exclude_values : null,
         imposition_field: varFormData.imposition_field || null,
         default_value: varFormData.default_value || null,
+        show_in_admin: varFormData.show_in_admin,
+        show_in_production: varFormData.show_in_production,
       }
     });
     setIsEditVarDialogOpen(false);
@@ -218,6 +220,8 @@ export default function ProductionConfiguration() {
       task_exclude_values: [],
       imposition_field: "",
       default_value: "",
+      show_in_admin: true,
+      show_in_production: true,
     });
   };
   const handleDeleteVariable = () => {
