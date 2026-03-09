@@ -192,17 +192,22 @@ const ImpositionDiagram: React.FC<{ data: any; title: string }> = ({ data, title
 
   const pw = Number(data.productWidth) || 50;
   const ph = Number(data.productHeight) || 50;
-  const sw = Number(data.sheetWidth) || 320;
-  const sh = Number(data.sheetHeight) || 450;
-  const bleed = Number(data.bleed) || 0;
+  const rawSw = Number(data.sheetWidth) || 320;
+  const rawSh = Number(data.sheetHeight) || 450;
   const gutterH = Number(data.gutterH) || 0;
   const gutterV = Number(data.gutterV) || 0;
   const repsH = Number(data.repetitionsH) || 1;
   const repsV = Number(data.repetitionsV) || 1;
 
-  // Use valid area if available, otherwise sheet
-  const vw = Number(data.validWidth) || sw;
-  const vh = Number(data.validHeight) || sh;
+  // Sheet is ALWAYS landscape (wider than tall)
+  const sw = Math.max(rawSw, rawSh);
+  const sh = Math.min(rawSw, rawSh);
+
+  // Valid area
+  const rawVw = Number(data.validWidth) || sw;
+  const rawVh = Number(data.validHeight) || sh;
+  const vw = Math.max(rawVw, rawVh);
+  const vh = Math.min(rawVw, rawVh);
 
   // Scale sheet to fit diagram area
   const scaleX = DIAGRAM_MAX_W / sw;
@@ -220,7 +225,7 @@ const ImpositionDiagram: React.FC<{ data: any; title: string }> = ({ data, title
   const marginX = ((sw - vw) / 2) * scale;
   const marginY = ((sh - vh) / 2) * scale;
 
-  // Grid occupies the valid area; center cells within it
+  // Center cells within valid area
   const gridTotalW = repsH * cellW + Math.max(0, repsH - 1) * gutH;
   const gridTotalH = repsV * cellH + Math.max(0, repsV - 1) * gutV;
   const validW = vw * scale;
@@ -253,14 +258,10 @@ const ImpositionDiagram: React.FC<{ data: any; title: string }> = ({ data, title
     }
   }
 
-  const totalReps = data.totalRepetitions || repsH * repsV;
-  const utilStr = data.utilization != null ? ` · ${Number(data.utilization).toFixed(1)}%` : '';
-
   return (
     <View style={styles.impositionBox}>
       <Text style={styles.impositionTitle}>{title}</Text>
 
-      {/* Sheet outline with cells */}
       <View style={{
         width: sheetW,
         height: sheetH,
@@ -271,10 +272,6 @@ const ImpositionDiagram: React.FC<{ data: any; title: string }> = ({ data, title
       }}>
         {cells}
       </View>
-
-      <Text style={styles.impositionCaption}>
-        {pw}×{ph} mm · {repsH}×{repsV} = {totalReps} uds/pliego{utilStr}
-      </Text>
     </View>
   );
 };
