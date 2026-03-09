@@ -215,8 +215,10 @@ const ImpositionDiagram: React.FC<{ data: any; title: string; maxWidth?: number;
 
   // Scale to fit diagram
   const margin = 4;
-  const scaleX = (DIAGRAM_MAX_W - margin * 2) / vw;
-  const scaleY = (DIAGRAM_MAX_H - margin * 2) / vh;
+  const dMaxW = maxWidth || DIAGRAM_DEFAULT_W;
+  const dMaxH = maxHeight || DIAGRAM_DEFAULT_H;
+  const scaleX = (dMaxW - margin * 2) / vw;
+  const scaleY = (dMaxH - margin * 2) / vh;
   const scale = Math.min(scaleX, scaleY);
 
   const scaledW = vw * scale;
