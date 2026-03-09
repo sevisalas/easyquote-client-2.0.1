@@ -84,6 +84,7 @@ function OutputTypeVisibilitySection() {
   );
 }
 
+export default function ProductionConfiguration() {
   const {
     organization
   } = useSubscription();
