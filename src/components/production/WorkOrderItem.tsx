@@ -20,17 +20,7 @@ interface WorkOrderItemProps {
   children?: React.ReactNode;
 }
 
-const outputTypesForOT = [
-  'Instructions',
-  'Workflow', 
-  'Width',
-  'Height',
-  'Depth',
-  'ProductImage',
-  'Quantity',
-  'Generic',
-  'Weight'
-];
+// Output type filtering is now done by the parent using useOutputTypeVisibility
 
 export const WorkOrderItem = ({ 
   item, 
@@ -41,9 +31,7 @@ export const WorkOrderItem = ({
   itemIndex,
   children,
 }: WorkOrderItemProps) => {
-  const relevantOutputs = (item.outputs || []).filter(output => 
-    outputTypesForOT.includes(output.type)
-  );
+  const relevantOutputs = item.outputs || [];
 
   const sortedPrompts = [...(item.prompts || [])].sort((a, b) => 
     (a.order || 0) - (b.order || 0)

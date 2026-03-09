@@ -21,6 +21,7 @@ import { isVisiblePrompt, type PromptDef } from "@/utils/promptVisibility";
 import { ItemProductionCard } from "@/components/production/ItemProductionCard";
 import { WorkOrderItem } from "@/components/production/WorkOrderItem";
 import { ImpositionSection } from "@/components/production/ImpositionSection";
+import { useOutputTypeVisibility } from "@/hooks/useOutputTypeVisibility";
 
 import { generateWorkOrderPDF } from "@/utils/workOrderPdfGenerator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -54,6 +55,7 @@ const SalesOrderDetail = () => {
   const isMobile = useIsMobile();
   const { canAccessProduccion } = useSubscription();
   const { loading, fetchSalesOrderById, fetchSalesOrderItems, fetchSalesOrderAdditionals, updateSalesOrderStatus, deleteSalesOrder } = useSalesOrders();
+  const { isVisibleIn } = useOutputTypeVisibility();
   const [order, setOrder] = useState<SalesOrder | null>(null);
   const [items, setItems] = useState<SalesOrderItem[]>([]);
   const [additionals, setAdditionals] = useState<SalesOrderAdditional[]>([]);
@@ -709,6 +711,10 @@ const SalesOrderDetail = () => {
           ) : (
             <div className="space-y-2">{items.map((item, index) => {
                 const itemOutputs = item.outputs && Array.isArray(item.outputs) ? item.outputs : [];
+                const visibilityContext = viewMode === 'administrative' ? 'admin' : 'production';
+                const filteredOutputs = (itemOutputs as Array<{ name: string; type: string; value: any }>).filter(
+                  (o) => isVisibleIn(o.type, visibilityContext)
+                );
                 const itemPrompts = item.prompts && Array.isArray(item.prompts) ? item.prompts : [];
                 const isExpanded = expandedItems.has(item.id);
                 
