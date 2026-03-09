@@ -780,7 +780,7 @@ const SalesOrderDetail = () => {
                                 product_id: item.product_id,
                                 prompts: item.prompts,
                                 outputs: item.outputs,
-                                organization_id: item.organization_id,
+                                organization_id: order?.organization_id || undefined,
                               }} onStatusUpdate={loadOrderData} />
                             </div>
                           )}
