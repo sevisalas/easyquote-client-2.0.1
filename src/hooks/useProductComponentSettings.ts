@@ -265,6 +265,9 @@ export function useProductComponentSettings(
   // Helper: obtener tipo de producto
   const productType = componentSettings?.product_type ?? 'sencillo';
 
+  // Helper: verificar si tiene imposición activada
+  const hasImposition = componentSettings?.has_imposition ?? false;
+
   const normalizePromptName = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
 
   const componentByPromptName = useMemo(() => {
@@ -288,6 +291,7 @@ export function useProductComponentSettings(
     isComponent,
     enabledComponents,
     productType,
+    hasImposition,
     apiUserId,
     organizationId,
     
