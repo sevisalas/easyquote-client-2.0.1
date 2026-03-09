@@ -768,6 +768,9 @@ const SalesOrderDetail = () => {
 
                       <CollapsibleContent>
                         <div className={`space-y-4 ${isMobile ? 'px-3 pb-3 pt-2' : 'px-4 pb-4 pt-2'}`}>
+                          {item.description && (
+                            <p className="text-sm text-muted-foreground">{item.description}</p>
+                          )}
                           <WorkOrderItem
                             item={{
                               id: item.id,
