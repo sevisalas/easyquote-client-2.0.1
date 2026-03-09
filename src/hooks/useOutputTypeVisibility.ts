@@ -25,6 +25,8 @@ export function useOutputTypeVisibility() {
   const { organization } = useSubscription();
 
   // Fetch real output types from EasyQuote API
+  const tokenReady = !!sessionStorage.getItem("easyquote_token");
+
   const { data: apiOutputTypes = [], isLoading: isLoadingTypes } = useQuery({
     queryKey: ["easyquote-output-types"],
     queryFn: async () => {
@@ -35,9 +37,11 @@ export function useOutputTypeVisibility() {
       });
       if (!resp.ok) return [];
       const data = await resp.json();
+      console.log("[OutputTypeVisibility] API output types:", data);
       return (Array.isArray(data) ? data : []) as EasyQuoteOutputType[];
     },
-    staleTime: 1000 * 60 * 60, // 1h — types rarely change
+    enabled: tokenReady,
+    staleTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
   });
 
