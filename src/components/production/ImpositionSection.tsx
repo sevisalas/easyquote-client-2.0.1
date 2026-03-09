@@ -120,8 +120,6 @@ async function resolveImpositionFromMappings(
       productWidth: 210,
       productHeight: 297,
       bleed: 0,
-      sheetWidth: 700,
-      sheetHeight: 500,
       validWidth: 680,
       validHeight: 480,
       gutterH: 0,
@@ -145,16 +143,6 @@ async function resolveImpositionFromMappings(
           impositionData[field] = numValue;
         }
       }
-    }
-
-    // Sheet dimensions = valid area when not explicitly mapped
-    const hasSheetMapping = impFieldMappings.some((m: any) => {
-      const f = (m.production_variables as any)?.imposition_field;
-      return f === 'sheetWidth' || f === 'sheetHeight';
-    });
-    if (!hasSheetMapping) {
-      impositionData.sheetWidth = impositionData.validWidth;
-      impositionData.sheetHeight = impositionData.validHeight;
     }
 
     return updateCalculatedValues(impositionData as any);
