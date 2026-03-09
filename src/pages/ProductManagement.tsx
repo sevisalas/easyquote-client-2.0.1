@@ -2666,7 +2666,7 @@ export default function ProductManagement() {
                 })} />
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 items-end">
+                <div className="grid grid-cols-2 gap-4 items-end">
                   <div>
                     <Label htmlFor="category-select">Categoría</Label>
                     <Select value={selectedCategoryId || "none"} onValueChange={value => {
@@ -2693,14 +2693,12 @@ export default function ProductManagement() {
                   <div>
                     <Label htmlFor="product-type">Tipo de producto</Label>
                     <Select value={productType} onValueChange={async (value: 'sencillo' | 'compuesto' | 'kit') => {
-                    if (value === 'kit') return; // Kit está deshabilitado
+                    if (value === 'kit') return;
                     setProductType(value);
                     if (selectedProduct) {
                       const newIsComposite = value === 'compuesto';
-                      // Determinar componentes según el tipo
                       let newEnabledComponents: string[] = [];
                       if (value === 'compuesto') {
-                        // Compuesto empieza vacío o mantiene los existentes
                         newEnabledComponents = enabledComponents.length > 0 ? enabledComponents : [];
                       }
                       try {
@@ -2727,8 +2725,10 @@ export default function ProductManagement() {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
 
-                  <div className="flex items-center space-x-2 pb-2">
+                <div className="flex items-center gap-6 mt-2">
+                  <div className="flex items-center space-x-2">
                     <Switch id="isActive" checked={selectedProduct.isActive} onCheckedChange={checked => setSelectedProduct({
                     ...selectedProduct,
                     isActive: checked
@@ -2736,7 +2736,7 @@ export default function ProductManagement() {
                     <Label htmlFor="isActive">Producto activo</Label>
                   </div>
 
-                  <div className="flex items-center space-x-2 pb-2">
+                  <div className="flex items-center space-x-2">
                     <Switch id="hasImposition" checked={componentSettings?.has_imposition ?? false} onCheckedChange={async (checked) => {
                       if (selectedProduct) {
                         try {
