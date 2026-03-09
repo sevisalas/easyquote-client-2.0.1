@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
   },
   // --- Separators ---
   thickSeparator: {
-    height: 2,
+    height: 1,
     backgroundColor: '#333',
     marginVertical: 6,
   },
