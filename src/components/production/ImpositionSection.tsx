@@ -83,6 +83,9 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
     if (!item.imposition_data || isSimpleImposition(item.imposition_data)) return null;
     return item.imposition_data[componentKey] || null;
   };
+  const hasUserModification = (item.observations || []).some(
+    (obs: any) => obs.type === "imposition_modified"
+  );
 
   const saveImposition = async (newData: any, isUserModified = true) => {
     try {
