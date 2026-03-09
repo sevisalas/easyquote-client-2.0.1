@@ -548,6 +548,7 @@ export const generateWorkOrderPDF = async (
         companyName={companyName}
         customerEmail={customerEmail}
         customerPhone={customerPhone}
+        adminOnlyLabels={adminOnlyLabels}
       />
     ).toBlob();
 
