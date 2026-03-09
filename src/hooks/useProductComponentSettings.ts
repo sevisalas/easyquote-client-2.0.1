@@ -11,6 +11,7 @@ export interface ProductComponentSettings {
   is_component: boolean;
   enabled_components: string[];
   product_type: 'sencillo' | 'compuesto' | 'kit';
+  has_imposition: boolean;
   created_at: string;
   updated_at: string;
 }
