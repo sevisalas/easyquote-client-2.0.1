@@ -46,13 +46,14 @@ export function calculateImposition(data: ImpositionData): CalculationResult {
     gutterV 
   } = data;
   
-  // Tamaño del producto con sangrado
-  const productWithBleedW = productWidth + (bleed * 2);
-  const productWithBleedH = productHeight + (bleed * 2);
+  // Tamaño del producto con calles (el sangrado NO se suma como espacio extra
+  // porque en imposición las piezas comparten la zona de sangrado con las adyacentes)
+  const cellW = productWidth + gutterH;
+  const cellH = productHeight + gutterV;
   
   // Calcular repeticiones con PRODUCTO en horizontal
-  const repsH_prodHoriz = Math.floor(validWidth / (productWithBleedW + gutterH));
-  const repsV_prodHoriz = Math.floor(validHeight / (productWithBleedH + gutterV));
+  const repsH_prodHoriz = Math.floor(validWidth / cellW);
+  const repsV_prodHoriz = Math.floor(validHeight / cellH);
   const total_prodHoriz = repsH_prodHoriz * repsV_prodHoriz;
   
   // Calcular repeticiones con PRODUCTO en vertical (rotado 90°)
