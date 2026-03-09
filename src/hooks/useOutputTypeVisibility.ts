@@ -45,19 +45,19 @@ export function useOutputTypeVisibility() {
   });
 
   const { data: visibilitySettings, isLoading: isLoadingSettings } = useQuery({
-    queryKey: ["output-type-visibility", organization?.id],
+    queryKey: ["output-type-visibility", organizationId],
     queryFn: async () => {
-      if (!organization?.id) return [];
+      if (!organizationId) return [];
 
       const { data, error } = await supabase
         .from("output_type_visibility")
         .select("*")
-        .eq("organization_id", organization.id);
+        .eq("organization_id", organizationId);
 
       if (error) throw error;
       return data as OutputTypeVisibility[];
     },
-    enabled: !!organization?.id,
+    enabled: !!organizationId,
     staleTime: 1000 * 60 * 5,
   });
 
