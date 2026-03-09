@@ -375,6 +375,10 @@ export default function ProductionConfiguration() {
                     </div>
                   </CardHeader>
                   <CardContent>
+                    {variable.default_value && <div className="text-sm mb-2">
+                        <span className="text-muted-foreground">Valor por defecto:</span>{" "}
+                        <span className="font-medium">{variable.default_value}</span>
+                      </div>}
                     {variable.imposition_field && <div className="text-sm mb-2">
                         <span className="text-muted-foreground">Imposición:</span>{" "}
                         <span className="font-medium text-primary">{impositionFieldLabels[variable.imposition_field] || variable.imposition_field}</span>
