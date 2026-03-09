@@ -17,6 +17,7 @@ interface ImpositionSectionProps {
     id: string;
     imposition_data?: any;
     composite_data?: any;
+    observations?: any[];
   };
   onStatusUpdate?: () => void;
 }
