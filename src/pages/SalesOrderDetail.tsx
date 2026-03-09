@@ -776,6 +776,11 @@ const SalesOrderDetail = () => {
                                 id: item.id,
                                 imposition_data: item.imposition_data,
                                 composite_data: (item as any).composite_data,
+                                observations: (item as any).observations,
+                                product_id: item.product_id,
+                                prompts: item.prompts,
+                                outputs: item.outputs,
+                                organization_id: item.organization_id,
                               }} onStatusUpdate={loadOrderData} />
                             </div>
                           )}
