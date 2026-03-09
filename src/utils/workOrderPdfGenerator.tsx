@@ -319,6 +319,7 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
   orderDate,
   deliveryDate,
   items,
+  additionals,
   logoUrl,
   companyName,
   adminOnlyLabels,
