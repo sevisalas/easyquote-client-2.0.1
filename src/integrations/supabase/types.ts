@@ -2162,6 +2162,8 @@ export type Database = {
           is_active: boolean
           name: string
           organization_id: string
+          show_in_admin: boolean
+          show_in_production: boolean
           task_exclude_values: string[] | null
           task_name: string | null
           task_phase_id: string | null
@@ -2178,6 +2180,8 @@ export type Database = {
           is_active?: boolean
           name: string
           organization_id: string
+          show_in_admin?: boolean
+          show_in_production?: boolean
           task_exclude_values?: string[] | null
           task_name?: string | null
           task_phase_id?: string | null
@@ -2194,6 +2198,8 @@ export type Database = {
           is_active?: boolean
           name?: string
           organization_id?: string
+          show_in_admin?: boolean
+          show_in_production?: boolean
           task_exclude_values?: string[] | null
           task_name?: string | null
           task_phase_id?: string | null
