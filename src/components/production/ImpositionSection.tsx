@@ -149,15 +149,14 @@ async function resolveImpositionFromMappings(
       }
     }
 
-    // Derive sheet dimensions from valid area if not explicitly mapped
-    // Add a small margin (e.g., 20mm) to represent gripper/margins
+    // Sheet dimensions = valid area when not explicitly mapped
     const hasSheetMapping = impFieldMappings.some((m: any) => {
       const f = (m.production_variables as any)?.imposition_field;
       return f === 'sheetWidth' || f === 'sheetHeight';
     });
     if (!hasSheetMapping) {
-      impositionData.sheetWidth = impositionData.validWidth + 20;
-      impositionData.sheetHeight = impositionData.validHeight + 20;
+      impositionData.sheetWidth = impositionData.validWidth;
+      impositionData.sheetHeight = impositionData.validHeight;
     }
 
     return updateCalculatedValues(impositionData as any);
