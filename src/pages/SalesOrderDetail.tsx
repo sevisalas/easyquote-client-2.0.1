@@ -591,7 +591,7 @@ const SalesOrderDetail = () => {
           ) : (
             /* Vista Producción - Sin precios */
             <>
-              <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 md:grid-cols-3 gap-2'}`}>
+              <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 md:grid-cols-4 gap-2'}`}>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">cliente</label>
                   <p className="text-sm font-medium mt-0.5">
@@ -626,6 +626,21 @@ const SalesOrderDetail = () => {
                     }
                   </p>
                 </div>
+                {sourceQuoteNumber && (
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">presupuesto origen</label>
+                    <p className="text-sm font-medium mt-0.5">
+                      <Button 
+                        variant="link" 
+                        className="h-auto p-0 text-sm font-medium"
+                        onClick={() => navigate(`/presupuestos/${order.quote_id}`)}
+                      >
+                        <FileText className="h-3.5 w-3.5 mr-1" />
+                        {sourceQuoteNumber}
+                      </Button>
+                    </p>
+                  </div>
+                )}
               </div>
             </>
           )}
