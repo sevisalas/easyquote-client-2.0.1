@@ -1,0 +1,2 @@
+ALTER TABLE public.product_component_settings ADD COLUMN has_imposition boolean NOT NULL DEFAULT false;
+COMMENT ON COLUMN public.product_component_settings.has_imposition IS 'Whether this product has automatic imposition scheme generation enabled';
