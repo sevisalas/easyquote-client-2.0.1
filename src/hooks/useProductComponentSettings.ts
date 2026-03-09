@@ -55,7 +55,8 @@ export const GENERAL_COMPONENT = { value: 'general', label: 'General' };
  */
 export function useProductComponentSettings(
   easyquoteProductId?: string,
-  apiUserIdOverride?: string
+  apiUserIdOverride?: string,
+  organizationIdOverride?: string
 ) {
   const queryClient = useQueryClient();
 
@@ -107,7 +108,7 @@ export function useProductComponentSettings(
 
   // Usar el override si está disponible, sino usar el del usuario
   const apiUserId = apiUserIdOverride || orgData?.apiUserId;
-  const organizationId = orgData?.organizationId;
+  const organizationId = organizationIdOverride || orgData?.organizationId;
 
   // Obtener configuración de componentes para un producto específico (por api_user_id)
   const { data: componentSettings, isLoading, error } = useQuery({
