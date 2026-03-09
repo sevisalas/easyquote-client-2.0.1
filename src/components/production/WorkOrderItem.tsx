@@ -31,7 +31,7 @@ export const WorkOrderItem = ({
   itemIndex,
   children,
 }: WorkOrderItemProps) => {
-  const relevantOutputs = item.outputs || [];
+  const relevantOutputs = [...(item.outputs || [])].sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
   const sortedPrompts = [...(item.prompts || [])].sort((a, b) => 
     (a.order || 0) - (b.order || 0)
