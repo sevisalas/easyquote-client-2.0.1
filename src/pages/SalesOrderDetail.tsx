@@ -55,6 +55,7 @@ const SalesOrderDetail = () => {
   const isMobile = useIsMobile();
   const { canAccessProduccion } = useSubscription();
   const { loading, fetchSalesOrderById, fetchSalesOrderItems, fetchSalesOrderAdditionals, updateSalesOrderStatus, deleteSalesOrder } = useSalesOrders();
+  const { isVisibleIn } = useOutputTypeVisibility();
   const [order, setOrder] = useState<SalesOrder | null>(null);
   const [items, setItems] = useState<SalesOrderItem[]>([]);
   const [additionals, setAdditionals] = useState<SalesOrderAdditional[]>([]);
