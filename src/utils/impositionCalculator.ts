@@ -57,8 +57,10 @@ export function calculateImposition(data: ImpositionData): CalculationResult {
   const total_prodHoriz = repsH_prodHoriz * repsV_prodHoriz;
   
   // Calcular repeticiones con PRODUCTO en vertical (rotado 90°)
-  const repsH_prodVert = Math.floor(validWidth / (productWithBleedH + gutterH));
-  const repsV_prodVert = Math.floor(validHeight / (productWithBleedW + gutterV));
+  const cellW_vert = productHeight + gutterH;
+  const cellH_vert = productWidth + gutterV;
+  const repsH_prodVert = Math.floor(validWidth / cellW_vert);
+  const repsV_prodVert = Math.floor(validHeight / cellH_vert);
   const total_prodVert = repsH_prodVert * repsV_prodVert;
   
   // Elegir la mejor orientación DEL PRODUCTO
@@ -69,9 +71,9 @@ export function calculateImposition(data: ImpositionData): CalculationResult {
   const totalRepetitions = repetitionsH * repetitionsV;
   
   // Calcular aprovechamiento
-  const usedWidth = useVertical ? productWithBleedH : productWithBleedW;
-  const usedHeight = useVertical ? productWithBleedW : productWithBleedH;
-  const totalUsedArea = totalRepetitions * (usedWidth * usedHeight);
+  const usedCellW = useVertical ? cellW_vert : cellW;
+  const usedCellH = useVertical ? cellH_vert : cellH;
+  const totalUsedArea = totalRepetitions * (usedCellW * usedCellH);
   const totalValidArea = validWidth * validHeight;
   const utilization = totalValidArea > 0 ? (totalUsedArea / totalValidArea) * 100 : 0;
   
