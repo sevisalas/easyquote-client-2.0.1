@@ -20,17 +20,7 @@ interface WorkOrderItemProps {
   children?: React.ReactNode;
 }
 
-const outputTypesForOT = [
-  'Instructions',
-  'Workflow', 
-  'Width',
-  'Height',
-  'Depth',
-  'ProductImage',
-  'Quantity',
-  'Generic',
-  'Weight'
-];
+// Output type filtering is now done by the parent using useOutputTypeVisibility
 
 export const WorkOrderItem = ({ 
   item, 
