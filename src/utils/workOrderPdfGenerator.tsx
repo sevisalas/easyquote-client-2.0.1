@@ -496,11 +496,12 @@ export const generateWorkOrderPDF = async (
 
     let customerEmail = '';
     let customerPhone = '';
+    let adminOnlyLabels = new Set<string>();
 
     if (options.orderId) {
       const { data: order } = await supabase
         .from('sales_orders')
-        .select('customer_id')
+        .select('customer_id, organization_id')
         .eq('id', options.orderId)
         .single();
 
@@ -514,6 +515,28 @@ export const generateWorkOrderPDF = async (
         if (customer) {
           customerEmail = customer.email || '';
           customerPhone = customer.phone || '';
+        }
+      }
+
+      // Load admin_only prompt labels to filter from OT PDF
+      if (order?.organization_id) {
+        const { data: orgData } = await supabase
+          .from('organizations')
+          .select('api_user_id')
+          .eq('id', order.organization_id)
+          .maybeSingle();
+
+        if (orgData?.api_user_id) {
+          const { data: settings } = await supabase
+            .from('product_prompt_settings')
+            .select('prompt_name, label')
+            .eq('api_user_id', orgData.api_user_id)
+            .eq('admin_only', true);
+
+          settings?.forEach(s => {
+            if (s.label) adminOnlyLabels.add(s.label.trim().toUpperCase());
+            if (s.prompt_name) adminOnlyLabels.add(s.prompt_name.trim().toUpperCase());
+          });
         }
       }
     }
