@@ -33,9 +33,12 @@ export const WorkOrderItem = ({
 }: WorkOrderItemProps) => {
   const relevantOutputs = [...(item.outputs || [])].sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
-  const sortedPrompts = [...(item.prompts || [])].sort((a, b) => 
-    (a.order || 0) - (b.order || 0)
-  );
+  const sortedPrompts = [...(item.prompts || [])]
+    .filter(p => {
+      const val = formatValue(p.value);
+      return val !== 'No' && val !== 'no';
+    })
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
 
   const formatValue = (value: any): string => {
     if (value === null || value === undefined) return '-';
