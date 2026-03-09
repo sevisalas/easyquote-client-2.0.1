@@ -93,6 +93,8 @@ const SalesOrderDetail = () => {
       if (roleData.organization_id) {
         loadAdminOnlyPrompts(roleData.organization_id);
       }
+    }
+  };
 
   const loadAdminOnlyPrompts = async (organizationId: string) => {
     const { data: orgData } = await supabase
