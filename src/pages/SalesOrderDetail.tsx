@@ -127,6 +127,7 @@ const SalesOrderDetail = () => {
   const refreshOutputTypes = async (itemsData: SalesOrderItem[]): Promise<SalesOrderItem[]> => {
     try {
       const token = sessionStorage.getItem("easyquote_token");
+      console.log('[RefreshOutputTypes] Starting... token available:', !!token, 'items:', itemsData.length);
       if (!token) return itemsData;
 
       // Get unique product_ids
