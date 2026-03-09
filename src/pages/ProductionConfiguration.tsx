@@ -36,42 +36,50 @@ function OutputTypeVisibilitySection() {
 
   if (isLoading || settings.length === 0) return null;
 
+  // Split into 2 columns
+  const half = Math.ceil(settings.length / 2);
+  const columns = [settings.slice(0, half), settings.slice(half)];
+
   return (
     <Card>
       <CardHeader className="py-3 px-4">
         <CardTitle className="text-sm">Visibilidad de tipos de output</CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-3 pt-0">
-        <div className="border rounded overflow-hidden text-xs">
-          <div className="grid grid-cols-[1fr_60px_60px] px-3 py-1.5 bg-muted/50 font-semibold text-muted-foreground uppercase tracking-wider">
-            <span>Tipo</span>
-            <span className="text-center">Admin</span>
-            <span className="text-center">Prod.</span>
-          </div>
-          {settings.map((s) => (
-            <div
-              key={s.output_type}
-              className="grid grid-cols-[1fr_60px_60px] px-3 py-1 border-t items-center"
-            >
-              <span className="font-medium">{s.output_type}</span>
-              <div className="flex justify-center">
-                <Switch
-                  className="scale-75"
-                  checked={s.show_in_admin}
-                  onCheckedChange={(v) =>
-                    toggleVisibility({ output_type: s.output_type, field: "show_in_admin", value: v })
-                  }
-                />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {columns.map((col, ci) => (
+            <div key={ci} className="border rounded overflow-hidden text-xs">
+              <div className="grid grid-cols-[1fr_44px_44px] px-2 py-1 bg-muted/50 font-semibold text-muted-foreground uppercase tracking-wider">
+                <span>Tipo</span>
+                <span className="text-center">Adm</span>
+                <span className="text-center">Prod</span>
               </div>
-              <div className="flex justify-center">
-                <Switch
-                  className="scale-75"
-                  checked={s.show_in_production}
-                  onCheckedChange={(v) =>
-                    toggleVisibility({ output_type: s.output_type, field: "show_in_production", value: v })
-                  }
-                />
-              </div>
+              {col.map((s) => (
+                <div
+                  key={s.output_type}
+                  className="grid grid-cols-[1fr_44px_44px] px-2 py-0.5 border-t items-center"
+                >
+                  <span className="font-medium truncate">{s.output_type}</span>
+                  <div className="flex justify-center">
+                    <Switch
+                      className="scale-[0.65]"
+                      checked={s.show_in_admin}
+                      onCheckedChange={(v) =>
+                        toggleVisibility({ output_type: s.output_type, field: "show_in_admin", value: v })
+                      }
+                    />
+                  </div>
+                  <div className="flex justify-center">
+                    <Switch
+                      className="scale-[0.65]"
+                      checked={s.show_in_production}
+                      onCheckedChange={(v) =>
+                        toggleVisibility({ output_type: s.output_type, field: "show_in_production", value: v })
+                      }
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           ))}
         </div>
