@@ -665,6 +665,14 @@ export default function ProductionConfiguration() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div>
+              <Label htmlFor="edit-var-default">Valor por defecto (opcional)</Label>
+              <Input id="edit-var-default" value={varFormData.default_value} onChange={e => setVarFormData({
+                ...varFormData,
+                default_value: e.target.value
+              })} placeholder="ej: 3" />
+            </div>
             
             <div className="flex items-center space-x-2">
               <Checkbox id="edit-has-implicit-task" checked={varFormData.has_implicit_task} onCheckedChange={checked => setVarFormData({
