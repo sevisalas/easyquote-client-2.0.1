@@ -182,76 +182,91 @@ interface WorkOrderPDFOptions {
   companyName?: string;
 }
 
-// ─── Visual Imposition Diagram ──────────────────────────────
+// ─── Visual Imposition Diagram (mirrors ImpositionScheme.tsx logic) ──────
 
-const DIAGRAM_MAX_W = 350;
-const DIAGRAM_MAX_H = 240;
+const DIAGRAM_MAX_W = 400;
+const DIAGRAM_MAX_H = 220;
 
 const ImpositionDiagram: React.FC<{ data: any; title: string }> = ({ data, title }) => {
   if (!data || !data.repetitionsH || !data.repetitionsV) return null;
 
-  const pw = Number(data.productWidth) || 50;
-  const ph = Number(data.productHeight) || 50;
-  const rawSw = Number(data.sheetWidth) || 320;
-  const rawSh = Number(data.sheetHeight) || 450;
+  const productWidth = Number(data.productWidth) || 50;
+  const productHeight = Number(data.productHeight) || 50;
+  const bleed = Number(data.bleed) || 0;
   const gutterH = Number(data.gutterH) || 0;
   const gutterV = Number(data.gutterV) || 0;
   const repsH = Number(data.repetitionsH) || 1;
   const repsV = Number(data.repetitionsV) || 1;
+  const orientation = data.orientation || 'horizontal';
+  const validWidth = Number(data.validWidth) || Number(data.sheetWidth) || 476;
+  const validHeight = Number(data.validHeight) || Number(data.sheetHeight) || 325;
 
-  // Sheet is ALWAYS landscape (wider than tall)
-  const sw = Math.max(rawSw, rawSh);
-  const sh = Math.min(rawSw, rawSh);
+  // Product with bleed
+  const productWithBleedW = productWidth + bleed * 2;
+  const productWithBleedH = productHeight + bleed * 2;
 
-  // Valid area
-  const rawVw = Number(data.validWidth) || sw;
-  const rawVh = Number(data.validHeight) || sh;
-  const vw = Math.max(rawVw, rawVh);
-  const vh = Math.min(rawVw, rawVh);
+  // Size according to orientation
+  const prodW = orientation === 'horizontal' ? productWithBleedW : productWithBleedH;
+  const prodH = orientation === 'horizontal' ? productWithBleedH : productWithBleedW;
 
-  // Scale sheet to fit diagram area
-  const scaleX = DIAGRAM_MAX_W / sw;
-  const scaleY = DIAGRAM_MAX_H / sh;
+  // Valid area is always landscape
+  const vw = Math.max(validWidth, validHeight);
+  const vh = Math.min(validWidth, validHeight);
+
+  // Scale to fit diagram
+  const margin = 4;
+  const scaleX = (DIAGRAM_MAX_W - margin * 2) / vw;
+  const scaleY = (DIAGRAM_MAX_H - margin * 2) / vh;
   const scale = Math.min(scaleX, scaleY);
 
-  const sheetW = sw * scale;
-  const sheetH = sh * scale;
-  const cellW = pw * scale;
-  const cellH = ph * scale;
-  const gutH = gutterH * scale;
-  const gutV = gutterV * scale;
+  const scaledW = vw * scale;
+  const scaledH = vh * scale;
 
-  // Margin from sheet edge to valid area
-  const marginX = ((sw - vw) / 2) * scale;
-  const marginY = ((sh - vh) / 2) * scale;
-
-  // Center cells within valid area
-  const gridTotalW = repsH * cellW + Math.max(0, repsH - 1) * gutH;
-  const gridTotalH = repsV * cellH + Math.max(0, repsV - 1) * gutV;
-  const validW = vw * scale;
-  const validH = vh * scale;
-  const offsetX = marginX + Math.max(0, (validW - gridTotalW) / 2);
-  const offsetY = marginY + Math.max(0, (validH - gridTotalH) / 2);
+  // Center grid within valid area (in real mm)
+  const totalUsedW = repsH * prodW + Math.max(0, repsH - 1) * gutterH;
+  const totalUsedH = repsV * prodH + Math.max(0, repsV - 1) * gutterV;
+  const impOffX = (vw - totalUsedW) / 2;
+  const impOffY = (vh - totalUsedH) / 2;
 
   // Build cells
   const cells: React.ReactNode[] = [];
   for (let row = 0; row < repsV; row++) {
     for (let col = 0; col < repsH; col++) {
-      const x = offsetX + col * (cellW + gutH);
-      const y = offsetY + row * (cellH + gutV);
+      const xMm = impOffX + col * (prodW + gutterH);
+      const yMm = impOffY + row * (prodH + gutterV);
 
+      // Bleed area
+      cells.push(
+        <View
+          key={`bleed-${row}-${col}`}
+          style={{
+            position: 'absolute',
+            left: xMm * scale,
+            top: yMm * scale,
+            width: prodW * scale,
+            height: prodH * scale,
+            backgroundColor: '#e5e7eb',
+            borderWidth: 0.3,
+            borderColor: '#9ca3af',
+          }}
+        />
+      );
+
+      // Product area (inside bleed)
+      const innerW = orientation === 'horizontal' ? productWidth : productHeight;
+      const innerH = orientation === 'horizontal' ? productHeight : productWidth;
       cells.push(
         <View
           key={`cell-${row}-${col}`}
           style={{
             position: 'absolute',
-            left: x,
-            top: y,
-            width: cellW,
-            height: cellH,
-            backgroundColor: '#e0e0e0',
+            left: (xMm + bleed) * scale,
+            top: (yMm + bleed) * scale,
+            width: innerW * scale,
+            height: innerH * scale,
+            backgroundColor: '#f3f4f6',
             borderWidth: 0.5,
-            borderColor: '#555',
+            borderColor: '#6b7280',
           }}
         />
       );
@@ -262,12 +277,13 @@ const ImpositionDiagram: React.FC<{ data: any; title: string }> = ({ data, title
     <View style={styles.impositionBox}>
       <Text style={styles.impositionTitle}>{title}</Text>
 
+      {/* Valid area outline */}
       <View style={{
-        width: sheetW,
-        height: sheetH,
-        borderWidth: 1,
-        borderColor: '#333',
-        backgroundColor: '#fff',
+        width: scaledW,
+        height: scaledH,
+        borderWidth: 1.5,
+        borderColor: '#d1d5db',
+        backgroundColor: '#fafafa',
         position: 'relative',
       }}>
         {cells}
