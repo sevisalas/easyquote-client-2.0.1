@@ -15,6 +15,19 @@ import { useDefaultProductionTasks } from "@/hooks/useDefaultProductionTasks";
 import { useProductionPhases } from "@/hooks/useProductionPhases";
 import { useProductionVariables } from "@/hooks/useProductionVariables";
 import type { DefaultProductionTask } from "@/hooks/useDefaultProductionTasks";
+
+const impositionFieldLabels: Record<string, string> = {
+  productWidth: "Ancho producto",
+  productHeight: "Alto producto",
+  validWidth: "Ancho válido pliego",
+  validHeight: "Alto válido pliego",
+  bleed: "Sangrado",
+  sheetWidth: "Ancho hoja",
+  sheetHeight: "Alto hoja",
+  gutterH: "Calle horizontal",
+  gutterV: "Calle vertical",
+};
+
 export default function ProductionConfiguration() {
   const {
     organization
@@ -67,7 +80,8 @@ export default function ProductionConfiguration() {
     has_implicit_task: false,
     task_name: "",
     task_phase_id: "",
-    task_exclude_values: [] as string[]
+    task_exclude_values: [] as string[],
+    imposition_field: "" as string,
   });
   useEffect(() => {
     if (organization) {
@@ -152,7 +166,8 @@ export default function ProductionConfiguration() {
       has_implicit_task: varFormData.has_implicit_task,
       task_name: varFormData.has_implicit_task ? varFormData.task_name : null,
       task_phase_id: varFormData.has_implicit_task ? varFormData.task_phase_id : null,
-      task_exclude_values: varFormData.has_implicit_task ? varFormData.task_exclude_values : null
+      task_exclude_values: varFormData.has_implicit_task ? varFormData.task_exclude_values : null,
+      imposition_field: varFormData.imposition_field || null,
     });
     setIsCreateVarDialogOpen(false);
     setVarFormData({
@@ -162,7 +177,8 @@ export default function ProductionConfiguration() {
       has_implicit_task: false,
       task_name: "",
       task_phase_id: "",
-      task_exclude_values: []
+      task_exclude_values: [],
+      imposition_field: "",
     });
   };
   const handleEditVariable = () => {
@@ -176,7 +192,8 @@ export default function ProductionConfiguration() {
         has_implicit_task: varFormData.has_implicit_task,
         task_name: varFormData.has_implicit_task ? varFormData.task_name : null,
         task_phase_id: varFormData.has_implicit_task ? varFormData.task_phase_id : null,
-        task_exclude_values: varFormData.has_implicit_task ? varFormData.task_exclude_values : null
+        task_exclude_values: varFormData.has_implicit_task ? varFormData.task_exclude_values : null,
+        imposition_field: varFormData.imposition_field || null,
       }
     });
     setIsEditVarDialogOpen(false);
@@ -188,7 +205,8 @@ export default function ProductionConfiguration() {
       has_implicit_task: false,
       task_name: "",
       task_phase_id: "",
-      task_exclude_values: []
+      task_exclude_values: [],
+      imposition_field: "",
     });
   };
   const handleDeleteVariable = () => {
@@ -206,7 +224,8 @@ export default function ProductionConfiguration() {
       has_implicit_task: variable.has_implicit_task,
       task_name: variable.task_name || "",
       task_phase_id: variable.task_phase_id || "",
-      task_exclude_values: variable.task_exclude_values || []
+      task_exclude_values: variable.task_exclude_values || [],
+      imposition_field: variable.imposition_field || "",
     });
     setIsEditVarDialogOpen(true);
   };
@@ -350,6 +369,10 @@ export default function ProductionConfiguration() {
                     </div>
                   </CardHeader>
                   <CardContent>
+                    {variable.imposition_field && <div className="text-sm mb-2">
+                        <span className="text-muted-foreground">Imposición:</span>{" "}
+                        <span className="font-medium text-primary">{impositionFieldLabels[variable.imposition_field] || variable.imposition_field}</span>
+                      </div>}
                     {variable.has_implicit_task && variable.task_name && <div className="space-y-2 text-sm">
                         <div>
                           <span className="text-muted-foreground">Tarea:</span>{" "}
@@ -511,6 +534,24 @@ export default function ProductionConfiguration() {
               description: e.target.value
             })} placeholder="Describe el propósito de esta variable" />
             </div>
+
+            <div>
+              <Label htmlFor="var-imposition">Campo de imposición (opcional)</Label>
+              <Select value={varFormData.imposition_field} onValueChange={value => setVarFormData({
+                ...varFormData,
+                imposition_field: value === "__none__" ? "" : value
+              })}>
+                <SelectTrigger id="var-imposition">
+                  <SelectValue placeholder="No asignado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">No asignado</SelectItem>
+                  {Object.entries(impositionFieldLabels).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             
             <div className="flex items-center space-x-2">
               <Checkbox id="has-implicit-task" checked={varFormData.has_implicit_task} onCheckedChange={checked => setVarFormData({
@@ -591,6 +632,24 @@ export default function ProductionConfiguration() {
               ...varFormData,
               description: e.target.value
             })} />
+            </div>
+
+            <div>
+              <Label htmlFor="edit-var-imposition">Campo de imposición (opcional)</Label>
+              <Select value={varFormData.imposition_field} onValueChange={value => setVarFormData({
+                ...varFormData,
+                imposition_field: value === "__none__" ? "" : value
+              })}>
+                <SelectTrigger id="edit-var-imposition">
+                  <SelectValue placeholder="No asignado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">No asignado</SelectItem>
+                  {Object.entries(impositionFieldLabels).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             <div className="flex items-center space-x-2">

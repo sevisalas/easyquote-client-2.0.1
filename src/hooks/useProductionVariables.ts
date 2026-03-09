@@ -14,6 +14,7 @@ export interface ProductionVariable {
   task_name: string | null;
   task_phase_id: string | null;
   task_exclude_values: string[];
+  imposition_field: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -26,6 +27,7 @@ export interface CreateProductionVariableData {
   task_name?: string;
   task_phase_id?: string;
   task_exclude_values?: string[];
+  imposition_field?: string | null;
 }
 
 export interface UpdateProductionVariableData {
@@ -37,6 +39,7 @@ export interface UpdateProductionVariableData {
   task_name?: string;
   task_phase_id?: string;
   task_exclude_values?: string[];
+  imposition_field?: string | null;
 }
 
 export function useProductionVariables() {
@@ -79,6 +82,7 @@ export function useProductionVariables() {
           task_name: newVariable.task_name || null,
           task_phase_id: newVariable.task_phase_id || null,
           task_exclude_values: newVariable.task_exclude_values || [],
+          imposition_field: newVariable.imposition_field || null,
         })
         .select()
         .single();

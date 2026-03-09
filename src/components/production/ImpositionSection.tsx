@@ -17,6 +17,7 @@ interface ImpositionSectionProps {
     id: string;
     imposition_data?: any;
     composite_data?: any;
+    observations?: any[];
   };
   onStatusUpdate?: () => void;
 }
@@ -82,12 +83,31 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
     if (!item.imposition_data || isSimpleImposition(item.imposition_data)) return null;
     return item.imposition_data[componentKey] || null;
   };
+  const hasUserModification = (item.observations || []).some(
+    (obs: any) => obs.type === "imposition_modified"
+  );
 
-  const saveImposition = async (newData: any) => {
+  const saveImposition = async (newData: any, isUserModified = true) => {
     try {
+      const updatePayload: any = { imposition_data: newData };
+      
+      // Add observation if user manually modified
+      if (isUserModified) {
+        const currentObs = (item as any).observations || [];
+        const newObs = [
+          ...currentObs,
+          {
+            type: "imposition_modified",
+            message: "Imposición modificada manualmente por el usuario",
+            timestamp: new Date().toISOString(),
+          }
+        ];
+        updatePayload.observations = newObs;
+      }
+
       const { error } = await supabase
         .from('sales_order_items')
-        .update({ imposition_data: newData })
+        .update(updatePayload)
         .eq('id', item.id);
       if (error) throw error;
       toast.success('Imposición guardada correctamente');
@@ -108,7 +128,12 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
       <>
         {simpleData ? (
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Imposición</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+              Imposición
+              {hasUserModification && (
+                <span className="ml-1 text-[9px] font-normal text-accent-foreground">• modificada</span>
+              )}
+            </p>
             <ImpositionBlock
               imp={simpleData}
               onEdit={() => setActiveModal('__simple__')}

@@ -2154,6 +2154,7 @@ export type Database = {
           description: string | null
           has_implicit_task: boolean
           id: string
+          imposition_field: string | null
           is_active: boolean
           name: string
           organization_id: string
@@ -2168,6 +2169,7 @@ export type Database = {
           description?: string | null
           has_implicit_task?: boolean
           id?: string
+          imposition_field?: string | null
           is_active?: boolean
           name: string
           organization_id: string
@@ -2182,6 +2184,7 @@ export type Database = {
           description?: string | null
           has_implicit_task?: boolean
           id?: string
+          imposition_field?: string | null
           is_active?: boolean
           name?: string
           organization_id?: string
@@ -2541,6 +2544,7 @@ export type Database = {
           id: string
           imposition_data: Json | null
           multi: Json | null
+          observations: Json | null
           outputs: Json | null
           position: number | null
           price: number
@@ -2560,6 +2564,7 @@ export type Database = {
           id?: string
           imposition_data?: Json | null
           multi?: Json | null
+          observations?: Json | null
           outputs?: Json | null
           position?: number | null
           price?: number
@@ -2579,6 +2584,7 @@ export type Database = {
           id?: string
           imposition_data?: Json | null
           multi?: Json | null
+          observations?: Json | null
           outputs?: Json | null
           position?: number | null
           price?: number
