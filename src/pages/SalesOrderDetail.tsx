@@ -746,7 +746,11 @@ const SalesOrderDetail = () => {
                 const itemOutputs = item.outputs && Array.isArray(item.outputs) ? item.outputs : [];
                 const visibilityContext = viewMode === 'administrative' ? 'admin' : 'production';
                 const filteredOutputs = (itemOutputs as Array<{ name: string; type: string; value: any }>).filter(
-                  (o) => isVisibleIn(o.type, visibilityContext)
+                  (o) => {
+                    const visible = isVisibleIn(o.type, visibilityContext);
+                    console.log(`[OutputFilter] ${o.name} (${o.type}) → ${visibilityContext} → ${visible}`);
+                    return visible;
+                  }
                 );
                 const itemPrompts = (item.prompts && Array.isArray(item.prompts) ? item.prompts : [])
                   .filter((p: any) => !isAdminOnlyPrompt(p.label || ''));
