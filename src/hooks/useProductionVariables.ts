@@ -27,6 +27,7 @@ export interface CreateProductionVariableData {
   task_name?: string;
   task_phase_id?: string;
   task_exclude_values?: string[];
+  imposition_field?: string | null;
 }
 
 export interface UpdateProductionVariableData {
