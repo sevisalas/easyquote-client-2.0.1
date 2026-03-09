@@ -1,62 +1,77 @@
 
-# Corregir nombre del articulo en pedidos
 
-## Problema
+# Plan: Redisenar la Orden de Trabajo (OT) siguiendo la muestra del cliente
 
-En `SalesOrderNew.tsx` y `SalesOrderEdit.tsx`, el campo `product_name` se rellena con `itemDescription` (la descripcion larga con los parametros del producto) en lugar del nombre real (ej. "Encuadernado"). En `QuoteNew.tsx` ya esta bien hecho usando `productName` y `displayName`.
+## Resumen
 
-## Cambios
+Reescribir completamente `workOrderPdfGenerator.tsx` para que el PDF generado replique el layout de la muestra: cabecera con cliente a la izquierda y numero de OT grande a la derecha, secciones separadas por lineas rojas gruesas, datos en columnas multiples, diagramas de imposicion, y bloques de ajustes/observaciones al final.
 
-La columna `description` ya existe en `sales_order_items`, asi que no hace falta migracion.
+## Layout objetivo (basado en la muestra)
 
-### 1. `SalesOrderNew.tsx` - Tipo ItemSnapshot (lineas 22-32)
-
-Anadir `displayName`, `productName` y `descriptionManual` al tipo:
-
-```typescript
-type ItemSnapshot = {
-  productId: string;
-  prompts: Record<string, any>;
-  outputs: any[];
-  price?: number;
-  displayName?: string;
-  productName?: string;
-  itemDescription?: string;
-  descriptionManual?: boolean;
-  itemAdditionals?: any[];
-  needsRecalculation?: boolean;
-  isFinalized?: boolean;
-  compositeData?: any;
-};
+```text
+┌──────────────────────────────────────────────────┐
+│ CLIENTE                          ORDEN DE TRABAJO│
+│ NOMBRE: xxx                      OT-26-000034-B │
+│ EMAIL: xxx                                       │
+│ TELÉFONO: xxx                                    │
+├══════════════════ linea roja ═════════════════════┤
+│ ARTICULO: Nombre del producto (titulo rojo)      │
+│                                                  │
+│ PAPEL INTERIOR: valor                            │
+│ TAMAÑO DE PAPEL: xx   PLIEGOS: xx   RS: xx      │
+│ NUM PAGINAS: xx        TAM CERRADO: xx  MOD: xx  │
+│                                                  │
+│ PAPEL CUBIERTA: valor (si compuesto)             │
+│ TAMAÑO DE PAPEL: xx   PLIEGOS: xx   RS: xx      │
+├══════════════════ linea roja ═════════════════════┤
+│ IMPRESION: valor                                 │
+│ NUM PLIEGOS: xx                                  │
+│ TINTAS: xx   PANTONE: xx   PLASTIFICADO: xx      │
+├══════════════════ linea roja ═════════════════════┤
+│ ACABADO: valor                                   │
+│ NUM PAGINAS: xx   NUM PLIEGOS: xx                │
+│ ENCUADERNACION: xx                               │
+├══════════════════ linea roja ═════════════════════┤
+│ ┌─────────────┐      ┌─────────────┐            │
+│ │  INTERIOR    │      │  CUBIERTA   │            │
+│ │ (imposicion) │      │ (imposicion)│            │
+│ └─────────────┘      └─────────────┘            │
+├──────────────────────────────────────────────────┤
+│ AJUSTES PERSONALIZADOS: texto de ajustes         │
+├──────────────────────────────────────────────────┤
+│ OBSERVACIONES: espacio en blanco para notas      │
+└──────────────────────────────────────────────────┘
 ```
 
-### 2. `SalesOrderNew.tsx` - Guardado de items (lineas 454-456)
+## Cambios tecnicos
 
-Cambiar:
-```typescript
-// ANTES
-product_name: item.itemDescription || "",
-description: item.itemDescription || "",
+### Archivo: `src/utils/workOrderPdfGenerator.tsx` (reescritura completa)
 
-// DESPUES
-product_name: item.displayName || item.productName || item.productId || "",
-description: item.itemDescription || "",
-description_manual: item.descriptionManual || false,
-```
+1. **Cabecera** - Two-column: izquierda con CLIENTE (nombre, email, telefono), derecha con "ORDEN DE TRABAJO" y numero de OT en fuente grande (~18px). Separador rojo grueso debajo.
 
-### 3. `SalesOrderEdit.tsx` - handleItemChange (linea 202)
+2. **Seccion ARTICULO** - Titulo del producto en rojo. Los prompts se renderizan en grid de 3 columnas (label:value) agrupados de forma compacta, similar al ejemplo. Para productos compuestos, se separan los prompts por componente (PAPEL INTERIOR / PAPEL CUBIERTA).
 
-Cambiar:
-```typescript
-// ANTES
-product_name: snapshot.itemDescription || updatedItems[itemIndex].product_name,
+3. **Seccion IMPRESION** - Separador rojo, titulo "IMPRESION" en negrita grande, y los prompts/outputs relevantes a impresion en layout multi-columna.
 
-// DESPUES
-product_name: snapshot.displayName || snapshot.productName || updatedItems[itemIndex].product_name,
-```
+4. **Seccion ACABADO** - Separador rojo, titulo "ACABADO", datos de encuadernacion y acabados.
 
-## Impacto
+5. **Diagramas de imposicion** - Dos cajas lado a lado (INTERIOR / CUBIERTA) usando Views de react-pdf como ya existe, pero con el layout de la muestra.
 
-- Pedidos nuevos guardaran el nombre correcto (ej. "Encuadernado") en `product_name` y la descripcion larga en `description`
-- Pedidos existentes no cambian automaticamente (habria que re-guardarlos)
-- No requiere migracion de base de datos
+6. **Ajustes personalizados** - Seccion con los ajustes del item (si existen en item data).
+
+7. **Observaciones** - Bloque vacio para notas manuales.
+
+8. **Estilos** - Color rojo (#CC0000) para separadores y titulos de seccion. Fuentes mas grandes que el actual (+2px general). Un item por pagina para dar espacio.
+
+### Nota importante sobre los datos
+
+Los prompts y outputs actuales son genericos (vienen de la API de EasyQuote con labels configurables). No podemos hardcodear secciones como "IMPRESION" o "ACABADO" porque cada producto tiene prompts distintos. La solucion inicial sera:
+- Renderizar TODOS los prompts en la seccion principal del articulo en grid de 3 columnas
+- Renderizar TODOS los outputs en una seccion "DATOS TECNICOS"
+- Las secciones fijas seran: Cabecera, Articulo (prompts+outputs), Imposicion, Ajustes, Observaciones
+- En futuras iteraciones se pueden mapear prompts a secciones especificas
+
+### Archivo: `src/components/production/WorkOrderItem.tsx`
+
+Sin cambios por ahora. Este componente es la vista en pantalla, no el PDF.
+
