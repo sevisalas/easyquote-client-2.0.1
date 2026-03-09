@@ -416,55 +416,26 @@ export default function ProductionConfiguration() {
                 <Plus className="h-4 w-4 mr-2" />
                 Crear primera variable
               </Button>
-            </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {variables.map(variable => <Card key={variable.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-base">{variable.name}</CardTitle>
-                        {variable.description && <CardDescription className="mt-1">
-                            {variable.description}
-                          </CardDescription>}
-                      </div>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => openEditVarDialog(variable)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => openDeleteVarDialog(variable)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+            </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {variables.map(variable => <div key={variable.id} className="border rounded-lg p-3 text-sm space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold truncate">{variable.name}</span>
+                    <div className="flex gap-0.5">
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditVarDialog(variable)}>
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openDeleteVarDialog(variable)}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    {variable.default_value && <div className="text-sm mb-2">
-                        <span className="text-muted-foreground">Valor por defecto:</span>{" "}
-                        <span className="font-medium">{variable.default_value}</span>
-                      </div>}
-                    {variable.imposition_field && <div className="text-sm mb-2">
-                        <span className="text-muted-foreground">Imposición:</span>{" "}
-                        <span className="font-medium text-primary">{impositionFieldLabels[variable.imposition_field] || variable.imposition_field}</span>
-                      </div>}
-                    {variable.has_implicit_task && variable.task_name && <div className="space-y-2 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Tarea:</span>{" "}
-                          <span className="font-medium">{variable.task_name}</span>
-                        </div>
-                        {variable.task_phase_id && <div>
-                            <span className="text-muted-foreground">Fase:</span>{" "}
-                            <span>
-                              {phases.find(p => p.id === variable.task_phase_id)?.display_name || 'N/A'}
-                            </span>
-                          </div>}
-                        {variable.task_exclude_values && variable.task_exclude_values.length > 0 && <div>
-                            <span className="text-muted-foreground">Excepciones:</span>{" "}
-                            <span className="text-xs">
-                              {variable.task_exclude_values.join(', ')}
-                            </span>
-                          </div>}
-                      </div>}
-                  </CardContent>
-                </Card>)}
+                  </div>
+                  {variable.description && <p className="text-xs text-muted-foreground truncate">{variable.description}</p>}
+                  <div className="text-xs space-y-0.5 text-muted-foreground">
+                    {variable.default_value && <div>Defecto: <span className="font-medium text-foreground">{variable.default_value}</span></div>}
+                    {variable.imposition_field && <div>Imp: <span className="font-medium text-primary">{impositionFieldLabels[variable.imposition_field] || variable.imposition_field}</span></div>}
+                    {variable.has_implicit_task && variable.task_name && <div>Tarea: <span className="font-medium text-foreground">{variable.task_name}</span></div>}
+                  </div>
+                </div>)}
             </div>}
         </CardContent>
       </Card>
