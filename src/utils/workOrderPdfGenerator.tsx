@@ -407,6 +407,9 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
               <Text style={styles.sectionTitle}>
                 ARTÍCULO{items.length > 1 ? ` ${itemIndex + 1}` : ''}: {item.product_name}
               </Text>
+              {item.description && (
+                <Text style={{ fontSize: 9, color: '#444', marginTop: 2 }}>{item.description}</Text>
+              )}
             </View>
 
             {/* Prompts + Outputs unified grid (no section labels) */}
