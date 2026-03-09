@@ -158,6 +158,7 @@ export function useProductComponentSettings(
       is_component?: boolean;
       enabled_components?: string[];
       product_type?: 'sencillo' | 'compuesto' | 'kit';
+      has_imposition?: boolean;
     }) => {
       if (!apiUserId) throw new Error('No api_user_id found');
       if (!organizationId) throw new Error('No organization found');
