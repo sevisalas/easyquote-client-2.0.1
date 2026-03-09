@@ -356,6 +356,10 @@ export default function ProductionConfiguration() {
                     </div>
                   </CardHeader>
                   <CardContent>
+                    {variable.imposition_field && <div className="text-sm mb-2">
+                        <span className="text-muted-foreground">Imposición:</span>{" "}
+                        <span className="font-medium text-primary">{impositionFieldLabels[variable.imposition_field] || variable.imposition_field}</span>
+                      </div>}
                     {variable.has_implicit_task && variable.task_name && <div className="space-y-2 text-sm">
                         <div>
                           <span className="text-muted-foreground">Tarea:</span>{" "}
