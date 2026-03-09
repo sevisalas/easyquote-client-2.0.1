@@ -14,6 +14,8 @@ interface WorkOrderItemProps {
   };
   orderNumber: string;
   customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
   orderDate?: string;
   deliveryDate?: string;
   itemIndex: number;
