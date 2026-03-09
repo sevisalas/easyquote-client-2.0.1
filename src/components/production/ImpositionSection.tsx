@@ -131,7 +131,7 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
               Imposición
               {hasUserModification && (
-                <span className="ml-1 text-[9px] font-normal text-amber-600">• modificada</span>
+                <span className="ml-1 text-[9px] font-normal text-accent-foreground">• modificada</span>
               )}
             </p>
             <ImpositionBlock
