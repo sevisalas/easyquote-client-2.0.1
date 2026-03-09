@@ -83,11 +83,27 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
     return item.imposition_data[componentKey] || null;
   };
 
-  const saveImposition = async (newData: any) => {
+  const saveImposition = async (newData: any, isUserModified = true) => {
     try {
+      const updatePayload: any = { imposition_data: newData };
+      
+      // Add observation if user manually modified
+      if (isUserModified) {
+        const currentObs = (item as any).observations || [];
+        const newObs = [
+          ...currentObs,
+          {
+            type: "imposition_modified",
+            message: "Imposición modificada manualmente por el usuario",
+            timestamp: new Date().toISOString(),
+          }
+        ];
+        updatePayload.observations = newObs;
+      }
+
       const { error } = await supabase
         .from('sales_order_items')
-        .update({ imposition_data: newData })
+        .update(updatePayload)
         .eq('id', item.id);
       if (error) throw error;
       toast.success('Imposición guardada correctamente');
