@@ -433,11 +433,10 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
             {item.imposition_data && (
               <>
                 <View style={styles.thickSeparator} />
-                <Text style={styles.sectionTitle}>IMPOSICIÓN</Text>
 
                 {isSimple ? (
                   <View style={styles.impositionRow}>
-                    <ImpositionDiagram data={item.imposition_data} title="IMPOSICIÓN" />
+                    <ImpositionDiagram data={item.imposition_data} title="" />
                   </View>
                 ) : compositeImpositions.length > 0 ? (
                   <View style={styles.impositionRow}>
@@ -449,7 +448,7 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
                   </View>
                 ) : (
                   <View style={styles.impositionRow}>
-                    <ImpositionDiagram data={item.imposition_data} title="IMPOSICIÓN" />
+                    <ImpositionDiagram data={item.imposition_data} title="" />
                   </View>
                 )}
               </>
