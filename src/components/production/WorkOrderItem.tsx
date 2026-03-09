@@ -35,6 +35,14 @@ export const WorkOrderItem = ({
   itemIndex,
   children,
 }: WorkOrderItemProps) => {
+  const formatValue = (value: any): string => {
+    if (value === null || value === undefined) return '-';
+    if (typeof value === 'string' && (value.startsWith('http://') || value.startsWith('https://'))) {
+      return 'Ver imagen';
+    }
+    return String(value);
+  };
+
   const relevantOutputs = [...(item.outputs || [])].sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
   const sortedPrompts = [...(item.prompts || [])]
@@ -43,14 +51,6 @@ export const WorkOrderItem = ({
       return val !== 'No' && val !== 'no';
     })
     .sort((a, b) => (a.order || 0) - (b.order || 0));
-
-  const formatValue = (value: any): string => {
-    if (value === null || value === undefined) return '-';
-    if (typeof value === 'string' && (value.startsWith('http://') || value.startsWith('https://'))) {
-      return 'Ver imagen';
-    }
-    return String(value);
-  };
 
   // Detectar si es simple o compuesto
   const isSimpleImposition = (data: any): boolean => data && typeof data.productWidth === 'number';
