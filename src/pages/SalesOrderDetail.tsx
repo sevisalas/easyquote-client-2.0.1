@@ -223,6 +223,18 @@ const SalesOrderDetail = () => {
       
       const additionalsData = await fetchSalesOrderAdditionals(id);
       setAdditionals(additionalsData);
+
+      // Load customer info
+      if (orderData.customer_id) {
+        const { data: customer } = await supabase
+          .from('customers')
+          .select('name, email, phone')
+          .eq('id', orderData.customer_id)
+          .single();
+        if (customer) {
+          setCustomerInfo({ name: customer.name, email: customer.email || undefined, phone: customer.phone || undefined });
+        }
+      }
       
       // Load source quote number if exists
       if (orderData.quote_id) {
