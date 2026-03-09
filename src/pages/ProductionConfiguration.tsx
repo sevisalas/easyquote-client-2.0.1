@@ -808,5 +808,8 @@ export default function ProductionConfiguration() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Output Type Visibility — al final */}
+      <OutputTypeVisibilitySection />
     </div>;
 }
