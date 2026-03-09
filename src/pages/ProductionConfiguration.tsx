@@ -82,6 +82,7 @@ export default function ProductionConfiguration() {
     task_phase_id: "",
     task_exclude_values: [] as string[],
     imposition_field: "" as string,
+    default_value: "" as string,
   });
   useEffect(() => {
     if (organization) {
@@ -168,6 +169,7 @@ export default function ProductionConfiguration() {
       task_phase_id: varFormData.has_implicit_task ? varFormData.task_phase_id : null,
       task_exclude_values: varFormData.has_implicit_task ? varFormData.task_exclude_values : null,
       imposition_field: varFormData.imposition_field || null,
+      default_value: varFormData.default_value || null,
     });
     setIsCreateVarDialogOpen(false);
     setVarFormData({
@@ -179,6 +181,7 @@ export default function ProductionConfiguration() {
       task_phase_id: "",
       task_exclude_values: [],
       imposition_field: "",
+      default_value: "",
     });
   };
   const handleEditVariable = () => {
@@ -194,6 +197,7 @@ export default function ProductionConfiguration() {
         task_phase_id: varFormData.has_implicit_task ? varFormData.task_phase_id : null,
         task_exclude_values: varFormData.has_implicit_task ? varFormData.task_exclude_values : null,
         imposition_field: varFormData.imposition_field || null,
+        default_value: varFormData.default_value || null,
       }
     });
     setIsEditVarDialogOpen(false);
@@ -207,6 +211,7 @@ export default function ProductionConfiguration() {
       task_phase_id: "",
       task_exclude_values: [],
       imposition_field: "",
+      default_value: "",
     });
   };
   const handleDeleteVariable = () => {
@@ -226,6 +231,7 @@ export default function ProductionConfiguration() {
       task_phase_id: variable.task_phase_id || "",
       task_exclude_values: variable.task_exclude_values || [],
       imposition_field: variable.imposition_field || "",
+      default_value: variable.default_value || "",
     });
     setIsEditVarDialogOpen(true);
   };
@@ -369,6 +375,10 @@ export default function ProductionConfiguration() {
                     </div>
                   </CardHeader>
                   <CardContent>
+                    {variable.default_value && <div className="text-sm mb-2">
+                        <span className="text-muted-foreground">Valor por defecto:</span>{" "}
+                        <span className="font-medium">{variable.default_value}</span>
+                      </div>}
                     {variable.imposition_field && <div className="text-sm mb-2">
                         <span className="text-muted-foreground">Imposición:</span>{" "}
                         <span className="font-medium text-primary">{impositionFieldLabels[variable.imposition_field] || variable.imposition_field}</span>
@@ -552,6 +562,14 @@ export default function ProductionConfiguration() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div>
+              <Label htmlFor="var-default">Valor por defecto (opcional)</Label>
+              <Input id="var-default" value={varFormData.default_value} onChange={e => setVarFormData({
+                ...varFormData,
+                default_value: e.target.value
+              })} placeholder="ej: 3" />
+            </div>
             
             <div className="flex items-center space-x-2">
               <Checkbox id="has-implicit-task" checked={varFormData.has_implicit_task} onCheckedChange={checked => setVarFormData({
@@ -650,6 +668,14 @@ export default function ProductionConfiguration() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="edit-var-default">Valor por defecto (opcional)</Label>
+              <Input id="edit-var-default" value={varFormData.default_value} onChange={e => setVarFormData({
+                ...varFormData,
+                default_value: e.target.value
+              })} placeholder="ej: 3" />
             </div>
             
             <div className="flex items-center space-x-2">

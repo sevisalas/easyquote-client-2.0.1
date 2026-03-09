@@ -605,7 +605,8 @@ export default function SalesOrderNew() {
                 prompt_or_output_name,
                 production_variable_id,
                 production_variables (
-                  imposition_field
+                  imposition_field,
+                  default_value
                 )
               `)
               .eq("easyquote_product_id", item.product_id)
@@ -634,12 +635,13 @@ export default function SalesOrderNew() {
             };
 
             for (const mapping of impFieldMappings) {
-              const field = (mapping.production_variables as any).imposition_field;
+              const variable = mapping.production_variables as any;
+              const field = variable.imposition_field;
               const promptOrOutputName = mapping.prompt_or_output_name;
               
               const promptMatch = prompts.find((p: any) => p.label === promptOrOutputName);
               const outputMatch = outputs.find((o: any) => o.name === promptOrOutputName);
-              const rawValue = promptMatch?.value || outputMatch?.value;
+              const rawValue = promptMatch?.value || outputMatch?.value || variable.default_value;
               
               if (rawValue !== undefined && rawValue !== null) {
                 const numValue = parseFloat(String(rawValue));
