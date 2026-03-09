@@ -512,10 +512,10 @@ const SalesOrdersList = () => {
               <TableHeader>
                 <TableRow className="h-9">
                   <TableHead className="py-2 text-xs font-semibold">Fecha</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold">Nº</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold min-w-[140px]">Nº</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Cliente</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Usuario</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold">Descripción</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold max-w-[200px]">Descripción</TableHead>
                   <TableHead className="py-2 text-right text-xs font-semibold">Total</TableHead>
                   {hasHoldedAccess && (
                     <>
@@ -536,7 +536,7 @@ const SalesOrdersList = () => {
                       <CustomerName customerId={order.customer_id} />
                     </TableCell>
                     <TableCell className="py-1.5 px-3 text-sm text-muted-foreground">{getUserName(order.user_id)}</TableCell>
-                    <TableCell className="py-1.5 px-3 text-sm">{order.description || order.title || ""}</TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm max-w-[200px] truncate">{order.description || order.title || ""}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm text-right font-medium">{fmtEUR(order.final_price)}</TableCell>
                     {hasHoldedAccess && (
                       <>
