@@ -748,7 +748,8 @@ const SalesOrderDetail = () => {
                 const filteredOutputs = (itemOutputs as Array<{ name: string; type: string; value: any }>).filter(
                   (o) => isVisibleIn(o.type, visibilityContext)
                 );
-                const itemPrompts = item.prompts && Array.isArray(item.prompts) ? item.prompts : [];
+                const itemPrompts = (item.prompts && Array.isArray(item.prompts) ? item.prompts : [])
+                  .filter((p: any) => !isAdminOnlyPrompt(p.label || ''));
                 const isExpanded = expandedItems.has(item.id);
                 
                 return (
