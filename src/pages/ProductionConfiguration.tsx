@@ -34,34 +34,29 @@ const impositionFieldLabels: Record<string, string> = {
 function OutputTypeVisibilitySection() {
   const { settings, toggleVisibility, isLoading } = useOutputTypeVisibility();
 
-  if (isLoading) return null;
+  if (isLoading || settings.length === 0) return null;
 
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle>Visibilidad de tipos de output</CardTitle>
-        <CardDescription>
-          Controla qué tipos de datos de salida se muestran en cada contexto
-        </CardDescription>
+    <Card>
+      <CardHeader className="py-3 px-4">
+        <CardTitle className="text-sm">Visibilidad de tipos de output</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="border rounded-lg overflow-hidden">
-          <div className="grid grid-cols-[1fr_80px_80px] gap-2 px-4 py-2 bg-muted/50 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+      <CardContent className="px-4 pb-3 pt-0">
+        <div className="border rounded overflow-hidden text-xs">
+          <div className="grid grid-cols-[1fr_60px_60px] px-3 py-1.5 bg-muted/50 font-semibold text-muted-foreground uppercase tracking-wider">
             <span>Tipo</span>
             <span className="text-center">Admin</span>
-            <span className="text-center">Producción</span>
+            <span className="text-center">Prod.</span>
           </div>
           {settings.map((s) => (
             <div
               key={s.output_type}
-              className="grid grid-cols-[1fr_80px_80px] gap-2 px-4 py-2 border-t items-center"
+              className="grid grid-cols-[1fr_60px_60px] px-3 py-1 border-t items-center"
             >
-              <div>
-                <span className="text-sm font-medium">{s.label}</span>
-                <span className="text-xs text-muted-foreground ml-2">({s.output_type})</span>
-              </div>
+              <span className="font-medium">{s.output_type}</span>
               <div className="flex justify-center">
                 <Switch
+                  className="scale-75"
                   checked={s.show_in_admin}
                   onCheckedChange={(v) =>
                     toggleVisibility({ output_type: s.output_type, field: "show_in_admin", value: v })
@@ -70,6 +65,7 @@ function OutputTypeVisibilitySection() {
               </div>
               <div className="flex justify-center">
                 <Switch
+                  className="scale-75"
                   checked={s.show_in_production}
                   onCheckedChange={(v) =>
                     toggleVisibility({ output_type: s.output_type, field: "show_in_production", value: v })
@@ -385,8 +381,7 @@ export default function ProductionConfiguration() {
         </Card>
       </div>
 
-      {/* Output Type Visibility */}
-      <OutputTypeVisibilitySection />
+      {/* Output Type Visibility moved to end */}
 
       {/* Bottom Row: Production Variables */}
       <Card>
@@ -813,5 +808,8 @@ export default function ProductionConfiguration() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Output Type Visibility — al final */}
+      <OutputTypeVisibilitySection />
     </div>;
 }
