@@ -179,7 +179,8 @@ export default function ProductionConfiguration() {
         has_implicit_task: varFormData.has_implicit_task,
         task_name: varFormData.has_implicit_task ? varFormData.task_name : null,
         task_phase_id: varFormData.has_implicit_task ? varFormData.task_phase_id : null,
-        task_exclude_values: varFormData.has_implicit_task ? varFormData.task_exclude_values : null
+        task_exclude_values: varFormData.has_implicit_task ? varFormData.task_exclude_values : null,
+        imposition_field: varFormData.imposition_field || null,
       }
     });
     setIsEditVarDialogOpen(false);
@@ -191,7 +192,8 @@ export default function ProductionConfiguration() {
       has_implicit_task: false,
       task_name: "",
       task_phase_id: "",
-      task_exclude_values: []
+      task_exclude_values: [],
+      imposition_field: "",
     });
   };
   const handleDeleteVariable = () => {
