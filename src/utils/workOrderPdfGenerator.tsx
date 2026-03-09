@@ -2,21 +2,20 @@ import React from 'react';
 import { Document, Page, Text, View, StyleSheet, pdf, Image } from '@react-pdf/renderer';
 import { supabase } from '@/integrations/supabase/client';
 
-// Estilos para el PDF
+const RED = '#CC0000';
+
 const styles = StyleSheet.create({
   page: {
-    padding: 20,
-    fontSize: 8,
+    padding: 24,
+    fontSize: 9,
     fontFamily: 'Helvetica',
   },
+  // --- Header ---
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 10,
-    paddingBottom: 8,
-    borderBottomWidth: 1.5,
-    borderBottomColor: '#000',
+    marginBottom: 4,
   },
   headerLeft: {
     flex: 1,
@@ -25,60 +24,158 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   logo: {
-    width: 60,
+    width: 70,
     height: 'auto',
     marginBottom: 4,
   },
-  title: {
+  otTitle: {
+    fontSize: 18,
+    fontFamily: 'Helvetica-Bold',
+    color: RED,
+  },
+  otNumber: {
     fontSize: 14,
     fontFamily: 'Helvetica-Bold',
+    marginTop: 2,
+  },
+  companyName: {
+    fontSize: 8,
+    color: '#666',
+    marginTop: 2,
+  },
+  // --- Client info ---
+  clientBlock: {
     marginBottom: 2,
   },
-  subtitle: {
-    fontSize: 9,
-    color: '#666',
-  },
-  section: {
-    marginBottom: 8,
-  },
-  sectionTitle: {
+  clientTitle: {
     fontSize: 10,
     fontFamily: 'Helvetica-Bold',
-    marginBottom: 4,
-    paddingBottom: 2,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#ddd',
+    color: RED,
+    marginBottom: 3,
   },
-  row: {
+  clientRow: {
     flexDirection: 'row',
-    marginBottom: 2,
+    marginBottom: 1,
   },
-  label: {
+  clientLabel: {
     fontFamily: 'Helvetica-Bold',
-    marginRight: 4,
-    minWidth: 80,
+    fontSize: 9,
+    width: 65,
   },
-  value: {
+  clientValue: {
+    fontSize: 9,
+  },
+  // --- Separators ---
+  redSeparator: {
+    height: 3,
+    backgroundColor: RED,
+    marginVertical: 6,
+  },
+  thinSeparator: {
+    height: 1,
+    backgroundColor: '#ddd',
+    marginVertical: 4,
+  },
+  // --- Section titles ---
+  sectionTitle: {
+    fontSize: 11,
+    fontFamily: 'Helvetica-Bold',
+    color: RED,
+    marginBottom: 4,
+  },
+  subsectionTitle: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: '#333',
+    marginBottom: 3,
+    textTransform: 'uppercase',
+  },
+  // --- Grid layout (3 columns) ---
+  grid3: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  gridItem: {
+    width: '33.33%',
+    flexDirection: 'row',
+    paddingVertical: 2,
+    paddingRight: 6,
+  },
+  gridLabel: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 8,
+    color: '#555',
+    marginRight: 3,
+  },
+  gridValue: {
+    fontSize: 8,
     flex: 1,
   },
-  table: {
+  // --- Imposition ---
+  impositionRow: {
+    flexDirection: 'row',
+    gap: 10,
     marginTop: 4,
   },
-  tableRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#eee',
-    paddingVertical: 3,
-  },
-  tableHeader: {
-    backgroundColor: '#f5f5f5',
-    fontFamily: 'Helvetica-Bold',
-  },
-  tableCell: {
+  impositionBox: {
     flex: 1,
-    paddingHorizontal: 3,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 6,
+    backgroundColor: '#fafafa',
+  },
+  impositionTitle: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    marginBottom: 4,
+    textAlign: 'center',
+    color: RED,
+  },
+  impositionText: {
+    fontSize: 7,
+    marginBottom: 1,
+  },
+  impositionBold: {
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    marginTop: 2,
+  },
+  // --- Observations ---
+  observationsBlock: {
+    borderWidth: 1,
+    borderColor: '#999',
+    padding: 8,
+    minHeight: 60,
+  },
+  observationsTitle: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    marginBottom: 4,
+  },
+  observationsPlaceholder: {
+    fontSize: 7,
+    color: '#aaa',
+    fontStyle: 'italic',
+  },
+  // --- Dates row ---
+  datesRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 16,
+    marginBottom: 2,
+  },
+  dateItem: {
+    flexDirection: 'row',
+    fontSize: 8,
+  },
+  dateLabel: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 8,
+    marginRight: 3,
   },
 });
+
+// ─── Interfaces ─────────────────────────────────────────────
 
 interface WorkOrderPDFOptions {
   orderId: string;
@@ -102,7 +199,50 @@ interface WorkOrderPDFOptions {
   companyName?: string;
 }
 
-// Componente del documento PDF
+// ─── Helper: render imposition box ──────────────────────────
+
+const ImpositionBox: React.FC<{ data: any; title: string }> = ({ data, title }) => {
+  if (!data || !data.repetitionsH || !data.repetitionsV) return null;
+  return (
+    <View style={styles.impositionBox}>
+      <Text style={styles.impositionTitle}>{title}</Text>
+      <Text style={styles.impositionText}>
+        Producto: {data.productWidth}×{data.productHeight} mm · Sangrado: {data.bleed} mm
+      </Text>
+      <Text style={styles.impositionText}>
+        Pliego: {data.sheetWidth}×{data.sheetHeight} mm
+      </Text>
+      {(data.validWidth || data.validHeight) && (
+        <Text style={styles.impositionText}>
+          Válido: {data.validWidth || data.sheetWidth}×{data.validHeight || data.sheetHeight} mm
+        </Text>
+      )}
+      <Text style={styles.impositionText}>
+        Calles: {data.gutterH}×{data.gutterV} mm
+      </Text>
+      <Text style={styles.impositionBold}>
+        {data.repetitionsH}×{data.repetitionsV} = {data.totalRepetitions} uds/pliego
+        {data.utilization != null ? ` · Aprov: ${Number(data.utilization).toFixed(1)}%` : ''}
+      </Text>
+    </View>
+  );
+};
+
+// ─── Helper: 3-column grid of label:value pairs ─────────────
+
+const DataGrid: React.FC<{ items: Array<{ label: string; value: string }> }> = ({ items }) => (
+  <View style={styles.grid3}>
+    {items.map((item, idx) => (
+      <View key={idx} style={styles.gridItem}>
+        <Text style={styles.gridLabel}>{item.label}:</Text>
+        <Text style={styles.gridValue}>{item.value}</Text>
+      </View>
+    ))}
+  </View>
+);
+
+// ─── Main Document ──────────────────────────────────────────
+
 const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
   orderNumber,
   customerName,
@@ -114,247 +254,160 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
   logoUrl,
   companyName,
 }) => {
-  // Filtrar outputs relevantes para producción
-  const getProductionOutputs = (outputs?: Array<{ name: string; type: string; value: any }>) => {
-    if (!outputs) return [];
-    const productionTypes = ['Instructions', 'Workflow', 'Width', 'Height', 'Depth', 
-                            'ProductImage', 'Quantity', 'Generic', 'Weight'];
-    return outputs.filter(output => productionTypes.includes(output.type));
+  const formatVal = (v: any): string => {
+    if (v === null || v === undefined) return '-';
+    if (typeof v === 'string' && (v.startsWith('http://') || v.startsWith('https://'))) return 'Ver imagen';
+    return String(v);
   };
-
-  // Agrupar items por página
-  const itemsPerPage = 3;
-  const pages: Array<typeof items> = [];
-  
-  for (let i = 0; i < items.length; i += itemsPerPage) {
-    pages.push(items.slice(i, i + itemsPerPage));
-  }
 
   return (
     <Document>
-      {pages.map((pageItems, pageIndex) => (
-        <Page key={pageIndex} size="A4" style={styles.page}>
-          {/* Cabecera - solo en primera página */}
-          {pageIndex === 0 && (
-            <>
-              <View style={styles.header}>
-                <View style={styles.headerLeft}>
-                  {logoUrl && (
-                    <Image src={logoUrl} style={styles.logo} />
-                  )}
-                  {companyName && (
-                    <Text style={styles.subtitle}>{companyName}</Text>
-                  )}
-                </View>
-                <View style={styles.headerRight}>
-                  <Text style={styles.title}>ORDEN DE TRABAJO</Text>
-                  <Text style={styles.subtitle}>Pedido: {orderNumber}</Text>
-                  {orderDate && (
-                    <Text style={styles.subtitle}>Fecha: {orderDate}</Text>
-                  )}
-                </View>
-              </View>
+      {items.map((item, itemIndex) => {
+        const sortedPrompts = [...(item.prompts || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
+        const outputs = item.outputs || [];
 
-              {/* Información del Cliente */}
-              {customerName && (
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>CLIENTE</Text>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Nombre:</Text>
-                    <Text style={styles.value}>{customerName}</Text>
-                  </View>
+        // Detect imposition type
+        const isSimple = item.imposition_data && typeof item.imposition_data.productWidth === 'number';
+        const isComposite = item.composite_data?.components && Object.keys(item.composite_data.components).length > 0;
+
+        const compositeImpositions = !isSimple && isComposite && item.imposition_data
+          ? Object.entries(item.imposition_data).filter(([_, d]) => d && typeof (d as any).productWidth === 'number')
+          : [];
+
+        return (
+          <Page key={itemIndex} size="A4" style={styles.page}>
+            {/* ═══ HEADER ═══ */}
+            <View style={styles.header}>
+              <View style={styles.headerLeft}>
+                {logoUrl && <Image src={logoUrl} style={styles.logo} />}
+                {companyName && <Text style={styles.companyName}>{companyName}</Text>}
+
+                <View style={{ marginTop: 6 }}>
+                  <Text style={styles.clientTitle}>CLIENTE</Text>
+                  {customerName && (
+                    <View style={styles.clientRow}>
+                      <Text style={styles.clientLabel}>Nombre:</Text>
+                      <Text style={styles.clientValue}>{customerName}</Text>
+                    </View>
+                  )}
                   {customerEmail && (
-                    <View style={styles.row}>
-                      <Text style={styles.label}>Email:</Text>
-                      <Text style={styles.value}>{customerEmail}</Text>
+                    <View style={styles.clientRow}>
+                      <Text style={styles.clientLabel}>Email:</Text>
+                      <Text style={styles.clientValue}>{customerEmail}</Text>
                     </View>
                   )}
                   {customerPhone && (
-                    <View style={styles.row}>
-                      <Text style={styles.label}>Teléfono:</Text>
-                      <Text style={styles.value}>{customerPhone}</Text>
+                    <View style={styles.clientRow}>
+                      <Text style={styles.clientLabel}>Teléfono:</Text>
+                      <Text style={styles.clientValue}>{customerPhone}</Text>
                     </View>
                   )}
                 </View>
-              )}
-
-              {/* Fechas */}
-              {(orderDate || deliveryDate) && (
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>FECHAS</Text>
-                  {orderDate && (
-                    <View style={styles.row}>
-                      <Text style={styles.label}>Fecha Pedido:</Text>
-                      <Text style={styles.value}>{orderDate}</Text>
-                    </View>
-                  )}
-                  {deliveryDate && (
-                    <View style={styles.row}>
-                      <Text style={styles.label}>Fecha Entrega:</Text>
-                      <Text style={styles.value}>{deliveryDate}</Text>
-                    </View>
-                  )}
-                </View>
-              )}
-            </>
-          )}
-
-          {/* Items de la página */}
-          {pageItems.map((item, itemIndex) => (
-            <View 
-              key={itemIndex} 
-              style={{
-                marginBottom: 12,
-                padding: 8,
-                backgroundColor: '#f8f9fa',
-                borderWidth: 1,
-                borderColor: '#dee2e6',
-                borderRadius: 4,
-              }}
-            >
-              {/* Producto */}
-              <View style={{ marginBottom: 6 }}>
-                <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#495057', marginBottom: 3 }}>
-                  ARTÍCULO {pageIndex * itemsPerPage + itemIndex + 1}
-                </Text>
-                <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold' }}>
-                  {item.product_name}
-                </Text>
               </View>
 
-              {/* Configuración (Prompts) */}
-              {item.prompts && item.prompts.length > 0 && (
-                <View style={{ marginBottom: 6 }}>
-                  <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', marginBottom: 3, color: '#6c757d' }}>
-                    Configuración
-                  </Text>
-                  <View style={styles.table}>
-                    {item.prompts
-                      .sort((a, b) => (a.order || 0) - (b.order || 0))
-                      .map((prompt, idx) => (
-                        <View key={idx} style={styles.tableRow}>
-                          <Text style={[styles.tableCell, { fontFamily: 'Helvetica-Bold', fontSize: 7 }]}>
-                            {prompt.label}
-                          </Text>
-                          <Text style={[styles.tableCell, { fontSize: 7 }]}>
-                            {String(prompt.value)}
-                          </Text>
-                        </View>
-                      ))}
-                  </View>
-                </View>
-              )}
-
-              {/* Datos Técnicos (Outputs) */}
-              {getProductionOutputs(item.outputs).length > 0 && (
-                <View style={{ marginBottom: 6 }}>
-                  <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', marginBottom: 3, color: '#6c757d' }}>
-                    Datos Técnicos
-                  </Text>
-                  <View style={styles.table}>
-                    {getProductionOutputs(item.outputs).map((output, idx) => (
-                      <View key={idx} style={styles.tableRow}>
-                        <Text style={[styles.tableCell, { fontFamily: 'Helvetica-Bold', fontSize: 7 }]}>
-                          {output.name}
-                        </Text>
-                        <Text style={[styles.tableCell, { fontSize: 7 }]}>
-                          {String(output.value)}
-                        </Text>
+              <View style={styles.headerRight}>
+                <Text style={styles.otTitle}>ORDEN DE TRABAJO</Text>
+                <Text style={styles.otNumber}>{orderNumber}</Text>
+                {(orderDate || deliveryDate) && (
+                  <View style={{ marginTop: 6 }}>
+                    {orderDate && (
+                      <View style={styles.dateItem}>
+                        <Text style={styles.dateLabel}>F. Pedido:</Text>
+                        <Text>{orderDate}</Text>
                       </View>
-                    ))}
-                  </View>
-                </View>
-              )}
-
-              {/* Imposición - solo texto, sin SVG */}
-              {item.imposition_data && (() => {
-                try {
-                  const isSimple = typeof item.imposition_data.productWidth === 'number';
-                  const isComposite = item.composite_data?.components && Object.keys(item.composite_data.components).length > 0;
-
-                  const renderImpText = (imp: any, label?: string) => {
-                    if (!imp || !imp.repetitionsH || !imp.repetitionsV) return null;
-                    return (
-                      <View style={{ flex: 1, borderWidth: 0.5, borderColor: '#ccc', padding: 4, marginRight: 4 }} key={label || '__simple__'}>
-                        {label && (
-                          <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold', marginBottom: 2 }}>
-                            {label}
-                          </Text>
-                        )}
-                        <Text style={{ fontSize: 7 }}>
-                          Producto: {imp.productWidth}×{imp.productHeight} mm · Sangrado: {imp.bleed} mm
-                        </Text>
-                        <Text style={{ fontSize: 7 }}>
-                          Pliego: {imp.sheetWidth}×{imp.sheetHeight} mm · Válido: {imp.validWidth || imp.sheetWidth}×{imp.validHeight || imp.sheetHeight} mm
-                        </Text>
-                        <Text style={{ fontSize: 7 }}>
-                          Calles: {imp.gutterH}×{imp.gutterV} mm
-                        </Text>
-                        <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', marginTop: 1 }}>
-                          {imp.repetitionsH}×{imp.repetitionsV} = {imp.totalRepetitions} uds/pliego
-                          {imp.utilization != null ? ` · Aprov: ${Number(imp.utilization).toFixed(1)}%` : ''}
-                        </Text>
+                    )}
+                    {deliveryDate && (
+                      <View style={styles.dateItem}>
+                        <Text style={styles.dateLabel}>F. Entrega:</Text>
+                        <Text>{deliveryDate}</Text>
                       </View>
-                    );
-                  };
-
-                  const compositeEntries = !isSimple && isComposite
-                    ? Object.entries(item.imposition_data).filter(([_, d]) => d && typeof (d as any).productWidth === 'number')
-                    : [];
-
-                  return (
-                    <View style={{ marginBottom: 4 }}>
-                      <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', marginBottom: 2, color: '#6c757d' }}>
-                        {compositeEntries.length > 0 ? 'Imposición por componente' : 'Imposición'}
-                      </Text>
-                      {isSimple ? (
-                        renderImpText(item.imposition_data)
-                      ) : compositeEntries.length > 0 ? (
-                        <View style={{ flexDirection: 'row' }}>
-                          {compositeEntries.map(([key, data]) => {
-                            const alias = item.composite_data?.components?.[key]?.alias || key;
-                            return renderImpText(data, alias);
-                          })}
-                        </View>
-                      ) : (
-                        renderImpText(item.imposition_data)
-                      )}
-                    </View>
-                  );
-                } catch (e) {
-                  console.error('Error rendering imposition in PDF:', e);
-                  return null;
-                }
-              })()}
-
-              {/* Observaciones */}
-              <View style={{ 
-                borderWidth: 1, borderColor: '#ced4da', 
-                padding: 4, 
-                backgroundColor: '#ffffff',
-                marginTop: 4,
-              }}>
-                <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold', marginBottom: 2 }}>
-                  Observaciones:
-                </Text>
-                <Text style={{ fontSize: 6, color: '#6c757d', fontStyle: 'italic' }}>
-                  ...
-                </Text>
+                    )}
+                  </View>
+                )}
               </View>
             </View>
-          ))}
-        </Page>
-      ))}
+
+            {/* ═══ RED SEPARATOR ═══ */}
+            <View style={styles.redSeparator} />
+
+            {/* ═══ ARTÍCULO ═══ */}
+            <View style={{ marginBottom: 4 }}>
+              <Text style={styles.sectionTitle}>
+                ARTÍCULO {items.length > 1 ? `${itemIndex + 1}` : ''}: {item.product_name}
+              </Text>
+            </View>
+
+            {/* Prompts (Configuración) in 3-col grid */}
+            {sortedPrompts.length > 0 && (
+              <View style={{ marginBottom: 6 }}>
+                <Text style={styles.subsectionTitle}>Configuración</Text>
+                <DataGrid
+                  items={sortedPrompts.map(p => ({ label: p.label, value: formatVal(p.value) }))}
+                />
+              </View>
+            )}
+
+            {/* ═══ RED SEPARATOR ═══ */}
+            {outputs.length > 0 && <View style={styles.redSeparator} />}
+
+            {/* Outputs (Datos técnicos) in 3-col grid */}
+            {outputs.length > 0 && (
+              <View style={{ marginBottom: 6 }}>
+                <Text style={styles.sectionTitle}>DATOS TÉCNICOS</Text>
+                <DataGrid
+                  items={outputs.map(o => ({ label: o.name, value: formatVal(o.value) }))}
+                />
+              </View>
+            )}
+
+            {/* ═══ IMPOSICIÓN ═══ */}
+            {item.imposition_data && (
+              <>
+                <View style={styles.redSeparator} />
+                <Text style={styles.sectionTitle}>IMPOSICIÓN</Text>
+
+                {isSimple ? (
+                  <View style={styles.impositionRow}>
+                    <ImpositionBox data={item.imposition_data} title="IMPOSICIÓN" />
+                  </View>
+                ) : compositeImpositions.length > 0 ? (
+                  <View style={styles.impositionRow}>
+                    {compositeImpositions.map(([key, data]) => {
+                      const alias = item.composite_data?.components?.[key]?.alias || key;
+                      return <ImpositionBox key={key} data={data} title={alias.toUpperCase()} />;
+                    })}
+                  </View>
+                ) : (
+                  <View style={styles.impositionRow}>
+                    <ImpositionBox data={item.imposition_data} title="IMPOSICIÓN" />
+                  </View>
+                )}
+              </>
+            )}
+
+            {/* ═══ RED SEPARATOR ═══ */}
+            <View style={styles.redSeparator} />
+
+            {/* ═══ OBSERVACIONES ═══ */}
+            <View style={styles.observationsBlock}>
+              <Text style={styles.observationsTitle}>OBSERVACIONES</Text>
+              <Text style={styles.observationsPlaceholder}>
+                Espacio para notas durante la producción...
+              </Text>
+            </View>
+          </Page>
+        );
+      })}
     </Document>
   );
 };
 
-// Función principal para generar el PDF
+// ─── Public API ─────────────────────────────────────────────
+
 export const generateWorkOrderPDF = async (
   options: Omit<WorkOrderPDFOptions, 'logoUrl' | 'companyName'>
 ): Promise<void> => {
   try {
-    // Obtener configuración del PDF (logo y nombre de empresa)
     const { data: { user } } = await supabase.auth.getUser();
     let logoUrl = '';
     let companyName = '';
@@ -372,7 +425,6 @@ export const generateWorkOrderPDF = async (
       }
     }
 
-    // Obtener datos completos del cliente si existe
     let customerEmail = '';
     let customerPhone = '';
 
@@ -397,7 +449,6 @@ export const generateWorkOrderPDF = async (
       }
     }
 
-    // Generar el PDF
     const blob = await pdf(
       <WorkOrderDocument
         {...options}
@@ -408,7 +459,6 @@ export const generateWorkOrderPDF = async (
       />
     ).toBlob();
 
-    // Descargar el archivo
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
