@@ -513,6 +513,12 @@ const SalesOrderDetail = () => {
             composite_data: (item as any).composite_data || undefined,
           };
         }),
+        additionals: additionals.map(a => ({
+          name: a.name,
+          type: a.type,
+          value: a.value,
+          is_discount: a.is_discount,
+        })),
       });
       
       toast.success('PDF de Orden de Trabajo generado correctamente');
