@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useSubscription } from "@/contexts/SubscriptionContext";
 import { getEasyQuoteToken } from "@/lib/easyquoteApi";
 
 export interface OutputTypeVisibility {
@@ -22,7 +21,7 @@ export interface EasyQuoteOutputType {
 export function useOutputTypeVisibility() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { organization } = useSubscription();
+  const organizationId = sessionStorage.getItem("selected_organization_id");
 
   // Fetch real output types from EasyQuote API
   const tokenReady = !!sessionStorage.getItem("easyquote_token");
@@ -46,19 +45,19 @@ export function useOutputTypeVisibility() {
   });
 
   const { data: visibilitySettings, isLoading: isLoadingSettings } = useQuery({
-    queryKey: ["output-type-visibility", organization?.id],
+    queryKey: ["output-type-visibility", organizationId],
     queryFn: async () => {
-      if (!organization?.id) return [];
+      if (!organizationId) return [];
 
       const { data, error } = await supabase
         .from("output_type_visibility")
         .select("*")
-        .eq("organization_id", organization.id);
+        .eq("organization_id", organizationId);
 
       if (error) throw error;
       return data as OutputTypeVisibility[];
     },
-    enabled: !!organization?.id,
+    enabled: !!organizationId,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -85,11 +84,11 @@ export function useOutputTypeVisibility() {
       field: "show_in_admin" | "show_in_production";
       value: boolean;
     }) => {
-      if (!organization?.id) throw new Error("No organization found");
+      if (!organizationId) throw new Error("No organization found");
 
       const current = mergedSettings.find((s) => s.output_type === output_type);
       const row = {
-        organization_id: organization.id,
+        organization_id: organizationId,
         output_type,
         show_in_admin: current?.show_in_admin ?? true,
         show_in_production: current?.show_in_production ?? true,
