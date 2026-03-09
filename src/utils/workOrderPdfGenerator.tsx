@@ -178,6 +178,7 @@ interface WorkOrderPDFOptions {
     imposition_data?: any;
     composite_data?: any;
   }>;
+  additionals?: Array<{ name: string; type: string; value: number; is_discount: boolean }>;
   logoUrl?: string;
   companyName?: string;
   adminOnlyLabels?: Set<string>;
