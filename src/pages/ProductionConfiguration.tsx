@@ -84,8 +84,6 @@ export default function ProductionConfiguration() {
     task_exclude_values: [] as string[],
     imposition_field: "" as string,
     default_value: "" as string,
-    show_in_admin: true,
-    show_in_production: true,
   });
   useEffect(() => {
     if (organization) {
