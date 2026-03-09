@@ -1524,6 +1524,51 @@ export type Database = {
         }
         Relationships: []
       }
+      output_type_visibility: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          output_type: string
+          show_in_admin: boolean
+          show_in_production: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          output_type: string
+          show_in_admin?: boolean
+          show_in_production?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          output_type?: string
+          show_in_admin?: boolean
+          show_in_production?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "output_type_visibility_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "output_type_visibility_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pdf_configurations: {
         Row: {
           brand_color: string | null
@@ -2162,8 +2207,6 @@ export type Database = {
           is_active: boolean
           name: string
           organization_id: string
-          show_in_admin: boolean
-          show_in_production: boolean
           task_exclude_values: string[] | null
           task_name: string | null
           task_phase_id: string | null
@@ -2180,8 +2223,6 @@ export type Database = {
           is_active?: boolean
           name: string
           organization_id: string
-          show_in_admin?: boolean
-          show_in_production?: boolean
           task_exclude_values?: string[] | null
           task_name?: string | null
           task_phase_id?: string | null
@@ -2198,8 +2239,6 @@ export type Database = {
           is_active?: boolean
           name?: string
           organization_id?: string
-          show_in_admin?: boolean
-          show_in_production?: boolean
           task_exclude_values?: string[] | null
           task_name?: string | null
           task_phase_id?: string | null
