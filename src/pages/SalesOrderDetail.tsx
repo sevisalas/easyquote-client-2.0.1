@@ -123,7 +123,7 @@ const SalesOrderDetail = () => {
     return adminOnlyPrompts.has(label.trim().toUpperCase());
   };
 
-  // Refresh output types from EasyQuote API for stored items
+  // Refresh output types from EasyQuote pricing API for stored items
   const refreshOutputTypes = async (itemsData: SalesOrderItem[]): Promise<SalesOrderItem[]> => {
     try {
       const token = sessionStorage.getItem("easyquote_token");
@@ -134,20 +134,27 @@ const SalesOrderDetail = () => {
       const productIds = [...new Set(itemsData.filter(i => i.product_id).map(i => i.product_id!))];
       if (productIds.length === 0) return itemsData;
 
-      // Fetch current outputs for each product in parallel
+      // Fetch current output types via easyquote-pricing GET (returns resolved names + types)
       const outputMaps = new Map<string, Map<string, string>>(); // productId -> (outputName -> outputType)
       await Promise.all(productIds.map(async (productId) => {
         try {
-          const { data, error } = await supabase.functions.invoke("easyquote-outputs", {
-            body: { token, productId },
+          const { data, error } = await supabase.functions.invoke("easyquote-pricing", {
+            body: { token, productId, inputs: [] },
           });
-          if (!error && Array.isArray(data)) {
+          if (error || data?.error) {
+            console.warn(`[RefreshOutputTypes] Pricing failed for ${productId}:`, error || data?.error);
+            return;
+          }
+          // Extract outputs from pricing response (outputValues or outputs)
+          const outputs = data?.outputValues || data?.outputs || [];
+          if (Array.isArray(outputs) && outputs.length > 0) {
             const nameToType = new Map<string, string>();
-            data.forEach((o: any) => {
-              const name = o.outputText || o.name || o.promptText || '';
+            outputs.forEach((o: any) => {
+              const name = o.label || o.name || o.outputText || o.text || o.outputName || '';
               const type = o.outputType || o.type || '';
               if (name && type) nameToType.set(name, type);
             });
+            console.log(`[RefreshOutputTypes] Product ${productId}: ${nameToType.size} outputs resolved`, Object.fromEntries(nameToType));
             outputMaps.set(productId, nameToType);
           }
         } catch (err) {
@@ -172,6 +179,7 @@ const SalesOrderDetail = () => {
         const newOutputs = (item.outputs as any[]).map((o: any) => {
           const currentType = nameToType.get(o.name);
           if (currentType && currentType !== o.type) {
+            console.log(`[RefreshOutputTypes] Updating "${o.name}": ${o.type} → ${currentType}`);
             changed = true;
             return { ...o, type: currentType };
           }
@@ -192,6 +200,8 @@ const SalesOrderDetail = () => {
         Promise.all(dbUpdates.map(({ itemId, outputs }) =>
           supabase.from('sales_order_items').update({ outputs }).eq('id', itemId)
         )).catch(err => console.warn('[RefreshOutputTypes] DB update failed:', err));
+      } else {
+        console.log('[RefreshOutputTypes] No type changes detected');
       }
 
       return updatedItems;
