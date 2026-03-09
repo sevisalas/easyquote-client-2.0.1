@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useDefaultProductionTasks } from "@/hooks/useDefaultProductionTasks";
 import { useProductionPhases } from "@/hooks/useProductionPhases";
 import { useProductionVariables } from "@/hooks/useProductionVariables";
+import { useOutputTypeVisibility } from "@/hooks/useOutputTypeVisibility";
+import { Switch } from "@/components/ui/switch";
 import type { DefaultProductionTask } from "@/hooks/useDefaultProductionTasks";
 
 const impositionFieldLabels: Record<string, string> = {
