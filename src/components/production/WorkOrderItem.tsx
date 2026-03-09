@@ -33,9 +33,12 @@ export const WorkOrderItem = ({
 }: WorkOrderItemProps) => {
   const relevantOutputs = [...(item.outputs || [])].sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
-  const sortedPrompts = [...(item.prompts || [])].sort((a, b) => 
-    (a.order || 0) - (b.order || 0)
-  );
+  const sortedPrompts = [...(item.prompts || [])]
+    .filter(p => {
+      const val = formatValue(p.value);
+      return val !== 'No' && val !== 'no';
+    })
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
 
   const formatValue = (value: any): string => {
     if (value === null || value === undefined) return '-';
@@ -66,69 +69,43 @@ export const WorkOrderItem = ({
         </div>
       </div>
 
-      {/* Configuración en tabla compacta */}
-      {sortedPrompts.length > 0 && (
+      {/* Prompts + Outputs unified grid (no section labels) */}
+      {(sortedPrompts.length > 0 || relevantOutputs.length > 0) && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Configuración</p>
           <div className="border border-border rounded-sm overflow-hidden">
             <div className="grid grid-cols-2 md:grid-cols-4 text-[11px]">
-              {sortedPrompts.map((prompt, idx) => {
-                const value = formatValue(prompt.value);
-                const isImage = typeof prompt.value === 'string' && 
-                  (prompt.value.startsWith('http://') || prompt.value.startsWith('https://'));
-                
-                return (
-                  <div 
-                    key={prompt.id} 
-                    className={`flex gap-1 px-2 py-1 ${idx % 2 === 0 ? 'bg-muted/20' : 'bg-muted/40'} border-b border-border/50 last:border-b-0`}
-                  >
-                    <span className="font-semibold text-muted-foreground whitespace-nowrap">{prompt.label}:</span>
-                    {isImage ? (
-                      <img 
-                        src={prompt.value} 
-                        alt={prompt.label}
-                        className="max-w-[60px] h-auto rounded"
-                      />
-                    ) : (
-                      <span className="font-medium truncate">{value}</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Datos técnicos en tabla compacta */}
-      {relevantOutputs.length > 0 && (
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Datos técnicos</p>
-          <div className="border border-border rounded-sm overflow-hidden">
-            <div className="grid grid-cols-2 md:grid-cols-4 text-[11px]">
-              {relevantOutputs.map((output, idx) => {
-                const value = formatValue(output.value);
-                const isImage = output.type === 'ProductImage';
-                
-                return (
-                  <div 
-                    key={idx} 
-                    className={`flex gap-1 px-2 py-1 ${idx % 2 === 0 ? 'bg-muted/20' : 'bg-muted/40'} border-b border-border/50 last:border-b-0`}
-                  >
-                    <span className="font-semibold text-muted-foreground whitespace-nowrap">{output.name}:</span>
-                    {isImage && typeof output.value === 'string' && 
-                     (output.value.startsWith('http://') || output.value.startsWith('https://')) ? (
-                      <img 
-                        src={output.value} 
-                        alt={output.name}
-                        className="max-w-[60px] h-auto rounded"
-                      />
-                    ) : (
-                      <span className="font-medium truncate">{value}</span>
-                    )}
-                  </div>
-                );
-              })}
+              {[
+                ...sortedPrompts.map((prompt) => ({
+                  key: `p-${prompt.id}`,
+                  label: prompt.label,
+                  value: prompt.value,
+                  isImage: typeof prompt.value === 'string' && 
+                    (prompt.value.startsWith('http://') || prompt.value.startsWith('https://')),
+                })),
+                ...relevantOutputs.map((output, idx) => ({
+                  key: `o-${idx}`,
+                  label: output.name,
+                  value: output.value,
+                  isImage: output.type === 'ProductImage' && typeof output.value === 'string' &&
+                    (output.value.startsWith('http://') || output.value.startsWith('https://')),
+                })),
+              ].map((item, idx) => (
+                <div 
+                  key={item.key} 
+                  className={`flex gap-1 px-2 py-1 ${idx % 2 === 0 ? 'bg-muted/20' : 'bg-muted/40'} border-b border-border/50 last:border-b-0`}
+                >
+                  <span className="font-semibold text-muted-foreground whitespace-nowrap">{item.label}:</span>
+                  {item.isImage ? (
+                    <img 
+                      src={item.value} 
+                      alt={item.label}
+                      className="max-w-[60px] h-auto rounded"
+                    />
+                  ) : (
+                    <span className="font-medium truncate">{formatValue(item.value)}</span>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>

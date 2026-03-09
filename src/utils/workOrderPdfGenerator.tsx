@@ -95,12 +95,12 @@ const styles = StyleSheet.create({
   },
   gridLabel: {
     fontFamily: 'Helvetica-Bold',
-    fontSize: 8,
-    color: '#555',
-    marginRight: 3,
+    fontSize: 10,
+    color: '#444',
+    marginRight: 4,
   },
   gridValue: {
-    fontSize: 8,
+    fontSize: 10,
     flex: 1,
   },
   // --- Imposition ---
@@ -184,8 +184,8 @@ interface WorkOrderPDFOptions {
 
 // ─── Visual Imposition Diagram (mirrors ImpositionScheme.tsx logic) ──────
 
-const DIAGRAM_DEFAULT_W = 400;
-const DIAGRAM_DEFAULT_H = 220;
+const DIAGRAM_DEFAULT_W = 300;
+const DIAGRAM_DEFAULT_H = 170;
 
 const ImpositionDiagram: React.FC<{ data: any; title: string; maxWidth?: number; maxHeight?: number }> = ({ data, title, maxWidth, maxHeight }) => {
   if (!data || !data.repetitionsH || !data.repetitionsV) return null;
@@ -329,7 +329,13 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
   return (
     <Document>
       {items.map((item, itemIndex) => {
-        const sortedPrompts = [...(item.prompts || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
+        // Filter out prompts with value "No" and sort by order
+        const sortedPrompts = [...(item.prompts || [])]
+          .filter(p => {
+            const val = formatVal(p.value);
+            return val !== 'No' && val !== 'no';
+          })
+          .sort((a, b) => (a.order || 0) - (b.order || 0));
         // Outputs already come pre-filtered by production visibility from the caller
         const outputs = [...(item.outputs || [])].sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
@@ -403,27 +409,16 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
               </Text>
             </View>
 
-            {/* Prompts (Configuración) in 3-col grid */}
-            {sortedPrompts.length > 0 && (
+            {/* Prompts + Outputs unified grid (no section labels) */}
+            {(sortedPrompts.length > 0 || outputs.length > 0) && (
               <View style={{ marginBottom: 6 }}>
-                <Text style={styles.subsectionTitle}>Configuración</Text>
                 <DataGrid
-                  items={sortedPrompts.map(p => ({ label: p.label, value: formatVal(p.value) }))}
+                  items={[
+                    ...sortedPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                    ...outputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                  ]}
                 />
               </View>
-            )}
-
-            {/* Outputs (Datos técnicos) in 3-col grid */}
-            {outputs.length > 0 && (
-              <>
-                <View style={styles.thinSeparator} />
-                <View style={{ marginBottom: 6 }}>
-                  <Text style={styles.subsectionTitle}>Datos técnicos</Text>
-                  <DataGrid
-                    items={outputs.map(o => ({ label: o.name, value: formatVal(o.value) }))}
-                  />
-                </View>
-              </>
             )}
 
             {/* ═══ IMPOSICIÓN (visual diagram) ═══ */}
