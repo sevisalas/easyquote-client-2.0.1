@@ -61,30 +61,10 @@ export function ImpositionForm({ data, onChange }: ImpositionFormProps) {
         </div>
       </div>
 
-      {/* Pliego */}
+      {/* Área válida */}
       <div>
-        <h4 className="font-semibold text-sm mb-2">Pliego</h4>
+        <h4 className="font-semibold text-sm mb-2">Área válida de impresión</h4>
         <div className="grid grid-cols-2 gap-2">
-          <div>
-            <Label htmlFor="sheetWidth" className="text-xs">Ancho hoja (mm)</Label>
-            <Input
-              id="sheetWidth"
-              type="number"
-              value={localData.sheetWidth}
-              onChange={(e) => handleChange('sheetWidth', parseFloat(e.target.value) || 0)}
-              className="h-8"
-            />
-          </div>
-          <div>
-            <Label htmlFor="sheetHeight" className="text-xs">Alto hoja (mm)</Label>
-            <Input
-              id="sheetHeight"
-              type="number"
-              value={localData.sheetHeight}
-              onChange={(e) => handleChange('sheetHeight', parseFloat(e.target.value) || 0)}
-              className="h-8"
-            />
-          </div>
           <div>
             <Label htmlFor="validWidth" className="text-xs">Ancho válido (mm)</Label>
             <Input

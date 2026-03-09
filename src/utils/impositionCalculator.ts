@@ -4,9 +4,7 @@ export interface ImpositionData {
   productHeight: number; // mm
   bleed: number;         // mm (sangrado)
   
-  // Pliego
-  sheetWidth: number;    // mm (ancho total de la hoja)
-  sheetHeight: number;   // mm (alto total de la hoja)
+  // Área válida de impresión
   validWidth: number;    // mm (ancho del área imprimible)
   validHeight: number;   // mm (alto del área imprimible)
   
@@ -20,6 +18,10 @@ export interface ImpositionData {
   totalRepetitions?: number;
   utilization?: number;  // % aprovechamiento
   orientation?: 'horizontal' | 'vertical';
+
+  // Legacy (kept for backward compat with saved data, not used in calc)
+  sheetWidth?: number;
+  sheetHeight?: number;
 }
 
 export interface CalculationResult {
@@ -34,10 +36,7 @@ export interface CalculationResult {
  * Calcula las repeticiones y aprovechamiento del pliego
  */
 export function calculateImposition(data: ImpositionData): CalculationResult {
-  // Respetar la orientación de la hoja que el usuario configuró
   const { 
-    sheetWidth, 
-    sheetHeight,
     validWidth,
     validHeight,
     productWidth, 

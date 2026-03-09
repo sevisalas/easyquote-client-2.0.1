@@ -30,8 +30,6 @@ const defaultImpositionData: ImpositionData = {
   productWidth: 210,
   productHeight: 297,
   bleed: 3,
-  sheetWidth: 700,
-  sheetHeight: 500,
   validWidth: 680,
   validHeight: 480,
   gutterH: 2,
@@ -52,7 +50,7 @@ function ImpositionBlock({ imp, label, onEdit, onDelete }: { imp: ImpositionData
           <ImpositionScheme data={imp} compact={true} />
         </div>
         <div className="text-[10px] leading-tight space-y-0">
-          <p>{imp.productWidth}×{imp.productHeight} → {imp.sheetWidth}×{imp.sheetHeight}</p>
+          <p>{imp.productWidth}×{imp.productHeight} · Válido: {imp.validWidth}×{imp.validHeight}</p>
           <p>Sangr: {imp.bleed} · Calles: {imp.gutterH}×{imp.gutterV}</p>
           <p className="font-bold">{imp.repetitionsH}×{imp.repetitionsV}={imp.totalRepetitions}/pliego</p>
           {imp.utilization !== undefined && <p>Aprov: {imp.utilization.toFixed(1)}%</p>}
@@ -122,8 +120,6 @@ async function resolveImpositionFromMappings(
       productWidth: 210,
       productHeight: 297,
       bleed: 0,
-      sheetWidth: 700,
-      sheetHeight: 500,
       validWidth: 680,
       validHeight: 480,
       gutterH: 0,
@@ -147,16 +143,6 @@ async function resolveImpositionFromMappings(
           impositionData[field] = numValue;
         }
       }
-    }
-
-    // Sheet dimensions = valid area when not explicitly mapped
-    const hasSheetMapping = impFieldMappings.some((m: any) => {
-      const f = (m.production_variables as any)?.imposition_field;
-      return f === 'sheetWidth' || f === 'sheetHeight';
-    });
-    if (!hasSheetMapping) {
-      impositionData.sheetWidth = impositionData.validWidth;
-      impositionData.sheetHeight = impositionData.validHeight;
     }
 
     return updateCalculatedValues(impositionData as any);

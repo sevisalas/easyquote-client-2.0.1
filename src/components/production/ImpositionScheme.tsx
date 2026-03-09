@@ -12,44 +12,35 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
     bleed,
     gutterH,
     gutterV,
+    validWidth,
+    validHeight,
     repetitionsH = 0,
     repetitionsV = 0,
     orientation = 'horizontal'
   } = data;
 
-  // Respetar la orientación de la hoja configurada por el usuario
-  // Solo si el usuario pone alto > ancho, la hoja se dibuja vertical
-  const sheetWidth = data.sheetWidth;
-  const sheetHeight = data.sheetHeight;
-  const validWidth = data.validWidth;
-  const validHeight = data.validHeight;
-
-  // SVG se adapta a la orientación real de la hoja
-  const isLandscape = sheetWidth >= sheetHeight;
+  // SVG se adapta a la orientación real del área válida
+  const isLandscape = validWidth >= validHeight;
   const svgWidth = compact ? 140 : 700;
   const svgHeight = compact ? 80 : (isLandscape ? 400 : 500);
   
-  // Escala para que el pliego quepa en el SVG con margen
+  // Escala para que el área válida quepa en el SVG con margen
   const margin = compact ? 5 : 20;
-  const scaleX = (svgWidth - margin * 2) / sheetWidth;
-  const scaleY = (svgHeight - margin * 2) / sheetHeight;
+  const scaleX = (svgWidth - margin * 2) / validWidth;
+  const scaleY = (svgHeight - margin * 2) / validHeight;
   const scale = Math.min(scaleX, scaleY);
   
-  // Centrar el pliego en el SVG
-  const scaledSheetW = sheetWidth * scale;
-  const scaledSheetH = sheetHeight * scale;
-  const offsetX = (svgWidth - scaledSheetW) / 2;
-  const offsetY = (svgHeight - scaledSheetH) / 2;
+  // Centrar el área válida en el SVG
+  const scaledW = validWidth * scale;
+  const scaledH = validHeight * scale;
+  const offsetX = (svgWidth - scaledW) / 2;
+  const offsetY = (svgHeight - scaledH) / 2;
   
   // Función para escalar y posicionar
   const sx = (x: number) => offsetX + x * scale;
   const sy = (y: number) => offsetY + y * scale;
   const sw = (w: number) => w * scale;
   const sh = (h: number) => h * scale;
-  
-  // Área válida (centrada en el pliego)
-  const validOffsetX = (sheetWidth - validWidth) / 2;
-  const validOffsetY = (sheetHeight - validHeight) / 2;
   
   // Tamaño del producto con sangrado
   const productWithBleedW = productWidth + (bleed * 2);
@@ -64,8 +55,8 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
   const totalUsedHeight = repetitionsV * prodH + (repetitionsV - 1) * gutterV;
   
   // Centrar la imposición dentro del área válida
-  const impositionOffsetX = validOffsetX + (validWidth - totalUsedWidth) / 2;
-  const impositionOffsetY = validOffsetY + (validHeight - totalUsedHeight) / 2;
+  const impositionOffsetX = (validWidth - totalUsedWidth) / 2;
+  const impositionOffsetY = (validHeight - totalUsedHeight) / 2;
   
   // Longitud de las marcas de corte
   const cropMarkLength = compact ? 3 : 10;
@@ -105,76 +96,20 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
           {!compact && (
             <>
               {/* Esquina superior izquierda */}
-              <line
-                x1={sx(x + bleed - cropMarkLength)}
-                y1={sy(y + bleed)}
-                x2={sx(x + bleed + cropMarkLength)}
-                y2={sy(y + bleed)}
-                stroke="#374151"
-                strokeWidth={0.5}
-              />
-              <line
-                x1={sx(x + bleed)}
-                y1={sy(y + bleed - cropMarkLength)}
-                x2={sx(x + bleed)}
-                y2={sy(y + bleed + cropMarkLength)}
-                stroke="#374151"
-                strokeWidth={0.5}
-              />
+              <line x1={sx(x + bleed - cropMarkLength)} y1={sy(y + bleed)} x2={sx(x + bleed + cropMarkLength)} y2={sy(y + bleed)} stroke="#374151" strokeWidth={0.5} />
+              <line x1={sx(x + bleed)} y1={sy(y + bleed - cropMarkLength)} x2={sx(x + bleed)} y2={sy(y + bleed + cropMarkLength)} stroke="#374151" strokeWidth={0.5} />
               
               {/* Esquina superior derecha */}
-              <line
-                x1={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight) - cropMarkLength)}
-                y1={sy(y + bleed)}
-                x2={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight) + cropMarkLength)}
-                y2={sy(y + bleed)}
-                stroke="#374151"
-                strokeWidth={0.5}
-              />
-              <line
-                x1={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight))}
-                y1={sy(y + bleed - cropMarkLength)}
-                x2={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight))}
-                y2={sy(y + bleed + cropMarkLength)}
-                stroke="#374151"
-                strokeWidth={0.5}
-              />
+              <line x1={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight) - cropMarkLength)} y1={sy(y + bleed)} x2={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight) + cropMarkLength)} y2={sy(y + bleed)} stroke="#374151" strokeWidth={0.5} />
+              <line x1={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight))} y1={sy(y + bleed - cropMarkLength)} x2={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight))} y2={sy(y + bleed + cropMarkLength)} stroke="#374151" strokeWidth={0.5} />
               
               {/* Esquina inferior izquierda */}
-              <line
-                x1={sx(x + bleed - cropMarkLength)}
-                y1={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth))}
-                x2={sx(x + bleed + cropMarkLength)}
-                y2={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth))}
-                stroke="#374151"
-                strokeWidth={0.5}
-              />
-              <line
-                x1={sx(x + bleed)}
-                y1={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth) - cropMarkLength)}
-                x2={sx(x + bleed)}
-                y2={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth) + cropMarkLength)}
-                stroke="#374151"
-                strokeWidth={0.5}
-              />
+              <line x1={sx(x + bleed - cropMarkLength)} y1={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth))} x2={sx(x + bleed + cropMarkLength)} y2={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth))} stroke="#374151" strokeWidth={0.5} />
+              <line x1={sx(x + bleed)} y1={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth) - cropMarkLength)} x2={sx(x + bleed)} y2={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth) + cropMarkLength)} stroke="#374151" strokeWidth={0.5} />
               
               {/* Esquina inferior derecha */}
-              <line
-                x1={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight) - cropMarkLength)}
-                y1={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth))}
-                x2={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight) + cropMarkLength)}
-                y2={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth))}
-                stroke="#374151"
-                strokeWidth={0.5}
-              />
-              <line
-                x1={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight))}
-                y1={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth) - cropMarkLength)}
-                x2={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight))}
-                y2={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth) + cropMarkLength)}
-                stroke="#374151"
-                strokeWidth={0.5}
-              />
+              <line x1={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight) - cropMarkLength)} y1={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth))} x2={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight) + cropMarkLength)} y2={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth))} stroke="#374151" strokeWidth={0.5} />
+              <line x1={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight))} y1={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth) - cropMarkLength)} x2={sx(x + bleed + (orientation === 'horizontal' ? productWidth : productHeight))} y2={sy(y + bleed + (orientation === 'horizontal' ? productHeight : productWidth) + cropMarkLength)} stroke="#374151" strokeWidth={0.5} />
             </>
           )}
         </g>
@@ -190,27 +125,15 @@ export function ImpositionScheme({ data, compact = false }: ImpositionSchemeProp
       style={{ backgroundColor: '#ffffff' }}
       viewBox={`0 0 ${svgWidth} ${svgHeight}`}
     >
-      {/* Pliego completo */}
+      {/* Área válida de impresión */}
       <rect
         x={sx(0)}
         y={sy(0)}
-        width={sw(sheetWidth)}
-        height={sh(sheetHeight)}
+        width={sw(validWidth)}
+        height={sh(validHeight)}
         fill="#fafafa"
         stroke="#d1d5db"
         strokeWidth={compact ? 1 : 2}
-      />
-      
-      {/* Área válida de impresión */}
-      <rect
-        x={sx(validOffsetX)}
-        y={sy(validOffsetY)}
-        width={sw(validWidth)}
-        height={sh(validHeight)}
-        fill="none"
-        stroke="#9ca3af"
-        strokeWidth={compact ? 0.5 : 1}
-        strokeDasharray={compact ? "2,2" : "4,4"}
       />
       
       {/* Productos */}
