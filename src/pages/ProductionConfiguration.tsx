@@ -211,7 +211,8 @@ export default function ProductionConfiguration() {
       has_implicit_task: variable.has_implicit_task,
       task_name: variable.task_name || "",
       task_phase_id: variable.task_phase_id || "",
-      task_exclude_values: variable.task_exclude_values || []
+      task_exclude_values: variable.task_exclude_values || [],
+      imposition_field: variable.imposition_field || "",
     });
     setIsEditVarDialogOpen(true);
   };
