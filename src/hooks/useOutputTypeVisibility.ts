@@ -21,7 +21,7 @@ export interface EasyQuoteOutputType {
 export function useOutputTypeVisibility() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { organization } = useSubscription();
+  const organizationId = sessionStorage.getItem("selected_organization_id");
 
   // Fetch real output types from EasyQuote API
   const tokenReady = !!sessionStorage.getItem("easyquote_token");
