@@ -335,7 +335,10 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
         const sortedPrompts = [...(item.prompts || [])]
           .filter(p => {
             const val = formatVal(p.value);
-            return val !== 'No' && val !== 'no';
+            if (val === 'No' || val === 'no') return false;
+            // Filter admin_only prompts from work order PDF
+            if (adminOnlyLabels && adminOnlyLabels.has(p.label.trim().toUpperCase())) return false;
+            return true;
           })
           .sort((a, b) => (a.order || 0) - (b.order || 0));
         // Outputs already come pre-filtered by production visibility from the caller
