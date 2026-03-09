@@ -89,12 +89,10 @@ const SalesOrderDetail = () => {
       if (roleData.role === 'comercial') {
         setViewMode('administrative');
       }
-      // Load admin_only prompts for non-admin users
-      if (roleData.role !== 'admin') {
+      // Always load admin_only prompts (needed for production view filtering)
+      if (roleData.organization_id) {
         loadAdminOnlyPrompts(roleData.organization_id);
       }
-    }
-  };
 
   const loadAdminOnlyPrompts = async (organizationId: string) => {
     const { data: orgData } = await supabase
