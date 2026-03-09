@@ -173,6 +173,7 @@ export function useProductComponentSettings(
           is_component: settings.is_component,
           enabled_components: settings.enabled_components,
           product_type: settings.product_type,
+          has_imposition: settings.has_imposition,
           updated_at: new Date().toISOString(),
         }, {
           onConflict: 'api_user_id,easyquote_product_id',
