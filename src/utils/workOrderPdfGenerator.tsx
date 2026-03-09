@@ -409,27 +409,16 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
               </Text>
             </View>
 
-            {/* Prompts (Configuración) in 3-col grid */}
-            {sortedPrompts.length > 0 && (
+            {/* Prompts + Outputs unified grid (no section labels) */}
+            {(sortedPrompts.length > 0 || outputs.length > 0) && (
               <View style={{ marginBottom: 6 }}>
-                <Text style={styles.subsectionTitle}>Configuración</Text>
                 <DataGrid
-                  items={sortedPrompts.map(p => ({ label: p.label, value: formatVal(p.value) }))}
+                  items={[
+                    ...sortedPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                    ...outputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                  ]}
                 />
               </View>
-            )}
-
-            {/* Outputs (Datos técnicos) in 3-col grid */}
-            {outputs.length > 0 && (
-              <>
-                <View style={styles.thinSeparator} />
-                <View style={{ marginBottom: 6 }}>
-                  <Text style={styles.subsectionTitle}>Datos técnicos</Text>
-                  <DataGrid
-                    items={outputs.map(o => ({ label: o.name, value: formatVal(o.value) }))}
-                  />
-                </View>
-              </>
             )}
 
             {/* ═══ IMPOSICIÓN (visual diagram) ═══ */}
