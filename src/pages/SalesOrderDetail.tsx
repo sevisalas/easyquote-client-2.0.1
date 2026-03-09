@@ -123,6 +123,83 @@ const SalesOrderDetail = () => {
     return adminOnlyPrompts.has(label.trim().toUpperCase());
   };
 
+  // Refresh output types from EasyQuote API for stored items
+  const refreshOutputTypes = async (itemsData: SalesOrderItem[]): Promise<SalesOrderItem[]> => {
+    try {
+      const token = sessionStorage.getItem("easyquote_token");
+      if (!token) return itemsData;
+
+      // Get unique product_ids
+      const productIds = [...new Set(itemsData.filter(i => i.product_id).map(i => i.product_id!))];
+      if (productIds.length === 0) return itemsData;
+
+      // Fetch current outputs for each product in parallel
+      const outputMaps = new Map<string, Map<string, string>>(); // productId -> (outputName -> outputType)
+      await Promise.all(productIds.map(async (productId) => {
+        try {
+          const { data, error } = await supabase.functions.invoke("easyquote-outputs", {
+            body: { token, productId },
+          });
+          if (!error && Array.isArray(data)) {
+            const nameToType = new Map<string, string>();
+            data.forEach((o: any) => {
+              const name = o.outputText || o.name || o.promptText || '';
+              const type = o.outputType || o.type || '';
+              if (name && type) nameToType.set(name, type);
+            });
+            outputMaps.set(productId, nameToType);
+          }
+        } catch (err) {
+          console.warn(`[RefreshOutputTypes] Failed for product ${productId}:`, err);
+        }
+      }));
+
+      if (outputMaps.size === 0) return itemsData;
+
+      // Update output types in items
+      const updatedItems: SalesOrderItem[] = [];
+      const dbUpdates: { itemId: string; outputs: any[] }[] = [];
+
+      for (const item of itemsData) {
+        if (!item.product_id || !item.outputs || !Array.isArray(item.outputs) || !outputMaps.has(item.product_id)) {
+          updatedItems.push(item);
+          continue;
+        }
+
+        const nameToType = outputMaps.get(item.product_id)!;
+        let changed = false;
+        const newOutputs = (item.outputs as any[]).map((o: any) => {
+          const currentType = nameToType.get(o.name);
+          if (currentType && currentType !== o.type) {
+            changed = true;
+            return { ...o, type: currentType };
+          }
+          return o;
+        });
+
+        if (changed) {
+          updatedItems.push({ ...item, outputs: newOutputs as any });
+          dbUpdates.push({ itemId: item.id, outputs: newOutputs });
+        } else {
+          updatedItems.push(item);
+        }
+      }
+
+      // Persist changes to DB in background
+      if (dbUpdates.length > 0) {
+        console.log(`[RefreshOutputTypes] Updating ${dbUpdates.length} items with corrected output types`);
+        Promise.all(dbUpdates.map(({ itemId, outputs }) =>
+          supabase.from('sales_order_items').update({ outputs }).eq('id', itemId)
+        )).catch(err => console.warn('[RefreshOutputTypes] DB update failed:', err));
+      }
+
+      return updatedItems;
+    } catch (err) {
+      console.warn('[RefreshOutputTypes] Error:', err);
+      return itemsData;
+    }
+  };
+
   const loadOrderData = async () => {
     if (!id) return;
     const orderData = await fetchSalesOrderById(id);
