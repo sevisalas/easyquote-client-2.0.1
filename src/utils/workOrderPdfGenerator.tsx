@@ -184,8 +184,8 @@ interface WorkOrderPDFOptions {
 
 // ─── Visual Imposition Diagram (mirrors ImpositionScheme.tsx logic) ──────
 
-const DIAGRAM_DEFAULT_W = 400;
-const DIAGRAM_DEFAULT_H = 220;
+const DIAGRAM_DEFAULT_W = 300;
+const DIAGRAM_DEFAULT_H = 170;
 
 const ImpositionDiagram: React.FC<{ data: any; title: string; maxWidth?: number; maxHeight?: number }> = ({ data, title, maxWidth, maxHeight }) => {
   if (!data || !data.repetitionsH || !data.repetitionsV) return null;
