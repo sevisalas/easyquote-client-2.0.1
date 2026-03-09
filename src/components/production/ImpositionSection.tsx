@@ -50,7 +50,7 @@ function ImpositionBlock({ imp, label, onEdit, onDelete }: { imp: ImpositionData
           <ImpositionScheme data={imp} compact={true} />
         </div>
         <div className="text-[10px] leading-tight space-y-0">
-          <p>{imp.productWidth}×{imp.productHeight} → {imp.sheetWidth}×{imp.sheetHeight}</p>
+          <p>{imp.productWidth}×{imp.productHeight} · Válido: {imp.validWidth}×{imp.validHeight}</p>
           <p>Sangr: {imp.bleed} · Calles: {imp.gutterH}×{imp.gutterV}</p>
           <p className="font-bold">{imp.repetitionsH}×{imp.repetitionsV}={imp.totalRepetitions}/pliego</p>
           {imp.utilization !== undefined && <p>Aprov: {imp.utilization.toFixed(1)}%</p>}
