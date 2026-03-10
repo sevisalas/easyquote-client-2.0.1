@@ -119,7 +119,7 @@ async function resolveImpositionFromMappings(
     const impositionData: Record<string, number> = {
       productWidth: 210,
       productHeight: 297,
-      bleed: 3,
+      bleed: 0,
       validWidth: 680,
       validHeight: 480,
       gutterH: 0,
@@ -135,11 +135,11 @@ async function resolveImpositionFromMappings(
       // Match by cell name OR display name against prompts and outputs
       const promptMatch = prompts.find((p: any) => p.label === cellName || p.label === displayName);
       const outputMatch = outputs.find((o: any) => o.name === cellName || o.name === displayName);
-      const rawValue = promptMatch?.value || outputMatch?.value || variable.default_value;
+      const rawValue = promptMatch?.value ?? outputMatch?.value ?? variable.default_value;
 
       if (rawValue !== undefined && rawValue !== null) {
         const numValue = parseFloat(String(rawValue));
-        if (!isNaN(numValue) && numValue > 0) {
+        if (!isNaN(numValue) && numValue >= 0) {
           impositionData[field] = numValue;
         }
       }
@@ -208,27 +208,72 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
   /**
    * When "Activar imposición" is clicked, try to resolve values from
    * production variable mappings first, then open modal with those values.
+   * For composite products, use the component's product_id and prompts/outputs.
    */
   const handleActivateImposition = async (modalKey: string) => {
-    if (item.product_id && item.organization_id) {
-      setIsResolving(true);
-      const prompts = Array.isArray(item.prompts) ? item.prompts : [];
-      const outputs = Array.isArray(item.outputs) ? item.outputs : [];
+    const organizationId = item.organization_id || sessionStorage.getItem('selected_organization_id');
+    if (!organizationId) {
+      setActiveModal(modalKey);
+      return;
+    }
+
+    setIsResolving(true);
+
+    // Determine the correct product_id and prompts/outputs
+    let targetProductId = item.product_id;
+    let targetPrompts: any[] = Array.isArray(item.prompts) ? item.prompts : [];
+    let targetOutputs: any[] = Array.isArray(item.outputs) ? item.outputs : [];
+
+    // For composite components, use the component's product_id and data
+    if (modalKey !== '__simple__' && isComposite && compositeData?.components?.[modalKey]) {
+      const compData = compositeData.components[modalKey];
+      // Find the component_product_id from activeComponents
+      const activeComp = compositeData.activeComponents?.find((ac: any) => {
+        const compKey = `${ac.id}:${ac.instance_index || 1}`;
+        return compKey === modalKey;
+      });
+      if (activeComp?.component_product_id) {
+        targetProductId = activeComp.component_product_id;
+      }
+      // Use component's prompts and outputs
+      if (Array.isArray(compData.prompts)) {
+        targetPrompts = compData.prompts.map((p: any) => ({
+          label: p.promptText || p.label || '',
+          value: p.currentValue ?? p.value,
+        }));
+      }
+      if (Array.isArray(compData.outputs)) {
+        targetOutputs = compData.outputs;
+      }
+    }
+
+    if (targetProductId) {
       const resolved = await resolveImpositionFromMappings(
-        item.product_id,
-        item.organization_id,
-        prompts,
-        outputs
+        targetProductId,
+        organizationId,
+        targetPrompts,
+        targetOutputs
       );
       setResolvedDefaults(resolved);
-      setIsResolving(false);
 
-      // If we got valid data with repetitions, save it directly without opening modal
+      // If we got valid data with repetitions, save it directly
       if (resolved && resolved.repetitionsH && resolved.repetitionsV) {
-        await saveImposition(JSON.parse(JSON.stringify(resolved)), false);
+        if (modalKey === '__simple__') {
+          await saveImposition(JSON.parse(JSON.stringify(resolved)), false);
+        } else {
+          // For composite: save under the component key
+          const currentMap = item.imposition_data && !isSimpleImposition(item.imposition_data)
+            ? { ...item.imposition_data }
+            : {};
+          currentMap[modalKey] = JSON.parse(JSON.stringify(resolved));
+          await saveImposition(currentMap, false);
+        }
+        setIsResolving(false);
         return;
       }
     }
+
+    setIsResolving(false);
     // Fallback: open modal with defaults or resolved partial data
     setActiveModal(modalKey);
   };
