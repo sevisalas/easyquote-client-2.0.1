@@ -312,7 +312,8 @@ const SalesOrdersList = () => {
             quantity: item.quantity,
             price: item.price,
             prompts: item.prompts,
-            outputs: item.outputs
+            outputs: item.outputs,
+            composite_data: (item as any).composite_data || null,
           }))
         );
       }
