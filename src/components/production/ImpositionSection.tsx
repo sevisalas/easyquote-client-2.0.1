@@ -142,6 +142,8 @@ async function resolveImpositionFromMappings(
         if (!isNaN(numValue) && numValue >= 0) {
           impositionData[field] = numValue;
         }
+      } else {
+        console.warn(`[Imposition] No value found for field "${field}" (cell: ${cellName}, label: ${displayName}). Available outputs:`, outputs.map((o: any) => o.name));
       }
     }
 
@@ -207,8 +209,7 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
 
   /**
    * When "Activar imposición" is clicked, try to resolve values from
-   * production variable mappings first, then open modal with those values.
-   * For composite products, use the component's product_id and prompts/outputs.
+   * production variable mappings first, then ALWAYS open modal for user review.
    */
   const handleActivateImposition = async (modalKey: string) => {
     const organizationId = item.organization_id || sessionStorage.getItem('selected_organization_id');
@@ -227,7 +228,6 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
     // For composite components, use the component's product_id and data
     if (modalKey !== '__simple__' && isComposite && compositeData?.components?.[modalKey]) {
       const compData = compositeData.components[modalKey];
-      // Find the component_product_id from activeComponents
       const activeComp = compositeData.activeComponents?.find((ac: any) => {
         const compKey = `${ac.id}:${ac.instance_index || 1}`;
         return compKey === modalKey;
@@ -235,7 +235,6 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
       if (activeComp?.component_product_id) {
         targetProductId = activeComp.component_product_id;
       }
-      // Use component's prompts and outputs
       if (Array.isArray(compData.prompts)) {
         targetPrompts = compData.prompts.map((p: any) => ({
           label: p.promptText || p.label || '',
@@ -255,26 +254,10 @@ export function ImpositionSection({ item, onStatusUpdate }: ImpositionSectionPro
         targetOutputs
       );
       setResolvedDefaults(resolved);
-
-      // If we got valid data with repetitions, save it directly
-      if (resolved && resolved.repetitionsH && resolved.repetitionsV) {
-        if (modalKey === '__simple__') {
-          await saveImposition(JSON.parse(JSON.stringify(resolved)), false);
-        } else {
-          // For composite: save under the component key
-          const currentMap = item.imposition_data && !isSimpleImposition(item.imposition_data)
-            ? { ...item.imposition_data }
-            : {};
-          currentMap[modalKey] = JSON.parse(JSON.stringify(resolved));
-          await saveImposition(currentMap, false);
-        }
-        setIsResolving(false);
-        return;
-      }
     }
 
     setIsResolving(false);
-    // Fallback: open modal with defaults or resolved partial data
+    // Always open modal for user review
     setActiveModal(modalKey);
   };
 
