@@ -142,6 +142,8 @@ async function resolveImpositionFromMappings(
         if (!isNaN(numValue) && numValue >= 0) {
           impositionData[field] = numValue;
         }
+      } else {
+        console.warn(`[Imposition] No value found for field "${field}" (cell: ${cellName}, label: ${displayName}). Available outputs:`, outputs.map((o: any) => o.name));
       }
     }
 
