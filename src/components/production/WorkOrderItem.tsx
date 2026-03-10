@@ -134,6 +134,81 @@ export const WorkOrderItem = ({
         </div>
       )}
 
+      {/* Componentes de producto compuesto */}
+      {isComposite && compositeData?.components && (
+        <div className="space-y-3">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Componentes</p>
+          {Object.entries(compositeData.components)
+            .sort(([, a]: [string, any], [, b]: [string, any]) => 
+              (a.alias || '').localeCompare(b.alias || '', 'es')
+            )
+            .map(([compKey, compData]: [string, any]) => {
+              const compPrompts = Array.isArray(compData.prompts) 
+                ? [...compData.prompts].sort((a: any, b: any) => (a.promptSequence || 0) - (b.promptSequence || 0))
+                : [];
+              const compOutputs = Array.isArray(compData.outputs)
+                ? [...compData.outputs].sort((a: any, b: any) => (a.name || '').localeCompare(b.name || '', 'es'))
+                : [];
+
+              return (
+                <div key={compKey} className="border border-border rounded-sm overflow-hidden">
+                  <div className="px-2 py-1 bg-muted/50 border-b border-border/50">
+                    <p className="text-[11px] font-bold">{compData.alias || compKey}</p>
+                  </div>
+                  
+                  {/* Prompts del componente */}
+                  {compPrompts.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 text-[11px]">
+                      {compPrompts.map((prompt: any, idx: number) => {
+                        const label = prompt.promptText || prompt.label || '';
+                        const val = formatValue(prompt.currentValue ?? prompt.value);
+                        return (
+                          <div 
+                            key={prompt.id || idx} 
+                            className={`flex gap-1 px-2 py-1 ${idx % 2 === 0 ? 'bg-muted/20' : 'bg-muted/40'} border-b border-border/50 last:border-b-0`}
+                          >
+                            <span className="font-semibold text-muted-foreground whitespace-nowrap">{label}:</span>
+                            <span className="font-medium truncate">{val}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Outputs del componente */}
+                  {compOutputs.length > 0 && (
+                    <>
+                      <div className="px-2 py-0.5 bg-muted/30 border-t border-border/50">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Datos técnicos</p>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 text-[11px]">
+                        {compOutputs.map((output: any, idx: number) => {
+                          const val = formatValue(output.value);
+                          const isImage = output.type === 'ProductImage';
+                          return (
+                            <div 
+                              key={idx} 
+                              className={`flex gap-1 px-2 py-1 ${idx % 2 === 0 ? 'bg-muted/20' : 'bg-muted/40'} border-b border-border/50 last:border-b-0`}
+                            >
+                              <span className="font-semibold text-muted-foreground whitespace-nowrap">{output.name}:</span>
+                              {isImage && typeof output.value === 'string' && 
+                               (output.value.startsWith('http://') || output.value.startsWith('https://')) ? (
+                                <img src={output.value} alt={output.name} className="max-w-[60px] h-auto rounded" />
+                              ) : (
+                                <span className="font-medium truncate">{val}</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+        </div>
+      )}
+
       {/* Slot para imposición interactiva */}
       {children}
 
