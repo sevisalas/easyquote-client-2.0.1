@@ -598,49 +598,63 @@ export default function SalesOrderNew() {
       // Auto-populate imposition data from mapped production variables
       if (insertedItems && insertedItems.length > 0 && currentOrganization?.id) {
         try {
-          // Get api_user_id for the organization
           const apiUserId = currentOrganization.api_user_id;
 
-          for (const item of insertedItems) {
+          // Helper: resolve imposition for a single product given its prompts/outputs
+          const resolveImpositionForProduct = async (
+            productId: string,
+            prompts: any[],
+            outputs: any[]
+          ) => {
             // Check if product has imposition enabled
             const { data: prodSettings } = await supabase
               .from("product_component_settings")
               .select("has_imposition")
               .eq("api_user_id", apiUserId)
-              .eq("easyquote_product_id", item.product_id)
+              .eq("easyquote_product_id", productId)
               .maybeSingle();
 
-            if (!prodSettings?.has_imposition) continue;
+            if (!prodSettings?.has_imposition) return null;
 
-            const { data: impMappings } = await supabase
-              .from("product_variable_mappings")
-              .select(`
-                prompt_or_output_name,
-                production_variable_id,
-                production_variables (
-                  imposition_field,
-                  default_value
-                )
-              `)
-              .eq("easyquote_product_id", item.product_id)
-              .eq("organization_id", currentOrganization.id);
+            // Fetch mappings and labels in parallel (labels by api_user_id for cross-org sharing)
+            const [mappingsResult, labelsResult] = await Promise.all([
+              supabase
+                .from("product_variable_mappings")
+                .select(`
+                  prompt_or_output_name,
+                  production_variable_id,
+                  production_variables (
+                    imposition_field,
+                    default_value
+                  )
+                `)
+                .eq("easyquote_product_id", productId)
+                .eq("organization_id", currentOrganization.id),
+              supabase
+                .from("product_prompt_settings")
+                .select("prompt_name, label")
+                .eq("easyquote_product_id", productId)
+                .eq("api_user_id", apiUserId),
+            ]);
 
-            if (!impMappings || impMappings.length === 0) continue;
+            const impMappings = mappingsResult.data;
+            if (!impMappings || impMappings.length === 0) return null;
 
-            // Filter only mappings with imposition_field set
             const impFieldMappings = impMappings.filter((m: any) => m.production_variables?.imposition_field);
-            if (impFieldMappings.length === 0) continue;
+            if (impFieldMappings.length === 0) return null;
 
-            const prompts = item.prompts as any[] || [];
-            const outputs = item.outputs as any[] || [];
+            // Build cell→label lookup
+            const cellToLabel: Record<string, string> = {};
+            for (const row of labelsResult.data || []) {
+              if (row.prompt_name && row.label) {
+                cellToLabel[row.prompt_name] = row.label;
+              }
+            }
 
-            // Default imposition data — bleed/gutter default to 0
             const impositionData: Record<string, number> = {
               productWidth: 210,
               productHeight: 297,
               bleed: 0,
-              sheetWidth: 700,
-              sheetHeight: 500,
               validWidth: 680,
               validHeight: 480,
               gutterH: 0,
@@ -650,12 +664,13 @@ export default function SalesOrderNew() {
             for (const mapping of impFieldMappings) {
               const variable = mapping.production_variables as any;
               const field = variable.imposition_field;
-              const promptOrOutputName = mapping.prompt_or_output_name;
-              
-              const promptMatch = prompts.find((p: any) => p.label === promptOrOutputName);
-              const outputMatch = outputs.find((o: any) => o.name === promptOrOutputName);
+              const cellName = mapping.prompt_or_output_name;
+              const displayName = cellToLabel[cellName] || cellName;
+
+              const promptMatch = prompts.find((p: any) => p.label === cellName || p.label === displayName);
+              const outputMatch = outputs.find((o: any) => o.name === cellName || o.name === displayName);
               const rawValue = promptMatch?.value ?? outputMatch?.value ?? variable.default_value;
-              
+
               if (rawValue !== undefined && rawValue !== null) {
                 const numValue = parseFloat(String(rawValue));
                 if (!isNaN(numValue) && numValue >= 0) {
@@ -664,24 +679,78 @@ export default function SalesOrderNew() {
               }
             }
 
-            // Calculate imposition results
             const { updateCalculatedValues } = await import("@/utils/impositionCalculator");
-            const fullData = updateCalculatedValues(impositionData as any);
+            return updateCalculatedValues(impositionData as any);
+          };
 
-            // Save to item with observation
-            const observations = [{
-              type: "imposition_auto",
-              message: "Imposición calculada automáticamente desde variables de producción",
-              timestamp: new Date().toISOString(),
-            }];
+          for (const item of insertedItems) {
+            const compositeData = item.composite_data as any;
+            const isComposite = compositeData?.components && Object.keys(compositeData.components).length > 0;
 
-            await supabase
-              .from("sales_order_items")
-              .update({ 
-                imposition_data: JSON.parse(JSON.stringify(fullData)),
-                observations: observations as any,
-              })
-              .eq("id", item.id);
+            if (isComposite) {
+              // Composite product: resolve imposition per component
+              const impositionMap: Record<string, any> = {};
+              const activeComponents = compositeData.activeComponents || [];
+
+              for (const [compKey, compData] of Object.entries(compositeData.components as Record<string, any>)) {
+                // Find the component's product_id
+                const activeComp = activeComponents.find((ac: any) => {
+                  const key = `${ac.id}:${ac.instance_index || 1}`;
+                  return key === compKey;
+                });
+                const compProductId = activeComp?.component_product_id;
+                if (!compProductId) continue;
+
+                // Build prompts/outputs from component data
+                const compPrompts = Array.isArray(compData.prompts)
+                  ? compData.prompts.map((p: any) => ({
+                      label: p.promptText || p.label || '',
+                      value: p.currentValue ?? p.value,
+                    }))
+                  : [];
+                const compOutputs = Array.isArray(compData.outputs) ? compData.outputs : [];
+
+                const resolved = await resolveImpositionForProduct(compProductId, compPrompts, compOutputs);
+                if (resolved) {
+                  impositionMap[compKey] = resolved;
+                }
+              }
+
+              if (Object.keys(impositionMap).length > 0) {
+                const observations = [{
+                  type: "imposition_auto",
+                  message: "Imposición calculada automáticamente desde variables de producción",
+                  timestamp: new Date().toISOString(),
+                }];
+                await supabase
+                  .from("sales_order_items")
+                  .update({
+                    imposition_data: JSON.parse(JSON.stringify(impositionMap)),
+                    observations: observations as any,
+                  })
+                  .eq("id", item.id);
+              }
+            } else {
+              // Simple product
+              const prompts = item.prompts as any[] || [];
+              const outputs = item.outputs as any[] || [];
+              const resolved = await resolveImpositionForProduct(item.product_id, prompts, outputs);
+
+              if (resolved) {
+                const observations = [{
+                  type: "imposition_auto",
+                  message: "Imposición calculada automáticamente desde variables de producción",
+                  timestamp: new Date().toISOString(),
+                }];
+                await supabase
+                  .from("sales_order_items")
+                  .update({
+                    imposition_data: JSON.parse(JSON.stringify(resolved)),
+                    observations: observations as any,
+                  })
+                  .eq("id", item.id);
+              }
+            }
           }
         } catch (impError) {
           console.error("Error auto-populating imposition data:", impError);
