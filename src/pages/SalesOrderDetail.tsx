@@ -218,7 +218,41 @@ const SalesOrderDetail = () => {
     setOrder(orderData);
     
     if (orderData) {
-      const itemsData = await fetchSalesOrderItems(id);
+      let itemsData = await fetchSalesOrderItems(id);
+      
+      // Backfill composite_data from accepted quote_items if missing
+      if (orderData.quote_id && itemsData.some(i => !i.composite_data)) {
+        const itemsMissingComposite = itemsData.filter(i => !i.composite_data);
+        const { data: quoteItems } = await supabase
+          .from('quote_items')
+          .select('product_id, position, composite_data')
+          .eq('quote_id', orderData.quote_id)
+          .eq('accepted', true)
+          .not('composite_data', 'is', null);
+        
+        if (quoteItems && quoteItems.length > 0) {
+          const dbUpdates: { id: string; composite_data: any }[] = [];
+          itemsData = itemsData.map(item => {
+            if (item.composite_data) return item;
+            const match = quoteItems.find(qi => 
+              qi.product_id === item.product_id && qi.position === item.position
+            );
+            if (match?.composite_data) {
+              dbUpdates.push({ id: item.id, composite_data: match.composite_data });
+              return { ...item, composite_data: match.composite_data as any };
+            }
+            return item;
+          });
+          // Persist in background
+          if (dbUpdates.length > 0) {
+            console.log(`[Backfill] Copying composite_data for ${dbUpdates.length} items`);
+            Promise.all(dbUpdates.map(u =>
+              supabase.from('sales_order_items').update({ composite_data: u.composite_data }).eq('id', u.id)
+            )).catch(err => console.warn('[Backfill] DB update failed:', err));
+          }
+        }
+      }
+      
       setItems(itemsData);
       
       const additionalsData = await fetchSalesOrderAdditionals(id);
