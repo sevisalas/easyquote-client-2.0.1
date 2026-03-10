@@ -79,7 +79,15 @@ async function resolveImpositionFromMappings(
   outputs: any[]
 ): Promise<ImpositionData | null> {
   try {
-    // Fetch mappings and label translations in parallel
+    // Fetch mappings by organization, labels by api_user_id (shared across orgs)
+    const { data: orgData } = await supabase
+      .from('organizations')
+      .select('api_user_id')
+      .eq('id', organizationId)
+      .maybeSingle();
+    
+    const apiUserId = orgData?.api_user_id;
+
     const [mappingsResult, labelsResult] = await Promise.all([
       supabase
         .from("product_variable_mappings")
@@ -93,11 +101,17 @@ async function resolveImpositionFromMappings(
         `)
         .eq("easyquote_product_id", productId)
         .eq("organization_id", organizationId),
-      supabase
-        .from("product_prompt_settings")
-        .select("prompt_name, label")
-        .eq("easyquote_product_id", productId)
-        .eq("organization_id", organizationId),
+      apiUserId
+        ? supabase
+            .from("product_prompt_settings")
+            .select("prompt_name, label")
+            .eq("easyquote_product_id", productId)
+            .eq("api_user_id", apiUserId)
+        : supabase
+            .from("product_prompt_settings")
+            .select("prompt_name, label")
+            .eq("easyquote_product_id", productId)
+            .eq("organization_id", organizationId),
     ]);
 
     const impMappings = mappingsResult.data;
