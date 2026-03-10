@@ -1,62 +1,26 @@
 
-# Corregir nombre del articulo en pedidos
 
-## Problema
+## Plan: Rellenar `composite_data` desde quote_items al cargar el pedido
 
-En `SalesOrderNew.tsx` y `SalesOrderEdit.tsx`, el campo `product_name` se rellena con `itemDescription` (la descripcion larga con los parametros del producto) en lugar del nombre real (ej. "Encuadernado"). En `QuoteNew.tsx` ya esta bien hecho usando `productName` y `displayName`.
+### Problema
+Los pedidos creados antes del fix no tienen `composite_data` en `sales_order_items`. Migrar manualmente la BD no es viable.
 
-## Cambios
+### Solución
+En `SalesOrderDetail.tsx`, después de cargar los items del pedido, si el pedido tiene `quote_id` y algún item tiene `composite_data` vacío, buscar los `quote_items` del presupuesto origen y copiar el `composite_data` a los items correspondientes (matching por `product_id` + posición). Además, persistir el dato en BD para que solo se haga una vez.
 
-La columna `description` ya existe en `sales_order_items`, asi que no hace falta migracion.
+### Cambios
 
-### 1. `SalesOrderNew.tsx` - Tipo ItemSnapshot (lineas 22-32)
+**`src/pages/SalesOrderDetail.tsx`** — en `loadOrderData`, después de `fetchSalesOrderItems`:
+1. Si `orderData.quote_id` existe y hay items sin `composite_data`, hacer un query a `quote_items` del presupuesto origen filtrando solo los **aceptados** (`accepted = true`).
+2. Para cada item del pedido sin `composite_data`, buscar su quote_item correspondiente (por `product_id` y posición) y copiar el `composite_data`.
+3. Actualizar los items en memoria y persistir en BD en background (`UPDATE sales_order_items SET composite_data = ... WHERE id = ...`).
 
-Anadir `displayName`, `productName` y `descriptionManual` al tipo:
+### Lógica de matching
+- Emparejar por `product_id` y `position` (ambos existen en quote_items y sales_order_items).
+- Solo copiar si el quote_item tiene `composite_data` no nulo.
 
-```typescript
-type ItemSnapshot = {
-  productId: string;
-  prompts: Record<string, any>;
-  outputs: any[];
-  price?: number;
-  displayName?: string;
-  productName?: string;
-  itemDescription?: string;
-  descriptionManual?: boolean;
-  itemAdditionals?: any[];
-  needsRecalculation?: boolean;
-  isFinalized?: boolean;
-  compositeData?: any;
-};
-```
+### Impacto
+- Solo afecta pedidos con `quote_id` (creados desde presupuesto).
+- Se auto-corrige la primera vez que se abre el pedido; las siguientes cargas ya tienen el dato.
+- No requiere migración manual ni SQL.
 
-### 2. `SalesOrderNew.tsx` - Guardado de items (lineas 454-456)
-
-Cambiar:
-```typescript
-// ANTES
-product_name: item.itemDescription || "",
-description: item.itemDescription || "",
-
-// DESPUES
-product_name: item.displayName || item.productName || item.productId || "",
-description: item.itemDescription || "",
-description_manual: item.descriptionManual || false,
-```
-
-### 3. `SalesOrderEdit.tsx` - handleItemChange (linea 202)
-
-Cambiar:
-```typescript
-// ANTES
-product_name: snapshot.itemDescription || updatedItems[itemIndex].product_name,
-
-// DESPUES
-product_name: snapshot.displayName || snapshot.productName || updatedItems[itemIndex].product_name,
-```
-
-## Impacto
-
-- Pedidos nuevos guardaran el nombre correcto (ej. "Encuadernado") en `product_name` y la descripcion larga en `description`
-- Pedidos existentes no cambian automaticamente (habria que re-guardarlos)
-- No requiere migracion de base de datos
