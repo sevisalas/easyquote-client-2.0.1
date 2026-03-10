@@ -258,6 +258,7 @@ export const useQuoteApproval = () => {
           prompts: item.prompts,
           multi: finalMulti,
           position: index,
+          composite_data: item.composite_data || null,
         };
       });
 
