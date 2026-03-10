@@ -634,17 +634,17 @@ export default function SalesOrderNew() {
             const prompts = item.prompts as any[] || [];
             const outputs = item.outputs as any[] || [];
 
-            // Default imposition data
+            // Default imposition data — bleed/gutter default to 0
             const impositionData: Record<string, number> = {
               productWidth: 210,
               productHeight: 297,
-              bleed: 3,
+              bleed: 0,
               sheetWidth: 700,
               sheetHeight: 500,
               validWidth: 680,
               validHeight: 480,
-              gutterH: 2,
-              gutterV: 2,
+              gutterH: 0,
+              gutterV: 0,
             };
 
             for (const mapping of impFieldMappings) {
@@ -654,11 +654,11 @@ export default function SalesOrderNew() {
               
               const promptMatch = prompts.find((p: any) => p.label === promptOrOutputName);
               const outputMatch = outputs.find((o: any) => o.name === promptOrOutputName);
-              const rawValue = promptMatch?.value || outputMatch?.value || variable.default_value;
+              const rawValue = promptMatch?.value ?? outputMatch?.value ?? variable.default_value;
               
               if (rawValue !== undefined && rawValue !== null) {
                 const numValue = parseFloat(String(rawValue));
-                if (!isNaN(numValue) && numValue > 0) {
+                if (!isNaN(numValue) && numValue >= 0) {
                   impositionData[field] = numValue;
                 }
               }
