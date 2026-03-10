@@ -253,6 +253,117 @@ const SalesOrderDetail = () => {
         }
       }
       
+      // Backfill imposition_data for items missing it but with has_imposition enabled
+      const itemsMissingImposition = itemsData.filter(i => i.product_id && !i.imposition_data);
+      if (itemsMissingImposition.length > 0) {
+        try {
+          const organizationId = sessionStorage.getItem('selected_organization_id');
+          if (organizationId) {
+            const { data: orgData } = await supabase
+              .from('organizations')
+              .select('api_user_id')
+              .eq('id', organizationId)
+              .maybeSingle();
+            
+            if (orgData?.api_user_id) {
+              const productIds = [...new Set(itemsMissingImposition.map(i => i.product_id!))];
+              
+              // Batch fetch product settings for all products
+              const { data: allSettings } = await supabase
+                .from('product_component_settings')
+                .select('easyquote_product_id, has_imposition')
+                .eq('api_user_id', orgData.api_user_id)
+                .in('easyquote_product_id', productIds)
+                .eq('has_imposition', true);
+              
+              const productsWithImposition = new Set(allSettings?.map(s => s.easyquote_product_id) || []);
+              
+              if (productsWithImposition.size > 0) {
+                // Fetch all variable mappings for these products
+                const { data: allMappings } = await supabase
+                  .from('product_variable_mappings')
+                  .select(`
+                    easyquote_product_id,
+                    prompt_or_output_name,
+                    production_variable_id,
+                    production_variables (
+                      imposition_field,
+                      default_value
+                    )
+                  `)
+                  .in('easyquote_product_id', [...productsWithImposition])
+                  .eq('organization_id', organizationId);
+                
+                const { updateCalculatedValues } = await import("@/utils/impositionCalculator");
+                const impUpdates: { id: string; imposition_data: any; observations: any[] }[] = [];
+                
+                for (const item of itemsMissingImposition) {
+                  if (!item.product_id || !productsWithImposition.has(item.product_id)) continue;
+                  
+                  const mappings = (allMappings || []).filter(
+                    (m: any) => m.easyquote_product_id === item.product_id && m.production_variables?.imposition_field
+                  );
+                  if (mappings.length === 0) continue;
+                  
+                  const prompts = (item.prompts as any[]) || [];
+                  const outputs = (item.outputs as any[]) || [];
+                  
+                  const impositionData: Record<string, number> = {
+                    productWidth: 210, productHeight: 297, bleed: 3,
+                    sheetWidth: 700, sheetHeight: 500,
+                    validWidth: 680, validHeight: 480,
+                    gutterH: 2, gutterV: 2,
+                  };
+                  
+                  for (const mapping of mappings) {
+                    const variable = mapping.production_variables as any;
+                    const field = variable.imposition_field;
+                    const name = mapping.prompt_or_output_name;
+                    const promptMatch = prompts.find((p: any) => p.label === name);
+                    const outputMatch = outputs.find((o: any) => o.name === name);
+                    const rawValue = promptMatch?.value || outputMatch?.value || variable.default_value;
+                    if (rawValue !== undefined && rawValue !== null) {
+                      const numValue = parseFloat(String(rawValue));
+                      if (!isNaN(numValue) && numValue > 0) {
+                        impositionData[field] = numValue;
+                      }
+                    }
+                  }
+                  
+                  const fullData = updateCalculatedValues(impositionData as any);
+                  const observations = [{
+                    type: "imposition_auto",
+                    message: "Imposición calculada automáticamente (backfill)",
+                    timestamp: new Date().toISOString(),
+                  }];
+                  impUpdates.push({ id: item.id, imposition_data: fullData, observations });
+                }
+                
+                if (impUpdates.length > 0) {
+                  console.log(`[Backfill] Calculating imposition for ${impUpdates.length} items`);
+                  itemsData = itemsData.map(item => {
+                    const update = impUpdates.find(u => u.id === item.id);
+                    if (update) {
+                      return { ...item, imposition_data: update.imposition_data as any };
+                    }
+                    return item;
+                  });
+                  // Persist in background
+                  Promise.all(impUpdates.map(u =>
+                    supabase.from('sales_order_items').update({
+                      imposition_data: JSON.parse(JSON.stringify(u.imposition_data)),
+                      observations: u.observations as any,
+                    }).eq('id', u.id)
+                  )).catch(err => console.warn('[Backfill] Imposition DB update failed:', err));
+                }
+              }
+            }
+          }
+        } catch (impErr) {
+          console.warn('[Backfill] Imposition calculation error:', impErr);
+        }
+      }
+      
       setItems(itemsData);
       
       const additionalsData = await fetchSalesOrderAdditionals(id);
