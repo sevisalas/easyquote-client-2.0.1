@@ -36,6 +36,8 @@ export interface CalculationResult {
   repetitionsH: number;
   repetitionsV: number;
   totalRepetitions: number;
+  rawTotalRepetitions?: number;
+  adjustedPagesPerSheet?: number;
   utilization: number;
   orientation: 'horizontal' | 'vertical';
 }
