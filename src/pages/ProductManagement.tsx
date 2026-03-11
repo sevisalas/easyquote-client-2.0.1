@@ -3338,6 +3338,24 @@ export default function ProductManagement() {
                                       [output.nameCell]: value,
                                     }))
                                   }
+                                  isOutputInOt={checkOutputInOt(output.nameCell)}
+                                  getOutputOtSection={checkOutputOtSection(output.nameCell)}
+                                  onOtToggle={(checked) => {
+                                    upsertOutputOtSetting({
+                                      output_name: output.nameCell,
+                                      label: outputLabelDrafts[output.nameCell] ?? getPromptLabel(output.nameCell) ?? output.nameCell,
+                                      show_in_ot: checked,
+                                      ot_section: checked ? (checkOutputOtSection(output.nameCell) || 'datos_destacados') : null,
+                                    });
+                                  }}
+                                  onOtSectionChange={(section) => {
+                                    upsertOutputOtSetting({
+                                      output_name: output.nameCell,
+                                      label: outputLabelDrafts[output.nameCell] ?? getPromptLabel(output.nameCell) ?? output.nameCell,
+                                      show_in_ot: true,
+                                      ot_section: section,
+                                    });
+                                  }}
                                 />
                               ))}
                               {orderedProductOutputs.length === 0 && <div className="text-center py-4">
