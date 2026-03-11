@@ -63,16 +63,16 @@ export function useProductVariableMappings(easyquoteProductId?: string) {
       promptOrOutputName: string;
       variableId: string | null;
     }) => {
-      if (!organization?.id) {
+      if (!organization?.id || !siblingOrgIds || siblingOrgIds.length === 0) {
         throw new Error("No organization found");
       }
 
-      // Si variableId es null, eliminar el mapeo
+      // Si variableId es null, eliminar el mapeo (cross-org)
       if (!variableId) {
         const { error } = await supabase
           .from("product_variable_mappings")
           .delete()
-          .eq("organization_id", organization.id)
+          .in("organization_id", siblingOrgIds)
           .eq("easyquote_product_id", easyquoteProductId)
           .eq("prompt_or_output_name", promptOrOutputName);
 
@@ -80,21 +80,40 @@ export function useProductVariableMappings(easyquoteProductId?: string) {
         return null;
       }
 
-      // Insertar o actualizar el mapeo
+      // Buscar mapeo existente en cualquier org hermana
+      const { data: existing } = await supabase
+        .from("product_variable_mappings")
+        .select("id, organization_id")
+        .in("organization_id", siblingOrgIds)
+        .eq("easyquote_product_id", easyquoteProductId)
+        .eq("prompt_or_output_name", promptOrOutputName)
+        .maybeSingle();
+
+      if (existing) {
+        // Actualizar el mapeo existente manteniendo su organization_id original
+        const { data, error } = await supabase
+          .from("product_variable_mappings")
+          .update({
+            production_variable_id: variableId,
+            product_name: productName,
+          })
+          .eq("id", existing.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+
+      // Crear nuevo mapeo con la org actual
       const { data, error } = await supabase
         .from("product_variable_mappings")
-        .upsert(
-          {
-            organization_id: organization.id,
-            easyquote_product_id: easyquoteProductId,
-            product_name: productName,
-            prompt_or_output_name: promptOrOutputName,
-            production_variable_id: variableId,
-          },
-          {
-            onConflict: "organization_id,easyquote_product_id,prompt_or_output_name",
-          }
-        )
+        .insert({
+          organization_id: organization.id,
+          easyquote_product_id: easyquoteProductId,
+          product_name: productName,
+          prompt_or_output_name: promptOrOutputName,
+          production_variable_id: variableId,
+        })
         .select()
         .single();
 
