@@ -305,14 +305,10 @@ function SortableOutputItem({
               <SelectContent className="bg-background border shadow-lg z-50">
                 <SelectItem value="none">Sin variable asignada</SelectItem>
                 {productionVariables.map((variable) => (
-                    <SelectItem key={variable.id} value={variable.id}>
-                      {variable.name}
-                    </SelectItem>
-                  ))}
-                    <SelectItem key={variable.id} value={variable.id}>
-                      {variable.name}
-                    </SelectItem>
-                  ))}
+                  <SelectItem key={variable.id} value={variable.id}>
+                    {variable.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
