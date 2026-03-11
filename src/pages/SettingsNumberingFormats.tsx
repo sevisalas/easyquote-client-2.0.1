@@ -72,7 +72,7 @@ export default function SettingsNumberingFormats() {
       if (organizationId) {
         query = query.eq('organization_id', organizationId);
       } else {
-        query = query.eq('user_id', user.id);
+        query = query.eq('user_id', user.id).is('organization_id', null);
       }
       
       const { data, error } = await query;
