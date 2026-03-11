@@ -266,61 +266,86 @@ const SalesOrderDetail = () => {
               .maybeSingle();
             
             if (orgData?.api_user_id) {
-              const productIds = [...new Set(itemsMissingImposition.map(i => i.product_id!))];
-              
-              // Batch fetch product settings for all products
+              const apiUserId = orgData.api_user_id;
+
+              // Collect ALL product IDs: top-level + component products from composite_data
+              const allProductIds = new Set<string>();
+              for (const item of itemsMissingImposition) {
+                if (item.product_id) allProductIds.add(item.product_id);
+                const cd = (item as any).composite_data;
+                if (cd?.activeComponents) {
+                  for (const ac of cd.activeComponents) {
+                    if (ac.component_product_id) allProductIds.add(ac.component_product_id);
+                  }
+                }
+              }
+
+              // Batch fetch product settings for ALL products (simple + component)
               const { data: allSettings } = await supabase
                 .from('product_component_settings')
                 .select('easyquote_product_id, has_imposition')
-                .eq('api_user_id', orgData.api_user_id)
-                .in('easyquote_product_id', productIds)
+                .eq('api_user_id', apiUserId)
+                .in('easyquote_product_id', [...allProductIds])
                 .eq('has_imposition', true);
               
               const productsWithImposition = new Set(allSettings?.map(s => s.easyquote_product_id) || []);
               
               if (productsWithImposition.size > 0) {
-                // Fetch all variable mappings for these products
-                const { data: allMappings } = await supabase
-                  .from('product_variable_mappings')
-                  .select(`
-                    easyquote_product_id,
-                    prompt_or_output_name,
-                    production_variable_id,
-                    production_variables (
-                      imposition_field,
-                      default_value
-                    )
-                  `)
-                  .in('easyquote_product_id', [...productsWithImposition])
-                  .eq('organization_id', organizationId);
-                
+                // Fetch all variable mappings and labels for these products
+                const [mappingsResult, labelsResult] = await Promise.all([
+                  supabase
+                    .from('product_variable_mappings')
+                    .select(`
+                      easyquote_product_id,
+                      prompt_or_output_name,
+                      production_variable_id,
+                      production_variables (
+                        imposition_field,
+                        default_value
+                      )
+                    `)
+                    .in('easyquote_product_id', [...productsWithImposition])
+                    .eq('organization_id', organizationId),
+                  supabase
+                    .from('product_prompt_settings')
+                    .select('easyquote_product_id, prompt_name, label')
+                    .in('easyquote_product_id', [...productsWithImposition])
+                    .eq('api_user_id', apiUserId),
+                ]);
+
+                const allMappings = mappingsResult.data || [];
+                const allLabels = labelsResult.data || [];
+
+                // Build per-product cell→label lookup
+                const labelsByProduct: Record<string, Record<string, string>> = {};
+                for (const row of allLabels) {
+                  if (!row.easyquote_product_id || !row.prompt_name || !row.label) continue;
+                  if (!labelsByProduct[row.easyquote_product_id]) labelsByProduct[row.easyquote_product_id] = {};
+                  labelsByProduct[row.easyquote_product_id][row.prompt_name] = row.label;
+                }
+
                 const { updateCalculatedValues } = await import("@/utils/impositionCalculator");
-                const impUpdates: { id: string; imposition_data: any; observations: any[] }[] = [];
-                
-                for (const item of itemsMissingImposition) {
-                  if (!item.product_id || !productsWithImposition.has(item.product_id)) continue;
-                  
-                  const mappings = (allMappings || []).filter(
-                    (m: any) => m.easyquote_product_id === item.product_id && m.production_variables?.imposition_field
+
+                const resolveForProductAsync = (productId: string, prompts: any[], outputs: any[]) => {
+                  if (!productsWithImposition.has(productId)) return null;
+                  const mappings = allMappings.filter(
+                    (m: any) => m.easyquote_product_id === productId && m.production_variables?.imposition_field
                   );
-                  if (mappings.length === 0) continue;
-                  
-                  const prompts = (item.prompts as any[]) || [];
-                  const outputs = (item.outputs as any[]) || [];
-                  
+                  if (mappings.length === 0) return null;
+
+                  const cellToLabel = labelsByProduct[productId] || {};
                   const impositionData: Record<string, number> = {
                     productWidth: 210, productHeight: 297, bleed: 0,
-                    sheetWidth: 700, sheetHeight: 500,
-                    validWidth: 680, validHeight: 480,
-                    gutterH: 0, gutterV: 0,
+                    validWidth: 680, validHeight: 480, gutterH: 0, gutterV: 0,
                   };
-                  
+
                   for (const mapping of mappings) {
                     const variable = mapping.production_variables as any;
                     const field = variable.imposition_field;
-                    const name = mapping.prompt_or_output_name;
-                    const promptMatch = prompts.find((p: any) => p.label === name);
-                    const outputMatch = outputs.find((o: any) => o.name === name);
+                    const cellName = mapping.prompt_or_output_name;
+                    const displayName = cellToLabel[cellName] || cellName;
+                    const promptMatch = prompts.find((p: any) => p.label === cellName || p.label === displayName);
+                    const outputMatch = outputs.find((o: any) => o.name === cellName || o.name === displayName);
                     const rawValue = promptMatch?.value ?? outputMatch?.value ?? variable.default_value;
                     if (rawValue !== undefined && rawValue !== null) {
                       const numValue = parseFloat(String(rawValue));
@@ -329,14 +354,66 @@ const SalesOrderDetail = () => {
                       }
                     }
                   }
-                  
-                  const fullData = updateCalculatedValues(impositionData as any);
-                  const observations = [{
-                    type: "imposition_auto",
-                    message: "Imposición calculada automáticamente (backfill)",
-                    timestamp: new Date().toISOString(),
-                  }];
-                  impUpdates.push({ id: item.id, imposition_data: fullData, observations });
+                  return updateCalculatedValues(impositionData as any);
+                };
+
+                const impUpdates: { id: string; imposition_data: any; observations: any[] }[] = [];
+                
+                for (const item of itemsMissingImposition) {
+                  const compositeData = (item as any).composite_data;
+                  const isComposite = compositeData?.components && Object.keys(compositeData.components).length > 0;
+
+                  if (isComposite) {
+                    // Composite: resolve per component
+                    const impositionMap: Record<string, any> = {};
+                    const activeComponents = compositeData.activeComponents || [];
+
+                    for (const [compKey, compData] of Object.entries(compositeData.components as Record<string, any>)) {
+                      const activeComp = activeComponents.find((ac: any) => {
+                        const key = `${ac.id}:${ac.instance_index || 1}`;
+                        return key === compKey;
+                      });
+                      const compProductId = activeComp?.component_product_id;
+                      if (!compProductId) continue;
+
+                      const compPrompts = Array.isArray(compData.prompts)
+                        ? compData.prompts.map((p: any) => ({
+                            label: p.promptText || p.label || '',
+                            value: p.currentValue ?? p.value,
+                          }))
+                        : [];
+                      const compOutputs = Array.isArray(compData.outputs) ? compData.outputs : [];
+
+                      const resolved = resolveForProductAsync(compProductId, compPrompts, compOutputs);
+                      if (resolved) impositionMap[compKey] = resolved;
+                    }
+
+                    if (Object.keys(impositionMap).length > 0) {
+                      impUpdates.push({
+                        id: item.id,
+                        imposition_data: impositionMap,
+                        observations: [{
+                          type: "imposition_auto",
+                          message: "Imposición calculada automáticamente (backfill compuesto)",
+                          timestamp: new Date().toISOString(),
+                        }],
+                      });
+                    }
+                  } else {
+                    // Simple product
+                    const resolved = resolveForProductAsync(item.product_id!, (item.prompts as any[]) || [], (item.outputs as any[]) || []);
+                    if (resolved) {
+                      impUpdates.push({
+                        id: item.id,
+                        imposition_data: resolved,
+                        observations: [{
+                          type: "imposition_auto",
+                          message: "Imposición calculada automáticamente (backfill)",
+                          timestamp: new Date().toISOString(),
+                        }],
+                      });
+                    }
+                  }
                 }
                 
                 if (impUpdates.length > 0) {
