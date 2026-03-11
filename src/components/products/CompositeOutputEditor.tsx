@@ -93,6 +93,8 @@ export function CompositeOutputEditor({
           label: editingOutput.label.trim(),
           type: editingOutput.type,
           formula: editingOutput.formula || null,
+          show_in_ot: false,
+          ot_section: null,
           display_order: outputs.length,
         });
         toast({ title: "Resultado creado", description: "El resultado se ha añadido correctamente" });
