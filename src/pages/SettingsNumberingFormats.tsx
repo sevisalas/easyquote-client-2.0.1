@@ -147,7 +147,6 @@ export default function SettingsNumberingFormats() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      // Usar organization_id del sessionStorage (mismo que usa toda la app)
       const organizationId = sessionStorage.getItem('selected_organization_id');
 
       const formatData = {
@@ -167,14 +166,34 @@ export default function SettingsNumberingFormats() {
           .from('numbering_formats')
           .update(formatData)
           .eq('id', format.id);
-
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        // Try to find existing record first (may exist with different user_id)
+        let existingQuery = supabase
           .from('numbering_formats')
-          .insert(formatData);
+          .select('id')
+          .eq('document_type', format.document_type);
 
-        if (error) throw error;
+        if (organizationId) {
+          existingQuery = existingQuery.eq('organization_id', organizationId);
+        } else {
+          existingQuery = existingQuery.eq('user_id', user.id);
+        }
+
+        const { data: existing } = await existingQuery.maybeSingle();
+
+        if (existing?.id) {
+          const { error } = await supabase
+            .from('numbering_formats')
+            .update(formatData)
+            .eq('id', existing.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('numbering_formats')
+            .insert(formatData);
+          if (error) throw error;
+        }
       }
 
       return true;
