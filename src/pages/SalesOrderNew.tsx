@@ -510,7 +510,7 @@ export default function SalesOrderNew() {
               const { data: sibOrgs } = await supabase
                 .from("organizations")
                 .select("id")
-                .eq("api_user_id", apiUserId);
+                .eq("api_user_id", currentOrganization.api_user_id);
               const allOrgIds = sibOrgs?.map(o => o.id) || [currentOrganization.id];
 
               const { data: mappings } = await supabase
