@@ -155,7 +155,17 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
     onChange(selectedAdditionals.map(sa => {
       if (sa.id !== id) return sa;
       const mv = [...(sa.multiValues || Array(qtyCount).fill(sa.value))];
+      const oldQ1Value = mv[0];
       mv[qtyIndex] = value;
+      
+      // If editing Q1 and all other values are the same as old Q1, update all to match
+      if (qtyIndex === 0) {
+        const allSameAsOldQ1 = mv.slice(1).every(v => v === oldQ1Value);
+        if (allSameAsOldQ1) {
+          return { ...sa, multiValues: Array(qtyCount).fill(value), value };
+        }
+      }
+      
       return { ...sa, multiValues: mv, value: mv[0] ?? sa.value };
     }))
   }
