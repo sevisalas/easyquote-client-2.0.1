@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Settings, Trash2 } from "lucide-react";
+import { Settings, Trash2, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ImpositionData, updateCalculatedValues } from "@/utils/impositionCalculator";
+import { ImpositionData, updateCalculatedValues, calculateImposition } from "@/utils/impositionCalculator";
 import { ImpositionModal } from "./ImpositionModal";
 import { ImpositionScheme } from "./ImpositionScheme";
 
