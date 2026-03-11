@@ -39,7 +39,7 @@ interface AdditionalsSelectorProps {
   qtyLabels?: string[]  // e.g. ["500", "1000", "2000"]
 }
 
-export default function AdditionalsSelector({ selectedAdditionals, onChange, quantity = 1, basePrice = 0 }: AdditionalsSelectorProps) {
+export default function AdditionalsSelector({ selectedAdditionals, onChange, quantity = 1, basePrice = 0, multiEnabled = false, qtyCount = 3, qtyLabels = [] }: AdditionalsSelectorProps) {
   const [newAdditionalId, setNewAdditionalId] = useState<string>("")
   const [predefinedType, setPredefinedType] = useState<"net_amount" | "quantity_multiplier" | "capacity_divider" | "percentage">("net_amount")
   const [predefinedValue, setPredefinedValue] = useState<number>(0)
