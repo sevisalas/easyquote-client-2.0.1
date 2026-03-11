@@ -83,11 +83,17 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
     // Generate unique ID to allow multiple instances of the same additional
     const uniqueId = `${additional.id}_${Date.now()}`
     
+    // Initialize multiValues by default if multiEnabled and net_amount
+    const initialMultiValues = (multiEnabled && predefinedType === 'net_amount') 
+      ? Array(qtyCount).fill(predefinedValue)
+      : undefined
+    
     const newSelected: SelectedAdditional = {
       id: uniqueId,
       name: additional.name,
       type: predefinedType,
       value: predefinedValue,
+      multiValues: initialMultiValues,
       is_discount: additional.is_discount || false,
       capacity_value: predefinedType === 'capacity_divider' ? predefinedCapacity : null
     }
