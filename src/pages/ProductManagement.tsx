@@ -321,6 +321,29 @@ function SortableOutputItem({
               </SelectContent>
             </Select>
           </div>
+
+          <div className="flex items-center gap-2">
+            <Label className="text-sm font-medium whitespace-nowrap">OT</Label>
+            <Switch checked={isOutputInOt} onCheckedChange={onOtToggle} />
+          </div>
+          {isOutputInOt && (
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-medium whitespace-nowrap">Sección OT</Label>
+              <Select value={getOutputOtSection || "datos_destacados"} onValueChange={onOtSectionChange}>
+                <SelectTrigger className="w-44">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background border shadow-lg z-50">
+                  <SelectItem value="datos_destacados">Datos destacados</SelectItem>
+                  <SelectItem value="impresion">Impresión</SelectItem>
+                  <SelectItem value="acabados">Acabados</SelectItem>
+                  <SelectItem value="imposiciones">Imposiciones</SelectItem>
+                  <SelectItem value="ajustes">Ajustes</SelectItem>
+                  <SelectItem value="observaciones">Observaciones</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
       </div>
     </div>
