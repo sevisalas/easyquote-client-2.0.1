@@ -1164,8 +1164,9 @@ const SalesOrderDetail = () => {
                               : undefined
                             }
                             itemIndex={index}
-                          >
-                          </WorkOrderItem>
+                            filterOutput={(o) => isVisibleIn(o.type, visibilityContext)}
+                            filterPrompt={(p) => !isAdminOnlyPrompt(p.label || '')}
+                          />
                           
                           {/* Imposición - Solo en vista producción */}
                           {viewMode === 'production' && !(order.status === 'in_production') && (
