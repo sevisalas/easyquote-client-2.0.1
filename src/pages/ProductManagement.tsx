@@ -682,6 +682,8 @@ export default function ProductManagement() {
         }
       }
       if (label !== undefined) updateData.label = label;
+      if (showInOt !== undefined) updateData.show_in_ot = showInOt;
+      if (otSection !== undefined) updateData.ot_section = otSection;
 
       if (existing?.id) {
         const { error } = await supabase
