@@ -440,58 +440,172 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
 
             <View style={styles.thinSeparator} />
 
-            {/* Prompts + Outputs unified grid (no section labels) */}
-            {(sortedPrompts.length > 0 || outputs.length > 0) && (
-              <View style={{ marginBottom: 6 }}>
-                <DataGrid
-                  items={[
-                    ...sortedPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
-                    ...outputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
-                  ]}
-                />
-              </View>
-            )}
-
-            {/* ═══ IMPOSICIÓN (visual diagram) ═══ */}
-            {item.imposition_data && (
+            {/* ═══ DATA CONTENT ═══ */}
+            {useSections ? (
+              /* Section-based layout */
               <>
-                <View style={styles.thickSeparator} />
+                {OT_SECTION_ORDER.map(sectionKey => {
+                  // Gather prompts and outputs assigned to this section
+                  const sectionPrompts = sortedPrompts.filter(p => 
+                    (promptSections?.get(p.label.trim().toUpperCase()) || '') === sectionKey
+                  );
+                  const sectionOutputs = outputs.filter(o =>
+                    (outputSections?.get(o.name.trim().toUpperCase()) || '') === sectionKey
+                  );
 
-                {isSimple ? (
-                  <View style={styles.impositionRow}>
-                    <ImpositionDiagram data={item.imposition_data} title="" />
-                  </View>
-                ) : compositeImpositions.length > 0 ? (
-                  <View style={styles.impositionRow}>
-                    {compositeImpositions.map(([key, data]) => {
-                      const alias = item.composite_data?.components?.[key]?.alias || key;
-                      const halfW = Math.floor((DIAGRAM_DEFAULT_W - 20) / compositeImpositions.length);
-                      return <ImpositionDiagram key={key} data={data} title={alias.toUpperCase()} maxWidth={halfW} maxHeight={180} />;
-                    })}
-                  </View>
-                ) : (
-                  <View style={styles.impositionRow}>
-                    <ImpositionDiagram data={item.imposition_data} title="" />
+                  // Special handling: imposiciones section includes the diagram
+                  if (sectionKey === 'imposiciones') {
+                    const hasImposition = item.imposition_data && (isSimple || compositeImpositions.length > 0);
+                    if (sectionPrompts.length === 0 && sectionOutputs.length === 0 && !hasImposition) return null;
+                    return (
+                      <View key={sectionKey} style={{ marginBottom: 6 }}>
+                        <View style={styles.thickSeparator} />
+                        <Text style={styles.sectionTitle}>{OT_SECTION_LABELS[sectionKey]}</Text>
+                        {(sectionPrompts.length > 0 || sectionOutputs.length > 0) && (
+                          <DataGrid items={[
+                            ...sectionPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                            ...sectionOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                          ]} />
+                        )}
+                        {hasImposition && (
+                          <>
+                            {isSimple ? (
+                              <View style={styles.impositionRow}>
+                                <ImpositionDiagram data={item.imposition_data} title="" />
+                              </View>
+                            ) : compositeImpositions.length > 0 ? (
+                              <View style={styles.impositionRow}>
+                                {compositeImpositions.map(([key, data]) => {
+                                  const alias = item.composite_data?.components?.[key]?.alias || key;
+                                  const halfW = Math.floor((DIAGRAM_DEFAULT_W - 20) / compositeImpositions.length);
+                                  return <ImpositionDiagram key={key} data={data} title={alias.toUpperCase()} maxWidth={halfW} maxHeight={180} />;
+                                })}
+                              </View>
+                            ) : null}
+                          </>
+                        )}
+                      </View>
+                    );
+                  }
+
+                  // Special handling: ajustes section includes additionals
+                  if (sectionKey === 'ajustes') {
+                    const hasAdditionals = additionals && additionals.length > 0;
+                    if (sectionPrompts.length === 0 && sectionOutputs.length === 0 && !hasAdditionals) return null;
+                    return (
+                      <View key={sectionKey} style={{ marginBottom: 6 }}>
+                        <View style={styles.thickSeparator} />
+                        <Text style={styles.sectionTitle}>{OT_SECTION_LABELS[sectionKey]}</Text>
+                        {(sectionPrompts.length > 0 || sectionOutputs.length > 0) && (
+                          <DataGrid items={[
+                            ...sectionPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                            ...sectionOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                          ]} />
+                        )}
+                        {hasAdditionals && (
+                          <View style={styles.grid3}>
+                            {additionals!.map((adj, idx) => (
+                              <View key={idx} style={styles.gridItem}>
+                                <Text style={styles.gridLabel}>{adj.name}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        )}
+                      </View>
+                    );
+                  }
+
+                  if (sectionPrompts.length === 0 && sectionOutputs.length === 0) return null;
+                  return (
+                    <View key={sectionKey} style={{ marginBottom: 6 }}>
+                      <View style={styles.thickSeparator} />
+                      <Text style={styles.sectionTitle}>{OT_SECTION_LABELS[sectionKey]}</Text>
+                      <DataGrid items={[
+                        ...sectionPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                        ...sectionOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                      ]} />
+                    </View>
+                  );
+                })}
+
+                {/* Unclassified prompts/outputs (no section assigned) */}
+                {(() => {
+                  const unclassifiedPrompts = sortedPrompts.filter(p => 
+                    !promptSections?.has(p.label.trim().toUpperCase()) || 
+                    !promptSections.get(p.label.trim().toUpperCase())
+                  );
+                  const unclassifiedOutputs = outputs.filter(o =>
+                    !outputSections?.has(o.name.trim().toUpperCase()) ||
+                    !outputSections.get(o.name.trim().toUpperCase())
+                  );
+                  if (unclassifiedPrompts.length === 0 && unclassifiedOutputs.length === 0) return null;
+                  return (
+                    <View style={{ marginBottom: 6 }}>
+                      <View style={styles.thickSeparator} />
+                      <Text style={styles.sectionTitle}>OTROS DATOS</Text>
+                      <DataGrid items={[
+                        ...unclassifiedPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                        ...unclassifiedOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                      ]} />
+                    </View>
+                  );
+                })()}
+              </>
+            ) : (
+              /* Legacy flat layout */
+              <>
+                {(sortedPrompts.length > 0 || outputs.length > 0) && (
+                  <View style={{ marginBottom: 6 }}>
+                    <DataGrid
+                      items={[
+                        ...sortedPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                        ...outputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                      ]}
+                    />
                   </View>
                 )}
+
+                {/* Imposition */}
+                {item.imposition_data && (
+                  <>
+                    <View style={styles.thickSeparator} />
+                    {isSimple ? (
+                      <View style={styles.impositionRow}>
+                        <ImpositionDiagram data={item.imposition_data} title="" />
+                      </View>
+                    ) : compositeImpositions.length > 0 ? (
+                      <View style={styles.impositionRow}>
+                        {compositeImpositions.map(([key, data]) => {
+                          const alias = item.composite_data?.components?.[key]?.alias || key;
+                          const halfW = Math.floor((DIAGRAM_DEFAULT_W - 20) / compositeImpositions.length);
+                          return <ImpositionDiagram key={key} data={data} title={alias.toUpperCase()} maxWidth={halfW} maxHeight={180} />;
+                        })}
+                      </View>
+                    ) : (
+                      <View style={styles.impositionRow}>
+                        <ImpositionDiagram data={item.imposition_data} title="" />
+                      </View>
+                    )}
+                  </>
+                )}
+
+                <View style={styles.thickSeparator} />
+
+                {/* Ajustes */}
+                <View style={{ marginBottom: 6 }}>
+                  <Text style={styles.sectionTitle}>AJUSTES PERSONALIZADOS</Text>
+                  {additionals && additionals.length > 0 ? (
+                    <View style={styles.grid3}>
+                      {additionals.map((adj, idx) => (
+                        <View key={idx} style={styles.gridItem}>
+                          <Text style={styles.gridLabel}>{adj.name}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ) : null}
+                </View>
               </>
             )}
-
-            <View style={styles.thickSeparator} />
-
-            {/* ═══ AJUSTES PERSONALIZADOS ═══ */}
-            <View style={{ marginBottom: 6 }}>
-              <Text style={styles.sectionTitle}>AJUSTES PERSONALIZADOS</Text>
-              {additionals && additionals.length > 0 ? (
-                <View style={styles.grid3}>
-                  {additionals.map((adj, idx) => (
-                    <View key={idx} style={styles.gridItem}>
-                      <Text style={styles.gridLabel}>{adj.name}</Text>
-                    </View>
-                  ))}
-                </View>
-              ) : null}
-            </View>
 
             <View style={styles.thickSeparator} />
 
