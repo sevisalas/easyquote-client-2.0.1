@@ -39,6 +39,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { normalizeApiUserId } from "@/utils/normalizeApiUserId";
+import { useProductOutputOtSettings, OT_SECTIONS } from "@/hooks/useProductOutputOtSettings";
 
 // Interface para productos del API de EasyQuote
 interface EasyQuoteProduct {
