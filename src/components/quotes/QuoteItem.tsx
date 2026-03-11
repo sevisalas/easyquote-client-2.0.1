@@ -2592,6 +2592,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   quantity={isCustomProduct ? customQuantity : (qtyPrompt && promptValues[qtyPrompt]
                     ? parseFloat(String((promptValues[qtyPrompt] as any)?.value ?? promptValues[qtyPrompt]).replace(/\./g, "").replace(",", ".")) || 1
                     : 1)}
+                  multiEnabled={multiEnabled}
+                  qtyCount={qtyCount}
+                  qtyLabels={qtyInputs.slice(0, qtyCount).map(q => q ? String(q) : "")}
                   basePrice={(() => {
                     // Base price without additionals for percentage calculation
                     if (isCustomProduct) return customPrice * customQuantity;
