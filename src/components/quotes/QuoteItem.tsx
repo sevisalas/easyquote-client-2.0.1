@@ -1852,7 +1852,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   // Calculate additionals breakdown for a specific quantity
   const calculateAdditionalsForQty = useMemo(() => {
-    return (qty: number) => {
+    return (qty: number, qtyIndex?: number) => {
       if (!Array.isArray(itemAdditionals) || itemAdditionals.length === 0) {
         return { total: 0, breakdown: [] };
       }
@@ -1863,7 +1863,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       itemAdditionals.forEach((additional) => {
         let additionalValue = 0;
         if (additional.type === 'net_amount') {
-          additionalValue = additional.value;
+          // Use per-quantity value if multiValues is set and qtyIndex is provided
+          if (additional.multiValues && qtyIndex !== undefined && qtyIndex < additional.multiValues.length) {
+            additionalValue = additional.multiValues[qtyIndex];
+          } else {
+            additionalValue = additional.value;
+          }
         } else if (additional.type === 'percentage') {
           // For per-qty breakdown, calculate percentage of that qty's base price
           // Use the main row price as reference
