@@ -5,6 +5,13 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.6.1] - 2026-03-11
+
+### Seguridad
+- **Protección del endpoint de notificaciones**: La función `send-support-notification` ahora requiere autenticación JWT y sanitiza todos los campos HTML para prevenir inyección de contenido y uso no autorizado como relay de correo
+
+---
+
 ## [2.5.25] - 2026-03-06
 
 ### Añadido
