@@ -42,6 +42,8 @@ function isSimpleImposition(data: any): data is ImpositionData {
 
 function ImpositionBlock({ imp, label, onEdit, onDelete }: { imp: ImpositionData; label?: string; onEdit: () => void; onDelete: () => void }) {
   if (!imp.repetitionsH || !imp.repetitionsV) return null;
+  const calcResult = calculateImposition(imp);
+  const hasPageAdjust = imp.pagesPerSheet && imp.pagesPerSheet > 0 && calcResult.adjustedPagesPerSheet;
   return (
     <div className="border border-border rounded-sm p-1.5 bg-background">
       {label && <p className="text-[10px] font-bold uppercase tracking-wider mb-1">{label}</p>}
@@ -53,6 +55,15 @@ function ImpositionBlock({ imp, label, onEdit, onDelete }: { imp: ImpositionData
           <p>{imp.productWidth}×{imp.productHeight} · Válido: {imp.validWidth}×{imp.validHeight}</p>
           <p>Sangr: {imp.bleed} · Calles: {imp.gutterH}×{imp.gutterV}</p>
           <p className="font-bold">{imp.repetitionsH}×{imp.repetitionsV}={imp.totalRepetitions}/pliego</p>
+          {hasPageAdjust && (
+            <p className="flex items-center gap-0.5 text-primary font-medium">
+              <BookOpen className="h-2.5 w-2.5" />
+              {calcResult.adjustedPagesPerSheet} págs/pliego
+              {calcResult.rawTotalRepetitions && (
+                <span className="text-muted-foreground font-normal"> (bruto: {calcResult.rawTotalRepetitions * 2})</span>
+              )}
+            </p>
+          )}
           {imp.utilization !== undefined && <p>Aprov: {imp.utilization.toFixed(1)}%</p>}
           <div className="flex gap-1 pt-0.5">
             <Button size="sm" variant="outline" onClick={onEdit} className="h-5 w-5 p-0">
