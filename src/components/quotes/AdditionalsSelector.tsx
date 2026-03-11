@@ -23,6 +23,7 @@ interface SelectedAdditional {
   name: string
   type: "net_amount" | "quantity_multiplier" | "capacity_divider" | "percentage" | "custom"
   value: number
+  multiValues?: number[]  // Per-quantity values when multi-qty is enabled (for net_amount)
   isCustom?: boolean
   is_discount?: boolean
   capacity_value?: number | null
@@ -33,6 +34,9 @@ interface AdditionalsSelectorProps {
   onChange: (additionals: SelectedAdditional[]) => void
   quantity?: number
   basePrice?: number
+  multiEnabled?: boolean
+  qtyCount?: number
+  qtyLabels?: string[]  // e.g. ["500", "1000", "2000"]
 }
 
 export default function AdditionalsSelector({ selectedAdditionals, onChange, quantity = 1, basePrice = 0 }: AdditionalsSelectorProps) {
