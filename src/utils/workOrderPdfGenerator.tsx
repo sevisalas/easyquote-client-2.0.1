@@ -492,31 +492,53 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
 
             {/* ═══ DATA CONTENT ═══ */}
             {useSections ? (
-              /* Section-based layout */
+              /* Section-based layout: merge general + component data into sections */
               <>
                 {OT_SECTION_ORDER.map(sectionKey => {
-                  // Gather prompts and outputs assigned to this section
-                  const sectionPrompts = sortedPrompts.filter(p => 
-                    (promptSections?.get(p.label.trim().toUpperCase()) || '') === sectionKey
-                  );
-                  const sectionOutputs = outputs.filter(o =>
-                    (outputSections?.get(o.name.trim().toUpperCase()) || '') === sectionKey
-                  );
+                  // Helper to check if a label belongs to this section
+                  const inSection = (label: string, isOutput: boolean) => {
+                    const key = label.trim().toUpperCase();
+                    const map = isOutput ? outputSections : promptSections;
+                    return (map?.get(key) || '') === sectionKey;
+                  };
 
-                  // Special handling: imposiciones section includes the diagram
+                  // General-level items for this section
+                  const sectionGeneralPrompts = sortedPrompts.filter(p => inSection(p.label, false));
+                  const sectionGeneralOutputs = outputs.filter(o => inSection(o.name, true));
+
+                  // Component-level items for this section
+                  const sectionComponents: Array<{ alias: string; items: DataItem[] }> = [];
+                  for (const comp of componentEntries) {
+                    const compItems = [
+                      ...comp.prompts.filter(p => inSection(p.label, false)),
+                      ...comp.outputs.filter(o => inSection(o.label, true)),
+                    ];
+                    if (compItems.length > 0) {
+                      sectionComponents.push({ alias: comp.alias, items: compItems });
+                    }
+                  }
+
+                  // Special: imposiciones section includes the diagram
                   if (sectionKey === 'imposiciones') {
                     const hasImposition = item.imposition_data && (isSimple || compositeImpositions.length > 0);
-                    if (sectionPrompts.length === 0 && sectionOutputs.length === 0 && !hasImposition) return null;
+                    const hasData = sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0 || sectionComponents.length > 0;
+                    if (!hasData && !hasImposition) return null;
                     return (
                       <View key={sectionKey} style={{ marginBottom: 6 }}>
                         <View style={styles.thickSeparator} />
                         <Text style={styles.sectionTitle}>{OT_SECTION_LABELS[sectionKey]}</Text>
-                        {(sectionPrompts.length > 0 || sectionOutputs.length > 0) && (
+                        {(sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0) && (
                           <DataGrid items={[
-                            ...sectionPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
-                            ...sectionOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                            ...sectionGeneralPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                            ...sectionGeneralOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
                           ]} />
                         )}
+                        {sectionComponents.map(sc => (
+                          <View key={sc.alias} style={{ marginTop: 4 }}>
+                            <Text style={styles.subsectionTitle}>{sc.alias}</Text>
+                            <DataGrid items={sc.items.map(i => ({ label: i.label, value: i.value }))} />
+                          </View>
+                        ))}
                         {hasImposition && (
                           <>
                             {isSimple ? (
@@ -538,20 +560,27 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
                     );
                   }
 
-                  // Special handling: ajustes section includes additionals
+                  // Special: ajustes section includes additionals
                   if (sectionKey === 'ajustes') {
                     const hasAdditionals = additionals && additionals.length > 0;
-                    if (sectionPrompts.length === 0 && sectionOutputs.length === 0 && !hasAdditionals) return null;
+                    const hasData = sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0 || sectionComponents.length > 0;
+                    if (!hasData && !hasAdditionals) return null;
                     return (
                       <View key={sectionKey} style={{ marginBottom: 6 }}>
                         <View style={styles.thickSeparator} />
                         <Text style={styles.sectionTitle}>{OT_SECTION_LABELS[sectionKey]}</Text>
-                        {(sectionPrompts.length > 0 || sectionOutputs.length > 0) && (
+                        {(sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0) && (
                           <DataGrid items={[
-                            ...sectionPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
-                            ...sectionOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                            ...sectionGeneralPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                            ...sectionGeneralOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
                           ]} />
                         )}
+                        {sectionComponents.map(sc => (
+                          <View key={sc.alias} style={{ marginTop: 4 }}>
+                            <Text style={styles.subsectionTitle}>{sc.alias}</Text>
+                            <DataGrid items={sc.items.map(i => ({ label: i.label, value: i.value }))} />
+                          </View>
+                        ))}
                         {hasAdditionals && (
                           <View style={styles.grid3}>
                             {additionals!.map((adj, idx) => (
@@ -565,38 +594,66 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
                     );
                   }
 
-                  if (sectionPrompts.length === 0 && sectionOutputs.length === 0) return null;
+                  const hasData = sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0 || sectionComponents.length > 0;
+                  if (!hasData) return null;
                   return (
                     <View key={sectionKey} style={{ marginBottom: 6 }}>
                       <View style={styles.thickSeparator} />
                       <Text style={styles.sectionTitle}>{OT_SECTION_LABELS[sectionKey]}</Text>
-                      <DataGrid items={[
-                        ...sectionPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
-                        ...sectionOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
-                      ]} />
+                      {(sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0) && (
+                        <DataGrid items={[
+                          ...sectionGeneralPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                          ...sectionGeneralOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                        ]} />
+                      )}
+                      {sectionComponents.map(sc => (
+                        <View key={sc.alias} style={{ marginTop: 4 }}>
+                          <Text style={styles.subsectionTitle}>{sc.alias}</Text>
+                          <DataGrid items={sc.items.map(i => ({ label: i.label, value: i.value }))} />
+                        </View>
+                      ))}
                     </View>
                   );
                 })}
 
-                {/* Unclassified prompts/outputs (no section assigned) */}
+                {/* Unclassified data */}
                 {(() => {
-                  const unclassifiedPrompts = sortedPrompts.filter(p => 
-                    !promptSections?.has(p.label.trim().toUpperCase()) || 
-                    !promptSections.get(p.label.trim().toUpperCase())
-                  );
-                  const unclassifiedOutputs = outputs.filter(o =>
-                    !outputSections?.has(o.name.trim().toUpperCase()) ||
-                    !outputSections.get(o.name.trim().toUpperCase())
-                  );
-                  if (unclassifiedPrompts.length === 0 && unclassifiedOutputs.length === 0) return null;
+                  const hasSection = (label: string, isOutput: boolean) => {
+                    const key = label.trim().toUpperCase();
+                    const map = isOutput ? outputSections : promptSections;
+                    return map?.has(key) && !!map.get(key);
+                  };
+                  const unclassifiedPrompts = sortedPrompts.filter(p => !hasSection(p.label, false));
+                  const unclassifiedOutputs = outputs.filter(o => !hasSection(o.name, true));
+                  
+                  const unclassifiedComponents: Array<{ alias: string; items: DataItem[] }> = [];
+                  for (const comp of componentEntries) {
+                    const compItems = [
+                      ...comp.prompts.filter(p => !hasSection(p.label, false)),
+                      ...comp.outputs.filter(o => !hasSection(o.label, true)),
+                    ];
+                    if (compItems.length > 0) {
+                      unclassifiedComponents.push({ alias: comp.alias, items: compItems });
+                    }
+                  }
+                  
+                  if (unclassifiedPrompts.length === 0 && unclassifiedOutputs.length === 0 && unclassifiedComponents.length === 0) return null;
                   return (
                     <View style={{ marginBottom: 6 }}>
                       <View style={styles.thickSeparator} />
                       <Text style={styles.sectionTitle}>OTROS DATOS</Text>
-                      <DataGrid items={[
-                        ...unclassifiedPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
-                        ...unclassifiedOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
-                      ]} />
+                      {(unclassifiedPrompts.length > 0 || unclassifiedOutputs.length > 0) && (
+                        <DataGrid items={[
+                          ...unclassifiedPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                          ...unclassifiedOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                        ]} />
+                      )}
+                      {unclassifiedComponents.map(sc => (
+                        <View key={sc.alias} style={{ marginTop: 4 }}>
+                          <Text style={styles.subsectionTitle}>{sc.alias}</Text>
+                          <DataGrid items={sc.items.map(i => ({ label: i.label, value: i.value }))} />
+                        </View>
+                      ))}
                     </View>
                   );
                 })()}
@@ -604,6 +661,7 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
             ) : (
               /* Legacy flat layout */
               <>
+                {/* General prompts + outputs */}
                 {(sortedPrompts.length > 0 || outputs.length > 0) && (
                   <View style={{ marginBottom: 6 }}>
                     <DataGrid
@@ -614,6 +672,18 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
                     />
                   </View>
                 )}
+
+                {/* Composite component data */}
+                {componentEntries.length > 0 && componentEntries.map(comp => (
+                  <View key={comp.alias} style={{ marginBottom: 6 }}>
+                    <View style={styles.thinSeparator} />
+                    <Text style={styles.subsectionTitle}>{comp.alias}</Text>
+                    <DataGrid items={[
+                      ...comp.prompts.map(p => ({ label: p.label, value: p.value })),
+                      ...comp.outputs.map(o => ({ label: o.label, value: o.value })),
+                    ]} />
+                  </View>
+                ))}
 
                 {/* Imposition */}
                 {item.imposition_data && (
