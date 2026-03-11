@@ -734,6 +734,7 @@ const SalesOrderDetail = () => {
           return {
             id: item.id,
             product_name: item.product_name,
+            product_id: item.product_id || undefined,
             quantity: item.quantity,
             prompts: item.prompts as any,
             outputs: filteredOutputs,
