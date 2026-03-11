@@ -621,47 +621,6 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
                   );
                 })}
 
-                {/* Unclassified data */}
-                {(() => {
-                  const hasSection = (label: string, isOutput: boolean) => {
-                    const key = label.trim().toUpperCase();
-                    const map = isOutput ? outputSections : promptSections;
-                    return map?.has(key) && !!map.get(key);
-                  };
-                  const unclassifiedPrompts = sortedPrompts.filter(p => !hasSection(p.label, false));
-                  const unclassifiedOutputs = outputs.filter(o => !hasSection(o.name, true));
-                  
-                  const unclassifiedComponents: Array<{ alias: string; items: DataItem[] }> = [];
-                  for (const comp of componentEntries) {
-                    const compItems = [
-                      ...comp.prompts.filter(p => !hasSection(p.label, false)),
-                      ...comp.outputs.filter(o => !hasSection(o.label, true)),
-                    ];
-                    if (compItems.length > 0) {
-                      unclassifiedComponents.push({ alias: comp.alias, items: compItems });
-                    }
-                  }
-                  
-                  if (unclassifiedPrompts.length === 0 && unclassifiedOutputs.length === 0 && unclassifiedComponents.length === 0) return null;
-                  return (
-                    <View style={{ marginBottom: 6 }}>
-                      <View style={styles.thickSeparator} />
-                      <Text style={styles.sectionTitle}>OTROS DATOS</Text>
-                      {(unclassifiedPrompts.length > 0 || unclassifiedOutputs.length > 0) && (
-                        <DataGrid items={[
-                          ...unclassifiedPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
-                          ...unclassifiedOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
-                        ]} />
-                      )}
-                      {unclassifiedComponents.map(sc => (
-                        <View key={sc.alias} style={{ marginTop: 4 }}>
-                          <Text style={styles.subsectionTitle}>{sc.alias}</Text>
-                          <DataGrid items={sc.items.map(i => ({ label: i.label, value: i.value }))} />
-                        </View>
-                      ))}
-                    </View>
-                  );
-                })()}
               </>
             ) : (
               /* Legacy flat layout */
