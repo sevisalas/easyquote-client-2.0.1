@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImpositionData, updateCalculatedValues, VALID_PAGES_PER_SHEET, calculateImposition } from "@/utils/impositionCalculator";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Lock, Unlock } from "lucide-react";
 
 interface ImpositionFormProps {
   data: ImpositionData;
@@ -10,21 +12,28 @@ interface ImpositionFormProps {
 }
 
 export function ImpositionForm({ data, onChange }: ImpositionFormProps) {
-  const [localData, setLocalData] = useState<ImpositionData>(data);
+  const [localData, setLocalData] = useState<ImpositionData>(() => updateCalculatedValues(data));
 
   useEffect(() => {
-    setLocalData(data);
+    setLocalData(updateCalculatedValues(data));
   }, [data]);
 
-  const handleChange = (field: keyof ImpositionData, value: number) => {
-    const updated = { ...localData, [field]: value };
-    const withCalculations = updateCalculatedValues(updated);
-    setLocalData(withCalculations);
-    onChange(withCalculations);
+  const applyChange = useCallback((updates: Partial<ImpositionData>) => {
+    setLocalData(prev => {
+      const merged = { ...prev, ...updates };
+      const withCalc = updateCalculatedValues(merged);
+      onChange(withCalc);
+      return withCalc;
+    });
+  }, [onChange]);
+
+  const handleNumericChange = (field: keyof ImpositionData, value: string) => {
+    applyChange({ [field]: parseFloat(value) || 0 });
   };
 
   const calcResult = calculateImposition(localData);
   const hasPageAdjust = localData.pagesPerSheet && localData.pagesPerSheet > 0;
+  const isManual = !!localData.isManual;
 
   return (
     <div className="space-y-4">
@@ -38,7 +47,7 @@ export function ImpositionForm({ data, onChange }: ImpositionFormProps) {
               id="productWidth"
               type="number"
               value={localData.productWidth}
-              onChange={(e) => handleChange('productWidth', parseFloat(e.target.value) || 0)}
+              onChange={(e) => handleNumericChange('productWidth', e.target.value)}
               className="h-8"
             />
           </div>
@@ -48,7 +57,7 @@ export function ImpositionForm({ data, onChange }: ImpositionFormProps) {
               id="productHeight"
               type="number"
               value={localData.productHeight}
-              onChange={(e) => handleChange('productHeight', parseFloat(e.target.value) || 0)}
+              onChange={(e) => handleNumericChange('productHeight', e.target.value)}
               className="h-8"
             />
           </div>
@@ -58,7 +67,7 @@ export function ImpositionForm({ data, onChange }: ImpositionFormProps) {
               id="bleed"
               type="number"
               value={localData.bleed}
-              onChange={(e) => handleChange('bleed', parseFloat(e.target.value) || 0)}
+              onChange={(e) => handleNumericChange('bleed', e.target.value)}
               className="h-8"
             />
           </div>
@@ -75,7 +84,7 @@ export function ImpositionForm({ data, onChange }: ImpositionFormProps) {
               id="validWidth"
               type="number"
               value={localData.validWidth}
-              onChange={(e) => handleChange('validWidth', parseFloat(e.target.value) || 0)}
+              onChange={(e) => handleNumericChange('validWidth', e.target.value)}
               className="h-8"
             />
           </div>
@@ -85,7 +94,7 @@ export function ImpositionForm({ data, onChange }: ImpositionFormProps) {
               id="validHeight"
               type="number"
               value={localData.validHeight}
-              onChange={(e) => handleChange('validHeight', parseFloat(e.target.value) || 0)}
+              onChange={(e) => handleNumericChange('validHeight', e.target.value)}
               className="h-8"
             />
           </div>
@@ -102,7 +111,7 @@ export function ImpositionForm({ data, onChange }: ImpositionFormProps) {
               id="gutterH"
               type="number"
               value={localData.gutterH}
-              onChange={(e) => handleChange('gutterH', parseFloat(e.target.value) || 0)}
+              onChange={(e) => handleNumericChange('gutterH', e.target.value)}
               className="h-8"
             />
           </div>
@@ -112,10 +121,101 @@ export function ImpositionForm({ data, onChange }: ImpositionFormProps) {
               id="gutterV"
               type="number"
               value={localData.gutterV}
-              onChange={(e) => handleChange('gutterV', parseFloat(e.target.value) || 0)}
+              onChange={(e) => handleNumericChange('gutterV', e.target.value)}
               className="h-8"
             />
           </div>
+        </div>
+      </div>
+
+      {/* Manual mode toggle + controls */}
+      <div className="pt-2 border-t">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="font-semibold text-sm flex items-center gap-1.5">
+            {isManual ? <Lock className="h-3.5 w-3.5 text-primary" /> : <Unlock className="h-3.5 w-3.5 text-muted-foreground" />}
+            Cuadre {isManual ? 'manual' : 'automático'}
+          </h4>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Manual</span>
+            <Switch
+              checked={isManual}
+              onCheckedChange={(checked) => applyChange({ isManual: checked })}
+            />
+          </div>
+        </div>
+
+        {/* Orientation selector */}
+        <div className="mb-3">
+          <Label className="text-xs">Orientación del producto</Label>
+          <Select
+            value={localData.orientation || 'horizontal'}
+            onValueChange={(val) => applyChange({ orientation: val as 'horizontal' | 'vertical', isManual: true })}
+            disabled={!isManual}
+          >
+            <SelectTrigger className="h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="horizontal">Horizontal</SelectItem>
+              <SelectItem value="vertical">Vertical (rotado 90°)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Manual reps */}
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <div>
+            <Label htmlFor="repetitionsH" className="text-xs">Poses por fila</Label>
+            <Input
+              id="repetitionsH"
+              type="number"
+              min={1}
+              value={localData.repetitionsH || 0}
+              onChange={(e) => {
+                const val = parseInt(e.target.value) || 1;
+                applyChange({ repetitionsH: val, isManual: true });
+              }}
+              disabled={!isManual}
+              className="h-8"
+            />
+          </div>
+          <div>
+            <Label htmlFor="repetitionsV" className="text-xs">Poses por columna</Label>
+            <Input
+              id="repetitionsV"
+              type="number"
+              min={1}
+              value={localData.repetitionsV || 0}
+              onChange={(e) => {
+                const val = parseInt(e.target.value) || 1;
+                applyChange({ repetitionsV: val, isManual: true });
+              }}
+              disabled={!isManual}
+              className="h-8"
+            />
+          </div>
+        </div>
+
+        {/* Págs/pliego (encuadernación) */}
+        <div className="mb-3">
+          <Label className="text-xs flex items-center gap-1">
+            <BookOpen className="h-3 w-3" />
+            Págs/pliego (encuadernación)
+          </Label>
+          <Select
+            value={String(localData.pagesPerSheet || 0)}
+            onValueChange={(val) => applyChange({ pagesPerSheet: parseInt(val) })}
+          >
+            <SelectTrigger className="h-8">
+              <SelectValue placeholder="Sin ajuste" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">Sin ajuste</SelectItem>
+              {VALID_PAGES_PER_SHEET.map(v => (
+                <SelectItem key={v} value={String(v)}>{v} págs/pliego</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -126,12 +226,16 @@ export function ImpositionForm({ data, onChange }: ImpositionFormProps) {
           <div className="flex justify-between">
             <span className="text-muted-foreground">Repeticiones:</span>
             <span className="font-medium">
-              {localData.repetitionsH} × {localData.repetitionsV} = {localData.totalRepetitions}
+              {calcResult.repetitionsH} × {calcResult.repetitionsV} = {calcResult.totalRepetitions}
             </span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Aprovechamiento:</span>
-            <span className="font-medium">{localData.utilization?.toFixed(1)}%</span>
+            <span className="font-medium">{calcResult.utilization.toFixed(1)}%</span>
+          </div>
+          <div className="flex justify-between col-span-2">
+            <span className="text-muted-foreground">Orientación:</span>
+            <span className="font-medium">{calcResult.orientation === 'vertical' ? 'Vertical' : 'Horizontal'}</span>
           </div>
         </div>
         
