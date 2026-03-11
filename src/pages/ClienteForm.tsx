@@ -22,7 +22,7 @@ const ClienteForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { organization } = useSubscription();
+  const { organization, membership } = useSubscription();
   const isEditing = !!id;
   
   const [formData, setFormData] = useState<ClienteData>({
@@ -91,12 +91,15 @@ const ClienteForm = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("No user found");
 
+        const selectedOrgId = sessionStorage.getItem('selected_organization_id');
+        const orgId = selectedOrgId || organization?.id || membership?.organization_id || membership?.organization?.id || null;
+
         const { error } = await supabase
           .from('customers')
           .insert({
             ...formData,
             user_id: user.id,
-            organization_id: organization?.id || null
+            organization_id: orgId
           });
 
         if (error) throw error;
