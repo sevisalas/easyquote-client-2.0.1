@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { ImpositionData, updateCalculatedValues } from "@/utils/impositionCalculator";
+import { ImpositionData, updateCalculatedValues, VALID_PAGES_PER_SHEET, calculateImposition } from "@/utils/impositionCalculator";
+import { BookOpen } from "lucide-react";
 
 interface ImpositionFormProps {
   data: ImpositionData;
@@ -21,6 +22,9 @@ export function ImpositionForm({ data, onChange }: ImpositionFormProps) {
     setLocalData(withCalculations);
     onChange(withCalculations);
   };
+
+  const calcResult = calculateImposition(localData);
+  const hasPageAdjust = localData.pagesPerSheet && localData.pagesPerSheet > 0;
 
   return (
     <div className="space-y-4">
@@ -130,6 +134,27 @@ export function ImpositionForm({ data, onChange }: ImpositionFormProps) {
             <span className="font-medium">{localData.utilization?.toFixed(1)}%</span>
           </div>
         </div>
+        
+        {/* Ajuste por encuadernación */}
+        {hasPageAdjust && calcResult.adjustedPagesPerSheet && (
+          <div className="mt-2 p-2 rounded bg-accent/50 border border-accent text-xs space-y-1">
+            <div className="flex items-center gap-1 font-semibold text-accent-foreground">
+              <BookOpen className="h-3 w-3" />
+              Ajuste encuadernación
+            </div>
+            {calcResult.rawTotalRepetitions && (
+              <p className="text-muted-foreground">
+                Cálculo bruto: {calcResult.rawTotalRepetitions}/cara × 2 = {calcResult.rawTotalRepetitions * 2} págs
+              </p>
+            )}
+            <p className="font-medium">
+              Ajustado: {calcResult.adjustedPagesPerSheet} págs/pliego ({calcResult.totalRepetitions}/cara)
+            </p>
+            <p className="text-muted-foreground text-[10px]">
+              Válidos: {VALID_PAGES_PER_SHEET.join(', ')}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -29,6 +29,7 @@ const impositionFieldLabels: Record<string, string> = {
   sheetHeight: "Alto hoja",
   gutterH: "Calle horizontal",
   gutterV: "Calle vertical",
+  pagesPerSheet: "Págs/pliego (encuadernación)",
 };
 
 function OutputTypeVisibilitySection() {
