@@ -754,6 +754,8 @@ export default function ProductManagement() {
               ? { is_hidden: result.patch.is_hidden }
               : {}),
             ...(result.patch.label !== undefined ? { label: result.patch.label } : {}),
+            ...(result.patch.show_in_ot !== undefined ? { show_in_ot: result.patch.show_in_ot } : {}),
+            ...(result.patch.ot_section !== undefined ? { ot_section: result.patch.ot_section } : {}),
             updated_at: new Date().toISOString(),
           };
 
