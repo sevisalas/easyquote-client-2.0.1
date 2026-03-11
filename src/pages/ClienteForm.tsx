@@ -22,7 +22,7 @@ const ClienteForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { organization } = useSubscription();
+  const { organization, membership } = useSubscription();
   const isEditing = !!id;
   
   const [formData, setFormData] = useState<ClienteData>({
