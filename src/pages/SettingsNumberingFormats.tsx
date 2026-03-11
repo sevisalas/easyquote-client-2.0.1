@@ -62,8 +62,7 @@ export default function SettingsNumberingFormats() {
 
       // Obtener organization_id del sessionStorage para filtrar por tenant
       const organizationId = sessionStorage.getItem('selected_organization_id');
-
-      // NO recalcular automáticamente - respetar siempre el valor manual del usuario
+      const currentYear = new Date().getFullYear();
 
       // Filtrar por organization_id si existe, sino por user_id (legacy)
       let query = supabase
@@ -73,12 +72,28 @@ export default function SettingsNumberingFormats() {
       if (organizationId) {
         query = query.eq('organization_id', organizationId);
       } else {
-        query = query.eq('user_id', user.id);
+        query = query.eq('user_id', user.id).is('organization_id', null);
       }
       
       const { data, error } = await query;
 
       if (error) throw error;
+
+      let quoteSequenceLast = 0;
+      let orderSequenceLast = 0;
+
+      // Si no hay formato aún, usar secuencia real para mostrar un "último número" correcto
+      if (organizationId) {
+        const { data: sequences } = await supabase
+          .from('document_sequences')
+          .select('document_type, last_number')
+          .eq('organization_id', organizationId)
+          .eq('year', currentYear)
+          .in('document_type', ['quote', 'order']);
+
+        quoteSequenceLast = sequences?.find(s => s.document_type === 'quote')?.last_number ?? 0;
+        orderSequenceLast = sequences?.find(s => s.document_type === 'order')?.last_number ?? 0;
+      }
 
       if (data) {
         const quoteData = data.find(f => f.document_type === 'quote');
@@ -93,8 +108,10 @@ export default function SettingsNumberingFormats() {
             use_year: quoteData.use_year,
             year_format: quoteData.year_format as 'YY' | 'YYYY',
             sequential_digits: quoteData.sequential_digits || 4,
-            last_sequential_number: quoteData.last_sequential_number ?? 0
+            last_sequential_number: Math.max(quoteData.last_sequential_number ?? 0, quoteSequenceLast)
           });
+        } else if (quoteSequenceLast > 0) {
+          setQuoteFormat(prev => ({ ...prev, last_sequential_number: quoteSequenceLast }));
         }
 
         if (orderData) {
@@ -106,8 +123,10 @@ export default function SettingsNumberingFormats() {
             use_year: orderData.use_year,
             year_format: orderData.year_format as 'YY' | 'YYYY',
             sequential_digits: orderData.sequential_digits || 4,
-            last_sequential_number: orderData.last_sequential_number ?? 0
+            last_sequential_number: Math.max(orderData.last_sequential_number ?? 0, orderSequenceLast)
           });
+        } else if (orderSequenceLast > 0) {
+          setOrderFormat(prev => ({ ...prev, last_sequential_number: orderSequenceLast }));
         }
       }
     } catch (error) {
@@ -177,7 +196,7 @@ export default function SettingsNumberingFormats() {
         if (organizationId) {
           existingQuery = existingQuery.eq('organization_id', organizationId);
         } else {
-          existingQuery = existingQuery.eq('user_id', user.id);
+          existingQuery = existingQuery.eq('user_id', user.id).is('organization_id', null);
         }
 
         const { data: existing } = await existingQuery.maybeSingle();

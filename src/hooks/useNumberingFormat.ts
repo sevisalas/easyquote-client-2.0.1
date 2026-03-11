@@ -20,6 +20,27 @@ export const useNumberingFormat = (documentType: 'quote' | 'order') => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
+      const getSequenceLastNumber = async (
+        organizationId: string,
+        useYear: boolean,
+      ): Promise<number> => {
+        const yearBucket = useYear ? new Date().getFullYear() : 0;
+        const { data: sequenceData, error: sequenceError } = await supabase
+          .from('document_sequences')
+          .select('last_number')
+          .eq('organization_id', organizationId)
+          .eq('document_type', documentType)
+          .eq('year', yearBucket)
+          .maybeSingle();
+
+        if (sequenceError) {
+          console.warn('📋 Error reading document sequence:', sequenceError);
+          return 0;
+        }
+
+        return sequenceData?.last_number ?? 0;
+      };
+
       // Use the selected organization from sessionStorage (same as SubscriptionContext)
       const savedOrgId = sessionStorage.getItem('selected_organization_id');
       let organizationId: string | null = savedOrgId;
@@ -51,9 +72,6 @@ export const useNumberingFormat = (documentType: 'quote' | 'order') => {
 
       console.log('📋 Numbering format - Organization ID:', organizationId, 'Document type:', documentType);
 
-      // No recalcular automáticamente: el usuario controla last_sequential_number manualmente.
-      // La secuencia se incrementa cuando se crea un presupuesto/pedido (QuoteNew/SalesOrderNew).
-
       // If user belongs to an organization, get format for that organization
       if (organizationId) {
         const { data: orgFormat, error: orgError } = await supabase
@@ -66,32 +84,47 @@ export const useNumberingFormat = (documentType: 'quote' | 'order') => {
         console.log('📋 Org format found:', orgFormat, 'Error:', orgError);
 
         if (orgError) throw orgError;
-        if (orgFormat) return orgFormat as NumberingFormat;
+
+        if (orgFormat) {
+          const sequenceLast = await getSequenceLastNumber(organizationId, orgFormat.use_year);
+          return {
+            ...orgFormat,
+            last_sequential_number: Math.max(orgFormat.last_sequential_number ?? 0, sequenceLast),
+          } as NumberingFormat;
+        }
       }
 
-      // Try to get user-specific format (legacy support)
+      // Try to get user-specific format (legacy support only when organization_id is null)
       const { data, error } = await supabase
         .from('numbering_formats')
         .select('*')
         .eq('document_type', documentType)
         .eq('user_id', user.id)
+        .is('organization_id', null)
         .maybeSingle();
 
       console.log('📋 User format found:', data, 'Error:', error);
 
       if (error) throw error;
-      
+
       // Return default format if none configured
       if (!data) {
-        console.warn('📋 No numbering format found, using defaults');
-        return {
+        const defaultFormat = {
           prefix: documentType === 'quote' ? '' : 'SO-',
           suffix: '',
           use_year: true,
           year_format: documentType === 'quote' ? 'YY' : 'YYYY',
           sequential_digits: 4,
-          last_sequential_number: 0
+          last_sequential_number: 0,
         } as Omit<NumberingFormat, 'id' | 'document_type'>;
+
+        if (organizationId) {
+          const sequenceLast = await getSequenceLastNumber(organizationId, defaultFormat.use_year);
+          defaultFormat.last_sequential_number = sequenceLast;
+        }
+
+        console.warn('📋 No numbering format found, using defaults');
+        return defaultFormat;
       }
 
       return data as NumberingFormat;
