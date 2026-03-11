@@ -477,7 +477,13 @@ export default function ProductManagement() {
     isAssigning: isAssigningComponent
   } = useProductComponentSettings(selectedProduct?.id, apiUserId, organizationId);
 
-  // Sincronizar productType con el valor guardado en BD
+  // Output OT settings hook
+  const {
+    isOutputInOt: checkOutputInOt,
+    getOutputOtSection: checkOutputOtSection,
+    upsertOutputOtSetting,
+  } = useProductOutputOtSettings(selectedProduct?.id);
+
   useEffect(() => {
     if (savedProductType) {
       setProductType(savedProductType);
