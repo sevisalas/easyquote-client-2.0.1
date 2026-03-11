@@ -16,10 +16,12 @@ export interface ImpositionData {
   gutterV: number;       // mm (calle vertical)
   
   // Encuadernación: páginas por pliego (total ambas caras)
-  // Cuando > 0, totalRepetitions se ajusta al valor válido más cercano ≤ calculado
   pagesPerSheet?: number;
   
-  // Calculados
+  // Manual mode: when true, user controls orientation and reps directly
+  isManual?: boolean;
+  
+  // Calculados (o manuales si isManual=true)
   repetitionsH?: number;
   repetitionsV?: number;
   totalRepetitions?: number;
@@ -43,7 +45,8 @@ export interface CalculationResult {
 }
 
 /**
- * Calcula las repeticiones y aprovechamiento del pliego
+ * Calcula las repeticiones y aprovechamiento del pliego.
+ * En modo manual (isManual=true), usa repetitionsH, repetitionsV y orientation del data directamente.
  */
 export function calculateImposition(data: ImpositionData): CalculationResult {
   const { 
@@ -54,62 +57,65 @@ export function calculateImposition(data: ImpositionData): CalculationResult {
     bleed, 
     gutterH, 
     gutterV,
-    pagesPerSheet
+    pagesPerSheet,
+    isManual
   } = data;
-  
-  // Tamaño del producto con calles (el sangrado NO se suma como espacio extra
-  // porque en imposición las piezas comparten la zona de sangrado con las adyacentes)
-  const cellW = productWidth + gutterH;
-  const cellH = productHeight + gutterV;
-  
-  // Calcular repeticiones con PRODUCTO en horizontal
-  const repsH_prodHoriz = Math.floor(validWidth / cellW);
-  const repsV_prodHoriz = Math.floor(validHeight / cellH);
-  const total_prodHoriz = repsH_prodHoriz * repsV_prodHoriz;
-  
-  // Calcular repeticiones con PRODUCTO en vertical (rotado 90°)
-  const cellW_vert = productHeight + gutterH;
-  const cellH_vert = productWidth + gutterV;
-  const repsH_prodVert = Math.floor(validWidth / cellW_vert);
-  const repsV_prodVert = Math.floor(validHeight / cellH_vert);
-  const total_prodVert = repsH_prodVert * repsV_prodVert;
-  
-  // Elegir la mejor orientación DEL PRODUCTO
-  const useVertical = total_prodVert > total_prodHoriz;
-  
-  let repetitionsH = useVertical ? repsH_prodVert : repsH_prodHoriz;
-  let repetitionsV = useVertical ? repsV_prodVert : repsV_prodHoriz;
+
+  let repetitionsH: number;
+  let repetitionsV: number;
+  let orientation: 'horizontal' | 'vertical';
+
+  if (isManual) {
+    // Manual mode: user-provided values
+    repetitionsH = data.repetitionsH || 1;
+    repetitionsV = data.repetitionsV || 1;
+    orientation = data.orientation || 'horizontal';
+  } else {
+    // Auto mode: calculate optimal layout
+    const cellW = productWidth + gutterH;
+    const cellH = productHeight + gutterV;
+    
+    // Producto en horizontal
+    const repsH_prodHoriz = Math.floor(validWidth / cellW);
+    const repsV_prodHoriz = Math.floor(validHeight / cellH);
+    const total_prodHoriz = repsH_prodHoriz * repsV_prodHoriz;
+    
+    // Producto en vertical (rotado 90°)
+    const cellW_vert = productHeight + gutterH;
+    const cellH_vert = productWidth + gutterV;
+    const repsH_prodVert = Math.floor(validWidth / cellW_vert);
+    const repsV_prodVert = Math.floor(validHeight / cellH_vert);
+    const total_prodVert = repsH_prodVert * repsV_prodVert;
+    
+    const useVertical = total_prodVert > total_prodHoriz;
+    
+    repetitionsH = useVertical ? repsH_prodVert : repsH_prodHoriz;
+    repetitionsV = useVertical ? repsV_prodVert : repsV_prodHoriz;
+    orientation = useVertical ? 'vertical' : 'horizontal';
+  }
+
   let totalRepetitions = repetitionsH * repetitionsV;
   const rawTotalRepetitions = totalRepetitions;
   
   // ─── Ajuste por páginas/pliego para encuadernación ───
-  // pagesPerSheet > 0 indica que las repeticiones totales × 2 caras
-  // deben ajustarse al valor válido más cercano ≤ calculado
   let adjustedPagesPerSheet: number | undefined;
   if (pagesPerSheet && pagesPerSheet > 0) {
-    const totalPages = totalRepetitions * 2; // ambas caras del pliego
-    // Buscar el mayor valor válido ≤ totalPages
+    const totalPages = totalRepetitions * 2;
     const validSorted = [...VALID_PAGES_PER_SHEET].sort((a, b) => b - a);
     const snapped = validSorted.find(v => v <= totalPages) || validSorted[validSorted.length - 1];
     adjustedPagesPerSheet = snapped;
-    // Recalcular repeticiones por cara
     const adjustedPerSide = snapped / 2;
     if (adjustedPerSide < totalRepetitions) {
       totalRepetitions = adjustedPerSide;
-      // Ajustar H y V para que sigan siendo coherentes
-      // Mantener la relación original de aspecto H×V lo más posible
       if (repetitionsH > 0 && repetitionsV > 0) {
-        // Intentar mantener repetitionsH y reducir repetitionsV
         const newV = Math.floor(adjustedPerSide / repetitionsH);
         if (newV > 0 && newV * repetitionsH === adjustedPerSide) {
           repetitionsV = newV;
         } else {
-          // Intentar mantener repetitionsV y reducir repetitionsH
           const newH = Math.floor(adjustedPerSide / repetitionsV);
           if (newH > 0 && newH * repetitionsV === adjustedPerSide) {
             repetitionsH = newH;
           } else {
-            // Factorización más cercana
             for (let h = repetitionsH; h >= 1; h--) {
               if (adjustedPerSide % h === 0) {
                 repetitionsH = h;
@@ -124,8 +130,10 @@ export function calculateImposition(data: ImpositionData): CalculationResult {
   }
   
   // Calcular aprovechamiento
-  const usedCellW = useVertical ? cellW_vert : cellW;
-  const usedCellH = useVertical ? cellH_vert : cellH;
+  const prodW = orientation === 'vertical' ? productHeight : productWidth;
+  const prodH = orientation === 'vertical' ? productWidth : productHeight;
+  const usedCellW = prodW + gutterH;
+  const usedCellH = prodH + gutterV;
   const totalUsedArea = totalRepetitions * (usedCellW * usedCellH);
   const totalValidArea = validWidth * validHeight;
   const utilization = totalValidArea > 0 ? (totalUsedArea / totalValidArea) * 100 : 0;
@@ -137,7 +145,7 @@ export function calculateImposition(data: ImpositionData): CalculationResult {
     rawTotalRepetitions: rawTotalRepetitions !== totalRepetitions ? rawTotalRepetitions : undefined,
     adjustedPagesPerSheet,
     utilization: Math.round(utilization * 10) / 10,
-    orientation: useVertical ? 'vertical' : 'horizontal'
+    orientation
   };
 }
 
