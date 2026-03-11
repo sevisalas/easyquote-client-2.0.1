@@ -499,128 +499,162 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
             {useSections ? (
               /* Section-based layout: merge general + component data into sections */
               <>
-                {OT_SECTION_ORDER.map(sectionKey => {
-                  // Helper to check if a label belongs to this section
-                  const inSection = (label: string, isOutput: boolean) => {
-                    const key = label.trim().toUpperCase();
-                    const map = isOutput ? outputSections : promptSections;
-                    return (map?.get(key) || '') === sectionKey;
-                  };
+                {(() => {
+                  // Collect general-level label+value pairs for deduplication
+                  const generalDataKeys = new Set<string>();
+                  for (const p of sortedPrompts) {
+                    generalDataKeys.add(`${p.label.trim().toUpperCase()}::${formatVal(p.value).trim().toUpperCase()}`);
+                  }
+                  for (const o of outputs) {
+                    generalDataKeys.add(`${o.name.trim().toUpperCase()}::${formatVal(o.value).trim().toUpperCase()}`);
+                  }
 
-                  // General-level items for this section
-                  const sectionGeneralPrompts = sortedPrompts.filter(p => inSection(p.label, false));
-                  const sectionGeneralOutputs = outputs.filter(o => inSection(o.name, true));
+                  return OT_SECTION_ORDER.map(sectionKey => {
+                    const inSection = (label: string, isOutput: boolean) => {
+                      const key = label.trim().toUpperCase();
+                      const map = isOutput ? outputSections : promptSections;
+                      return (map?.get(key) || '') === sectionKey;
+                    };
 
-                  // Component-level items for this section
-                  const sectionComponents: Array<{ alias: string; items: DataItem[] }> = [];
-                  for (const comp of componentEntries) {
-                    const compItems = [
-                      ...comp.prompts.filter(p => inSection(p.label, false)),
-                      ...comp.outputs.filter(o => inSection(o.label, true)),
-                    ];
-                    if (compItems.length > 0) {
-                      sectionComponents.push({ alias: comp.alias, items: compItems });
+                    const sectionGeneralPrompts = sortedPrompts.filter(p => inSection(p.label, false));
+                    const sectionGeneralOutputs = outputs.filter(o => inSection(o.name, true));
+
+                    // Component-level items, deduplicated against general level
+                    const sectionComponents: Array<{ alias: string; items: DataItem[] }> = [];
+                    for (const comp of componentEntries) {
+                      const compItems = [
+                        ...comp.prompts.filter(p => inSection(p.label, false)),
+                        ...comp.outputs.filter(o => inSection(o.label, true)),
+                      ].filter(item => {
+                        const dedupKey = `${item.label.trim().toUpperCase()}::${item.value.trim().toUpperCase()}`;
+                        return !generalDataKeys.has(dedupKey);
+                      });
+                      if (compItems.length > 0) {
+                        sectionComponents.push({ alias: comp.alias, items: compItems });
+                      }
                     }
-                  }
 
-                  // Special: imposiciones section includes the diagram
-                  if (sectionKey === 'imposiciones') {
-                    const hasImposition = item.imposition_data && (isSimple || compositeImpositions.length > 0);
-                    const hasData = sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0 || sectionComponents.length > 0;
-                    if (!hasData && !hasImposition) return null;
-                    return (
-                      <View key={sectionKey} style={{ marginBottom: 6 }}>
-                        <View style={styles.thickSeparator} />
-                        <Text style={styles.sectionTitle}>{OT_SECTION_LABELS[sectionKey]}</Text>
-                        {(sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0) && (
-                          <DataGrid items={[
-                            ...sectionGeneralPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
-                            ...sectionGeneralOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
-                          ]} />
-                        )}
-                        {sectionComponents.map(sc => (
-                          <View key={sc.alias} style={{ marginTop: 4 }}>
-                            <Text style={styles.subsectionTitle}>{sc.alias}</Text>
-                            <DataGrid items={sc.items.map(i => ({ label: i.label, value: i.value }))} />
-                          </View>
-                        ))}
-                        {hasImposition && (
-                          <>
-                            {isSimple ? (
-                              <View style={styles.impositionRow}>
-                                <ImpositionDiagram data={item.imposition_data} title="" />
-                              </View>
-                            ) : compositeImpositions.length > 0 ? (
-                              <View style={styles.impositionRow}>
-                                {compositeImpositions.map(([key, data]) => {
-                                  const alias = item.composite_data?.components?.[key]?.alias || key;
-                                  const halfW = Math.floor((DIAGRAM_DEFAULT_W - 20) / compositeImpositions.length);
-                                  return <ImpositionDiagram key={key} data={data} title={alias.toUpperCase()} maxWidth={halfW} maxHeight={180} />;
-                                })}
-                              </View>
-                            ) : null}
-                          </>
-                        )}
-                      </View>
-                    );
-                  }
-
-                  // Special: ajustes section includes additionals
-                  if (sectionKey === 'ajustes') {
-                    const hasAdditionals = additionals && additionals.length > 0;
-                    const hasData = sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0 || sectionComponents.length > 0;
-                    if (!hasData && !hasAdditionals) return null;
-                    return (
-                      <View key={sectionKey} style={{ marginBottom: 6 }}>
-                        <View style={styles.thickSeparator} />
-                        <Text style={styles.sectionTitle}>{OT_SECTION_LABELS[sectionKey]}</Text>
-                        {(sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0) && (
-                          <DataGrid items={[
-                            ...sectionGeneralPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
-                            ...sectionGeneralOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
-                          ]} />
-                        )}
-                        {sectionComponents.map(sc => (
-                          <View key={sc.alias} style={{ marginTop: 4 }}>
-                            <Text style={styles.subsectionTitle}>{sc.alias}</Text>
-                            <DataGrid items={sc.items.map(i => ({ label: i.label, value: i.value }))} />
-                          </View>
-                        ))}
-                        {hasAdditionals && (
-                          <View style={styles.grid3}>
-                            {additionals!.map((adj, idx) => (
-                              <View key={idx} style={styles.gridItem}>
-                                <Text style={styles.gridLabel}>{adj.name}</Text>
-                              </View>
-                            ))}
-                          </View>
-                        )}
-                      </View>
-                    );
-                  }
-
-                  const hasData = sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0 || sectionComponents.length > 0;
-                  if (!hasData) return null;
-                  return (
-                    <View key={sectionKey} style={{ marginBottom: 6 }}>
-                      <View style={styles.thickSeparator} />
-                      <Text style={styles.sectionTitle}>{OT_SECTION_LABELS[sectionKey]}</Text>
-                      {(sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0) && (
-                        <DataGrid items={[
-                          ...sectionGeneralPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
-                          ...sectionGeneralOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
-                        ]} />
-                      )}
-                      {sectionComponents.map(sc => (
-                        <View key={sc.alias} style={{ marginTop: 4 }}>
-                          <Text style={styles.subsectionTitle}>{sc.alias}</Text>
-                          <DataGrid items={sc.items.map(i => ({ label: i.label, value: i.value }))} />
+                    // datos_destacados: no section header, render inline
+                    if (sectionKey === 'datos_destacados') {
+                      const hasData = sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0 || sectionComponents.length > 0;
+                      if (!hasData) return null;
+                      return (
+                        <View key={sectionKey} style={{ marginBottom: 6 }}>
+                          {(sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0) && (
+                            <DataGrid items={[
+                              ...sectionGeneralPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                              ...sectionGeneralOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                            ]} />
+                          )}
+                          {sectionComponents.map(sc => (
+                            <View key={sc.alias} style={{ marginTop: 4 }}>
+                              <Text style={styles.subsectionTitle}>{sc.alias}</Text>
+                              <DataGrid items={sc.items.map(i => ({ label: i.label, value: i.value }))} />
+                            </View>
+                          ))}
                         </View>
-                      ))}
-                    </View>
-                  );
-                })}
+                      );
+                    }
 
+                    // imposiciones: includes the diagram
+                    if (sectionKey === 'imposiciones') {
+                      const hasImposition = item.imposition_data && (isSimple || compositeImpositions.length > 0);
+                      const hasData = sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0 || sectionComponents.length > 0;
+                      if (!hasData && !hasImposition) return null;
+                      return (
+                        <View key={sectionKey} style={{ marginBottom: 6 }}>
+                          <View style={styles.thickSeparator} />
+                          <Text style={styles.sectionTitle}>{OT_SECTION_LABELS[sectionKey]}</Text>
+                          {(sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0) && (
+                            <DataGrid items={[
+                              ...sectionGeneralPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                              ...sectionGeneralOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                            ]} />
+                          )}
+                          {sectionComponents.map(sc => (
+                            <View key={sc.alias} style={{ marginTop: 4 }}>
+                              <Text style={styles.subsectionTitle}>{sc.alias}</Text>
+                              <DataGrid items={sc.items.map(i => ({ label: i.label, value: i.value }))} />
+                            </View>
+                          ))}
+                          {hasImposition && (
+                            <>
+                              {isSimple ? (
+                                <View style={styles.impositionRow}>
+                                  <ImpositionDiagram data={item.imposition_data} title="" />
+                                </View>
+                              ) : compositeImpositions.length > 0 ? (
+                                <View style={styles.impositionRow}>
+                                  {compositeImpositions.map(([key, data]) => {
+                                    const alias = item.composite_data?.components?.[key]?.alias || key;
+                                    const halfW = Math.floor((DIAGRAM_DEFAULT_W - 20) / compositeImpositions.length);
+                                    return <ImpositionDiagram key={key} data={data} title={alias.toUpperCase()} maxWidth={halfW} maxHeight={180} />;
+                                  })}
+                                </View>
+                              ) : null}
+                            </>
+                          )}
+                        </View>
+                      );
+                    }
+
+                    // ajustes: includes additionals
+                    if (sectionKey === 'ajustes') {
+                      const hasAdditionals = additionals && additionals.length > 0;
+                      const hasData = sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0 || sectionComponents.length > 0;
+                      if (!hasData && !hasAdditionals) return null;
+                      return (
+                        <View key={sectionKey} style={{ marginBottom: 6 }}>
+                          <View style={styles.thickSeparator} />
+                          <Text style={styles.sectionTitle}>{OT_SECTION_LABELS[sectionKey]}</Text>
+                          {(sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0) && (
+                            <DataGrid items={[
+                              ...sectionGeneralPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                              ...sectionGeneralOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                            ]} />
+                          )}
+                          {sectionComponents.map(sc => (
+                            <View key={sc.alias} style={{ marginTop: 4 }}>
+                              <Text style={styles.subsectionTitle}>{sc.alias}</Text>
+                              <DataGrid items={sc.items.map(i => ({ label: i.label, value: i.value }))} />
+                            </View>
+                          ))}
+                          {hasAdditionals && (
+                            <View style={styles.grid3}>
+                              {additionals!.map((adj, idx) => (
+                                <View key={idx} style={styles.gridItem}>
+                                  <Text style={styles.gridLabel}>{adj.name}</Text>
+                                </View>
+                              ))}
+                            </View>
+                          )}
+                        </View>
+                      );
+                    }
+
+                    // Generic section
+                    const hasData = sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0 || sectionComponents.length > 0;
+                    if (!hasData) return null;
+                    return (
+                      <View key={sectionKey} style={{ marginBottom: 6 }}>
+                        <View style={styles.thickSeparator} />
+                        <Text style={styles.sectionTitle}>{OT_SECTION_LABELS[sectionKey]}</Text>
+                        {(sectionGeneralPrompts.length > 0 || sectionGeneralOutputs.length > 0) && (
+                          <DataGrid items={[
+                            ...sectionGeneralPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                            ...sectionGeneralOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                          ]} />
+                        )}
+                        {sectionComponents.map(sc => (
+                          <View key={sc.alias} style={{ marginTop: 4 }}>
+                            <Text style={styles.subsectionTitle}>{sc.alias}</Text>
+                            <DataGrid items={sc.items.map(i => ({ label: i.label, value: i.value }))} />
+                          </View>
+                        ))}
+                      </View>
+                    );
+                  });
+                })()}
               </>
             ) : (
               /* Legacy flat layout */
