@@ -3035,7 +3035,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                               const formattedCalculated = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedPrice);
                               
                               // Calculate additionals for this specific quantity
-                              const additionals = calculateAdditionalsForQty(r.qty);
+                              const additionals = calculateAdditionalsForQty(r.qty, idx);
                               const hasAdditionals = additionals.breakdown.length > 0;
                               const totalWithAdditionals = displayPrice + additionals.total;
                               
