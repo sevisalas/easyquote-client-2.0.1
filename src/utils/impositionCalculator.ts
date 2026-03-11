@@ -53,7 +53,8 @@ export function calculateImposition(data: ImpositionData): CalculationResult {
     productHeight, 
     bleed, 
     gutterH, 
-    gutterV 
+    gutterV,
+    pagesPerSheet
   } = data;
   
   // Tamaño del producto con calles (el sangrado NO se suma como espacio extra
@@ -76,9 +77,51 @@ export function calculateImposition(data: ImpositionData): CalculationResult {
   // Elegir la mejor orientación DEL PRODUCTO
   const useVertical = total_prodVert > total_prodHoriz;
   
-  const repetitionsH = useVertical ? repsH_prodVert : repsH_prodHoriz;
-  const repetitionsV = useVertical ? repsV_prodVert : repsV_prodHoriz;
-  const totalRepetitions = repetitionsH * repetitionsV;
+  let repetitionsH = useVertical ? repsH_prodVert : repsH_prodHoriz;
+  let repetitionsV = useVertical ? repsV_prodVert : repsV_prodHoriz;
+  let totalRepetitions = repetitionsH * repetitionsV;
+  const rawTotalRepetitions = totalRepetitions;
+  
+  // ─── Ajuste por páginas/pliego para encuadernación ───
+  // pagesPerSheet > 0 indica que las repeticiones totales × 2 caras
+  // deben ajustarse al valor válido más cercano ≤ calculado
+  let adjustedPagesPerSheet: number | undefined;
+  if (pagesPerSheet && pagesPerSheet > 0) {
+    const totalPages = totalRepetitions * 2; // ambas caras del pliego
+    // Buscar el mayor valor válido ≤ totalPages
+    const validSorted = [...VALID_PAGES_PER_SHEET].sort((a, b) => b - a);
+    const snapped = validSorted.find(v => v <= totalPages) || validSorted[validSorted.length - 1];
+    adjustedPagesPerSheet = snapped;
+    // Recalcular repeticiones por cara
+    const adjustedPerSide = snapped / 2;
+    if (adjustedPerSide < totalRepetitions) {
+      totalRepetitions = adjustedPerSide;
+      // Ajustar H y V para que sigan siendo coherentes
+      // Mantener la relación original de aspecto H×V lo más posible
+      if (repetitionsH > 0 && repetitionsV > 0) {
+        // Intentar mantener repetitionsH y reducir repetitionsV
+        const newV = Math.floor(adjustedPerSide / repetitionsH);
+        if (newV > 0 && newV * repetitionsH === adjustedPerSide) {
+          repetitionsV = newV;
+        } else {
+          // Intentar mantener repetitionsV y reducir repetitionsH
+          const newH = Math.floor(adjustedPerSide / repetitionsV);
+          if (newH > 0 && newH * repetitionsV === adjustedPerSide) {
+            repetitionsH = newH;
+          } else {
+            // Factorización más cercana
+            for (let h = repetitionsH; h >= 1; h--) {
+              if (adjustedPerSide % h === 0) {
+                repetitionsH = h;
+                repetitionsV = adjustedPerSide / h;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
   
   // Calcular aprovechamiento
   const usedCellW = useVertical ? cellW_vert : cellW;
@@ -91,6 +134,8 @@ export function calculateImposition(data: ImpositionData): CalculationResult {
     repetitionsH,
     repetitionsV,
     totalRepetitions,
+    rawTotalRepetitions: rawTotalRepetitions !== totalRepetitions ? rawTotalRepetitions : undefined,
+    adjustedPagesPerSheet,
     utilization: Math.round(utilization * 10) / 10,
     orientation: useVertical ? 'vertical' : 'horizontal'
   };
@@ -106,6 +151,7 @@ export function updateCalculatedValues(data: ImpositionData): ImpositionData {
     repetitionsH: result.repetitionsH,
     repetitionsV: result.repetitionsV,
     totalRepetitions: result.totalRepetitions,
+    rawTotalRepetitions: result.rawTotalRepetitions,
     utilization: result.utilization,
     orientation: result.orientation
   };
