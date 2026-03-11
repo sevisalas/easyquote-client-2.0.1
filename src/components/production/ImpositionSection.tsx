@@ -88,6 +88,12 @@ async function resolveImpositionFromMappings(
     
     const apiUserId = orgData?.api_user_id;
 
+    // Get all orgs sharing the same api_user_id (cross-org mapping fallback)
+    const { data: siblingOrgs } = apiUserId
+      ? await supabase.from('organizations').select('id').eq('api_user_id', apiUserId)
+      : { data: null };
+    const allOrgIds = siblingOrgs?.map(o => o.id) || [organizationId];
+
     const [mappingsResult, labelsResult] = await Promise.all([
       supabase
         .from("product_variable_mappings")
@@ -100,7 +106,7 @@ async function resolveImpositionFromMappings(
           )
         `)
         .eq("easyquote_product_id", productId)
-        .eq("organization_id", organizationId),
+        .in("organization_id", allOrgIds),
       apiUserId
         ? supabase
             .from("product_prompt_settings")

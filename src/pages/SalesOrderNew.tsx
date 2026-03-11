@@ -616,6 +616,13 @@ export default function SalesOrderNew() {
 
             if (!prodSettings?.has_imposition) return null;
 
+            // Get all orgs sharing the same api_user_id (cross-org mapping fallback)
+            const { data: siblingOrgs } = await supabase
+              .from("organizations")
+              .select("id")
+              .eq("api_user_id", apiUserId);
+            const allOrgIds = siblingOrgs?.map(o => o.id) || [currentOrganization.id];
+
             // Fetch mappings and labels in parallel (labels by api_user_id for cross-org sharing)
             const [mappingsResult, labelsResult] = await Promise.all([
               supabase
@@ -629,7 +636,7 @@ export default function SalesOrderNew() {
                   )
                 `)
                 .eq("easyquote_product_id", productId)
-                .eq("organization_id", currentOrganization.id),
+                .in("organization_id", allOrgIds),
               supabase
                 .from("product_prompt_settings")
                 .select("prompt_name, label")
