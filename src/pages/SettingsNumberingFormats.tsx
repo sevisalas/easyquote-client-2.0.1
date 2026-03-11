@@ -196,7 +196,7 @@ export default function SettingsNumberingFormats() {
         if (organizationId) {
           existingQuery = existingQuery.eq('organization_id', organizationId);
         } else {
-          existingQuery = existingQuery.eq('user_id', user.id);
+          existingQuery = existingQuery.eq('user_id', user.id).is('organization_id', null);
         }
 
         const { data: existing } = await existingQuery.maybeSingle();
