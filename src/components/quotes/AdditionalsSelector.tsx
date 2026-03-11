@@ -83,11 +83,17 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
     // Generate unique ID to allow multiple instances of the same additional
     const uniqueId = `${additional.id}_${Date.now()}`
     
+    // Initialize multiValues by default if multiEnabled and net_amount
+    const initialMultiValues = (multiEnabled && predefinedType === 'net_amount') 
+      ? Array(qtyCount).fill(predefinedValue)
+      : undefined
+    
     const newSelected: SelectedAdditional = {
       id: uniqueId,
       name: additional.name,
       type: predefinedType,
       value: predefinedValue,
+      multiValues: initialMultiValues,
       is_discount: additional.is_discount || false,
       capacity_value: predefinedType === 'capacity_divider' ? predefinedCapacity : null
     }
@@ -113,11 +119,18 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
     if (!customName.trim()) return
 
     const customId = `custom_${Date.now()}`
+    
+    // Initialize multiValues by default if multiEnabled and net_amount
+    const initialMultiValues = (multiEnabled && customType === 'net_amount')
+      ? Array(qtyCount).fill(customValue)
+      : undefined
+    
     const newCustom: SelectedAdditional = {
       id: customId,
       name: customName.trim(),
       type: customType,
       value: customValue,
+      multiValues: initialMultiValues,
       isCustom: true,
       capacity_value: customType === 'capacity_divider' ? customCapacity : null
     }
