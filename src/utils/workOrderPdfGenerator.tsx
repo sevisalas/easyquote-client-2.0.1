@@ -356,16 +356,30 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
   return (
     <Document>
       {items.map((item, itemIndex) => {
-        // Filter out prompts with value "No" and sort by order
+        // Helper to check if a label is marked for OT (has a section assigned)
+        const isMarkedForOt = (label: string, isOutput: boolean): boolean => {
+          const key = label.trim().toUpperCase();
+          const map = isOutput ? outputSections : promptSections;
+          return !!map?.get(key);
+        };
+
+        // Filter out prompts with value "No", admin_only, and (in section mode) unmarked
         const sortedPrompts = [...(item.prompts || [])]
           .filter(p => {
             const val = formatVal(p.value);
             if (val === 'No' || val === 'no') return false;
             if (adminOnlyLabels && adminOnlyLabels.has(p.label.trim().toUpperCase())) return false;
+            if (useSections && !isMarkedForOt(p.label, false)) return false;
             return true;
           })
           .sort((a, b) => (a.order || 0) - (b.order || 0));
-        const outputs = [...(item.outputs || [])].sort((a, b) => a.name.localeCompare(b.name, 'es'));
+
+        const outputs = [...(item.outputs || [])]
+          .filter(o => {
+            if (useSections && !isMarkedForOt(o.name, true)) return false;
+            return true;
+          })
+          .sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
         // Detect imposition type
         const isSimple = item.imposition_data && typeof item.imposition_data.productWidth === 'number';
@@ -375,20 +389,9 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
           ? Object.entries(item.imposition_data).filter(([_, d]) => d && typeof (d as any).productWidth === 'number')
           : [];
 
-        // Extract composite component prompts/outputs into unified lists
+        // Extract composite component prompts/outputs
         type DataItem = { label: string; value: string; componentAlias?: string };
-        const allDataItems: DataItem[] = [];
-        
-        // Add top-level prompts
-        for (const p of sortedPrompts) {
-          allDataItems.push({ label: p.label, value: formatVal(p.value) });
-        }
-        // Add top-level outputs
-        for (const o of outputs) {
-          allDataItems.push({ label: o.name, value: formatVal(o.value) });
-        }
 
-        // Add component-level prompts/outputs for composite products
         const componentEntries: Array<{ alias: string; prompts: DataItem[]; outputs: DataItem[] }> = [];
         if (isComposite && item.composite_data?.components) {
           Object.entries(item.composite_data.components)
@@ -408,6 +411,7 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
                     const val = formatVal(p.currentValue ?? p.value);
                     if (val === 'No' || val === 'no') return;
                     if (adminOnlyLabels && adminOnlyLabels.has(label.trim().toUpperCase())) return;
+                    if (useSections && !isMarkedForOt(label, false)) return;
                     compPrompts.push({ label, value: val, componentAlias: alias });
                   });
               }
@@ -417,6 +421,7 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
                   .sort((a: any, b: any) => (a.name || '').localeCompare(b.name || '', 'es'))
                   .forEach((o: any) => {
                     const val = formatVal(o.value);
+                    if (useSections && !isMarkedForOt(o.name || '', true)) return;
                     compOutputs.push({ label: o.name || '', value: val, componentAlias: alias });
                   });
               }
