@@ -14,6 +14,8 @@ export interface ProductPromptSetting {
   force_result: boolean;
   is_hidden: boolean;
   is_quantity: boolean;
+  show_in_ot: boolean;
+  ot_section: string | null;
   created_at: string;
   updated_at: string;
 }
