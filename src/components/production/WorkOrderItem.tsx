@@ -18,9 +18,11 @@ interface WorkOrderItemProps {
   deliveryDate?: string;
   itemIndex: number;
   children?: React.ReactNode;
+  /** Filter function for output visibility (by output type) */
+  filterOutput?: (output: { name: string; type: string; value: any }) => boolean;
+  /** Filter function for prompt visibility (by prompt label) */
+  filterPrompt?: (prompt: { label: string; value: any }) => boolean;
 }
-
-// Output type filtering is now done by the parent using useOutputTypeVisibility
 
 export const WorkOrderItem = ({ 
   item, 
@@ -30,10 +32,18 @@ export const WorkOrderItem = ({
   deliveryDate,
   itemIndex,
   children,
+  filterOutput,
+  filterPrompt,
 }: WorkOrderItemProps) => {
-  const relevantOutputs = [...(item.outputs || [])].sort((a, b) => a.name.localeCompare(b.name, 'es'));
+  const applyOutputFilter = (outputs: Array<{ name: string; type: string; value: any }>) =>
+    filterOutput ? outputs.filter(filterOutput) : outputs;
 
-  const sortedPrompts = [...(item.prompts || [])].sort((a, b) => 
+  const applyPromptFilter = (prompts: Array<{ label: string; value: any; [k: string]: any }>) =>
+    filterPrompt ? prompts.filter(filterPrompt) : prompts;
+
+  const relevantOutputs = applyOutputFilter([...(item.outputs || [])]).sort((a, b) => a.name.localeCompare(b.name, 'es'));
+
+  const sortedPrompts = applyPromptFilter([...(item.prompts || [])]).sort((a: any, b: any) => 
     (a.order || 0) - (b.order || 0)
   );
 
@@ -72,14 +82,14 @@ export const WorkOrderItem = ({
           <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Configuración</p>
           <div className="border border-border rounded-sm overflow-hidden">
             <div className="grid grid-cols-2 md:grid-cols-4 text-[11px]">
-              {sortedPrompts.map((prompt, idx) => {
+              {sortedPrompts.map((prompt: any, idx: number) => {
                 const value = formatValue(prompt.value);
                 const isImage = typeof prompt.value === 'string' && 
                   (prompt.value.startsWith('http://') || prompt.value.startsWith('https://'));
                 
                 return (
                   <div 
-                    key={prompt.id} 
+                    key={prompt.id || idx} 
                     className={`flex gap-1 px-2 py-1 ${idx % 2 === 0 ? 'bg-muted/20' : 'bg-muted/40'} border-b border-border/50 last:border-b-0`}
                   >
                     <span className="font-semibold text-muted-foreground whitespace-nowrap">{prompt.label}:</span>
@@ -143,12 +153,20 @@ export const WorkOrderItem = ({
               (a.alias || '').localeCompare(b.alias || '', 'es')
             )
             .map(([compKey, compData]: [string, any]) => {
-              const compPrompts = Array.isArray(compData.prompts) 
+              const rawPrompts = Array.isArray(compData.prompts) 
                 ? [...compData.prompts].sort((a: any, b: any) => (a.promptSequence || 0) - (b.promptSequence || 0))
                 : [];
-              const compOutputs = Array.isArray(compData.outputs)
+              const rawOutputs = Array.isArray(compData.outputs)
                 ? [...compData.outputs].sort((a: any, b: any) => (a.name || '').localeCompare(b.name || '', 'es'))
                 : [];
+
+              // Apply filters to composite component data too
+              const compPrompts = filterPrompt
+                ? rawPrompts.filter((p: any) => filterPrompt({ label: p.promptText || p.label || '', value: p.currentValue ?? p.value }))
+                : rawPrompts;
+              const compOutputs = filterOutput
+                ? rawOutputs.filter((o: any) => filterOutput({ name: o.name || '', type: o.type || '', value: o.value }))
+                : rawOutputs;
 
               return (
                 <div key={compKey} className="border border-border rounded-sm overflow-hidden">
