@@ -602,6 +602,8 @@ export default function ProductManagement() {
       isHidden,
       isQuantity,
       label,
+      showInOt,
+      otSection,
     }: {
       productId: string;
       promptName: string;
@@ -611,6 +613,8 @@ export default function ProductManagement() {
       isHidden?: boolean;
       isQuantity?: boolean;
       label?: string;
+      showInOt?: boolean;
+      otSection?: string | null;
     }) => {
       const normalizePromptKey = (v: string) =>
         String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
