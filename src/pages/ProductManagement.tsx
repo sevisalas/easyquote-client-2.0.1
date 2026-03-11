@@ -822,6 +822,22 @@ export default function ProductManagement() {
     return setting?.is_quantity || false;
   };
 
+  // Helper to check if prompt is shown in OT
+  const isPromptInOt = (promptName: string): boolean => {
+    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+    const key = normalizePromptKey(promptName);
+    const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
+    return setting?.show_in_ot || false;
+  };
+
+  // Helper to get OT section for a prompt
+  const getPromptOtSection = (promptName: string): string | null => {
+    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+    const key = normalizePromptKey(promptName);
+    const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
+    return setting?.ot_section || null;
+  };
+
   // Helper to get saved label for a prompt
   const getPromptLabel = (promptName: string): string | undefined => {
     const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
