@@ -99,13 +99,79 @@ Deno.serve(async (req) => {
 
     // Check if user already exists
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
-    const userExists = existingUsers.users?.some(user => user.email === email)
+    const existingUser = existingUsers.users?.find(u => u.email === email)
     
-    if (userExists) {
-      console.log('User already exists with email:', email)
+    let finalUser = null;
+
+    if (existingUser) {
+      console.log('User already exists with email:', email, '- checking if we can add to organization')
+
+      // If superadmin creating a new subscriber (with org), block duplicate
+      if (isSuperAdmin && organizationName && subscriptionPlan) {
+        return new Response(
+          JSON.stringify({ 
+            error: `El usuario con email ${email} ya existe en el sistema. Usa un email diferente o contacta al administrador.`,
+            code: 'USER_EXISTS'
+          }),
+          { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // For org admins: add existing user to their organization
+      if (organizationId) {
+        // Check if already a member
+        const { data: existingMember } = await supabaseAdmin
+          .from('organization_members')
+          .select('id')
+          .eq('organization_id', organizationId)
+          .eq('user_id', existingUser.id)
+          .maybeSingle();
+
+        if (existingMember) {
+          return new Response(
+            JSON.stringify({ 
+              error: `El usuario ${email} ya es miembro de esta organización.`,
+              code: 'ALREADY_MEMBER'
+            }),
+            { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        const memberDisplayName = displayName || email.split('@')[0];
+        const { error: memberError } = await supabaseAdmin
+          .from('organization_members')
+          .insert({
+            organization_id: organizationId,
+            user_id: existingUser.id,
+            role: role,
+            display_name: memberDisplayName
+          });
+
+        if (memberError) {
+          console.error('Error adding existing user to organization:', memberError);
+          return new Response(
+            JSON.stringify({ error: 'Error al añadir usuario a la organización: ' + memberError.message }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            user: {
+              id: existingUser.id,
+              email: existingUser.email,
+              created_at: existingUser.created_at
+            },
+            added_to_existing: true
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
       return new Response(
         JSON.stringify({ 
-          error: `El usuario con email ${email} ya existe en el sistema. Usa un email diferente o contacta al administrador.`,
+          error: `El usuario con email ${email} ya existe. Si quieres añadirlo a tu organización, selecciona la organización correcta.`,
           code: 'USER_EXISTS'
         }),
         { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -117,7 +183,7 @@ Deno.serve(async (req) => {
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // Auto-confirm so no email needed
+      email_confirm: true,
       user_metadata: {
         created_by_admin: true
       }
@@ -158,7 +224,6 @@ Deno.serve(async (req) => {
 
       if (orgError) {
         console.error('Error creating organization:', orgError);
-        // Delete the user if organization creation fails
         await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
         return new Response(
           JSON.stringify({ error: 'Error creating organization: ' + orgError.message }),
@@ -183,7 +248,6 @@ Deno.serve(async (req) => {
 
       if (memberError) {
         console.error('Error adding user to organization:', memberError);
-        // Don't fail the entire operation, just log the error
       }
     }
 
