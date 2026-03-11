@@ -623,7 +623,7 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
 // ─── Public API ─────────────────────────────────────────────
 
 export const generateWorkOrderPDF = async (
-  options: Omit<WorkOrderPDFOptions, 'logoUrl' | 'companyName'>
+  options: Omit<WorkOrderPDFOptions, 'logoUrl' | 'companyName' | 'promptSections' | 'outputSections' | 'useSections'>
 ): Promise<void> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -646,6 +646,9 @@ export const generateWorkOrderPDF = async (
     let customerEmail = '';
     let customerPhone = '';
     let adminOnlyLabels = new Set<string>();
+    let promptSections = new Map<string, string>();
+    let outputSections = new Map<string, string>();
+    let useSections = false;
 
     if (options.orderId) {
       const { data: order } = await supabase
@@ -667,7 +670,7 @@ export const generateWorkOrderPDF = async (
         }
       }
 
-      // Load admin_only prompt labels to filter from OT PDF
+      // Load admin_only prompt labels and section assignments
       if (order?.organization_id) {
         const { data: orgData } = await supabase
           .from('organizations')
@@ -676,16 +679,70 @@ export const generateWorkOrderPDF = async (
           .maybeSingle();
 
         if (orgData?.api_user_id) {
-          const { data: settings } = await supabase
+          // Load prompt settings (admin_only + ot_section)
+          const { data: promptSettings } = await supabase
             .from('product_prompt_settings')
-            .select('prompt_name, label')
-            .eq('api_user_id', orgData.api_user_id)
-            .eq('admin_only', true);
+            .select('prompt_name, label, admin_only, show_in_ot, ot_section')
+            .eq('api_user_id', orgData.api_user_id);
 
-          settings?.forEach(s => {
-            if (s.label) adminOnlyLabels.add(s.label.trim().toUpperCase());
-            if (s.prompt_name) adminOnlyLabels.add(s.prompt_name.trim().toUpperCase());
+          promptSettings?.forEach(s => {
+            if (s.admin_only) {
+              if (s.label) adminOnlyLabels.add(s.label.trim().toUpperCase());
+              if (s.prompt_name) adminOnlyLabels.add(s.prompt_name.trim().toUpperCase());
+            }
+            if (s.show_in_ot && s.ot_section) {
+              useSections = true;
+              if (s.label) promptSections.set(s.label.trim().toUpperCase(), s.ot_section);
+              if (s.prompt_name) promptSections.set(s.prompt_name.trim().toUpperCase(), s.ot_section);
+            }
           });
+
+          // Load output OT section settings
+          const { data: outputOtSettings } = await supabase
+            .from('product_output_ot_settings' as any)
+            .select('output_name, label, show_in_ot, ot_section')
+            .eq('api_user_id', orgData.api_user_id);
+
+          (outputOtSettings as any[])?.forEach((s: any) => {
+            if (s.show_in_ot && s.ot_section) {
+              useSections = true;
+              if (s.output_name) outputSections.set(s.output_name.trim().toUpperCase(), s.ot_section);
+              if (s.label) outputSections.set(s.label.trim().toUpperCase(), s.ot_section);
+            }
+          });
+
+          // Also load composite product prompts/outputs with ot_section
+          const productIds = [...new Set(options.items.filter(i => i.product_id).map(i => i.product_id!))];
+          if (productIds.length > 0) {
+            const [{ data: compositePrompts }, { data: compositeOutputs }] = await Promise.all([
+              supabase
+                .from('composite_product_prompts')
+                .select('name, label, show_in_ot, ot_section')
+                .eq('api_user_id', orgData.api_user_id)
+                .in('easyquote_product_id', productIds),
+              supabase
+                .from('composite_product_outputs')
+                .select('name, label, show_in_ot, ot_section')
+                .eq('api_user_id', orgData.api_user_id)
+                .in('easyquote_product_id', productIds),
+            ]);
+
+            compositePrompts?.forEach(s => {
+              if (s.show_in_ot && s.ot_section) {
+                useSections = true;
+                if (s.label) promptSections.set(s.label.trim().toUpperCase(), s.ot_section);
+                if (s.name) promptSections.set(s.name.trim().toUpperCase(), s.ot_section);
+              }
+            });
+
+            compositeOutputs?.forEach(s => {
+              if (s.show_in_ot && s.ot_section) {
+                useSections = true;
+                if (s.label) outputSections.set(s.label.trim().toUpperCase(), s.ot_section);
+                if (s.name) outputSections.set(s.name.trim().toUpperCase(), s.ot_section);
+              }
+            });
+          }
         }
       }
     }
@@ -698,6 +755,9 @@ export const generateWorkOrderPDF = async (
         customerEmail={customerEmail}
         customerPhone={customerPhone}
         adminOnlyLabels={adminOnlyLabels}
+        promptSections={promptSections}
+        outputSections={outputSections}
+        useSections={useSections}
       />
     ).toBlob();
 
