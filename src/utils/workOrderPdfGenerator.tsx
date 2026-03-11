@@ -361,12 +361,10 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
           .filter(p => {
             const val = formatVal(p.value);
             if (val === 'No' || val === 'no') return false;
-            // Filter admin_only prompts from work order PDF
             if (adminOnlyLabels && adminOnlyLabels.has(p.label.trim().toUpperCase())) return false;
             return true;
           })
           .sort((a, b) => (a.order || 0) - (b.order || 0));
-        // Outputs already come pre-filtered by production visibility from the caller
         const outputs = [...(item.outputs || [])].sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
         // Detect imposition type
@@ -376,6 +374,58 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
         const compositeImpositions = !isSimple && isComposite && item.imposition_data
           ? Object.entries(item.imposition_data).filter(([_, d]) => d && typeof (d as any).productWidth === 'number')
           : [];
+
+        // Extract composite component prompts/outputs into unified lists
+        type DataItem = { label: string; value: string; componentAlias?: string };
+        const allDataItems: DataItem[] = [];
+        
+        // Add top-level prompts
+        for (const p of sortedPrompts) {
+          allDataItems.push({ label: p.label, value: formatVal(p.value) });
+        }
+        // Add top-level outputs
+        for (const o of outputs) {
+          allDataItems.push({ label: o.name, value: formatVal(o.value) });
+        }
+
+        // Add component-level prompts/outputs for composite products
+        const componentEntries: Array<{ alias: string; prompts: DataItem[]; outputs: DataItem[] }> = [];
+        if (isComposite && item.composite_data?.components) {
+          Object.entries(item.composite_data.components)
+            .sort(([, a]: [string, any], [, b]: [string, any]) => 
+              (a.alias || '').localeCompare(b.alias || '', 'es')
+            )
+            .forEach(([compKey, compData]: [string, any]) => {
+              const alias = compData.alias || compKey;
+              const compPrompts: DataItem[] = [];
+              const compOutputs: DataItem[] = [];
+
+              if (Array.isArray(compData.prompts)) {
+                [...compData.prompts]
+                  .sort((a: any, b: any) => (a.promptSequence || 0) - (b.promptSequence || 0))
+                  .forEach((p: any) => {
+                    const label = p.promptText || p.label || '';
+                    const val = formatVal(p.currentValue ?? p.value);
+                    if (val === 'No' || val === 'no') return;
+                    if (adminOnlyLabels && adminOnlyLabels.has(label.trim().toUpperCase())) return;
+                    compPrompts.push({ label, value: val, componentAlias: alias });
+                  });
+              }
+
+              if (Array.isArray(compData.outputs)) {
+                [...compData.outputs]
+                  .sort((a: any, b: any) => (a.name || '').localeCompare(b.name || '', 'es'))
+                  .forEach((o: any) => {
+                    const val = formatVal(o.value);
+                    compOutputs.push({ label: o.name || '', value: val, componentAlias: alias });
+                  });
+              }
+
+              if (compPrompts.length > 0 || compOutputs.length > 0) {
+                componentEntries.push({ alias, prompts: compPrompts, outputs: compOutputs });
+              }
+            });
+        }
 
         return (
           <Page key={itemIndex} size="A4" style={styles.page}>
