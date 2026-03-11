@@ -178,6 +178,79 @@ Deno.serve(async (req) => {
       )
     }
 
+
+    // Create user directly with admin API - bypasses all signup restrictions
+    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        created_by_admin: true
+      }
+    })
+
+    if (createError) {
+      console.error('Error creating user:', createError)
+      return new Response(
+        JSON.stringify({ error: createError.message }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!newUser.user) {
+      console.error('User creation returned null user')
+      return new Response(
+        JSON.stringify({ error: 'User creation failed - no user returned' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log('User created successfully:', newUser.user.email)
+
+    let organizationData = null;
+
+    // If this is a superadmin creating an organization (new subscriber)
+    if (isSuperAdmin && organizationName && subscriptionPlan) {
+      console.log('Creating organization:', organizationName, 'for user:', newUser.user.id)
+      const { data: orgData, error: orgError } = await supabaseAdmin
+        .from('organizations')
+        .insert({
+          name: organizationName,
+          subscription_plan: subscriptionPlan,
+          api_user_id: newUser.user.id,
+        })
+        .select()
+        .single();
+
+      if (orgError) {
+        console.error('Error creating organization:', orgError);
+        await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
+        return new Response(
+          JSON.stringify({ error: 'Error creating organization: ' + orgError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      console.log('Organization created successfully:', orgData.id)
+      organizationData = orgData;
+    }
+
+    // If organizationId is provided and user is not superadmin, add user to organization
+    if (organizationId && !isSuperAdmin && newUser.user) {
+      const memberDisplayName = displayName || email.split('@')[0];
+      const { error: memberError } = await supabaseAdmin
+        .from('organization_members')
+        .insert({
+          organization_id: organizationId,
+          user_id: newUser.user.id,
+          role: role,
+          display_name: memberDisplayName
+        });
+
+      if (memberError) {
+        console.error('Error adding user to organization:', memberError);
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
