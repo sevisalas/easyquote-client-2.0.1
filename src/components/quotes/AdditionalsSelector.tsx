@@ -134,8 +134,30 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
 
   const updateAdditionalValue = (id: string, value: number) => {
     onChange(selectedAdditionals.map(sa => 
-      sa.id === id ? { ...sa, value } : sa
+      sa.id === id ? { ...sa, value, multiValues: undefined } : sa
     ))
+  }
+
+  const updateAdditionalMultiValue = (id: string, qtyIndex: number, value: number) => {
+    onChange(selectedAdditionals.map(sa => {
+      if (sa.id !== id) return sa;
+      const mv = [...(sa.multiValues || Array(qtyCount).fill(sa.value))];
+      mv[qtyIndex] = value;
+      return { ...sa, multiValues: mv, value: mv[0] ?? sa.value };
+    }))
+  }
+
+  const toggleMultiMode = (id: string) => {
+    onChange(selectedAdditionals.map(sa => {
+      if (sa.id !== id || sa.type !== 'net_amount') return sa;
+      if (sa.multiValues) {
+        // Collapse back to single value (use first)
+        return { ...sa, value: sa.multiValues[0] ?? sa.value, multiValues: undefined };
+      } else {
+        // Expand to multi: fill all with current value
+        return { ...sa, multiValues: Array(qtyCount).fill(sa.value) };
+      }
+    }))
   }
 
   return (
