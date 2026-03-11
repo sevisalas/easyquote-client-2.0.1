@@ -1,3 +1,6 @@
+// Valores válidos de páginas por pliego (total ambas caras) para encuadernación
+export const VALID_PAGES_PER_SHEET = [4, 8, 12, 16, 24, 32] as const;
+
 export interface ImpositionData {
   // Producto
   productWidth: number;  // mm
@@ -12,10 +15,15 @@ export interface ImpositionData {
   gutterH: number;       // mm (calle horizontal)
   gutterV: number;       // mm (calle vertical)
   
+  // Encuadernación: páginas por pliego (total ambas caras)
+  // Cuando > 0, totalRepetitions se ajusta al valor válido más cercano ≤ calculado
+  pagesPerSheet?: number;
+  
   // Calculados
   repetitionsH?: number;
   repetitionsV?: number;
   totalRepetitions?: number;
+  rawTotalRepetitions?: number; // antes del ajuste por pagesPerSheet
   utilization?: number;  // % aprovechamiento
   orientation?: 'horizontal' | 'vertical';
 
