@@ -16,6 +16,8 @@ export interface CompositePrompt {
   options: any | null;
   is_required: boolean;
   is_hidden: boolean;
+  show_in_ot: boolean;
+  ot_section: string | null;
   display_order: number;
   created_at: string;
   updated_at: string;
