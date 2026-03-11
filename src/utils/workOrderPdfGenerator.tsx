@@ -158,6 +158,19 @@ const styles = StyleSheet.create({
   },
 });
 
+// ─── Section definitions ────────────────────────────────────
+
+const OT_SECTION_LABELS: Record<string, string> = {
+  datos_destacados: 'DATOS DESTACADOS',
+  impresion: 'IMPRESIÓN',
+  acabados: 'ACABADOS',
+  imposiciones: 'IMPOSICIONES',
+  ajustes: 'AJUSTES',
+  observaciones: 'OBSERVACIONES Y NOTAS',
+};
+
+const OT_SECTION_ORDER = ['datos_destacados', 'impresion', 'acabados', 'imposiciones', 'ajustes', 'observaciones'];
+
 // ─── Interfaces ─────────────────────────────────────────────
 
 interface WorkOrderPDFOptions {
@@ -171,6 +184,7 @@ interface WorkOrderPDFOptions {
   items: Array<{
     id: string;
     product_name: string;
+    product_id?: string;
     quantity: number;
     prompts?: Array<{ label: string; value: any; order?: number }>;
     outputs?: Array<{ name: string; type: string; value: any }>;
@@ -182,6 +196,12 @@ interface WorkOrderPDFOptions {
   logoUrl?: string;
   companyName?: string;
   adminOnlyLabels?: Set<string>;
+  /** Map: normalized prompt label → ot_section */
+  promptSections?: Map<string, string>;
+  /** Map: normalized output name → ot_section */
+  outputSections?: Map<string, string>;
+  /** Whether to use section-based layout */
+  useSections?: boolean;
 }
 
 // ─── Visual Imposition Diagram (mirrors ImpositionScheme.tsx logic) ──────
