@@ -3117,6 +3117,45 @@ export default function ProductManagement() {
                                 }
                               }} />
                               </div>
+                              <div className="flex items-center gap-2">
+                                <Label className="text-sm font-medium whitespace-nowrap">OT</Label>
+                                <Switch checked={isPromptInOt(prompt.promptCell)} onCheckedChange={checked => {
+                                if (selectedProduct) {
+                                  upsertPromptSettingMutation.mutate({
+                                    productId: selectedProduct.id,
+                                    promptName: prompt.promptCell,
+                                    showInOt: checked,
+                                    otSection: checked ? (getPromptOtSection(prompt.promptCell) || 'datos_destacados') : null,
+                                  });
+                                }
+                              }} />
+                              </div>
+                              {isPromptInOt(prompt.promptCell) && (
+                                <div className="flex items-center gap-2">
+                                  <Label className="text-sm font-medium whitespace-nowrap">Sección OT</Label>
+                                  <Select value={getPromptOtSection(prompt.promptCell) || "datos_destacados"} onValueChange={value => {
+                                    if (selectedProduct) {
+                                      upsertPromptSettingMutation.mutate({
+                                        productId: selectedProduct.id,
+                                        promptName: prompt.promptCell,
+                                        otSection: value,
+                                      });
+                                    }
+                                  }}>
+                                    <SelectTrigger className="w-44">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-background border shadow-lg z-50">
+                                      <SelectItem value="datos_destacados">Datos destacados</SelectItem>
+                                      <SelectItem value="impresion">Impresión</SelectItem>
+                                      <SelectItem value="acabados">Acabados</SelectItem>
+                                      <SelectItem value="imposiciones">Imposiciones</SelectItem>
+                                      <SelectItem value="ajustes">Ajustes</SelectItem>
+                                      <SelectItem value="observaciones">Observaciones</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              )}
                               {/* Etiqueta y Variable de prod. en la misma línea */}
                               <div className="flex items-center gap-4 flex-1">
                                 <div className="flex items-center gap-2 flex-1">
