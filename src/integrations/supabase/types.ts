@@ -290,6 +290,8 @@ export type Database = {
           label: string
           name: string
           organization_id: string
+          ot_section: string | null
+          show_in_ot: boolean
           type: string
           updated_at: string
         }
@@ -303,6 +305,8 @@ export type Database = {
           label: string
           name: string
           organization_id: string
+          ot_section?: string | null
+          show_in_ot?: boolean
           type?: string
           updated_at?: string
         }
@@ -316,6 +320,8 @@ export type Database = {
           label?: string
           name?: string
           organization_id?: string
+          ot_section?: string | null
+          show_in_ot?: boolean
           type?: string
           updated_at?: string
         }
@@ -335,6 +341,8 @@ export type Database = {
           name: string
           options: Json | null
           organization_id: string
+          ot_section: string | null
+          show_in_ot: boolean
           type: string
           updated_at: string
         }
@@ -351,6 +359,8 @@ export type Database = {
           name: string
           options?: Json | null
           organization_id: string
+          ot_section?: string | null
+          show_in_ot?: boolean
           type?: string
           updated_at?: string
         }
@@ -367,6 +377,8 @@ export type Database = {
           name?: string
           options?: Json | null
           organization_id?: string
+          ot_section?: string | null
+          show_in_ot?: boolean
           type?: string
           updated_at?: string
         }
@@ -1893,6 +1905,60 @@ export type Database = {
           },
         ]
       }
+      product_output_ot_settings: {
+        Row: {
+          api_user_id: string
+          created_at: string | null
+          easyquote_product_id: string
+          id: string
+          label: string | null
+          organization_id: string
+          ot_section: string | null
+          output_name: string
+          show_in_ot: boolean
+          updated_at: string | null
+        }
+        Insert: {
+          api_user_id: string
+          created_at?: string | null
+          easyquote_product_id: string
+          id?: string
+          label?: string | null
+          organization_id: string
+          ot_section?: string | null
+          output_name: string
+          show_in_ot?: boolean
+          updated_at?: string | null
+        }
+        Update: {
+          api_user_id?: string
+          created_at?: string | null
+          easyquote_product_id?: string
+          id?: string
+          label?: string | null
+          organization_id?: string
+          ot_section?: string | null
+          output_name?: string
+          show_in_ot?: boolean
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_output_ot_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "product_output_ot_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_prompt_components: {
         Row: {
           api_user_id: string
@@ -1954,7 +2020,9 @@ export type Database = {
           is_quantity: boolean
           label: string | null
           organization_id: string
+          ot_section: string | null
           prompt_name: string
+          show_in_ot: boolean
           updated_at: string
         }
         Insert: {
@@ -1969,7 +2037,9 @@ export type Database = {
           is_quantity?: boolean
           label?: string | null
           organization_id: string
+          ot_section?: string | null
           prompt_name: string
+          show_in_ot?: boolean
           updated_at?: string
         }
         Update: {
@@ -1984,7 +2054,9 @@ export type Database = {
           is_quantity?: boolean
           label?: string | null
           organization_id?: string
+          ot_section?: string | null
           prompt_name?: string
+          show_in_ot?: boolean
           updated_at?: string
         }
         Relationships: [
