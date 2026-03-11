@@ -719,6 +719,8 @@ export default function ProductManagement() {
           force_result: forceResult,
           is_hidden: isHidden,
           label,
+          show_in_ot: showInOt,
+          ot_section: otSection,
         },
       };
     },
