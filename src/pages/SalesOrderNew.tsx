@@ -506,7 +506,13 @@ export default function SalesOrderNew() {
                 }
               }
 
-              // 2. Create tasks from mapped production variables
+              // 2. Create tasks from mapped production variables (search across sibling orgs)
+              const { data: sibOrgs } = await supabase
+                .from("organizations")
+                .select("id")
+                .eq("api_user_id", currentOrganization.api_user_id);
+              const allOrgIds = sibOrgs?.map(o => o.id) || [currentOrganization.id];
+
               const { data: mappings } = await supabase
                 .from("product_variable_mappings")
                 .select(`
@@ -521,7 +527,7 @@ export default function SalesOrderNew() {
                   )
                 `)
                 .eq("easyquote_product_id", item.product_id)
-                .eq("organization_id", currentOrganization.id);
+                .in("organization_id", allOrgIds);
 
               if (mappings && mappings.length > 0) {
                 for (const mapping of mappings) {

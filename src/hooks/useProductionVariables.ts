@@ -50,22 +50,37 @@ export function useProductionVariables() {
   const queryClient = useQueryClient();
   const { organization } = useSubscription();
 
-  const { data: variables, isLoading } = useQuery({
-    queryKey: ["production-variables", organization?.id],
+  // Get all sibling org IDs sharing the same api_user_id
+  const { data: siblingOrgIds } = useQuery({
+    queryKey: ["sibling-org-ids", organization?.api_user_id],
     queryFn: async () => {
-      if (!organization?.id) return [];
+      if (!organization?.api_user_id) return [];
+      const { data } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("api_user_id", organization.api_user_id);
+      return data?.map(o => o.id) || [];
+    },
+    enabled: !!organization?.api_user_id,
+    staleTime: 1000 * 60 * 30,
+  });
+
+  const { data: variables, isLoading } = useQuery({
+    queryKey: ["production-variables", organization?.api_user_id],
+    queryFn: async () => {
+      if (!siblingOrgIds || siblingOrgIds.length === 0) return [];
       
       const { data, error } = await supabase
         .from("production_variables")
         .select("*")
-        .eq("organization_id", organization.id)
+        .in("organization_id", siblingOrgIds)
         .order("name");
 
       if (error) throw error;
       return data as ProductionVariable[];
     },
-    enabled: !!organization?.id,
-    staleTime: 1000 * 60 * 5 // 5 minutes
+    enabled: !!siblingOrgIds && siblingOrgIds.length > 0,
+    staleTime: 1000 * 60 * 5
   });
 
   const createMutation = useMutation({

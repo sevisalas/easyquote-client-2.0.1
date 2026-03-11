@@ -19,21 +19,36 @@ export function useProductVariableMappings(easyquoteProductId?: string) {
   const queryClient = useQueryClient();
   const { organization } = useSubscription();
 
-  const { data: mappings, isLoading } = useQuery({
-    queryKey: ["product-variable-mappings", organization?.id, easyquoteProductId],
+  // Get all sibling org IDs sharing the same api_user_id
+  const { data: siblingOrgIds } = useQuery({
+    queryKey: ["sibling-org-ids", organization?.api_user_id],
     queryFn: async () => {
-      if (!organization?.id || !easyquoteProductId) return [];
+      if (!organization?.api_user_id) return [];
+      const { data } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("api_user_id", organization.api_user_id);
+      return data?.map(o => o.id) || [];
+    },
+    enabled: !!organization?.api_user_id,
+    staleTime: 1000 * 60 * 30,
+  });
+
+  const { data: mappings, isLoading } = useQuery({
+    queryKey: ["product-variable-mappings", organization?.api_user_id, easyquoteProductId],
+    queryFn: async () => {
+      if (!siblingOrgIds || siblingOrgIds.length === 0 || !easyquoteProductId) return [];
       
       const { data, error } = await supabase
         .from("product_variable_mappings")
         .select("*")
-        .eq("organization_id", organization.id)
+        .in("organization_id", siblingOrgIds)
         .eq("easyquote_product_id", easyquoteProductId);
 
       if (error) throw error;
       return data as ProductVariableMapping[];
     },
-    enabled: !!organization?.id && !!easyquoteProductId,
+    enabled: !!siblingOrgIds && siblingOrgIds.length > 0 && !!easyquoteProductId,
   });
 
   const upsertMutation = useMutation({
