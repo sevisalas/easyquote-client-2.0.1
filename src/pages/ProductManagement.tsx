@@ -117,6 +117,10 @@ function SortableOutputItem({
   selectedProduct,
   labelValue,
   onLabelChange,
+  isOutputInOt,
+  getOutputOtSection,
+  onOtToggle,
+  onOtSectionChange,
 }: {
   output: ProductOutput;
   index: number;
@@ -131,6 +135,10 @@ function SortableOutputItem({
   selectedProduct: EasyQuoteProduct | null;
   labelValue: string;
   onLabelChange: (value: string) => void;
+  isOutputInOt: boolean;
+  getOutputOtSection: string | null;
+  onOtToggle: (checked: boolean) => void;
+  onOtSectionChange: (section: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({
