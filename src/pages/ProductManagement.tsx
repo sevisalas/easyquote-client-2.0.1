@@ -3223,10 +3223,6 @@ export default function ProductManagement() {
                                           {variable.name}
                                         </SelectItem>
                                       ))}
-                                        <SelectItem key={variable.id} value={variable.id}>
-                                          {variable.name}
-                                        </SelectItem>
-                                      ))}
                                     </SelectContent>
                                   </Select>
                                 </div>
