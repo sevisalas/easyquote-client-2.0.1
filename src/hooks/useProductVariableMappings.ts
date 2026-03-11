@@ -140,14 +140,14 @@ export function useProductVariableMappings(easyquoteProductId?: string) {
       easyquoteProductId: string;
       promptOrOutputName: string;
     }) => {
-      if (!organization?.id) {
+      if (!siblingOrgIds || siblingOrgIds.length === 0) {
         throw new Error("No organization found");
       }
 
       const { error } = await supabase
         .from("product_variable_mappings")
         .delete()
-        .eq("organization_id", organization.id)
+        .in("organization_id", siblingOrgIds)
         .eq("easyquote_product_id", easyquoteProductId)
         .eq("prompt_or_output_name", promptOrOutputName);
 
