@@ -302,7 +302,7 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
                       onClick={() => {
                         const q1Value = additional.multiValues?.[0] ?? additional.value;
                         onChange(selectedAdditionals.map(sa => {
-                          if (sa.id !== id) return sa;
+                          if (sa.id !== additional.id) return sa;
                           return { ...sa, multiValues: Array(qtyCount).fill(q1Value) };
                         }));
                       }}
