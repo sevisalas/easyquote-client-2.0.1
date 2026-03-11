@@ -650,6 +650,8 @@ export default function ProductManagement() {
         is_hidden?: boolean;
         is_quantity?: boolean;
         label?: string;
+        show_in_ot?: boolean;
+        ot_section?: string | null;
         updated_at: string;
       } = {
         updated_at: new Date().toISOString(),
