@@ -304,20 +304,11 @@ function SortableOutputItem({
               </SelectTrigger>
               <SelectContent className="bg-background border shadow-lg z-50">
                 <SelectItem value="none">Sin variable asignada</SelectItem>
-                {productionVariables
-                  .filter((v) => {
-                    const mappedNames = getMappedNames();
-                    const currentMapping = getMappedVariableId(output.nameCell);
-                    return (
-                      !mappedNames.includes(output.nameCell) ||
-                      (currentMapping && v.id === currentMapping)
-                    );
-                  })
-                  .map((variable) => (
-                    <SelectItem key={variable.id} value={variable.id}>
-                      {variable.name}
-                    </SelectItem>
-                  ))}
+                {productionVariables.map((variable) => (
+                  <SelectItem key={variable.id} value={variable.id}>
+                    {variable.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -3227,11 +3218,7 @@ export default function ProductManagement() {
                                     </SelectTrigger>
                                     <SelectContent className="bg-background border shadow-lg z-50">
                                       <SelectItem value="none">Sin variable asignada</SelectItem>
-                                      {productionVariables.filter(v => {
-                                        const mappedNames = getMappedNames();
-                                        const currentMapping = getMappedVariableId(prompt.promptCell);
-                                        return !mappedNames.includes(prompt.promptCell) || currentMapping && v.id === currentMapping;
-                                      }).map(variable => (
+                                      {productionVariables.map(variable => (
                                         <SelectItem key={variable.id} value={variable.id}>
                                           {variable.name}
                                         </SelectItem>
