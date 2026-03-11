@@ -158,6 +158,19 @@ const styles = StyleSheet.create({
   },
 });
 
+// ─── Section definitions ────────────────────────────────────
+
+const OT_SECTION_LABELS: Record<string, string> = {
+  datos_destacados: 'DATOS DESTACADOS',
+  impresion: 'IMPRESIÓN',
+  acabados: 'ACABADOS',
+  imposiciones: 'IMPOSICIONES',
+  ajustes: 'AJUSTES',
+  observaciones: 'OBSERVACIONES Y NOTAS',
+};
+
+const OT_SECTION_ORDER = ['datos_destacados', 'impresion', 'acabados', 'imposiciones', 'ajustes', 'observaciones'];
+
 // ─── Interfaces ─────────────────────────────────────────────
 
 interface WorkOrderPDFOptions {
@@ -171,6 +184,7 @@ interface WorkOrderPDFOptions {
   items: Array<{
     id: string;
     product_name: string;
+    product_id?: string;
     quantity: number;
     prompts?: Array<{ label: string; value: any; order?: number }>;
     outputs?: Array<{ name: string; type: string; value: any }>;
@@ -182,6 +196,12 @@ interface WorkOrderPDFOptions {
   logoUrl?: string;
   companyName?: string;
   adminOnlyLabels?: Set<string>;
+  /** Map: normalized prompt label → ot_section */
+  promptSections?: Map<string, string>;
+  /** Map: normalized output name → ot_section */
+  outputSections?: Map<string, string>;
+  /** Whether to use section-based layout */
+  useSections?: boolean;
 }
 
 // ─── Visual Imposition Diagram (mirrors ImpositionScheme.tsx logic) ──────
@@ -323,6 +343,9 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
   logoUrl,
   companyName,
   adminOnlyLabels,
+  promptSections,
+  outputSections,
+  useSections,
 }) => {
   const formatVal = (v: any): string => {
     if (v === null || v === undefined) return '-';
@@ -417,58 +440,172 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
 
             <View style={styles.thinSeparator} />
 
-            {/* Prompts + Outputs unified grid (no section labels) */}
-            {(sortedPrompts.length > 0 || outputs.length > 0) && (
-              <View style={{ marginBottom: 6 }}>
-                <DataGrid
-                  items={[
-                    ...sortedPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
-                    ...outputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
-                  ]}
-                />
-              </View>
-            )}
-
-            {/* ═══ IMPOSICIÓN (visual diagram) ═══ */}
-            {item.imposition_data && (
+            {/* ═══ DATA CONTENT ═══ */}
+            {useSections ? (
+              /* Section-based layout */
               <>
-                <View style={styles.thickSeparator} />
+                {OT_SECTION_ORDER.map(sectionKey => {
+                  // Gather prompts and outputs assigned to this section
+                  const sectionPrompts = sortedPrompts.filter(p => 
+                    (promptSections?.get(p.label.trim().toUpperCase()) || '') === sectionKey
+                  );
+                  const sectionOutputs = outputs.filter(o =>
+                    (outputSections?.get(o.name.trim().toUpperCase()) || '') === sectionKey
+                  );
 
-                {isSimple ? (
-                  <View style={styles.impositionRow}>
-                    <ImpositionDiagram data={item.imposition_data} title="" />
-                  </View>
-                ) : compositeImpositions.length > 0 ? (
-                  <View style={styles.impositionRow}>
-                    {compositeImpositions.map(([key, data]) => {
-                      const alias = item.composite_data?.components?.[key]?.alias || key;
-                      const halfW = Math.floor((DIAGRAM_DEFAULT_W - 20) / compositeImpositions.length);
-                      return <ImpositionDiagram key={key} data={data} title={alias.toUpperCase()} maxWidth={halfW} maxHeight={180} />;
-                    })}
-                  </View>
-                ) : (
-                  <View style={styles.impositionRow}>
-                    <ImpositionDiagram data={item.imposition_data} title="" />
+                  // Special handling: imposiciones section includes the diagram
+                  if (sectionKey === 'imposiciones') {
+                    const hasImposition = item.imposition_data && (isSimple || compositeImpositions.length > 0);
+                    if (sectionPrompts.length === 0 && sectionOutputs.length === 0 && !hasImposition) return null;
+                    return (
+                      <View key={sectionKey} style={{ marginBottom: 6 }}>
+                        <View style={styles.thickSeparator} />
+                        <Text style={styles.sectionTitle}>{OT_SECTION_LABELS[sectionKey]}</Text>
+                        {(sectionPrompts.length > 0 || sectionOutputs.length > 0) && (
+                          <DataGrid items={[
+                            ...sectionPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                            ...sectionOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                          ]} />
+                        )}
+                        {hasImposition && (
+                          <>
+                            {isSimple ? (
+                              <View style={styles.impositionRow}>
+                                <ImpositionDiagram data={item.imposition_data} title="" />
+                              </View>
+                            ) : compositeImpositions.length > 0 ? (
+                              <View style={styles.impositionRow}>
+                                {compositeImpositions.map(([key, data]) => {
+                                  const alias = item.composite_data?.components?.[key]?.alias || key;
+                                  const halfW = Math.floor((DIAGRAM_DEFAULT_W - 20) / compositeImpositions.length);
+                                  return <ImpositionDiagram key={key} data={data} title={alias.toUpperCase()} maxWidth={halfW} maxHeight={180} />;
+                                })}
+                              </View>
+                            ) : null}
+                          </>
+                        )}
+                      </View>
+                    );
+                  }
+
+                  // Special handling: ajustes section includes additionals
+                  if (sectionKey === 'ajustes') {
+                    const hasAdditionals = additionals && additionals.length > 0;
+                    if (sectionPrompts.length === 0 && sectionOutputs.length === 0 && !hasAdditionals) return null;
+                    return (
+                      <View key={sectionKey} style={{ marginBottom: 6 }}>
+                        <View style={styles.thickSeparator} />
+                        <Text style={styles.sectionTitle}>{OT_SECTION_LABELS[sectionKey]}</Text>
+                        {(sectionPrompts.length > 0 || sectionOutputs.length > 0) && (
+                          <DataGrid items={[
+                            ...sectionPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                            ...sectionOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                          ]} />
+                        )}
+                        {hasAdditionals && (
+                          <View style={styles.grid3}>
+                            {additionals!.map((adj, idx) => (
+                              <View key={idx} style={styles.gridItem}>
+                                <Text style={styles.gridLabel}>{adj.name}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        )}
+                      </View>
+                    );
+                  }
+
+                  if (sectionPrompts.length === 0 && sectionOutputs.length === 0) return null;
+                  return (
+                    <View key={sectionKey} style={{ marginBottom: 6 }}>
+                      <View style={styles.thickSeparator} />
+                      <Text style={styles.sectionTitle}>{OT_SECTION_LABELS[sectionKey]}</Text>
+                      <DataGrid items={[
+                        ...sectionPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                        ...sectionOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                      ]} />
+                    </View>
+                  );
+                })}
+
+                {/* Unclassified prompts/outputs (no section assigned) */}
+                {(() => {
+                  const unclassifiedPrompts = sortedPrompts.filter(p => 
+                    !promptSections?.has(p.label.trim().toUpperCase()) || 
+                    !promptSections.get(p.label.trim().toUpperCase())
+                  );
+                  const unclassifiedOutputs = outputs.filter(o =>
+                    !outputSections?.has(o.name.trim().toUpperCase()) ||
+                    !outputSections.get(o.name.trim().toUpperCase())
+                  );
+                  if (unclassifiedPrompts.length === 0 && unclassifiedOutputs.length === 0) return null;
+                  return (
+                    <View style={{ marginBottom: 6 }}>
+                      <View style={styles.thickSeparator} />
+                      <Text style={styles.sectionTitle}>OTROS DATOS</Text>
+                      <DataGrid items={[
+                        ...unclassifiedPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                        ...unclassifiedOutputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                      ]} />
+                    </View>
+                  );
+                })()}
+              </>
+            ) : (
+              /* Legacy flat layout */
+              <>
+                {(sortedPrompts.length > 0 || outputs.length > 0) && (
+                  <View style={{ marginBottom: 6 }}>
+                    <DataGrid
+                      items={[
+                        ...sortedPrompts.map(p => ({ label: p.label, value: formatVal(p.value) })),
+                        ...outputs.map(o => ({ label: o.name, value: formatVal(o.value) })),
+                      ]}
+                    />
                   </View>
                 )}
+
+                {/* Imposition */}
+                {item.imposition_data && (
+                  <>
+                    <View style={styles.thickSeparator} />
+                    {isSimple ? (
+                      <View style={styles.impositionRow}>
+                        <ImpositionDiagram data={item.imposition_data} title="" />
+                      </View>
+                    ) : compositeImpositions.length > 0 ? (
+                      <View style={styles.impositionRow}>
+                        {compositeImpositions.map(([key, data]) => {
+                          const alias = item.composite_data?.components?.[key]?.alias || key;
+                          const halfW = Math.floor((DIAGRAM_DEFAULT_W - 20) / compositeImpositions.length);
+                          return <ImpositionDiagram key={key} data={data} title={alias.toUpperCase()} maxWidth={halfW} maxHeight={180} />;
+                        })}
+                      </View>
+                    ) : (
+                      <View style={styles.impositionRow}>
+                        <ImpositionDiagram data={item.imposition_data} title="" />
+                      </View>
+                    )}
+                  </>
+                )}
+
+                <View style={styles.thickSeparator} />
+
+                {/* Ajustes */}
+                <View style={{ marginBottom: 6 }}>
+                  <Text style={styles.sectionTitle}>AJUSTES PERSONALIZADOS</Text>
+                  {additionals && additionals.length > 0 ? (
+                    <View style={styles.grid3}>
+                      {additionals.map((adj, idx) => (
+                        <View key={idx} style={styles.gridItem}>
+                          <Text style={styles.gridLabel}>{adj.name}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ) : null}
+                </View>
               </>
             )}
-
-            <View style={styles.thickSeparator} />
-
-            {/* ═══ AJUSTES PERSONALIZADOS ═══ */}
-            <View style={{ marginBottom: 6 }}>
-              <Text style={styles.sectionTitle}>AJUSTES PERSONALIZADOS</Text>
-              {additionals && additionals.length > 0 ? (
-                <View style={styles.grid3}>
-                  {additionals.map((adj, idx) => (
-                    <View key={idx} style={styles.gridItem}>
-                      <Text style={styles.gridLabel}>{adj.name}</Text>
-                    </View>
-                  ))}
-                </View>
-              ) : null}
-            </View>
 
             <View style={styles.thickSeparator} />
 
@@ -486,7 +623,7 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
 // ─── Public API ─────────────────────────────────────────────
 
 export const generateWorkOrderPDF = async (
-  options: Omit<WorkOrderPDFOptions, 'logoUrl' | 'companyName'>
+  options: Omit<WorkOrderPDFOptions, 'logoUrl' | 'companyName' | 'promptSections' | 'outputSections' | 'useSections'>
 ): Promise<void> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -509,6 +646,9 @@ export const generateWorkOrderPDF = async (
     let customerEmail = '';
     let customerPhone = '';
     let adminOnlyLabels = new Set<string>();
+    let promptSections = new Map<string, string>();
+    let outputSections = new Map<string, string>();
+    let useSections = false;
 
     if (options.orderId) {
       const { data: order } = await supabase
@@ -530,7 +670,7 @@ export const generateWorkOrderPDF = async (
         }
       }
 
-      // Load admin_only prompt labels to filter from OT PDF
+      // Load admin_only prompt labels and section assignments
       if (order?.organization_id) {
         const { data: orgData } = await supabase
           .from('organizations')
@@ -539,16 +679,70 @@ export const generateWorkOrderPDF = async (
           .maybeSingle();
 
         if (orgData?.api_user_id) {
-          const { data: settings } = await supabase
+          // Load prompt settings (admin_only + ot_section)
+          const { data: promptSettings } = await supabase
             .from('product_prompt_settings')
-            .select('prompt_name, label')
-            .eq('api_user_id', orgData.api_user_id)
-            .eq('admin_only', true);
+            .select('prompt_name, label, admin_only, show_in_ot, ot_section')
+            .eq('api_user_id', orgData.api_user_id);
 
-          settings?.forEach(s => {
-            if (s.label) adminOnlyLabels.add(s.label.trim().toUpperCase());
-            if (s.prompt_name) adminOnlyLabels.add(s.prompt_name.trim().toUpperCase());
+          promptSettings?.forEach(s => {
+            if (s.admin_only) {
+              if (s.label) adminOnlyLabels.add(s.label.trim().toUpperCase());
+              if (s.prompt_name) adminOnlyLabels.add(s.prompt_name.trim().toUpperCase());
+            }
+            if (s.show_in_ot && s.ot_section) {
+              useSections = true;
+              if (s.label) promptSections.set(s.label.trim().toUpperCase(), s.ot_section);
+              if (s.prompt_name) promptSections.set(s.prompt_name.trim().toUpperCase(), s.ot_section);
+            }
           });
+
+          // Load output OT section settings
+          const { data: outputOtSettings } = await supabase
+            .from('product_output_ot_settings' as any)
+            .select('output_name, label, show_in_ot, ot_section')
+            .eq('api_user_id', orgData.api_user_id);
+
+          (outputOtSettings as any[])?.forEach((s: any) => {
+            if (s.show_in_ot && s.ot_section) {
+              useSections = true;
+              if (s.output_name) outputSections.set(s.output_name.trim().toUpperCase(), s.ot_section);
+              if (s.label) outputSections.set(s.label.trim().toUpperCase(), s.ot_section);
+            }
+          });
+
+          // Also load composite product prompts/outputs with ot_section
+          const productIds = [...new Set(options.items.filter(i => i.product_id).map(i => i.product_id!))];
+          if (productIds.length > 0) {
+            const [{ data: compositePrompts }, { data: compositeOutputs }] = await Promise.all([
+              supabase
+                .from('composite_product_prompts')
+                .select('name, label, show_in_ot, ot_section')
+                .eq('api_user_id', orgData.api_user_id)
+                .in('easyquote_product_id', productIds),
+              supabase
+                .from('composite_product_outputs')
+                .select('name, label, show_in_ot, ot_section')
+                .eq('api_user_id', orgData.api_user_id)
+                .in('easyquote_product_id', productIds),
+            ]);
+
+            compositePrompts?.forEach(s => {
+              if (s.show_in_ot && s.ot_section) {
+                useSections = true;
+                if (s.label) promptSections.set(s.label.trim().toUpperCase(), s.ot_section);
+                if (s.name) promptSections.set(s.name.trim().toUpperCase(), s.ot_section);
+              }
+            });
+
+            compositeOutputs?.forEach(s => {
+              if (s.show_in_ot && s.ot_section) {
+                useSections = true;
+                if (s.label) outputSections.set(s.label.trim().toUpperCase(), s.ot_section);
+                if (s.name) outputSections.set(s.name.trim().toUpperCase(), s.ot_section);
+              }
+            });
+          }
         }
       }
     }
@@ -561,6 +755,9 @@ export const generateWorkOrderPDF = async (
         customerEmail={customerEmail}
         customerPhone={customerPhone}
         adminOnlyLabels={adminOnlyLabels}
+        promptSections={promptSections}
+        outputSections={outputSections}
+        useSections={useSections}
       />
     ).toBlob();
 
