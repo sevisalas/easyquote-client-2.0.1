@@ -324,41 +324,8 @@ const SalesOrderDetail = () => {
                   labelsByProduct[row.easyquote_product_id][row.prompt_name] = row.label;
                 }
 
-                // Helper: resolve imposition for a product given prompts/outputs
-                const resolveForProduct = (productId: string, prompts: any[], outputs: any[]) => {
-                  if (!productsWithImposition.has(productId)) return null;
-                  const mappings = allMappings.filter(
-                    (m: any) => m.easyquote_product_id === productId && m.production_variables?.imposition_field
-                  );
-                  if (mappings.length === 0) return null;
-
-                  const cellToLabel = labelsByProduct[productId] || {};
-                  const impositionData: Record<string, number> = {
-                    productWidth: 210, productHeight: 297, bleed: 0,
-                    validWidth: 680, validHeight: 480, gutterH: 0, gutterV: 0,
-                  };
-
-                  for (const mapping of mappings) {
-                    const variable = mapping.production_variables as any;
-                    const field = variable.imposition_field;
-                    const cellName = mapping.prompt_or_output_name;
-                    const displayName = cellToLabel[cellName] || cellName;
-                    const promptMatch = prompts.find((p: any) => p.label === cellName || p.label === displayName);
-                    const outputMatch = outputs.find((o: any) => o.name === cellName || o.name === displayName);
-                    const rawValue = promptMatch?.value ?? outputMatch?.value ?? variable.default_value;
-                    if (rawValue !== undefined && rawValue !== null) {
-                      const numValue = parseFloat(String(rawValue));
-                      if (!isNaN(numValue) && numValue >= 0) {
-                        impositionData[field] = numValue;
-                      }
-                    }
-                  }
-                  const { updateCalculatedValues } = require("@/utils/impositionCalculator");
-                  return updateCalculatedValues(impositionData as any);
-                };
-                
                 const { updateCalculatedValues } = await import("@/utils/impositionCalculator");
-                // Override the inline require with the dynamic import
+
                 const resolveForProductAsync = (productId: string, prompts: any[], outputs: any[]) => {
                   if (!productsWithImposition.has(productId)) return null;
                   const mappings = allMappings.filter(
