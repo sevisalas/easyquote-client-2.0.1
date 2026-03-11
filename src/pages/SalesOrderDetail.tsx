@@ -291,6 +291,13 @@ const SalesOrderDetail = () => {
               const productsWithImposition = new Set(allSettings?.map(s => s.easyquote_product_id) || []);
               
               if (productsWithImposition.size > 0) {
+                // Get all orgs sharing the same api_user_id (cross-org mapping fallback)
+                const { data: siblingOrgs } = await supabase
+                  .from('organizations')
+                  .select('id')
+                  .eq('api_user_id', apiUserId);
+                const allOrgIds = siblingOrgs?.map(o => o.id) || [organizationId];
+
                 // Fetch all variable mappings and labels for these products
                 const [mappingsResult, labelsResult] = await Promise.all([
                   supabase
@@ -305,7 +312,7 @@ const SalesOrderDetail = () => {
                       )
                     `)
                     .in('easyquote_product_id', [...productsWithImposition])
-                    .eq('organization_id', organizationId),
+                    .in('organization_id', allOrgIds),
                   supabase
                     .from('product_prompt_settings')
                     .select('easyquote_product_id, prompt_name, label')
