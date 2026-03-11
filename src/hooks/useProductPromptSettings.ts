@@ -14,6 +14,8 @@ export interface ProductPromptSetting {
   force_result: boolean;
   is_hidden: boolean;
   is_quantity: boolean;
+  show_in_ot: boolean;
+  ot_section: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -142,6 +144,18 @@ export function useProductPromptSettings(easyquoteProductId?: string) {
     return undefined;
   };
 
+  // Helper: verificar si un prompt aparece en la OT
+  const isPromptInOt = (promptName: string): boolean => {
+    const setting = settingsByPromptName.get(normalizePromptName(promptName));
+    return setting?.show_in_ot ?? false;
+  };
+
+  // Helper: obtener la sección OT de un prompt
+  const getPromptOtSection = (promptName: string): string | null => {
+    const setting = settingsByPromptName.get(normalizePromptName(promptName));
+    return setting?.ot_section ?? null;
+  };
+
   // Helper: obtener la configuración completa de un prompt
   const getPromptSetting = (promptName: string): ProductPromptSetting | undefined => {
     return settingsByPromptName.get(normalizePromptName(promptName));
@@ -157,6 +171,8 @@ export function useProductPromptSettings(easyquoteProductId?: string) {
     isPromptForceResult,
     isPromptHidden,
     isPromptQuantity,
+    isPromptInOt,
+    getPromptOtSection,
     getQuantityPromptName,
     getPromptSetting,
   };

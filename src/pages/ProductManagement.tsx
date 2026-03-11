@@ -39,6 +39,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { normalizeApiUserId } from "@/utils/normalizeApiUserId";
+import { useProductOutputOtSettings, OT_SECTIONS } from "@/hooks/useProductOutputOtSettings";
 
 // Interface para productos del API de EasyQuote
 interface EasyQuoteProduct {
@@ -116,6 +117,10 @@ function SortableOutputItem({
   selectedProduct,
   labelValue,
   onLabelChange,
+  isOutputInOt,
+  getOutputOtSection,
+  onOtToggle,
+  onOtSectionChange,
 }: {
   output: ProductOutput;
   index: number;
@@ -130,6 +135,10 @@ function SortableOutputItem({
   selectedProduct: EasyQuoteProduct | null;
   labelValue: string;
   onLabelChange: (value: string) => void;
+  isOutputInOt: boolean;
+  getOutputOtSection: string | null;
+  onOtToggle: (checked: boolean) => void;
+  onOtSectionChange: (section: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({
@@ -312,6 +321,29 @@ function SortableOutputItem({
               </SelectContent>
             </Select>
           </div>
+
+          <div className="flex items-center gap-2">
+            <Label className="text-sm font-medium whitespace-nowrap">OT</Label>
+            <Switch checked={isOutputInOt} onCheckedChange={onOtToggle} />
+          </div>
+          {isOutputInOt && (
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-medium whitespace-nowrap">Sección OT</Label>
+              <Select value={getOutputOtSection || "datos_destacados"} onValueChange={onOtSectionChange}>
+                <SelectTrigger className="w-44">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background border shadow-lg z-50">
+                  <SelectItem value="datos_destacados">Datos destacados</SelectItem>
+                  <SelectItem value="impresion">Impresión</SelectItem>
+                  <SelectItem value="acabados">Acabados</SelectItem>
+                  <SelectItem value="imposiciones">Imposiciones</SelectItem>
+                  <SelectItem value="ajustes">Ajustes</SelectItem>
+                  <SelectItem value="observaciones">Observaciones</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -445,7 +477,13 @@ export default function ProductManagement() {
     isAssigning: isAssigningComponent
   } = useProductComponentSettings(selectedProduct?.id, apiUserId, organizationId);
 
-  // Sincronizar productType con el valor guardado en BD
+  // Output OT settings hook
+  const {
+    isOutputInOt: checkOutputInOt,
+    getOutputOtSection: checkOutputOtSection,
+    upsertOutputOtSetting,
+  } = useProductOutputOtSettings(selectedProduct?.id);
+
   useEffect(() => {
     if (savedProductType) {
       setProductType(savedProductType);
@@ -602,6 +640,8 @@ export default function ProductManagement() {
       isHidden,
       isQuantity,
       label,
+      showInOt,
+      otSection,
     }: {
       productId: string;
       promptName: string;
@@ -611,6 +651,8 @@ export default function ProductManagement() {
       isHidden?: boolean;
       isQuantity?: boolean;
       label?: string;
+      showInOt?: boolean;
+      otSection?: string | null;
     }) => {
       const normalizePromptKey = (v: string) =>
         String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
@@ -646,6 +688,8 @@ export default function ProductManagement() {
         is_hidden?: boolean;
         is_quantity?: boolean;
         label?: string;
+        show_in_ot?: boolean;
+        ot_section?: string | null;
         updated_at: string;
       } = {
         updated_at: new Date().toISOString(),
@@ -676,6 +720,8 @@ export default function ProductManagement() {
         }
       }
       if (label !== undefined) updateData.label = label;
+      if (showInOt !== undefined) updateData.show_in_ot = showInOt;
+      if (otSection !== undefined) updateData.ot_section = otSection;
 
       if (existing?.id) {
         const { error } = await supabase
@@ -695,6 +741,8 @@ export default function ProductManagement() {
           is_hidden: isHidden ?? false,
           is_quantity: isQuantity ?? false,
           label: label ?? null,
+          show_in_ot: showInOt ?? false,
+          ot_section: otSection ?? null,
         });
         if (error) throw error;
       }
@@ -709,6 +757,8 @@ export default function ProductManagement() {
           force_result: forceResult,
           is_hidden: isHidden,
           label,
+          show_in_ot: showInOt,
+          ot_section: otSection,
         },
       };
     },
@@ -742,6 +792,8 @@ export default function ProductManagement() {
               ? { is_hidden: result.patch.is_hidden }
               : {}),
             ...(result.patch.label !== undefined ? { label: result.patch.label } : {}),
+            ...(result.patch.show_in_ot !== undefined ? { show_in_ot: result.patch.show_in_ot } : {}),
+            ...(result.patch.ot_section !== undefined ? { ot_section: result.patch.ot_section } : {}),
             updated_at: new Date().toISOString(),
           };
 
@@ -806,6 +858,22 @@ export default function ProductManagement() {
     const key = normalizePromptKey(promptName);
     const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
     return setting?.is_quantity || false;
+  };
+
+  // Helper to check if prompt is shown in OT
+  const isPromptInOt = (promptName: string): boolean => {
+    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+    const key = normalizePromptKey(promptName);
+    const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
+    return setting?.show_in_ot || false;
+  };
+
+  // Helper to get OT section for a prompt
+  const getPromptOtSection = (promptName: string): string | null => {
+    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+    const key = normalizePromptKey(promptName);
+    const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
+    return setting?.ot_section || null;
   };
 
   // Helper to get saved label for a prompt
@@ -3087,6 +3155,45 @@ export default function ProductManagement() {
                                 }
                               }} />
                               </div>
+                              <div className="flex items-center gap-2">
+                                <Label className="text-sm font-medium whitespace-nowrap">OT</Label>
+                                <Switch checked={isPromptInOt(prompt.promptCell)} onCheckedChange={checked => {
+                                if (selectedProduct) {
+                                  upsertPromptSettingMutation.mutate({
+                                    productId: selectedProduct.id,
+                                    promptName: prompt.promptCell,
+                                    showInOt: checked,
+                                    otSection: checked ? (getPromptOtSection(prompt.promptCell) || 'datos_destacados') : null,
+                                  });
+                                }
+                              }} />
+                              </div>
+                              {isPromptInOt(prompt.promptCell) && (
+                                <div className="flex items-center gap-2">
+                                  <Label className="text-sm font-medium whitespace-nowrap">Sección OT</Label>
+                                  <Select value={getPromptOtSection(prompt.promptCell) || "datos_destacados"} onValueChange={value => {
+                                    if (selectedProduct) {
+                                      upsertPromptSettingMutation.mutate({
+                                        productId: selectedProduct.id,
+                                        promptName: prompt.promptCell,
+                                        otSection: value,
+                                      });
+                                    }
+                                  }}>
+                                    <SelectTrigger className="w-44">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-background border shadow-lg z-50">
+                                      <SelectItem value="datos_destacados">Datos destacados</SelectItem>
+                                      <SelectItem value="impresion">Impresión</SelectItem>
+                                      <SelectItem value="acabados">Acabados</SelectItem>
+                                      <SelectItem value="imposiciones">Imposiciones</SelectItem>
+                                      <SelectItem value="ajustes">Ajustes</SelectItem>
+                                      <SelectItem value="observaciones">Observaciones</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              )}
                               {/* Etiqueta y Variable de prod. en la misma línea */}
                               <div className="flex items-center gap-4 flex-1">
                                 <div className="flex items-center gap-2 flex-1">
@@ -3231,6 +3338,24 @@ export default function ProductManagement() {
                                       [output.nameCell]: value,
                                     }))
                                   }
+                                  isOutputInOt={checkOutputInOt(output.nameCell)}
+                                  getOutputOtSection={checkOutputOtSection(output.nameCell)}
+                                  onOtToggle={(checked) => {
+                                    upsertOutputOtSetting({
+                                      output_name: output.nameCell,
+                                      label: outputLabelDrafts[output.nameCell] ?? getPromptLabel(output.nameCell) ?? output.nameCell,
+                                      show_in_ot: checked,
+                                      ot_section: checked ? (checkOutputOtSection(output.nameCell) || 'datos_destacados') : null,
+                                    });
+                                  }}
+                                  onOtSectionChange={(section) => {
+                                    upsertOutputOtSetting({
+                                      output_name: output.nameCell,
+                                      label: outputLabelDrafts[output.nameCell] ?? getPromptLabel(output.nameCell) ?? output.nameCell,
+                                      show_in_ot: true,
+                                      ot_section: section,
+                                    });
+                                  }}
                                 />
                               ))}
                               {orderedProductOutputs.length === 0 && <div className="text-center py-4">

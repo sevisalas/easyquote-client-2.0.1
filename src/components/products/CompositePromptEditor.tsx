@@ -105,6 +105,8 @@ export function CompositePromptEditor({
           default_value: editingPrompt.default_value || null,
           is_required: editingPrompt.is_required,
           is_hidden: editingPrompt.is_hidden,
+          show_in_ot: false,
+          ot_section: null,
           options: editingPrompt.type === "select" ? editingPrompt.options : null,
           display_order: prompts.length,
         });
