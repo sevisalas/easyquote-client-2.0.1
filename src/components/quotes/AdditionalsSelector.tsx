@@ -186,59 +186,103 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
               subtotalLabel = `${subtotal.toFixed(2)} €`;
             }
             
-            return (
-              <div key={additional.id} className="flex items-center gap-2 p-1.5 border rounded">
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium">
-                    {additional.name}
-                    {additional.is_discount && (
-                      <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
-                        Descuento
+              const isNetMulti = multiEnabled && additional.type === "net_amount" && !!additional.multiValues;
+              const showMultiToggle = multiEnabled && additional.type === "net_amount";
+              
+              return (
+              <div key={additional.id} className="p-1.5 border rounded space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium">
+                      {additional.name}
+                      {additional.is_discount && (
+                        <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
+                          Descuento
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {additional.type === "net_amount" ? "Importe neto" : 
+                       additional.type === "percentage" ? "Porcentaje" :
+                       additional.type === "quantity_multiplier" ? "Precio unidad" :
+                       additional.type === "capacity_divider" ? `Por capacidad (${additional.capacity_value || '?'} uds)` : "Personalizado"}
+                    </div>
+                  </div>
+                  {/* Single value input (when NOT in multi mode for this additional) */}
+                  {!isNetMulti && (
+                    <div className="flex items-center gap-1 w-24">
+                      {additional.isCustom ? (
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={additional.value}
+                          onChange={(e) => updateAdditionalValue(additional.id, parseFloat(e.target.value) || 0)}
+                          onFocus={(e) => e.target.select()}
+                          className="w-full h-9"
+                        />
+                      ) : (
+                        <div className="w-full h-9 flex items-center justify-end px-3 border rounded bg-muted/50">
+                          <span className="font-medium">{additional.value}</span>
+                        </div>
+                      )}
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">
+                        {additional.type === "percentage" ? "%" :
+                         additional.type === "net_amount" ? "€" : 
+                         additional.type === "capacity_divider" ? "€/ud" : "x"}
                       </span>
-                    )}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {additional.type === "net_amount" ? "Importe neto" : 
-                     additional.type === "percentage" ? "Porcentaje" :
-                     additional.type === "quantity_multiplier" ? "Precio unidad" :
-                     additional.type === "capacity_divider" ? `Por capacidad (${additional.capacity_value || '?'} uds)` : "Personalizado"}
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 w-24">
-                  {additional.isCustom ? (
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={additional.value}
-                      onChange={(e) => updateAdditionalValue(additional.id, parseFloat(e.target.value) || 0)}
-                      onFocus={(e) => e.target.select()}
-                      className="w-full h-9"
-                    />
-                  ) : (
-                    <div className="w-full h-9 flex items-center justify-end px-3 border rounded bg-muted/50">
-                      <span className="font-medium">{additional.value}</span>
                     </div>
                   )}
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">
-                    {additional.type === "percentage" ? "%" :
-                     additional.type === "net_amount" ? "€" : 
-                     additional.type === "capacity_divider" ? "€/ud" : "x"}
-                  </span>
+                  {/* Subtotal column (only for single mode) */}
+                  {!isNetMulti && (
+                    <div className="w-32 text-right">
+                      <span className="text-sm font-semibold text-primary">
+                        {subtotalLabel}
+                      </span>
+                    </div>
+                  )}
+                  {/* Multi toggle button for net_amount */}
+                  {showMultiToggle && (
+                    <Button
+                      variant={isNetMulti ? "secondary" : "outline"}
+                      size="sm"
+                      className="h-7 text-xs px-2"
+                      onClick={() => toggleMultiMode(additional.id)}
+                      title={isNetMulti ? "Usar valor único" : "Valor por cantidad"}
+                    >
+                      {isNetMulti ? "1 valor" : "Por Qty"}
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={() => removeAdditional(additional.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-                {/* Subtotal column */}
-                <div className="w-32 text-right">
-                  <span className="text-sm font-semibold text-primary">
-                    {subtotalLabel}
-                  </span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9"
-                  onClick={() => removeAdditional(additional.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                {/* Per-quantity inputs for net_amount in multi mode */}
+                {isNetMulti && additional.multiValues && (
+                  <div className="flex gap-2 flex-wrap pl-2 pt-1 border-t">
+                    {additional.multiValues.slice(0, qtyCount).map((mv, qi) => (
+                      <div key={qi} className="flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground w-10">
+                          {qtyLabels[qi] ? `Q${qi + 1}` : `Q${qi + 1}`}
+                          {qtyLabels[qi] && <span className="block text-[10px]">({qtyLabels[qi]})</span>}
+                        </span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={mv}
+                          onChange={(e) => updateAdditionalMultiValue(additional.id, qi, parseFloat(e.target.value) || 0)}
+                          onFocus={(e) => e.target.select()}
+                          className="w-20 h-7 text-xs"
+                        />
+                        <span className="text-xs text-muted-foreground">€</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
