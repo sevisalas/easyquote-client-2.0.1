@@ -119,11 +119,18 @@ export default function AdditionalsSelector({ selectedAdditionals, onChange, qua
     if (!customName.trim()) return
 
     const customId = `custom_${Date.now()}`
+    
+    // Initialize multiValues by default if multiEnabled and net_amount
+    const initialMultiValues = (multiEnabled && customType === 'net_amount')
+      ? Array(qtyCount).fill(customValue)
+      : undefined
+    
     const newCustom: SelectedAdditional = {
       id: customId,
       name: customName.trim(),
       type: customType,
       value: customValue,
+      multiValues: initialMultiValues,
       isCustom: true,
       capacity_value: customType === 'capacity_divider' ? customCapacity : null
     }
