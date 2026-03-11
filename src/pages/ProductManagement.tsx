@@ -703,6 +703,8 @@ export default function ProductManagement() {
           is_hidden: isHidden ?? false,
           is_quantity: isQuantity ?? false,
           label: label ?? null,
+          show_in_ot: showInOt ?? false,
+          ot_section: otSection ?? null,
         });
         if (error) throw error;
       }
