@@ -45,6 +45,39 @@ export interface CalculationResult {
 }
 
 /**
+ * Find all valid H×V factorizations for a target count
+ * that physically fit within the valid area for the given orientation.
+ */
+function findFittingFactorizations(
+  target: number,
+  validWidth: number,
+  validHeight: number,
+  productWidth: number,
+  productHeight: number,
+  gutterH: number,
+  gutterV: number,
+  orientation: 'horizontal' | 'vertical'
+): { h: number; v: number } | null {
+  const prodW = orientation === 'vertical' ? productHeight : productWidth;
+  const prodH = orientation === 'vertical' ? productWidth : productHeight;
+  const cellW = prodW + gutterH;
+  const cellH = prodH + gutterV;
+  const maxH = Math.floor(validWidth / cellW);
+  const maxV = Math.floor(validHeight / cellH);
+
+  // Try factorizations preferring wider layouts (more cols)
+  for (let h = Math.min(target, maxH); h >= 1; h--) {
+    if (target % h === 0) {
+      const v = target / h;
+      if (v <= maxV) {
+        return { h, v };
+      }
+    }
+  }
+  return null;
+}
+
+/**
  * Calcula las repeticiones y aprovechamiento del pliego.
  * En modo manual (isManual=true), usa repetitionsH, repetitionsV y orientation del data directamente.
  */
@@ -76,21 +109,21 @@ export function calculateImposition(data: ImpositionData): CalculationResult {
     const cellH = productHeight + gutterV;
     
     // Producto en horizontal
-    const repsH_prodHoriz = Math.floor(validWidth / cellW);
-    const repsV_prodHoriz = Math.floor(validHeight / cellH);
-    const total_prodHoriz = repsH_prodHoriz * repsV_prodHoriz;
+    const repsH_horiz = Math.floor(validWidth / cellW);
+    const repsV_horiz = Math.floor(validHeight / cellH);
+    const total_horiz = repsH_horiz * repsV_horiz;
     
     // Producto en vertical (rotado 90°)
     const cellW_vert = productHeight + gutterH;
     const cellH_vert = productWidth + gutterV;
-    const repsH_prodVert = Math.floor(validWidth / cellW_vert);
-    const repsV_prodVert = Math.floor(validHeight / cellH_vert);
-    const total_prodVert = repsH_prodVert * repsV_prodVert;
+    const repsH_vert = Math.floor(validWidth / cellW_vert);
+    const repsV_vert = Math.floor(validHeight / cellH_vert);
+    const total_vert = repsH_vert * repsV_vert;
     
-    const useVertical = total_prodVert > total_prodHoriz;
+    const useVertical = total_vert > total_horiz;
     
-    repetitionsH = useVertical ? repsH_prodVert : repsH_prodHoriz;
-    repetitionsV = useVertical ? repsV_prodVert : repsV_prodHoriz;
+    repetitionsH = useVertical ? repsH_vert : repsH_horiz;
+    repetitionsV = useVertical ? repsV_vert : repsV_horiz;
     orientation = useVertical ? 'vertical' : 'horizontal';
   }
 
@@ -105,24 +138,40 @@ export function calculateImposition(data: ImpositionData): CalculationResult {
     const snapped = validSorted.find(v => v <= totalPages) || validSorted[validSorted.length - 1];
     adjustedPagesPerSheet = snapped;
     const adjustedPerSide = snapped / 2;
+
     if (adjustedPerSide < totalRepetitions) {
-      totalRepetitions = adjustedPerSide;
-      if (repetitionsH > 0 && repetitionsV > 0) {
-        const newV = Math.floor(adjustedPerSide / repetitionsH);
-        if (newV > 0 && newV * repetitionsH === adjustedPerSide) {
-          repetitionsV = newV;
-        } else {
-          const newH = Math.floor(adjustedPerSide / repetitionsV);
-          if (newH > 0 && newH * repetitionsV === adjustedPerSide) {
-            repetitionsH = newH;
-          } else {
-            for (let h = repetitionsH; h >= 1; h--) {
-              if (adjustedPerSide % h === 0) {
-                repetitionsH = h;
-                repetitionsV = adjustedPerSide / h;
-                break;
-              }
-            }
+      // Try to find a factorization that physically fits in the current orientation
+      let fit = findFittingFactorizations(
+        adjustedPerSide, validWidth, validHeight,
+        productWidth, productHeight, gutterH, gutterV,
+        orientation
+      );
+
+      if (!fit) {
+        // Try the other orientation
+        const altOrientation: 'horizontal' | 'vertical' = orientation === 'horizontal' ? 'vertical' : 'horizontal';
+        fit = findFittingFactorizations(
+          adjustedPerSide, validWidth, validHeight,
+          productWidth, productHeight, gutterH, gutterV,
+          altOrientation
+        );
+        if (fit) {
+          orientation = altOrientation;
+        }
+      }
+
+      if (fit) {
+        repetitionsH = fit.h;
+        repetitionsV = fit.v;
+        totalRepetitions = adjustedPerSide;
+      } else {
+        // Fallback: just reduce total, best-effort factorization
+        totalRepetitions = adjustedPerSide;
+        for (let h = repetitionsH; h >= 1; h--) {
+          if (adjustedPerSide % h === 0) {
+            repetitionsH = h;
+            repetitionsV = adjustedPerSide / h;
+            break;
           }
         }
       }
