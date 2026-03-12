@@ -258,7 +258,12 @@ export default function Template7({ data }: Template7Props) {
                           const adjs = item._raw_additionals || item.item_additionals || [];
                           if (adjs.length > 0) {
                             adjs.forEach((adj: any) => {
-                              let subtotal = adj.value;
+                              // For net_amount with multiValues, use the value for this specific quantity index
+                              const qtyIndex = meIdx + 1; // meIdx is 0-based for Q2,Q3... so +1 to skip Q1
+                              let baseValue = (adj.type === 'net_amount' && Array.isArray(adj.multiValues) && adj.multiValues[qtyIndex] != null)
+                                ? adj.multiValues[qtyIndex]
+                                : adj.value;
+                              let subtotal = baseValue;
                               if (adj.type === 'percentage') {
                                 subtotal = (me.price * adj.value) / 100;
                               } else if (adj.type === 'quantity_multiplier') {
