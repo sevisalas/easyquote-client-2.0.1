@@ -507,6 +507,7 @@ export const generateQuotePDF = async (
         value: adj.value || 0,
         is_discount: adj.is_discount || false,
         capacity_value: adj.capacity_value || null,
+        multiValues: adj.multiValues || null,
       }));
 
       // Format multi-quantity rows (Q2, Q3, etc.) for informational display
