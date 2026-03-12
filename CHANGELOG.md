@@ -5,6 +5,19 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.6.2] - 2026-03-12
+
+### Mejorado
+- **Descripción automática en presupuestos y pedidos**: Si el usuario no escribe descripción, se rellena automáticamente con el nombre a mostrar del primer artículo
+
+### Corregido
+- **Precios multi-cantidad con ajustes por cantidad en PDF**: Los precios informativos de Q2/Q3 en plantillas Campillo/Anebri ahora usan el valor de ajuste específico de cada cantidad (`multiValues`) en vez del valor fijo de Q1
+
+### Eliminado
+- **Ruta independiente de pruebas de producto**: Eliminada la ruta `/admin/productos/test` (la funcionalidad sigue disponible dentro de Herramientas de SuperAdmin y Gestión de productos)
+
+---
+
 ## [2.6.1] - 2026-03-11
 
 ### Seguridad
